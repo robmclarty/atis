@@ -5,6 +5,8 @@
  * map arrives with the phases in `SPEC.md` at the repository root.
  */
 
+import { SCHEMA_VERSION } from 'core';
+
 export const NAME = 'atis';
 export const VERSION = '0.0.0';
 
@@ -13,7 +15,8 @@ export const USAGE = `${NAME} ${VERSION}: a weather map for code changes.
   atis --version   print the version
   atis --help      print this text
 
-Nothing renders yet: this release holds the name. Follow the build at
+Nothing renders yet: this release holds the name. When it does, it writes
+map.json at schema ${SCHEMA_VERSION}. Follow the build at
 https://github.com/robmclarty/atis
 `;
 

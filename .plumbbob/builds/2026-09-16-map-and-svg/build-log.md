@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** none (at the boundary)
+**Current step:** 1 — chore(repo): scaffold the atis monorepo with checkride init
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -23,7 +23,29 @@ step boundaries. The antidote to "my plan got lost in the noise."
 line above. Only ONE step is in flight; a step is done only after a checkpoint:
 check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 
-- ☐ 1. <step>
+- ☐ 1. chore(repo): scaffold the atis monorepo with checkride init
+- ☐ 2. feat(core): define the map.json schema types and assertMap
+- ☐ 3. feat(core): identify cells, organelles and shore groups from a file list
+- ☐ 4. feat(core): compute topological depth bands over the import graph
+- ☐ 5. feat(cli): scan TypeScript imports into files, exports and edges
+- ☐ 6. feat(cli): read the git diff into change kinds, sizes and head-side hunks
+- ☐ 7. feat(history): mine git log into churn, age, bug-fix rate and co-change
+- ☐ 8. feat(cli): read checkride's .check artifacts into evidence inputs
+- ☐ 9. feat(core): compute the changed set and reach by module hop
+- ☐ 10. feat(core): compute evidence and the flight category
+- ☐ 11. feat(core): rank notice candidates into the six-slot budget
+- ☐ 12. feat(core): assemble map.json through one pure buildMap
+- ☐ 13. feat(cli): add the atis command that writes map.json for a base ref
+- ☐ 14. chore(spike): generate and spot-check map.json for checkride's PR 4
+- ☐ 15. feat(core): lay out organelles within bands with a seeded force simulation
+- ☐ 16. feat(core): draw cell membranes as Bubble Set contours over the layout
+- ☐ 17. feat(svg): render the field, terraces, membranes and organelles
+- ☐ 18. feat(svg): render the weather layer over the terrain
+- ☐ 19. feat(svg): render the notice labels and the HUD grade blocks
+- ☐ 20. feat(cli): add --svg and --open to write and show the static render
+- ☐ 21. docs(design): record the colour and chrome tokens the SVG settled
+- ☐ 22. chore(fixtures): generate map.json and the SVG for five historical PRs
+- ☐ 23. chore(glance): run glance-test round one and record the verdicts
 
 ## Park list
 

@@ -34,6 +34,9 @@
     "dist",
     "!dist/**/__tests__/**"
   ],
+  "dependencies": {
+    "core": "workspace:*"
+  },
   "engines": {
     "node": ">=22.18.0"
   },

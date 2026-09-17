@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 
-import { CORE } from '../index.js';
+import { SCHEMA_VERSION } from '../index.js';
 
-test('core smoke', () => {
-  expect(CORE).toBe('core');
+test('core owns the map.json schema version', () => {
+  expect(SCHEMA_VERSION).toBe(1);
 });
