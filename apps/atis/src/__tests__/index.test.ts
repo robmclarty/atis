@@ -7,8 +7,9 @@ import { NAME, VERSION, run } from '../index.js';
 test('the version constant matches package.json', () => {
   const manifest = JSON.parse(
     readFileSync(new URL('../../package.json', import.meta.url), 'utf8'),
-  ) as { name: string; version: string };
-  expect(manifest.name).toBe(NAME);
+  ) as { name: string; version: string; bin: Record<string, string> };
+  expect(manifest.name).toBe(`@robmclarty/${NAME}`);
+  expect(Object.keys(manifest.bin)).toEqual([NAME]);
   expect(manifest.version).toBe(VERSION);
 });
 

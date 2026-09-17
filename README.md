@@ -8,7 +8,7 @@ weather in ten seconds, then descends only where the weather is bad.
 - [SPEC.md](./SPEC.md): the design, phase by phase.
 - [docs/prior-art.md](./docs/prior-art.md) and
   [docs/inspiration.md](./docs/inspiration.md): what it borrows, and from whom.
-- `apps/atis`: the `atis` command, published as `atis` (`0.0.0` holds the name).
+- `apps/atis`: the `atis` command, published as `@robmclarty/atis` (`0.0.0` holds the name).
 - `libs/core`: the pure core that will compute `map.json`.
 
 ```bash
