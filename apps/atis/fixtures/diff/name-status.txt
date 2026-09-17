@@ -1,0 +1,5 @@
+A	src/keep/added.ts
+D	src/keep/deleted.ts
+A	src/keep/logo.png
+M	src/keep/modified.ts
+R066	src/dir/old.ts	src/other/renamed.ts

@@ -1,0 +1,5 @@
+1	0	src/keep/added.ts
+0	1	src/keep/deleted.ts
+-	-	src/keep/logo.png
+1	1	src/keep/modified.ts
+1	0	src/{dir/old.ts => other/renamed.ts}

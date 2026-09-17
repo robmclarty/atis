@@ -302,7 +302,7 @@ const GLOB_SOURCE: ReadonlyMap<string, string> = new Map([
 ]);
 
 /** A workspace glob, anchored at the repo root the way pnpm reads it. */
-function globToRegExp(glob: string): RegExp {
+export function globToRegExp(glob: string): RegExp {
   const tokens = glob.match(GLOB_TOKEN) ?? [];
   const source = tokens
     .map((token) => GLOB_SOURCE.get(token) ?? token.replace(/[.+^${}()|[\]\\]/g, '\\$&'))

@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 5 — feat(cli): scan TypeScript imports into files, exports and edges
+**Current step:** 6 — feat(cli): read the git diff into change kinds, sizes and head-side hunks
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -27,7 +27,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 2. feat(core): define the map.json schema types and assertMap
 - ☑ 3. feat(core): identify cells, organelles and shore groups from a file list
 - ☑ 4. feat(core): compute topological depth bands over the import graph
-- ☐ 5. feat(cli): scan TypeScript imports into files, exports and edges
+- ☑ 5. feat(cli): scan TypeScript imports into files, exports and edges
 - ☐ 6. feat(cli): read the git diff into change kinds, sizes and head-side hunks
 - ☐ 7. feat(history): mine git log into churn, age, bug-fix rate and co-change
 - ☐ 8. feat(cli): read checkride's .check artifacts into evidence inputs
@@ -332,3 +332,55 @@ folder, so it rides the branch into the PR.)*
   **5.** Tarjan runs on an explicit stack, and output order doesn't depend on input order
 
   A recursive Tarjan overflows the call stack on an import chain around 10k files deep, so this one keeps its own stack of frames. A test runs a 20,000-file chain to prove it. Nodes and each file's import list are sorted by path and duplicates removed. Self-imports are dropped. The longest-path pass walks the grouped graph in topological order, which is Tarjan's output reversed. A test shows that reversed input, duplicate edges and a self-import give the same result (C3 (deterministic)).
+
+- 2026-09-17 — step 5 checkpointed · 637b56021 — feat(cli): scan TypeScript imports into files, exports and edges (1 drift, 12m)
+
+  **Summary**: `scanImports(dir)` reads one extracted commit into `{ files, edges, members }`: every file of the tree is listed with its kind, the `.ts` and `.tsx` ones are parsed with the TypeScript compiler API for their exports and for every static import, `export … from` and `import()` specifier, and each specifier is resolved under NodeNext, so `./foo.js` lands on `foo.ts` and a workspace package resolves by name through `pnpm-workspace.yaml` and its own manifest. Eight tests cover it, six against a fixture tree written into a `mkdtemp` directory from strings and two against the two pure parsers. Beyond the tests I ran it over this repo, checkride and fascicle: 41 edges here, 1409 at checkride, and fascicle's seven `examples/*` members all found behind the comment lines in its workspace file.
+
+  1. Resolution can only see the files the extraction holds
+  2. A barrel's `export * from` names are expanded to a fixed point
+  3. A manifest's entry point resolves to the source a built target came from
+  4. `scanImports` takes an optional second argument for fallow's sake
+  5. `pnpm-lock.yaml` is the one file outside the seam
+
+  **Readout**: Step 5 - feat(cli): scan TypeScript imports into files, exports and edges
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored
+               - D21 (import-graph), D32 (terrain-from-base), D43 (scan-roots)
+               - D20 (workspace-exports), D22 (local-fallow), D30 (pure-parsers)
+               - D42 (committed-files-vs-gate), D4 (tests-not-terrain)
+  constraints  11 of 11 honored
+  seam         strayed: 1 path outside the seam
+               → pnpm-lock.yaml
+  diff         +844 -1 across 5 files
+  spent        12 min · 1 turn · 3s gate · green first run
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Recommendation**: Land it. The done-when's file, member and edge lists are pinned by the fixture tree and the gate is green; highlights 2, 3 and 4 are the three places I went past the plan's literal words, and they are the ones to look at before step 12 leans on this.
+
+  **1.** Resolution can only see the files the extraction holds
+
+  The compiler is handed a module resolution host backed by the walk's own file list rather than by the filesystem, so a specifier that leaves the extraction, or dives into a `node_modules` an archive never had, resolves to nothing at all: "never through `node_modules`" is a property of the host, not a filter after the fact. The host also has no `realpath`, so resolution never escapes through a symlink, which is what keeps a `mkdtemp` directory under macOS's `/var` symlink from resolving into `/private/var` and falling outside the scan. `.git` and `node_modules` are skipped in the walk itself, for the live tree the CLI will point at before step 13 extracts archives.
+
+  Every tracked file is listed, not only the parsed ones, because the shore groups of [D48 (shore-groups)](#d48) are built from the same list. A file the scan does not parse carries `loc: 0` and no exports: `loc` counts the non-blank lines the scan read, and a PNG has none. That is the one number here that a reader could mistake for a measurement, so it is documented on the type.
+
+  **2.** A barrel's `export * from` names are expanded to a fixed point
+
+  The done-when asks only for an `exports[]` per file, and taken literally a barrel that re-exports with `export *` would carry zero names, which would give `interface_size` (step 3) a zero for the widest interface in the repo and hide every deleted export behind a barrel from step 11's candidate. So a star re-export whose target is inside the scan contributes that target's names, transitively, taken to a fixed point so a cycle of barrels settles instead of recursing. On this repo `libs/core/src/index.ts` now reports its 53 re-exported names instead of nothing. A star through a specifier that does not resolve (an npm package) adds nothing, because those names are not knowable from this scan ([C2 (never-fake)](#c2)). Dropping the expansion is a five-line change if you would rather keep the scan literal.
+
+  **3.** A manifest's entry point resolves to the source a built target came from
+
+  `bin` and the `default` condition point at `./dist/cli.js`, and the done-when drops non-TypeScript paths, so read literally a published package contributes no entry points at all and depth collapses to "nothing is reachable" on any repo without a local fallow. A `dist/…js` or `.d.ts` target is therefore also tried as `src/….ts`, and the recovered source is preferred over the target as written, so a repo that commits its `dist/` does not enter itself through generated code. Here that turns `bin: ./dist/cli.js` into `apps/atis/src/cli.ts` and the three conditions of the `.` export into one `src/index.ts`.
+
+  **4.** `scanImports` takes an optional second argument for fallow's sake
+
+  Entry points are the union of the reviewed repo's fallow list and the manifest targets, but an extracted commit has no `node_modules` to hold a fallow, so the binary cannot be looked for where the scan is reading. `scanImports(dir, { repo })` names the working tree it lives in, defaulting to `dir`, and the call in the done-when still works as written. The run is guarded on `node_modules/.bin/fallow` existing before `pnpm exec` is spawned, so the machine's stale global 2.56 can never answer ([D22 (local-fallow)](#d22)); a missing or failing fallow just means the entry points come from the manifests alone. Parsing its output is a pure function tested from a string, per [D30 (pure-parsers)](#d30), and it collapses the `./` segments fallow leaves in workspace paths (`libs/core/./src/index.ts`).
+
+  **5.** `pnpm-lock.yaml` is the one file outside the seam
+
+  `typescript` is now a dependency of `apps/atis` rather than only a root dev tool, which [C9 (deps-earn-their-place)](#c9) asks for by name, and `pnpm install` recorded that in the lockfile. Three lines, no version change, and the gate is green with it.
