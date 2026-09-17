@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 4 — feat(core): compute topological depth bands over the import graph
+**Current step:** 5 — feat(cli): scan TypeScript imports into files, exports and edges
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -26,7 +26,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 1. chore(repo): scaffold the atis monorepo with checkride init
 - ☑ 2. feat(core): define the map.json schema types and assertMap
 - ☑ 3. feat(core): identify cells, organelles and shore groups from a file list
-- ☐ 4. feat(core): compute topological depth bands over the import graph
+- ☑ 4. feat(core): compute topological depth bands over the import graph
 - ☐ 5. feat(cli): scan TypeScript imports into files, exports and edges
 - ☐ 6. feat(cli): read the git diff into change kinds, sizes and head-side hunks
 - ☐ 7. feat(history): mine git log into churn, age, bug-fix rate and co-change
@@ -55,6 +55,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 > Capture is one line (`/plumbbob:park` composes it). Harvest happens only at the boundary.
 
 - [ ] test and shore patterns: vitest __snapshots__/*.snap and .gitkeep land in other, and a tests/ folder counts as terrain; decide whether the defaults grow once step 14 or 22 shows real repos
+- [ ] generated TypeScript is terrain today: a committed dist/ or a .d.ts file scans like source; decide whether the scan drops it once step 14 or 22 shows a repo that commits one
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -285,3 +286,49 @@ folder, so it rides the branch into the PR.)*
   **4.** The test now covers plugin hooks/ folders too
 
   At the first pause, the new test covered `.claude/hooks/` and `skills/*/hooks/` but no plugin `hooks/` folder, which the done-when also names. At Rob's direction it now also checks `plugins/ast-grep-rules/hooks/hooks.json` goes to `scripts`, beside the `.sh`, `.cjs` and `.mjs` hooks, the Markdown file that stays in `docs` and the `.claude/settings.json` that stays in `prompts`. The gate is still green.
+
+- 2026-09-17 — step 4 checkpointed · b01fac5d6 — feat(core): compute topological depth bands over the import graph (4m)
+
+  **Summary**: `computeDepth(edges, entryPoints, files?)` groups each import cycle into one node (Tarjan's algorithm), gives every file the length of the longest import path from any entry point, and sorts those depths into at most seven bands. Files that no entry point reaches go in the deepest band with `reachable: false` and no `depth` field. Thirteen tests cover the five cases the done-when names, plus a few edge cases.
+
+  1. computeDepth takes an optional third argument, the full list of terrain files
+  2. An entry point that another entry point imports sits below it
+  3. Deep graphs are cut into seven equal-width bands, so the last band can be thinner
+  4. With no entry points, every file is unreachable and sits in a single band 0
+  5. Tarjan runs on an explicit stack, and output order doesn't depend on input order
+
+  **Readout**: Step 4 - feat(core): compute topological depth bands over the import graph
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    3 of 3 honored
+  constraints  11 of 11 honored
+  seam         held: 3 of 3 declared, no strays
+  diff         +334 -0 across 3 files
+  spent        4 min · 1 turn · 3s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Land it. Every case the done-when names is tested, and the gate is green. Highlights 2 and 4 are the two choices worth a second look before step 12 starts using this.
+
+  **1.** computeDepth takes an optional third argument, the full list of terrain files
+
+  A file with no imports in or out (dead code, usually) appears in no edge, so with only `(edges, entryPoints)` the function would never see it, and D26 couldn't put it in the deepest band. The optional `files` list fixes that. Step 3 set the precedent when `identifyGroups` got an optional third argument, and the planned two-argument call still works. Step 12 should pass the base file paths here. Tests and non-TypeScript paths are dropped wherever they appear, whether in `files`, in edges or in entry points, using the same `classifyFile` as step 3. So a test file is never an entry point and never gets a depth (D4 (tests-not-terrain)).
+
+  **2.** An entry point that another entry point imports sits below it
+
+  I took "longest path from any entry point" literally: an entry point starts at depth 0 only when nothing above it imports it. If `apps/atis/src/cli.ts` imports `libs/core/src/index.ts` and both are entry points (D43 counts every member's `exports`), core's barrel ends up at depth 1, below the app. The other option, putting every entry point at depth 0, would place every library barrel at the top next to the apps. That flattens depth, the same problem D4 avoids by keeping tests out. One test pins this: `cli > index > doctor` gives depths 0, 1 and 2.
+
+  **3.** Deep graphs are cut into seven equal-width bands, so the last band can be thinner
+
+  When the maximum depth is 6 or less, each file's band equals its depth. Past that, `band = floor(depth × 7 / (max + 1))`, which splits the depths `0..max` into seven equal slices. Every band then holds at least one depth, bands never decrease as depth grows, and the deepest file always lands in band 6. Integer inputs make the floor exact. With the done-when's depth-12 chain, bands 0 to 5 hold two depths each and band 6 holds only depth 12. Each `bands[]` entry records its `depth_min` and `depth_max`, and a test pins all seven.
+
+  **4.** With no entry points, every file is unreachable and sits in a single band 0
+
+  If a reviewed repo yields no entry points (no fallow, no manifest targets), nothing is reachable, so the deepest band is band 0. `bands` then contains one entry, `{ index: 0, depth_min: 0, depth_max: 0 }`, so these files have a band to be drawn in. That depth range is nominal, because no reachable file actually has depth 0. With no files at all, `bands` is empty. This is the one place where C2 (never-fake) comes close to bending. I chose it over an empty `bands` list, because an empty list would leave files pointing at a band that doesn't exist.
+
+  **5.** Tarjan runs on an explicit stack, and output order doesn't depend on input order
+
+  A recursive Tarjan overflows the call stack on an import chain around 10k files deep, so this one keeps its own stack of frames. A test runs a 20,000-file chain to prove it. Nodes and each file's import list are sorted by path and duplicates removed. Self-imports are dropped. The longest-path pass walks the grouped graph in topological order, which is Tarjan's output reversed. A test shows that reversed input, duplicate edges and a self-import give the same result (C3 (deterministic)).

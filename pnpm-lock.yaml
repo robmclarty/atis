@@ -47,6 +47,9 @@ importers:
       core:
         specifier: workspace:*
         version: link:../../libs/core
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
 
   libs/core: {}
 
