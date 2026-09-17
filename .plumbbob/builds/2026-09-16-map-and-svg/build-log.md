@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 24 — fix(core): send hook folders to the scripts shore group
+**Current step:** 4 — feat(core): compute topological depth bands over the import graph
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -46,7 +46,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☐ 21. docs(design): record the colour and chrome tokens the SVG settled
 - ☐ 22. chore(fixtures): generate map.json and the SVG for five historical PRs
 - ☐ 23. chore(glance): run glance-test round one and record the verdicts
-- ☐ 24. fix(core): send hook folders to the scripts shore group
+- ☑ 24. fix(core): send hook folders to the scripts shore group
 
 ## Park list
 
@@ -244,3 +244,44 @@ folder, so it rides the branch into the PR.)*
   **5.** identifyGroups takes an optional third argument, the workspace roots
 
   D48 says the `examples` group only takes `examples/**` and `templates/**` files "not claimed by a workspace member", and a function with only `(files, rules)` can't tell which files those are. The examples rule sets `outside_members: true`, and `identifyGroups(files, rules, roots)` skips that rule for files inside a member. The repo root never counts as a member for this. As a result, fascicle's `examples/pr-improve/fixtures/pr-sample.patch` falls through to `data`. The planned two-argument call still works. Both functions accept the whole tracked-file list and use one shared `classifyFile` (`source | test | other`) to split it, so every file ends up in exactly one of cells, tests or groups. Step 5 can reuse that function for its `kind` field instead of writing a second test-file rule.
+
+- 2026-09-17 — step 24 checkpointed · cfa977b32 — fix(core): send hook folders to the scripts shore group (3m)
+
+  **Summary**: A shore rule can now list `except` patterns. The default `prompts` rule excepts `hooks/**`, and `scripts` now includes `hooks/**`, so hook files inside `.claude/` or a skill count as scripts. A test checks each hook location the done-when names.
+
+  1. A rule can now skip some of the paths it matches
+  2. D48's default table changes again, at Rob's direction
+  3. Across every local repo, only files in hooks/ folders change groups
+  4. The test now covers plugin hooks/ folders too
+
+  **Readout**: Step 24 - fix(core): send hook folders to the scripts shore group
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    bent: D48 (shore-groups), hooks/ leave prompts for scripts
+  constraints  11 of 11 honored
+  seam         held: 3 of 3 declared, no strays
+  diff         +29 -7 across 3 files
+  spent        3 min · 1 turn · 3s gate · green first run
+  ```
+
+  **Verdict**: ○ Out of plumb (decisions bent)
+
+  **Recommendation**: Land it. Every part of the done-when is now tested, and in the cross-repo check the only files that changed groups were in `hooks/` folders.
+
+  **1.** A rule can now skip some of the paths it matches
+
+  `GroupRule` has a new optional `except` list, compiled with the same glob engine as `patterns`. A rule only takes a file when a pattern matches and no `except` pattern does, so a later rule can pick the file up. `prompts` sets `except: ['hooks/**']`, and `scripts` adds `hooks/**` to its patterns. The order of the groups doesn't change. I didn't use the other way to do this, a second `scripts` rule placed before `prompts`, because it would have moved `scripts` to the top of the group order and made one group span two rules.
+
+  **2.** D48's default table changes again, at Rob's direction
+
+  D48 puts everything under `.claude/**` and `skills/**` in `prompts`. Rob asked for the hook scripts in those folders to be scripts instead, so the default table departs from D48's list a second time (the first was trying `prompts` before `docs` in step 3). A Markdown file in a hooks folder still ends up in `docs`, because the `docs` rule's `*.md` comes before `scripts`. `.claude/settings.json` stays in `prompts`.
+
+  **3.** Across every local repo, only files in hooks/ folders change groups
+
+  I sorted every tracked file in every repo under `~/Projects/*/code/` with the old and new rules, and 17 of 25,449 non-source, non-test files changed groups. Seven moved from `prompts` to `scripts`: checkride's three `examples/agent-loop/.claude/hooks/` files, the `.claude/hooks/checkride-gate.sh` in plumbbob and shinbun, and the `skills/*/hooks/session-capture.mjs` in lodestar and rob-ot. Ten moved from `other` to `scripts`: plugin `hooks/` folders in agent-tools, plumbbob and trellis (`hooks.json` files and trellis's Python hooks), plus trellis-exec's `hooks/.gitkeep`. No other file moved. Moving whole groups up the list, the alternative I rejected, would also have moved `CLAUDE.md` test fixtures, fascicle's `.vale` example docs and several `rules/README.md` files.
+
+  **4.** The test now covers plugin hooks/ folders too
+
+  At the first pause, the new test covered `.claude/hooks/` and `skills/*/hooks/` but no plugin `hooks/` folder, which the done-when also names. At Rob's direction it now also checks `plugins/ast-grep-rules/hooks/hooks.json` goes to `scripts`, beside the `.sh`, `.cjs` and `.mjs` hooks, the Markdown file that stays in `docs` and the `.claude/settings.json` that stays in `prompts`. The gate is still green.
