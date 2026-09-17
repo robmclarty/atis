@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 2 — feat(core): define the map.json schema types and assertMap
+**Current step:** 3 — feat(core): identify cells, organelles and shore groups from a file list
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -24,7 +24,7 @@ line above. Only ONE step is in flight; a step is done only after a checkpoint:
 check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 
 - ☑ 1. chore(repo): scaffold the atis monorepo with checkride init
-- ☐ 2. feat(core): define the map.json schema types and assertMap
+- ☑ 2. feat(core): define the map.json schema types and assertMap
 - ☐ 3. feat(core): identify cells, organelles and shore groups from a file list
 - ☐ 4. feat(core): compute topological depth bands over the import graph
 - ☐ 5. feat(cli): scan TypeScript imports into files, exports and edges
@@ -52,6 +52,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 > Mid-step, every new problem / idea / "ooh what if" lands HERE, untouched, and you
 > go straight back to the step. Acting the instant an idea arrives is the disease.
 > Capture is one line (`/plumbbob:park` composes it). Harvest happens only at the boundary.
+
+- [ ] test and shore patterns: vitest __snapshots__/*.snap and .gitkeep land in other, and a tests/ folder counts as terrain; decide whether the defaults grow once step 14 or 22 shows real repos
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -148,3 +150,50 @@ folder, so it rides the branch into the PR.)*
   **5.** `apps/atis/tsconfig.json` now references `libs/core`
 
   `tsc --build` needs the dependency edge to build core before atis; the reference supplies it, and the `types` condition resolves to core's `dist/index.d.ts` from that build. No `customConditions` is needed: TypeScript reads `types`, vitest reads `source`, Node reads `default`, each from the same three-condition export.
+
+- 2026-09-17 — step 2 checkpointed · d26089e7f — feat(core): define the map.json schema types and assertMap (17m)
+
+  **Summary**: `libs/core/src/schema.ts` now carries the full `map.json` type sketch (terrain, weather, notices, with `layout` optional) plus `SCHEMA_VERSION` and a cast-free `assertMap` that narrows an unknown value into `MapJson`, throwing a path-naming error on each of the seven invariants the done-when lists.
+
+  1. assertMap narrows without ever casting to MapJson
+  2. the seven checks, each with its own path
+  3. nine tests: two valid shapes, seven rejections
+
+  **Readout**: Step 2 - feat(core): define the map.json schema types and assertMap
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    1 of 1 honored
+  constraints  11 of 11 honored
+  seam         held: 3 of 3 declared, no strays
+  diff         +522 -2 across 3 files
+  spent        17 min · 1 turn · 3s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Land it as planned. The done-when's seven checks are each independently tested, `pnpm check` is green end to end, and the seam stayed to the three declared files.
+
+  **1.** assertMap narrows without ever casting to MapJson
+
+  oxlint's type-aware `no-unsafe-type-assertion` rejects `value as MapJson` outright, so
+  `assertMap` is built as a TypeScript assertion function (`asserts value is MapJson`)
+  backed by three tiny generic guards (`expectRecord`, `expectArray`, `expectString`).
+  Each guard is a single `if`-throw, reused at every field instead of one inline check
+  per field, which keeps the branch count (and the untested "malformed input" branches)
+  small enough for the global 70% branch-coverage gate.
+
+  **2.** the seven checks, each with its own path
+
+  Wrong `schema_version`, more than six notices, a tier over its 1/2/3 budget, a
+  `weather.reach[].cell` naming an unknown cell, a `layout.positions` key naming neither
+  a known organelle nor a group file, a `changed` entry with both or neither of
+  `cell`/`group`, and a `changed.group` naming an unknown group (D48) — each throws
+  `Error` with the offending path in its message (e.g. `weather.changed[0].group`).
+
+  **3.** nine tests: two valid shapes, seven rejections
+
+  `schema.test.ts` builds a minimal valid map and a layout-bearing variant, then exercises
+  each of the seven rejections once via small fixture builders (`notice`, `changedEntry`,
+  `groupChangedEntry`, `layoutFixture`).

@@ -3,4 +3,7 @@
  * scanned repository, the diff and the check artifacts into `map.json`.
  */
 
+export * from './config.js';
+export * from './groups.js';
+export * from './modules.js';
 export * from './schema.js';
