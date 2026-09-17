@@ -18,8 +18,13 @@ const LOCKFILES = ['pnpm-lock.yaml', 'package-lock.json', 'npm-shrinkwrap.json',
 export const DEFAULT_CONFIG: Config = {
   // D48's groups in its order, except that `prompts` is tried before `docs`:
   // first match wins, and `*.md` would otherwise swallow AGENTS.md and CLAUDE.md.
+  // Hook folders inside `.claude/` or a skill are code, so they fall through to `scripts`.
   groups: [
-    { id: 'prompts', patterns: ['AGENTS.md', 'CLAUDE.md', '.claude/**', '.cursor/**', 'skills/**', 'prompts/**'] },
+    {
+      id: 'prompts',
+      patterns: ['AGENTS.md', 'CLAUDE.md', '.claude/**', '.cursor/**', 'skills/**', 'prompts/**'],
+      except: ['hooks/**'],
+    },
     { id: 'docs', patterns: ['*.md', 'docs/**', 'research/**', '.plumbbob/**', 'LICENSE'] },
     {
       id: 'config',
@@ -41,7 +46,7 @@ export const DEFAULT_CONFIG: Config = {
     },
     { id: 'deps', patterns: ['package.json', 'pnpm-workspace.yaml', ...LOCKFILES] },
     { id: 'ci', patterns: ['.github/**', 'Dockerfile', 'compose*.yaml', 'compose*.yml'] },
-    { id: 'scripts', patterns: ['scripts/**', 'bin/**', '*.sh', '*.mjs'] },
+    { id: 'scripts', patterns: ['scripts/**', 'bin/**', 'hooks/**', '*.sh', '*.mjs'] },
     { id: 'examples', patterns: ['examples/**', 'templates/**'], outside_members: true },
     { id: 'assets', patterns: ['site/**', ...IMAGES, ...FONTS, '*.css', '*.html', '*.svg'] },
     // Only non-test files reach the table, so `test/**` holds just the fixtures and data beside the tests.

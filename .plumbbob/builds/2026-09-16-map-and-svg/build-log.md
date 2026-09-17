@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 3 — feat(core): identify cells, organelles and shore groups from a file list
+**Current step:** 24 — fix(core): send hook folders to the scripts shore group
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -25,7 +25,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 
 - ☑ 1. chore(repo): scaffold the atis monorepo with checkride init
 - ☑ 2. feat(core): define the map.json schema types and assertMap
-- ☐ 3. feat(core): identify cells, organelles and shore groups from a file list
+- ☑ 3. feat(core): identify cells, organelles and shore groups from a file list
 - ☐ 4. feat(core): compute topological depth bands over the import graph
 - ☐ 5. feat(cli): scan TypeScript imports into files, exports and edges
 - ☐ 6. feat(cli): read the git diff into change kinds, sizes and head-side hunks
@@ -46,6 +46,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☐ 21. docs(design): record the colour and chrome tokens the SVG settled
 - ☐ 22. chore(fixtures): generate map.json and the SVG for five historical PRs
 - ☐ 23. chore(glance): run glance-test round one and record the verdicts
+- ☐ 24. fix(core): send hook folders to the scripts shore group
 
 ## Park list
 
@@ -197,3 +198,49 @@ folder, so it rides the branch into the PR.)*
   `schema.test.ts` builds a minimal valid map and a layout-bearing variant, then exercises
   each of the seven rejections once via small fixture builders (`notice`, `changedEntry`,
   `groupChangedEntry`, `layoutFixture`).
+
+- 2026-09-17 — step 3 checkpointed · f86c31bd4 — feat(core): identify cells, organelles and shore groups from a file list (18m)
+
+  **Summary**: Core can now sort any file list three ways: `identifyModules` puts every TypeScript file that isn't a test into a cell, `identifyGroups` puts every other non-test file into one shore group, and test files go to neither. Together they cover every repo shape in the plan (flat `src/`, folder modules, `apps/*` with `libs/*`, `packages/*`, barrel-less directories, and fascicle's library root with example members), and 38 new tests pin those shapes.
+
+  1. Cell ids carry their kind, so no two cells and no cell and group can share a key
+  2. A root src/ that no member claims makes the root a package too
+  3. D48 bent: prompts is tried before docs, or AGENTS.md could never be a prompt
+  4. Shore patterns match at any depth unless they start with a slash
+  5. identifyGroups takes an optional third argument, the workspace roots
+
+  **Readout**: Step 3 - feat(core): identify cells, organelles and shore groups from a file list
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    bent: D48 (shore-groups), prompts is tried before docs
+  constraints  11 of 11 honored
+  seam         held: 6 of 6 declared, no strays
+  diff         +826 -0 across 6 files
+  spent        18 min · 1 turn · 2s gate · green first run
+  ```
+
+  **Verdict**: ○ Out of plumb (decisions bent)
+
+  **Recommendation**: Land it as planned, and approve the prompts-before-docs reorder with it. Every clause of the done-when is tested, the gate passed on the first run, and the reorder is the only way the files D48 names as prompts can end up in prompts.
+
+  **1.** Cell ids carry their kind, so no two cells and no cell and group can share a key
+
+  A cell's id is `<kind>:<path>`, for example `package:libs/core`, `folder:libs/core/src/layout`, `single:src/doctor.ts` or `directory:.`. Plain paths would collide twice. First, a package and the directory holding its loose files are both `libs/core`. D45 keeps the barrel as the package's only direct organelle, so a file like `packages/core/vite.config.ts` needs a directory cell of its own. Second, a workspace member called `docs` (a docs site) would share `docs` with the shore group, and `layout.contours` is keyed by cell or group in one record. The `path` field stays the plain path for labels. The cells carry no `band`, `reachable` or history yet: `identifyModules` returns a `ModuleCell` without those fields rather than filling them with made-up values (C2 (never-fake)), and step 12 merges them in. For a package, `body_loc` sums every file under the package outline, not just its barrel, because the package is the body that its barrel's exports sit on top of.
+
+  **2.** A root src/ that no member claims makes the root a package too
+
+  D43 says workspace members become packages, and the repo root is a package only when there is no workspace. fascicle breaks that rule: its library is the root `src/`, and only `examples/*` are members. Without a root package, `src/index.ts` would be a barrel for nothing. So when a root `src/` file belongs to no member, the root becomes `package:.` alongside the members. This repo doesn't have that shape, so `vitest.config.ts` gets a top-level `directory:.` cell with no parent. A member with no TypeScript files (a docs site) gets no cell, since an empty outline has nothing to draw. Folder modules are one level deep, as checkride's convention defines them: everything under `src/pm/` belongs to `folder:src/pm`. A folder under `src/` with no barrel, and any directory outside `src/`, becomes a cell for its own files only, with no nesting. Its interface is the files imported from outside that cell, and imports from tests don't count (D4 (tests-not-terrain)).
+
+  **3.** D48 bent: prompts is tried before docs, or AGENTS.md could never be a prompt
+
+  The rule table is first-match, and D48 lists `docs` (`*.md`) ahead of `prompts` (`AGENTS.md`, `CLAUDE.md`). In that literal order the two named files, and every `SKILL.md`, land in `docs` and the prompts entries never match anything. `config.ts` moves `prompts` up by one place and says why in a comment, and a test pins it. The order matters again at step 15, which lays out the shore "in the table order of D48", so prompts will come first there. D48's descriptive entries are now actual patterns: lockfiles (`pnpm-lock.yaml`, `package-lock.json`, `npm-shrinkwrap.json`, `yarn.lock`, `bun.lock`, `bun.lockb`), images (`png jpg jpeg gif webp avif ico`) and fonts (`woff woff2 ttf otf`). `compose*.yml` sits beside `compose*.yaml`. Nothing else was added: `.gitkeep`, `LICENSE.txt` and snapshots go to `other`, which should be noisy so the table gets extended (parked).
+
+  **4.** Shore patterns match at any depth unless they start with a slash
+
+  Read as root-only (gitignore's rule for `docs/**`), `fixtures/**` would miss `apps/atis/fixtures/` and `libs/core/fixtures/`, which steps 6, 8 and 12 commit. It would also miss fascicle's `src/viewer/__tests__/fixtures/*.jsonl`, so all of them would go to `other`. The patterns therefore match at any depth: `*.md` tests the file name, and `docs/**` matches any folder named `docs`. A leading `/` pins a pattern to the repo root, for anyone who wants that in `atis.config.json`. The small glob engine handles `*`, `?`, `**` and `**/`, escapes everything else (tested with `(x)+.txt`), and keeps each group's files sorted.
+
+  **5.** identifyGroups takes an optional third argument, the workspace roots
+
+  D48 says the `examples` group only takes `examples/**` and `templates/**` files "not claimed by a workspace member", and a function with only `(files, rules)` can't tell which files those are. The examples rule sets `outside_members: true`, and `identifyGroups(files, rules, roots)` skips that rule for files inside a member. The repo root never counts as a member for this. As a result, fascicle's `examples/pr-improve/fixtures/pr-sample.patch` falls through to `data`. The planned two-argument call still works. Both functions accept the whole tracked-file list and use one shared `classifyFile` (`source | test | other`) to split it, so every file ends up in exactly one of cells, tests or groups. Step 5 can reuse that function for its `kind` field instead of writing a second test-file rule.

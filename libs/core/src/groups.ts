@@ -15,12 +15,14 @@ export const OTHER_GROUP = 'other';
  * One row of the shore table. A pattern matches at any depth unless it opens
  * with `/`, which anchors it at the repo root: `*.md` tests the file name and
  * `docs/**` any `docs` folder. `*` and `?` stay inside one path segment, `**`
- * crosses them. `outside_members` skips files inside a workspace member, as
- * D48 asks of `examples` and `templates`.
+ * crosses them. `except` carves paths out of a row so a later row can take
+ * them; `outside_members` skips files inside a workspace member, as D48 asks
+ * of `examples` and `templates`.
  */
 export type GroupRule = {
   readonly id: string;
   readonly patterns: readonly string[];
+  readonly except?: readonly string[];
   readonly outside_members?: boolean;
 };
 
@@ -53,13 +55,19 @@ export function identifyGroups(
   rules: readonly GroupRule[],
   roots: readonly string[] = [],
 ): readonly Group[] {
-  const table = rules.map((rule) => ({ rule, patterns: rule.patterns.map(globToRegExp) }));
+  const table = rules.map((rule) => ({
+    rule,
+    patterns: rule.patterns.map(globToRegExp),
+    except: (rule.except ?? []).map(globToRegExp),
+  }));
   const shore = [...new Set(files.map((file) => file.path))].filter((path) => classifyFile(path) === 'other');
   const placed = shore.map((path) => {
     const claimed = (memberOf(path, roots) ?? '') !== '';
     const row = table.find(
-      ({ rule, patterns }) =>
-        !(claimed && rule.outside_members === true) && patterns.some((pattern) => pattern.test(path)),
+      ({ rule, patterns, except }) =>
+        !(claimed && rule.outside_members === true) &&
+        patterns.some((pattern) => pattern.test(path)) &&
+        !except.some((pattern) => pattern.test(path)),
     );
     return { path, id: row?.rule.id ?? OTHER_GROUP };
   });

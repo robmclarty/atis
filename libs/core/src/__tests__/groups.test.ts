@@ -43,6 +43,15 @@ test('agent instructions are prompts, not docs, though *.md would match them', (
   expect(groupOf('CHANGELOG.md')).toBe('docs');
 });
 
+test('hook folders under .claude/, a skill or a plugin are scripts, whatever their extension', () => {
+  expect(groupOf('examples/agent-loop/.claude/hooks/checkride-gate.sh')).toBe('scripts');
+  expect(groupOf('examples/agent-loop/.claude/hooks/checkride-protect.cjs')).toBe('scripts');
+  expect(groupOf('skills/lodestar/hooks/session-capture.mjs')).toBe('scripts');
+  expect(groupOf('plugins/ast-grep-rules/hooks/hooks.json')).toBe('scripts');
+  expect(groupOf('.claude/hooks/README.md')).toBe('docs');
+  expect(groupOf('.claude/settings.json')).toBe('prompts');
+});
+
 test('patterns without a leading slash match at any depth', () => {
   expect(groupOf('apps/atis/fixtures/check/coverage/coverage-final.json')).toBe('data');
   expect(groupOf('libs/core/src/__fixtures__/tree.json')).toBe('data');
