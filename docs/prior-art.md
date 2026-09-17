@@ -26,18 +26,18 @@ needed to tick the merge checklist.
 ### 1. Hierarchy as nested circles (the "blobs within blobs" base layer)
 
 - **GitHub Next repo-visualizer** (Amelia Wattenberger, 2021).
-  https://githubnext.com/projects/repo-visualization/ and
-  https://github.com/githubocto/repo-visualizer. Circle packing: folders are
+  <https://githubnext.com/projects/repo-visualization/> and
+  <https://github.com/githubocto/repo-visualizer>. Circle packing: folders are
   circles containing file circles; colour = file type, size = file size. Import
   edges only on hover ("too many connections at once"). Shipped as a GitHub
   Action that regenerates an SVG in the README so you see the fingerprint every
   day and notice structural change by familiarity.
   Borrow: circle packing as the base; edges hidden by default; the daily
   fingerprint. Limit: 2D, no metrics, no diff awareness.
-- **Git Truck** (ITU Copenhagen, VISSOFT 2022). https://github.com/git-truck/git-truck.
+- **Git Truck** (ITU Copenhagen, VISSOFT 2022). <https://github.com/git-truck/git-truck>.
   Local, treemap + circle packing, colour by authorship / commit count / last
   change, time slider. Borrow: local-first, git-derived churn and age overlays.
-- **Codecov sunburst**. https://docs.codecov.com/docs/graphs. Hierarchical
+- **Codecov sunburst**. <https://docs.codecov.com/docs/graphs>. Hierarchical
   coverage rings, drill-down. Their thesis piece "patch coverage matters more
   than project coverage" is the diff-relevant number.
   Borrow: coverage rolled up per module ring; patch coverage as the headline.
@@ -45,18 +45,18 @@ needed to tick the merge checklist.
 ### 2. Organic blobs and maps (the "gravity + terrain" look)
 
 - **Bubble Sets** (Collins, Penn, Carpendale, InfoVis 2009).
-  https://vialab.ca/research/bubble-sets. Isocontour blobs drawn around set
+  <https://vialab.ca/research/bubble-sets>. Isocontour blobs drawn around set
   members over an existing layout, so a group reads as one organic shape even
   when members are scattered. JS port: `bubblesets-js`. Observable riff:
   "Hierarchical Bubble Clusters for Semantic Layout".
   Borrow: draw module boundaries as isocontours around a force layout, not as
   rigid circles. This is the literal technique for Rob's blob outline.
-- **GMap** (Gansner, Hu, Kobourov 2010). https://yifanhu.net/MAPS/index.html.
+- **GMap** (Gansner, Hu, Kobourov 2010). <https://yifanhu.net/MAPS/index.html>.
   Graph plus clustering rendered as a geographic map: clusters become
   countries with coastlines and borders. Ships in Graphviz as `gvmap`.
   Borrow: country = module, shared border = coupling, sea = distance.
 - **Software Cartography / Codemap** (Kuhn, Loretan, Nierstrasz 2008 to 2010).
-  https://arxiv.org/abs/1001.2386. Files placed by lexical similarity, hills
+  <https://arxiv.org/abs/1001.2386>. Files placed by lexical similarity, hills
   sized by LOC, and, critically, a *consistent layout* across versions so the
   developer forms spatial memory of the codebase.
   Lesson: layout stability is the whole game. If the map reshuffles per PR,
@@ -68,18 +68,18 @@ needed to tick the merge checklist.
 ### 3. City and 3D metric maps
 
 - **CodeCharta** (MaibornWolff, active, open source, three.js).
-  https://codecharta.com/ and https://github.com/maibornwolff/codecharta.
+  <https://codecharta.com/> and <https://github.com/maibornwolff/codecharta>.
   City metaphor: area = LOC, height = complexity, colour = any metric. Importers
   for Sonar, coverage, git log (churn), Code Maat. **Compare (delta) mode**:
   load two maps and each building is coloured by how its height metric changed
   (green up, red down), with a metric bar showing Σ and Δ.
-  https://codecharta.com/docs/visualization/user-controls/compare/
+  <https://codecharta.com/docs/visualization/user-controls/compare/>
   Borrow: everything is a delta of two snapshots (trunk vs branch). Avoid: the
   rectilinear clutter; it is a metrics browser, not a merge gauge.
-- **ExplorViz** (Kiel). https://explorviz.dev/. 3D city plus "landscape"
+- **ExplorViz** (Kiel). <https://explorviz.dev/>. 3D city plus "landscape"
   level, live traces, VR. Borrow: two zoom levels (landscape of packages, city
   of one package).
-- **Software Galaxies** (anvaka). https://anvaka.github.io/pm/. 3D WebGL
+- **Software Galaxies** (anvaka). <https://anvaka.github.io/pm/>. 3D WebGL
   package graphs. Beautiful, purely exploratory. Cautionary: 3D node-link
   clouds at scale are pretty and not diagnostic; occlusion and free camera
   fight the glance task.
@@ -89,7 +89,7 @@ needed to tick the merge checklist.
 ### 4. PR and diff focused (closest to the actual goal)
 
 - **CodeSee Review Maps** (2021 to ~2024; now dormant inside GitKraken).
-  https://docs.codesee.io/docs/review-map-guide. Auto-generated per-PR map of
+  <https://docs.codesee.io/docs/review-map-guide>. Auto-generated per-PR map of
   changed files plus their imports/importers. Colour swatch per file:
   added / removed / edited / renamed / unchanged. Author-written **Tours** walk
   reviewers through the change in logical order instead of alphabetical.
@@ -98,7 +98,7 @@ needed to tick the merge checklist.
   Borrow: change-state colour, tour ordering, reviewed progress.
   Market lesson: a standalone viewer with its own workflow did not survive.
   Delivery must be zero-tax: local tab, PR image, CLI.
-- **CodeLayers** (2026, commercial, active). https://codelayers.ai/explore.
+- **CodeLayers** (2026, commercial, active). <https://codelayers.ai/explore>.
   3D dependency graph; "blast radius" mode colours from red (directly changed)
   through purple (5+ hops); explore any public PR by URL; GitHub Action posts
   the 3D view as a PR comment; MCP server so Claude Code can highlight files
@@ -109,12 +109,12 @@ needed to tick the merge checklist.
   files says nothing about whether the change is safe. Pairing reach with the
   evidence that covers it is exactly the gap.
 - **Nx Cloud affected project graph** (Nov 2024).
-  https://nx.dev/blog/ci-affected-graph. Composite graph: directory groups
+  <https://nx.dev/blog/ci-affected-graph>. Composite graph: directory groups
   collapse into one node, double-click to expand; affected projects highlighted
   on every CI run. Borrow: collapsible composite nodes (= the openable deep
   module) and "affected" highlighting from the CI's own perspective.
 - **CodeScene delta analysis**.
-  https://docs.enterprise.codescene.io/versions/4.5.0/guides/delta/automated-delta-analyses.html
+  <https://docs.enterprise.codescene.io/versions/4.5.0/guides/delta/automated-delta-analyses.html>
   Per-PR code-health delta (decline fails the gate); *absent change pattern*
   warning when files that historically co-change were not all touched;
   positive reinforcement when a hotspot improves; a recommended review level
@@ -124,7 +124,7 @@ needed to tick the merge checklist.
   review-level recommendation rather than a block.
 - **CHID paper**, "Enhanced code reviews using pull request based change impact
   analysis", Empirical Software Engineering 2024.
-  https://link.springer.com/article/10.1007/s10664-024-10600-2. PR-level
+  <https://link.springer.com/article/10.1007/s10664-024-10600-2>. PR-level
   impact from a call graph plus history mining. Metrics: highly churned file
   ratio, highly buggy file ratio, missing co-change files, PR size, author
   merge rate, impact size; weighted into a risk score. Focus groups: 3.66/5
@@ -135,7 +135,7 @@ needed to tick the merge checklist.
 
 - **Bartram, Ware, Calvert**, "Moticons: detection, distraction and task"
   (IJHCS 2003) and "Moving icons: detection and distraction" (Interact 2001).
-  https://www.cs.kent.edu/~jmaletic/softvis/papers/Bartram01.pdf. Simple
+  <https://www.cs.kent.edu/~jmaletic/softvis/papers/Bartram01.pdf>. Simple
   motion is detected preattentively across the whole visual field, even in
   the periphery and at low amplitude, and outperforms colour and shape for
   peripheral signalling. It is also the most distracting channel when
@@ -204,6 +204,7 @@ literally shows why the boundary rules are worth having, and shows the cost
 when a barrel changes (the glow spreads).
 
 Views (toggleable, same model):
+
 1. **Map** (default): terrain + weather + skin, as above.
 2. **Coverage by level**: sunburst / nested rings rolled up per module, with
    patch coverage separated from project coverage.

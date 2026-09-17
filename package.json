@@ -1,0 +1,40 @@
+{
+  "name": "atis",
+  "version": "0.1.0",
+  "description": "",
+  "license": "Apache-2.0",
+  "author": "Rob McLarty",
+  "type": "module",
+  "private": true,
+  "packageManager": "pnpm@11.1.2",
+  "engines": {
+    "node": ">=22.18.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "check": "checkride",
+    "check:all": "checkride --all",
+    "check:json": "checkride --json",
+    "check:bail": "checkride --bail",
+    "check:changed": "checkride --changed",
+    "check:fix": "checkride fix",
+    "doctor": "checkride doctor",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "build": "tsc --build",
+    "types": "tsc --build"
+  },
+  "devDependencies": {
+    "@ast-grep/cli": "0.45.3",
+    "@types/node": "22.20.1",
+    "@vitest/coverage-v8": "4.1.11",
+    "checkride": "0.12.5",
+    "cspell": "10.2.0",
+    "fallow": "3.22.0",
+    "markdownlint-cli2": "0.23.2",
+    "oxlint": "1.81.0",
+    "oxlint-tsgolint": "7.0.2001",
+    "typescript": "6.0.3",
+    "vitest": "4.1.11"
+  }
+}
