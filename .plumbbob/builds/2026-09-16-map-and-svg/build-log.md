@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 1 — chore(repo): scaffold the atis monorepo with checkride init
+**Current step:** 2 — feat(core): define the map.json schema types and assertMap
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -23,7 +23,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 line above. Only ONE step is in flight; a step is done only after a checkpoint:
 check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 
-- ☐ 1. chore(repo): scaffold the atis monorepo with checkride init
+- ☑ 1. chore(repo): scaffold the atis monorepo with checkride init
 - ☐ 2. feat(core): define the map.json schema types and assertMap
 - ☐ 3. feat(core): identify cells, organelles and shore groups from a file list
 - ☐ 4. feat(core): compute topological depth bands over the import graph
@@ -99,3 +99,52 @@ folder, so it rides the branch into the PR.)*
   "Threshold newly breached", "boundary or cycle introduced", `improvements` and the HUD's Health Δ block all need `.check/` at the base as well as at head. This build reads `.check/` at head only, so the first two become "present at head and touching a changed file", labelled in each notice's `why`, and the other two stay muted. The cost: a pre-existing cycle through a changed file reads as LIFR on an innocent PR. D32 now extracts the base tree anyway, so one extra step running `fallow health` and `dead-code` in that extraction would close most of it cheaply; it is left out because neither the spot-check nor the glance test asks for deltas. Rob can pull it in.
 
   Checked and found sound: step 1's seam against the real scaffold tree (28 files from `checkride init --shape monorepo`, run for real in /tmp), including the 34 markdownlint hits in `docs/` that step 1 now owns; the scaffold's `.gitignore` does not exclude `.plumbbob/`, so the build folder rides the branch; fallow 3.22 (pinned by the scaffold) has `--impact-closure` and the global 2.56 does not (D22); every `.check/` shape named in step 8, read from checkride's live run (health schema 11, dead 9, dupes 9, Stryker 1.0, vitest JSON, istanbul); PR 4's merge `07d95bb` with parents `fee5ed6` and `ae5078c` (D29); `d3-force` seeds through `randomSource` and `bubblesets-js` is pure geometry, so both fit C1 and C3 (D34); the plan commit runs no check gate, so the vacuous-green warning from `start` cannot refuse it, and `.plumbbob/settings.json` already carries `"check": "pnpm check --strict"` for step 1 onward. Sizes: steps 17 to 19 are the largest in the plan; each is one package layer with its own golden file, which is the smallest cut that still reviews as one picture.
+
+- 2026-09-17 — step 1 checkpointed · e5aaa9f66 — chore(repo): scaffold the atis monorepo with checkride init (2m)
+
+  **Summary**: Closes the scaffold: `apps/atis` depends on `core` as a `workspace:*` package, core exports its TypeScript source under a `source` condition beside `dist/` for Node, vitest resolves that condition on the node side so the tests pass with no build at all, `apps/atis` references `libs/core` so `tsc --build` orders the two projects, and core takes ownership of `SCHEMA_VERSION`, which the CLI's help now reports.
+
+  1. Most of the seam is already on main, landed out of band at Rob's direction
+  2. planned title → proposed subject: `chore(repo): wire core into atis and close the checkride scaffold`
+  3. The `source` condition had to go into Vite's node-side list
+  4. core owns `SCHEMA_VERSION` one step early
+  5. `apps/atis/tsconfig.json` now references `libs/core`
+
+  **Readout**: Step 1 - chore(repo): scaffold the atis monorepo with checkride init
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored:
+               - D19 (packages), D20 (workspace-exports)
+               - D31 (no-hooks-yet), D42 (committed-files-vs-gate)
+               - D53 (pnpm-and-stub)
+  constraints  11 of 11 honored
+  seam         held: 4 of 23 declared, no strays
+  diff         +38 -7 across 8 files
+  spent        2 min · 1 turn · 2s gate · green first run
+  ```
+
+  **Verdict**: ◐ A hair off (2 commits outside the ledger)
+
+  **Recommendation**: Checkpoint it, with the reconciled subject if you take highlight 2. Every clause of the done-when holds, the remainder is 38 lines across 8 files, and the earlier commits it completes are already on main.
+
+  **1.** Most of the seam is already on main, landed out of band at Rob's direction
+
+  The scaffold, the publishable stub and the docs lint fixes landed in `75b7094`, the plan and its receipt in `86c530f` and `9198a10`, and the scoped rename in `d4d72b7`, all before this tick, because Rob wanted the `0.0.0` stub published before `apps/atis` gained a dependency on the unpublished `core`. The registry then refused the bare name as too similar to `atob`, `ansis` and `axios`, so the package is `@robmclarty/atis` and the command stays `atis`; D53 records it. This diff is the remainder the plan held back, so the seam row will name the earlier files as absent from it.
+
+  **2.** planned title → proposed subject: `chore(repo): wire core into atis and close the checkride scaffold`
+
+  The planned title describes the whole step, but the commit this tick lands carries only the wiring: the dependency, the export conditions, the vitest and tsconfig plumbing and the schema constant. A subject naming that keeps `git log` honest about what each commit did. Unapproved, the planned title lands as is.
+
+  **3.** The `source` condition had to go into Vite's node-side list
+
+  With only `resolve.conditions: ['source']`, vitest still resolved `core` through Node's default conditions and failed on the missing `dist/`, because Vite 6 and later read the server-side list from `ssr.resolve.conditions`. That list now carries `source` ahead of Vite's own server defaults (`module`, `node`, `development|production`). Proven by deleting both `dist/` folders and running the tests: 5 pass in 2 files. Node still takes `default`, so the built CLI runs from `dist/`.
+
+  **4.** core owns `SCHEMA_VERSION` one step early
+
+  A `workspace:*` dependency that nothing imports would trip fallow's unused-dependency rule, and a smoke constant printed in the help would be decoration. The `map.json` contract version is the one constant the sketch already gives to core, so core's index exports `SCHEMA_VERSION = 1` and the CLI's help reports the schema it will write. Step 2 moves the constant into `schema.ts` and re-exports it; nothing else changes.
+
+  **5.** `apps/atis/tsconfig.json` now references `libs/core`
+
+  `tsc --build` needs the dependency edge to build core before atis; the reference supplies it, and the `types` condition resolves to core's `dist/index.d.ts` from that build. No `customConditions` is needed: TypeScript reads `types`, vitest reads `source`, Node reads `default`, each from the same three-condition export.
