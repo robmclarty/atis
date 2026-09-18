@@ -8,6 +8,7 @@ export * from './depth.js';
 export * from './evidence.js';
 export * from './groups.js';
 export * from './history.js';
+export * from './map.js';
 export * from './modules.js';
 export * from './notices.js';
 export * from './reach.js';

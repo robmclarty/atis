@@ -1,0 +1,285 @@
+{
+  "meta": {
+    "repo": "demo",
+    "base": "main",
+    "head": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+    "merge_base": "0f1e2d3c4b5a69788796a5b4c3d2e1f098765432",
+    "generated_at": "2026-09-17T09:00:00.000Z"
+  },
+  "base": {
+    "files": [
+      { "path": ".gitignore", "loc": 0, "kind": "other", "exports": [] },
+      { "path": "README.md", "loc": 0, "kind": "other", "exports": [] },
+      { "path": "apps/cli/package.json", "loc": 0, "kind": "other", "exports": [] },
+      { "path": "apps/cli/src/doctor.ts", "loc": 212, "kind": "source", "exports": ["runDoctor"] },
+      { "path": "apps/cli/src/index.ts", "loc": 24, "kind": "source", "exports": ["main"] },
+      { "path": "libs/core/package.json", "loc": 0, "kind": "other", "exports": [] },
+      { "path": "libs/core/src/__tests__/pm.test.ts", "loc": 74, "kind": "test", "exports": [] },
+      { "path": "libs/core/src/index.ts", "loc": 14, "kind": "source", "exports": ["legacyResolve", "listSlots", "resolveSlot"] },
+      { "path": "libs/core/src/pm/index.ts", "loc": 31, "kind": "source", "exports": ["legacyResolve", "listSlots", "resolveSlot"] },
+      { "path": "libs/core/src/pm/legacy.ts", "loc": 45, "kind": "source", "exports": ["legacyResolve"] },
+      { "path": "libs/core/src/pm/slots.ts", "loc": 88, "kind": "source", "exports": ["listSlots"] },
+      { "path": "libs/core/src/util/format.ts", "loc": 52, "kind": "source", "exports": ["formatSlot"] },
+      { "path": "libs/core/src/util/text.ts", "loc": 37, "kind": "source", "exports": ["indent"] },
+      { "path": "notes.xyz", "loc": 0, "kind": "other", "exports": [] },
+      { "path": "package.json", "loc": 0, "kind": "other", "exports": [] },
+      { "path": "pnpm-workspace.yaml", "loc": 0, "kind": "other", "exports": [] },
+      { "path": "tsconfig.json", "loc": 0, "kind": "other", "exports": [] }
+    ],
+    "edges": [
+      { "from": "apps/cli/src/doctor.ts", "to": "libs/core/src/index.ts", "names": ["listSlots"], "line": 4 },
+      { "from": "apps/cli/src/doctor.ts", "to": "libs/core/src/pm/index.ts", "names": ["resolveSlot"], "line": 5 },
+      { "from": "apps/cli/src/index.ts", "to": "apps/cli/src/doctor.ts", "names": ["runDoctor"], "line": 3 },
+      { "from": "libs/core/src/__tests__/pm.test.ts", "to": "libs/core/src/pm/index.ts", "names": ["listSlots", "resolveSlot"], "line": 3 },
+      { "from": "libs/core/src/__tests__/pm.test.ts", "to": "libs/core/src/pm/legacy.ts", "names": ["legacyResolve"], "line": 4 },
+      { "from": "libs/core/src/index.ts", "to": "libs/core/src/pm/index.ts", "names": ["legacyResolve", "listSlots", "resolveSlot"], "line": 1 },
+      { "from": "libs/core/src/pm/index.ts", "to": "libs/core/src/pm/legacy.ts", "names": ["legacyResolve"], "line": 2 },
+      { "from": "libs/core/src/pm/index.ts", "to": "libs/core/src/pm/slots.ts", "names": ["listSlots"], "line": 1 },
+      { "from": "libs/core/src/pm/slots.ts", "to": "libs/core/src/util/format.ts", "names": ["formatSlot"], "line": 2 },
+      { "from": "libs/core/src/util/format.ts", "to": "libs/core/src/util/text.ts", "names": ["indent"], "line": 1 },
+      { "from": "libs/core/src/util/text.ts", "to": "libs/core/src/util/format.ts", "names": ["formatSlot"], "line": 1 }
+    ],
+    "members": [
+      { "name": "demo", "dir": ".", "entry": [] },
+      { "name": "cli", "dir": "apps/cli", "entry": ["apps/cli/src/index.ts"] },
+      { "name": "@demo/core", "dir": "libs/core", "entry": ["libs/core/src/index.ts"] }
+    ]
+  },
+  "head": {
+    "files": [
+      { "path": ".gitignore", "loc": 0, "kind": "other", "exports": [] },
+      { "path": "README.md", "loc": 0, "kind": "other", "exports": [] },
+      { "path": "apps/cli/package.json", "loc": 0, "kind": "other", "exports": [] },
+      { "path": "apps/cli/src/doctor.ts", "loc": 268, "kind": "source", "exports": ["runDoctor"] },
+      { "path": "apps/cli/src/index.ts", "loc": 24, "kind": "source", "exports": ["main"] },
+      { "path": "libs/core/package.json", "loc": 0, "kind": "other", "exports": [] },
+      { "path": "libs/core/src/__tests__/pm.test.ts", "loc": 91, "kind": "test", "exports": [] },
+      { "path": "libs/core/src/index.ts", "loc": 14, "kind": "source", "exports": ["legacyResolve", "listSlots", "resolveSlot"] },
+      { "path": "libs/core/src/pm/index.ts", "loc": 38, "kind": "source", "exports": ["listSlots", "resolveSlot", "resolveTool"] },
+      { "path": "libs/core/src/pm/slots.ts", "loc": 88, "kind": "source", "exports": ["listSlots"] },
+      { "path": "libs/core/src/pm/tools.ts", "loc": 96, "kind": "source", "exports": ["resolveTool"] },
+      { "path": "libs/core/src/util/format.ts", "loc": 52, "kind": "source", "exports": ["formatSlot"] },
+      { "path": "libs/core/src/util/text.ts", "loc": 37, "kind": "source", "exports": ["indent"] },
+      { "path": "notes.xyz", "loc": 0, "kind": "other", "exports": [] },
+      { "path": "package.json", "loc": 0, "kind": "other", "exports": [] },
+      { "path": "pnpm-workspace.yaml", "loc": 0, "kind": "other", "exports": [] },
+      { "path": "tsconfig.json", "loc": 0, "kind": "other", "exports": [] }
+    ],
+    "edges": [
+      { "from": "apps/cli/src/doctor.ts", "to": "libs/core/src/index.ts", "names": ["listSlots"], "line": 4 },
+      { "from": "apps/cli/src/doctor.ts", "to": "libs/core/src/pm/index.ts", "names": ["resolveSlot", "resolveTool"], "line": 5 },
+      { "from": "apps/cli/src/index.ts", "to": "apps/cli/src/doctor.ts", "names": ["runDoctor"], "line": 3 },
+      { "from": "libs/core/src/__tests__/pm.test.ts", "to": "libs/core/src/pm/index.ts", "names": ["listSlots", "resolveSlot"], "line": 3 },
+      { "from": "libs/core/src/__tests__/pm.test.ts", "to": "libs/core/src/pm/tools.ts", "names": ["resolveTool"], "line": 4 },
+      { "from": "libs/core/src/index.ts", "to": "libs/core/src/pm/index.ts", "names": ["legacyResolve", "listSlots", "resolveSlot"], "line": 1 },
+      { "from": "libs/core/src/pm/index.ts", "to": "libs/core/src/pm/slots.ts", "names": ["listSlots"], "line": 1 },
+      { "from": "libs/core/src/pm/index.ts", "to": "libs/core/src/pm/tools.ts", "names": ["resolveTool"], "line": 2 },
+      { "from": "libs/core/src/pm/slots.ts", "to": "libs/core/src/util/format.ts", "names": ["formatSlot"], "line": 2 },
+      { "from": "libs/core/src/pm/tools.ts", "to": "libs/core/src/util/format.ts", "names": ["formatSlot"], "line": 2 },
+      { "from": "libs/core/src/util/format.ts", "to": "libs/core/src/util/text.ts", "names": ["indent"], "line": 1 },
+      { "from": "libs/core/src/util/text.ts", "to": "libs/core/src/util/format.ts", "names": ["formatSlot"], "line": 1 }
+    ],
+    "members": [
+      { "name": "demo", "dir": ".", "entry": [] },
+      { "name": "cli", "dir": "apps/cli", "entry": ["apps/cli/src/index.ts"] },
+      { "name": "@demo/core", "dir": "libs/core", "entry": ["libs/core/src/index.ts"] }
+    ]
+  },
+  "diff": [
+    { "path": "README.md", "kind": "modified", "added": 6, "deleted": 2, "hunks": [{ "start": 12, "count": 6 }] },
+    { "path": "apps/cli/src/doctor.ts", "kind": "modified", "added": 96, "deleted": 40, "hunks": [{ "start": 31, "count": 28 }, { "start": 150, "count": 68 }] },
+    { "path": "libs/core/src/__tests__/pm.test.ts", "kind": "modified", "added": 22, "deleted": 5, "hunks": [{ "start": 52, "count": 22 }] },
+    { "path": "libs/core/src/pm/index.ts", "kind": "modified", "added": 18, "deleted": 9, "hunks": [{ "start": 6, "count": 4 }, { "start": 19, "count": 14 }] },
+    { "path": "libs/core/src/pm/legacy.ts", "kind": "deleted", "added": 0, "deleted": 45, "hunks": [] },
+    { "path": "libs/core/src/pm/tools.ts", "kind": "added", "added": 96, "deleted": 0, "hunks": [{ "start": 1, "count": 96 }] },
+    { "path": "notes.xyz", "kind": "modified", "added": 3, "deleted": 1, "hunks": [{ "start": 2, "count": 3 }] },
+    { "path": "package.json", "kind": "modified", "added": 2, "deleted": 0, "hunks": [{ "start": 18, "count": 2 }] }
+  ],
+  "deps_added": [{ "manifest": "package.json", "name": "picomatch", "range": "^4.0.2", "dev": false }],
+  "head_time": 1789635600,
+  "commits": [
+    {
+      "sha": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+      "time": 1789549200,
+      "subject": "feat(pm): resolve a slot's tool locally",
+      "files": [
+        { "path": "apps/cli/src/doctor.ts", "added": 96, "deleted": 40 },
+        { "path": "libs/core/src/__tests__/pm.test.ts", "added": 22, "deleted": 5 },
+        { "path": "libs/core/src/pm/index.ts", "added": 18, "deleted": 9 },
+        { "path": "libs/core/src/pm/legacy.ts", "added": 0, "deleted": 45 },
+        { "path": "libs/core/src/pm/tools.ts", "added": 96, "deleted": 0 },
+        { "path": "README.md", "added": 6, "deleted": 2 },
+        { "path": "notes.xyz", "added": 3, "deleted": 1 },
+        { "path": "package.json", "added": 2, "deleted": 0 }
+      ]
+    },
+    {
+      "sha": "b2c3d4e5f60718293a4b5c6d7e8f90123456789a",
+      "time": 1786957200,
+      "subject": "fix(pm): keep the slot order stable",
+      "files": [
+        { "path": "libs/core/src/pm/index.ts", "added": 12, "deleted": 4 },
+        { "path": "libs/core/src/pm/slots.ts", "added": 20, "deleted": 6 },
+        { "path": "libs/core/src/util/format.ts", "added": 8, "deleted": 3 }
+      ]
+    },
+    {
+      "sha": "c3d4e5f60718293a4b5c6d7e8f90123456789ab2",
+      "time": 1784365200,
+      "subject": "refactor(pm): move formatting to util",
+      "files": [
+        { "path": "libs/core/src/pm/index.ts", "added": 9, "deleted": 14 },
+        { "path": "libs/core/src/util/format.ts", "added": 30, "deleted": 2 },
+        { "path": "libs/core/src/util/text.ts", "added": 18, "deleted": 0 }
+      ]
+    },
+    {
+      "sha": "d4e5f60718293a4b5c6d7e8f90123456789ab2c3",
+      "time": 1781773200,
+      "subject": "fix(cli): report a missing slot instead of throwing",
+      "files": [
+        { "path": "apps/cli/src/doctor.ts", "added": 140, "deleted": 96 },
+        { "path": "libs/core/src/pm/index.ts", "added": 6, "deleted": 2 },
+        { "path": "libs/core/src/util/format.ts", "added": 4, "deleted": 1 }
+      ]
+    },
+    {
+      "sha": "e5f60718293a4b5c6d7e8f90123456789ab2c3d4",
+      "time": 1779181200,
+      "subject": "fix(cli): read the doctor's config once",
+      "files": [
+        { "path": "apps/cli/src/doctor.ts", "added": 210, "deleted": 140 },
+        { "path": "README.md", "added": 4, "deleted": 0 }
+      ]
+    },
+    {
+      "sha": "f60718293a4b5c6d7e8f90123456789ab2c3d4e5",
+      "time": 1776589200,
+      "subject": "feat(cli): add the doctor command",
+      "files": [
+        { "path": "apps/cli/src/doctor.ts", "added": 180, "deleted": 0 },
+        { "path": "apps/cli/src/index.ts", "added": 6, "deleted": 0 },
+        { "path": "package.json", "added": 3, "deleted": 0 }
+      ]
+    },
+    {
+      "sha": "0718293a4b5c6d7e8f90123456789ab2c3d4e5f6",
+      "time": 1758196800,
+      "subject": "feat(core): add the pm slot registry",
+      "files": [
+        { "path": "libs/core/src/index.ts", "added": 14, "deleted": 0 },
+        { "path": "libs/core/src/pm/index.ts", "added": 31, "deleted": 0 },
+        { "path": "libs/core/src/pm/legacy.ts", "added": 45, "deleted": 0 },
+        { "path": "libs/core/src/pm/slots.ts", "added": 88, "deleted": 0 }
+      ]
+    },
+    {
+      "sha": "18293a4b5c6d7e8f90123456789ab2c3d4e5f607",
+      "time": 1757000000,
+      "subject": "chore(repo): scaffold the workspace",
+      "files": [
+        { "path": ".gitignore", "added": 9, "deleted": 0 },
+        { "path": "README.md", "added": 12, "deleted": 0 },
+        { "path": "apps/cli/package.json", "added": 8, "deleted": 0 },
+        { "path": "libs/core/package.json", "added": 8, "deleted": 0 },
+        { "path": "notes.xyz", "added": 4, "deleted": 0 },
+        { "path": "package.json", "added": 24, "deleted": 0 },
+        { "path": "pnpm-workspace.yaml", "added": 5, "deleted": 0 },
+        { "path": "tsconfig.json", "added": 18, "deleted": 0 }
+      ]
+    }
+  ],
+  "check": {
+    "mode": "check",
+    "summary": {
+      "ok": false,
+      "checks_run": 8,
+      "timestamp": "2026-09-17T08:58:12.412Z",
+      "total_duration_ms": 41230,
+      "checks": [
+        { "name": "types", "ok": true, "skipped": false },
+        { "name": "lint", "ok": true, "skipped": false },
+        { "name": "struct", "ok": true, "skipped": false },
+        { "name": "dead", "ok": false, "skipped": false },
+        { "name": "health", "ok": true, "skipped": false },
+        { "name": "dupes", "ok": true, "skipped": false },
+        { "name": "test", "ok": false, "skipped": false },
+        { "name": "mutation", "ok": true, "skipped": false },
+        { "name": "security", "ok": true, "skipped": true }
+      ]
+    },
+    "fallow_schemas": { "health": 9, "dead": 9, "dupes": 9 },
+    "stale": [],
+    "health": {
+      "file_scores": [
+        { "path": "apps/cli/src/doctor.ts", "fan_in": 1, "fan_out": 2, "lines": 268, "function_count": 19, "maintainability_index": 61.4, "crap_max": 24.5 },
+        { "path": "apps/cli/src/index.ts", "fan_in": 0, "fan_out": 1, "lines": 24, "function_count": 2, "maintainability_index": 92.1, "crap_max": 2 },
+        { "path": "libs/core/src/index.ts", "fan_in": 1, "fan_out": 1, "lines": 14, "function_count": 0, "maintainability_index": 100, "crap_max": 0 },
+        { "path": "libs/core/src/pm/index.ts", "fan_in": 2, "fan_out": 2, "lines": 38, "function_count": 3, "maintainability_index": 84.6, "crap_max": 6 },
+        { "path": "libs/core/src/pm/slots.ts", "fan_in": 1, "fan_out": 1, "lines": 88, "function_count": 7, "maintainability_index": 78.2, "crap_max": 9.5 },
+        { "path": "libs/core/src/pm/tools.ts", "fan_in": 1, "fan_out": 1, "lines": 96, "function_count": 8, "maintainability_index": 64.9, "crap_max": 31 },
+        { "path": "libs/core/src/util/format.ts", "fan_in": 3, "fan_out": 1, "lines": 52, "function_count": 5, "maintainability_index": 80.3, "crap_max": 7.5 },
+        { "path": "libs/core/src/util/text.ts", "fan_in": 1, "fan_out": 1, "lines": 37, "function_count": 4, "maintainability_index": 86.7, "crap_max": 4 }
+      ],
+      "findings": [{ "path": "libs/core/src/pm/tools.ts", "exceeded": "cyclomatic_crap" }],
+      "fan_in_p95": 2
+    },
+    "dead": {
+      "circular_dependencies": [
+        { "files": ["libs/core/src/util/format.ts", "libs/core/src/util/text.ts"], "length": 2, "line": 1, "col": 0 }
+      ],
+      "re_export_cycles": [],
+      "boundary_violations": [],
+      "unused_exports": [{ "path": "libs/core/src/index.ts", "name": "legacyResolve", "line": 1 }]
+    },
+    "dupes": {
+      "clone_families": [
+        {
+          "files": ["libs/core/src/pm/slots.ts", "libs/core/src/pm/tools.ts"],
+          "groups": [],
+          "total_duplicated_lines": 34,
+          "total_duplicated_tokens": 180
+        }
+      ]
+    },
+    "coverage": [
+      {
+        "path": "apps/cli/src/doctor.ts",
+        "statements": [
+          { "line": 33, "hits": 5 }, { "line": 40, "hits": 5 }, { "line": 52, "hits": 0 },
+          { "line": 160, "hits": 2 }, { "line": 175, "hits": 2 }, { "line": 190, "hits": 0 }, { "line": 205, "hits": 0 }
+        ]
+      },
+      {
+        "path": "libs/core/src/pm/index.ts",
+        "statements": [
+          { "line": 6, "hits": 12 }, { "line": 7, "hits": 12 }, { "line": 8, "hits": 0 }, { "line": 9, "hits": 0 },
+          { "line": 20, "hits": 4 }, { "line": 22, "hits": 4 }, { "line": 25, "hits": 0 }, { "line": 28, "hits": 0 },
+          { "line": 31, "hits": 0 }, { "line": 40, "hits": 9 }
+        ]
+      },
+      {
+        "path": "libs/core/src/pm/tools.ts",
+        "statements": [
+          { "line": 4, "hits": 6 }, { "line": 11, "hits": 6 }, { "line": 19, "hits": 6 }, { "line": 27, "hits": 0 },
+          { "line": 38, "hits": 3 }, { "line": 52, "hits": 3 }, { "line": 64, "hits": 0 }, { "line": 77, "hits": 2 },
+          { "line": 90, "hits": 2 }
+        ]
+      }
+    ],
+    "mutation": [
+      {
+        "path": "libs/core/src/pm/index.ts",
+        "mutants": [{ "line": 21, "status": "Killed" }, { "line": 26, "status": "Killed" }]
+      },
+      {
+        "path": "libs/core/src/pm/tools.ts",
+        "mutants": [
+          { "line": 27, "status": "NoCoverage" }, { "line": 41, "status": "Killed" },
+          { "line": 64, "status": "Survived" }, { "line": 78, "status": "Killed" }
+        ]
+      }
+    ],
+    "test": { "results": [{ "path": "libs/core/src/__tests__/pm.test.ts", "status": "failed" }] }
+  }
+}

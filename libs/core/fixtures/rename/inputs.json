@@ -1,0 +1,61 @@
+{
+  "meta": {
+    "repo": "rename",
+    "base": "main",
+    "head": "9f8e7d6c5b4a39281706f5e4d3c2b1a099887766",
+    "merge_base": "112233445566778899aabbccddeeff0011223344",
+    "generated_at": "2026-09-17T09:00:00.000Z"
+  },
+  "base": {
+    "files": [
+      { "path": "README.md", "loc": 0, "kind": "other", "exports": [] },
+      { "path": "src/index.ts", "loc": 9, "kind": "source", "exports": ["helper"] },
+      { "path": "src/old-name.ts", "loc": 36, "kind": "source", "exports": ["helper"] }
+    ],
+    "edges": [{ "from": "src/index.ts", "to": "src/old-name.ts", "names": ["helper"], "line": 1 }],
+    "members": [{ "name": "rename", "dir": ".", "entry": ["src/index.ts"] }]
+  },
+  "head": {
+    "files": [
+      { "path": "README.md", "loc": 0, "kind": "other", "exports": [] },
+      { "path": "src/index.ts", "loc": 9, "kind": "source", "exports": ["helper"] },
+      { "path": "src/new-name.ts", "loc": 38, "kind": "source", "exports": ["helper"] }
+    ],
+    "edges": [{ "from": "src/index.ts", "to": "src/new-name.ts", "names": ["helper"], "line": 1 }],
+    "members": [{ "name": "rename", "dir": ".", "entry": ["src/index.ts"] }]
+  },
+  "diff": [
+    {
+      "path": "src/new-name.ts",
+      "kind": "renamed",
+      "from": "src/old-name.ts",
+      "added": 4,
+      "deleted": 2,
+      "hunks": [{ "start": 3, "count": 4 }]
+    }
+  ],
+  "deps_added": [],
+  "head_time": 1789635600,
+  "commits": [
+    {
+      "sha": "9f8e7d6c5b4a39281706f5e4d3c2b1a099887766",
+      "time": 1789549200,
+      "subject": "refactor(core): rename the helper module",
+      "files": [
+        { "path": "src/new-name.ts", "added": 38, "deleted": 0 },
+        { "path": "src/old-name.ts", "added": 0, "deleted": 36 },
+        { "path": "src/index.ts", "added": 1, "deleted": 1 }
+      ]
+    },
+    {
+      "sha": "8e7d6c5b4a39281706f5e4d3c2b1a09988776655",
+      "time": 1757000000,
+      "subject": "fix(core): trim the helper's input",
+      "files": [
+        { "path": "src/old-name.ts", "added": 6, "deleted": 3 },
+        { "path": "README.md", "added": 2, "deleted": 0 }
+      ]
+    }
+  ],
+  "check": { "mode": "git-only", "reason": ".check/ is absent" }
+}

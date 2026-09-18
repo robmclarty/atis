@@ -1,0 +1,1217 @@
+{
+  "meta": {
+    "schema_version": 1,
+    "generated_at": "",
+    "repo": "demo",
+    "base": "main",
+    "head": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+    "merge_base": "0f1e2d3c4b5a69788796a5b4c3d2e1f098765432",
+    "mode": "change",
+    "instruments": {
+      "mode": "check",
+      "fallow_schemas": {
+        "health": 9,
+        "dead": 9,
+        "dupes": 9
+      }
+    }
+  },
+  "terrain": {
+    "cells": [
+      {
+        "id": "directory:libs/core/src/util",
+        "path": "libs/core/src/util",
+        "kind": "directory",
+        "parent": "package:libs/core",
+        "organelles": [
+          "libs/core/src/util/format.ts",
+          "libs/core/src/util/text.ts"
+        ],
+        "band": 5,
+        "interface_size": 1,
+        "body_loc": 89,
+        "function_count": 9,
+        "fan_in": 2,
+        "fan_out": 0,
+        "dents": [
+          "cycle"
+        ]
+      },
+      {
+        "id": "folder:libs/core/src/pm",
+        "path": "libs/core/src/pm",
+        "kind": "folder",
+        "parent": "package:libs/core",
+        "barrel": "libs/core/src/pm/index.ts",
+        "organelles": [
+          "libs/core/src/pm/index.ts",
+          "libs/core/src/pm/legacy.ts",
+          "libs/core/src/pm/slots.ts",
+          "libs/core/src/pm/tools.ts"
+        ],
+        "band": 3,
+        "interface_size": 3,
+        "body_loc": 260,
+        "function_count": 18,
+        "fan_in": 2,
+        "fan_out": 1,
+        "dents": [
+          "crap",
+          "cyclomatic"
+        ],
+        "clone_family": "family-1"
+      },
+      {
+        "id": "package:apps/cli",
+        "path": "apps/cli",
+        "kind": "package",
+        "barrel": "apps/cli/src/index.ts",
+        "organelles": [
+          "apps/cli/src/index.ts"
+        ],
+        "band": 0,
+        "interface_size": 1,
+        "body_loc": 236,
+        "function_count": 21,
+        "fan_in": 0,
+        "fan_out": 2,
+        "dents": []
+      },
+      {
+        "id": "package:libs/core",
+        "path": "libs/core",
+        "kind": "package",
+        "barrel": "libs/core/src/index.ts",
+        "organelles": [
+          "libs/core/src/index.ts"
+        ],
+        "band": 2,
+        "interface_size": 3,
+        "body_loc": 363,
+        "function_count": 27,
+        "fan_in": 1,
+        "fan_out": 0,
+        "dents": [
+          "crap",
+          "cycle",
+          "cyclomatic"
+        ],
+        "clone_family": "family-1"
+      },
+      {
+        "id": "single:apps/cli/src/doctor.ts",
+        "path": "apps/cli/src/doctor.ts",
+        "kind": "single",
+        "parent": "package:apps/cli",
+        "organelles": [
+          "apps/cli/src/doctor.ts"
+        ],
+        "band": 1,
+        "interface_size": 1,
+        "body_loc": 212,
+        "function_count": 19,
+        "fan_in": 1,
+        "fan_out": 2,
+        "dents": []
+      }
+    ],
+    "organelles": [
+      {
+        "id": "apps/cli/src/doctor.ts",
+        "path": "apps/cli/src/doctor.ts",
+        "cell": "single:apps/cli/src/doctor.ts",
+        "band": 1,
+        "reachable": true,
+        "loc": 212,
+        "function_count": 19,
+        "dents": [],
+        "churn_ratio": 3.3656716417910446,
+        "age_days": 151,
+        "bugfix_rate": 0.5
+      },
+      {
+        "id": "apps/cli/src/index.ts",
+        "path": "apps/cli/src/index.ts",
+        "cell": "package:apps/cli",
+        "band": 0,
+        "reachable": true,
+        "loc": 24,
+        "function_count": 2,
+        "dents": []
+      },
+      {
+        "id": "libs/core/src/index.ts",
+        "path": "libs/core/src/index.ts",
+        "cell": "package:libs/core",
+        "band": 2,
+        "reachable": true,
+        "loc": 14,
+        "function_count": 0,
+        "dents": []
+      },
+      {
+        "id": "libs/core/src/pm/index.ts",
+        "path": "libs/core/src/pm/index.ts",
+        "cell": "folder:libs/core/src/pm",
+        "band": 3,
+        "reachable": true,
+        "loc": 31,
+        "function_count": 3,
+        "dents": [],
+        "churn_ratio": 2.763157894736842,
+        "age_days": 363,
+        "bugfix_rate": 0.4
+      },
+      {
+        "id": "libs/core/src/pm/legacy.ts",
+        "path": "libs/core/src/pm/legacy.ts",
+        "cell": "folder:libs/core/src/pm",
+        "band": 4,
+        "reachable": true,
+        "loc": 45,
+        "dents": [],
+        "age_days": 363,
+        "bugfix_rate": 0
+      },
+      {
+        "id": "libs/core/src/pm/slots.ts",
+        "path": "libs/core/src/pm/slots.ts",
+        "cell": "folder:libs/core/src/pm",
+        "band": 4,
+        "reachable": true,
+        "loc": 88,
+        "function_count": 7,
+        "dents": [],
+        "clone_family": "family-1"
+      },
+      {
+        "id": "libs/core/src/pm/tools.ts",
+        "path": "libs/core/src/pm/tools.ts",
+        "cell": "folder:libs/core/src/pm",
+        "band": 4,
+        "reachable": true,
+        "loc": 96,
+        "function_count": 8,
+        "dents": [
+          "crap",
+          "cyclomatic"
+        ],
+        "churn_ratio": 1,
+        "age_days": 1,
+        "bugfix_rate": 0,
+        "clone_family": "family-1"
+      },
+      {
+        "id": "libs/core/src/util/format.ts",
+        "path": "libs/core/src/util/format.ts",
+        "cell": "directory:libs/core/src/util",
+        "band": 5,
+        "reachable": true,
+        "loc": 52,
+        "function_count": 5,
+        "dents": [
+          "cycle"
+        ]
+      },
+      {
+        "id": "libs/core/src/util/text.ts",
+        "path": "libs/core/src/util/text.ts",
+        "cell": "directory:libs/core/src/util",
+        "band": 5,
+        "reachable": true,
+        "loc": 37,
+        "function_count": 4,
+        "dents": [
+          "cycle"
+        ]
+      }
+    ],
+    "bands": [
+      {
+        "index": 0,
+        "depth_min": 0,
+        "depth_max": 0
+      },
+      {
+        "index": 1,
+        "depth_min": 1,
+        "depth_max": 1
+      },
+      {
+        "index": 2,
+        "depth_min": 2,
+        "depth_max": 2
+      },
+      {
+        "index": 3,
+        "depth_min": 3,
+        "depth_max": 3
+      },
+      {
+        "index": 4,
+        "depth_min": 4,
+        "depth_max": 4
+      },
+      {
+        "index": 5,
+        "depth_min": 5,
+        "depth_max": 5
+      }
+    ],
+    "groups": [
+      {
+        "id": "docs",
+        "files": [
+          "README.md"
+        ]
+      },
+      {
+        "id": "config",
+        "files": [
+          "tsconfig.json"
+        ]
+      },
+      {
+        "id": "settings",
+        "files": [
+          ".gitignore"
+        ]
+      },
+      {
+        "id": "deps",
+        "files": [
+          "apps/cli/package.json",
+          "libs/core/package.json",
+          "package.json",
+          "pnpm-workspace.yaml"
+        ]
+      },
+      {
+        "id": "tests",
+        "files": [
+          "libs/core/src/__tests__/pm.test.ts"
+        ]
+      },
+      {
+        "id": "other",
+        "files": [
+          "notes.xyz"
+        ]
+      }
+    ],
+    "edges_exceptional": [
+      {
+        "from": "libs/core/src/pm/tools.ts",
+        "to": "libs/core/src/util/format.ts",
+        "kind": "new-cross-module"
+      },
+      {
+        "from": "libs/core/src/util/format.ts",
+        "to": "libs/core/src/util/text.ts",
+        "kind": "cycle"
+      },
+      {
+        "from": "libs/core/src/util/text.ts",
+        "to": "libs/core/src/util/format.ts",
+        "kind": "cycle"
+      }
+    ],
+    "history": {
+      "window_commits": 8,
+      "cochange": [
+        {
+          "a": "README.md",
+          "b": ".gitignore",
+          "rate": 0.3333333333333333,
+          "support": 1
+        },
+        {
+          "a": "README.md",
+          "b": "apps/cli/package.json",
+          "rate": 0.3333333333333333,
+          "support": 1
+        },
+        {
+          "a": "README.md",
+          "b": "apps/cli/src/doctor.ts",
+          "rate": 0.6666666666666666,
+          "support": 2
+        },
+        {
+          "a": "README.md",
+          "b": "libs/core/package.json",
+          "rate": 0.3333333333333333,
+          "support": 1
+        },
+        {
+          "a": "README.md",
+          "b": "libs/core/src/__tests__/pm.test.ts",
+          "rate": 0.3333333333333333,
+          "support": 1
+        },
+        {
+          "a": "README.md",
+          "b": "libs/core/src/pm/index.ts",
+          "rate": 0.3333333333333333,
+          "support": 1
+        },
+        {
+          "a": "README.md",
+          "b": "libs/core/src/pm/legacy.ts",
+          "rate": 0.3333333333333333,
+          "support": 1
+        },
+        {
+          "a": "README.md",
+          "b": "libs/core/src/pm/tools.ts",
+          "rate": 0.3333333333333333,
+          "support": 1
+        },
+        {
+          "a": "README.md",
+          "b": "notes.xyz",
+          "rate": 0.6666666666666666,
+          "support": 2
+        },
+        {
+          "a": "README.md",
+          "b": "package.json",
+          "rate": 0.6666666666666666,
+          "support": 2
+        },
+        {
+          "a": "README.md",
+          "b": "pnpm-workspace.yaml",
+          "rate": 0.3333333333333333,
+          "support": 1
+        },
+        {
+          "a": "README.md",
+          "b": "tsconfig.json",
+          "rate": 0.3333333333333333,
+          "support": 1
+        },
+        {
+          "a": "apps/cli/src/doctor.ts",
+          "b": "README.md",
+          "rate": 0.5,
+          "support": 2
+        },
+        {
+          "a": "apps/cli/src/doctor.ts",
+          "b": "apps/cli/src/index.ts",
+          "rate": 0.25,
+          "support": 1
+        },
+        {
+          "a": "apps/cli/src/doctor.ts",
+          "b": "libs/core/src/__tests__/pm.test.ts",
+          "rate": 0.25,
+          "support": 1
+        },
+        {
+          "a": "apps/cli/src/doctor.ts",
+          "b": "libs/core/src/pm/index.ts",
+          "rate": 0.5,
+          "support": 2
+        },
+        {
+          "a": "apps/cli/src/doctor.ts",
+          "b": "libs/core/src/pm/legacy.ts",
+          "rate": 0.25,
+          "support": 1
+        },
+        {
+          "a": "apps/cli/src/doctor.ts",
+          "b": "libs/core/src/pm/tools.ts",
+          "rate": 0.25,
+          "support": 1
+        },
+        {
+          "a": "apps/cli/src/doctor.ts",
+          "b": "libs/core/src/util/format.ts",
+          "rate": 0.25,
+          "support": 1
+        },
+        {
+          "a": "apps/cli/src/doctor.ts",
+          "b": "notes.xyz",
+          "rate": 0.25,
+          "support": 1
+        },
+        {
+          "a": "apps/cli/src/doctor.ts",
+          "b": "package.json",
+          "rate": 0.5,
+          "support": 2
+        },
+        {
+          "a": "libs/core/src/__tests__/pm.test.ts",
+          "b": "README.md",
+          "rate": 1,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/__tests__/pm.test.ts",
+          "b": "apps/cli/src/doctor.ts",
+          "rate": 1,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/__tests__/pm.test.ts",
+          "b": "libs/core/src/pm/index.ts",
+          "rate": 1,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/__tests__/pm.test.ts",
+          "b": "libs/core/src/pm/legacy.ts",
+          "rate": 1,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/__tests__/pm.test.ts",
+          "b": "libs/core/src/pm/tools.ts",
+          "rate": 1,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/__tests__/pm.test.ts",
+          "b": "notes.xyz",
+          "rate": 1,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/__tests__/pm.test.ts",
+          "b": "package.json",
+          "rate": 1,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/pm/index.ts",
+          "b": "README.md",
+          "rate": 0.2,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/pm/index.ts",
+          "b": "apps/cli/src/doctor.ts",
+          "rate": 0.4,
+          "support": 2
+        },
+        {
+          "a": "libs/core/src/pm/index.ts",
+          "b": "libs/core/src/__tests__/pm.test.ts",
+          "rate": 0.2,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/pm/index.ts",
+          "b": "libs/core/src/index.ts",
+          "rate": 0.2,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/pm/index.ts",
+          "b": "libs/core/src/pm/legacy.ts",
+          "rate": 0.4,
+          "support": 2
+        },
+        {
+          "a": "libs/core/src/pm/index.ts",
+          "b": "libs/core/src/pm/slots.ts",
+          "rate": 0.4,
+          "support": 2
+        },
+        {
+          "a": "libs/core/src/pm/index.ts",
+          "b": "libs/core/src/pm/tools.ts",
+          "rate": 0.2,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/pm/index.ts",
+          "b": "libs/core/src/util/format.ts",
+          "rate": 0.6,
+          "support": 3
+        },
+        {
+          "a": "libs/core/src/pm/index.ts",
+          "b": "libs/core/src/util/text.ts",
+          "rate": 0.2,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/pm/index.ts",
+          "b": "notes.xyz",
+          "rate": 0.2,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/pm/index.ts",
+          "b": "package.json",
+          "rate": 0.2,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/pm/legacy.ts",
+          "b": "README.md",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/pm/legacy.ts",
+          "b": "apps/cli/src/doctor.ts",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/pm/legacy.ts",
+          "b": "libs/core/src/__tests__/pm.test.ts",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/pm/legacy.ts",
+          "b": "libs/core/src/index.ts",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/pm/legacy.ts",
+          "b": "libs/core/src/pm/index.ts",
+          "rate": 1,
+          "support": 2
+        },
+        {
+          "a": "libs/core/src/pm/legacy.ts",
+          "b": "libs/core/src/pm/slots.ts",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/pm/legacy.ts",
+          "b": "libs/core/src/pm/tools.ts",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/pm/legacy.ts",
+          "b": "notes.xyz",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/pm/legacy.ts",
+          "b": "package.json",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/pm/tools.ts",
+          "b": "README.md",
+          "rate": 1,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/pm/tools.ts",
+          "b": "apps/cli/src/doctor.ts",
+          "rate": 1,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/pm/tools.ts",
+          "b": "libs/core/src/__tests__/pm.test.ts",
+          "rate": 1,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/pm/tools.ts",
+          "b": "libs/core/src/pm/index.ts",
+          "rate": 1,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/pm/tools.ts",
+          "b": "libs/core/src/pm/legacy.ts",
+          "rate": 1,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/pm/tools.ts",
+          "b": "notes.xyz",
+          "rate": 1,
+          "support": 1
+        },
+        {
+          "a": "libs/core/src/pm/tools.ts",
+          "b": "package.json",
+          "rate": 1,
+          "support": 1
+        },
+        {
+          "a": "notes.xyz",
+          "b": ".gitignore",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "notes.xyz",
+          "b": "README.md",
+          "rate": 1,
+          "support": 2
+        },
+        {
+          "a": "notes.xyz",
+          "b": "apps/cli/package.json",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "notes.xyz",
+          "b": "apps/cli/src/doctor.ts",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "notes.xyz",
+          "b": "libs/core/package.json",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "notes.xyz",
+          "b": "libs/core/src/__tests__/pm.test.ts",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "notes.xyz",
+          "b": "libs/core/src/pm/index.ts",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "notes.xyz",
+          "b": "libs/core/src/pm/legacy.ts",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "notes.xyz",
+          "b": "libs/core/src/pm/tools.ts",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "notes.xyz",
+          "b": "package.json",
+          "rate": 1,
+          "support": 2
+        },
+        {
+          "a": "notes.xyz",
+          "b": "pnpm-workspace.yaml",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "notes.xyz",
+          "b": "tsconfig.json",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "package.json",
+          "b": ".gitignore",
+          "rate": 0.3333333333333333,
+          "support": 1
+        },
+        {
+          "a": "package.json",
+          "b": "README.md",
+          "rate": 0.6666666666666666,
+          "support": 2
+        },
+        {
+          "a": "package.json",
+          "b": "apps/cli/package.json",
+          "rate": 0.3333333333333333,
+          "support": 1
+        },
+        {
+          "a": "package.json",
+          "b": "apps/cli/src/doctor.ts",
+          "rate": 0.6666666666666666,
+          "support": 2
+        },
+        {
+          "a": "package.json",
+          "b": "apps/cli/src/index.ts",
+          "rate": 0.3333333333333333,
+          "support": 1
+        },
+        {
+          "a": "package.json",
+          "b": "libs/core/package.json",
+          "rate": 0.3333333333333333,
+          "support": 1
+        },
+        {
+          "a": "package.json",
+          "b": "libs/core/src/__tests__/pm.test.ts",
+          "rate": 0.3333333333333333,
+          "support": 1
+        },
+        {
+          "a": "package.json",
+          "b": "libs/core/src/pm/index.ts",
+          "rate": 0.3333333333333333,
+          "support": 1
+        },
+        {
+          "a": "package.json",
+          "b": "libs/core/src/pm/legacy.ts",
+          "rate": 0.3333333333333333,
+          "support": 1
+        },
+        {
+          "a": "package.json",
+          "b": "libs/core/src/pm/tools.ts",
+          "rate": 0.3333333333333333,
+          "support": 1
+        },
+        {
+          "a": "package.json",
+          "b": "notes.xyz",
+          "rate": 0.6666666666666666,
+          "support": 2
+        },
+        {
+          "a": "package.json",
+          "b": "pnpm-workspace.yaml",
+          "rate": 0.3333333333333333,
+          "support": 1
+        },
+        {
+          "a": "package.json",
+          "b": "tsconfig.json",
+          "rate": 0.3333333333333333,
+          "support": 1
+        }
+      ]
+    }
+  },
+  "weather": {
+    "changed": [
+      {
+        "path": "README.md",
+        "kind": "modified",
+        "added": 6,
+        "deleted": 2,
+        "hunks": [
+          {
+            "start": 12,
+            "count": 6
+          }
+        ],
+        "group": "docs",
+        "is_barrel": false
+      },
+      {
+        "path": "apps/cli/src/doctor.ts",
+        "kind": "modified",
+        "added": 96,
+        "deleted": 40,
+        "hunks": [
+          {
+            "start": 31,
+            "count": 28
+          },
+          {
+            "start": 150,
+            "count": 68
+          }
+        ],
+        "cell": "single:apps/cli/src/doctor.ts",
+        "is_barrel": false
+      },
+      {
+        "path": "libs/core/src/__tests__/pm.test.ts",
+        "kind": "modified",
+        "added": 22,
+        "deleted": 5,
+        "hunks": [
+          {
+            "start": 52,
+            "count": 22
+          }
+        ],
+        "group": "tests",
+        "is_barrel": false
+      },
+      {
+        "path": "libs/core/src/pm/index.ts",
+        "kind": "modified",
+        "added": 18,
+        "deleted": 9,
+        "hunks": [
+          {
+            "start": 6,
+            "count": 4
+          },
+          {
+            "start": 19,
+            "count": 14
+          }
+        ],
+        "cell": "folder:libs/core/src/pm",
+        "is_barrel": true
+      },
+      {
+        "path": "libs/core/src/pm/legacy.ts",
+        "kind": "deleted",
+        "added": 0,
+        "deleted": 45,
+        "hunks": [],
+        "cell": "folder:libs/core/src/pm",
+        "is_barrel": false
+      },
+      {
+        "path": "libs/core/src/pm/tools.ts",
+        "kind": "added",
+        "added": 96,
+        "deleted": 0,
+        "hunks": [
+          {
+            "start": 1,
+            "count": 96
+          }
+        ],
+        "cell": "folder:libs/core/src/pm",
+        "is_barrel": false
+      },
+      {
+        "path": "notes.xyz",
+        "kind": "modified",
+        "added": 3,
+        "deleted": 1,
+        "hunks": [
+          {
+            "start": 2,
+            "count": 3
+          }
+        ],
+        "group": "other",
+        "is_barrel": false
+      },
+      {
+        "path": "package.json",
+        "kind": "modified",
+        "added": 2,
+        "deleted": 0,
+        "hunks": [
+          {
+            "start": 18,
+            "count": 2
+          }
+        ],
+        "group": "deps",
+        "is_barrel": false
+      }
+    ],
+    "reach": [
+      {
+        "path": "apps/cli/src/doctor.ts",
+        "cell": "single:apps/cli/src/doctor.ts",
+        "hops": 0,
+        "via": []
+      },
+      {
+        "path": "apps/cli/src/index.ts",
+        "cell": "package:apps/cli",
+        "hops": 1,
+        "via": [
+          "apps/cli/src/doctor.ts"
+        ]
+      },
+      {
+        "path": "libs/core/src/index.ts",
+        "cell": "package:libs/core",
+        "hops": 1,
+        "via": [
+          "libs/core/src/pm/index.ts"
+        ]
+      },
+      {
+        "path": "libs/core/src/pm/index.ts",
+        "cell": "folder:libs/core/src/pm",
+        "hops": 0,
+        "via": []
+      },
+      {
+        "path": "libs/core/src/pm/legacy.ts",
+        "cell": "folder:libs/core/src/pm",
+        "hops": 0,
+        "via": []
+      },
+      {
+        "path": "libs/core/src/pm/tools.ts",
+        "cell": "folder:libs/core/src/pm",
+        "hops": 0,
+        "via": []
+      }
+    ],
+    "evidence": {
+      "patch_coverage": [
+        {
+          "path": "apps/cli/src/doctor.ts",
+          "changed_executable": 7,
+          "covered": 4,
+          "uncovered_lines": [
+            52,
+            190,
+            205
+          ]
+        },
+        {
+          "path": "libs/core/src/pm/index.ts",
+          "changed_executable": 9,
+          "covered": 4,
+          "uncovered_lines": [
+            8,
+            9,
+            25,
+            28,
+            31
+          ]
+        },
+        {
+          "path": "libs/core/src/pm/tools.ts",
+          "changed_executable": 9,
+          "covered": 7,
+          "uncovered_lines": [
+            27,
+            64
+          ]
+        }
+      ],
+      "mutants": [
+        {
+          "path": "libs/core/src/pm/tools.ts",
+          "line": 27,
+          "status": "NoCoverage"
+        },
+        {
+          "path": "libs/core/src/pm/tools.ts",
+          "line": 64,
+          "status": "Survived"
+        }
+      ],
+      "stitches": [
+        {
+          "test": "libs/core/src/__tests__/pm.test.ts",
+          "targets": [
+            "libs/core/src/pm/index.ts",
+            "libs/core/src/pm/legacy.ts",
+            "libs/core/src/pm/tools.ts"
+          ],
+          "status": "failed"
+        }
+      ]
+    },
+    "checks": {
+      "category": "IFR",
+      "checks_run": 8,
+      "timestamp": "2026-09-17T08:58:12.412Z",
+      "slots": [
+        {
+          "name": "dead",
+          "ok": false,
+          "skipped": false,
+          "scope": [
+            "libs/core/src/index.ts",
+            "libs/core/src/util/format.ts",
+            "libs/core/src/util/text.ts"
+          ]
+        },
+        {
+          "name": "dupes",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "health",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "lint",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "mutation",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "security",
+          "ok": true,
+          "skipped": true,
+          "scope": "global"
+        },
+        {
+          "name": "struct",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "test",
+          "ok": false,
+          "skipped": false,
+          "scope": [
+            "libs/core/src/__tests__/pm.test.ts"
+          ]
+        },
+        {
+          "name": "types",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        }
+      ]
+    },
+    "ghosts": [
+      {
+        "path": "libs/core/src/util/format.ts",
+        "with": [
+          "libs/core/src/pm/index.ts"
+        ],
+        "rate": 0.6,
+        "support": 3
+      }
+    ],
+    "deps_added": [
+      {
+        "manifest": "package.json",
+        "name": "picomatch",
+        "range": "^4.0.2",
+        "dev": false
+      }
+    ],
+    "improvements": []
+  },
+  "notices": [
+    {
+      "kind": "deleted-export",
+      "target": "libs/core/src/pm/index.ts",
+      "why": "`legacyResolve` no longer exported, and 1 files still import it",
+      "inputs": {
+        "cells_reached": 4,
+        "uncovered_fraction": 0.556,
+        "history_weight": 3.163,
+        "names": 1,
+        "consumers": 1
+      },
+      "thresholds": {
+        "severity": 8
+      },
+      "weight": 135.224,
+      "tier": "primary"
+    },
+    {
+      "kind": "interface-change",
+      "target": "libs/core/src/pm/index.ts",
+      "why": "the interface of `libs/core/src/pm` changed and 2 files read it",
+      "inputs": {
+        "cells_reached": 4,
+        "uncovered_fraction": 0.556,
+        "history_weight": 3.163,
+        "band": 3,
+        "fan_in": 2
+      },
+      "thresholds": {
+        "severity": 8,
+        "fan_in_high": 2,
+        "deep_band": 4
+      },
+      "weight": 135.224,
+      "tier": "secondary"
+    },
+    {
+      "kind": "uncovered-high-reach",
+      "target": "libs/core/src/pm/index.ts",
+      "why": "5 changed lines are uncovered and the change reaches 4 cells",
+      "inputs": {
+        "cells_reached": 4,
+        "uncovered_fraction": 0.556,
+        "history_weight": 3.163,
+        "uncovered_lines": 5
+      },
+      "thresholds": {
+        "severity": 7,
+        "high_reach_cells": 3
+      },
+      "weight": 118.321,
+      "tier": "secondary"
+    },
+    {
+      "kind": "large-hot-change",
+      "target": "apps/cli/src/doctor.ts",
+      "why": "136 lines changed in a file with churn 3.366 and a bug-fix rate of 0.5",
+      "inputs": {
+        "cells_reached": 2,
+        "uncovered_fraction": 0.429,
+        "history_weight": 3.866,
+        "lines": 136
+      },
+      "thresholds": {
+        "severity": 4,
+        "large_lines": 100,
+        "hot_churn_ratio": 2,
+        "hot_bugfix_rate": 0.3
+      },
+      "weight": 58.371,
+      "tier": "tertiary"
+    },
+    {
+      "kind": "uncovered-high-reach",
+      "target": "libs/core/src/pm/tools.ts",
+      "why": "2 changed lines are uncovered and the change reaches 4 cells",
+      "inputs": {
+        "cells_reached": 4,
+        "uncovered_fraction": 0.222,
+        "history_weight": 1,
+        "uncovered_lines": 2
+      },
+      "thresholds": {
+        "severity": 7,
+        "high_reach_cells": 3
+      },
+      "weight": 44.642,
+      "tier": "tertiary"
+    },
+    {
+      "kind": "survived-mutants",
+      "target": "libs/core/src/pm/tools.ts",
+      "why": "2 mutants survived on the changed lines",
+      "inputs": {
+        "cells_reached": 4,
+        "uncovered_fraction": 0.222,
+        "history_weight": 1,
+        "mutants": 2
+      },
+      "thresholds": {
+        "severity": 6
+      },
+      "weight": 38.265,
+      "tier": "tertiary"
+    }
+  ]
+}

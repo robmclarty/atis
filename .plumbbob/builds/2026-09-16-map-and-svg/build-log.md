@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 11 — feat(core): rank notice candidates into the six-slot budget
+**Current step:** 12 — feat(core): assemble map.json through one pure buildMap
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -33,7 +33,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 8. feat(cli): read checkride's .check artifacts into evidence inputs
 - ☑ 9. feat(core): compute the changed set and reach by module hop
 - ☑ 10. feat(core): compute evidence and the flight category
-- ☐ 11. feat(core): rank notice candidates into the six-slot budget
+- ☑ 11. feat(core): rank notice candidates into the six-slot budget
 - ☐ 12. feat(core): assemble map.json through one pure buildMap
 - ☐ 13. feat(cli): add the atis command that writes map.json for a base ref
 - ☐ 14. chore(spike): generate and spot-check map.json for checkride's PR 4
@@ -60,6 +60,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [ ] a changed source file the coverage report never names yields no gap, so an uninstrumented new file can read as VFR; D27's gap rule needs a third state (unmeasured) or the notices step needs an 'untested changed file' candidate
 - [ ] core's CheckArtifacts is the .check contract but nothing proves apps/atis still satisfies it once step 12 stops importing every field; consider a type-level conformance assertion in apps/atis
 - [ ] computeEvidence runs computeReach once per changed file, which recomputes newCrossModule each time; harmless at spike scale, worth a narrow per-file reach export if a large PR shows up in step 14
+- [ ] notices.ts: the deleted-export `why` says "1 files still import it"; pluralise the consumer count
+- [ ] C1's struct rule, when it lands, scopes to shipped sources: tests under __tests__/ may import node:* to read fixtures (Rob, 2026-09-17)
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -625,3 +627,60 @@ folder, so it rides the branch into the PR.)*
   **5.** Three parks, and one of them is a real hole in D27
 
   D27 says a *gap* is a changed file with any uncovered changed executable line. A changed source file that the coverage report never names has no changed executable lines at all, so it has no gap, so an entirely uninstrumented new file reads as VFR. That is the literal rule and I built it, but vitest only emits uncovered files when `coverage.all` is on, so this is reachable on a real repo. Parked, because it wants either a third state (unmeasured) on the gap rule or an "untested changed file" notice candidate in step 11, and either is a decision rather than a build call. The other two parks are smaller: nothing currently proves `apps/atis` still satisfies `CheckArtifacts` once step 12 stops importing every field, and `computeEvidence` calls `computeReach` once per changed file (reusing D5's one implementation rather than walking again), which recomputes `newCrossModule` each time and is worth revisiting only if step 14 meets a large PR.
+
+- 2026-09-18 — step 11 checkpointed · 80486a57c — feat(core): rank notice candidates into the six-slot budget (1 drift, 14m)
+
+  **Summary**: `rankNotices` builds every candidate of §5.4 plus D48's `other` group, scores each as severity scaled by reach, evidence gap and history, and keeps the six the map has room for. The ladder, the gates and the thresholds are all in `config.ts`, and every notice carries both the measurements and the coefficients that produced it, so a reviewer who disagrees argues with a number rather than with the tool.
+
+  1. Thirteen kinds cover §5.4's twelve rows, and the last row is two of them
+  2. Every coefficient is in `config.ts` and rides on the notice that used it
+  3. The ranking is one total order, so two runs and a shuffled input give one map
+  4. `evidence.ts` gained two exports, outside the seam
+  5. The D27 park is still open, and I did not close it here
+
+  **Readout**: Step 11 - feat(core): rank notice candidates into the six-slot budget
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored
+               - D23 (head-only-check), D28 (config-file), D9 (thresholds)
+               - D39 (two-graphs), D47 (dependency-delta), D48 (shore-groups), D45 (nested-cells)
+  constraints  11 of 11 honored
+  seam         strayed: 1 path outside the seam
+               → libs/core/src/evidence.ts
+  diff         +1040 -2 across 5 files
+  spent        14 min · 1 turn · 3s gate · green first run
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Recommendation**: Approve and checkpoint. `pnpm check` is green on all eight slots and the done-when is met clause by clause; the one thing worth your judgement is the park in highlight 5, which step 12 will build `buildMap` on top of either way.
+
+  **1.** Thirteen kinds cover §5.4's twelve rows, and the last row is two of them
+
+  The eleven rows of §5.4 and D48's `other` group produce thirteen kind strings, because §5.4's last row is two instruments in one line: a `package.json` delta and `security.json`. They have different targets, different `why` and different inputs, so `new-dependency` and `security-finding` are separate kinds; a notice reading "new dependency or security finding" would say neither. The test drives one scenario per row from a quiet repository and asserts that each fires its own kind and nothing else.
+
+  Two of the rows needed a rule the plan names but does not spell out. `deleted-export` follows D39 (base importers of a name missing from the head `exports[]`) with one refinement: a consumer whose head version no longer takes that name has already moved on and is not counted, which keeps a PR that removes an export *and* updates its callers from earning a severity-8 primary notice for work it already did. The one case that cannot be told apart is a deleted file, where a consumer that kept a broken import and one that removed it both leave no head edge; the base importer is kept and the comment says so. `interface-change` treats a changed file as interface when it is its cell's barrel *or* something outside the cell imports it, so nothing depends on a barrel existing (D45).
+
+  One rule I added that the done-when does not ask for: when a slot is red, it already names its findings on the map, so a candidate built from that same slot's own artifact and pointing at the same target is dropped rather than spending a second of the six (C7). It is narrow on purpose — only `dead`, `health` and `security` can be spoken for, and only by their own red slot — and a test pins both sides of it.
+
+  **2.** Every coefficient is in `config.ts` and rides on the notice that used it
+
+  `NoticeConfig` carries the severity ladder and every gate: fan-in high (the run's own `fan_in_p95` when `health.json` has one, else 7), deep band 4, large 100 lines, hot at churn 2 or a bug-fix rate of 0.3, bedrock at 365 days and churn 0.5, a ghost at rate 0.5 over 3 commits. The ladder runs 10 for a red slot down to the floor of 2 the step pins for co-change, bedrock and `other`; two pairs share a rung because they sit at the same altitude rather than because a number ran out, and the comment says which and why.
+
+  One number the step names but does not define is the history weight. I made it `churn_ratio + bugfix_rate`, both dimensionless and both absent-as-zero (C2), and put both in the notice's `inputs` rather than hiding a coefficient between them. Every notice echoes `cells_reached`, `uncovered_fraction` and `history_weight` in `inputs` and at least `severity` in `thresholds`, so the D28 echo is structural rather than per-kind.
+
+  **3.** The ranking is one total order, so two runs and a shuffled input give one map
+
+  Candidates sort by weight, then path, then kind, then `why`. The last of those is beyond the step's "path then kind", and it is there because two red slots can name one file and would otherwise tie completely. The six slots are an array of tiers, so the budget *is* the array: a seventh candidate has nowhere to go and a lone candidate is one primary with nothing behind it. The determinism test runs one input twice and then again with every list reversed, and all three stringify identically.
+
+  Worth knowing from the crowded fixture: a `cycle-or-boundary` notice outranked a red check slot there, because the file it names has churned four times its own length and one commit in two says "fix", and the history factor multiplies. That is the formula the step specifies doing its job rather than a bug, but it means the gate's own verdict is not automatically the primary notice, which the glance test in step 23 will judge.
+
+  **4.** `evidence.ts` gained two exports, outside the seam
+
+  The cycle-and-boundary candidate needs fallow's finding-path extraction, which already exists in `evidence.ts` as `pathsOf` and `structuralFindings`. Copying those thirty lines into `notices.ts` would give one tricky convention two homes, so I added the `export` keyword to each instead: two words, no behaviour change, and `pnpm check` covers it. It is the only file touched outside the four the seam names.
+
+  **5.** The D27 park is still open, and I did not close it here
+
+  Step 10 parked a real hole: a changed source file the coverage report never names has no changed executable lines, so it has no gap, so an entirely uninstrumented new file reads as VFR. The park says the fix is either a third state on D27's gap rule or an "untested changed file" candidate in this step. Neither is in the done-when's list of kinds, and inventing a fourteenth candidate would be deciding it rather than building it, so the hole is exactly where step 10 left it. One word from you turns it into a step; it is cheap to add once the shape is yours.
