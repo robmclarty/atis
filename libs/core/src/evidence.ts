@@ -346,7 +346,7 @@ export type CategoryInputs = {
  * applied to the findings themselves: a finding shape atis does not know names
  * nothing, and its slot falls back to `global` rather than to a guess.
  */
-function pathsOf(finding: unknown): readonly string[] {
+export function pathsOf(finding: unknown): readonly string[] {
   if (!isRecord(finding)) return [];
   const paths: string[] = [];
   for (const key of PATH_KEYS) {
@@ -365,7 +365,7 @@ function pathsOf(finding: unknown): readonly string[] {
 }
 
 /** The findings that are a cycle or a boundary violation, which is what §5.3 calls LIFR when one touches the change. */
-function structuralFindings(dead: Dead | undefined): readonly unknown[] {
+export function structuralFindings(dead: Dead | undefined): readonly unknown[] {
   if (dead === undefined) return [];
   return [...dead.circular_dependencies, ...dead.re_export_cycles, ...dead.boundary_violations];
 }

@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 10 — feat(core): compute evidence and the flight category
+**Current step:** 11 — feat(core): rank notice candidates into the six-slot budget
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -32,7 +32,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 7. feat(history): mine git log into churn, age, bug-fix rate and co-change
 - ☑ 8. feat(cli): read checkride's .check artifacts into evidence inputs
 - ☑ 9. feat(core): compute the changed set and reach by module hop
-- ☐ 10. feat(core): compute evidence and the flight category
+- ☑ 10. feat(core): compute evidence and the flight category
 - ☐ 11. feat(core): rank notice candidates into the six-slot budget
 - ☐ 12. feat(core): assemble map.json through one pure buildMap
 - ☐ 13. feat(cli): add the atis command that writes map.json for a base ref
@@ -571,3 +571,57 @@ folder, so it rides the branch into the PR.)*
   **5.** Nine tests, the six the plan named plus three edges
 
   The planned six are the three-cell chain at hops 0/1/2 with `via`, the contained change, the deleted file reached through base edges, the new cross-cell import against an edited old one, the barrel-less directory cell, and the package cell that costs no hop of its own. The three I added are the diamond above, the barrel-bypassing import from highlight 2, and one placement test covering cells, barrels, all four shore groups a real PR hits, the `tests` group and the residual. Each builds its fixture through the real `identifyModules` and `identifyGroups` rather than a hand-written cell list, so the cell ids and barrels in the assertions are the ones step 12 will actually see.
+
+- 2026-09-18 — step 10 checkpointed · 330effb3b — feat(core): compute evidence and the flight category (1 drift, 17m)
+
+  **Summary**: `libs/core/src/evidence.ts` now turns a change and a `.check/` run into the two things the map opens with: the evidence on each changed file (which of its changed executable lines the tests covered, which mutants are still alive on them, which test files stitch it to a result) and the flight category, §5.3's ladder walked worst-first with D27's numbers. Eighteen tests pin it, one fixture per category plus NOINST, and the `.check/` input contract moved into core so the reader in `apps/atis` conforms to one declaration instead of a second copy.
+
+  1. Evidence reads the head-side hunks, and a channel the run did not produce is simply absent
+  2. The category is a ladder, and its one number is now config
+  3. A red slot's scope comes from fallow's real shapes, not its documented ones
+  4. The `.check/` contract moved into core, which put one file outside the seam
+  5. Three parks, and one of them is a real hole in D27
+
+  **Readout**: Step 10 - feat(core): compute evidence and the flight category
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored
+               - D27 (category-defaults): the one number, `high_reach_cells: 3`, in config.ts
+               - D41 (artifact-trust): `harness_broken` is LIFR, an absent `.check/` is NOINST
+               - D39 (two-graphs): stitches walk base edges for a deleted file, head for the rest
+  constraints  11 of 11 honored
+  seam         strayed: 1 path outside the seam
+               → apps/atis/src/sources/check.ts
+  diff         +889 -70 across 5 files
+  spent        17 min · 1 turn · 3s gate · green first run
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Recommendation**: Approve and checkpoint. `pnpm check` is green on all eight slots, the done-when is met clause by clause, and the one thing worth your judgement is park 1: whether D27's gap rule should grow an unmeasured state before step 11 builds notices on top of it.
+
+  **1.** Evidence reads the head-side hunks, and a channel the run did not produce is simply absent
+
+  `computeEvidence` joins each changed file's hunks to three instruments independently. Patch coverage takes the statements whose start line falls in a hunk and folds them onto lines the way istanbul's own `getLineCoverage` does, taking the highest hit count of the statements starting on a line, so a line two statements share is covered when either ran and `changed_executable` counts lines rather than statements, which is what step 18 draws the closed fraction of the membrane from. Mutation is joined to the hunk lines rather than to the covered ones, so survived and no-coverage mutants still report when coverage is missing: they are separate instruments and C2 says a missing one mutes itself rather than poisoning its neighbour. Stitches come from the import graph and take their status from `test.json`; a test the report never names is `unknown` rather than a pass.
+
+  Each of the three keys on `weather.evidence` is present only when its channel is, so a git-only map carries `{}` there and says nothing about coverage rather than saying zero. A test asserts exactly that with `Object.keys`.
+
+  **2.** The category is a ladder, and its one number is now config
+
+  `computeCategory` checks, in order: a summary that ran no check at all (vacuous green, LIFR), a cycle or boundary violation naming a changed file (LIFR), any red slot (IFR), a gap on a file whose reach touches three or more cells (IFR), any gap or escaped interface (MVFR), else VFR. No `.check/` is NOINST and is never green; a `summary.json` that claimed schema 1 and then failed its shape comes back from step 8 as `git-only` with the reason `harness_broken`, and that one reason is LIFR rather than NOINST, which is the line D41 draws between a broken harness and an absent one.
+
+  D27's only number, *high reach* at three cells, is `config.category.high_reach_cells` in `config.ts`, so step 11 can echo it beside the notice it produced. *Gap* and *escaped interface* are shapes rather than numbers and needed none. An escaped interface is measured the way D45 measures a hop, by innermost cell, and a test importer is evidence rather than a consumer, so it does not count.
+
+  **3.** A red slot's scope comes from fallow's real shapes, not its documented ones
+
+  D27 scopes a red `test`, `health`, `dead` or `dupes` slot to the paths its own raw output names. Rather than guess, I ran fallow 3.22 against a throwaway repo with a real cycle, a real boundary violation and a real clone family, because the committed fixture has all of those arrays empty and the shipped `cli-reference.md` documents the schema-7 shapes. At schema 9 a circular dependency carries `files[]` and `edges[].path` (not the documented `cycle[]`), a boundary violation carries `from_path` and `to_path`, and a clone family carries `files[]` plus `groups[].instances[].file`. `pathsOf` reads that fixed key set and nothing else, so a finding shape atis does not know names nothing and its slot falls back to `global` rather than to a guess, which is D41's "read by key, never reject on the number" applied to the findings themselves.
+
+  **4.** The `.check/` contract moved into core, which put one file outside the seam
+
+  Core computes evidence from `.check/` data but cannot import the reader that gathers it (C1, and fallow's `libs → libs` boundary rule enforces it). That leaves two options: core redeclares the eleven artifact types, or core owns them and `apps/atis` imports them. I took the second. `libs/core/src/evidence.ts` now declares `CheckArtifacts` and its parts, `apps/atis/src/sources/check.ts` imports them and keeps `CheckInputs` as an alias so its own tests are untouched, and the file gets 60 lines shorter. This is the same shape as `history.ts` owning `Commit` while the git runner produces it. The cost is one file outside the declared seam, which the seam row will name; the alternative was two declarations of one contract that have to be kept in sync by hand, with no compiler anywhere checking that they agree.
+
+  **5.** Three parks, and one of them is a real hole in D27
+
+  D27 says a *gap* is a changed file with any uncovered changed executable line. A changed source file that the coverage report never names has no changed executable lines at all, so it has no gap, so an entirely uninstrumented new file reads as VFR. That is the literal rule and I built it, but vitest only emits uncovered files when `coverage.all` is on, so this is reachable on a real repo. Parked, because it wants either a third state (unmeasured) on the gap rule or an "untested changed file" notice candidate in step 11, and either is a decision rather than a build call. The other two parks are smaller: nothing currently proves `apps/atis` still satisfies `CheckArtifacts` once step 12 stops importing every field, and `computeEvidence` calls `computeReach` once per changed file (reusing D5's one implementation rather than walking again), which recomputes `newCrossModule` each time and is worth revisiting only if step 14 meets a large PR.

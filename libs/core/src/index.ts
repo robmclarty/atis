@@ -9,5 +9,6 @@ export * from './evidence.js';
 export * from './groups.js';
 export * from './history.js';
 export * from './modules.js';
+export * from './notices.js';
 export * from './reach.js';
 export * from './schema.js';
