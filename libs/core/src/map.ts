@@ -7,9 +7,9 @@
  * (C1), so the clock is an input too, and it decides nothing the parts have
  * not already settled: it rekeys the base terrain by the diff's renames
  * (D40), names the graph each computation runs on (D39), and composes
- * modules, depth, history, reach, evidence and notices in that order. Every
- * list leaves sorted (C3), and `terrain.layout` is absent until step 15 gives
- * core a layout to put there (D24).
+ * modules, depth, history, reach, evidence and notices in that order, and
+ * finally lays the terrain out on the field every renderer draws (D24). Every
+ * list leaves sorted (C3).
  */
 
 import { DEFAULT_CONFIG } from './config.js';
@@ -21,6 +21,7 @@ import type { CheckArtifacts, Dupes, Health } from './evidence.js';
 import { OTHER_GROUP, identifyGroups } from './groups.js';
 import { computeHistory } from './history.js';
 import type { Commit, CommitFile, FileHistory } from './history.js';
+import { computeLayout } from './layout/index.js';
 import { classifyFile, identifyModules } from './modules.js';
 import type { ImportEdge, ModuleCell, Modules, ScannedFile } from './modules.js';
 import { findGhosts, rankNotices } from './notices.js';
@@ -461,8 +462,13 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
     history: new Map(history.files.map((file) => [file.path, file] as const)),
   };
   const cells = assembleCells(modules, edges, signals);
+  const organelles = assembleOrganelles(modules, signals);
   const deps_added = [...inputs.deps_added].toSorted((a, b) => byPath(a.manifest, b.manifest) || byPath(a.name, b.name));
   const ghosts = findGhosts(history.cochange, inputs.diff.map((file) => file.path), config.notices);
+  // Last, because the field is drawn over everything above it: the terrain
+  // settles from the base alone and the added files find their place after
+  // it, so the weather never moves the ground (D32).
+  const layout = computeLayout({ organelles, edges, bands: depths.bands, groups, added });
 
   return {
     meta: {
@@ -477,7 +483,7 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
     },
     terrain: {
       cells,
-      organelles: assembleOrganelles(modules, signals),
+      organelles,
       bands: depths.bands,
       groups,
       edges_exceptional: exceptionalEdges(
@@ -486,6 +492,7 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
         new Set(modules.organelles.map((organelle) => organelle.path)),
       ),
       history: { window_commits: history.window_commits, cochange: history.cochange },
+      layout,
     },
     weather: {
       changed: reach.changed,

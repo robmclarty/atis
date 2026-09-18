@@ -9,5 +9,11 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     }
+  },
+  "dependencies": {
+    "d3-force": "3.0.0"
+  },
+  "devDependencies": {
+    "@types/d3-force": "3.0.10"
   }
 }

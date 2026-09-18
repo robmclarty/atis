@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 14 — chore(spike): generate and spot-check map.json for checkride's PR 4
+**Current step:** 15 — feat(core): lay out organelles within bands with a seeded force simulation
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -36,7 +36,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 11. feat(core): rank notice candidates into the six-slot budget
 - ☑ 12. feat(core): assemble map.json through one pure buildMap
 - ☑ 13. feat(cli): add the atis command that writes map.json for a base ref
-- ☐ 14. chore(spike): generate and spot-check map.json for checkride's PR 4
+- ☑ 14. chore(spike): generate and spot-check map.json for checkride's PR 4
 - ☐ 15. feat(core): lay out organelles within bands with a seeded force simulation
 - ☐ 16. feat(core): draw cell membranes as Bubble Set contours over the layout
 - ☐ 17. feat(svg): render the field, terraces, membranes and organelles
@@ -792,3 +792,71 @@ folder, so it rides the branch into the PR.)*
   **5.** One stray, and a model note
 
   `apps/atis/src/__tests__/index.test.ts` is outside the declared seam. It had three tests calling `run(['--version'])` against the placeholder `run(argv)`, and `run` no longer takes argv, so those moved to `cli.test.ts` where they now exercise the built bin; what stays is the manifest check and a new assertion that `USAGE` names every flag `cli.ts` parses. Two declared seam paths needed no edit: `fallow.toml` already lists `apps/atis/src/cli.ts` as an entry and globs the tests, and `apps/atis/package.json` already points `bin` at `dist/cli.js`. The step recommended `sonnet` and this ran on Opus 5; I should have flagged that before implementing rather than here.
+
+- 2026-09-18 — step 14 checkpointed · a831f431a — chore(spike): generate and spot-check map.json for checkride's PR 4 (12m)
+
+  **Summary**: All four spot-check rows are ✓, and the two that could be exact are exact: atis's changed set is git's, eleven for eleven, and its reach set for `src/pm/tools.ts` is fallow's impact closure minus test files, thirty-two for thirty-two with an empty symmetric difference. Patch coverage is 12 of 12 against `coverage-final.json` counted by hand, and the `src/pm/index.ts` interface change is not merely in the top three but the primary notice. The spike also did what a spike is for and found three problems, all parked: a symlinked `--repo` path silently empties the coverage channel, the tertiary notice tier is ranked by the alphabet, and the red `security` slot that sets this fixture's IFR category is today's advisory database rather than anything PR 4 did.
+
+  1. Four rows checked, and the two that could be exact are exact
+  2. A symlinked repo path silently empties the coverage channel
+  3. The tertiary notice tier is ranked by the alphabet
+  4. The IFR category is today's advisory database, not PR 4
+  5. meta.repo is the directory's basename, so the worktree must be named for the repo
+
+  **Readout**: Step 14 - chore(spike): generate and spot-check map.json for checkride's PR 4
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored:
+               - D29 (spike-target), D52 (reach-from-scan), D41 (artifact-trust)
+               - D22 (local-fallow), D25 (base-semantics), D24 (layout-in-core), D23 (head-only-check)
+  constraints  11 of 11 honored
+  seam         held: 2 of 2 declared, no strays
+  diff         +7079 -0 across 3 files
+  spent        12 min · 1 turn · 9s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Approve and checkpoint. The four rows the plan asked for are ✓ with reproducible evidence behind each, two of them exact set equality against an outside oracle, and the three problems the spike turned up are parked for `/plumbbob:refine` rather than smuggled into a step whose seam is two files. Step 15 starts the layout and wants opus.
+
+  **1.** Four rows checked, and the two that could be exact are exact
+
+  The done-when asked for four rows, each ✓ with the command behind it, and `docs/spike.md` carries them with the evidence rather than the verdict alone.
+
+  **The changed set** is eleven paths, ten modified and one added, matching `git diff --name-status fee5ed6...ae5078c` exactly, with `added`/`deleted` summing to +473 −21 — the same size D29 recorded for the PR. The half git cannot check is where each file landed: three on terrain (two single-file cells and `folder:src/pm`), four on the `docs` and `prompts` shores, three test files in the `tests` group, which is how a changed test names exactly one cell or group (D48) while staying a stitch and never an organelle (D4).
+
+  **The reach set** is the strong row. fallow returns 56 files in `affected_not_shown`; removing the 24 test files leaves 32. atis returns 33 reach entries when the diff is narrowed to `src/pm/tools.ts` alone; removing the seed itself, which fallow reports separately, leaves 32. The symmetric difference is empty — nothing in one that the other lacks. The narrowing was done by running the shipped pipeline with `diff.changed` filtered to that one path, so the code under test is `computeReach` as it ships and not a re-implementation. What atis has beyond the flat list is D5's attenuation: 2 files at 0 hops, 13 at 1, 8 at 2, 10 at 3, each carrying the barrels crossed. That is exactly the thing D52 says the oracle cannot witness, so the oracle proves set equality and then stops.
+
+  **Patch coverage** had one subtlety worth the "by eye" the plan asked for. istanbul's `statementMap` for `src/pm/tools.ts` holds 15 statements, all inside the file's single hunk and none with a zero hit count; atis reports `changed_executable: 12`. Fifteen against twelve is right: lines 30, 66 and 68 each carry two statements, and step 10 counts changed executable *lines*. I did the same arithmetic by hand over the other three changed files with coverage and all three agree — `src/doctor.ts` 4 of 4 over six hunks, `src/orchestrator.ts` 9 of 9 over three, and `src/pm/index.ts` 0 of 0, a barrel of pure re-exports having no executable line in its hunks, which is an absent measurement and not a zero-percent one (C2).
+
+  **The interface change** ranks first, carrying the numbers that put it there: `fan_in: 8` against a threshold of 6 read from `health.json`'s `fan_in_p95`, `band: 4` against a deep-band threshold of 4, `cells_reached: 14`, history weight 1.773. The budget came out 1 + 2 + 3 with more candidates than slots, so C7 is filled rather than padded.
+
+  **2.** A symlinked repo path silently empties the coverage channel
+
+  The first run produced `weather.evidence.patch_coverage: []`, with no reason given, on a repository whose `.check/coverage/coverage-final.json` holds 52 files including every changed one.
+
+  macOS is the cause. `/tmp` is a symlink to `/private/tmp`, istanbul writes absolute keys under the resolved path, and `relativeToRepo` in `apps/atis/src/sources/check.ts` computes `relative('/tmp/…', '/private/tmp/…')`, gets a `../../..` path, and falls back to keeping the key absolute. Nothing then joins to a repo-relative changed path, so coverage and stitches both come back empty. Passing the resolved path restores 4 patch-coverage entries and 9 stitches.
+
+  It fakes nothing, so C2 holds by the letter, but a wrongly muted channel is worse than an absent one because it cannot be told apart from a repository with no tests at all. A `realpathSync` on `--repo` in `run.ts` is the fix; it is parked rather than done here because `apps/atis/src/` is outside this step's seam. The fixture is generated from the resolved path in the meantime, which is why the README's command reads `pwd -P`, and `docs/spike.md` records the whole diagnosis so the repair does not have to rediscover it.
+
+  **3.** The tertiary notice tier is ranked by the alphabet
+
+  Four candidates tied at weight 2 — `README.md`, `other`, `package.json` and `src/pm/translate.ts` — for three tertiary slots. The tie-break is `byPath`, so `R` beat `o` beat `p` beat `s`, and `src/pm/translate.ts` was cut.
+
+  That is the wrong one to cut. It is a source file inside the very cell the PR changes, and it co-changes with `src/__tests__/pm.test.ts` at rate 0.857 over 6 commits, against 0.5 over 4 for the `README.md` that took a slot instead. The cause is in `score()`: it multiplies severity by reach, uncovered fraction and history weight, and a file that did *not* change has none of the three, so every missing-cochange candidate scores its bare severity and the alphabet does the rest of the ranking. The attention budget is the product (P1, C7), and spending two of three tertiary slots on markdown housekeeping while dropping a source file in the changed cell is that budget being spent badly, deterministically. Feeding a ghost's `rate` and `support` into its weight is the obvious repair and is a `config.ts` and `notices.ts` change, not a schema one. Parked.
+
+  **4.** The IFR category is today's advisory database, not PR 4
+
+  `pnpm check --all --skip mutation` is what the done-when specified, and on a 2026 lockfile its `security` slot runs `pnpm audit` against the advisory database as it stands today: 15 findings, 5 moderate and 10 high. That red slot is what makes the map IFR, and it produces the third-ranked notice.
+
+  The map is honest about it — the notice reads *the `security` check is red for the whole repository*, scoped `global` — and the ranking handles it rather well, which is worth noticing on its own. `red-check-slot` carries the highest severity in the config, 10 against the interface change's 8, and still lands third, because a global slot failure reaches no cell and has no history and so scores its bare severity, while a deep barrel that fourteen cells read is amplified to 82.3. The map's answer to "what should I look at" is the barrel, and the red gate slot is reported without being allowed to shout down a change it has nothing to do with.
+
+  The problem is downstream. Step 22 generates five of these fixtures and step 23 asks readers to judge merge or hold from them; a category carrying an audit the PR did not cause will collect holds for the wrong reason. Parked as a call for step 22: skip `security` beside `mutation`, or record the caveat in each README. This fixture's README records it.
+
+  **5.** meta.repo is the directory's basename, so the worktree must be named for the repo
+
+  `run.ts` fills `meta.repo` with `basename(resolve(options.repo))`. The first worktree was at `/tmp/atis-spike-cr-pr4`, so the map came out carrying `"repo": "atis-spike-cr-pr4"`. I regenerated it from a worktree named `checkride` and the fixture now reads `"repo": "checkride"`, but step 22 does this five more times and the trap is one careless path away each time. Parked, with reading the name from the origin remote as the alternative.
+
+  Two properties nobody asked for held while I was there, and both are in the doc: two runs produced byte-identical files at 185,534 bytes once `generated_at` was blanked (C3), and the command exited 0 on a map it wrote while the reviewed repository's own `pnpm check` exited 1 (C4). Wall time was 2.67 seconds across the eight measured sources, 1.97 of it the two TypeScript scans; the history window was 0.47 but over only 182 commits against D8's cap of 5,000, so that number says little and the doc says so rather than dressing it up as a D50 data point.

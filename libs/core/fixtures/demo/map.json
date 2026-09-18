@@ -800,6 +800,133 @@
           "support": 1
         }
       ]
+    },
+    "layout": {
+      "width": 480,
+      "height": 660,
+      "shore": {
+        "y0": 0,
+        "y1": 84
+      },
+      "bands": [
+        {
+          "index": 0,
+          "y0": 84,
+          "y1": 180
+        },
+        {
+          "index": 1,
+          "y0": 180,
+          "y1": 276
+        },
+        {
+          "index": 2,
+          "y0": 276,
+          "y1": 372
+        },
+        {
+          "index": 3,
+          "y0": 372,
+          "y1": 468
+        },
+        {
+          "index": 4,
+          "y0": 468,
+          "y1": 564
+        },
+        {
+          "index": 5,
+          "y0": 564,
+          "y1": 660
+        }
+      ],
+      "positions": {
+        ".gitignore": {
+          "x": 165,
+          "y": 33,
+          "r": 4
+        },
+        "README.md": {
+          "x": 49,
+          "y": 33,
+          "r": 4
+        },
+        "apps/cli/package.json": {
+          "x": 223,
+          "y": 33,
+          "r": 4
+        },
+        "apps/cli/src/doctor.ts": {
+          "x": 151.41,
+          "y": 259.97,
+          "r": 13.03
+        },
+        "apps/cli/src/index.ts": {
+          "x": 179.04,
+          "y": 163.38,
+          "r": 7.04
+        },
+        "libs/core/package.json": {
+          "x": 241,
+          "y": 33,
+          "r": 4
+        },
+        "libs/core/src/index.ts": {
+          "x": 147.55,
+          "y": 340.7,
+          "r": 6.32
+        },
+        "libs/core/src/pm/index.ts": {
+          "x": 121.66,
+          "y": 438.68,
+          "r": 7.45
+        },
+        "libs/core/src/pm/legacy.ts": {
+          "x": 112.15,
+          "y": 488.32,
+          "r": 8.16
+        },
+        "libs/core/src/pm/slots.ts": {
+          "x": 105.76,
+          "y": 515.56,
+          "r": 9.82
+        },
+        "libs/core/src/pm/tools.ts": {
+          "x": 110.88,
+          "y": 545.01,
+          "r": 10.07
+        },
+        "libs/core/src/util/format.ts": {
+          "x": 64.7,
+          "y": 618.24,
+          "r": 8.47
+        },
+        "libs/core/src/util/text.ts": {
+          "x": 47.77,
+          "y": 590.2,
+          "r": 7.77
+        },
+        "notes.xyz": {
+          "x": 299,
+          "y": 33,
+          "r": 4
+        },
+        "package.json": {
+          "x": 223,
+          "y": 51,
+          "r": 4
+        },
+        "pnpm-workspace.yaml": {
+          "x": 241,
+          "y": 51,
+          "r": 4
+        },
+        "tsconfig.json": {
+          "x": 107,
+          "y": 33,
+          "r": 4
+        }
+      }
     }
   },
   "weather": {

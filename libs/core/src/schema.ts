@@ -69,10 +69,12 @@ export type LayoutBand = { readonly index: number; readonly y0: number; readonly
 export type Layout = {
   readonly width: number;
   readonly height: number;
+  /** The shore strip, above band 0: land above the abyss (D48). */
   readonly shore: { readonly y0: number; readonly y1: number };
   readonly bands: readonly LayoutBand[];
   readonly positions: Readonly<Record<string, Position>>;
-  readonly contours: Readonly<Record<string, readonly (readonly [number, number])[]>>;
+  /** One closed contour per cell and per non-empty shore group; absent until step 16 draws them. */
+  readonly contours?: Readonly<Record<string, readonly (readonly [number, number])[]>>;
 };
 
 export type Terrain = {

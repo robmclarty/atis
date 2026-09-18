@@ -75,7 +75,9 @@ test('the demo map reads its terrain from the base and its weather from the head
     { from: 'libs/core/src/util/text.ts', to: 'libs/core/src/util/format.ts', kind: 'cycle' },
   ]);
 
-  expect(map.terrain.layout).toBeUndefined();
+  // The terraces the bands were quantised into are the strips the field is
+  // drawn on, in the same order (D24); step 16 adds the membranes over them.
+  expect(map.terrain.layout?.bands.map((band) => band.index)).toEqual([0, 1, 2, 3, 4, 5]);
   expect(map.meta.instruments).toEqual({ mode: 'check', fallow_schemas: { health: 9, dead: 9, dupes: 9 } });
 });
 
