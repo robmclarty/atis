@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 17 — feat(svg): render the field, terraces, membranes and organelles
+**Current step:** 18 — feat(svg): render the weather layer over the terrain
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -39,7 +39,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 14. chore(spike): generate and spot-check map.json for checkride's PR 4
 - ☑ 15. feat(core): lay out organelles within bands with a seeded force simulation
 - ☑ 16. feat(core): draw cell membranes as Bubble Set contours over the layout
-- ☐ 17. feat(svg): render the field, terraces, membranes and organelles
+- ☑ 17. feat(svg): render the field, terraces, membranes and organelles
 - ☐ 18. feat(svg): render the weather layer over the terrain
 - ☐ 19. feat(svg): render the notice labels and the HUD grade blocks
 - ☐ 20. feat(cli): add --svg and --open to write and show the static render
@@ -71,6 +71,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [ ] on synthetic fields packed at the collide pad (480 to 2000 files) the bubble-set routing leaves a neighbour's centre under a skin a handful of times even after the harder second cut; revisit the field or the layout's cell spacing if a step-22 repo shows one
 - [ ] a root vitest.config.ts is terrain: it draws as a one-file directory cell named '.' on band 0 (with an empty package:. beside it) because classifyFile sends every .ts to terrain before D48's config rule (*.config.*) can claim it; decide whether TypeScript config files are shore
 - [ ] svg: draw a cell's own dents and clone_family on its membrane (§5.1 names cells too; step 17 drew them on organelles only, as the done-when scoped)
+- [ ] svg: added and modified stains are the same disc, told apart only by data-kind; if the glance test wants them distinct, a rim or a value is the change
+- [ ] svg: global storm markers hang at the field's top-right corner; step 19's HUD may want that corner and can move them through STORM_INSET
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -965,3 +967,57 @@ folder, so it rides the branch into the PR.)*
   **5.** Two paths outside the seam: map.ts hands the cells to the layout, and layout.test.ts asserted the contours were absent
 
   `buildMap` had to pass `cells` into `computeLayout`, one word on one line of `libs/core/src/map.ts`. Step 15's test carried `expect(layout.contours).toBeUndefined()`, which this step makes false, and its fixture needed cells for the new input; it now asserts one contour per cell, and its empty-field case expects an empty `contours` record beside the empty `positions` one. Both are the diff touching what the seam did not name.
+
+- 2026-09-18 — step 17 checkpointed · 00b8ce693 — feat(svg): render the field, terraces, membranes and organelles (18m)
+
+  **Summary**: `libs/svg` exists and `renderSvg(map)` turns a laid-out `map.json` into one still SVG: a near-black field, one faint strip and contour line per terrace with band 0 at the top, the shore above it with one dim skin and small-caps label per group that has a mark, one membrane path per cell stroked as thick as its interface over a translucent body, and one shape per organelle, a circle sized by mass or a polygon with a vertex pulled per dent, with the same small glyph on every member of a clone family. Every element goes through one `el` helper that escapes attributes and text, the palette is greyscale and dim and a test holds every colour in the output to that, the demo map renders a golden byte for byte, and the gate is green in full.
+
+  1. The renderer draws only what the map carries, and refuses a map that carries no layout
+  2. One `el` helper builds every element, so a file named `a<b>&"c".ts` survives the trip
+  3. The CLI's `svg` dependency waits for step 20, because fallow flags a dependency nothing imports
+  4. The golden is rendered from core's demo golden, read across the workspace rather than copied
+  5. Dents and clone glyphs are drawn on organelles only; the cell-level versions are parked
+
+  **Readout**: Step 17 - feat(svg): render the field, terraces, membranes and organelles
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored
+               - D33 (svg-package)
+               - D24 (layout-in-core)
+               - D48 (shore-groups)
+               - D13 (geometry)
+               - D11 (mood)
+               - D45 (nested-cells)
+               - D4 (tests-not-terrain)
+               - D35 (static-encodings)
+  constraints  11 of 11 honored
+  seam         held: 3 of 4 declared, no strays
+  diff         +879 -0 across 12 files
+  spent        18 min · 2 turns · 8s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Approve and checkpoint. The gate is green in full, every element the done-when names is drawn in the order it names and asserted on the demo map and on a hand-built one, the render was checked by eye, and the only seam path untouched is the CLI manifest, deferred to the step that imports the package.
+
+  **1.** The renderer draws only what the map carries, and refuses a map that carries no layout
+
+  `renderSvg` throws on a missing `terrain.layout` rather than laying anything out itself (D24). Every number it draws is read, not derived: an organelle's radius is the layout's `r`, which core made from `loc`, and the test asserts that a bigger file draws a bigger circle rather than recomputing one; a membrane's stroke width is core's own `membraneThickness(interface_size)`, the package's one runtime import and a workspace dependency, not a third-party one (C9); a contour is traced as `M…L…Z` from the points core stored. Membranes are drawn outermost first so a folder's skin lies over the skin of the package that holds it (D45), and the translucent fills stack where they nest, which is the nesting made visible. The terrace strips are one tone on purpose: darkening them by depth would spend luminance, which C11 keeps for evidence and reach, so the contour lines carry the terraces and position carries depth. The colours live in `tokens.ts` named by meaning, greyscale with a chroma of at most 20 and no channel above `#90`; two started a hair too blue and the test caught them.
+
+  **2.** One `el` helper builds every element, so a file named `a<b>&"c".ts` survives the trip
+
+  `el(tag, attrs, children)` returns a small `Markup` wrapper, and a plain string among the children is text: escaped, and kept inline so no whitespace lands inside a `<text>`. An attribute set to `undefined` is left out, which is how `data-reachable="false"` costs one expression, and numbers are written at two decimals with trailing zeros dropped, the layout's own precision, so the SVG reads and diffs like `map.json`. The round-trip test hand-builds a map with `src/<weird>&"q's".ts` as a file and cell id and a shore group named `docs & <notes>`, asserts the raw angle brackets never open a tag, and reads each string back through the inverse escape to the characters it left with.
+
+  **3.** The CLI's `svg` dependency waits for step 20, because fallow flags a dependency nothing imports
+
+  The seam names `apps/atis/package.json`, and the first pass added `svg: workspace:*` there so the lockfile would carry it now. Fallow's `unused-dependencies` rule is an error in `fallow.toml` and went red on it, since nothing in the CLI imports the package until step 20 wires `--svg`. Adding `svg` to fallow's ignore list would be a file outside the seam papering over a true finding, so the dependency was reverted: `apps/atis/package.json` is byte-identical to `main`, and the lockfile gains only the `libs/svg` importer. Step 20 adds the dependency beside the import that uses it; its one lockfile line will be a small stray there, since step 20's seam does not name the lockfile.
+
+  **4.** The golden is rendered from core's demo golden, read across the workspace rather than copied
+
+  `libs/svg/fixtures/demo/atis.svg` is 83 lines rendered from `libs/core/fixtures/demo/map.json`, which the test reads by relative path. P2 says every renderer draws the same terrain from one `map.json`, so the SVG golden is made from exactly the bytes core's golden test asserts, and a deliberate change to either is landed by regenerating both; a copy would drift from core's golden silently. The recipe is in the test header: `pnpm build`, then write `renderSvg(demo)` back over the file and read the diff. The render was checked by eye at 2× in headless Chromium: the package skin holds the `pm/` folder's skin, `tools.ts` with two dents shows two teeth at top and bottom, the one-dent `util/` files read as teardrops, and both `family-1` members carry the double bar.
+
+  **5.** Dents and clone glyphs are drawn on organelles only; the cell-level versions are parked
+
+  §5.1 gives cells `dents` and a `clone_family` too, and the demo's `package:libs/core` carries three dents and a family, but the done-when scopes the polygon and the glyph to `#organelles`, so a membrane carries its `data-kind` and its thickness and nothing else this step. That is parked as one line rather than built. Two smaller calls in the same spirit: an unreachable organelle gets `data-reachable="false"` and no invented look, since D26 already puts it in the deepest band and C2 forbids faking a channel; and the `tests` group, whose files got no place on the field (D4), draws no block, no label and no empty contour.

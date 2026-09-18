@@ -4,9 +4,9 @@
  * The renderer reads the map and nothing else: no git, no `.check/`, no DOM,
  * no layout of its own (D24). The image is `#world`, the organic material of
  * §5.6, built bottom up in one order: the field, the terraces, the shore, the
- * membranes, the organelles. The weather and the chrome are drawn over it in
- * the steps that follow. It is the same bytes for the same map (C3), and it
- * animates nothing (C10).
+ * membranes, the organelles, and over all of it the weather. The chrome is
+ * drawn in the step that follows. It is the same bytes for the same map (C3),
+ * and it animates nothing (C10).
  */
 
 import type { MapJson } from 'core';
@@ -14,6 +14,7 @@ import type { MapJson } from 'core';
 import { el, num, serialize } from './el.js';
 import { drawField, drawMembranes, drawOrganelles, drawShore, drawTerraces } from './terrain.js';
 import { FONT_FAMILY } from './tokens.js';
+import { drawWeather } from './weather.js';
 
 const XMLNS = 'http://www.w3.org/2000/svg';
 
@@ -33,6 +34,7 @@ export function renderSvg(map: MapJson): string {
     drawShore(map.terrain, layout),
     drawMembranes(map.terrain, layout),
     drawOrganelles(map.terrain, layout),
+    drawWeather(map, layout),
   ]);
   return serialize(
     el(

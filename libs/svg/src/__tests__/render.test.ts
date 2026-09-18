@@ -225,7 +225,10 @@ test('every member of a clone family carries the same small glyph, and nobody el
 });
 
 test('the base tissue is greyscale and dim', () => {
-  const colours = [...new Set([...renderSvg(demo()).matchAll(/#([0-9a-f]{6})\b/g)].map(([, hex]) => hex ?? ''))];
+  // The terrain is everything before the weather, which is where the luminous marks begin.
+  const svg = renderSvg(demo());
+  const terrain = svg.slice(0, svg.indexOf('id="weather"'));
+  const colours = [...new Set([...terrain.matchAll(/#([0-9a-f]{6})\b/g)].map(([, hex]) => hex ?? ''))];
   expect(colours.length).toBeGreaterThan(4);
   for (const hex of colours) {
     const channels = [0, 2, 4].map((at) => Number.parseInt(hex.slice(at, at + 2), 16));

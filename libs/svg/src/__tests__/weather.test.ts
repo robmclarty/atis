@@ -1,0 +1,466 @@
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { assertMap } from 'core';
+import type { ChangedFile, Contour, ExceptionalEdge, MapJson, Organelle, Weather } from 'core';
+import { expect, test } from 'vitest';
+
+import { num } from '../el.js';
+import { GLOW_ID, HATCH_ID, STIPPLE_ID } from '../patterns.js';
+import { renderSvg } from '../render.js';
+import {
+  CHANGE_HUE,
+  EVIDENCE_LIGHT,
+  FIELD_FILL,
+  GHOST_PAD,
+  GHOST_STROKE,
+  IFR_HUE,
+  LIFR_HUE,
+  MUTANT_DENT_RADIUS,
+  RENAME_DASH,
+  RENAME_LABEL_SIZE,
+  STITCH_UNLIT,
+  STORM_INSET,
+  TEXTURE_INK,
+  TEXTURE_MAX_OPACITY,
+} from '../tokens.js';
+import { reachOpacity } from '../weather.js';
+
+/**
+ * The demo map is core's own golden, read across the workspace (P2, and see
+ * `render.test.ts`); it carries every weather channel at once. The small map
+ * below is hand-built for the cases the demo has none of: a rename, a global
+ * red slot, a stitch that passed, a map with git and nothing else.
+ */
+const HERE = dirname(fileURLToPath(import.meta.url));
+const CORE_FIXTURES = join(HERE, '..', '..', '..', 'core', 'fixtures');
+
+function demo(): MapJson {
+  return assertMap(JSON.parse(readFileSync(join(CORE_FIXTURES, 'demo', 'map.json'), 'utf8')));
+}
+
+/** The markup of one `<g id>` with everything nested in it, closed at its own indentation, which the serializer keeps one level per depth. */
+function group(svg: string, id: string): string | undefined {
+  const lines = svg.split('\n');
+  const start = lines.findIndex((line) => line.trimStart().startsWith(`<g id="${id}"`));
+  if (start === -1) return undefined;
+  const opening = lines[start] ?? '';
+  const indent = opening.slice(0, opening.length - opening.trimStart().length);
+  const end = lines.findIndex((line, index) => index > start && line === `${indent}</g>`);
+  return lines.slice(start, end + 1).join('\n');
+}
+
+function drawn(svg: string, id: string): string {
+  const markup = group(svg, id);
+  expect(markup, `#${id} is drawn`).toBeDefined();
+  return markup ?? '';
+}
+
+function count(markup: string, pattern: RegExp): number {
+  return [...markup.matchAll(pattern)].length;
+}
+
+type Point = { readonly x: number; readonly y: number };
+type Curve = { readonly start: Point; readonly control: Point; readonly end: Point };
+
+/** Which side of the line from start to end a curve's control point lies on: the sign, or 0 when it lies on the line. */
+function side(edge: Curve): number {
+  return Math.sign((edge.end.x - edge.start.x) * (edge.control.y - edge.start.y) - (edge.end.y - edge.start.y) * (edge.control.x - edge.start.x));
+}
+
+function escape(literal: string): string {
+  return literal.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+const A = 'src/a.ts';
+const B = 'src/b.ts';
+const CELL_A = 'single:src/a.ts';
+const CELL_B = 'single:src/b.ts';
+const DOC = 'docs/notes.md';
+const TEST = 'src/__tests__/a.test.ts';
+const AT_A = { x: 70, y: 105, r: 10 };
+const AT_B = { x: 170, y: 105, r: 10 };
+const AT_DOC = { x: 30, y: 25, r: 4 };
+
+function square(x: number, y: number, half: number): Contour {
+  return [
+    [x - half, y - half],
+    [x + half, y - half],
+    [x + half, y + half],
+    [x - half, y + half],
+    [x - half, y - half],
+  ];
+}
+
+const MODIFIED_A: ChangedFile = { path: A, kind: 'modified', cell: CELL_A, is_barrel: false, added: 3, deleted: 1, hunks: [{ start: 1, count: 3 }] };
+
+type Small = {
+  readonly weather?: Partial<Weather>;
+  readonly a?: Partial<Organelle>;
+  readonly edges?: readonly ExceptionalEdge[];
+};
+
+/** Two single-file cells, one doc on the shore, one test file with no place (D4), and whatever weather the case needs. */
+function small({ weather = {}, a = {}, edges = [] }: Small = {}): MapJson {
+  const map: MapJson = {
+    meta: {
+      schema_version: 1,
+      generated_at: '',
+      repo: 'small',
+      base: 'main',
+      head: 'a'.repeat(40),
+      merge_base: 'b'.repeat(40),
+      mode: 'change',
+      instruments: { mode: 'git-only', reason: 'no .check/' },
+    },
+    terrain: {
+      cells: [
+        { id: CELL_A, path: A, kind: 'single', organelles: [A], band: 0, interface_size: 1, body_loc: 20, dents: [] },
+        { id: CELL_B, path: B, kind: 'single', organelles: [B], band: 0, interface_size: 1, body_loc: 20, dents: [] },
+      ],
+      organelles: [
+        { id: A, path: A, cell: CELL_A, band: 0, reachable: true, loc: 20, dents: [], ...a },
+        { id: B, path: B, cell: CELL_B, band: 0, reachable: true, loc: 20, dents: [] },
+      ],
+      bands: [{ index: 0, depth_min: 0, depth_max: 0 }],
+      groups: [
+        { id: 'docs', files: [DOC] },
+        { id: 'tests', files: [TEST] },
+      ],
+      edges_exceptional: edges,
+      history: { window_commits: 0, cochange: [] },
+      layout: {
+        width: 240,
+        height: 160,
+        shore: { y0: 0, y1: 50 },
+        bands: [{ index: 0, y0: 50, y1: 160 }],
+        positions: { [DOC]: AT_DOC, [A]: AT_A, [B]: AT_B },
+        contours: { docs: square(AT_DOC.x, AT_DOC.y, 10), [CELL_A]: square(AT_A.x, AT_A.y, 25), [CELL_B]: square(AT_B.x, AT_B.y, 25) },
+      },
+    },
+    weather: {
+      changed: [],
+      reach: [],
+      evidence: {},
+      checks: { category: 'NOINST', checks_run: 0, slots: [] },
+      ghosts: [],
+      deps_added: [],
+      improvements: [],
+      ...weather,
+    },
+    notices: [],
+  };
+  return assertMap(map);
+}
+
+test('the weather is drawn inside the world after the organelles, its definitions first and its layers bottom up', () => {
+  const svg = renderSvg(demo());
+  const order = ['organelles', 'weather', 'reach', 'changed', 'history', 'evidence', 'edges', 'ghosts', 'storms'].map((id) => svg.indexOf(`id="${id}"`));
+  expect(order.every((at) => at >= 0)).toBe(true);
+  expect(order).toEqual([...order].toSorted((a, b) => a - b));
+  const weather = drawn(svg, 'weather');
+  // The definitions sit under #world, where a filter and a pattern belong (D12), and before anything paints with them.
+  expect(weather.indexOf('<defs>')).toBeLessThan(weather.indexOf('id="reach"'));
+  expect(svg.indexOf('<defs>')).toBeGreaterThan(svg.indexOf('id="world"'));
+  expect(count(svg, /<defs>/g)).toBe(1);
+});
+
+test('changed organelles and shore files are stained by kind, and a changed test file is nowhere on the field', () => {
+  const svg = renderSvg(demo());
+  const changed = drawn(svg, 'changed');
+  expect(changed).toContain(`fill="${CHANGE_HUE}" stroke="${CHANGE_HUE}"`);
+  const stains = [...changed.matchAll(/<circle data-id="([^"]+)" data-kind="(\w+)" cx="[\d.]+" cy="[\d.]+" r="([\d.]+)"([^/]*)\/>/g)].map(
+    ([, id, kind, r, rest]) => ({ id, kind, r: Number(r), rest: rest ?? '' }),
+  );
+  expect(stains.map((stain) => [stain.id, stain.kind])).toEqual([
+    ['README.md', 'modified'],
+    ['apps/cli/src/doctor.ts', 'modified'],
+    ['libs/core/src/pm/index.ts', 'modified'],
+    ['libs/core/src/pm/legacy.ts', 'deleted'],
+    ['libs/core/src/pm/tools.ts', 'added'],
+    ['notes.xyz', 'modified'],
+    ['package.json', 'modified'],
+  ]);
+  for (const stain of stains) {
+    // Added and modified are the hue through, with no rim of their own; deleted is the outline alone, the body gone.
+    if (stain.kind === 'deleted') expect(stain.rest).toBe(' fill="none"');
+    else expect(stain.rest).toBe(' stroke="none"');
+  }
+  // A shore file is stained at its own small mark, never drawn as an organelle (D48).
+  expect(stains.find((stain) => stain.id === 'README.md')?.r).toBe(4);
+  // The changed test file is a stitch, not a stain (D4).
+  expect(changed).not.toContain('pm.test.ts');
+});
+
+test('a renamed file is a dashed outline at its one position, labelled with the path it came from (D40)', () => {
+  const renamed: ChangedFile = { path: A, kind: 'renamed', from: 'src/old.ts', cell: CELL_A, is_barrel: false, added: 0, deleted: 0, hunks: [] };
+  const changed = drawn(renderSvg(small({ weather: { changed: [renamed] } })), 'changed');
+  expect(changed).toContain(`<circle data-id="${A}" data-kind="renamed" cx="70" cy="105" r="10" fill="none" stroke-dasharray="${RENAME_DASH}"/>`);
+  const label = /<text data-id="src\/a\.ts" x="([\d.]+)" y="([\d.]+)"[^>]*stroke="none">([^<]*)<\/text>/.exec(changed);
+  expect(label?.[3]).toBe('src/old.ts');
+  expect(Number(label?.[1])).toBeGreaterThan(AT_A.x + AT_A.r);
+  expect(Math.abs(Number(label?.[2]) - AT_A.y)).toBeLessThan(RENAME_LABEL_SIZE);
+});
+
+test('reach glows through a blur, fills each reached cell at an opacity strictly decreasing by hops, and lights each barrel it crossed', () => {
+  const map = demo();
+  const svg = renderSvg(map);
+  expect(svg).toMatch(new RegExp(`<filter id="${GLOW_ID}"[^>]*>\\s*<feGaussianBlur stdDeviation="[\\d.]+"/>`));
+  const reach = drawn(svg, 'reach');
+  expect(reach).toContain(`filter="url(#${GLOW_ID})"`);
+  const glows = [...reach.matchAll(/<path data-id="([^"]+)" data-hops="(\d+)" d="([^"]+)"( fill-rule="evenodd")? opacity="([\d.]+)"\/>/g)].map(
+    ([, id, hops, d, evenodd, opacity]) => ({ id: id ?? '', hops: Number(hops), holes: count(d ?? '', /Z/g) - 1, evenodd: evenodd !== undefined, opacity: Number(opacity) }),
+  );
+  // Every cell the reach enters, dimmest first, so the changed cell's light is laid last.
+  expect(glows.map((glow) => glow.id)).toEqual(['package:apps/cli', 'package:libs/core', 'folder:libs/core/src/pm', 'single:apps/cli/src/doctor.ts']);
+  expect(new Set(map.weather.reach.map((entry) => entry.cell))).toEqual(new Set(glows.map((glow) => glow.id)));
+  const at = (hops: number): number => glows.find((glow) => glow.hops === hops)?.opacity ?? Number.NaN;
+  expect(at(0)).toBeGreaterThan(at(1));
+  // A package's light is cut around the cells it holds (D45): the pm folder, reached, glows on its own; util, not reached, stays dark.
+  const core = glows.find((glow) => glow.id === 'package:libs/core');
+  expect(core?.evenodd).toBe(true);
+  expect(core?.holes).toBe(2);
+  expect(glows.find((glow) => glow.id === 'folder:libs/core/src/pm')?.evenodd).toBe(false);
+  // Each interface file crossed is lit at the crossing.
+  expect([...reach.matchAll(/<circle data-via="([^"]+)"/g)].map(([, via]) => via)).toEqual(['apps/cli/src/doctor.ts', 'libs/core/src/pm/index.ts']);
+  // The attenuation is strictly decreasing as written, two decimals and all, seven crossings out.
+  const written = Array.from({ length: 8 }, (_, hops) => Number(num(reachOpacity(hops))));
+  expect(written).toEqual([...written].toSorted((a, b) => b - a));
+  expect(new Set(written).size).toBe(written.length);
+});
+
+test('patch coverage closes each changed skin by covered over changed_executable, from the top clockwise, and leaves the rest dark', () => {
+  const evidence = drawn(renderSvg(demo()), 'evidence');
+  const skins = [...evidence.matchAll(/<g data-id="([^"]+)" data-covered="(\d+)" data-changed="(\d+)">([\s\S]*?)<\/g>/g)].map(
+    ([, id, covered, changed, body]) => ({ id, covered: Number(covered), changed: Number(changed), body: body ?? '' }),
+  );
+  expect(skins.map((skin) => [skin.id, skin.covered, skin.changed])).toEqual([
+    ['apps/cli/src/doctor.ts', 4, 7],
+    ['libs/core/src/pm/index.ts', 4, 9],
+    ['libs/core/src/pm/tools.ts', 7, 9],
+  ]);
+  for (const skin of skins) {
+    const closed = /stroke-dasharray="([\d.]+) 1"/.exec(skin.body)?.[1];
+    expect(Number(closed)).toBeCloseTo(skin.covered / skin.changed, 2);
+    // The open ring beneath is the field's own dark, so a gap reads as a gap even over a glowing cell.
+    expect(skin.body.indexOf(`stroke="${FIELD_FILL}"`)).toBeLessThan(skin.body.indexOf(`stroke="${EVIDENCE_LIGHT}"`));
+    expect(skin.body).toContain('pathLength="1"');
+    expect(skin.body).toMatch(/transform="rotate\(-90 /);
+  }
+});
+
+test('survived and no-coverage mutants are small dents in the changed skin', () => {
+  const map = demo();
+  const at = map.terrain.layout?.positions['libs/core/src/pm/tools.ts'];
+  expect(at).toBeDefined();
+  if (at === undefined) return;
+  const evidence = drawn(renderSvg(map), 'evidence');
+  const dents = [...evidence.matchAll(new RegExp(`<circle data-id="([^"]+)" data-line="(\\d+)" data-status="(\\w+)" cx="([\\d.]+)" cy="([\\d.]+)" r="([\\d.]+)" fill="${FIELD_FILL}"/>`, 'g'))].map(
+    ([, id, line, status, cx, cy, r]) => ({ id, line: Number(line), status, cx: Number(cx), cy: Number(cy), r: Number(r) }),
+  );
+  expect(dents.map((dent) => [dent.id, dent.line, dent.status])).toEqual([
+    ['libs/core/src/pm/tools.ts', 27, 'NoCoverage'],
+    ['libs/core/src/pm/tools.ts', 64, 'Survived'],
+  ]);
+  for (const dent of dents) {
+    expect(dent.r).toBe(MUTANT_DENT_RADIUS);
+    expect(Math.hypot(dent.cx - at.x, dent.cy - at.y)).toBeCloseTo(at.r, 1);
+    expect(dent.cy).toBeLessThan(at.y);
+  }
+  expect(dents[0]?.cx).not.toBe(dents[1]?.cx);
+});
+
+test('stitches are short strokes across the edge: torn in the IFR hue when the test failed, lit when it passed, unlit when it was not run', () => {
+  const map = demo();
+  const torn = [...drawn(renderSvg(map), 'evidence').matchAll(/<line data-id="([^"]+)" data-test="([^"]+)" data-status="failed" stroke="([^"]+)"/g)].map(
+    ([, id, by, stroke]) => ({ id, by, stroke }),
+  );
+  // The one failed test stitches three files, and each stitch is torn in two.
+  expect(torn.map((stitch) => stitch.id)).toEqual([
+    'libs/core/src/pm/index.ts',
+    'libs/core/src/pm/index.ts',
+    'libs/core/src/pm/legacy.ts',
+    'libs/core/src/pm/legacy.ts',
+    'libs/core/src/pm/tools.ts',
+    'libs/core/src/pm/tools.ts',
+  ]);
+  expect(new Set(torn.map((stitch) => stitch.by))).toEqual(new Set(['libs/core/src/__tests__/pm.test.ts']));
+  expect(new Set(torn.map((stitch) => stitch.stroke))).toEqual(new Set([IFR_HUE]));
+
+  const stitched = small({
+    weather: {
+      changed: [MODIFIED_A],
+      evidence: {
+        stitches: [
+          { test: 'src/__tests__/z.test.ts', targets: [A], status: 'unknown' },
+          { test: TEST, targets: [A], status: 'passed' },
+        ],
+      },
+    },
+  });
+  const lines = [...drawn(renderSvg(stitched), 'evidence').matchAll(/<line data-id="([^"]+)" data-test="([^"]+)" data-status="(\w+)" stroke="([^"]+)" x1="([\d.]+)" y1="([\d.]+)" x2="([\d.]+)" y2="([\d.]+)"\/>/g)].map(
+    ([, id, by, status, stroke, x1, y1, x2, y2]) => ({ id, by, status, stroke, inside: Math.hypot(Number(x1) - AT_A.x, Number(y1) - AT_A.y), outside: Math.hypot(Number(x2) - AT_A.x, Number(y2) - AT_A.y) }),
+  );
+  expect(lines.map((line) => [line.by, line.status, line.stroke])).toEqual([
+    [TEST, 'passed', EVIDENCE_LIGHT],
+    ['src/__tests__/z.test.ts', 'unknown', STITCH_UNLIT],
+  ]);
+  for (const line of lines) {
+    expect(line.inside).toBeLessThan(AT_A.r);
+    expect(line.outside).toBeGreaterThan(AT_A.r);
+  }
+});
+
+test('a red slot is a storm over the field when global and over each cell it names when scoped; green and skipped slots are no storm', () => {
+  const map = demo();
+  const svg = renderSvg(map);
+  const storms = drawn(svg, 'storms');
+  expect(storms).toContain(`fill="${IFR_HUE}"`);
+  const marks = [...storms.matchAll(/<g data-slot="(\w+)" data-over="([^"]+)">\s*<path d="[^"]+" transform="translate\(([\d.]+) ([\d.]+)\)"\/>\s*<text[^>]*>([^<]*)<\/text>/g)].map(
+    ([, slot, over, x, y, label]) => ({ slot, over: over ?? '', x: Number(x), y: Number(y), label }),
+  );
+  // `dead` names files in two cells; `test` names a test file, which hangs over the cells it stitches (D4).
+  expect(marks.map((mark) => [mark.slot, mark.over, mark.label])).toEqual([
+    ['dead', 'directory:libs/core/src/util', 'dead'],
+    ['dead', 'package:libs/core', 'dead'],
+    ['test', 'folder:libs/core/src/pm', 'test'],
+  ]);
+  for (const mark of marks) {
+    const top = Math.min(...(map.terrain.layout?.contours?.[mark.over] ?? []).map(([, y]) => y));
+    expect(mark.y).toBeLessThan(top);
+  }
+  // Only the red slots: the demo's six green ones and its skipped one hang nothing.
+  expect(count(storms, /data-slot=/g)).toBe(3);
+
+  const global = small({
+    weather: {
+      changed: [MODIFIED_A],
+      evidence: { stitches: [{ test: TEST, targets: [A], status: 'failed' }] },
+      checks: {
+        category: 'IFR',
+        checks_run: 5,
+        slots: [
+          { name: 'types', ok: true, skipped: false, scope: 'global' },
+          { name: 'lint', ok: false, skipped: false, scope: 'global' },
+          { name: 'security', ok: false, skipped: true, scope: 'global' },
+          { name: 'docs', ok: false, skipped: false, scope: [DOC] },
+          { name: 'test', ok: false, skipped: false, scope: [TEST] },
+        ],
+      },
+    },
+  });
+  const field = drawn(renderSvg(global), 'storms');
+  const over = [...field.matchAll(/<g data-slot="(\w+)" data-over="([^"]+)">/g)].map(([, slot, at]) => [slot, at]);
+  expect(over).toEqual([
+    ['docs', 'docs'],
+    ['lint', 'field'],
+    ['test', CELL_A],
+  ]);
+  // The global storm hangs at the field's top right corner, its label to the left of the bolt.
+  expect(field).toContain(`translate(${num(240 - STORM_INSET)} ${num(STORM_INSET)})`);
+  expect(field).toMatch(/<text [^>]*text-anchor="end">lint<\/text>/);
+});
+
+test('a ghost is a dashed outline round the untouched file that usually changes with these', () => {
+  const map = demo();
+  const at = map.terrain.layout?.positions['libs/core/src/util/format.ts'];
+  const ghosts = drawn(renderSvg(map), 'ghosts');
+  expect(ghosts).toContain(`stroke="${GHOST_STROKE}" stroke-dasharray=`);
+  expect(ghosts).toContain(
+    `<circle data-id="libs/core/src/util/format.ts" data-with="libs/core/src/pm/index.ts" data-rate="0.6" cx="${num(at?.x ?? 0)}" cy="${num(at?.y ?? 0)}" r="${num((at?.r ?? 0) + GHOST_PAD)}"/>`,
+  );
+  expect(count(ghosts, /<circle /g)).toBe(map.weather.ghosts.length);
+});
+
+test('churn is hatching and bug-fix rate is stipple, each at an opacity by value, and a zero or absent value is no texture', () => {
+  const svg = renderSvg(demo());
+  expect(svg).toMatch(new RegExp(`<pattern id="${HATCH_ID}" patternUnits="userSpaceOnUse"[^>]*>\\s*<path [^>]*stroke="${TEXTURE_INK}"`));
+  expect(svg).toMatch(new RegExp(`<pattern id="${STIPPLE_ID}" patternUnits="userSpaceOnUse"[^>]*>\\s*<circle [^>]*fill="${TEXTURE_INK}"`));
+  const history = drawn(svg, 'history');
+  const texture = (pattern: string, key: string): readonly (readonly [string, number, number])[] =>
+    [...history.matchAll(new RegExp(`<circle data-id="([^"]+)" ${key}="([\\d.]+)"[^>]*fill="url\\(#${pattern}\\)" fill-opacity="([\\d.]+)"/>`, 'g'))].map(
+      ([, id, value, opacity]) => [id ?? '', Number(value), Number(opacity)] as const,
+    );
+  const hatch = texture(HATCH_ID, 'data-churn');
+  const stipple = texture(STIPPLE_ID, 'data-bugfix');
+  expect(hatch.map(([id]) => id)).toEqual(['apps/cli/src/doctor.ts', 'libs/core/src/pm/index.ts', 'libs/core/src/pm/tools.ts']);
+  expect(stipple.map(([id]) => id)).toEqual(['apps/cli/src/doctor.ts', 'libs/core/src/pm/index.ts']);
+  // Hotter is more opaque, up to full.
+  const opacities = hatch.map(([, , opacity]) => opacity);
+  expect(opacities).toEqual([...opacities].toSorted((a, b) => b - a));
+  expect(opacities[0]).toBe(TEXTURE_MAX_OPACITY);
+  expect(opacities[2]).toBeLessThan(opacities[1] ?? 0);
+  // legacy.ts carries a bug-fix rate of zero and no churn; slots.ts carries neither. Neither is textured.
+  expect(history).not.toContain('legacy.ts');
+  expect(history).not.toContain('slots.ts');
+});
+
+test('the exceptional edges are the only lines drawn, importer to imported, and a cycle bows apart into a lens', () => {
+  const map = demo();
+  const svg = renderSvg(map);
+  const edges = drawn(svg, 'edges');
+  const paths = [...edges.matchAll(/<path data-from="([^"]+)" data-to="([^"]+)" data-kind="([\w-]+)" d="M([\d.]+) ([\d.]+)Q([\d.]+) ([\d.]+) ([\d.]+) ([\d.]+)" stroke="([^"]+)" marker-end="url\(#arrow-([\w-]+)\)"\/>/g)].map(
+    ([, from, to, kind, x1, y1, cx, cy, x2, y2, stroke, arrow]) => ({
+      from: from ?? '',
+      to: to ?? '',
+      kind,
+      stroke,
+      arrow,
+      start: { x: Number(x1), y: Number(y1) },
+      control: { x: Number(cx), y: Number(cy) },
+      end: { x: Number(x2), y: Number(y2) },
+    }),
+  );
+  expect(paths.length).toBe(map.terrain.edges_exceptional.length);
+  expect(paths.map((path) => [path.kind, path.stroke, path.arrow])).toEqual([
+    ['new-cross-module', CHANGE_HUE, 'new-cross-module'],
+    ['cycle', LIFR_HUE, 'cycle'],
+    ['cycle', LIFR_HUE, 'cycle'],
+  ]);
+  const positions = map.terrain.layout?.positions ?? {};
+  for (const path of paths) {
+    // Each end sits on its organelle's rim, not at its centre.
+    const from = positions[path.from];
+    const to = positions[path.to];
+    expect(Math.hypot(path.start.x - (from?.x ?? 0), path.start.y - (from?.y ?? 0))).toBeCloseTo(from?.r ?? 0, 1);
+    expect(Math.hypot(path.end.x - (to?.x ?? 0), path.end.y - (to?.y ?? 0))).toBeCloseTo(to?.r ?? 0, 1);
+  }
+  // The cycle's two edges bow to opposite sides of the line between the two files.
+  const [there, back] = paths.filter((path) => path.kind === 'cycle');
+  expect(side(there ?? paths[0]!)).not.toBe(0);
+  expect(side(there ?? paths[0]!)).toBe(side(back ?? paths[0]!));
+  // Every other line in the weather is a stitch, and the terrain draws none but the terrace contours.
+  const weather = drawn(svg, 'weather');
+  expect(count(weather, /<line /g)).toBe(count(drawn(svg, 'evidence'), /<line /g));
+  expect(count(svg.slice(0, svg.indexOf('id="weather"')), /<line /g)).toBe(map.terrain.layout?.bands.length);
+
+  // An edge to a file the layout did not place is not on the field; one between two placed files is.
+  const unplaced = renderSvg(small({ edges: [{ from: A, to: TEST, kind: 'boundary' }] }));
+  expect(group(unplaced, 'edges')).toBeUndefined();
+  const boundary = drawn(renderSvg(small({ edges: [{ from: A, to: B, kind: 'boundary' }] })), 'edges');
+  expect(boundary).toMatch(new RegExp(`data-kind="boundary" d="M[^"]+" stroke="${escape(LIFR_HUE)}" marker-end="url\\(#arrow-boundary\\)"`));
+});
+
+test('a git-only map draws its changed set and its reach and nothing else: no evidence, no history, no storms, no ghosts, and no light it cannot justify (C2)', () => {
+  const svg = renderSvg(small({ weather: { changed: [MODIFIED_A], reach: [{ path: A, cell: CELL_A, hops: 0, via: [] }] } }));
+  expect(group(svg, 'changed')).toBeDefined();
+  expect(group(svg, 'reach')).toBeDefined();
+  for (const id of ['evidence', 'history', 'storms', 'ghosts', 'edges']) expect(group(svg, id), `#${id} is not drawn`).toBeUndefined();
+  // Past the definitions, nothing in the weather carries a hue or a light the map did not earn.
+  const weather = drawn(svg, 'weather');
+  const painted = weather.slice(weather.indexOf('</defs>'));
+  for (const forbidden of [IFR_HUE, LIFR_HUE, EVIDENCE_LIGHT, GHOST_STROKE, TEXTURE_INK, `url(#${HATCH_ID})`, `url(#${STIPPLE_ID})`, 'url(#arrow-']) {
+    expect(painted).not.toContain(forbidden);
+  }
+  expect(count(painted, /<g id=/g)).toBe(2);
+});
+
+test('every mark in the weather names something the layout placed', () => {
+  const map = demo();
+  const weather = drawn(renderSvg(map), 'weather');
+  const placed = new Set([...Object.keys(map.terrain.layout?.positions ?? {}), ...Object.keys(map.terrain.layout?.contours ?? {})]);
+  const named = [...weather.matchAll(/data-(?:id|via|from|to|over)="([^"]+)"/g)].map(([, id]) => id ?? '');
+  expect(named.length).toBeGreaterThan(20);
+  for (const id of named) expect(placed.has(id), `${id} is on the field`).toBe(true);
+});

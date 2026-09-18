@@ -5,6 +5,8 @@
  */
 
 export * from './el.js';
+export * from './patterns.js';
 export * from './render.js';
 export * from './terrain.js';
 export * from './tokens.js';
+export * from './weather.js';

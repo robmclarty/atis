@@ -68,8 +68,8 @@ function byPath(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
 }
 
-/** A closed ring as a path: the first point moved to, the rest drawn to, then closed. */
-function pathOf(contour: Contour): string {
+/** A closed ring as a path: the first point moved to, the rest drawn to, then closed. The weather glows through the same path. */
+export function pathOf(contour: Contour): string {
   const [first, ...rest] = contour;
   if (first === undefined) return '';
   return `M${num(first[0])} ${num(first[1])}${rest.map(([x, y]) => `L${num(x)} ${num(y)}`).join('')}Z`;
