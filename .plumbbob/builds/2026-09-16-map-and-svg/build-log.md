@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 6 — feat(cli): read the git diff into change kinds, sizes and head-side hunks
+**Current step:** 7 — feat(history): mine git log into churn, age, bug-fix rate and co-change
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -28,7 +28,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 3. feat(core): identify cells, organelles and shore groups from a file list
 - ☑ 4. feat(core): compute topological depth bands over the import graph
 - ☑ 5. feat(cli): scan TypeScript imports into files, exports and edges
-- ☐ 6. feat(cli): read the git diff into change kinds, sizes and head-side hunks
+- ☑ 6. feat(cli): read the git diff into change kinds, sizes and head-side hunks
 - ☐ 7. feat(history): mine git log into churn, age, bug-fix rate and co-change
 - ☐ 8. feat(cli): read checkride's .check artifacts into evidence inputs
 - ☐ 9. feat(core): compute the changed set and reach by module hop
@@ -384,3 +384,40 @@ folder, so it rides the branch into the PR.)*
   **5.** `pnpm-lock.yaml` is the one file outside the seam
 
   `typescript` is now a dependency of `apps/atis` rather than only a root dev tool, which [C9 (deps-earn-their-place)](#c9) asks for by name, and `pnpm install` recorded that in the lockfile. Three lines, no version change, and the gate is green with it.
+
+- 2026-09-17 — step 6 checkpointed · 9d919bd62 — feat(cli): read the git diff into change kinds, sizes and head-side hunks (1 drift, 9m)
+
+  **Summary**: `readDiff` and `readManifests` land in `apps/atis/src/sources/git.ts`: thin git-shelling runners over pure parsers, tested from captured diff text and inline manifest strings, plus one integration test against this repo's own history.
+
+  1. readDiff composes three git commands into sorted changed[]
+  2. readManifests derives workspace membership from git itself, not the working tree
+  3. diffManifests is the pure delta: new name in a manifest's dependency map, never a bumped range
+
+  **Readout**: Step 6 - feat(cli): read the git diff into change kinds, sizes and head-side hunks
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    5 of 5 honored
+  constraints  11 of 11 honored
+  seam         strayed: 1 path outside the seam
+               → apps/atis/src/sources/imports.ts
+  diff         +382 -1 across 7 files
+  spent        9 min · 1 turn · 2s gate · green first run
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Recommendation**: Land it as planned. `pnpm check` is green, all four new tests (fixture-driven `parseDiff`, two `diffManifests` cases, and the `HEAD~1` integration test against this repo) pass, and the diff stayed inside the declared seam plus one minimal export in `imports.ts`.
+
+  **1.** readDiff composes three git commands into sorted changed[]
+
+  `readDiff(repo, base)` resolves `merge_base(base, HEAD)` (D25), then runs `--name-status -M`, `--numstat -M` and `-U0 -M` between it and `HEAD` and hands their raw text to the pure `parseDiff`. The trickiest bit was `--numstat`'s compact rename notation (`src/{old.ts => new.ts}`, or a bare `old => new` when the paths share no prefix) — `headPathOf` expands it without regex, matched against `--name-status`'s unambiguous tab-separated rename rows, which already carry `from` directly. A binary file's numstat counts (`-\t-`) are left unset rather than parsed as `0`, and only collapse to `0` at the very end since `DiffChange.added`/`deleted` are non-optional numbers in the shape the plan specifies.
+
+  **2.** readManifests derives workspace membership from git itself, not the working tree
+
+  `readManifests(repo, mergeBase)` reads `pnpm-workspace.yaml` and the full tracked-file list at each commit via `git ls-tree`, applies the same glob-matching `scanImports` uses (D43), and reads each matched member's `package.json` at both ends with `git show <sha>:<path>` — never the working tree (D46). A manifest that exists at only one end (a package born or removed) is treated as an empty manifest on the missing side, so a born package's initial deps all read as "added" and a removed package contributes nothing, rather than a thrown error or a faked default (C2). I exported `globToRegExp` from `imports.ts` (one keyword) so this glob-matching logic has one tested home instead of two.
+
+  **3.** diffManifests is the pure delta: new name in a manifest's dependency map, never a bumped range
+
+  `diffManifests(manifest, before, after)` compares `dependencies`/`devDependencies` by key presence only: a name absent from `before`'s same-kind map that appears in `after` is `deps_added`; a version bump on an existing name is not (D47). Malformed JSON on either side is read as no dependencies, matching the "a manifest that will not parse names no package" precedent already in `imports.ts`.

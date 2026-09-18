@@ -3,13 +3,15 @@
  * `git diff --name-status`, `--numstat` and `-U0` between it and `HEAD`
  * (D46) into `changed[]`; `readManifests` reads every workspace `package.json`
  * at both ends of the diff and `diffManifests` turns two manifests into the
- * dependencies `HEAD` added (D47). Each split into a thin runner that shells
- * out and a pure parser tested from captured text (D30).
+ * dependencies `HEAD` added (D47); `readLog` turns `git log --numstat` into
+ * `commits[]` for `computeHistory` (D8), no author field anywhere (C6). Each
+ * split into a thin runner that shells out and a pure parser tested from
+ * captured text (D30).
  */
 
 import { execFileSync } from 'node:child_process';
 
-import type { ChangeKind, DepAdded, Hunk } from 'core';
+import type { ChangeKind, Commit, DepAdded, Hunk } from 'core';
 
 import { globToRegExp, parseWorkspaceGlobs } from './imports.js';
 
@@ -157,6 +159,38 @@ export function parseDiff(nameStatus: string, numstat: string, unified: string):
       };
     })
     .toSorted((a, b) => byPath(a.path, b.path));
+}
+
+const HISTORY_WINDOW = 5000;
+const LOG_FORMAT = '%H%x00%ct%x00%s';
+const NUL = '\0';
+
+/** `git log --numstat --no-merges --format=%H%x00%ct%x00%s -n 5000 <head>`: one commit per header line, its files following, no blank line between a commit's last file and the next header (D8). */
+export function parseLog(output: string): readonly Commit[] {
+  const commits: { sha: string; time: number; subject: string; files: { path: string; added: number; deleted: number }[] }[] = [];
+  for (const line of lines(output)) {
+    if (line.includes(NUL)) {
+      const [sha, timeRaw, subject] = line.split(NUL);
+      if (sha === undefined || timeRaw === undefined || subject === undefined) {
+        throw new Error(`malformed log header line: "${line}"`);
+      }
+      commits.push({ sha, time: Number(timeRaw), subject, files: [] });
+      continue;
+    }
+    const current = commits.at(-1);
+    if (current === undefined) throw new Error(`numstat line before any commit header: "${line}"`);
+    const [addedRaw, deletedRaw, path] = line.split('\t');
+    if (addedRaw === undefined || deletedRaw === undefined || path === undefined) {
+      throw new Error(`malformed log numstat line: "${line}"`);
+    }
+    current.files.push({ path, added: addedRaw === '-' ? 0 : Number(addedRaw), deleted: deletedRaw === '-' ? 0 : Number(deletedRaw) });
+  }
+  return commits;
+}
+
+/** The `-n 5000` window of `head`'s log, no author or email field anywhere (C6). */
+export function readLog(repo: string, head: string): readonly Commit[] {
+  return parseLog(git(repo, ['log', '--numstat', '--no-merges', `--format=${LOG_FORMAT}`, '-n', String(HISTORY_WINDOW), head]));
 }
 
 /** `merge_base(base, HEAD)..HEAD`, the way GitHub shows a PR (D25); the two sides scan from commits only (D46). */

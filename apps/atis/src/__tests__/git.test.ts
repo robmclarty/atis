@@ -5,13 +5,18 @@ import { fileURLToPath } from 'node:url';
 
 import { expect, test } from 'vitest';
 
-import { diffManifests, parseDiff, readDiff, readManifests } from '../sources/index.js';
+import { diffManifests, parseDiff, parseLog, readDiff, readLog, readManifests } from '../sources/index.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FIXTURES = join(HERE, '..', '..', 'fixtures', 'diff');
+const LOG_FIXTURES = join(HERE, '..', '..', 'fixtures', 'log');
 
 function fixture(name: string): string {
   return readFileSync(join(FIXTURES, name), 'utf8');
+}
+
+function logFixture(name: string): string {
+  return readFileSync(join(LOG_FIXTURES, name), 'utf8');
 }
 
 test('parseDiff turns captured name-status, numstat and unified text into sorted changed[]', () => {
@@ -57,6 +62,48 @@ test('diffManifests treats a manifest born or removed at HEAD without faking a d
   expect(diffManifests('libs/broken/package.json', '{ not json', JSON.stringify({ dependencies: { zod: '^3.0.0' } }))).toEqual([
     { manifest: 'libs/broken/package.json', name: 'zod', range: '^3.0.0', dev: false },
   ]);
+});
+
+test('parseLog turns captured header and numstat lines into commits[], no blank line needed between a commit and the next header', () => {
+  const commits = parseLog(logFixture('log.txt'));
+  expect(commits).toEqual([
+    { sha: 'c3', time: 1_700_007_200, subject: 'chore: binary asset', files: [{ path: 'assets/logo.png', added: 0, deleted: 0 }] },
+    { sha: 'c2', time: 1_700_003_600, subject: 'fix: bug in a', files: [{ path: 'src/a.ts', added: 1, deleted: 1 }] },
+    {
+      sha: 'c1',
+      time: 1_700_000_000,
+      subject: 'feat: add a and b',
+      files: [
+        { path: 'src/a.ts', added: 3, deleted: 0 },
+        { path: 'src/b.ts', added: 2, deleted: 0 },
+      ],
+    },
+  ]);
+});
+
+test('readLog against this repo with HEAD: no author field anywhere (C6), and the git log wall time is recorded', () => {
+  const repo = execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: HERE, encoding: 'utf8' }).trim();
+
+  const started = performance.now();
+  const commits = readLog(repo, 'HEAD');
+  const elapsedMs = performance.now() - started;
+  // eslint-disable-next-line no-console -- D50: the integration test records the git log wall time on this repo.
+  console.log(`readLog(HEAD) over ${String(commits.length)} commits took ${elapsedMs.toFixed(1)}ms`);
+
+  expect(commits.length).toBeGreaterThan(0);
+  expect(commits.length).toBeLessThanOrEqual(5000);
+  const shas = commits.map((commit) => commit.sha);
+  expect(new Set(shas).size).toBe(shas.length);
+  for (const commit of commits) {
+    expect(commit.sha).toMatch(/^[0-9a-f]{40}$/);
+    expect(Number.isInteger(commit.time)).toBe(true);
+    expect(commit).not.toHaveProperty('author');
+    expect(commit).not.toHaveProperty('email');
+    for (const file of commit.files) {
+      expect(file.added).toBeGreaterThanOrEqual(0);
+      expect(file.deleted).toBeGreaterThanOrEqual(0);
+    }
+  }
 });
 
 test('readDiff against this repo with --base HEAD~1', () => {
