@@ -468,7 +468,7 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
   // Last, because the field is drawn over everything above it: the terrain
   // settles from the base alone and the added files find their place after
   // it, so the weather never moves the ground (D32).
-  const layout = computeLayout({ organelles, edges, bands: depths.bands, groups, added });
+  const layout = computeLayout({ cells, organelles, edges, bands: depths.bands, groups, added });
 
   return {
     meta: {

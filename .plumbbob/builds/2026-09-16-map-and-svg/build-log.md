@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 15 — feat(core): lay out organelles within bands with a seeded force simulation
+**Current step:** 16 — feat(core): draw cell membranes as Bubble Set contours over the layout
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -37,7 +37,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 12. feat(core): assemble map.json through one pure buildMap
 - ☑ 13. feat(cli): add the atis command that writes map.json for a base ref
 - ☑ 14. chore(spike): generate and spot-check map.json for checkride's PR 4
-- ☐ 15. feat(core): lay out organelles within bands with a seeded force simulation
+- ☑ 15. feat(core): lay out organelles within bands with a seeded force simulation
 - ☐ 16. feat(core): draw cell membranes as Bubble Set contours over the layout
 - ☐ 17. feat(svg): render the field, terraces, membranes and organelles
 - ☐ 18. feat(svg): render the weather layer over the terrain
@@ -67,6 +67,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [ ] readCheck loses the coverage and test channels when --repo reaches the repository through a symlink: on macOS /tmp is /private/tmp, so relativeToRepo() in apps/atis/src/sources/check.ts falls back to the absolute coverage key and nothing joins to a changed path; patch_coverage came back [] with no reason. A realpathSync on the repo in run.ts (or in relativeToRepo) fixes it. Found by the step-14 spike; the fixture is generated from the realpath as a workaround.
 - [ ] the notice tie-break is alphabetical, so the strongest missing-cochange loses to markdown: on checkride PR 4 all four tertiary candidates weigh exactly 2 (severity 2, cells_reached 0, history_weight 0) and byPath cut src/pm/translate.ts (rate 0.857, support 6, a source file in the changed cell) in favour of README.md (rate 0.5) and package.json. score() gives a co-change candidate no credit for rate or support, so the alphabet is doing the ranking in the tertiary tier (P1, C7).
 - [ ] pnpm check --all on a historical commit runs pnpm audit against today's advisory database, so the security slot goes red for reasons the PR did not cause and the map reads IFR: checkride PR 4's fixture carries a red-check-slot notice and an IFR category from 15 advisories in a 2026 lockfile. Step 22's five fixtures need a call: skip security beside mutation, or record in each README that the category includes an audit the PR is not responsible for.
+- [ ] contours are two thirds of the demo golden's lines: the CLI's pretty-printed map.json puts every coordinate on its own line, so a compact writer for contours (one point per line, or a flat array) is worth deciding before step 22 commits five fixtures
+- [ ] on synthetic fields packed at the collide pad (480 to 2000 files) the bubble-set routing leaves a neighbour's centre under a skin a handful of times even after the harder second cut; revisit the field or the layout's cell spacing if a step-22 repo shows one
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -860,3 +862,50 @@ folder, so it rides the branch into the PR.)*
   `run.ts` fills `meta.repo` with `basename(resolve(options.repo))`. The first worktree was at `/tmp/atis-spike-cr-pr4`, so the map came out carrying `"repo": "atis-spike-cr-pr4"`. I regenerated it from a worktree named `checkride` and the fixture now reads `"repo": "checkride"`, but step 22 does this five more times and the trap is one careless path away each time. Parked, with reading the name from the origin remote as the alternative.
 
   Two properties nobody asked for held while I was there, and both are in the doc: two runs produced byte-identical files at 185,534 bytes once `generated_at` was blanked (C3), and the command exited 0 on a map it wrote while the reviewed repository's own `pnpm check` exited 1 (C4). Wall time was 2.67 seconds across the eight measured sources, 1.97 of it the two TypeScript scans; the history window was 0.47 but over only 182 commits against D8's cap of 5,000, so that number says little and the doc says so rather than dressing it up as a D50 data point.
+
+- 2026-09-18 — step 15 checkpointed · 0a6837066 — feat(core): lay out organelles within bands with a seeded force simulation (1 drift, 25m)
+
+  **Summary**: `buildMap` now emits `terrain.layout`: a shore grid above band 0, one strip per terrace, and a position for every organelle settled by a seeded `d3-force` simulation that is stopped before `d3-timer` can take a frame and advanced only by `tick(300)`. The four forces the step names are there, plus a fifth that turns the terrace from a preference into a guarantee; the step's four invariants hold on the fixture, on a 180-file stress case and on this repository's own map.
+
+  1. The band strip needed a fifth force, because a clamp at the end stacks files on top of each other
+  2. The terrain settles first and the second pass cannot move it
+  3. The field is measured off the terrain, not the other way round
+  4. Test files get no place on the shore
+  5. One line outside the seam: map.test.ts asserted the layout was absent
+
+  **Readout**: Step 15 - feat(core): lay out organelles within bands with a seeded force simulation
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    4 of 4 honored
+  constraints  11 of 11 honored
+  seam         strayed: 1 path outside the seam
+               → libs/core/src/__tests__/map.test.ts
+  diff         +1021 -7 across 11 files
+  spent        25 min · 1 turn · 39s gate · green first run
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Recommendation**: Approve and checkpoint. The gate is green under `--strict`, the four invariants the done-when names are asserted on a realistic fixture and verified by hand on a 180-file stress case and on this repository, and the golden's diff is the `layout` block and nothing else.
+
+  **1.** The band strip needed a fifth force, because a clamp at the end stacks files on top of each other
+
+  `forceY` fades with alpha and `forceCollide` does not, so on a busy terrace collision wins the last hundred ticks and pushes the crowd over the strip's edges. Clamping `y` back at the end then puts several files on the same boundary line: measured on a 180-file synthetic, two files in one cell ended 4.9 px apart with radii summing to 31.7. So `forceTerrace` runs after the other four and trims each tick to what the strip can hold, which leaves collision's push in `x` where the field has room for it. Overlap on that case went from 26.8 px to 0. Each file also gets its own rest height inside the strip rather than all of them being pulled to one centre line, so the terrace fills instead of packing into a thread.
+
+  **2.** The terrain settles first and the second pass cannot move it
+
+  Pass one lays out the base organelles alone, slides them onto the margin and rounds them; pass two pins exactly those numbers with `fx`/`fy` and places only what the change added, seeding each new file beside its own cell's existing files rather than across the field. A test drives `simulate` directly with a `fixed` map and asserts every pinned placement comes back byte-identical, which is D32's promise stated as an assertion rather than as a hope.
+
+  **3.** The field is measured off the terrain, not the other way round
+
+  A nominal width sets the starting spread of the cell columns, the shore's wrap and the band heights, but the width `map.json` carries is the settled terrain's own extent plus a margin, floored at 480 and at whatever the shore needed. A tightly coupled repository is drawn as the narrow column it is rather than padded out to look wider: this repo comes out 480 × 942, the demo fixture 480 × 660.
+
+  **4.** Test files get no place on the shore
+
+  The shore grid walks `terrain.groups` in D48's table order, but skips any file `classifyFile` calls a test. D4 makes a test evidence, and D48 draws it as a stitch on the organelle it imports; giving it a shore mark would have drawn it twice and put it inside a shore contour it does not belong to. The `tests` group still exists so a changed test names a group, it just has no position, and a test asserts exactly that.
+
+  **5.** One line outside the seam: map.test.ts asserted the layout was absent
+
+  Step 12's test carried `expect(map.terrain.layout).toBeUndefined()`, which this step makes false. It now asserts the field's strips run in the same order as the bands they were quantised from. `libs/core/src/__tests__/map.test.ts` is the one path the diff touches that the seam does not name.

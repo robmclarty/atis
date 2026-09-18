@@ -50,6 +50,10 @@ function fixture(added: readonly string[] = []): LayoutInput {
   const organelles = Array.from({ length: CELLS }, (_unused, cell) =>
     Array.from({ length: PER_CELL }, (_file, file) => organelleAt(cell, file)),
   ).flat();
+  const cells = Array.from({ length: CELLS }, (_unused, cell) => ({
+    id: cellOf(cell),
+    organelles: organelles.flatMap((organelle) => (organelle.cell === cellOf(cell) ? [organelle.id] : [])),
+  }));
   // A chain through each cell's files, and one import from each cell into the next.
   const edges = organelles.flatMap((organelle, index) =>
     index === 0 ? [] : [{ from: organelles[index - 1]?.id ?? '', to: organelle.id }],
@@ -65,7 +69,7 @@ function fixture(added: readonly string[] = []): LayoutInput {
     depth_min: index,
     depth_max: index,
   }));
-  return { organelles, edges, bands, groups, added: new Set(added) };
+  return { cells, organelles, edges, bands, groups, added: new Set(added) };
 }
 
 /** One field, shared by every test that only reads it; laying it out twice is the slow part. */
@@ -193,8 +197,8 @@ test('the shore is a grid above band 0, group by group, and holds no test file',
 });
 
 test('an empty repository lays out an empty field rather than throwing', () => {
-  const layout = computeLayout({ organelles: [], edges: [], bands: [], groups: [], added: new Set() });
-  expect(layout).toEqual({ width: 480, height: 0, shore: { y0: 0, y1: 0 }, bands: [], positions: {} });
+  const layout = computeLayout({ cells: [], organelles: [], edges: [], bands: [], groups: [], added: new Set() });
+  expect(layout).toEqual({ width: 480, height: 0, shore: { y0: 0, y1: 0 }, bands: [], positions: {}, contours: {} });
 });
 
 /** The end of the seam: `buildMap` is what puts the field in the file (D24). */
@@ -216,9 +220,8 @@ test('buildMap emits a layout every organelle and shore file has a place in', ()
       expect(layout.positions[file] === undefined).toBe(group.id === 'tests');
     }
   }
-  // Step 16 draws the membranes; until then the map says so rather than
-  // carrying an empty record that claims there are none (C2).
-  expect(layout.contours).toBeUndefined();
+  // The membranes are cut over the same field: one per cell (step 16).
+  for (const cell of map.terrain.cells) expect(layout.contours?.[cell.id]).toBeDefined();
   // The added file was placed by the second pass and is on the field like any other.
   expect(layout.positions['libs/core/src/pm/tools.ts']).toBeDefined();
 });

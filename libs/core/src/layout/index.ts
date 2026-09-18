@@ -11,7 +11,8 @@
  * order (land above the abyss). Under it the terraces descend, band 0 at the
  * top where the entry points are, the deepest band at the bottom. Terrain is
  * settled first and added files second, with the terrain pinned, so that the
- * weather never moves the ground under it (D32).
+ * weather never moves the ground under it (D32). The membranes are cut last,
+ * over the settled field, one per cell and one per shore group (D13).
  */
 
 import { classifyFile } from '../modules.js';
@@ -19,9 +20,12 @@ import type { ImportEdge } from '../modules.js';
 import type { Band, Group, Layout, LayoutBand, Organelle, Position } from '../schema.js';
 import { radiusOf, simulate } from './force.js';
 import type { LayoutFile, Placement, Strip } from './force.js';
+import { computeMembranes } from './membranes.js';
+import type { MembraneCell } from './membranes.js';
 import { LAYOUT_SEED, seededRandom } from './random.js';
 
 export * from './force.js';
+export * from './membranes.js';
 export * from './random.js';
 
 /** The quiet edge the field keeps around everything it draws. */
@@ -49,6 +53,8 @@ const SHORE_PAD = 24;
 const PRECISION = 100;
 
 export type LayoutInput = {
+  /** The cells the membranes are cut around; a package's holds every cell beneath it (D45). */
+  readonly cells: readonly MembraneCell[];
   readonly organelles: readonly Organelle[];
   /** The terrain's import graph: felt by the layout, drawn by nobody (§5.1). */
   readonly edges: readonly ImportEdge[];
@@ -207,9 +213,9 @@ function settle(
 
 /**
  * Compute the one layout every renderer of this map draws from (D24). The
- * field's own size is the last thing decided, measured off the terrain once it
- * has settled and the shore beside it, rather than a frame the terrain was
- * made to fit.
+ * field's own size is measured off the terrain once it has settled and the
+ * shore beside it, rather than a frame the terrain was made to fit, and the
+ * membranes are cut over that settled field, so nothing they do can move it.
  */
 export function computeLayout(input: LayoutInput): Layout {
   const files: readonly LayoutFile[] = input.organelles.map((organelle) => ({
@@ -229,12 +235,14 @@ export function computeLayout(input: LayoutInput): Layout {
     ...shore.positions,
     ...placements.map((placed) => [placed.id, { x: placed.x, y: placed.y, r: placed.r }] as const),
   ].toSorted(([a], [b]) => byPath(a, b));
+  const positions = Object.fromEntries(entries);
 
   return {
     width: Math.max(MIN_WIDTH, shore.extent, Math.ceil(right) + MARGIN),
     height: shore.height + bands.reduce((total, band) => total + (band.y1 - band.y0), 0),
     shore: { y0: 0, y1: shore.height },
     bands,
-    positions: Object.fromEntries(entries),
+    positions,
+    contours: computeMembranes({ cells: input.cells, groups: input.groups, positions }),
   };
 }
