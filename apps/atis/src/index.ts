@@ -1,36 +1,29 @@
 /**
  * atis: a weather map for code changes.
  *
- * `0.0.0` holds the name on npm. The command prints its version and exits; the
- * map arrives with the phases in `SPEC.md` at the repository root.
+ * The package's surface: the constants the command prints, and `run`, which
+ * turns a parsed set of flags into `map.json` on disk.
  */
 
 import { SCHEMA_VERSION } from 'core';
+
+export * from './run.js';
 
 export const NAME = 'atis';
 export const VERSION = '0.0.0';
 
 export const USAGE = `${NAME} ${VERSION}: a weather map for code changes.
 
-  atis --version   print the version
-  atis --help      print this text
+  atis --base <ref> [options]
 
-Nothing renders yet: this release holds the name. When it does, it writes
-map.json at schema ${SCHEMA_VERSION}. Follow the build at
+  --repo <path>   the repository to read (default: the working directory)
+  --base <ref>    the ref the change is measured from (required)
+  --out <file>    where to write the map (default: map.json)
+  --verbose       print per-source timings on stderr
+  --version, -V   print the version
+  --help, -h      print this text
+
+The map is written at schema ${SCHEMA_VERSION}: terrain scanned from the merge
+base of <ref> and HEAD, weather from HEAD, and at most six ranked notices.
 https://github.com/robmclarty/atis
 `;
-
-/** What the command prints and how it exits: 0 when it did its job, 2 on misuse. */
-export type Outcome = { exitCode: 0 | 2; stdout: string; stderr: string };
-
-/** Interpret the arguments after the script name. */
-export function run(argv: readonly string[]): Outcome {
-  const [flag] = argv;
-  if (argv.length === 1 && (flag === '--version' || flag === '-V')) {
-    return { exitCode: 0, stdout: `${VERSION}\n`, stderr: '' };
-  }
-  if (argv.length === 1 && (flag === '--help' || flag === '-h')) {
-    return { exitCode: 0, stdout: USAGE, stderr: '' };
-  }
-  return { exitCode: 2, stdout: '', stderr: USAGE };
-}

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 
 import { expect, test } from 'vitest';
 
-import { NAME, VERSION, run } from '../index.js';
+import { NAME, USAGE, VERSION } from '../index.js';
 
 test('the version constant matches package.json', () => {
   const manifest = JSON.parse(
@@ -13,23 +13,8 @@ test('the version constant matches package.json', () => {
   expect(manifest.version).toBe(VERSION);
 });
 
-test('--version prints the version and exits 0', () => {
-  expect(run(['--version'])).toEqual({ exitCode: 0, stdout: `${VERSION}\n`, stderr: '' });
-  expect(run(['-V']).exitCode).toBe(0);
-});
-
-test('--help prints usage on stdout and exits 0', () => {
-  const out = run(['--help']);
-  expect(out.exitCode).toBe(0);
-  expect(out.stdout).toContain('weather map');
-  expect(out.stderr).toBe('');
-});
-
-test('anything else is misuse: usage on stderr, exit 2', () => {
-  for (const argv of [[], ['--base', 'main'], ['--nope'], ['--version', 'extra']]) {
-    const out = run(argv);
-    expect(out.exitCode).toBe(2);
-    expect(out.stdout).toBe('');
-    expect(out.stderr).toContain('--help');
+test('the usage text names every flag the bin parses', () => {
+  for (const flag of ['--repo <path>', '--base <ref>', '--out <file>', '--verbose', '--version', '--help']) {
+    expect(USAGE).toContain(flag);
   }
 });

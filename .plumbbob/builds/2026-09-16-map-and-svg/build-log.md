@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 12 — feat(core): assemble map.json through one pure buildMap
+**Current step:** 13 — feat(cli): add the atis command that writes map.json for a base ref
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -34,7 +34,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 9. feat(core): compute the changed set and reach by module hop
 - ☑ 10. feat(core): compute evidence and the flight category
 - ☑ 11. feat(core): rank notice candidates into the six-slot budget
-- ☐ 12. feat(core): assemble map.json through one pure buildMap
+- ☑ 12. feat(core): assemble map.json through one pure buildMap
 - ☐ 13. feat(cli): add the atis command that writes map.json for a base ref
 - ☐ 14. chore(spike): generate and spot-check map.json for checkride's PR 4
 - ☐ 15. feat(core): lay out organelles within bands with a seeded force simulation
@@ -62,6 +62,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [ ] computeEvidence runs computeReach once per changed file, which recomputes newCrossModule each time; harmless at spike scale, worth a narrow per-file reach export if a large PR shows up in step 14
 - [ ] notices.ts: the deleted-export `why` says "1 files still import it"; pluralise the consumer count
 - [ ] C1's struct rule, when it lands, scopes to shipped sources: tests under __tests__/ may import node:* to read fixtures (Rob, 2026-09-17)
+- [ ] atis writes map.json into the working directory by default; .gitignore does not cover it, so a run in this repo leaves an untracked file
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -684,3 +685,51 @@ folder, so it rides the branch into the PR.)*
   **5.** The D27 park is still open, and I did not close it here
 
   Step 10 parked a real hole: a changed source file the coverage report never names has no changed executable lines, so it has no gap, so an entirely uninstrumented new file reads as VFR. The park says the fix is either a third state on D27's gap rule or an "untested changed file" candidate in this step. Neither is in the done-when's list of kinds, and inventing a fourteenth candidate would be deciding it rather than building it, so the hole is exactly where step 10 left it. One word from you turns it into a step; it is cheap to add once the shape is yours.
+
+- 2026-09-18 — step 12 checkpointed · 1e752b601 — feat(core): assemble map.json through one pure buildMap (48m)
+
+  **Summary**: `buildMap` now turns the two scans, the diff, the manifest delta, the log window and the `.check/` artifacts into a whole `map.json`, and a committed fixture repository proves it: eight changed files across five cells and six shore groups, IFR, six ranked notices, byte-identical across runs. It decides nothing the parts had not already settled; what it adds is the rename rekey, the graph each computation runs on, and the terrain's own numbers.
+
+  1. One pure function composes the eight parts, each told which graph it runs on
+  2. The rename rekey runs first, and now reaches the git log too
+  3. `terrain.groups` gained a `tests` group, because a changed test file was dangling
+  4. The terrain's own numbers are assembled here, and survive a missing `.check/`
+  5. The golden test reads its fixtures with `node:fs`, which C1 leaves alone
+
+  **Readout**: Step 12 - feat(core): assemble map.json through one pure buildMap
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored:
+               - D32 (terrain-from-base), D39 (two-graphs), D40 (rename-identity)
+               - D24 (layout-in-core), D45 (nested-cells), D48 (shore-groups)
+  constraints  11 of 11 honored
+  seam         held: 4 of 4 declared, no strays
+  diff         +2325 -0 across 6 files
+  spent        48 min · 4 turns · 4s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Approve and checkpoint. The check is green across all eight slots, the seam held, and the golden pins the whole composition so step 13 can wire the CLI to it and step 15 can regenerate it with a layout.
+
+  **1.** One pure function composes the eight parts, each told which graph it runs on
+
+  `buildMap(inputs, config)` is a straight line: rekey, then cells and the shore from the base files plus the added ones, depth over the base edges plus the head edges an added file is an end of, reach and stitches over the head edges with the base edges for deleted files, deleted-export consumers over the base edges, then evidence, the category and the ranking. Nothing reads a clock, a file or a process, so `generated_at` is an input like everything else and two runs over one input set differ in nothing at all ([C3 (deterministic)](#c3)). `terrain.layout` is absent, waiting for step 15 ([D24 (layout-in-core)](#d24)).
+
+  **2.** The rename rekey runs first, and now reaches the git log too
+
+  [D40 (rename-identity)](#d40) asks that every list come out keyed by the head path, so the base scan's files, edges and entry points are rekeyed before anything else runs. The log needed the same treatment or a renamed file would lose the history its old name earned and a co-change ghost could point at a path no longer on the map. `git log` is read without `-M`, so the rename commit lists both names; the two entries fold into one rather than counting the file twice. The rename fixture comes out with one organelle at the head path, `changed[].from` set, and no new-cross-module edge invented by the rename.
+
+  **3.** `terrain.groups` gained a `tests` group, because a changed test file was dangling
+
+  `computeReach` puts a changed test file in the `tests` group ([D4 (tests-not-terrain)](#d4) meets [D48 (shore-groups)](#d48): a test is evidence, but every changed entry still names exactly one cell or group). `assertMap` checks that name against `terrain.groups`, which `identifyGroups` never emits, so any change touching a test produced a map that failed its own guard. `terrain.groups` now carries the tracked test files under `tests`, between the shore table and the loud `other` residual. The SVG still draws them as stitches, never as a shore contour.
+
+  **4.** The terrain's own numbers are assembled here, and survive a missing `.check/`
+
+  A cell's band is the shallowest terrace its files reach, since that is where a reader arrives; `fan_in` and `fan_out` count the terrain files outside its contour that read into it and that it reads, computed from the import graph rather than from `health.json`, so they still mean something when there is no `.check/` at all ([D52 (reach-from-scan)](#d52)). Dents are the rules a file breaks, with fallow's compound `exceeded` values split so the count of dents is the count of rules; cycles and boundary violations dent every file they name and are the only lines the map draws beside the new cross-module import. fallow names no id for a clone family, so the map numbers them by their sorted file lists, which is what makes two runs mark the same cells with the same glyph. Every one of these is absent rather than defaulted when its channel is missing ([C2 (never-fake)](#c2)).
+
+  **5.** The golden test reads its fixtures with `node:fs`, which C1 leaves alone
+
+  `libs/core/src/__tests__/map.test.ts` imports `node:fs`, `node:path` and `node:url` to reach the fixture input set and the golden under `libs/core/fixtures/`. I first flagged that as bending [C1 (core-is-pure)](#c1) by its letter ("nothing under `libs/core/src` imports `node:*`"); Rob's reading, 2026-09-17, is that C1 is about the code core ships and a test is a special case. On that reading it is honoured outright: `map.ts` and everything the package exports are Node-free, and no consumer of `core` gains a Node dependency. The test's comment now says so, and a park records that C1's promised struct rule should scope to non-test sources when it lands, so this test does not go red under it. The JSON-import version I tried on the way (which trips `no-deep-sibling-import` on any `../../…` specifier) is not needed and is not in the diff. I also parked one nit from step 11: the deleted-export notice says "1 files still import it".
