@@ -1,0 +1,180 @@
+{
+  "schema_version": 1,
+  "timestamp": "2026-09-17T05:52:40.668Z",
+  "ok": true,
+  "checks_run": 19,
+  "total_duration_ms": 25000,
+  "checks": [
+    {
+      "name": "types",
+      "adapter": "tsc",
+      "description": "TypeScript type checking (incremental, via project references)",
+      "ok": true,
+      "exit_code": 0,
+      "duration_ms": 388,
+      "output_file": null
+    },
+    {
+      "name": "lint",
+      "adapter": "oxlint",
+      "description": "Oxlint",
+      "ok": true,
+      "exit_code": 0,
+      "duration_ms": 1520,
+      "output_file": "lint.json"
+    },
+    {
+      "name": "struct",
+      "adapter": "ast-grep",
+      "description": "Structural rules (ast-grep)",
+      "ok": true,
+      "exit_code": 0,
+      "duration_ms": 936,
+      "output_file": "struct.json"
+    },
+    {
+      "name": "links",
+      "adapter": "links",
+      "description": "Relative markdown link targets exist on disk",
+      "ok": true,
+      "exit_code": 0,
+      "duration_ms": 21,
+      "output_file": "links.json"
+    },
+    {
+      "name": "dead",
+      "adapter": "fallow",
+      "description": "Fallow: unused code, cycles, and boundary violations (dead-code)",
+      "ok": true,
+      "exit_code": 0,
+      "duration_ms": 862,
+      "output_file": "dead.json"
+    },
+    {
+      "name": "dupes",
+      "adapter": "fallow",
+      "description": "Fallow: code duplication (clones)",
+      "ok": true,
+      "exit_code": 0,
+      "duration_ms": 774,
+      "output_file": "dupes.json"
+    },
+    {
+      "name": "health",
+      "adapter": "fallow",
+      "description": "Fallow: complexity & maintainability (health)",
+      "ok": true,
+      "exit_code": 0,
+      "duration_ms": 945,
+      "output_file": "health.json"
+    },
+    {
+      "name": "docs",
+      "adapter": "markdownlint-cli2",
+      "description": "Markdown linting",
+      "ok": true,
+      "exit_code": 0,
+      "duration_ms": 2274,
+      "output_file": null
+    },
+    {
+      "name": "spell",
+      "adapter": "cspell",
+      "description": "Spell check",
+      "ok": true,
+      "exit_code": 0,
+      "duration_ms": 2885,
+      "output_file": null
+    },
+    {
+      "name": "prose",
+      "adapter": "vale",
+      "description": "Vale: writing style (prose linting)",
+      "ok": true,
+      "exit_code": 0,
+      "duration_ms": 1468,
+      "output_file": "prose.json"
+    },
+    {
+      "name": "security",
+      "adapter": "pnpm-audit",
+      "description": "Dependency audit (pnpm audit)",
+      "ok": true,
+      "exit_code": 0,
+      "duration_ms": 743,
+      "output_file": "security.json"
+    },
+    {
+      "name": "typecheck-tests",
+      "adapter": "custom:typecheck-tests",
+      "description": "Type-check test files",
+      "ok": true,
+      "exit_code": 0,
+      "duration_ms": 2094,
+      "output_file": null
+    },
+    {
+      "name": "build",
+      "adapter": "build",
+      "description": "Build the package (runs the consumer's build script)",
+      "ok": true,
+      "exit_code": 0,
+      "duration_ms": 357,
+      "output_file": null
+    },
+    {
+      "name": "publint",
+      "adapter": "publint",
+      "description": "publint: package.json publishing correctness",
+      "ok": true,
+      "exit_code": 0,
+      "duration_ms": 1371,
+      "output_file": null
+    },
+    {
+      "name": "attw",
+      "adapter": "attw",
+      "description": "Are the types wrong?",
+      "ok": true,
+      "exit_code": 0,
+      "duration_ms": 2129,
+      "output_file": "attw.json"
+    },
+    {
+      "name": "pack",
+      "adapter": "pack",
+      "description": "Pack dry-run: the tarball ships the required files and none of the forbidden ones",
+      "ok": true,
+      "exit_code": 0,
+      "duration_ms": 379,
+      "output_file": "pack.json"
+    },
+    {
+      "name": "smoke",
+      "adapter": "smoke",
+      "description": "Smoke import: the built package loads and its declared value exports are live",
+      "ok": true,
+      "exit_code": 0,
+      "duration_ms": 60,
+      "output_file": "smoke.json"
+    },
+    {
+      "name": "snippets",
+      "adapter": "snippets-dist",
+      "description": "Doc snippet typecheck: tagged fences typecheck against built .d.ts",
+      "ok": true,
+      "exit_code": 0,
+      "duration_ms": 629,
+      "output_file": "snippets.json"
+    },
+    {
+      "name": "test",
+      "adapter": "vitest",
+      "description": "Vitest tests with coverage",
+      "ok": true,
+      "exit_code": 0,
+      "duration_ms": 17117,
+      "output_file": null
+    }
+  ]
+}

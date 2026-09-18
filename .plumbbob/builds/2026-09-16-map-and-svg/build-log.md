@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 7 — feat(history): mine git log into churn, age, bug-fix rate and co-change
+**Current step:** 8 — feat(cli): read checkride's .check artifacts into evidence inputs
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -29,7 +29,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 4. feat(core): compute topological depth bands over the import graph
 - ☑ 5. feat(cli): scan TypeScript imports into files, exports and edges
 - ☑ 6. feat(cli): read the git diff into change kinds, sizes and head-side hunks
-- ☐ 7. feat(history): mine git log into churn, age, bug-fix rate and co-change
+- ☑ 7. feat(history): mine git log into churn, age, bug-fix rate and co-change
 - ☐ 8. feat(cli): read checkride's .check artifacts into evidence inputs
 - ☐ 9. feat(core): compute the changed set and reach by module hop
 - ☐ 10. feat(core): compute evidence and the flight category
@@ -421,3 +421,39 @@ folder, so it rides the branch into the PR.)*
   **3.** diffManifests is the pure delta: new name in a manifest's dependency map, never a bumped range
 
   `diffManifests(manifest, before, after)` compares `dependencies`/`devDependencies` by key presence only: a name absent from `before`'s same-kind map that appears in `after` is `deps_added`; a version bump on an existing name is not (D47). Malformed JSON on either side is read as no dependencies, matching the "a manifest that will not parse names no package" precedent already in `imports.ts`.
+
+- 2026-09-18 — step 7 checkpointed · 60013a166 — feat(history): mine git log into churn, age, bug-fix rate and co-change (1 drift, 85m)
+
+  **Summary**: `readLog`/`parseLog` in `apps/atis/src/sources/git.ts` turn `git log --numstat --no-merges` into `commits[]`, and `computeHistory` in the new `libs/core/src/history.ts` turns those commits into per-changed-file churn ratio, age and bug-fix rate plus directional co-change pairs.
+
+  1. A thin runner, a pure parser, no author field anywhere
+  2. computeHistory scopes both the per-file stats and the co-change pairs to `changed`
+  3. Wall time recorded, not yet capped
+
+  **Readout**: Step 7 - feat(history): mine git log into churn, age, bug-fix rate and co-change
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    3 of 3 honored
+  seam         strayed: 1 path outside the seam
+               → apps/atis/fixtures/log/log.txt
+  diff         +267 -4 across 6 files
+  spent        85 min · 1 turn · 3s gate · green first run
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Recommendation**: Land it. The gate is green, the CHID co-change test matches the plan's numbers exactly, and the only judgment call — omitting a stats field rather than faking a zero when the window has no data for a path — follows C2 the same way `readDiff`'s numstat parsing already does.
+
+  **1.** A thin runner, a pure parser, no author field anywhere
+
+  `readLog(repo, head)` shells out to `git log --numstat --no-merges --format=%H%x00%ct%x00%s -n 5000 <head>`; `parseLog` is the pure text-to-struct half (D30), tested against a hand-built fixture (`apps/atis/fixtures/log/log.txt`, real NUL bytes) covering multiple files per commit and a binary `-`/`-` marker. Neither function reads or emits an author or email field (C6), and the integration test asserts that on every commit from this repo's real log.
+
+  **2.** computeHistory scopes both the per-file stats and the co-change pairs to `changed`
+
+  `(commits, loc, changed, headTime)` returns, per changed file: `churn_ratio` (window's added+deleted over the `loc` map's current count, omitted when that count is unknown or zero), `age_days` (floor days since the file's first commit in the window) and `bugfix_rate` (share of its commits whose subject matches `/\b(fix|bug|regression|hotfix)\b/i`); a changed file with zero commits in the window carries only its `path`, nothing faked (C2). Co-change is directional per CHID eq. 3: for a changed file `a`, every `b` it ever shared a commit with gets `{ a, b, rate: support / occurrences(a), support }` — the scripted-commit test asserts the specified 3-of-4 case exactly (rate 0.75, support 3).
+
+  **3.** Wall time recorded, not yet capped
+
+  Per D50, this step only measures: the integration test times `readLog(repo, 'HEAD')` on this repo and logs it (12 commits, ~74ms here) rather than asserting a threshold. No `--history <n>` cap and no `--verbose` per-source timings are added — D50 defers both until a slow repo actually shows up, and `--verbose` is step 13's CLI-wiring concern, outside this step's seam.

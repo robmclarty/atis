@@ -1,0 +1,40 @@
+{
+  "numTotalTestSuites": 3,
+  "numPassedTestSuites": 3,
+  "numFailedTestSuites": 0,
+  "numPendingTestSuites": 0,
+  "numTotalTests": 3,
+  "numPassedTests": 3,
+  "numFailedTests": 0,
+  "numPendingTests": 0,
+  "numTodoTests": 0,
+  "startTime": 1758087160668,
+  "success": true,
+  "testResults": [
+    {
+      "name": "/Users/robmclarty/Projects/checkride/code/checkride/test/conventions.test.ts",
+      "status": "passed",
+      "startTime": 1758087160668,
+      "endTime": 1758087160700,
+      "message": "",
+      "assertionResults": []
+    },
+    {
+      "name": "/Users/robmclarty/Projects/checkride/code/checkride/test/docs-currency.test.ts",
+      "status": "passed",
+      "startTime": 1758087160700,
+      "endTime": 1758087160740,
+      "message": "",
+      "assertionResults": []
+    },
+    {
+      "name": "/Users/robmclarty/Projects/checkride/code/checkride/test/dogfood-config.test.ts",
+      "status": "passed",
+      "startTime": 1758087160740,
+      "endTime": 1758087160780,
+      "message": "",
+      "assertionResults": []
+    }
+  ],
+  "coverageMap": {}
+}

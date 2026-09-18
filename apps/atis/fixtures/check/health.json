@@ -1,0 +1,75 @@
+{
+  "kind": "health",
+  "schema_version": 9,
+  "version": "3.22.0",
+  "elapsed_ms": 81,
+  "findings": [
+    {
+      "path": "src/gate.ts",
+      "name": "runGate",
+      "line": 42,
+      "col": 0,
+      "cyclomatic": 28,
+      "cognitive": 22,
+      "line_count": 95,
+      "exceeded": "cyclomatic"
+    }
+  ],
+  "summary": {
+    "files_analyzed": 62,
+    "functions_analyzed": 480,
+    "functions_above_threshold": 1,
+    "max_cyclomatic_threshold": 15,
+    "max_cognitive_threshold": 15
+  },
+  "file_scores": [
+    {
+      "path": "src/orchestrator/execute.ts",
+      "fan_in": 1,
+      "fan_out": 10,
+      "dead_code_ratio": 0.0,
+      "complexity_density": 0.25,
+      "maintainability_index": 82.9,
+      "total_cyclomatic": 84,
+      "total_cognitive": 64,
+      "function_count": 23,
+      "lines": 340,
+      "crap_max": 26.5,
+      "crap_above_threshold": 0
+    },
+    {
+      "path": "src/init.ts",
+      "fan_in": 6,
+      "fan_out": 9,
+      "dead_code_ratio": 0.0,
+      "complexity_density": 0.17,
+      "maintainability_index": 85.7,
+      "total_cyclomatic": 242,
+      "total_cognitive": 193,
+      "function_count": 84,
+      "lines": 1409,
+      "crap_max": 26.5,
+      "crap_above_threshold": 0
+    },
+    {
+      "path": "src/gate.ts",
+      "fan_in": 10,
+      "fan_out": 6,
+      "dead_code_ratio": 0.0,
+      "complexity_density": 0.13,
+      "maintainability_index": 88.3,
+      "total_cyclomatic": 106,
+      "total_cognitive": 66,
+      "function_count": 37,
+      "lines": 800,
+      "crap_max": 26.5,
+      "crap_above_threshold": 1
+    }
+  ],
+  "target_thresholds": {
+    "fan_in_p95": 6.0,
+    "fan_in_p75": 3.0,
+    "fan_out_p95": 8.0,
+    "fan_out_p90": 6
+  }
+}

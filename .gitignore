@@ -8,3 +8,6 @@ coverage/
 *.tsbuildinfo
 .DS_Store
 .pnpm-store/
+
+# D42: the check fixture's coverage/ is real committed data, not a check run's output.
+!apps/atis/fixtures/**/coverage/

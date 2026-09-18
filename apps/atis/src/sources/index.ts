@@ -4,5 +4,6 @@
  * pure functions that are tested from strings (D30).
  */
 
+export * from './check.js';
 export * from './git.js';
 export * from './imports.js';

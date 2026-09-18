@@ -1,0 +1,33 @@
+{
+  "files": {
+    "src/agent-setup/hook.ts": {
+      "language": "typescript",
+      "mutants": [
+        {
+          "id": "0",
+          "mutatorName": "StringLiteral",
+          "replacement": "\"\"",
+          "statusReason": "Ignored because of excluded mutation \"StringLiteral\"",
+          "status": "Ignored",
+          "static": false,
+          "location": { "start": { "line": 41, "column": 37 }, "end": { "line": 41, "column": 60 } }
+        },
+        {
+          "id": "1",
+          "mutatorName": "ConditionalExpression",
+          "replacement": "true",
+          "statusReason": null,
+          "status": "Survived",
+          "static": false,
+          "location": { "start": { "line": 58, "column": 4 }, "end": { "line": 58, "column": 22 } }
+        }
+      ]
+    }
+  },
+  "schemaVersion": 1.0,
+  "thresholds": { "high": 80, "low": 60 },
+  "testFiles": {},
+  "projectRoot": "/repo",
+  "config": {},
+  "framework": { "name": "StrykerJS", "version": "9.6.1" }
+}
