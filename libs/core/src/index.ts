@@ -8,4 +8,5 @@ export * from './depth.js';
 export * from './groups.js';
 export * from './history.js';
 export * from './modules.js';
+export * from './reach.js';
 export * from './schema.js';

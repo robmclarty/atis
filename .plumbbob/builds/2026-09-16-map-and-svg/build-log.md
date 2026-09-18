@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 8 — feat(cli): read checkride's .check artifacts into evidence inputs
+**Current step:** 9 — feat(core): compute the changed set and reach by module hop
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -30,7 +30,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 5. feat(cli): scan TypeScript imports into files, exports and edges
 - ☑ 6. feat(cli): read the git diff into change kinds, sizes and head-side hunks
 - ☑ 7. feat(history): mine git log into churn, age, bug-fix rate and co-change
-- ☐ 8. feat(cli): read checkride's .check artifacts into evidence inputs
+- ☑ 8. feat(cli): read checkride's .check artifacts into evidence inputs
 - ☐ 9. feat(core): compute the changed set and reach by module hop
 - ☐ 10. feat(core): compute evidence and the flight category
 - ☐ 11. feat(core): rank notice candidates into the six-slot budget
@@ -56,6 +56,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 
 - [ ] test and shore patterns: vitest __snapshots__/*.snap and .gitkeep land in other, and a tests/ folder counts as terrain; decide whether the defaults grow once step 14 or 22 shows real repos
 - [ ] generated TypeScript is terrain today: a committed dist/ or a .d.ts file scans like source; decide whether the scan drops it once step 14 or 22 shows a repo that commits one
+- [ ] changed test files need a home in changed[]: step 9 gives them the group id 'tests' (D4 keeps them off the terrain, D48 demands exactly one cell or group), so step 12 must list a tests group in terrain.groups or assertMap rejects every PR that touches a test
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -457,3 +458,58 @@ folder, so it rides the branch into the PR.)*
   **3.** Wall time recorded, not yet capped
 
   Per D50, this step only measures: the integration test times `readLog(repo, 'HEAD')` on this repo and logs it (12 commits, ~74ms here) rather than asserting a threshold. No `--history <n>` cap and no `--verbose` per-source timings are added — D50 defers both until a slow repo actually shows up, and `--verbose` is step 13's CLI-wiring concern, outside this step's seam.
+
+- 2026-09-18 — step 8 checkpointed · ee0b2ccbf — feat(cli): read checkride's .check artifacts into evidence inputs (18m)
+
+  **Summary**: `readCheck(repo)` trusts `.check/` only through a schema-1 `summary.json`, gates every raw file by a fixed slot-to-file table rather than `output_file`, mutes a stale or missing channel instead of faking it, and records fallow's own schema numbers without rejecting them; a trimmed copy of checkride's real `.check/` and three synthetic edge cases back it.
+
+  1. Seven readers, one gate, one runner
+  2. The fixture is checkride's own unlisted-mutation case
+  3. A judgment call: `readCheckDir` alongside `readCheck`
+
+  **Readout**: Step 8 - feat(cli): read checkride's .check artifacts into evidence inputs
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    3 of 3 honored
+  seam         held: 5 of 5 declared, no strays
+  diff         +1101 -0 across 12 files
+  spent        18 min · 1 turn · 3s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Land it. `pnpm check --strict` is green, all 24 new tests pass, coverage on `check.ts` is 100% lines / 89% statements / 75% branches, and the done-when's three named edge cases (stale-mutation, unlisted-slot, summary-less) each have a dedicated test alongside the fixture-backed integration coverage.
+
+  **1.** Seven readers, one gate, one runner
+
+  `check.ts` splits into pure parsers (`parseSummary`, `parseHealth`, `parseDead`,
+  `parseDupes`, `parseCoverage`, `parseMutation`, `parseTest`, `parseSecurity`) and a thin
+  runner (`readCheckDir`/`readCheck`) that resolves `summary.json` first — `git-only` with a
+  `reason` when it's absent, empty, missing or the wrong `schema_version`, `harness_broken`
+  when `schema_version: 1` lies about the rest of the shape — then reads each raw file only
+  when its slot ran and wasn't skipped, comparing mtime against the run window
+  `[timestamp − total_duration_ms, ∞)` and muting a stale channel into `stale[]` with its
+  age recorded.
+
+  **2.** The fixture is checkride's own unlisted-mutation case
+
+  `apps/atis/fixtures/check/` is a trimmed copy of checkride's real `.check/`: the same
+  summary that lists 18 slots, none named `mutation`, beside a `mutation.json` still on
+  disk — exactly the case D41 cites for why the slot table gates by `checks[]`, never by a
+  file's mere presence. `dead.json`, `dupes.json` and `security.json` are the real (clean)
+  files; `health.json`, `test.json`, `mutation.json` and `coverage-final.json` are hand-
+  trimmed to a handful of entries, one health finding kept so `exceeded` has something to
+  assert on.
+
+  **3.** A judgment call: `readCheckDir` alongside `readCheck`
+
+  `.check/` is globally gitignored (any directory with that literal name, anywhere), so a
+  committed fixture cannot itself be named `.check/` without disappearing from git even
+  with the `coverage/` negation. I split the runner into `readCheckDir(dir)` (the real
+  logic) and `readCheck(repo) = readCheckDir(join(repo, '.check'))` (the documented entry
+  point), so the fixture test reads the flat `fixtures/check/` directory directly while
+  `readCheck` still behaves exactly as the done-when specifies. The synthetic stale/
+  skipped/unlisted-slot cases build real `.check/` folders under `mkdtemp`, never committed,
+  so they exercise `readCheck` itself.
