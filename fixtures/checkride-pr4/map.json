@@ -1,0 +1,6794 @@
+{
+  "meta": {
+    "schema_version": 1,
+    "generated_at": "2026-09-18T03:27:06.918Z",
+    "repo": "checkride",
+    "base": "fee5ed6",
+    "head": "ae5078cc8b570a3ba5247ff7d6723966797ef0a2",
+    "merge_base": "fee5ed6b65e25a0c8c4e6dd2a6163068f9ffb039",
+    "mode": "change",
+    "instruments": {
+      "mode": "check",
+      "fallow_schemas": {
+        "health": 7,
+        "dead": 7,
+        "dupes": 7
+      }
+    }
+  },
+  "terrain": {
+    "cells": [
+      {
+        "id": "directory:.",
+        "path": ".",
+        "kind": "directory",
+        "parent": "package:.",
+        "organelles": [
+          "vitest.config.ts",
+          "vitest.e2e.config.ts"
+        ],
+        "band": 6,
+        "interface_size": 0,
+        "body_loc": 39,
+        "fan_in": 0,
+        "fan_out": 0,
+        "dents": []
+      },
+      {
+        "id": "directory:examples/agent-loop/src",
+        "path": "examples/agent-loop/src",
+        "kind": "directory",
+        "parent": "package:.",
+        "organelles": [
+          "examples/agent-loop/src/checkout.ts",
+          "examples/agent-loop/src/pricing.ts"
+        ],
+        "band": 6,
+        "interface_size": 0,
+        "body_loc": 28,
+        "fan_in": 0,
+        "fan_out": 0,
+        "dents": []
+      },
+      {
+        "id": "directory:examples/custom-checks/src",
+        "path": "examples/custom-checks/src",
+        "kind": "directory",
+        "parent": "package:.",
+        "organelles": [
+          "examples/custom-checks/src/routes.ts"
+        ],
+        "band": 6,
+        "interface_size": 0,
+        "body_loc": 15,
+        "fan_in": 0,
+        "fan_out": 0,
+        "dents": []
+      },
+      {
+        "id": "directory:examples/dal-boundaries-declarative/src",
+        "path": "examples/dal-boundaries-declarative/src",
+        "kind": "directory",
+        "parent": "package:.",
+        "organelles": [
+          "examples/dal-boundaries-declarative/src/app.ts"
+        ],
+        "band": 6,
+        "interface_size": 0,
+        "body_loc": 28,
+        "fan_in": 0,
+        "fan_out": 3,
+        "dents": []
+      },
+      {
+        "id": "directory:examples/dal-boundaries-declarative/src/db",
+        "path": "examples/dal-boundaries-declarative/src/db",
+        "kind": "directory",
+        "parent": "package:.",
+        "organelles": [
+          "examples/dal-boundaries-declarative/src/db/read-pool.ts",
+          "examples/dal-boundaries-declarative/src/db/write-pool.ts"
+        ],
+        "band": 6,
+        "interface_size": 2,
+        "body_loc": 34,
+        "fan_in": 5,
+        "fan_out": 0,
+        "dents": []
+      },
+      {
+        "id": "directory:examples/dal-boundaries-declarative/src/domains/customers",
+        "path": "examples/dal-boundaries-declarative/src/domains/customers",
+        "kind": "directory",
+        "parent": "package:.",
+        "organelles": [
+          "examples/dal-boundaries-declarative/src/domains/customers/index.ts",
+          "examples/dal-boundaries-declarative/src/domains/customers/reader.ts",
+          "examples/dal-boundaries-declarative/src/domains/customers/schema.ts",
+          "examples/dal-boundaries-declarative/src/domains/customers/writer.ts"
+        ],
+        "band": 6,
+        "interface_size": 3,
+        "body_loc": 25,
+        "fan_in": 2,
+        "fan_out": 2,
+        "dents": []
+      },
+      {
+        "id": "directory:examples/dal-boundaries-declarative/src/domains/orders",
+        "path": "examples/dal-boundaries-declarative/src/domains/orders",
+        "kind": "directory",
+        "parent": "package:.",
+        "organelles": [
+          "examples/dal-boundaries-declarative/src/domains/orders/index.ts",
+          "examples/dal-boundaries-declarative/src/domains/orders/reader.ts",
+          "examples/dal-boundaries-declarative/src/domains/orders/schema.ts",
+          "examples/dal-boundaries-declarative/src/domains/orders/writer.ts"
+        ],
+        "band": 6,
+        "interface_size": 4,
+        "body_loc": 52,
+        "fan_in": 2,
+        "fan_out": 2,
+        "dents": []
+      },
+      {
+        "id": "directory:examples/dal-boundaries-declarative/src/reports",
+        "path": "examples/dal-boundaries-declarative/src/reports",
+        "kind": "directory",
+        "parent": "package:.",
+        "organelles": [
+          "examples/dal-boundaries-declarative/src/reports/monthly.ts"
+        ],
+        "band": 6,
+        "interface_size": 1,
+        "body_loc": 24,
+        "fan_in": 1,
+        "fan_out": 3,
+        "dents": []
+      },
+      {
+        "id": "directory:examples/dal-boundaries/src",
+        "path": "examples/dal-boundaries/src",
+        "kind": "directory",
+        "parent": "package:.",
+        "organelles": [
+          "examples/dal-boundaries/src/app.ts"
+        ],
+        "band": 6,
+        "interface_size": 0,
+        "body_loc": 28,
+        "fan_in": 0,
+        "fan_out": 3,
+        "dents": []
+      },
+      {
+        "id": "directory:examples/dal-boundaries/src/db",
+        "path": "examples/dal-boundaries/src/db",
+        "kind": "directory",
+        "parent": "package:.",
+        "organelles": [
+          "examples/dal-boundaries/src/db/read-pool.ts",
+          "examples/dal-boundaries/src/db/write-pool.ts"
+        ],
+        "band": 6,
+        "interface_size": 2,
+        "body_loc": 34,
+        "fan_in": 5,
+        "fan_out": 0,
+        "dents": []
+      },
+      {
+        "id": "directory:examples/dal-boundaries/src/domains/customers",
+        "path": "examples/dal-boundaries/src/domains/customers",
+        "kind": "directory",
+        "parent": "package:.",
+        "organelles": [
+          "examples/dal-boundaries/src/domains/customers/index.ts",
+          "examples/dal-boundaries/src/domains/customers/reader.ts",
+          "examples/dal-boundaries/src/domains/customers/schema.ts",
+          "examples/dal-boundaries/src/domains/customers/writer.ts"
+        ],
+        "band": 6,
+        "interface_size": 3,
+        "body_loc": 25,
+        "fan_in": 2,
+        "fan_out": 2,
+        "dents": []
+      },
+      {
+        "id": "directory:examples/dal-boundaries/src/domains/orders",
+        "path": "examples/dal-boundaries/src/domains/orders",
+        "kind": "directory",
+        "parent": "package:.",
+        "organelles": [
+          "examples/dal-boundaries/src/domains/orders/index.ts",
+          "examples/dal-boundaries/src/domains/orders/reader.ts",
+          "examples/dal-boundaries/src/domains/orders/schema.ts",
+          "examples/dal-boundaries/src/domains/orders/writer.ts"
+        ],
+        "band": 6,
+        "interface_size": 4,
+        "body_loc": 52,
+        "fan_in": 2,
+        "fan_out": 2,
+        "dents": []
+      },
+      {
+        "id": "directory:examples/dal-boundaries/src/reports",
+        "path": "examples/dal-boundaries/src/reports",
+        "kind": "directory",
+        "parent": "package:.",
+        "organelles": [
+          "examples/dal-boundaries/src/reports/monthly.ts"
+        ],
+        "band": 6,
+        "interface_size": 1,
+        "body_loc": 24,
+        "fan_in": 1,
+        "fan_out": 3,
+        "dents": []
+      },
+      {
+        "id": "directory:examples/existing-repo-baseline/src",
+        "path": "examples/existing-repo-baseline/src",
+        "kind": "directory",
+        "parent": "package:.",
+        "organelles": [
+          "examples/existing-repo-baseline/src/legacy-parse.ts",
+          "examples/existing-repo-baseline/src/legacy-report.ts"
+        ],
+        "band": 6,
+        "interface_size": 0,
+        "body_loc": 25,
+        "fan_in": 0,
+        "fan_out": 0,
+        "dents": []
+      },
+      {
+        "id": "directory:examples/module-boundaries/src",
+        "path": "examples/module-boundaries/src",
+        "kind": "directory",
+        "parent": "package:.",
+        "organelles": [
+          "examples/module-boundaries/src/app.ts"
+        ],
+        "band": 6,
+        "interface_size": 0,
+        "body_loc": 18,
+        "fan_in": 0,
+        "fan_out": 2,
+        "dents": []
+      },
+      {
+        "id": "directory:examples/module-boundaries/src/domains/billing",
+        "path": "examples/module-boundaries/src/domains/billing",
+        "kind": "directory",
+        "parent": "package:.",
+        "organelles": [
+          "examples/module-boundaries/src/domains/billing/index.ts",
+          "examples/module-boundaries/src/domains/billing/invoice.ts"
+        ],
+        "band": 6,
+        "interface_size": 2,
+        "body_loc": 23,
+        "fan_in": 1,
+        "fan_out": 2,
+        "dents": []
+      },
+      {
+        "id": "directory:examples/module-boundaries/src/domains/catalog",
+        "path": "examples/module-boundaries/src/domains/catalog",
+        "kind": "directory",
+        "parent": "package:.",
+        "organelles": [
+          "examples/module-boundaries/src/domains/catalog/index.ts",
+          "examples/module-boundaries/src/domains/catalog/product.ts"
+        ],
+        "band": 6,
+        "interface_size": 1,
+        "body_loc": 25,
+        "fan_in": 1,
+        "fan_out": 0,
+        "dents": []
+      },
+      {
+        "id": "directory:examples/module-boundaries/src/domains/identity",
+        "path": "examples/module-boundaries/src/domains/identity",
+        "kind": "directory",
+        "parent": "package:.",
+        "organelles": [
+          "examples/module-boundaries/src/domains/identity/customer.ts",
+          "examples/module-boundaries/src/domains/identity/index.ts"
+        ],
+        "band": 6,
+        "interface_size": 1,
+        "body_loc": 21,
+        "fan_in": 1,
+        "fan_out": 0,
+        "dents": []
+      },
+      {
+        "id": "directory:examples/module-boundaries/src/shared",
+        "path": "examples/module-boundaries/src/shared",
+        "kind": "directory",
+        "parent": "package:.",
+        "organelles": [
+          "examples/module-boundaries/src/shared/index.ts",
+          "examples/module-boundaries/src/shared/money.ts"
+        ],
+        "band": 6,
+        "interface_size": 1,
+        "body_loc": 14,
+        "fan_in": 1,
+        "fan_out": 0,
+        "dents": []
+      },
+      {
+        "id": "directory:examples/shared-preset/src",
+        "path": "examples/shared-preset/src",
+        "kind": "directory",
+        "parent": "package:.",
+        "organelles": [
+          "examples/shared-preset/src/inventory.ts"
+        ],
+        "band": 6,
+        "interface_size": 0,
+        "body_loc": 11,
+        "fan_in": 0,
+        "fan_out": 0,
+        "dents": []
+      },
+      {
+        "id": "folder:src/agent-setup",
+        "path": "src/agent-setup",
+        "kind": "folder",
+        "parent": "package:.",
+        "barrel": "src/agent-setup/index.ts",
+        "organelles": [
+          "src/agent-setup/hook.ts",
+          "src/agent-setup/index.ts"
+        ],
+        "band": 1,
+        "interface_size": 9,
+        "body_loc": 352,
+        "function_count": 19,
+        "fan_in": 2,
+        "fan_out": 1,
+        "dents": []
+      },
+      {
+        "id": "folder:src/artifacts",
+        "path": "src/artifacts",
+        "kind": "folder",
+        "parent": "package:.",
+        "barrel": "src/artifacts/index.ts",
+        "organelles": [
+          "src/artifacts/configured.ts",
+          "src/artifacts/format.ts",
+          "src/artifacts/freshness.ts",
+          "src/artifacts/index.ts",
+          "src/artifacts/json.ts",
+          "src/artifacts/raw.ts",
+          "src/artifacts/summary.ts"
+        ],
+        "band": 6,
+        "interface_size": 22,
+        "body_loc": 409,
+        "function_count": 28,
+        "fan_in": 10,
+        "fan_out": 3,
+        "dents": []
+      },
+      {
+        "id": "folder:src/baseline",
+        "path": "src/baseline",
+        "kind": "folder",
+        "parent": "package:.",
+        "barrel": "src/baseline/index.ts",
+        "organelles": [
+          "src/baseline/fallow.ts",
+          "src/baseline/fingerprint.ts",
+          "src/baseline/index.ts",
+          "src/baseline/store.ts"
+        ],
+        "band": 3,
+        "interface_size": 13,
+        "body_loc": 641,
+        "function_count": 37,
+        "fan_in": 4,
+        "fan_out": 3,
+        "dents": []
+      },
+      {
+        "id": "folder:src/digest",
+        "path": "src/digest",
+        "kind": "folder",
+        "parent": "package:.",
+        "barrel": "src/digest/index.ts",
+        "organelles": [
+          "src/digest/digest.ts",
+          "src/digest/index.ts"
+        ],
+        "band": 2,
+        "interface_size": 3,
+        "body_loc": 167,
+        "function_count": 10,
+        "fan_in": 2,
+        "fan_out": 5,
+        "dents": []
+      },
+      {
+        "id": "folder:src/pm",
+        "path": "src/pm",
+        "kind": "folder",
+        "parent": "package:.",
+        "barrel": "src/pm/index.ts",
+        "organelles": [
+          "src/pm/detect.ts",
+          "src/pm/index.ts",
+          "src/pm/tools.ts",
+          "src/pm/translate.ts"
+        ],
+        "band": 4,
+        "interface_size": 4,
+        "body_loc": 234,
+        "function_count": 13,
+        "fan_in": 8,
+        "fan_out": 0,
+        "dents": []
+      },
+      {
+        "id": "folder:src/qa",
+        "path": "src/qa",
+        "kind": "folder",
+        "parent": "package:.",
+        "barrel": "src/qa/index.ts",
+        "organelles": [
+          "src/qa/cli.ts",
+          "src/qa/dead.ts",
+          "src/qa/dupes.ts",
+          "src/qa/health.ts",
+          "src/qa/index.ts",
+          "src/qa/mutation.ts",
+          "src/qa/qa.ts",
+          "src/qa/read.ts",
+          "src/qa/render.ts"
+        ],
+        "band": 6,
+        "interface_size": 9,
+        "body_loc": 1191,
+        "function_count": 112,
+        "fan_in": 0,
+        "fan_out": 1,
+        "dents": []
+      },
+      {
+        "id": "folder:src/triage",
+        "path": "src/triage",
+        "kind": "folder",
+        "parent": "package:.",
+        "barrel": "src/triage/index.ts",
+        "organelles": [
+          "src/triage/cli.ts",
+          "src/triage/doctor-fold.ts",
+          "src/triage/env.ts",
+          "src/triage/gate.ts",
+          "src/triage/index.ts",
+          "src/triage/render.ts",
+          "src/triage/triage.ts"
+        ],
+        "band": 6,
+        "interface_size": 7,
+        "body_loc": 808,
+        "function_count": 84,
+        "fan_in": 0,
+        "fan_out": 5,
+        "dents": []
+      },
+      {
+        "id": "package:.",
+        "path": ".",
+        "kind": "package",
+        "barrel": "src/index.ts",
+        "organelles": [
+          "src/index.ts"
+        ],
+        "band": 0,
+        "interface_size": 29,
+        "body_loc": 9926,
+        "function_count": 677,
+        "fan_in": 0,
+        "fan_out": 0,
+        "dents": []
+      },
+      {
+        "id": "single:src/adapters.ts",
+        "path": "src/adapters.ts",
+        "kind": "single",
+        "parent": "package:.",
+        "organelles": [
+          "src/adapters.ts"
+        ],
+        "band": 4,
+        "interface_size": 7,
+        "body_loc": 506,
+        "fan_in": 7,
+        "fan_out": 0,
+        "dents": []
+      },
+      {
+        "id": "single:src/atomic.ts",
+        "path": "src/atomic.ts",
+        "kind": "single",
+        "parent": "package:.",
+        "organelles": [
+          "src/atomic.ts"
+        ],
+        "band": 5,
+        "interface_size": 1,
+        "body_loc": 43,
+        "function_count": 1,
+        "fan_in": 3,
+        "fan_out": 0,
+        "dents": []
+      },
+      {
+        "id": "single:src/baseline-command.ts",
+        "path": "src/baseline-command.ts",
+        "kind": "single",
+        "parent": "package:.",
+        "organelles": [
+          "src/baseline-command.ts"
+        ],
+        "band": 1,
+        "interface_size": 3,
+        "body_loc": 75,
+        "function_count": 2,
+        "fan_in": 2,
+        "fan_out": 6,
+        "dents": []
+      },
+      {
+        "id": "single:src/cli.ts",
+        "path": "src/cli.ts",
+        "kind": "single",
+        "parent": "package:.",
+        "organelles": [
+          "src/cli.ts"
+        ],
+        "band": 0,
+        "interface_size": 4,
+        "body_loc": 355,
+        "function_count": 27,
+        "fan_in": 0,
+        "fan_out": 5,
+        "dents": []
+      },
+      {
+        "id": "single:src/config.ts",
+        "path": "src/config.ts",
+        "kind": "single",
+        "parent": "package:.",
+        "organelles": [
+          "src/config.ts"
+        ],
+        "band": 3,
+        "interface_size": 8,
+        "body_loc": 666,
+        "function_count": 53,
+        "fan_in": 6,
+        "fan_out": 2,
+        "dents": []
+      },
+      {
+        "id": "single:src/doctor.ts",
+        "path": "src/doctor.ts",
+        "kind": "single",
+        "parent": "package:.",
+        "organelles": [
+          "src/doctor.ts"
+        ],
+        "band": 0,
+        "interface_size": 11,
+        "body_loc": 460,
+        "function_count": 48,
+        "fan_in": 2,
+        "fan_out": 4,
+        "dents": []
+      },
+      {
+        "id": "single:src/init.ts",
+        "path": "src/init.ts",
+        "kind": "single",
+        "parent": "package:.",
+        "organelles": [
+          "src/init.ts"
+        ],
+        "band": 0,
+        "interface_size": 12,
+        "body_loc": 943,
+        "function_count": 73,
+        "fan_in": 2,
+        "fan_out": 8,
+        "dents": []
+      },
+      {
+        "id": "single:src/json.ts",
+        "path": "src/json.ts",
+        "kind": "single",
+        "parent": "package:.",
+        "organelles": [
+          "src/json.ts"
+        ],
+        "band": 5,
+        "interface_size": 2,
+        "body_loc": 22,
+        "function_count": 1,
+        "fan_in": 5,
+        "fan_out": 0,
+        "dents": []
+      },
+      {
+        "id": "single:src/links.ts",
+        "path": "src/links.ts",
+        "kind": "single",
+        "parent": "package:.",
+        "organelles": [
+          "src/links.ts"
+        ],
+        "band": 4,
+        "interface_size": 3,
+        "body_loc": 246,
+        "function_count": 18,
+        "fan_in": 6,
+        "fan_out": 0,
+        "dents": []
+      },
+      {
+        "id": "single:src/orchestrator.ts",
+        "path": "src/orchestrator.ts",
+        "kind": "single",
+        "parent": "package:.",
+        "organelles": [
+          "src/orchestrator.ts"
+        ],
+        "band": 2,
+        "interface_size": 21,
+        "body_loc": 948,
+        "function_count": 73,
+        "fan_in": 9,
+        "fan_out": 13,
+        "dents": []
+      },
+      {
+        "id": "single:src/pack.ts",
+        "path": "src/pack.ts",
+        "kind": "single",
+        "parent": "package:.",
+        "organelles": [
+          "src/pack.ts"
+        ],
+        "band": 3,
+        "interface_size": 5,
+        "body_loc": 279,
+        "function_count": 18,
+        "fan_in": 1,
+        "fan_out": 3,
+        "dents": []
+      },
+      {
+        "id": "single:src/proc.ts",
+        "path": "src/proc.ts",
+        "kind": "single",
+        "parent": "package:.",
+        "organelles": [
+          "src/proc.ts"
+        ],
+        "band": 3,
+        "interface_size": 3,
+        "body_loc": 39,
+        "function_count": 3,
+        "fan_in": 2,
+        "fan_out": 0,
+        "dents": []
+      },
+      {
+        "id": "single:src/security.ts",
+        "path": "src/security.ts",
+        "kind": "single",
+        "parent": "package:.",
+        "organelles": [
+          "src/security.ts"
+        ],
+        "band": 3,
+        "interface_size": 4,
+        "body_loc": 103,
+        "function_count": 10,
+        "fan_in": 1,
+        "fan_out": 3,
+        "dents": []
+      },
+      {
+        "id": "single:src/smoke.ts",
+        "path": "src/smoke.ts",
+        "kind": "single",
+        "parent": "package:.",
+        "organelles": [
+          "src/smoke.ts"
+        ],
+        "band": 3,
+        "interface_size": 6,
+        "body_loc": 374,
+        "function_count": 23,
+        "fan_in": 1,
+        "fan_out": 1,
+        "dents": []
+      },
+      {
+        "id": "single:src/snippets.ts",
+        "path": "src/snippets.ts",
+        "kind": "single",
+        "parent": "package:.",
+        "organelles": [
+          "src/snippets.ts"
+        ],
+        "band": 3,
+        "interface_size": 19,
+        "body_loc": 435,
+        "function_count": 22,
+        "fan_in": 2,
+        "fan_out": 2,
+        "dents": []
+      },
+      {
+        "id": "single:src/tool-json.ts",
+        "path": "src/tool-json.ts",
+        "kind": "single",
+        "parent": "package:.",
+        "organelles": [
+          "src/tool-json.ts"
+        ],
+        "band": 5,
+        "interface_size": 2,
+        "body_loc": 62,
+        "function_count": 2,
+        "fan_in": 5,
+        "fan_out": 0,
+        "dents": []
+      }
+    ],
+    "organelles": [
+      {
+        "id": "examples/agent-loop/src/checkout.ts",
+        "path": "examples/agent-loop/src/checkout.ts",
+        "cell": "directory:examples/agent-loop/src",
+        "band": 6,
+        "reachable": false,
+        "loc": 18,
+        "dents": []
+      },
+      {
+        "id": "examples/agent-loop/src/pricing.ts",
+        "path": "examples/agent-loop/src/pricing.ts",
+        "cell": "directory:examples/agent-loop/src",
+        "band": 6,
+        "reachable": false,
+        "loc": 10,
+        "dents": []
+      },
+      {
+        "id": "examples/custom-checks/src/routes.ts",
+        "path": "examples/custom-checks/src/routes.ts",
+        "cell": "directory:examples/custom-checks/src",
+        "band": 6,
+        "reachable": false,
+        "loc": 15,
+        "dents": []
+      },
+      {
+        "id": "examples/dal-boundaries-declarative/src/app.ts",
+        "path": "examples/dal-boundaries-declarative/src/app.ts",
+        "cell": "directory:examples/dal-boundaries-declarative/src",
+        "band": 6,
+        "reachable": false,
+        "loc": 28,
+        "dents": []
+      },
+      {
+        "id": "examples/dal-boundaries-declarative/src/db/read-pool.ts",
+        "path": "examples/dal-boundaries-declarative/src/db/read-pool.ts",
+        "cell": "directory:examples/dal-boundaries-declarative/src/db",
+        "band": 6,
+        "reachable": false,
+        "loc": 20,
+        "dents": []
+      },
+      {
+        "id": "examples/dal-boundaries-declarative/src/db/write-pool.ts",
+        "path": "examples/dal-boundaries-declarative/src/db/write-pool.ts",
+        "cell": "directory:examples/dal-boundaries-declarative/src/db",
+        "band": 6,
+        "reachable": false,
+        "loc": 14,
+        "dents": []
+      },
+      {
+        "id": "examples/dal-boundaries-declarative/src/domains/customers/index.ts",
+        "path": "examples/dal-boundaries-declarative/src/domains/customers/index.ts",
+        "cell": "directory:examples/dal-boundaries-declarative/src/domains/customers",
+        "band": 6,
+        "reachable": false,
+        "loc": 3,
+        "dents": []
+      },
+      {
+        "id": "examples/dal-boundaries-declarative/src/domains/customers/reader.ts",
+        "path": "examples/dal-boundaries-declarative/src/domains/customers/reader.ts",
+        "cell": "directory:examples/dal-boundaries-declarative/src/domains/customers",
+        "band": 6,
+        "reachable": false,
+        "loc": 8,
+        "dents": []
+      },
+      {
+        "id": "examples/dal-boundaries-declarative/src/domains/customers/schema.ts",
+        "path": "examples/dal-boundaries-declarative/src/domains/customers/schema.ts",
+        "cell": "directory:examples/dal-boundaries-declarative/src/domains/customers",
+        "band": 6,
+        "reachable": false,
+        "loc": 7,
+        "dents": []
+      },
+      {
+        "id": "examples/dal-boundaries-declarative/src/domains/customers/writer.ts",
+        "path": "examples/dal-boundaries-declarative/src/domains/customers/writer.ts",
+        "cell": "directory:examples/dal-boundaries-declarative/src/domains/customers",
+        "band": 6,
+        "reachable": false,
+        "loc": 7,
+        "dents": []
+      },
+      {
+        "id": "examples/dal-boundaries-declarative/src/domains/orders/index.ts",
+        "path": "examples/dal-boundaries-declarative/src/domains/orders/index.ts",
+        "cell": "directory:examples/dal-boundaries-declarative/src/domains/orders",
+        "band": 6,
+        "reachable": false,
+        "loc": 3,
+        "dents": []
+      },
+      {
+        "id": "examples/dal-boundaries-declarative/src/domains/orders/reader.ts",
+        "path": "examples/dal-boundaries-declarative/src/domains/orders/reader.ts",
+        "cell": "directory:examples/dal-boundaries-declarative/src/domains/orders",
+        "band": 6,
+        "reachable": false,
+        "loc": 14,
+        "dents": []
+      },
+      {
+        "id": "examples/dal-boundaries-declarative/src/domains/orders/schema.ts",
+        "path": "examples/dal-boundaries-declarative/src/domains/orders/schema.ts",
+        "cell": "directory:examples/dal-boundaries-declarative/src/domains/orders",
+        "band": 6,
+        "reachable": false,
+        "loc": 13,
+        "dents": []
+      },
+      {
+        "id": "examples/dal-boundaries-declarative/src/domains/orders/writer.ts",
+        "path": "examples/dal-boundaries-declarative/src/domains/orders/writer.ts",
+        "cell": "directory:examples/dal-boundaries-declarative/src/domains/orders",
+        "band": 6,
+        "reachable": false,
+        "loc": 22,
+        "dents": []
+      },
+      {
+        "id": "examples/dal-boundaries-declarative/src/reports/monthly.ts",
+        "path": "examples/dal-boundaries-declarative/src/reports/monthly.ts",
+        "cell": "directory:examples/dal-boundaries-declarative/src/reports",
+        "band": 6,
+        "reachable": false,
+        "loc": 24,
+        "dents": []
+      },
+      {
+        "id": "examples/dal-boundaries/src/app.ts",
+        "path": "examples/dal-boundaries/src/app.ts",
+        "cell": "directory:examples/dal-boundaries/src",
+        "band": 6,
+        "reachable": false,
+        "loc": 28,
+        "dents": []
+      },
+      {
+        "id": "examples/dal-boundaries/src/db/read-pool.ts",
+        "path": "examples/dal-boundaries/src/db/read-pool.ts",
+        "cell": "directory:examples/dal-boundaries/src/db",
+        "band": 6,
+        "reachable": false,
+        "loc": 20,
+        "dents": []
+      },
+      {
+        "id": "examples/dal-boundaries/src/db/write-pool.ts",
+        "path": "examples/dal-boundaries/src/db/write-pool.ts",
+        "cell": "directory:examples/dal-boundaries/src/db",
+        "band": 6,
+        "reachable": false,
+        "loc": 14,
+        "dents": []
+      },
+      {
+        "id": "examples/dal-boundaries/src/domains/customers/index.ts",
+        "path": "examples/dal-boundaries/src/domains/customers/index.ts",
+        "cell": "directory:examples/dal-boundaries/src/domains/customers",
+        "band": 6,
+        "reachable": false,
+        "loc": 3,
+        "dents": []
+      },
+      {
+        "id": "examples/dal-boundaries/src/domains/customers/reader.ts",
+        "path": "examples/dal-boundaries/src/domains/customers/reader.ts",
+        "cell": "directory:examples/dal-boundaries/src/domains/customers",
+        "band": 6,
+        "reachable": false,
+        "loc": 8,
+        "dents": []
+      },
+      {
+        "id": "examples/dal-boundaries/src/domains/customers/schema.ts",
+        "path": "examples/dal-boundaries/src/domains/customers/schema.ts",
+        "cell": "directory:examples/dal-boundaries/src/domains/customers",
+        "band": 6,
+        "reachable": false,
+        "loc": 7,
+        "dents": []
+      },
+      {
+        "id": "examples/dal-boundaries/src/domains/customers/writer.ts",
+        "path": "examples/dal-boundaries/src/domains/customers/writer.ts",
+        "cell": "directory:examples/dal-boundaries/src/domains/customers",
+        "band": 6,
+        "reachable": false,
+        "loc": 7,
+        "dents": []
+      },
+      {
+        "id": "examples/dal-boundaries/src/domains/orders/index.ts",
+        "path": "examples/dal-boundaries/src/domains/orders/index.ts",
+        "cell": "directory:examples/dal-boundaries/src/domains/orders",
+        "band": 6,
+        "reachable": false,
+        "loc": 3,
+        "dents": []
+      },
+      {
+        "id": "examples/dal-boundaries/src/domains/orders/reader.ts",
+        "path": "examples/dal-boundaries/src/domains/orders/reader.ts",
+        "cell": "directory:examples/dal-boundaries/src/domains/orders",
+        "band": 6,
+        "reachable": false,
+        "loc": 14,
+        "dents": []
+      },
+      {
+        "id": "examples/dal-boundaries/src/domains/orders/schema.ts",
+        "path": "examples/dal-boundaries/src/domains/orders/schema.ts",
+        "cell": "directory:examples/dal-boundaries/src/domains/orders",
+        "band": 6,
+        "reachable": false,
+        "loc": 13,
+        "dents": []
+      },
+      {
+        "id": "examples/dal-boundaries/src/domains/orders/writer.ts",
+        "path": "examples/dal-boundaries/src/domains/orders/writer.ts",
+        "cell": "directory:examples/dal-boundaries/src/domains/orders",
+        "band": 6,
+        "reachable": false,
+        "loc": 22,
+        "dents": []
+      },
+      {
+        "id": "examples/dal-boundaries/src/reports/monthly.ts",
+        "path": "examples/dal-boundaries/src/reports/monthly.ts",
+        "cell": "directory:examples/dal-boundaries/src/reports",
+        "band": 6,
+        "reachable": false,
+        "loc": 24,
+        "dents": []
+      },
+      {
+        "id": "examples/existing-repo-baseline/src/legacy-parse.ts",
+        "path": "examples/existing-repo-baseline/src/legacy-parse.ts",
+        "cell": "directory:examples/existing-repo-baseline/src",
+        "band": 6,
+        "reachable": false,
+        "loc": 10,
+        "dents": []
+      },
+      {
+        "id": "examples/existing-repo-baseline/src/legacy-report.ts",
+        "path": "examples/existing-repo-baseline/src/legacy-report.ts",
+        "cell": "directory:examples/existing-repo-baseline/src",
+        "band": 6,
+        "reachable": false,
+        "loc": 15,
+        "dents": []
+      },
+      {
+        "id": "examples/module-boundaries/src/app.ts",
+        "path": "examples/module-boundaries/src/app.ts",
+        "cell": "directory:examples/module-boundaries/src",
+        "band": 6,
+        "reachable": false,
+        "loc": 18,
+        "dents": []
+      },
+      {
+        "id": "examples/module-boundaries/src/domains/billing/index.ts",
+        "path": "examples/module-boundaries/src/domains/billing/index.ts",
+        "cell": "directory:examples/module-boundaries/src/domains/billing",
+        "band": 6,
+        "reachable": false,
+        "loc": 3,
+        "dents": []
+      },
+      {
+        "id": "examples/module-boundaries/src/domains/billing/invoice.ts",
+        "path": "examples/module-boundaries/src/domains/billing/invoice.ts",
+        "cell": "directory:examples/module-boundaries/src/domains/billing",
+        "band": 6,
+        "reachable": false,
+        "loc": 20,
+        "dents": []
+      },
+      {
+        "id": "examples/module-boundaries/src/domains/catalog/index.ts",
+        "path": "examples/module-boundaries/src/domains/catalog/index.ts",
+        "cell": "directory:examples/module-boundaries/src/domains/catalog",
+        "band": 6,
+        "reachable": false,
+        "loc": 7,
+        "dents": []
+      },
+      {
+        "id": "examples/module-boundaries/src/domains/catalog/product.ts",
+        "path": "examples/module-boundaries/src/domains/catalog/product.ts",
+        "cell": "directory:examples/module-boundaries/src/domains/catalog",
+        "band": 6,
+        "reachable": false,
+        "loc": 18,
+        "dents": []
+      },
+      {
+        "id": "examples/module-boundaries/src/domains/identity/customer.ts",
+        "path": "examples/module-boundaries/src/domains/identity/customer.ts",
+        "cell": "directory:examples/module-boundaries/src/domains/identity",
+        "band": 6,
+        "reachable": false,
+        "loc": 19,
+        "dents": []
+      },
+      {
+        "id": "examples/module-boundaries/src/domains/identity/index.ts",
+        "path": "examples/module-boundaries/src/domains/identity/index.ts",
+        "cell": "directory:examples/module-boundaries/src/domains/identity",
+        "band": 6,
+        "reachable": false,
+        "loc": 2,
+        "dents": []
+      },
+      {
+        "id": "examples/module-boundaries/src/shared/index.ts",
+        "path": "examples/module-boundaries/src/shared/index.ts",
+        "cell": "directory:examples/module-boundaries/src/shared",
+        "band": 6,
+        "reachable": false,
+        "loc": 2,
+        "dents": []
+      },
+      {
+        "id": "examples/module-boundaries/src/shared/money.ts",
+        "path": "examples/module-boundaries/src/shared/money.ts",
+        "cell": "directory:examples/module-boundaries/src/shared",
+        "band": 6,
+        "reachable": false,
+        "loc": 12,
+        "dents": []
+      },
+      {
+        "id": "examples/shared-preset/src/inventory.ts",
+        "path": "examples/shared-preset/src/inventory.ts",
+        "cell": "directory:examples/shared-preset/src",
+        "band": 6,
+        "reachable": false,
+        "loc": 11,
+        "dents": []
+      },
+      {
+        "id": "src/adapters.ts",
+        "path": "src/adapters.ts",
+        "cell": "single:src/adapters.ts",
+        "band": 4,
+        "reachable": true,
+        "loc": 506,
+        "dents": []
+      },
+      {
+        "id": "src/agent-setup/hook.ts",
+        "path": "src/agent-setup/hook.ts",
+        "cell": "folder:src/agent-setup",
+        "band": 2,
+        "reachable": true,
+        "loc": 336,
+        "function_count": 19,
+        "dents": []
+      },
+      {
+        "id": "src/agent-setup/index.ts",
+        "path": "src/agent-setup/index.ts",
+        "cell": "folder:src/agent-setup",
+        "band": 1,
+        "reachable": true,
+        "loc": 16,
+        "dents": []
+      },
+      {
+        "id": "src/artifacts/configured.ts",
+        "path": "src/artifacts/configured.ts",
+        "cell": "folder:src/artifacts",
+        "band": 6,
+        "reachable": false,
+        "loc": 42,
+        "function_count": 3,
+        "dents": []
+      },
+      {
+        "id": "src/artifacts/format.ts",
+        "path": "src/artifacts/format.ts",
+        "cell": "folder:src/artifacts",
+        "band": 6,
+        "reachable": false,
+        "loc": 61,
+        "function_count": 4,
+        "dents": []
+      },
+      {
+        "id": "src/artifacts/freshness.ts",
+        "path": "src/artifacts/freshness.ts",
+        "cell": "folder:src/artifacts",
+        "band": 6,
+        "reachable": false,
+        "loc": 41,
+        "function_count": 2,
+        "dents": []
+      },
+      {
+        "id": "src/artifacts/index.ts",
+        "path": "src/artifacts/index.ts",
+        "cell": "folder:src/artifacts",
+        "band": 6,
+        "reachable": false,
+        "loc": 21,
+        "dents": []
+      },
+      {
+        "id": "src/artifacts/json.ts",
+        "path": "src/artifacts/json.ts",
+        "cell": "folder:src/artifacts",
+        "band": 6,
+        "reachable": false,
+        "loc": 47,
+        "function_count": 5,
+        "dents": []
+      },
+      {
+        "id": "src/artifacts/raw.ts",
+        "path": "src/artifacts/raw.ts",
+        "cell": "folder:src/artifacts",
+        "band": 6,
+        "reachable": false,
+        "loc": 92,
+        "function_count": 8,
+        "dents": []
+      },
+      {
+        "id": "src/artifacts/summary.ts",
+        "path": "src/artifacts/summary.ts",
+        "cell": "folder:src/artifacts",
+        "band": 6,
+        "reachable": false,
+        "loc": 105,
+        "function_count": 6,
+        "dents": []
+      },
+      {
+        "id": "src/atomic.ts",
+        "path": "src/atomic.ts",
+        "cell": "single:src/atomic.ts",
+        "band": 5,
+        "reachable": true,
+        "loc": 43,
+        "function_count": 1,
+        "dents": []
+      },
+      {
+        "id": "src/baseline-command.ts",
+        "path": "src/baseline-command.ts",
+        "cell": "single:src/baseline-command.ts",
+        "band": 1,
+        "reachable": true,
+        "loc": 75,
+        "function_count": 2,
+        "dents": []
+      },
+      {
+        "id": "src/baseline/fallow.ts",
+        "path": "src/baseline/fallow.ts",
+        "cell": "folder:src/baseline",
+        "band": 4,
+        "reachable": true,
+        "loc": 375,
+        "function_count": 18,
+        "dents": []
+      },
+      {
+        "id": "src/baseline/fingerprint.ts",
+        "path": "src/baseline/fingerprint.ts",
+        "cell": "folder:src/baseline",
+        "band": 4,
+        "reachable": true,
+        "loc": 119,
+        "function_count": 9,
+        "dents": []
+      },
+      {
+        "id": "src/baseline/index.ts",
+        "path": "src/baseline/index.ts",
+        "cell": "folder:src/baseline",
+        "band": 3,
+        "reachable": true,
+        "loc": 20,
+        "dents": []
+      },
+      {
+        "id": "src/baseline/store.ts",
+        "path": "src/baseline/store.ts",
+        "cell": "folder:src/baseline",
+        "band": 4,
+        "reachable": true,
+        "loc": 127,
+        "function_count": 10,
+        "dents": []
+      },
+      {
+        "id": "src/cli.ts",
+        "path": "src/cli.ts",
+        "cell": "single:src/cli.ts",
+        "band": 0,
+        "reachable": true,
+        "loc": 355,
+        "function_count": 27,
+        "dents": []
+      },
+      {
+        "id": "src/config.ts",
+        "path": "src/config.ts",
+        "cell": "single:src/config.ts",
+        "band": 3,
+        "reachable": true,
+        "loc": 666,
+        "function_count": 53,
+        "dents": []
+      },
+      {
+        "id": "src/digest/digest.ts",
+        "path": "src/digest/digest.ts",
+        "cell": "folder:src/digest",
+        "band": 2,
+        "reachable": true,
+        "loc": 161,
+        "function_count": 10,
+        "dents": []
+      },
+      {
+        "id": "src/digest/index.ts",
+        "path": "src/digest/index.ts",
+        "cell": "folder:src/digest",
+        "band": 2,
+        "reachable": true,
+        "loc": 6,
+        "dents": []
+      },
+      {
+        "id": "src/doctor.ts",
+        "path": "src/doctor.ts",
+        "cell": "single:src/doctor.ts",
+        "band": 0,
+        "reachable": true,
+        "loc": 460,
+        "function_count": 48,
+        "dents": [],
+        "churn_ratio": 1.0042283298097252,
+        "age_days": 43,
+        "bugfix_rate": 0.16666666666666666
+      },
+      {
+        "id": "src/index.ts",
+        "path": "src/index.ts",
+        "cell": "package:.",
+        "band": 0,
+        "reachable": true,
+        "loc": 23,
+        "dents": []
+      },
+      {
+        "id": "src/init.ts",
+        "path": "src/init.ts",
+        "cell": "single:src/init.ts",
+        "band": 0,
+        "reachable": true,
+        "loc": 943,
+        "function_count": 73,
+        "dents": []
+      },
+      {
+        "id": "src/json.ts",
+        "path": "src/json.ts",
+        "cell": "single:src/json.ts",
+        "band": 5,
+        "reachable": true,
+        "loc": 22,
+        "function_count": 1,
+        "dents": []
+      },
+      {
+        "id": "src/links.ts",
+        "path": "src/links.ts",
+        "cell": "single:src/links.ts",
+        "band": 4,
+        "reachable": true,
+        "loc": 246,
+        "function_count": 18,
+        "dents": []
+      },
+      {
+        "id": "src/orchestrator.ts",
+        "path": "src/orchestrator.ts",
+        "cell": "single:src/orchestrator.ts",
+        "band": 2,
+        "reachable": true,
+        "loc": 948,
+        "function_count": 73,
+        "dents": [],
+        "churn_ratio": 1.4539078156312626,
+        "age_days": 30,
+        "bugfix_rate": 0.25
+      },
+      {
+        "id": "src/pack.ts",
+        "path": "src/pack.ts",
+        "cell": "single:src/pack.ts",
+        "band": 3,
+        "reachable": true,
+        "loc": 279,
+        "function_count": 18,
+        "dents": []
+      },
+      {
+        "id": "src/pm/detect.ts",
+        "path": "src/pm/detect.ts",
+        "cell": "folder:src/pm",
+        "band": 6,
+        "reachable": true,
+        "loc": 62,
+        "function_count": 6,
+        "dents": []
+      },
+      {
+        "id": "src/pm/index.ts",
+        "path": "src/pm/index.ts",
+        "cell": "folder:src/pm",
+        "band": 4,
+        "reachable": true,
+        "loc": 9,
+        "dents": [],
+        "churn_ratio": 1.2727272727272727,
+        "age_days": 22,
+        "bugfix_rate": 0.5
+      },
+      {
+        "id": "src/pm/tools.ts",
+        "path": "src/pm/tools.ts",
+        "cell": "folder:src/pm",
+        "band": 5,
+        "reachable": true,
+        "loc": 79,
+        "function_count": 4,
+        "dents": [],
+        "churn_ratio": 1.0886075949367089,
+        "age_days": 0,
+        "bugfix_rate": 1
+      },
+      {
+        "id": "src/pm/translate.ts",
+        "path": "src/pm/translate.ts",
+        "cell": "folder:src/pm",
+        "band": 5,
+        "reachable": true,
+        "loc": 84,
+        "function_count": 3,
+        "dents": []
+      },
+      {
+        "id": "src/proc.ts",
+        "path": "src/proc.ts",
+        "cell": "single:src/proc.ts",
+        "band": 3,
+        "reachable": true,
+        "loc": 39,
+        "function_count": 3,
+        "dents": []
+      },
+      {
+        "id": "src/qa/cli.ts",
+        "path": "src/qa/cli.ts",
+        "cell": "folder:src/qa",
+        "band": 6,
+        "reachable": false,
+        "loc": 23,
+        "dents": []
+      },
+      {
+        "id": "src/qa/dead.ts",
+        "path": "src/qa/dead.ts",
+        "cell": "folder:src/qa",
+        "band": 6,
+        "reachable": false,
+        "loc": 96,
+        "function_count": 5,
+        "dents": []
+      },
+      {
+        "id": "src/qa/dupes.ts",
+        "path": "src/qa/dupes.ts",
+        "cell": "folder:src/qa",
+        "band": 6,
+        "reachable": false,
+        "loc": 85,
+        "function_count": 4,
+        "dents": []
+      },
+      {
+        "id": "src/qa/health.ts",
+        "path": "src/qa/health.ts",
+        "cell": "folder:src/qa",
+        "band": 6,
+        "reachable": false,
+        "loc": 156,
+        "function_count": 12,
+        "dents": []
+      },
+      {
+        "id": "src/qa/index.ts",
+        "path": "src/qa/index.ts",
+        "cell": "folder:src/qa",
+        "band": 6,
+        "reachable": false,
+        "loc": 22,
+        "dents": []
+      },
+      {
+        "id": "src/qa/mutation.ts",
+        "path": "src/qa/mutation.ts",
+        "cell": "folder:src/qa",
+        "band": 6,
+        "reachable": false,
+        "loc": 240,
+        "function_count": 21,
+        "dents": []
+      },
+      {
+        "id": "src/qa/qa.ts",
+        "path": "src/qa/qa.ts",
+        "cell": "folder:src/qa",
+        "band": 6,
+        "reachable": false,
+        "loc": 214,
+        "function_count": 14,
+        "dents": []
+      },
+      {
+        "id": "src/qa/read.ts",
+        "path": "src/qa/read.ts",
+        "cell": "folder:src/qa",
+        "band": 6,
+        "reachable": false,
+        "loc": 54,
+        "function_count": 1,
+        "dents": []
+      },
+      {
+        "id": "src/qa/render.ts",
+        "path": "src/qa/render.ts",
+        "cell": "folder:src/qa",
+        "band": 6,
+        "reachable": false,
+        "loc": 301,
+        "function_count": 55,
+        "dents": []
+      },
+      {
+        "id": "src/security.ts",
+        "path": "src/security.ts",
+        "cell": "single:src/security.ts",
+        "band": 3,
+        "reachable": true,
+        "loc": 103,
+        "function_count": 10,
+        "dents": []
+      },
+      {
+        "id": "src/smoke.ts",
+        "path": "src/smoke.ts",
+        "cell": "single:src/smoke.ts",
+        "band": 3,
+        "reachable": true,
+        "loc": 374,
+        "function_count": 23,
+        "dents": []
+      },
+      {
+        "id": "src/snippets.ts",
+        "path": "src/snippets.ts",
+        "cell": "single:src/snippets.ts",
+        "band": 3,
+        "reachable": true,
+        "loc": 435,
+        "function_count": 22,
+        "dents": []
+      },
+      {
+        "id": "src/tool-json.ts",
+        "path": "src/tool-json.ts",
+        "cell": "single:src/tool-json.ts",
+        "band": 5,
+        "reachable": true,
+        "loc": 62,
+        "function_count": 2,
+        "dents": []
+      },
+      {
+        "id": "src/triage/cli.ts",
+        "path": "src/triage/cli.ts",
+        "cell": "folder:src/triage",
+        "band": 6,
+        "reachable": false,
+        "loc": 25,
+        "dents": []
+      },
+      {
+        "id": "src/triage/doctor-fold.ts",
+        "path": "src/triage/doctor-fold.ts",
+        "cell": "folder:src/triage",
+        "band": 6,
+        "reachable": false,
+        "loc": 92,
+        "function_count": 6,
+        "dents": []
+      },
+      {
+        "id": "src/triage/env.ts",
+        "path": "src/triage/env.ts",
+        "cell": "folder:src/triage",
+        "band": 6,
+        "reachable": false,
+        "loc": 107,
+        "function_count": 10,
+        "dents": []
+      },
+      {
+        "id": "src/triage/gate.ts",
+        "path": "src/triage/gate.ts",
+        "cell": "folder:src/triage",
+        "band": 6,
+        "reachable": false,
+        "loc": 97,
+        "function_count": 5,
+        "dents": []
+      },
+      {
+        "id": "src/triage/index.ts",
+        "path": "src/triage/index.ts",
+        "cell": "folder:src/triage",
+        "band": 6,
+        "reachable": false,
+        "loc": 20,
+        "dents": []
+      },
+      {
+        "id": "src/triage/render.ts",
+        "path": "src/triage/render.ts",
+        "cell": "folder:src/triage",
+        "band": 6,
+        "reachable": false,
+        "loc": 296,
+        "function_count": 46,
+        "dents": []
+      },
+      {
+        "id": "src/triage/triage.ts",
+        "path": "src/triage/triage.ts",
+        "cell": "folder:src/triage",
+        "band": 6,
+        "reachable": false,
+        "loc": 171,
+        "function_count": 17,
+        "dents": []
+      },
+      {
+        "id": "vitest.config.ts",
+        "path": "vitest.config.ts",
+        "cell": "directory:.",
+        "band": 6,
+        "reachable": false,
+        "loc": 27,
+        "dents": []
+      },
+      {
+        "id": "vitest.e2e.config.ts",
+        "path": "vitest.e2e.config.ts",
+        "cell": "directory:.",
+        "band": 6,
+        "reachable": false,
+        "loc": 12,
+        "dents": []
+      }
+    ],
+    "bands": [
+      {
+        "index": 0,
+        "depth_min": 0,
+        "depth_max": 1
+      },
+      {
+        "index": 1,
+        "depth_min": 2,
+        "depth_max": 2
+      },
+      {
+        "index": 2,
+        "depth_min": 3,
+        "depth_max": 3
+      },
+      {
+        "index": 3,
+        "depth_min": 4,
+        "depth_max": 4
+      },
+      {
+        "index": 4,
+        "depth_min": 5,
+        "depth_max": 5
+      },
+      {
+        "index": 5,
+        "depth_min": 6,
+        "depth_max": 6
+      },
+      {
+        "index": 6,
+        "depth_min": 7,
+        "depth_max": 7
+      }
+    ],
+    "groups": [
+      {
+        "id": "prompts",
+        "files": [
+          ".claude/skills/version/SKILL.md",
+          "AGENTS.md",
+          "CLAUDE.md",
+          "examples/agent-loop/.claude/settings.json",
+          "examples/agent-loop/AGENTS.md",
+          "skills/check/SKILL.md",
+          "skills/qa/SKILL.md"
+        ]
+      },
+      {
+        "id": "docs",
+        "files": [
+          ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/build-log.md",
+          ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/checkpoints",
+          ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/intent.md",
+          ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/report.md",
+          ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/build-log.md",
+          ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/checkpoints",
+          ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/intent.md",
+          ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/report.md",
+          ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/build-log.md",
+          ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/checkpoints",
+          ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/intent.md",
+          ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/oracle-notes.md",
+          ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/report.md",
+          ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/stats.json",
+          ".plumbbob/builds/2026-07-24-checkride-bundled-plugin-check-and-qa-readers/build-log.md",
+          ".plumbbob/builds/2026-07-24-checkride-bundled-plugin-check-and-qa-readers/checkpoints",
+          ".plumbbob/builds/2026-07-24-checkride-bundled-plugin-check-and-qa-readers/intent.md",
+          ".plumbbob/builds/2026-07-24-checkride-bundled-plugin-check-and-qa-readers/report.md",
+          ".plumbbob/builds/2026-07-24-checkride-bundled-plugin-check-and-qa-readers/stats.json",
+          ".plumbbob/settings.json",
+          "CHANGELOG.md",
+          "CONTRIBUTING.md",
+          "LICENSE",
+          "README.md",
+          "docs/README.md",
+          "docs/cheatsheet.md",
+          "docs/ci.md",
+          "docs/contract.md",
+          "docs/deep-modules.md",
+          "docs/getting-started.md",
+          "docs/ordering-in-practice.md",
+          "docs/plugin.md",
+          "docs/presets.md",
+          "docs/reliability.md",
+          "docs/spec-agent-setup-upgrade.md",
+          "docs/spec-slot-provenance.md",
+          "docs/tools.md",
+          "docs/why.md",
+          "examples/README.md",
+          "examples/agent-loop/README.md",
+          "examples/custom-checks/README.md",
+          "examples/dal-boundaries-declarative/README.md",
+          "examples/dal-boundaries/README.md",
+          "examples/existing-repo-baseline/README.md",
+          "examples/module-boundaries/README.md",
+          "examples/polyglot/README.md",
+          "examples/shared-preset/README.md"
+        ]
+      },
+      {
+        "id": "config",
+        "files": [
+          ".markdownlint-cli2.jsonc",
+          ".oxlintrc.json",
+          "checkride.config.json",
+          "cspell.json",
+          "examples/agent-loop/.oxlintrc.json",
+          "examples/agent-loop/tsconfig.json",
+          "examples/custom-checks/.oxlintrc.json",
+          "examples/custom-checks/checkride.config.json",
+          "examples/custom-checks/tsconfig.json",
+          "examples/dal-boundaries-declarative/fallow.toml",
+          "examples/dal-boundaries-declarative/rules/no-writes-outside-writers.yml",
+          "examples/dal-boundaries-declarative/rules/only-writers-hold-the-write-pool.yml",
+          "examples/dal-boundaries-declarative/rules/writer-owns-only-its-tables.yml",
+          "examples/dal-boundaries-declarative/sgconfig.yml",
+          "examples/dal-boundaries-declarative/tsconfig.json",
+          "examples/dal-boundaries/checkride.config.json",
+          "examples/dal-boundaries/fallow.toml",
+          "examples/dal-boundaries/tsconfig.json",
+          "examples/existing-repo-baseline/.oxlintrc.json",
+          "examples/existing-repo-baseline/tsconfig.json",
+          "examples/module-boundaries/.oxlintrc.json",
+          "examples/module-boundaries/fallow.toml",
+          "examples/module-boundaries/rules/no-deep-sibling-import.yml",
+          "examples/module-boundaries/sgconfig.yml",
+          "examples/module-boundaries/tsconfig.json",
+          "examples/polyglot/checkride.config.json",
+          "examples/polyglot/rules/no-print-in-src.yml",
+          "examples/polyglot/rules/no-star-import.yml",
+          "examples/polyglot/sgconfig.yml",
+          "examples/shared-preset/.oxlintrc.json",
+          "examples/shared-preset/checkride.config.json",
+          "examples/shared-preset/tsconfig.json",
+          "fallow.toml",
+          "rules/no-class.yml",
+          "rules/no-deep-sibling-import.yml",
+          "rules/no-default-export.yml",
+          "rules/no-logic-in-barrel.yml",
+          "rules/require-js-extension.yml",
+          "schema/checkride.config.schema.json",
+          "sgconfig.yml",
+          "stryker.config.mjs",
+          "templates/flat/fallow.toml",
+          "templates/flat/tsconfig.json",
+          "templates/hybrid/fallow.toml",
+          "templates/hybrid/tsconfig.json",
+          "templates/monorepo/fallow.toml",
+          "templates/monorepo/tsconfig.json",
+          "templates/shared/cspell.json",
+          "templates/shared/rules/no-class.yml",
+          "templates/shared/rules/no-deep-sibling-import.yml",
+          "templates/shared/rules/no-default-export.yml",
+          "templates/shared/rules/require-js-extension.yml",
+          "templates/shared/sgconfig.yml",
+          "templates/shared/tsconfig.base.json",
+          "templates/shared/vitest.config.ts.template",
+          "tsconfig.base.json",
+          "tsconfig.json",
+          "tsconfig.test.json"
+        ]
+      },
+      {
+        "id": "settings",
+        "files": [
+          ".gitignore",
+          ".npmrc"
+        ]
+      },
+      {
+        "id": "deps",
+        "files": [
+          "examples/agent-loop/package.json",
+          "examples/agent-loop/pnpm-workspace.yaml",
+          "examples/custom-checks/package.json",
+          "examples/custom-checks/pnpm-workspace.yaml",
+          "examples/dal-boundaries-declarative/package.json",
+          "examples/dal-boundaries-declarative/pnpm-workspace.yaml",
+          "examples/dal-boundaries/package.json",
+          "examples/dal-boundaries/pnpm-workspace.yaml",
+          "examples/existing-repo-baseline/package.json",
+          "examples/existing-repo-baseline/pnpm-workspace.yaml",
+          "examples/module-boundaries/package.json",
+          "examples/module-boundaries/pnpm-workspace.yaml",
+          "examples/polyglot/package.json",
+          "examples/polyglot/pnpm-workspace.yaml",
+          "examples/shared-preset/package.json",
+          "examples/shared-preset/pnpm-workspace.yaml",
+          "examples/shared-preset/preset/package.json",
+          "package.json",
+          "pnpm-lock.yaml",
+          "pnpm-workspace.yaml",
+          "templates/flat/pnpm-workspace.yaml",
+          "templates/hybrid/pnpm-workspace.yaml",
+          "templates/monorepo/pnpm-workspace.yaml"
+        ]
+      },
+      {
+        "id": "ci",
+        "files": [
+          ".github/dependabot.yml",
+          ".github/workflows/ci.yml",
+          ".github/workflows/pages.yaml",
+          ".github/workflows/publish.yaml",
+          ".github/workflows/release.yaml"
+        ]
+      },
+      {
+        "id": "scripts",
+        "files": [
+          "examples/custom-checks/scripts/check-licenses.mjs",
+          "examples/custom-checks/scripts/normalize.mjs",
+          "examples/custom-checks/scripts/validate-openapi.mjs",
+          "examples/dal-boundaries/scripts/check-table-ownership.mjs",
+          "examples/shared-preset/preset/scripts/no-todo-comments.mjs",
+          "examples/shared-preset/preset/scripts/require-license-header.mjs"
+        ]
+      },
+      {
+        "id": "examples",
+        "files": [
+          "examples/agent-loop/expected.json",
+          "examples/custom-checks/data/regions.json",
+          "examples/custom-checks/expected.json",
+          "examples/custom-checks/openapi.json",
+          "examples/dal-boundaries-declarative/expected.json",
+          "examples/dal-boundaries/expected.json",
+          "examples/existing-repo-baseline/checkride.baseline.json",
+          "examples/existing-repo-baseline/expected.json",
+          "examples/module-boundaries/expected.json",
+          "examples/polyglot/expected.json",
+          "examples/polyglot/pyproject.toml",
+          "examples/polyglot/src/pricing.py",
+          "examples/polyglot/src/reporting.py",
+          "examples/polyglot/tests/test_pricing.py",
+          "examples/shared-preset/expected.json",
+          "examples/shared-preset/preset/preset.json",
+          "examples/shared-preset/preset/strict.json",
+          "templates/shared/gitignore",
+          "templates/shared/markdownlint-cli2.jsonc",
+          "templates/shared/npmrc",
+          "templates/shared/oxlintrc.json",
+          "templates/shared/prettierrc.json"
+        ]
+      },
+      {
+        "id": "assets",
+        "files": [
+          "checkride_photo.png",
+          "site/api.html",
+          "site/docs.html",
+          "site/index.html",
+          "site/stars.js",
+          "site/support.js"
+        ]
+      },
+      {
+        "id": "data",
+        "files": [
+          "schema/checkride.summary.schema.json",
+          "src/__tests__/fixtures/baseline-ast-grep.json",
+          "src/__tests__/fixtures/baseline-cspell.txt",
+          "src/__tests__/fixtures/baseline-fallow-dead-code.json",
+          "src/__tests__/fixtures/baseline-fallow-dupes.json",
+          "src/__tests__/fixtures/baseline-fallow-health.json",
+          "src/__tests__/fixtures/baseline-oxlint.json",
+          "test/fixtures/existing-biome/biome.json"
+        ]
+      },
+      {
+        "id": "tests",
+        "files": [
+          "src/__tests__/adapters.test.ts",
+          "src/__tests__/artifacts.test.ts",
+          "src/__tests__/atomic.test.ts",
+          "src/__tests__/baseline-fingerprint.test.ts",
+          "src/__tests__/baseline.test.ts",
+          "src/__tests__/cli.test.ts",
+          "src/__tests__/config.test.ts",
+          "src/__tests__/digest.test.ts",
+          "src/__tests__/doctor.test.ts",
+          "src/__tests__/fallow.test.ts",
+          "src/__tests__/generated-spell.test.ts",
+          "src/__tests__/index.test.ts",
+          "src/__tests__/init.test.ts",
+          "src/__tests__/links.test.ts",
+          "src/__tests__/orchestrator.test.ts",
+          "src/__tests__/pack.test.ts",
+          "src/__tests__/pm.test.ts",
+          "src/__tests__/qa.test.ts",
+          "src/__tests__/security.test.ts",
+          "src/__tests__/smoke.test.ts",
+          "src/__tests__/snippets.test.ts",
+          "src/__tests__/tool-json.test.ts",
+          "src/__tests__/triage.test.ts",
+          "src/triage/__tests__/env.test.ts",
+          "test/contract/digest.contract.test.ts",
+          "test/contract/exit-codes.contract.test.ts",
+          "test/contract/exports.contract.test.ts",
+          "test/contract/flags.contract.test.ts",
+          "test/contract/order-compat.contract.test.ts",
+          "test/contract/streams.contract.test.ts",
+          "test/contract/summary.contract.test.ts",
+          "test/conventions.test.ts",
+          "test/dogfood-config.test.ts",
+          "test/e2e/bin-entrypoint.e2e.test.ts",
+          "test/e2e/defaults.e2e.test.ts",
+          "test/e2e/examples.e2e.test.ts",
+          "test/e2e/existing.e2e.test.ts",
+          "test/e2e/interrupt.e2e.test.ts",
+          "test/e2e/plugin-readers.e2e.test.ts",
+          "test/e2e/pm-quartet.e2e.test.ts",
+          "test/e2e/shapes.e2e.test.ts",
+          "test/plugin-manifest.test.ts",
+          "test/resolution.fixture.test.ts"
+        ]
+      },
+      {
+        "id": "other",
+        "files": [
+          ".claude-plugin/plugin.json"
+        ]
+      }
+    ],
+    "edges_exceptional": [],
+    "history": {
+      "window_commits": 182,
+      "cochange": [
+        {
+          "a": "AGENTS.md",
+          "b": ".claude/settings.json",
+          "rate": 0.25,
+          "support": 2
+        },
+        {
+          "a": "AGENTS.md",
+          "b": ".gitignore",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": ".markdownlint-cli2.jsonc",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": ".npmrc",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": ".oxlintrc.json",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/build-log.md",
+          "rate": 0.25,
+          "support": 2
+        },
+        {
+          "a": "AGENTS.md",
+          "b": ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/checkpoints",
+          "rate": 0.25,
+          "support": 2
+        },
+        {
+          "a": "AGENTS.md",
+          "b": ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/intent.md",
+          "rate": 0.25,
+          "support": 2
+        },
+        {
+          "a": "AGENTS.md",
+          "b": ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/build-log.md",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/checkpoints",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/intent.md",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "CHANGELOG.md",
+          "rate": 0.375,
+          "support": 3
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "CLAUDE.md",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "LICENSE",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "README.md",
+          "rate": 0.5,
+          "support": 4
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "cspell.json",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "docs/cheatsheet.md",
+          "rate": 0.25,
+          "support": 2
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "docs/contract.md",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "docs/getting-started.md",
+          "rate": 0.25,
+          "support": 2
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "docs/plugin.md",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "docs/tools.md",
+          "rate": 0.25,
+          "support": 2
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "fallow.toml",
+          "rate": 0.25,
+          "support": 2
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "package.json",
+          "rate": 0.25,
+          "support": 2
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "plans/checkride-plan.md",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "pnpm-lock.yaml",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "pnpm-workspace.yaml",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "rules/no-class.yml",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "rules/no-deep-sibling-import.yml",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "rules/no-default-export.yml",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "rules/no-logic-in-barrel.yml",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "rules/require-js-extension.yml",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "schema/checkride.summary.schema.json",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "scripts/check-links.mjs",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "scripts/check.mjs",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "sgconfig.yml",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/__tests__/baseline.test.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/__tests__/cli.test.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/__tests__/doctor.test.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/__tests__/init.test.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/__tests__/orchestrator.test.ts",
+          "rate": 0.25,
+          "support": 2
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/__tests__/pm.test.ts",
+          "rate": 0.25,
+          "support": 2
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/agent-setup/hook.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/agent-setup/index.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/artifacts/freshness.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/artifacts/json.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/atomic.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/baseline/fingerprint.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/baseline/index.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/baseline/store.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/cli.ts",
+          "rate": 0.25,
+          "support": 2
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/config.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/doctor.ts",
+          "rate": 0.25,
+          "support": 2
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/index.test.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/index.ts",
+          "rate": 0.25,
+          "support": 2
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/init.ts",
+          "rate": 0.25,
+          "support": 2
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/json.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/orchestrator.ts",
+          "rate": 0.25,
+          "support": 2
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/pm/index.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/pm/tools.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/pm/translate.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/proc.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/security.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/tool-json.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/triage/__tests__/env.test.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/triage/env.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/{ => __tests__}/index.test.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/{adapters/index.test.ts => __tests__/adapters.test.ts}",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/{adapters/index.ts => adapters.ts}",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/{cli/index.test.ts => __tests__/cli.test.ts}",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/{cli/index.ts => cli.ts}",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/{config/index.test.ts => __tests__/config.test.ts}",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/{config/index.ts => config.ts}",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/{doctor/index.test.ts => __tests__/doctor.test.ts}",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/{doctor/index.ts => doctor.ts}",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/{init/index.test.ts => __tests__/init.test.ts}",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/{init/index.ts => init.ts}",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/{links/index.test.ts => __tests__/links.test.ts}",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/{links/index.ts => links.ts}",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/{orchestrator/index.test.ts => __tests__/orchestrator.test.ts}",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "src/{orchestrator/index.ts => orchestrator.ts}",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "test/contract/exit-codes.contract.test.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "test/contract/flags.contract.test.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "test/contract/summary.contract.test.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "test/conventions.test.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "test/e2e/defaults.e2e.test.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "test/e2e/existing.e2e.test.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "test/e2e/shapes.e2e.test.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "test/resolution.fixture.test.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "tsconfig.base.json",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "tsconfig.json",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "AGENTS.md",
+          "b": "vitest.config.ts",
+          "rate": 0.125,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": ".claude-plugin/plugin.json",
+          "rate": 0.14285714285714285,
+          "support": 7
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/build-log.md",
+          "rate": 0.04081632653061224,
+          "support": 2
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/checkpoints",
+          "rate": 0.04081632653061224,
+          "support": 2
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/intent.md",
+          "rate": 0.04081632653061224,
+          "support": 2
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/build-log.md",
+          "rate": 0.061224489795918366,
+          "support": 3
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/checkpoints",
+          "rate": 0.061224489795918366,
+          "support": 3
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/intent.md",
+          "rate": 0.061224489795918366,
+          "support": 3
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/oracle-notes.md",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/stats.json",
+          "rate": 0.061224489795918366,
+          "support": 3
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": ".plumbbob/builds/2026-07-24-checkride-bundled-plugin-check-and-qa-readers/build-log.md",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": ".plumbbob/builds/2026-07-24-checkride-bundled-plugin-check-and-qa-readers/checkpoints",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": ".plumbbob/builds/2026-07-24-checkride-bundled-plugin-check-and-qa-readers/intent.md",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": ".plumbbob/builds/2026-07-24-checkride-bundled-plugin-check-and-qa-readers/stats.json",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "AGENTS.md",
+          "rate": 0.061224489795918366,
+          "support": 3
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "README.md",
+          "rate": 0.08163265306122448,
+          "support": 4
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "checkride.baseline.json",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "checkride.config.json",
+          "rate": 0.04081632653061224,
+          "support": 2
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "cspell.json",
+          "rate": 0.04081632653061224,
+          "support": 2
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "docs/README.md",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "docs/cheatsheet.md",
+          "rate": 0.10204081632653061,
+          "support": 5
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "docs/ci.md",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "docs/contract.md",
+          "rate": 0.10204081632653061,
+          "support": 5
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "docs/getting-started.md",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "docs/plugin.md",
+          "rate": 0.061224489795918366,
+          "support": 3
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "docs/reliability.md",
+          "rate": 0.061224489795918366,
+          "support": 3
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "docs/spec-agent-setup-upgrade.md",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "docs/tools.md",
+          "rate": 0.12244897959183673,
+          "support": 6
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "fallow.toml",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "package.json",
+          "rate": 0.5714285714285714,
+          "support": 28
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "pnpm-lock.yaml",
+          "rate": 0.04081632653061224,
+          "support": 2
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "pnpm-workspace.yaml",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "schema/checkride.config.schema.json",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "schema/checkride.summary.schema.json",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/__tests__/adapters.test.ts",
+          "rate": 0.061224489795918366,
+          "support": 3
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/__tests__/baseline-fingerprint.test.ts",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/__tests__/baseline.test.ts",
+          "rate": 0.04081632653061224,
+          "support": 2
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/__tests__/cli.test.ts",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/__tests__/doctor.test.ts",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/__tests__/fallow.test.ts",
+          "rate": 0.061224489795918366,
+          "support": 3
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/__tests__/fixtures/baseline-fallow-dead-code.json",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/__tests__/fixtures/baseline-fallow-dupes.json",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/__tests__/fixtures/baseline-fallow-health.json",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/__tests__/init.test.ts",
+          "rate": 0.10204081632653061,
+          "support": 5
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/__tests__/orchestrator.test.ts",
+          "rate": 0.08163265306122448,
+          "support": 4
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/__tests__/pack.test.ts",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/__tests__/pm.test.ts",
+          "rate": 0.08163265306122448,
+          "support": 4
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/__tests__/qa.test.ts",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/__tests__/security.test.ts",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/__tests__/tool-json.test.ts",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/adapters.ts",
+          "rate": 0.061224489795918366,
+          "support": 3
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/agent-setup/hook.ts",
+          "rate": 0.08163265306122448,
+          "support": 4
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/agent-setup/index.ts",
+          "rate": 0.04081632653061224,
+          "support": 2
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/artifacts/freshness.ts",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/artifacts/json.ts",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/atomic.ts",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/baseline/command.ts",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/baseline/fallow.ts",
+          "rate": 0.08163265306122448,
+          "support": 4
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/baseline/fingerprint.ts",
+          "rate": 0.061224489795918366,
+          "support": 3
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/baseline/index.ts",
+          "rate": 0.04081632653061224,
+          "support": 2
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/baseline/store.ts",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/cli.ts",
+          "rate": 0.061224489795918366,
+          "support": 3
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/config.ts",
+          "rate": 0.04081632653061224,
+          "support": 2
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/digest/digest.ts",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/doctor.ts",
+          "rate": 0.04081632653061224,
+          "support": 2
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/index.test.ts",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/index.ts",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/init.ts",
+          "rate": 0.08163265306122448,
+          "support": 4
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/json.ts",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/orchestrator.ts",
+          "rate": 0.14285714285714285,
+          "support": 7
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/pack.ts",
+          "rate": 0.04081632653061224,
+          "support": 2
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/pm/index.ts",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/pm/tools.ts",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/pm/translate.ts",
+          "rate": 0.061224489795918366,
+          "support": 3
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/proc.ts",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/security.ts",
+          "rate": 0.04081632653061224,
+          "support": 2
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/tool-json.ts",
+          "rate": 0.04081632653061224,
+          "support": 2
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/triage/__tests__/env.test.ts",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "src/triage/env.ts",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "stryker.config.mjs",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "test/contract/exit-codes.contract.test.ts",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "test/contract/flags.contract.test.ts",
+          "rate": 0.061224489795918366,
+          "support": 3
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "test/contract/summary.contract.test.ts",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "test/conventions.test.ts",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "test/e2e/defaults.e2e.test.ts",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "test/e2e/plugin-readers.e2e.test.ts",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "tsconfig.json",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "CHANGELOG.md",
+          "b": "tsconfig.test.json",
+          "rate": 0.02040816326530612,
+          "support": 1
+        },
+        {
+          "a": "docs/contract.md",
+          "b": ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/build-log.md",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "docs/contract.md",
+          "b": ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/checkpoints",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "docs/contract.md",
+          "b": ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/intent.md",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "docs/contract.md",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/build-log.md",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "docs/contract.md",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/checkpoints",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "docs/contract.md",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/intent.md",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "docs/contract.md",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/oracle-notes.md",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "docs/contract.md",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/stats.json",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "AGENTS.md",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "CHANGELOG.md",
+          "rate": 0.5555555555555556,
+          "support": 5
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "README.md",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "docs/README.md",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "docs/cheatsheet.md",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "docs/getting-started.md",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "docs/ordering-in-practice.md",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "docs/reliability.md",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "docs/spec-agent-setup-upgrade.md",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "docs/tools.md",
+          "rate": 0.3333333333333333,
+          "support": 3
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "schema/checkride.summary.schema.json",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "src/__tests__/adapters.test.ts",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "src/__tests__/doctor.test.ts",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "src/__tests__/orchestrator.test.ts",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "src/__tests__/pm.test.ts",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "src/__tests__/tool-json.test.ts",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "src/adapters.ts",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "src/agent-setup/hook.ts",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "src/baseline/fallow.ts",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "src/baseline/fingerprint.ts",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "src/doctor.ts",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "src/index.ts",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "src/orchestrator.ts",
+          "rate": 0.3333333333333333,
+          "support": 3
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "src/pack.ts",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "src/pm/index.ts",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "src/pm/tools.ts",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "src/pm/translate.ts",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "src/tool-json.ts",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "test/contract/digest.contract.test.ts",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "test/contract/exit-codes.contract.test.ts",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "test/contract/exports.contract.test.ts",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "test/contract/flags.contract.test.ts",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "test/contract/streams.contract.test.ts",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "docs/contract.md",
+          "b": "test/contract/summary.contract.test.ts",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/build-log.md",
+          "rate": 0.15,
+          "support": 3
+        },
+        {
+          "a": "docs/tools.md",
+          "b": ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/checkpoints",
+          "rate": 0.15,
+          "support": 3
+        },
+        {
+          "a": "docs/tools.md",
+          "b": ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/intent.md",
+          "rate": 0.15,
+          "support": 3
+        },
+        {
+          "a": "docs/tools.md",
+          "b": ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/build-log.md",
+          "rate": 0.1,
+          "support": 2
+        },
+        {
+          "a": "docs/tools.md",
+          "b": ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/checkpoints",
+          "rate": 0.1,
+          "support": 2
+        },
+        {
+          "a": "docs/tools.md",
+          "b": ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/intent.md",
+          "rate": 0.1,
+          "support": 2
+        },
+        {
+          "a": "docs/tools.md",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/build-log.md",
+          "rate": 0.1,
+          "support": 2
+        },
+        {
+          "a": "docs/tools.md",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/checkpoints",
+          "rate": 0.1,
+          "support": 2
+        },
+        {
+          "a": "docs/tools.md",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/intent.md",
+          "rate": 0.1,
+          "support": 2
+        },
+        {
+          "a": "docs/tools.md",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/oracle-notes.md",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/stats.json",
+          "rate": 0.1,
+          "support": 2
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "AGENTS.md",
+          "rate": 0.1,
+          "support": 2
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "CHANGELOG.md",
+          "rate": 0.3,
+          "support": 6
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "CONTRIBUTING.md",
+          "rate": 0.1,
+          "support": 2
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "README.md",
+          "rate": 0.45,
+          "support": 9
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "checkride.baseline.json",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "checkride.config.json",
+          "rate": 0.1,
+          "support": 2
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "cspell.json",
+          "rate": 0.25,
+          "support": 5
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "docs/README.md",
+          "rate": 0.15,
+          "support": 3
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "docs/cheatsheet.md",
+          "rate": 0.3,
+          "support": 6
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "docs/ci.md",
+          "rate": 0.1,
+          "support": 2
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "docs/contract.md",
+          "rate": 0.15,
+          "support": 3
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "docs/deep-modules.md",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "docs/getting-started.md",
+          "rate": 0.25,
+          "support": 5
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "docs/plugin.md",
+          "rate": 0.1,
+          "support": 2
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "docs/reliability.md",
+          "rate": 0.1,
+          "support": 2
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "docs/spec-agent-setup-upgrade.md",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "examples/agent-loop/package.json",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "examples/custom-checks/package.json",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "examples/dal-boundaries-declarative/package.json",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "examples/dal-boundaries/package.json",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "examples/existing-repo-baseline/package.json",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "examples/module-boundaries/package.json",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "examples/polyglot/package.json",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "examples/shared-preset/package.json",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "fallow.toml",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "package.json",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "pnpm-lock.yaml",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "schema/checkride.config.schema.json",
+          "rate": 0.3,
+          "support": 6
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "schema/checkride.summary.schema.json",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/__tests__/adapters.test.ts",
+          "rate": 0.25,
+          "support": 5
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/__tests__/baseline-fingerprint.test.ts",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/__tests__/baseline.test.ts",
+          "rate": 0.1,
+          "support": 2
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/__tests__/cli.test.ts",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/__tests__/config.test.ts",
+          "rate": 0.2,
+          "support": 4
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/__tests__/doctor.test.ts",
+          "rate": 0.1,
+          "support": 2
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/__tests__/fallow.test.ts",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/__tests__/fixtures/baseline-fallow-dead-code.json",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/__tests__/fixtures/baseline-fallow-dupes.json",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/__tests__/fixtures/baseline-fallow-health.json",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/__tests__/init.test.ts",
+          "rate": 0.1,
+          "support": 2
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/__tests__/links.test.ts",
+          "rate": 0.1,
+          "support": 2
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/__tests__/orchestrator.test.ts",
+          "rate": 0.3,
+          "support": 6
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/__tests__/pm.test.ts",
+          "rate": 0.2,
+          "support": 4
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/__tests__/qa.test.ts",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/adapters.ts",
+          "rate": 0.3,
+          "support": 6
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/agent-setup/hook.ts",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/artifacts/freshness.ts",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/artifacts/json.ts",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/atomic.ts",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/baseline/command.ts",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/baseline/fallow.ts",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/baseline/fingerprint.ts",
+          "rate": 0.1,
+          "support": 2
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/baseline/index.ts",
+          "rate": 0.1,
+          "support": 2
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/baseline/store.ts",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/cli.ts",
+          "rate": 0.15,
+          "support": 3
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/config.ts",
+          "rate": 0.3,
+          "support": 6
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/digest/digest.ts",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/doctor.ts",
+          "rate": 0.15,
+          "support": 3
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/init.ts",
+          "rate": 0.15,
+          "support": 3
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/json.ts",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/links.ts",
+          "rate": 0.1,
+          "support": 2
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/orchestrator.ts",
+          "rate": 0.3,
+          "support": 6
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/pm/detect.ts",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/pm/index.ts",
+          "rate": 0.1,
+          "support": 2
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/pm/tools.ts",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/pm/translate.ts",
+          "rate": 0.15,
+          "support": 3
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/proc.ts",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/security.ts",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/tool-json.ts",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/triage/__tests__/env.test.ts",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "src/triage/env.ts",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "stryker.config.mjs",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "templates/shared/prettierrc.json",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "test/contract/exit-codes.contract.test.ts",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "test/contract/flags.contract.test.ts",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "test/contract/summary.contract.test.ts",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "test/conventions.test.ts",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "test/e2e/defaults.e2e.test.ts",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "test/e2e/plugin-readers.e2e.test.ts",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "docs/tools.md",
+          "b": "test/fixtures/existing-biome/biome.json",
+          "rate": 0.05,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": ".github/workflows/ci.yml",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/build-log.md",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/checkpoints",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/intent.md",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/build-log.md",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/checkpoints",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/intent.md",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/build-log.md",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/checkpoints",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/intent.md",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/stats.json",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "AGENTS.md",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "CHANGELOG.md",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "README.md",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "cspell.json",
+          "rate": 0.3333333333333333,
+          "support": 3
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "docs/contract.md",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "docs/spec-slot-provenance.md",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "docs/tools.md",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "fallow.toml",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "package.json",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "plans/checkride-plan.md",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "pnpm-lock.yaml",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "src/__tests__/adapters.test.ts",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "src/__tests__/cli.test.ts",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "src/__tests__/config.test.ts",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "src/__tests__/generated-spell.test.ts",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "src/__tests__/init.test.ts",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "src/__tests__/links.test.ts",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "src/__tests__/orchestrator.test.ts",
+          "rate": 0.4444444444444444,
+          "support": 4
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "src/__tests__/pm.test.ts",
+          "rate": 0.3333333333333333,
+          "support": 3
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "src/adapters.ts",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "src/config.ts",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "src/doctor.ts",
+          "rate": 0.7777777777777778,
+          "support": 7
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "src/init.ts",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "src/orchestrator.ts",
+          "rate": 0.3333333333333333,
+          "support": 3
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "src/pm/detect.ts",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "src/pm/index.ts",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "src/pm/tools.ts",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "src/pm/translate.ts",
+          "rate": 0.2222222222222222,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "stryker.config.mjs",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/doctor.test.ts",
+          "b": "stryker.incremental.json",
+          "rate": 0.1111111111111111,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/build-log.md",
+          "rate": 0.19047619047619047,
+          "support": 4
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/checkpoints",
+          "rate": 0.19047619047619047,
+          "support": 4
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/intent.md",
+          "rate": 0.19047619047619047,
+          "support": 4
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/build-log.md",
+          "rate": 0.19047619047619047,
+          "support": 4
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/checkpoints",
+          "rate": 0.19047619047619047,
+          "support": 4
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/intent.md",
+          "rate": 0.19047619047619047,
+          "support": 4
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/build-log.md",
+          "rate": 0.09523809523809523,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/checkpoints",
+          "rate": 0.09523809523809523,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/intent.md",
+          "rate": 0.09523809523809523,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/stats.json",
+          "rate": 0.09523809523809523,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "AGENTS.md",
+          "rate": 0.09523809523809523,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "CHANGELOG.md",
+          "rate": 0.19047619047619047,
+          "support": 4
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "README.md",
+          "rate": 0.2857142857142857,
+          "support": 6
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "checkride.baseline.json",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "cspell.json",
+          "rate": 0.14285714285714285,
+          "support": 3
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "docs/cheatsheet.md",
+          "rate": 0.09523809523809523,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "docs/ci.md",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "docs/contract.md",
+          "rate": 0.09523809523809523,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "docs/plugin.md",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "docs/tools.md",
+          "rate": 0.2857142857142857,
+          "support": 6
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "fallow.toml",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "package.json",
+          "rate": 0.14285714285714285,
+          "support": 3
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "pnpm-lock.yaml",
+          "rate": 0.09523809523809523,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "schema/checkride.config.schema.json",
+          "rate": 0.19047619047619047,
+          "support": 4
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "schema/checkride.summary.schema.json",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/__tests__/adapters.test.ts",
+          "rate": 0.23809523809523808,
+          "support": 5
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/__tests__/atomic.test.ts",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/__tests__/baseline.test.ts",
+          "rate": 0.09523809523809523,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/__tests__/cli.test.ts",
+          "rate": 0.14285714285714285,
+          "support": 3
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/__tests__/config.test.ts",
+          "rate": 0.3333333333333333,
+          "support": 7
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/__tests__/doctor.test.ts",
+          "rate": 0.19047619047619047,
+          "support": 4
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/__tests__/init.test.ts",
+          "rate": 0.14285714285714285,
+          "support": 3
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/__tests__/links.test.ts",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/__tests__/pack.test.ts",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/__tests__/pm.test.ts",
+          "rate": 0.23809523809523808,
+          "support": 5
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/__tests__/tool-json.test.ts",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/adapters.ts",
+          "rate": 0.2857142857142857,
+          "support": 6
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/artifacts/freshness.ts",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/artifacts/json.ts",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/atomic.ts",
+          "rate": 0.09523809523809523,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/baseline/command.ts",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/baseline/fallow.ts",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/baseline/fingerprint.ts",
+          "rate": 0.14285714285714285,
+          "support": 3
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/baseline/index.ts",
+          "rate": 0.09523809523809523,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/baseline/store.ts",
+          "rate": 0.14285714285714285,
+          "support": 3
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/cli.ts",
+          "rate": 0.3333333333333333,
+          "support": 7
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/config.ts",
+          "rate": 0.3333333333333333,
+          "support": 7
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/digest/digest.ts",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/doctor.ts",
+          "rate": 0.23809523809523808,
+          "support": 5
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/init.ts",
+          "rate": 0.14285714285714285,
+          "support": 3
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/json.ts",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/links.ts",
+          "rate": 0.09523809523809523,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/orchestrator.ts",
+          "rate": 0.7619047619047619,
+          "support": 16
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/pack.ts",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/pm/detect.ts",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/pm/index.ts",
+          "rate": 0.09523809523809523,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/pm/tools.ts",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/pm/translate.ts",
+          "rate": 0.19047619047619047,
+          "support": 4
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/proc.ts",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/security.ts",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/tool-json.ts",
+          "rate": 0.09523809523809523,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/triage/__tests__/env.test.ts",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "src/triage/env.ts",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "stryker.config.mjs",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "stryker.incremental.json",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "templates/shared/prettierrc.json",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "test/contract/exit-codes.contract.test.ts",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "test/contract/flags.contract.test.ts",
+          "rate": 0.09523809523809523,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "test/contract/order-compat.contract.test.ts",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "test/contract/streams.contract.test.ts",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "test/contract/summary.contract.test.ts",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "test/conventions.test.ts",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "test/e2e/defaults.e2e.test.ts",
+          "rate": 0.047619047619047616,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/orchestrator.test.ts",
+          "b": "test/e2e/interrupt.e2e.test.ts",
+          "rate": 0.14285714285714285,
+          "support": 3
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/build-log.md",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/checkpoints",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/intent.md",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/build-log.md",
+          "rate": 0.2857142857142857,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/checkpoints",
+          "rate": 0.2857142857142857,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/intent.md",
+          "rate": 0.2857142857142857,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/stats.json",
+          "rate": 0.2857142857142857,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "AGENTS.md",
+          "rate": 0.2857142857142857,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "CHANGELOG.md",
+          "rate": 0.5714285714285714,
+          "support": 4
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "README.md",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "checkride.config.json",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "cspell.json",
+          "rate": 0.2857142857142857,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "docs/contract.md",
+          "rate": 0.2857142857142857,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "docs/plugin.md",
+          "rate": 0.2857142857142857,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "docs/tools.md",
+          "rate": 0.5714285714285714,
+          "support": 4
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "schema/checkride.summary.schema.json",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/__tests__/adapters.test.ts",
+          "rate": 0.2857142857142857,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/__tests__/baseline.test.ts",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/__tests__/cli.test.ts",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/__tests__/config.test.ts",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/__tests__/doctor.test.ts",
+          "rate": 0.42857142857142855,
+          "support": 3
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/__tests__/orchestrator.test.ts",
+          "rate": 0.7142857142857143,
+          "support": 5
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/__tests__/pack.test.ts",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/__tests__/qa.test.ts",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/__tests__/tool-json.test.ts",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/adapters.ts",
+          "rate": 0.2857142857142857,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/artifacts/freshness.ts",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/artifacts/json.ts",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/atomic.ts",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/baseline/fallow.ts",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/baseline/fingerprint.ts",
+          "rate": 0.2857142857142857,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/baseline/index.ts",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/baseline/store.ts",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/cli.ts",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/config.ts",
+          "rate": 0.2857142857142857,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/doctor.ts",
+          "rate": 0.5714285714285714,
+          "support": 4
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/json.ts",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/orchestrator.ts",
+          "rate": 0.8571428571428571,
+          "support": 6
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/pack.ts",
+          "rate": 0.2857142857142857,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/pm/detect.ts",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/pm/index.ts",
+          "rate": 0.2857142857142857,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/pm/tools.ts",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/pm/translate.ts",
+          "rate": 0.8571428571428571,
+          "support": 6
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/proc.ts",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/security.ts",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/tool-json.ts",
+          "rate": 0.2857142857142857,
+          "support": 2
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/triage/__tests__/env.test.ts",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "src/triage/env.ts",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "stryker.config.mjs",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "test/contract/exit-codes.contract.test.ts",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "test/contract/flags.contract.test.ts",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "test/contract/summary.contract.test.ts",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "test/conventions.test.ts",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "test/e2e/defaults.e2e.test.ts",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/__tests__/pm.test.ts",
+          "b": "test/e2e/plugin-readers.e2e.test.ts",
+          "rate": 0.14285714285714285,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": ".github/workflows/ci.yml",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/build-log.md",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/checkpoints",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/intent.md",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/build-log.md",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/checkpoints",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/intent.md",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/build-log.md",
+          "rate": 0.16666666666666666,
+          "support": 2
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/checkpoints",
+          "rate": 0.16666666666666666,
+          "support": 2
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/intent.md",
+          "rate": 0.16666666666666666,
+          "support": 2
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/stats.json",
+          "rate": 0.16666666666666666,
+          "support": 2
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "AGENTS.md",
+          "rate": 0.16666666666666666,
+          "support": 2
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "CHANGELOG.md",
+          "rate": 0.16666666666666666,
+          "support": 2
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "README.md",
+          "rate": 0.16666666666666666,
+          "support": 2
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "checkride.baseline.json",
+          "rate": 0.25,
+          "support": 3
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "cspell.json",
+          "rate": 0.25,
+          "support": 3
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "docs/contract.md",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "docs/plugin.md",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "docs/spec-slot-provenance.md",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "docs/tools.md",
+          "rate": 0.25,
+          "support": 3
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "package.json",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "plans/checkride-plan.md",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "pnpm-lock.yaml",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "schema/checkride.summary.schema.json",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/__tests__/adapters.test.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/__tests__/baseline.test.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/__tests__/config.test.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/__tests__/doctor.test.ts",
+          "rate": 0.5833333333333334,
+          "support": 7
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/__tests__/init.test.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/__tests__/orchestrator.test.ts",
+          "rate": 0.4166666666666667,
+          "support": 5
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/__tests__/pm.test.ts",
+          "rate": 0.3333333333333333,
+          "support": 4
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/adapters.ts",
+          "rate": 0.25,
+          "support": 3
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/agent-setup/hook.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/agent-setup/index.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/artifacts/freshness.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/artifacts/json.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/atomic.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/baseline-command.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/baseline/fallow.ts",
+          "rate": 0.16666666666666666,
+          "support": 2
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/baseline/fingerprint.ts",
+          "rate": 0.16666666666666666,
+          "support": 2
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/baseline/index.ts",
+          "rate": 0.16666666666666666,
+          "support": 2
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/baseline/store.ts",
+          "rate": 0.16666666666666666,
+          "support": 2
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/cli.ts",
+          "rate": 0.16666666666666666,
+          "support": 2
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/config.ts",
+          "rate": 0.3333333333333333,
+          "support": 4
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/digest/digest.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/digest/index.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/init.ts",
+          "rate": 0.4166666666666667,
+          "support": 5
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/json.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/links.ts",
+          "rate": 0.16666666666666666,
+          "support": 2
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/orchestrator.ts",
+          "rate": 0.5833333333333334,
+          "support": 7
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/pack.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/pm/detect.ts",
+          "rate": 0.16666666666666666,
+          "support": 2
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/pm/index.ts",
+          "rate": 0.16666666666666666,
+          "support": 2
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/pm/tools.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/pm/translate.ts",
+          "rate": 0.3333333333333333,
+          "support": 4
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/proc.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/security.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/smoke.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/snippets.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/tool-json.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/triage/__tests__/env.test.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "src/triage/env.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "test/contract/exit-codes.contract.test.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "test/contract/flags.contract.test.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "test/contract/streams.contract.test.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "test/contract/summary.contract.test.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "test/conventions.test.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "test/e2e/defaults.e2e.test.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/doctor.ts",
+          "b": "test/e2e/interrupt.e2e.test.ts",
+          "rate": 0.08333333333333333,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/build-log.md",
+          "rate": 0.17857142857142858,
+          "support": 5
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/checkpoints",
+          "rate": 0.17857142857142858,
+          "support": 5
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/intent.md",
+          "rate": 0.17857142857142858,
+          "support": 5
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/build-log.md",
+          "rate": 0.17857142857142858,
+          "support": 5
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/checkpoints",
+          "rate": 0.17857142857142858,
+          "support": 5
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": ".plumbbob/builds/2026-07-09-checkride-post-0-3-0-fixes-bugs-hardening-docs-sync/intent.md",
+          "rate": 0.17857142857142858,
+          "support": 5
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/build-log.md",
+          "rate": 0.17857142857142858,
+          "support": 5
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/checkpoints",
+          "rate": 0.17857142857142858,
+          "support": 5
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/intent.md",
+          "rate": 0.17857142857142858,
+          "support": 5
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": ".plumbbob/builds/2026-07-18-publish-ready-bundle-wave-scheduler/stats.json",
+          "rate": 0.17857142857142858,
+          "support": 5
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "AGENTS.md",
+          "rate": 0.07142857142857142,
+          "support": 2
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "CHANGELOG.md",
+          "rate": 0.25,
+          "support": 7
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "README.md",
+          "rate": 0.21428571428571427,
+          "support": 6
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "checkride.baseline.json",
+          "rate": 0.14285714285714285,
+          "support": 4
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "cspell.json",
+          "rate": 0.17857142857142858,
+          "support": 5
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "docs/cheatsheet.md",
+          "rate": 0.10714285714285714,
+          "support": 3
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "docs/ci.md",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "docs/contract.md",
+          "rate": 0.10714285714285714,
+          "support": 3
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "docs/plugin.md",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "docs/tools.md",
+          "rate": 0.21428571428571427,
+          "support": 6
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "fallow.toml",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "package.json",
+          "rate": 0.07142857142857142,
+          "support": 2
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "pnpm-lock.yaml",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "schema/checkride.config.schema.json",
+          "rate": 0.14285714285714285,
+          "support": 4
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "schema/checkride.summary.schema.json",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/__tests__/adapters.test.ts",
+          "rate": 0.25,
+          "support": 7
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/__tests__/atomic.test.ts",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/__tests__/baseline-fingerprint.test.ts",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/__tests__/baseline.test.ts",
+          "rate": 0.14285714285714285,
+          "support": 4
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/__tests__/cli.test.ts",
+          "rate": 0.10714285714285714,
+          "support": 3
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/__tests__/config.test.ts",
+          "rate": 0.14285714285714285,
+          "support": 4
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/__tests__/digest.test.ts",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/__tests__/doctor.test.ts",
+          "rate": 0.10714285714285714,
+          "support": 3
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/__tests__/fallow.test.ts",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/__tests__/fixtures/baseline-fallow-dead-code.json",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/__tests__/fixtures/baseline-fallow-dupes.json",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/__tests__/fixtures/baseline-fallow-health.json",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/__tests__/init.test.ts",
+          "rate": 0.07142857142857142,
+          "support": 2
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/__tests__/links.test.ts",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/__tests__/orchestrator.test.ts",
+          "rate": 0.5714285714285714,
+          "support": 16
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/__tests__/pack.test.ts",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/__tests__/pm.test.ts",
+          "rate": 0.21428571428571427,
+          "support": 6
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/__tests__/security.test.ts",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/__tests__/smoke.test.ts",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/__tests__/snippets.test.ts",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/__tests__/tool-json.test.ts",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/adapters.ts",
+          "rate": 0.39285714285714285,
+          "support": 11
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/agent-setup/hook.ts",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/agent-setup/index.ts",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/artifacts/freshness.ts",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/artifacts/json.ts",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/atomic.ts",
+          "rate": 0.07142857142857142,
+          "support": 2
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/baseline-command.ts",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/baseline/command.ts",
+          "rate": 0.10714285714285714,
+          "support": 3
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/baseline/fallow.ts",
+          "rate": 0.10714285714285714,
+          "support": 3
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/baseline/fingerprint.ts",
+          "rate": 0.17857142857142858,
+          "support": 5
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/baseline/index.ts",
+          "rate": 0.17857142857142858,
+          "support": 5
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/baseline/store.ts",
+          "rate": 0.14285714285714285,
+          "support": 4
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/cli.ts",
+          "rate": 0.39285714285714285,
+          "support": 11
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/config.ts",
+          "rate": 0.2857142857142857,
+          "support": 8
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/digest/digest.ts",
+          "rate": 0.14285714285714285,
+          "support": 4
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/digest/index.ts",
+          "rate": 0.07142857142857142,
+          "support": 2
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/doctor.ts",
+          "rate": 0.25,
+          "support": 7
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/init.ts",
+          "rate": 0.21428571428571427,
+          "support": 6
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/json.ts",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/links.ts",
+          "rate": 0.10714285714285714,
+          "support": 3
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/pack.ts",
+          "rate": 0.14285714285714285,
+          "support": 4
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/pm/detect.ts",
+          "rate": 0.07142857142857142,
+          "support": 2
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/pm/index.ts",
+          "rate": 0.07142857142857142,
+          "support": 2
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/pm/tools.ts",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/pm/translate.ts",
+          "rate": 0.21428571428571427,
+          "support": 6
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/proc.ts",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/security.ts",
+          "rate": 0.07142857142857142,
+          "support": 2
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/smoke.ts",
+          "rate": 0.07142857142857142,
+          "support": 2
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/snippets.ts",
+          "rate": 0.07142857142857142,
+          "support": 2
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/tool-json.ts",
+          "rate": 0.07142857142857142,
+          "support": 2
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/triage/__tests__/env.test.ts",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "src/triage/env.ts",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "templates/shared/prettierrc.json",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "test/contract/exit-codes.contract.test.ts",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "test/contract/flags.contract.test.ts",
+          "rate": 0.10714285714285714,
+          "support": 3
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "test/contract/order-compat.contract.test.ts",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "test/contract/streams.contract.test.ts",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "test/contract/summary.contract.test.ts",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "test/conventions.test.ts",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "test/e2e/defaults.e2e.test.ts",
+          "rate": 0.03571428571428571,
+          "support": 1
+        },
+        {
+          "a": "src/orchestrator.ts",
+          "b": "test/e2e/interrupt.e2e.test.ts",
+          "rate": 0.10714285714285714,
+          "support": 3
+        },
+        {
+          "a": "src/pm/index.ts",
+          "b": ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/build-log.md",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "src/pm/index.ts",
+          "b": ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/checkpoints",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "src/pm/index.ts",
+          "b": ".plumbbob/builds/2026-07-06-checkride-flexibility-adoption-roadmap/intent.md",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "src/pm/index.ts",
+          "b": "AGENTS.md",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "src/pm/index.ts",
+          "b": "CHANGELOG.md",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "src/pm/index.ts",
+          "b": "README.md",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "src/pm/index.ts",
+          "b": "cspell.json",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "src/pm/index.ts",
+          "b": "docs/contract.md",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "src/pm/index.ts",
+          "b": "docs/tools.md",
+          "rate": 1,
+          "support": 2
+        },
+        {
+          "a": "src/pm/index.ts",
+          "b": "src/__tests__/doctor.test.ts",
+          "rate": 1,
+          "support": 2
+        },
+        {
+          "a": "src/pm/index.ts",
+          "b": "src/__tests__/orchestrator.test.ts",
+          "rate": 1,
+          "support": 2
+        },
+        {
+          "a": "src/pm/index.ts",
+          "b": "src/__tests__/pm.test.ts",
+          "rate": 1,
+          "support": 2
+        },
+        {
+          "a": "src/pm/index.ts",
+          "b": "src/doctor.ts",
+          "rate": 1,
+          "support": 2
+        },
+        {
+          "a": "src/pm/index.ts",
+          "b": "src/orchestrator.ts",
+          "rate": 1,
+          "support": 2
+        },
+        {
+          "a": "src/pm/index.ts",
+          "b": "src/pm/detect.ts",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "src/pm/index.ts",
+          "b": "src/pm/tools.ts",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "src/pm/index.ts",
+          "b": "src/pm/translate.ts",
+          "rate": 0.5,
+          "support": 1
+        },
+        {
+          "a": "src/pm/tools.ts",
+          "b": "AGENTS.md",
+          "rate": 1,
+          "support": 1
+        },
+        {
+          "a": "src/pm/tools.ts",
+          "b": "CHANGELOG.md",
+          "rate": 1,
+          "support": 1
+        },
+        {
+          "a": "src/pm/tools.ts",
+          "b": "docs/contract.md",
+          "rate": 1,
+          "support": 1
+        },
+        {
+          "a": "src/pm/tools.ts",
+          "b": "docs/tools.md",
+          "rate": 1,
+          "support": 1
+        },
+        {
+          "a": "src/pm/tools.ts",
+          "b": "src/__tests__/doctor.test.ts",
+          "rate": 1,
+          "support": 1
+        },
+        {
+          "a": "src/pm/tools.ts",
+          "b": "src/__tests__/orchestrator.test.ts",
+          "rate": 1,
+          "support": 1
+        },
+        {
+          "a": "src/pm/tools.ts",
+          "b": "src/__tests__/pm.test.ts",
+          "rate": 1,
+          "support": 1
+        },
+        {
+          "a": "src/pm/tools.ts",
+          "b": "src/doctor.ts",
+          "rate": 1,
+          "support": 1
+        },
+        {
+          "a": "src/pm/tools.ts",
+          "b": "src/orchestrator.ts",
+          "rate": 1,
+          "support": 1
+        },
+        {
+          "a": "src/pm/tools.ts",
+          "b": "src/pm/index.ts",
+          "rate": 1,
+          "support": 1
+        }
+      ]
+    }
+  },
+  "weather": {
+    "changed": [
+      {
+        "path": "AGENTS.md",
+        "kind": "modified",
+        "added": 1,
+        "deleted": 1,
+        "hunks": [
+          {
+            "start": 72,
+            "count": 1
+          }
+        ],
+        "group": "prompts",
+        "is_barrel": false
+      },
+      {
+        "path": "CHANGELOG.md",
+        "kind": "modified",
+        "added": 41,
+        "deleted": 0,
+        "hunks": [
+          {
+            "start": 7,
+            "count": 41
+          }
+        ],
+        "group": "docs",
+        "is_barrel": false
+      },
+      {
+        "path": "docs/contract.md",
+        "kind": "modified",
+        "added": 5,
+        "deleted": 0,
+        "hunks": [
+          {
+            "start": 40,
+            "count": 5
+          }
+        ],
+        "group": "docs",
+        "is_barrel": false
+      },
+      {
+        "path": "docs/tools.md",
+        "kind": "modified",
+        "added": 19,
+        "deleted": 6,
+        "hunks": [
+          {
+            "start": 50,
+            "count": 19
+          }
+        ],
+        "group": "docs",
+        "is_barrel": false
+      },
+      {
+        "path": "src/__tests__/doctor.test.ts",
+        "kind": "modified",
+        "added": 35,
+        "deleted": 0,
+        "hunks": [
+          {
+            "start": 58,
+            "count": 35
+          }
+        ],
+        "group": "tests",
+        "is_barrel": false
+      },
+      {
+        "path": "src/__tests__/orchestrator.test.ts",
+        "kind": "modified",
+        "added": 92,
+        "deleted": 2,
+        "hunks": [
+          {
+            "start": 2,
+            "count": 1
+          },
+          {
+            "start": 14,
+            "count": 10
+          },
+          {
+            "start": 1104,
+            "count": 81
+          }
+        ],
+        "group": "tests",
+        "is_barrel": false
+      },
+      {
+        "path": "src/__tests__/pm.test.ts",
+        "kind": "modified",
+        "added": 117,
+        "deleted": 1,
+        "hunks": [
+          {
+            "start": 8,
+            "count": 9
+          },
+          {
+            "start": 172,
+            "count": 108
+          }
+        ],
+        "group": "tests",
+        "is_barrel": false
+      },
+      {
+        "path": "src/doctor.ts",
+        "kind": "modified",
+        "added": 21,
+        "deleted": 8,
+        "hunks": [
+          {
+            "start": 29,
+            "count": 1
+          },
+          {
+            "start": 246,
+            "count": 10
+          },
+          {
+            "start": 260,
+            "count": 1
+          },
+          {
+            "start": 262,
+            "count": 2
+          },
+          {
+            "start": 265,
+            "count": 6
+          },
+          {
+            "start": 385,
+            "count": 1
+          }
+        ],
+        "cell": "single:src/doctor.ts",
+        "is_barrel": false
+      },
+      {
+        "path": "src/orchestrator.ts",
+        "kind": "modified",
+        "added": 53,
+        "deleted": 2,
+        "hunks": [
+          {
+            "start": 38,
+            "count": 9
+          },
+          {
+            "start": 381,
+            "count": 40
+          },
+          {
+            "start": 430,
+            "count": 4
+          }
+        ],
+        "cell": "single:src/orchestrator.ts",
+        "is_barrel": false
+      },
+      {
+        "path": "src/pm/index.ts",
+        "kind": "modified",
+        "added": 3,
+        "deleted": 1,
+        "hunks": [
+          {
+            "start": 5,
+            "count": 2
+          },
+          {
+            "start": 11,
+            "count": 1
+          }
+        ],
+        "cell": "folder:src/pm",
+        "is_barrel": true
+      },
+      {
+        "path": "src/pm/tools.ts",
+        "kind": "added",
+        "added": 86,
+        "deleted": 0,
+        "hunks": [
+          {
+            "start": 1,
+            "count": 86
+          }
+        ],
+        "cell": "folder:src/pm",
+        "is_barrel": false
+      }
+    ],
+    "reach": [
+      {
+        "path": "src/agent-setup/hook.ts",
+        "cell": "folder:src/agent-setup",
+        "hops": 1,
+        "via": [
+          "src/pm/index.ts"
+        ]
+      },
+      {
+        "path": "src/agent-setup/index.ts",
+        "cell": "folder:src/agent-setup",
+        "hops": 1,
+        "via": [
+          "src/pm/index.ts"
+        ]
+      },
+      {
+        "path": "src/artifacts/freshness.ts",
+        "cell": "folder:src/artifacts",
+        "hops": 1,
+        "via": [
+          "src/orchestrator.ts"
+        ]
+      },
+      {
+        "path": "src/artifacts/index.ts",
+        "cell": "folder:src/artifacts",
+        "hops": 1,
+        "via": [
+          "src/orchestrator.ts"
+        ]
+      },
+      {
+        "path": "src/artifacts/raw.ts",
+        "cell": "folder:src/artifacts",
+        "hops": 1,
+        "via": [
+          "src/orchestrator.ts"
+        ]
+      },
+      {
+        "path": "src/artifacts/summary.ts",
+        "cell": "folder:src/artifacts",
+        "hops": 1,
+        "via": [
+          "src/orchestrator.ts"
+        ]
+      },
+      {
+        "path": "src/baseline-command.ts",
+        "cell": "single:src/baseline-command.ts",
+        "hops": 1,
+        "via": [
+          "src/orchestrator.ts"
+        ]
+      },
+      {
+        "path": "src/cli.ts",
+        "cell": "single:src/cli.ts",
+        "hops": 1,
+        "via": [
+          "src/doctor.ts"
+        ]
+      },
+      {
+        "path": "src/digest/digest.ts",
+        "cell": "folder:src/digest",
+        "hops": 1,
+        "via": [
+          "src/orchestrator.ts"
+        ]
+      },
+      {
+        "path": "src/digest/index.ts",
+        "cell": "folder:src/digest",
+        "hops": 1,
+        "via": [
+          "src/orchestrator.ts"
+        ]
+      },
+      {
+        "path": "src/doctor.ts",
+        "cell": "single:src/doctor.ts",
+        "hops": 0,
+        "via": []
+      },
+      {
+        "path": "src/index.ts",
+        "cell": "package:.",
+        "hops": 1,
+        "via": [
+          "src/doctor.ts"
+        ]
+      },
+      {
+        "path": "src/init.ts",
+        "cell": "single:src/init.ts",
+        "hops": 1,
+        "via": [
+          "src/orchestrator.ts"
+        ]
+      },
+      {
+        "path": "src/orchestrator.ts",
+        "cell": "single:src/orchestrator.ts",
+        "hops": 0,
+        "via": []
+      },
+      {
+        "path": "src/pack.ts",
+        "cell": "single:src/pack.ts",
+        "hops": 1,
+        "via": [
+          "src/pm/index.ts"
+        ]
+      },
+      {
+        "path": "src/pm/index.ts",
+        "cell": "folder:src/pm",
+        "hops": 0,
+        "via": []
+      },
+      {
+        "path": "src/pm/tools.ts",
+        "cell": "folder:src/pm",
+        "hops": 0,
+        "via": []
+      },
+      {
+        "path": "src/qa/cli.ts",
+        "cell": "folder:src/qa",
+        "hops": 2,
+        "via": [
+          "src/orchestrator.ts",
+          "src/artifacts/index.ts"
+        ]
+      },
+      {
+        "path": "src/qa/dead.ts",
+        "cell": "folder:src/qa",
+        "hops": 2,
+        "via": [
+          "src/orchestrator.ts",
+          "src/artifacts/index.ts"
+        ]
+      },
+      {
+        "path": "src/qa/dupes.ts",
+        "cell": "folder:src/qa",
+        "hops": 2,
+        "via": [
+          "src/orchestrator.ts",
+          "src/artifacts/index.ts"
+        ]
+      },
+      {
+        "path": "src/qa/health.ts",
+        "cell": "folder:src/qa",
+        "hops": 2,
+        "via": [
+          "src/orchestrator.ts",
+          "src/artifacts/index.ts"
+        ]
+      },
+      {
+        "path": "src/qa/index.ts",
+        "cell": "folder:src/qa",
+        "hops": 2,
+        "via": [
+          "src/orchestrator.ts",
+          "src/artifacts/index.ts"
+        ]
+      },
+      {
+        "path": "src/qa/mutation.ts",
+        "cell": "folder:src/qa",
+        "hops": 2,
+        "via": [
+          "src/orchestrator.ts",
+          "src/artifacts/index.ts"
+        ]
+      },
+      {
+        "path": "src/qa/qa.ts",
+        "cell": "folder:src/qa",
+        "hops": 2,
+        "via": [
+          "src/orchestrator.ts",
+          "src/artifacts/index.ts"
+        ]
+      },
+      {
+        "path": "src/qa/read.ts",
+        "cell": "folder:src/qa",
+        "hops": 2,
+        "via": [
+          "src/orchestrator.ts",
+          "src/artifacts/index.ts"
+        ]
+      },
+      {
+        "path": "src/qa/render.ts",
+        "cell": "folder:src/qa",
+        "hops": 2,
+        "via": [
+          "src/orchestrator.ts",
+          "src/artifacts/index.ts"
+        ]
+      },
+      {
+        "path": "src/snippets.ts",
+        "cell": "single:src/snippets.ts",
+        "hops": 1,
+        "via": [
+          "src/pm/index.ts"
+        ]
+      },
+      {
+        "path": "src/triage/cli.ts",
+        "cell": "folder:src/triage",
+        "hops": 1,
+        "via": [
+          "src/orchestrator.ts"
+        ]
+      },
+      {
+        "path": "src/triage/doctor-fold.ts",
+        "cell": "folder:src/triage",
+        "hops": 2,
+        "via": [
+          "src/orchestrator.ts",
+          "src/artifacts/index.ts"
+        ]
+      },
+      {
+        "path": "src/triage/gate.ts",
+        "cell": "folder:src/triage",
+        "hops": 1,
+        "via": [
+          "src/pm/index.ts"
+        ]
+      },
+      {
+        "path": "src/triage/index.ts",
+        "cell": "folder:src/triage",
+        "hops": 1,
+        "via": [
+          "src/orchestrator.ts"
+        ]
+      },
+      {
+        "path": "src/triage/render.ts",
+        "cell": "folder:src/triage",
+        "hops": 1,
+        "via": [
+          "src/orchestrator.ts"
+        ]
+      },
+      {
+        "path": "src/triage/triage.ts",
+        "cell": "folder:src/triage",
+        "hops": 1,
+        "via": [
+          "src/orchestrator.ts"
+        ]
+      }
+    ],
+    "evidence": {
+      "patch_coverage": [
+        {
+          "path": "src/doctor.ts",
+          "changed_executable": 4,
+          "covered": 4,
+          "uncovered_lines": []
+        },
+        {
+          "path": "src/orchestrator.ts",
+          "changed_executable": 9,
+          "covered": 9,
+          "uncovered_lines": []
+        },
+        {
+          "path": "src/pm/index.ts",
+          "changed_executable": 0,
+          "covered": 0,
+          "uncovered_lines": []
+        },
+        {
+          "path": "src/pm/tools.ts",
+          "changed_executable": 12,
+          "covered": 12,
+          "uncovered_lines": []
+        }
+      ],
+      "stitches": [
+        {
+          "test": "src/__tests__/adapters.test.ts",
+          "targets": [
+            "src/orchestrator.ts"
+          ],
+          "status": "passed"
+        },
+        {
+          "test": "src/__tests__/artifacts.test.ts",
+          "targets": [
+            "src/orchestrator.ts"
+          ],
+          "status": "passed"
+        },
+        {
+          "test": "src/__tests__/baseline.test.ts",
+          "targets": [
+            "src/orchestrator.ts"
+          ],
+          "status": "passed"
+        },
+        {
+          "test": "src/__tests__/digest.test.ts",
+          "targets": [
+            "src/orchestrator.ts"
+          ],
+          "status": "passed"
+        },
+        {
+          "test": "src/__tests__/doctor.test.ts",
+          "targets": [
+            "src/doctor.ts"
+          ],
+          "status": "passed"
+        },
+        {
+          "test": "src/__tests__/fallow.test.ts",
+          "targets": [
+            "src/orchestrator.ts"
+          ],
+          "status": "passed"
+        },
+        {
+          "test": "src/__tests__/orchestrator.test.ts",
+          "targets": [
+            "src/orchestrator.ts",
+            "src/pm/index.ts"
+          ],
+          "status": "passed"
+        },
+        {
+          "test": "src/__tests__/pm.test.ts",
+          "targets": [
+            "src/pm/index.ts"
+          ],
+          "status": "passed"
+        },
+        {
+          "test": "test/contract/order-compat.contract.test.ts",
+          "targets": [
+            "src/orchestrator.ts"
+          ],
+          "status": "passed"
+        }
+      ]
+    },
+    "checks": {
+      "category": "IFR",
+      "checks_run": 18,
+      "timestamp": "2026-09-18T03:24:54.223Z",
+      "slots": [
+        {
+          "name": "attw",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "build",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "dead",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "docs",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "dupes",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "format",
+          "ok": true,
+          "skipped": true,
+          "scope": "global"
+        },
+        {
+          "name": "health",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "links",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "lint",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "pack",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "publint",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "security",
+          "ok": false,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "smoke",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "snippets",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "spell",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "struct",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "test",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "typecheck-tests",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "types",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        }
+      ]
+    },
+    "ghosts": [
+      {
+        "path": "README.md",
+        "with": [
+          "AGENTS.md"
+        ],
+        "rate": 0.5,
+        "support": 4
+      },
+      {
+        "path": "package.json",
+        "with": [
+          "CHANGELOG.md"
+        ],
+        "rate": 0.571,
+        "support": 28
+      },
+      {
+        "path": "src/pm/translate.ts",
+        "with": [
+          "src/__tests__/pm.test.ts"
+        ],
+        "rate": 0.857,
+        "support": 6
+      }
+    ],
+    "deps_added": [],
+    "improvements": []
+  },
+  "notices": [
+    {
+      "kind": "interface-change",
+      "target": "src/pm/index.ts",
+      "why": "the interface of `src/pm` changed and 8 files read it and it sits in band 4",
+      "inputs": {
+        "cells_reached": 14,
+        "uncovered_fraction": 0,
+        "history_weight": 1.773,
+        "band": 4,
+        "fan_in": 8
+      },
+      "thresholds": {
+        "severity": 8,
+        "fan_in_high": 6,
+        "deep_band": 4
+      },
+      "weight": 82.259,
+      "tier": "primary"
+    },
+    {
+      "kind": "interface-change",
+      "target": "src/orchestrator.ts",
+      "why": "the interface of `src/orchestrator.ts` changed and 9 files read it",
+      "inputs": {
+        "cells_reached": 10,
+        "uncovered_fraction": 0,
+        "history_weight": 1.704,
+        "band": 2,
+        "fan_in": 9
+      },
+      "thresholds": {
+        "severity": 8,
+        "fan_in_high": 6,
+        "deep_band": 4
+      },
+      "weight": 73.503,
+      "tier": "secondary"
+    },
+    {
+      "kind": "red-check-slot",
+      "target": "security",
+      "why": "the `security` check is red for the whole repository",
+      "inputs": {
+        "cells_reached": 0,
+        "uncovered_fraction": 0,
+        "history_weight": 0
+      },
+      "thresholds": {
+        "severity": 10
+      },
+      "weight": 10,
+      "tier": "secondary"
+    },
+    {
+      "kind": "missing-cochange",
+      "target": "README.md",
+      "why": "usually changes with `AGENTS.md` (4 commits, rate 0.5) and did not",
+      "inputs": {
+        "cells_reached": 0,
+        "uncovered_fraction": 0,
+        "history_weight": 0,
+        "rate": 0.5,
+        "support": 4
+      },
+      "thresholds": {
+        "severity": 2,
+        "cochange_rate": 0.5,
+        "cochange_support": 3
+      },
+      "weight": 2,
+      "tier": "tertiary"
+    },
+    {
+      "kind": "other-group",
+      "target": "other",
+      "why": "1 files no shore rule claims: .json",
+      "inputs": {
+        "cells_reached": 0,
+        "uncovered_fraction": 0,
+        "history_weight": 0,
+        "files": 1,
+        "kinds": 1
+      },
+      "thresholds": {
+        "severity": 2
+      },
+      "weight": 2,
+      "tier": "tertiary"
+    },
+    {
+      "kind": "missing-cochange",
+      "target": "package.json",
+      "why": "usually changes with `CHANGELOG.md` (28 commits, rate 0.571) and did not",
+      "inputs": {
+        "cells_reached": 0,
+        "uncovered_fraction": 0,
+        "history_weight": 0,
+        "rate": 0.571,
+        "support": 28
+      },
+      "thresholds": {
+        "severity": 2,
+        "cochange_rate": 0.5,
+        "cochange_support": 3
+      },
+      "weight": 2,
+      "tier": "tertiary"
+    }
+  ]
+}

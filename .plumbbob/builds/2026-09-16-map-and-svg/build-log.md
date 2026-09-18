@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 13 — feat(cli): add the atis command that writes map.json for a base ref
+**Current step:** 14 — chore(spike): generate and spot-check map.json for checkride's PR 4
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -35,7 +35,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 10. feat(core): compute evidence and the flight category
 - ☑ 11. feat(core): rank notice candidates into the six-slot budget
 - ☑ 12. feat(core): assemble map.json through one pure buildMap
-- ☐ 13. feat(cli): add the atis command that writes map.json for a base ref
+- ☑ 13. feat(cli): add the atis command that writes map.json for a base ref
 - ☐ 14. chore(spike): generate and spot-check map.json for checkride's PR 4
 - ☐ 15. feat(core): lay out organelles within bands with a seeded force simulation
 - ☐ 16. feat(core): draw cell membranes as Bubble Set contours over the layout
@@ -63,6 +63,10 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [ ] notices.ts: the deleted-export `why` says "1 files still import it"; pluralise the consumer count
 - [ ] C1's struct rule, when it lands, scopes to shipped sources: tests under __tests__/ may import node:* to read fixtures (Rob, 2026-09-17)
 - [ ] atis writes map.json into the working directory by default; .gitignore does not cover it, so a run in this repo leaves an untracked file
+- [ ] the fixture procedure must name the worktree directory after the repo: meta.repo is basename(--repo), so /tmp/atis-spike-cr-pr4 wrote repo: "atis-spike-cr-pr4" into the map; step 22's five fixtures need the same care, or the CLI should read the name from the origin remote
+- [ ] readCheck loses the coverage and test channels when --repo reaches the repository through a symlink: on macOS /tmp is /private/tmp, so relativeToRepo() in apps/atis/src/sources/check.ts falls back to the absolute coverage key and nothing joins to a changed path; patch_coverage came back [] with no reason. A realpathSync on the repo in run.ts (or in relativeToRepo) fixes it. Found by the step-14 spike; the fixture is generated from the realpath as a workaround.
+- [ ] the notice tie-break is alphabetical, so the strongest missing-cochange loses to markdown: on checkride PR 4 all four tertiary candidates weigh exactly 2 (severity 2, cells_reached 0, history_weight 0) and byPath cut src/pm/translate.ts (rate 0.857, support 6, a source file in the changed cell) in favour of README.md (rate 0.5) and package.json. score() gives a co-change candidate no credit for rate or support, so the alphabet is doing the ranking in the tertiary tier (P1, C7).
+- [ ] pnpm check --all on a historical commit runs pnpm audit against today's advisory database, so the security slot goes red for reasons the PR did not cause and the map reads IFR: checkride PR 4's fixture carries a red-check-slot notice and an IFR category from 15 advisories in a 2026 lockfile. Step 22's five fixtures need a call: skip security beside mutation, or record in each README that the category includes an audit the PR is not responsible for.
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -733,3 +737,58 @@ folder, so it rides the branch into the PR.)*
   **5.** The golden test reads its fixtures with `node:fs`, which C1 leaves alone
 
   `libs/core/src/__tests__/map.test.ts` imports `node:fs`, `node:path` and `node:url` to reach the fixture input set and the golden under `libs/core/fixtures/`. I first flagged that as bending [C1 (core-is-pure)](#c1) by its letter ("nothing under `libs/core/src` imports `node:*`"); Rob's reading, 2026-09-17, is that C1 is about the code core ships and a test is a special case. On that reading it is honoured outright: `map.ts` and everything the package exports are Node-free, and no consumer of `core` gains a Node dependency. The test's comment now says so, and a park records that C1's promised struct rule should scope to non-test sources when it lands, so this test does not go red under it. The JSON-import version I tried on the way (which trips `no-deep-sibling-import` on any `../../…` specifier) is not needed and is not in the diff. I also parked one nit from step 11: the deleted-export notice says "1 files still import it".
+
+- 2026-09-18 — step 13 checkpointed · 702d79fee — feat(cli): add the atis command that writes map.json for a base ref (1 drift, 11m)
+
+  **Summary**: `atis --base <ref>` now reads a real repository end to end and writes a real `map.json`. Run on this repo at `HEAD~1` it prints `MVFR, 10 files changed, 0 notices` in about 1.5 seconds, and the file it leaves passes `assertMap`. Everything impure lives in the new `run.ts`; `cli.ts` parses flags and nothing else.
+
+  1. The bin parses flags, `run.ts` does the work, and `index.ts` stays the package's surface
+  2. Two `git archive` extractions, removed in a `finally`, are the whole of D32 and D46
+  3. `--verbose` measures every source, which is the measurement D50 asked this build to take
+  4. The three artifact tests run the real bin over `git clone` copies of this repo
+  5. One stray, and a model note
+
+  **Readout**: Step 13 - feat(cli): add the atis command that writes map.json for a base ref
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored:
+               - D32 (terrain-from-base), D46 (head-is-a-commit), D50 (history-measured)
+               - D25 (base-semantics), D30 (pure-parsers), D41 (artifact-trust)
+  constraints  11 of 11 honored
+  seam         strayed: 1 path outside the seam
+               → apps/atis/src/__tests__/index.test.ts
+  diff         +402 -42 across 5 files
+  spent        11 min · 1 turn · 10s gate · green first run
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Recommendation**: Approve and checkpoint. The gate is green across all eight slots, the command produces a real map of this repository that passes its own schema guard, and step 14 is the spike that points it at checkride's PR 4 and reads the result.
+
+  **1.** The bin parses flags, `run.ts` does the work, and `index.ts` stays the package's surface
+
+  `cli.ts` is now `util.parseArgs` in strict mode with `allowPositionals: false`, a small `Flags` shape, and four early returns: `--version`, `--help`, a missing `--base`, and otherwise `run(...)`. A parse throw (an unknown flag, a stray positional, `--base` with no value) becomes an exit-2 line plus the usage text rather than a stack trace. `run.ts` owns the rest: two `git archive` extractions, the six sources, `buildMap`, the atomic write. `index.ts` keeps `NAME`, `VERSION` and a `USAGE` that now names every flag, and re-exports `run`, so a library caller can build a map without the `bin`.
+
+  The exit codes are [C4 (never-blocks)](#c4) exactly: 0 whenever the map was written, whatever the weather says, and 2 only for misuse or a repository that cannot be read. `MVFR` on this repo's own change exits 0.
+
+  **2.** Two `git archive` extractions, removed in a `finally`, are the whole of D32 and D46
+
+  `extract` makes a temp directory per side, writes `git archive --format=tar -o` into it and untars into a `tree/` subdirectory, so the archive itself never lands inside the tree the scanner walks. The merge-base tree feeds the terrain and the `HEAD` tree feeds the weather ([D32 (terrain-from-base)](#d32), [D46 (head-is-a-commit)](#d46)); the working tree is read for one thing only, `.check/`, which is never committed. Both extractions are removed in a `finally`, so a throw mid-scan does not leave them behind.
+
+  `headOf` is deliberately the first call `run` makes: one quiet `git show -s --format=%H%n%ct HEAD` that yields both `meta.head` and the `head_time` every age is measured back from, and that fails by name on a directory that is no repository before any source has shelled out. That is what the fifth test asserts, in process, since a clean exit-2 path is not reachable through a clone.
+
+  **3.** `--verbose` measures every source, which is the measurement D50 asked this build to take
+
+  Each source is wrapped in a `timed` call and the list prints on stderr, so stdout stays the one line. On this repo: `diff 89 ms`, `scan base 593 ms`, `scan head 516 ms`, `manifests 174 ms`, `log 104 ms`, `check 1 ms`, `build 9 ms`, `write 1 ms`. The history window is not the cost here; the two TypeScript scans are, at roughly 1.1 seconds of a 1.5 second run. [D50 (history-measured)](#d50) says the first repo past about two seconds earns a `--history <n>` cap, and on this evidence the cap it earns first may be on the scan instead. Step 14 runs this on checkride's PR 4, which is the bigger repo that will say.
+
+  **4.** The three artifact tests run the real bin over `git clone` copies of this repo
+
+  A clone is the honest temp copy: it carries the history the CLI reads and none of the ignored files, so `.check/` is absent in it by construction and NOINST is what the map should say. One test asserts `git-only`, `NOINST`, no slots and `Object.keys(evidence)` empty, so a muted channel is an absent key and not a faked zero ([C2 (never-fake)](#c2)); another makes `.check/` and leaves it empty and asserts the `reason` reaches both `weather.checks.reason` and `meta.instruments.reason`. The first test runs against this repo itself with `--base HEAD~1` and checks `assertMap`, the one-line stdout and the `--verbose` timings. Five tests, 5.9 seconds, each with a one-minute timeout since a clone plus two scans will never fit vitest's default five seconds.
+
+  `beforeAll` builds the `bin` only when `dist/cli.js` is missing, and tolerates a failed build as long as the file then exists: checkride runs its slots from a pool, so `types` can be building the same graph in parallel with `test`, and the second gate run above did exactly that.
+
+  **5.** One stray, and a model note
+
+  `apps/atis/src/__tests__/index.test.ts` is outside the declared seam. It had three tests calling `run(['--version'])` against the placeholder `run(argv)`, and `run` no longer takes argv, so those moved to `cli.test.ts` where they now exercise the built bin; what stays is the manifest check and a new assertion that `USAGE` names every flag `cli.ts` parses. Two declared seam paths needed no edit: `fallow.toml` already lists `apps/atis/src/cli.ts` as an entry and globs the tests, and `apps/atis/package.json` already points `bin` at `dist/cli.js`. The step recommended `sonnet` and this ran on Opus 5; I should have flagged that before implementing rather than here.
