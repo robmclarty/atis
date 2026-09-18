@@ -14,80 +14,37 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, sep } from 'node:path';
 
-import type { FallowSchemas } from 'core';
+import type {
+  CheckArtifacts,
+  CheckSummary,
+  CheckSummarySlot,
+  Coverage,
+  CoverageFile,
+  CoverageStatement,
+  Dead,
+  Dupes,
+  Health,
+  HealthFileScore,
+  HealthFinding,
+  Mutation,
+  MutationFile,
+  ReportedMutant,
+  Security,
+  StaleChannel,
+  TestReport,
+  TestResult,
+} from 'core';
 
 const CHECK_DIR = '.check';
 const SUMMARY_FILE = 'summary.json';
 const SUMMARY_SCHEMA_VERSION = 1;
 
-export type CheckSummarySlot = { readonly name: string; readonly ok: boolean; readonly skipped: boolean };
-
-export type CheckSummary = {
-  readonly ok: boolean;
-  readonly checks_run: number;
-  readonly timestamp: string;
-  readonly total_duration_ms: number;
-  readonly checks: readonly CheckSummarySlot[];
-};
-
-export type HealthFileScore = {
-  readonly path: string;
-  readonly fan_in?: number;
-  readonly fan_out?: number;
-  readonly lines: number;
-  readonly function_count: number;
-  readonly maintainability_index: number;
-  readonly crap_max: number;
-};
-
-export type HealthFinding = { readonly path: string; readonly exceeded: string };
-
-export type Health = {
-  readonly file_scores: readonly HealthFileScore[];
-  readonly findings: readonly HealthFinding[];
-  readonly fan_in_p95?: number;
-};
-
-export type Dead = {
-  readonly circular_dependencies: readonly unknown[];
-  readonly re_export_cycles: readonly unknown[];
-  readonly boundary_violations: readonly unknown[];
-  readonly unused_exports: readonly unknown[];
-};
-
-export type Dupes = { readonly clone_families: readonly unknown[] };
-
-export type CoverageStatement = { readonly line: number; readonly hits: number };
-export type CoverageFile = { readonly path: string; readonly statements: readonly CoverageStatement[] };
-export type Coverage = readonly CoverageFile[];
-
-export type Mutant = { readonly line: number; readonly status: string };
-export type MutationFile = { readonly path: string; readonly mutants: readonly Mutant[] };
-export type Mutation = readonly MutationFile[];
-
-export type TestResult = { readonly path: string; readonly status: string };
-export type TestReport = { readonly results: readonly TestResult[] };
-
-export type Security = { readonly vulnerabilities: Readonly<Record<string, number>> };
-
-/** A channel muted for staleness: its owning slot ran, but the raw file predates the run window (D41). */
-export type StaleChannel = { readonly slot: string; readonly file: string; readonly age_ms: number };
-
-export type CheckInputs =
-  | { readonly mode: 'git-only'; readonly reason: string }
-  | {
-      readonly mode: 'check';
-      readonly summary: CheckSummary;
-      readonly fallow_schemas: FallowSchemas;
-      readonly stale: readonly StaleChannel[];
-      readonly health?: Health;
-      readonly dead?: Dead;
-      readonly dupes?: Dupes;
-      readonly coverage?: Coverage;
-      readonly mutation?: Mutation;
-      readonly test?: TestReport;
-      readonly security?: Security;
-    };
+/**
+ * What `readCheck` hands core. The shape is core's (`CheckArtifacts`), since
+ * core owns the contract it computes evidence from and cannot import this
+ * reader (C1); the alias keeps the reader's own name for it.
+ */
+export type CheckInputs = CheckArtifacts;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -265,7 +222,7 @@ export function parseMutation(text: string): Mutation | undefined {
 
   const result = Object.entries(files).flatMap(([path, raw]): readonly MutationFile[] => {
     if (!isRecord(raw)) return [];
-    const mutants = arrayField(raw, 'mutants').flatMap((m): readonly Mutant[] => {
+    const mutants = arrayField(raw, 'mutants').flatMap((m): readonly ReportedMutant[] => {
       if (!isRecord(m)) return [];
       const status = m['status'];
       const location = m['location'];

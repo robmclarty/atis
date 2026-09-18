@@ -6,9 +6,21 @@
 
 import type { GroupRule } from './groups.js';
 
+/** The numbers §5.3 names only in words, with D27's starting values. */
+export type CategoryConfig = {
+  /**
+   * How many cells a changed file's reach must touch, its own included, to
+   * count as *high reach*: an uncovered change at or above this is IFR rather
+   * than MVFR, because the reviewer cannot see where it lands.
+   */
+  readonly high_reach_cells: number;
+};
+
 export type Config = {
   /** The shore's first-match table (D48); a file no row matches lands in `other`. */
   readonly groups: readonly GroupRule[];
+  /** The flight-category thresholds of §5.3 (D27). */
+  readonly category: CategoryConfig;
 };
 
 const IMAGES = ['*.png', '*.jpg', '*.jpeg', '*.gif', '*.webp', '*.avif', '*.ico'];
@@ -16,6 +28,7 @@ const FONTS = ['*.woff', '*.woff2', '*.ttf', '*.otf'];
 const LOCKFILES = ['pnpm-lock.yaml', 'package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock', 'bun.lock', 'bun.lockb'];
 
 export const DEFAULT_CONFIG: Config = {
+  category: { high_reach_cells: 3 },
   // D48's groups in its order, except that `prompts` is tried before `docs`:
   // first match wins, and `*.md` would otherwise swallow AGENTS.md and CLAUDE.md.
   // Hook folders inside `.claude/` or a skill are code, so they fall through to `scripts`.

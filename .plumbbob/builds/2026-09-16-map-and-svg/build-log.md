@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 9 — feat(core): compute the changed set and reach by module hop
+**Current step:** 10 — feat(core): compute evidence and the flight category
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -31,7 +31,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 6. feat(cli): read the git diff into change kinds, sizes and head-side hunks
 - ☑ 7. feat(history): mine git log into churn, age, bug-fix rate and co-change
 - ☑ 8. feat(cli): read checkride's .check artifacts into evidence inputs
-- ☐ 9. feat(core): compute the changed set and reach by module hop
+- ☑ 9. feat(core): compute the changed set and reach by module hop
 - ☐ 10. feat(core): compute evidence and the flight category
 - ☐ 11. feat(core): rank notice candidates into the six-slot budget
 - ☐ 12. feat(core): assemble map.json through one pure buildMap
@@ -57,6 +57,9 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [ ] test and shore patterns: vitest __snapshots__/*.snap and .gitkeep land in other, and a tests/ folder counts as terrain; decide whether the defaults grow once step 14 or 22 shows real repos
 - [ ] generated TypeScript is terrain today: a committed dist/ or a .d.ts file scans like source; decide whether the scan drops it once step 14 or 22 shows a repo that commits one
 - [ ] changed test files need a home in changed[]: step 9 gives them the group id 'tests' (D4 keeps them off the terrain, D48 demands exactly one cell or group), so step 12 must list a tests group in terrain.groups or assertMap rejects every PR that touches a test
+- [ ] a changed source file the coverage report never names yields no gap, so an uninstrumented new file can read as VFR; D27's gap rule needs a third state (unmeasured) or the notices step needs an 'untested changed file' candidate
+- [ ] core's CheckArtifacts is the .check contract but nothing proves apps/atis still satisfies it once step 12 stops importing every field; consider a type-level conformance assertion in apps/atis
+- [ ] computeEvidence runs computeReach once per changed file, which recomputes newCrossModule each time; harmless at spike scale, worth a narrow per-file reach export if a large PR shows up in step 14
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -513,3 +516,58 @@ folder, so it rides the branch into the PR.)*
   `readCheck` still behaves exactly as the done-when specifies. The synthetic stale/
   skipped/unlisted-slot cases build real `.check/` folders under `mkdtemp`, never committed,
   so they exercise `readCheck` itself.
+
+- 2026-09-18 — step 9 checkpointed · 39d94db86 — feat(core): compute the changed set and reach by module hop (6m)
+
+  **Summary**: `computeReach` now turns the diff and the two import graphs into the whole weather layer this step owns: every changed file placed on its cell or in one shore group, every file the change reaches carrying its minimum hop count and the interfaces it crossed to get there, and every cross-cell import this change introduced. Hops price membranes rather than files, so a change whose exports never leave its cell reaches no other cell at all and the deep-module payoff falls straight out of the walk instead of being special-cased. Nine tests cover the six cases the plan named plus three edges I judged sharp enough to pin.
+
+  1. Reach walks two graphs and charges one hop per membrane, never per file
+  2. `via` records the file the edge actually took, not the barrel it went around
+  3. Changed test files needed a home in `changed[]`, and got the group `tests`
+  4. The walk cannot be reordered into a different map
+  5. Nine tests, the six the plan named plus three edges
+
+  **Readout**: Step 9 - feat(core): compute the changed set and reach by module hop
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored: 5
+               - D5 (reach-by-module-hop), D45 (nested-cells): hops price membranes, not files
+               - D39 (two-graphs): head edges for live files, base edges for deleted ones
+               - D48 (shore-groups), D4 (tests-not-terrain): every changed file placed once
+  constraints  11 of 11 honored
+  seam         held: 3 of 3 declared, no strays
+  diff         +496 -0 across 3 files
+  spent        6 min · 1 turn · 3s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Approve it, and say yes or no to the `tests` group while it is cheap. The done-when is met clause by clause and `pnpm check --strict` is green on all eight slots, so the two things worth your eye are both judgment rather than defect: the `via` reading in highlight 2, which is one line and one test to flip, and the `tests` group in highlight 3, which step 12 has to honour three steps from now.
+
+  **1.** Reach walks two graphs and charges one hop per membrane, never per file
+
+  The walk is over reverse edges: from each changed file out to whoever imports it. A step that stays inside one innermost cell is free, and a step into another costs one hop and appends the interface file it landed on, so `via` is the list of interfaces a reviewer has to read to follow the change out. Added, modified and renamed files walk the head graph; a deleted file walks the base graph, where the consumers it breaks still import it (D39), and the test pins both directions on one file: deleted it reaches two consumers, modified it reaches nothing, because the head graph lost that import along with the file.
+
+  Nesting is handled by asking only which *innermost* cell each end sits in, which is what makes a package contour cost nothing of its own (D45). The package test walks an edge that leaves the `libs/core` contour and enters the `apps/atis` one on its way into `cli.ts`, and it still costs the single hop that leaving a folder module costs.
+
+  **2.** `via` records the file the edge actually took, not the barrel it went around
+
+  This is the one place I read D45's parenthetical as descriptive rather than as an override, so it is the line to overturn if you disagree. D45 says `via` records "the file the edge lands on in the target cell, the barrel when there is one and otherwise the imported file itself". Where an import enters a cell through its barrel, the file landed on *is* the barrel and both readings agree, which is every case the done-when names: all six planned tests passed unchanged when I switched from one reading to the other.
+
+  They differ only when an import reaches past a barrel and takes a file inside the cell directly. Recording the barrel there would name a file that had nothing to do with the crossing, while §5.2 says the crossing is "the public interface through which the change escapes, which is exactly where a reviewer should read", and your own rider on D45 is that nothing may depend on a barrel existing. So the crossing records the file that was imported, which is on that cell's interface by definition. A test pins it, and it is a one-line change plus that test to flip.
+
+  **3.** Changed test files needed a home in `changed[]`, and got the group `tests`
+
+  D4 keeps tests off the terrain and step 3 keeps them out of the shore table too, but D48 gives every `changed[]` entry exactly one cell or group and `assertMap` rejects an entry with neither, while step 14's first row wants the changed set to equal `git diff --name-status`, tests included. Those three cannot all hold, so a changed test file now carries the group id `tests`: grouped by what it is, the way D48 groups every other leftover, rather than dumped into `other`, which stays the loud residual. Nothing about the drawing changes; tests are still stitches on the organelles they import.
+
+  This is parked, because the other half lands outside this seam: step 12 has to list a `tests` group in `terrain.groups` or `assertMap` will reject every PR that touches a test. Worth one word from you now, since step 12 is three steps out.
+
+  **4.** The walk cannot be reordered into a different map
+
+  Reach is a shortest-path problem where the label is `(hops, via)`, and two paths of equal length would otherwise leave `via` to whatever order the queue happened to take. The label carries a total order, fewest hops first and then the lexicographically smaller `via`, and relaxation runs to a fixpoint rather than settling each file once, so the result is the minimum under that order no matter what order the queue ran in (C3). The diamond test pins it: a file reachable both directly and through a longer arm reports the short one.
+
+  **5.** Nine tests, the six the plan named plus three edges
+
+  The planned six are the three-cell chain at hops 0/1/2 with `via`, the contained change, the deleted file reached through base edges, the new cross-cell import against an edited old one, the barrel-less directory cell, and the package cell that costs no hop of its own. The three I added are the diamond above, the barrel-bypassing import from highlight 2, and one placement test covering cells, barrels, all four shore groups a real PR hits, the `tests` group and the residual. Each builds its fixture through the real `identifyModules` and `identifyGroups` rather than a hand-written cell list, so the cell ids and barrels in the assertions are the ones step 12 will actually see.

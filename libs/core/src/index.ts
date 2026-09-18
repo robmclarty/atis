@@ -5,6 +5,7 @@
 
 export * from './config.js';
 export * from './depth.js';
+export * from './evidence.js';
 export * from './groups.js';
 export * from './history.js';
 export * from './modules.js';
