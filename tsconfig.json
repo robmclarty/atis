@@ -2,6 +2,7 @@
   "files": [],
   "references": [
     { "path": "./libs/core" },
+    { "path": "./libs/svg" },
     { "path": "./apps/atis" }
   ]
 }

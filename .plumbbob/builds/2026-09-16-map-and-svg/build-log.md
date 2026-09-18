@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 16 — feat(core): draw cell membranes as Bubble Set contours over the layout
+**Current step:** 17 — feat(svg): render the field, terraces, membranes and organelles
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -38,7 +38,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 13. feat(cli): add the atis command that writes map.json for a base ref
 - ☑ 14. chore(spike): generate and spot-check map.json for checkride's PR 4
 - ☑ 15. feat(core): lay out organelles within bands with a seeded force simulation
-- ☐ 16. feat(core): draw cell membranes as Bubble Set contours over the layout
+- ☑ 16. feat(core): draw cell membranes as Bubble Set contours over the layout
 - ☐ 17. feat(svg): render the field, terraces, membranes and organelles
 - ☐ 18. feat(svg): render the weather layer over the terrain
 - ☐ 19. feat(svg): render the notice labels and the HUD grade blocks
@@ -69,6 +69,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [ ] pnpm check --all on a historical commit runs pnpm audit against today's advisory database, so the security slot goes red for reasons the PR did not cause and the map reads IFR: checkride PR 4's fixture carries a red-check-slot notice and an IFR category from 15 advisories in a 2026 lockfile. Step 22's five fixtures need a call: skip security beside mutation, or record in each README that the category includes an audit the PR is not responsible for.
 - [ ] contours are two thirds of the demo golden's lines: the CLI's pretty-printed map.json puts every coordinate on its own line, so a compact writer for contours (one point per line, or a flat array) is worth deciding before step 22 commits five fixtures
 - [ ] on synthetic fields packed at the collide pad (480 to 2000 files) the bubble-set routing leaves a neighbour's centre under a skin a handful of times even after the harder second cut; revisit the field or the layout's cell spacing if a step-22 repo shows one
+- [ ] a root vitest.config.ts is terrain: it draws as a one-file directory cell named '.' on band 0 (with an empty package:. beside it) because classifyFile sends every .ts to terrain before D48's config rule (*.config.*) can claim it; decide whether TypeScript config files are shore
+- [ ] svg: draw a cell's own dents and clone_family on its membrane (§5.1 names cells too; step 17 drew them on organelles only, as the done-when scoped)
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -909,3 +911,57 @@ folder, so it rides the branch into the PR.)*
   **5.** One line outside the seam: map.test.ts asserted the layout was absent
 
   Step 12's test carried `expect(map.terrain.layout).toBeUndefined()`, which this step makes false. It now asserts the field's strips run in the same order as the bands they were quantised from. `libs/core/src/__tests__/map.test.ts` is the one path the diff touches that the seam does not name.
+
+- 2026-09-18 — step 16 checkpointed · ab9420b21 — feat(core): draw cell membranes as Bubble Set contours over the layout (1 drift, 20m)
+
+  **Summary**: Every cell and every shore group with a mark on the field now carries one closed contour in `terrain.layout.contours`, cut by `bubblesets-js` over the settled field, and `membraneThickness` turns a cell's `interface_size` into the stroke width the SVG will draw its skin at. The tests prove every member centre inside its contour and every other centre outside, a cell on two terraces stretched across the line between them, a package's skin holding the folder beneath it, and the same bytes twice; the demo golden carries the contours and the gate is green in full.
+
+  1. A package's skin holds every cell beneath it, and the folder's own skin sits inside it
+  2. The skin is checked, and re-cut with a harder push when a neighbour ends up under it
+  3. The ring is thinned to a third before it is smoothed, so the golden grew by 2,378 lines rather than 5,518
+  4. A group of test files has no skin, and a file the layout did not place is neither held nor routed around
+  5. Two paths outside the seam: map.ts hands the cells to the layout, and layout.test.ts asserted the contours were absent
+
+  **Readout**: Step 16 - feat(core): draw cell membranes as Bubble Set contours over the layout
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored
+               - D13 (geometry)
+               - D24 (layout-in-core)
+               - D34 (layout-deps)
+               - D45 (nested-cells)
+               - D48 (shore-groups)
+               - D4 (tests-not-terrain)
+  constraints  11 of 11 honored
+  seam         strayed: 2 paths outside the seam
+               - libs/core/src/__tests__/layout.test.ts
+               - libs/core/src/map.ts
+  diff         +2877 -12 across 8 files
+  spent        20 min · 2 turns · 8s gate · green first run
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Recommendation**: Approve and checkpoint. The gate is green in full, the four properties the done-when names are asserted on a purpose-built fixture and on the demo map, the renders of the demo and a 30-cell field were checked by eye, and the two strays are the one word `map.ts` needs to hand the cells over and the assertion step 15 left for this step to flip.
+
+  **1.** A package's skin holds every cell beneath it, and the folder's own skin sits inside it
+
+  D45 makes a package a contour around all of its descendants with its barrel as its only direct organelle, so a cell's members are its own organelles plus those of every cell whose `parent` chain reaches it, walked as a tree rather than assumed to be one level deep. Everything else placed on the field, including the parent's barrel for a child cell and the shore's marks for any cell, is pushed as a non-member, which is what routes the skin around a neighbour rather than over it. On the demo map `package:libs/core`'s contour holds `pm/` and `util/` and not the CLI, and `pm/`'s contour holds its four files and not the package barrel; the render shows the folder's skin nested inside the package's, both stretched down the terraces. The cells therefore had to reach the layout: `LayoutInput` gains a `cells` field narrowed to `id`, `parent` and `organelles`, so a test can hand over three lines rather than a full `Cell`.
+
+  **2.** The skin is checked, and re-cut with a harder push when a neighbour ends up under it
+
+  The library loosens its field until every member's centre is inside the ring and says nothing about whose else is, so on a terrace packed tighter than its routing can bend around, a virtual edge runs straight through a neighbour and the neighbour's centre lands under the skin. Measured on synthetic fields laid out by step 15's own forces: none on the 8-cell fixture, the 30-cell one or the demo, and 1 of 480, 5 of 1000 and 4 of 2000 files at the default push. A stronger push everywhere trades those for a cell's own file falling outside its skin, which is worse (2 members out at -1.2 on 2000 files, 1 at -1.5), so the module checks the stored ring itself with the same ray test the tests use, and only when a member is out or a neighbour is in does it cut again at -1.5 and keep that ring only if the check now passes. That resolved 4 of the 5 on 1000 files and none of the 4 on 2000; the first cut stands when neither holds, since a skin with a neighbour under it is still the cell's skin and a missing one would say the cell has no membrane (C2). The residue is parked against step 22's real repos.
+
+  **3.** The ring is thinned to a third before it is smoothed, so the golden grew by 2,378 lines rather than 5,518
+
+  The marching squares return one point per grid step, and a B-spline sampled six times per point turned the demo's ten contours into 1,374 points and a golden 5,518 lines longer, because the CLI's pretty-printed JSON puts every coordinate on its own line. The tolerance the ring is thinned to is now per field, 3 px for a cell and 2 px for the shore, and the spline is sampled three times per control point, which is 589 points for the same ten contours with the inside-and-outside property intact on every field measured. The tolerance stops at 3 because 4 pulled the shore's small marks out of their skin after smoothing: the shore field rests only 6 px beyond a mark, a third of a cell's margin, and the same thinning that is invisible on a cell eats that. Whether contours should be written more compactly than one number per line is parked for before step 22 commits five fixtures.
+
+  **4.** A group of test files has no skin, and a file the layout did not place is neither held nor routed around
+
+  The `tests` group exists so a changed test can name a group, but D4 gave its files no position, so it gets no contour rather than an empty one, and step 17's "one contour per non-empty group" reads as per group with a mark on the field. The same rule covers any id without a position: it is not a member and not an obstacle, because a file the layout did not place is not on the field at all; a cell whose every organelle is unplaced gets no key, which the tests assert alongside the empty-contour case of `withinContour`.
+
+  **5.** Two paths outside the seam: map.ts hands the cells to the layout, and layout.test.ts asserted the contours were absent
+
+  `buildMap` had to pass `cells` into `computeLayout`, one word on one line of `libs/core/src/map.ts`. Step 15's test carried `expect(layout.contours).toBeUndefined()`, which this step makes false, and its fixture needed cells for the new input; it now asserts one contour per cell, and its empty-field case expects an empty `contours` record beside the empty `positions` one. Both are the diff touching what the seam did not name.

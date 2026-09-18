@@ -64,6 +64,12 @@ importers:
         specifier: 3.0.10
         version: 3.0.10
 
+  libs/svg:
+    dependencies:
+      core:
+        specifier: workspace:*
+        version: link:../core
+
 packages:
 
   '@ast-grep/cli-darwin-arm64@0.45.3':
