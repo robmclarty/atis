@@ -64,6 +64,7 @@ import {
   INTEGRITY_GAP_WIDTH,
   INTEGRITY_PAD,
   INTEGRITY_WIDTH,
+  LABEL_BASELINE,
   MUTANT_DENT_RADIUS,
   MUTANT_DENT_SPACING,
   REACH_DECAY,
@@ -87,8 +88,6 @@ import {
 
 /** The storm glyph: a bolt, drawn about its own origin. */
 const STORM_GLYPH = 'M1 -6L-3 1H0L-1 6L3 -1H0Z';
-/** Where a label's baseline sits to centre it on a mark, as a share of its font size. */
-const BASELINE = 0.35;
 const PASSED = 'passed';
 const FAILED = 'failed';
 const TOP = -Math.PI / 2;
@@ -197,7 +196,7 @@ function drawStain(file: ChangedFile, at: Position): readonly Markup[] {
     {
       'data-id': file.path,
       x: at.x + at.r + RENAME_LABEL_GAP,
-      y: at.y + RENAME_LABEL_SIZE * BASELINE,
+      y: at.y + RENAME_LABEL_SIZE * LABEL_BASELINE,
       'font-size': RENAME_LABEL_SIZE,
       stroke: 'none',
     },
@@ -475,7 +474,7 @@ function drawStorm(slot: string, over: string, x: number, y: number, atEdge: boo
       'text',
       {
         x: atEdge ? x - STORM_LABEL_GAP : x + STORM_LABEL_GAP,
-        y: y + STORM_LABEL_SIZE * BASELINE,
+        y: y + STORM_LABEL_SIZE * LABEL_BASELINE,
         'font-size': STORM_LABEL_SIZE,
         'font-variant': 'small-caps',
         'text-anchor': atEdge ? 'end' : undefined,

@@ -15,7 +15,7 @@ import type { ExceptionalEdgeKind } from 'core';
 
 import { el, num } from './el.js';
 import type { Markup } from './el.js';
-import { CHANGE_HUE, HATCH_PITCH, LIFR_HUE, REACH_BLUR, STIPPLE_DOT, STIPPLE_PITCH, TEXTURE_INK } from './tokens.js';
+import { ARROW_SIZE, CHANGE_HUE, HATCH_PITCH, HATCH_WIDTH, LIFR_HUE, REACH_BLUR, STIPPLE_DOT, STIPPLE_PITCH, TEXTURE_INK } from './tokens.js';
 
 export const HATCH_ID = 'hatch';
 export const STIPPLE_ID = 'stipple';
@@ -39,7 +39,7 @@ export function arrowId(kind: ExceptionalEdgeKind): string {
 export function drawDefs(): Markup {
   return el('defs', {}, [
     el('pattern', { id: HATCH_ID, patternUnits: 'userSpaceOnUse', width: HATCH_PITCH, height: HATCH_PITCH }, [
-      el('path', { d: `M0 ${num(HATCH_PITCH)}L${num(HATCH_PITCH)} 0`, stroke: TEXTURE_INK, 'stroke-width': 1 }),
+      el('path', { d: `M0 ${num(HATCH_PITCH)}L${num(HATCH_PITCH)} 0`, stroke: TEXTURE_INK, 'stroke-width': HATCH_WIDTH }),
     ]),
     el('pattern', { id: STIPPLE_ID, patternUnits: 'userSpaceOnUse', width: STIPPLE_PITCH, height: STIPPLE_PITCH }, [
       el('circle', { cx: STIPPLE_PITCH / 2, cy: STIPPLE_PITCH / 2, r: STIPPLE_DOT, fill: TEXTURE_INK }),
@@ -50,7 +50,7 @@ export function drawDefs(): Markup {
     ...EDGE_KINDS.map((kind) =>
       el(
         'marker',
-        { id: arrowId(kind), viewBox: '0 0 6 6', refX: 5, refY: 3, markerWidth: 5, markerHeight: 5, orient: 'auto', fill: EDGE_HUES[kind] },
+        { id: arrowId(kind), viewBox: '0 0 6 6', refX: 5, refY: 3, markerWidth: ARROW_SIZE, markerHeight: ARROW_SIZE, orient: 'auto', fill: EDGE_HUES[kind] },
         [el('path', { d: 'M0 0L6 3L0 6Z' })],
       ),
     ),

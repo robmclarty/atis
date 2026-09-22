@@ -34,6 +34,7 @@ import {
   CHROME_MUTED,
   CHROME_PAD,
   CHROME_RULE,
+  CHROME_STROKE_WIDTH,
   EMPHASIS_PAD,
   HUD_BLOCK_GAP,
   HUD_BLOCK_HEIGHT,
@@ -41,6 +42,7 @@ import {
   HUD_FONT_SIZE,
   HUD_PAD,
   IFR_HUE,
+  LABEL_BASELINE,
   LEADER_DASH,
   LEADER_INK,
   LEADER_WIDTH,
@@ -95,8 +97,6 @@ export const HUD_ORDER: readonly string[] = [
   'other',
 ];
 
-/** Where a label's baseline sits to centre it on a mark, as a share of its font size. */
-const BASELINE = 0.35;
 /** The unit the chrome writes tallies in: `−` is the minus sign, `·` the tier separator. */
 const MINUS = '−';
 const DOT = '·';
@@ -308,12 +308,12 @@ function drawBlock({ block: current, x, y, width }: PlacedBlock, category: Fligh
         height: HUD_BLOCK_HEIGHT,
         fill: solid ?? 'none',
         stroke: solid === undefined ? ink : undefined,
-        'stroke-width': solid === undefined ? 1 : undefined,
+        'stroke-width': solid === undefined ? CHROME_STROKE_WIDTH : undefined,
       }),
       runs(
         {
           x: x + HUD_BLOCK_PAD,
-          y: y + HUD_BLOCK_HEIGHT / 2 + size * BASELINE,
+          y: y + HUD_BLOCK_HEIGHT / 2 + size * LABEL_BASELINE,
           'font-size': size,
           fill: solid === undefined ? ink : CATEGORY_LETTERS,
         },
@@ -421,13 +421,13 @@ function drawBox(rank: number, tier: NoticeTier, x: number, y: number, hue: stri
       height: NOTICE_BOX,
       fill: solid ? hue : CHROME_GROUND,
       stroke: solid ? undefined : tier === 'secondary' ? CHROME_INK : CHROME_MUTED,
-      'stroke-width': solid ? undefined : tier === 'secondary' ? SECONDARY_BOX_WIDTH : 1,
+      'stroke-width': solid ? undefined : tier === 'secondary' ? SECONDARY_BOX_WIDTH : CHROME_STROKE_WIDTH,
     }),
     el(
       'text',
       {
         x: x + NOTICE_BOX / 2,
-        y: y + NOTICE_BOX / 2 + NOTICE_NUMERAL_SIZE * BASELINE,
+        y: y + NOTICE_BOX / 2 + NOTICE_NUMERAL_SIZE * LABEL_BASELINE,
         'font-size': NOTICE_NUMERAL_SIZE,
         'font-weight': 'bold',
         'text-anchor': 'middle',
@@ -623,7 +623,7 @@ export function drawChrome(map: MapJson, layout: Layout): Chrome {
   const drawnMarks = drawMarks(ranked, marks, hue, worldY);
   const markup = el('g', { id: 'chrome' }, [
     el('g', { id: 'hud' }, hud.placed.map((placed) => drawBlock(placed, category))),
-    el('g', { id: 'rules', stroke: CHROME_RULE, 'stroke-width': 1 }, [
+    el('g', { id: 'rules', stroke: CHROME_RULE, 'stroke-width': CHROME_STROKE_WIDTH }, [
       el('line', { x1: 0, y1: worldY, x2: width, y2: worldY }),
       el('line', { x1: layout.width, y1: worldY, x2: layout.width, y2: height }),
     ]),

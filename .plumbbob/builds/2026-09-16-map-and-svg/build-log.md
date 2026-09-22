@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 20 — feat(cli): add --svg and --open to write and show the static render
+**Current step:** 21 — docs(design): record the colour and chrome tokens the SVG settled
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -42,7 +42,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 17. feat(svg): render the field, terraces, membranes and organelles
 - ☑ 18. feat(svg): render the weather layer over the terrain
 - ☑ 19. feat(svg): render the notice labels and the HUD grade blocks
-- ☐ 20. feat(cli): add --svg and --open to write and show the static render
+- ☑ 20. feat(cli): add --svg and --open to write and show the static render
 - ☐ 21. docs(design): record the colour and chrome tokens the SVG settled
 - ☐ 22. chore(fixtures): generate map.json and the SVG for five historical PRs
 - ☐ 23. chore(glance): run glance-test round one and record the verdicts
@@ -1150,3 +1150,49 @@ folder, so it rides the branch into the PR.)*
   **5.** Two lines of `render.test.ts` strayed outside the seam, and the five goldens regenerate with one env var
 
   The canvas is no longer the world's size, so the render test's `viewBox="0 0 480 660"` prefix now checks only the prefix (the field's own 480×660 is still asserted on the rect), and its label round-trip on the awkward map now reads the world's text only, since the chrome writes text of its own. Nothing else outside the seam moved. The demo golden is regenerated and four more sit under `fixtures/categories/`, each the demo with its verdict swapped by the test's own `variant` (green slots and passed stitches for VFR and MVFR, nothing trusted for NOINST); `ATIS_UPDATE_GOLDENS=1 pnpm vitest run libs/svg` writes them all back, which is the recipe the test header records.
+
+- 2026-09-22 — step 20 checkpointed · 024ec73e1 — feat(cli): add --svg and --open to write and show the static render (1 drift, 8m)
+
+  **Summary**: `atis --svg <file>` now renders the built map to a still SVG in the same run that writes `map.json`, and `--open` hands that SVG to the platform viewer as a no-op under tests. Wiring the existing `renderSvg` in made `svg` a workspace dependency of `apps/atis`; the gate is green and an end-to-end run against this repo writes both outputs and exits 0 (VFR).
+
+  1. `--svg <file>` renders the map in the same run that writes it
+  2. `--open` opens the SVG and no-ops in tests
+  3. Wiring the renderer touched two files outside the seam
+  4. The done-when's `#world`/`#chrome` is a selector, so the test reads the ids
+
+  **Readout**: Step 20 - feat(cli): add --svg and --open to write and show the static render
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored:
+               - D33 (svg-package)
+               - D18 (delivery)
+               - D24 (layout-in-core)
+  constraints  11 of 11 honored
+  seam         strayed: 2 paths outside the seam
+               - apps/atis/tsconfig.json
+               - pnpm-lock.yaml
+  diff         +91 -3 across 6 files
+  spent        8 min · 1 turn · 13s gate · green first run
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Recommendation**: Approve and checkpoint step 20. Every done-when clause is verified against this repo and the gate is green; the only latitude taken, the two out-of-seam wiring files and the id-selector reading of the done-when, is disclosed above.
+
+  **1.** `--svg <file>` renders the map in the same run that writes it
+
+  `run.ts`, after the atomic `map.json` write, renders the already-built map with `renderSvg` from the `svg` package and writes the SVG atomically too. The stdout line now names both outputs (`wrote map.json and atis.svg`) and `--verbose` gains `render` and `write svg` timings.
+
+  **2.** `--open` opens the SVG and no-ops in tests
+
+  A detached, best-effort `open` (macOS) / `xdg-open` (elsewhere) spawn that swallows a missing opener so it never changes the exit code (C4), and returns early under `VITEST`/`NODE_ENV=test` so the suite launches nothing. `--open` without `--svg` is misuse (exit 2), guarded at the flag layer.
+
+  **3.** Wiring the renderer touched two files outside the seam
+
+  Adding `svg` as a `workspace:*` dependency of `apps/atis` (in seam: `package.json`) also required a project reference in `apps/atis/tsconfig.json` and a `pnpm-lock.yaml` entry from `pnpm install`, both outside the declared seam but mechanically required to resolve and build against the composite `svg` project. It adds no npm dependency (C9): `svg` is the internal renderer package of D33.
+
+  **4.** The done-when's `#world`/`#chrome` is a selector, so the test reads the ids
+
+  The renderer emits `<g id="world">` and `<g id="chrome">`, not a literal `#world`; the plan uses the `#`-prefix the way `intent.md` names groups throughout, so the test asserts `id="world"` and `id="chrome"` are present rather than a substring that never appears.

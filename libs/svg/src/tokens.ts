@@ -108,6 +108,8 @@ export const STITCH_UNLIT = '#6b7480';
 /** An exceptional edge, the only drawn line (§5.1), bowed to the right of travel by this share of its length so a cycle reads as a lens. */
 export const EDGE_WIDTH = 1;
 export const EDGE_BOW = 0.15;
+/** The arrowhead the edge ends in, its rendered size in user units; the triangle's own shape is fixed geometry, drawn in patterns.ts. */
+export const ARROW_SIZE = 5;
 
 /** A ghost, a missing co-change (§5.2): a dashed outline in a dim light this far outside the file's edge. */
 export const GHOST_STROKE = '#7c8590';
@@ -127,6 +129,8 @@ export const TEXTURE_MAX_OPACITY = 0.7;
 export const CHURN_FULL_AT = 3;
 export const BUGFIX_FULL_AT = 0.5;
 export const HATCH_PITCH = 4;
+/** The one diagonal stroke each hatch tile is drawn with, this wide. */
+export const HATCH_WIDTH = 1;
 export const STIPPLE_PITCH = 4;
 export const STIPPLE_DOT = 0.7;
 
@@ -139,6 +143,8 @@ export const STIPPLE_DOT = 0.7;
  */
 export const CHROME_GROUND = '#1a1f27';
 export const CHROME_RULE = '#2b333d';
+/** The brutalist hairline (D12): the width of a framed HUD block, a tertiary notice box, and the hard rule where the chrome meets the world. */
+export const CHROME_STROKE_WIDTH = 1;
 export const CHROME_INK = '#e6edf3';
 export const CHROME_MUTED = '#6b7480';
 /** The quiet edge the chrome keeps between its ground and what it writes. */
@@ -151,6 +157,8 @@ export const MUTED_DASH = '—';
  * this estimate; the local face lands within the padding either way.
  */
 export const MONO_ADVANCE = 0.6;
+/** Where a label's baseline sits to centre it on a mark, as a share of its font size, so a number rides level with the shape it names. */
+export const LABEL_BASELINE = 0.35;
 
 /** The category hues (§5.3, D6): VFR green, MVFR blue, IFR red, LIFR magenta; the letters always ride beside the hue (C11). NOINST has none. */
 export const VFR_HUE = '#4fd37a';
