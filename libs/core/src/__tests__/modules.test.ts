@@ -1,7 +1,11 @@
 import { expect, test } from 'vitest';
 
+import { DEFAULT_CONFIG } from '../config.js';
+import { configMatcher } from '../groups.js';
 import { classifyFile, identifyModules, memberOf } from '../modules.js';
 import type { ImportEdge, ModuleCell, Modules, ScannedFile } from '../modules.js';
+
+const isConfig = configMatcher(DEFAULT_CONFIG.groups);
 
 /** A scanned file with `loc` lines and `exports` exported names. */
 function file(path: string, loc = 10, exports = 0): ScannedFile {
@@ -38,6 +42,19 @@ test.each([
   ['test/fixtures/biome.json', 'other'],
 ])('classifyFile(%s) is %s', (path, kind) => {
   expect(classifyFile(path)).toBe(kind);
+});
+
+test('a .ts that configures a tool is shore, not terrain, once the config table is in hand (D57)', () => {
+  // `*.config.*` and the `config` row's other patterns, at the root or nested.
+  expect(classifyFile('vitest.config.ts', isConfig)).toBe('other');
+  expect(classifyFile('packages/app/vite.config.tsx', isConfig)).toBe('other');
+  expect(classifyFile('rules/no-raw-fetch.ts', isConfig)).toBe('other');
+  // A test under the config row is still evidence: the test read comes first (D4).
+  expect(classifyFile('src/theme.config.test.ts', isConfig)).toBe('test');
+  // A name that merely contains "config" is ordinary terrain.
+  expect(classifyFile('src/config.ts', isConfig)).toBe('source');
+  // Without the table, the name-only read leaves it terrain, the fallback the graph sources take.
+  expect(classifyFile('vitest.config.ts')).toBe('source');
 });
 
 test('memberOf picks the innermost member and normalises the roots', () => {
@@ -149,7 +166,7 @@ test('a folder module owns everything beneath it; a barrel-less folder falls bac
   expect(cellIn(modules, 'package:.')).toMatchObject({ organelles: ['src/index.ts'], body_loc: 222 });
 });
 
-test('apps/* with libs/*: each member is a package and root files outside them get no package', () => {
+test('a root config .ts beside workspace members is shore: no `directory:.` cell, no empty `package:.` (D57)', () => {
   const modules = identifyModules(
     [
       file('apps/atis/src/cli.ts', 8),
@@ -163,17 +180,25 @@ test('apps/* with libs/*: each member is a package and root files outside them g
       file('vitest.config.ts', 35, 1),
     ],
     [edge('apps/atis/src/cli.ts', 'apps/atis/src/index.ts'), edge('apps/atis/src/index.ts', 'libs/core/src/index.ts')],
-    ['apps/atis', './libs/core/'],
+    ['.', 'apps/atis', './libs/core/'],
+    isConfig,
   );
 
+  // The config file founds no cell of its own and drags no empty root package
+  // into being: before D57 the spike drew a `directory:.` and a `package:.`
+  // beside it, and both are gone now.
   expect(cellIds(modules)).toEqual([
-    'directory:.',
     'folder:libs/core/src/layout',
     'package:apps/atis',
     'package:libs/core',
     'single:apps/atis/src/cli.ts',
     'single:libs/core/src/schema.ts',
   ]);
+  expect(cellIds(modules)).not.toContain('directory:.');
+  expect(cellIds(modules)).not.toContain('package:.');
+  expect(modules.organelles.map((organelle) => organelle.path)).not.toContain('vitest.config.ts');
+
+  // The members are still packaged exactly as before.
   expect(cellIn(modules, 'package:libs/core')).toEqual({
     id: 'package:libs/core',
     path: 'libs/core',
@@ -184,18 +209,8 @@ test('apps/* with libs/*: each member is a package and root files outside them g
     interface_size: 12,
     body_loc: 399,
   });
-  expect(cellIn(modules, 'directory:.')).toEqual({
-    id: 'directory:.',
-    path: '.',
-    kind: 'directory',
-    organelles: ['vitest.config.ts'],
-    interface_files: [],
-    interface_size: 0,
-    body_loc: 35,
-  });
   expect(cellIn(modules, 'folder:libs/core/src/layout').parent).toBe('package:libs/core');
   expect(cellIn(modules, 'single:apps/atis/src/cli.ts').parent).toBe('package:apps/atis');
-  expect(modules.organelles.map((organelle) => organelle.path)).not.toContain('libs/core/src/__tests__/schema.test.ts');
 });
 
 test('packages/*: .tsx barrels, loose package files, a barrel-less package and an empty member', () => {

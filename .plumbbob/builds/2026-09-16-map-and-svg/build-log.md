@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 25 — fix(core): weigh missing co-change notices by rate and support
+**Current step:** 26 — fix(core): send TypeScript config files to the config shore group
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -47,7 +47,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☐ 22. chore(fixtures): generate map.json and the SVG for five historical PRs
 - ☐ 23. chore(glance): run glance-test round one and record the verdicts
 - ☑ 24. fix(core): send hook folders to the scripts shore group
-- ☐ 25. fix(core): weigh missing co-change notices by rate and support
+- ☑ 25. fix(core): weigh missing co-change notices by rate and support
 - ☐ 26. fix(core): send TypeScript config files to the config shore group
 
 ## Park list
@@ -1245,3 +1245,50 @@ folder, so it rides the branch into the PR.)*
   **5.** Three renderer files edited beyond the seam
 
   `chrome.ts`, `weather.ts` and `patterns.ts` were edited to read the newly extracted tokens. That is outside the declared seam paths but is what the done-when's "single source" requires; the values are unchanged, so the rendered bytes and the goldens are untouched.
+
+- 2026-09-22 — step 25 checkpointed · 29c322c9d — fix(core): weigh missing co-change notices by rate and support (1 drift, 21m)
+
+  **Summary**: The missing-cochange notice is now weighed by the two numbers a ghost actually has, how often and how reliably it co-changed, so the co-change budget stops being settled by the path alphabet; the deleted-export line now reads as English when a single file still imports the removed symbol.
+
+  1. The ghost's weight is now severity × (1 + rate) × (1 + log(1 + support))
+  2. The deleted-export why pluralises its consumer count
+  3. A test proves the alphabet lost
+  4. The pluralisation cascaded to six goldens beyond the seam
+
+  **Readout**: Step 25 - fix(core): weigh missing co-change notices by rate and support
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    2 of 2 honored
+  constraints  11 of 11 honored
+  seam         strayed: 6 paths outside the seam
+               - libs/core/fixtures/demo/map.json
+               - libs/svg/fixtures/categories/LIFR.svg
+               - libs/svg/fixtures/categories/MVFR.svg
+               - libs/svg/fixtures/categories/NOINST.svg
+               - libs/svg/fixtures/categories/VFR.svg
+               - libs/svg/fixtures/demo/atis.svg
+  diff         +105 -16 across 8 files
+  spent        21 min · 1 turn · 13s gate · green first run
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Recommendation**: Approve and checkpoint. The formula and the pluralisation are exactly D55 and the done-when, the new test shows rate and support beat the path sort, and the six regenerated goldens are the deterministic consequence of the mandated `why` change, each carrying only the one-versus-many flip.
+
+  **1.** The ghost's weight is now severity × (1 + rate) × (1 + log(1 + support))
+
+  `rankNotices` branches `missing-cochange` to a new `cochangeWeight`, while every other kind keeps §5.4's reach, coverage and churn factors. A ghost is the file that did *not* change, so those three factors are all zero for it; its `inputs` now carry rate and support alone, with no zeroed factors dragged in, beside the `cochange_rate` and `cochange_support` thresholds (D9).
+
+  **2.** The deleted-export why pluralises its consumer count
+
+  A small `stillImports` helper renders `1 file still imports it` for a lone consumer and `3 files still import it` otherwise, replacing the old always-plural `N files still import it`.
+
+  **3.** A test proves the alphabet lost
+
+  Four equal-severity ghosts, and the one at rate 0.857 over 6 commits ranks above the one at rate 0.5 over 2 in both path orderings (strong sorted last, then strong sorted first). The pluralisation is pinned for one and three consumers alongside it.
+
+  **4.** The pluralisation cascaded to six goldens beyond the seam
+
+  The demo map's lone-consumer `why` changed, and the five SVG goldens render that same core map, so all six were regenerated deterministically through the sanctioned `ATIS_UPDATE_GOLDENS=1` path; the only change in each is `1 files still import it` → `1 file still imports it` (the SVG wrap re-broke `import it` → `imports it`). `fixtures/checkride-pr4/map.json` is left for step 22 to regenerate, as the plan asks.

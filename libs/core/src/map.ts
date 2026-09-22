@@ -18,7 +18,7 @@ import { computeDepth } from './depth.js';
 import type { FileDepth } from './depth.js';
 import { computeCategory, computeEvidence, pathsOf } from './evidence.js';
 import type { CheckArtifacts, Dupes, Health } from './evidence.js';
-import { OTHER_GROUP, identifyGroups } from './groups.js';
+import { OTHER_GROUP, configMatcher, identifyGroups } from './groups.js';
 import { computeHistory } from './history.js';
 import type { Commit, CommitFile, FileHistory } from './history.js';
 import { computeLayout } from './layout/index.js';
@@ -437,10 +437,18 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
   const files = terrainFiles(base, head, added);
   const edges = terrainEdges(base, head, added);
   const roots = sortUnique([...base.members, ...head.members].map((member) => member.dir));
-  const modules = identifyModules(files, edges, roots);
+  const isConfig = configMatcher(config.groups);
+  const modules = identifyModules(files, edges, roots, isConfig);
   const groups = shoreGroups(files, roots, config);
 
-  const depths = computeDepth(edges, entryPoints(base, head, added), files.map((file) => file.path));
+  // A `.ts`/`.tsx` that configures a tool is shore, not terrain (D57): it founds
+  // no cell above and never sits on a terrace or ties one below, so depth is
+  // handed neither the file nor an edge that touches it.
+  const depths = computeDepth(
+    edges.filter((edge) => !isConfig(edge.from) && !isConfig(edge.to)),
+    entryPoints(base, head, added),
+    files.filter((file) => !isConfig(file.path)).map((file) => file.path),
+  );
   const history = computeHistory(
     rekeyCommits(inputs.commits, renames),
     new Map(head.files.map((file) => [file.path, file.loc] as const)),

@@ -99,6 +99,25 @@ test('the demo map places every changed file on one cell or one group', () => {
   expect(map.weather.changed.find((file) => file.path === 'libs/core/src/pm/index.ts')?.is_barrel).toBe(true);
 });
 
+test('a config `.ts` lands in the config shore, founding no cell and no empty root package (D57)', () => {
+  // The demo root is a workspace member of its own, so before D57 a root
+  // `vitest.config.ts` drew a `directory:.` cell with an empty `package:.`
+  // beside it. It is scanned terrain like any `.ts`, but the shore claims it.
+  const base = inputsFor('demo');
+  const withConfig: BuildInputs = {
+    ...base,
+    base: { ...base.base, files: [...base.base.files, { path: 'vitest.config.ts', loc: 20, exports: [] }] },
+    head: { ...base.head, files: [...base.head.files, { path: 'vitest.config.ts', loc: 20, exports: [] }] },
+  };
+  const map = buildMap(withConfig, DEFAULT_CONFIG);
+
+  expect(() => assertMap(map)).not.toThrow();
+  expect(map.terrain.groups.find((group) => group.id === 'config')?.files).toContain('vitest.config.ts');
+  expect(map.terrain.cells.map((cell) => cell.id)).not.toContain('directory:.');
+  expect(map.terrain.cells.map((cell) => cell.id)).not.toContain('package:.');
+  expect(map.terrain.organelles.map((organelle) => organelle.id)).not.toContain('vitest.config.ts');
+});
+
 test('the demo map carries the evidence the check run produced and nothing it did not', () => {
   const map = buildMap(inputsFor('demo'), DEFAULT_CONFIG);
 

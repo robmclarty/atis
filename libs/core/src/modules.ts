@@ -57,10 +57,22 @@ const TYPESCRIPT = /\.tsx?$/;
 const TEST_NAME = /\.(?:test|spec)\.tsx?$/;
 const TEST_DIR = /(?:^|\/)(?:__tests__|test)\//;
 
-/** Classify a tracked path: TypeScript is terrain unless it is a test (D4); the rest is shore. */
-export function classifyFile(path: string): FileKind {
+/** No config table in hand: a name-only read, where nothing counts as tool config. */
+const NOT_CONFIG = (): boolean => false;
+
+/**
+ * Classify a tracked path: TypeScript is terrain unless it is a test (D4), and
+ * a `.ts`/`.tsx` that configures a tool is shore too (D57), so a
+ * `vitest.config.ts` founds no cell. `isConfig` is the shore's `config` row,
+ * compiled by `configMatcher`; `buildMap` threads the reviewed repo's own table
+ * through, so an `atis.config.json` override moves that boundary with it. The
+ * graph sources that read a scanned tree and have no table (depth, reach, the
+ * import scan) fall back to the name, where a config file founds no cell anyway.
+ */
+export function classifyFile(path: string, isConfig: (path: string) => boolean = NOT_CONFIG): FileKind {
   if (!TYPESCRIPT.test(path)) return 'other';
-  return TEST_NAME.test(path) || TEST_DIR.test(path) ? 'test' : 'source';
+  if (TEST_NAME.test(path) || TEST_DIR.test(path)) return 'test';
+  return isConfig(path) ? 'other' : 'source';
 }
 
 function normalizeRoot(root: string): string {
@@ -167,19 +179,22 @@ function finish(draft: Draft, importers: ReadonlyMap<string, readonly string[]>)
 }
 
 /**
- * Group the terrain into cells. `files` may hold every tracked file: tests and
- * non-TypeScript paths are skipped here. `edges` only decide the interface of a
- * cell without a barrel, and only edges between terrain files count. `roots`
- * are the workspace members' directories, repo-relative.
+ * Group the terrain into cells. `files` may hold every tracked file: tests,
+ * non-TypeScript paths and the `config` shore (D57) are skipped here. `edges`
+ * only decide the interface of a cell without a barrel, and only edges between
+ * terrain files count. `roots` are the workspace members' directories,
+ * repo-relative. `isConfig` is the shore's `config` row, so a `.ts` that
+ * configures a tool founds no cell of its own.
  */
 export function identifyModules(
   files: readonly ScannedFile[],
   edges: readonly ImportEdge[],
   roots: readonly string[],
+  isConfig: (path: string) => boolean = NOT_CONFIG,
 ): Modules {
   const byPath = new Map<string, ScannedFile>();
   for (const file of files) {
-    if (classifyFile(file.path) === 'source' && !byPath.has(file.path)) byPath.set(file.path, file);
+    if (classifyFile(file.path, isConfig) === 'source' && !byPath.has(file.path)) byPath.set(file.path, file);
   }
   const sorted = [...byPath.values()].toSorted((a, b) => (a.path < b.path ? -1 : 1));
   const terrain = new Set(byPath.keys());

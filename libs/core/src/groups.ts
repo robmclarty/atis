@@ -11,6 +11,9 @@ import type { Group } from './schema.js';
 /** The group every unmatched file lands in; always listed last. */
 export const OTHER_GROUP = 'other';
 
+/** The shore row whose `.ts`/`.tsx` members are tool config, not terrain (D48, D57). */
+export const CONFIG_GROUP_ID = 'config';
+
 /**
  * One row of the shore table. A pattern matches at any depth unless it opens
  * with `/`, which anchors it at the repo root: `*.md` tests the file name and
@@ -45,6 +48,20 @@ function globToRegExp(pattern: string): RegExp {
 }
 
 /**
+ * Whether a path matches the shore's `config` row (D48): `classifyFile` reads a
+ * `.ts`/`.tsx` that does as tool configuration and sends it to the shore rather
+ * than the terrain (D57). Built from the same `rules` the shore is sorted by,
+ * so overriding the `config` row in an `atis.config.json` moves that boundary
+ * too; an absent row (a custom table with no `config`) matches nothing.
+ */
+export function configMatcher(rules: readonly GroupRule[]): (path: string) => boolean {
+  const row = rules.find((rule) => rule.id === CONFIG_GROUP_ID);
+  const patterns = (row?.patterns ?? []).map(globToRegExp);
+  const except = (row?.except ?? []).map(globToRegExp);
+  return (path) => patterns.some((pattern) => pattern.test(path)) && !except.some((pattern) => pattern.test(path));
+}
+
+/**
  * Sort the shore into groups, in table order with `other` last and empty
  * groups left out. `files` may hold every tracked file: terrain and tests are
  * skipped here. `roots` are the workspace members' directories; the repo root
@@ -60,7 +77,8 @@ export function identifyGroups(
     patterns: rule.patterns.map(globToRegExp),
     except: (rule.except ?? []).map(globToRegExp),
   }));
-  const shore = [...new Set(files.map((file) => file.path))].filter((path) => classifyFile(path) === 'other');
+  const isConfig = configMatcher(rules);
+  const shore = [...new Set(files.map((file) => file.path))].filter((path) => classifyFile(path, isConfig) === 'other');
   const placed = shore.map((path) => {
     const claimed = (memberOf(path, roots) ?? '') !== '';
     const row = table.find(
