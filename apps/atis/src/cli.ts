@@ -14,6 +14,8 @@ const FLAGS = {
   repo: { type: 'string' },
   base: { type: 'string' },
   out: { type: 'string' },
+  svg: { type: 'string' },
+  open: { type: 'boolean' },
   verbose: { type: 'boolean' },
   version: { type: 'boolean', short: 'V' },
   help: { type: 'boolean', short: 'h' },
@@ -23,6 +25,8 @@ type Flags = {
   readonly repo?: string | undefined;
   readonly base?: string | undefined;
   readonly out?: string | undefined;
+  readonly svg?: string | undefined;
+  readonly open?: boolean | undefined;
   readonly verbose?: boolean | undefined;
   readonly version?: boolean | undefined;
   readonly help?: boolean | undefined;
@@ -52,11 +56,14 @@ function main(argv: readonly string[]): Outcome {
   if (flags.version === true) return { exitCode: 0, stdout: `${VERSION}\n`, stderr: '' };
   if (flags.help === true) return { exitCode: 0, stdout: USAGE, stderr: '' };
   if (flags.base === undefined) return misuse('--base <ref> is required');
+  if (flags.open === true && flags.svg === undefined) return misuse('--open needs --svg <file>');
 
   return run({
     repo: flags.repo ?? process.cwd(),
     base: flags.base,
     out: flags.out ?? DEFAULT_OUT,
+    svg: flags.svg,
+    open: flags.open === true,
     verbose: flags.verbose === true,
   });
 }

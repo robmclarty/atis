@@ -13,12 +13,13 @@
  * and only misuse or a repository it cannot read exits 2 (C4).
  */
 
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { platform, tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 
 import { buildMap } from 'core';
+import { renderSvg } from 'svg';
 
 import { readCheck, readDiff, readLog, readManifests, scanImports } from './sources/index.js';
 
@@ -30,6 +31,10 @@ export type Options = {
   readonly base: string;
   /** Where to write the map, resolved against the working directory. */
   readonly out: string;
+  /** Where to write the still SVG (D33); when absent, only `map.json` is written. */
+  readonly svg?: string | undefined;
+  /** Hand the SVG to the platform opener once written; a no-op under a test run. */
+  readonly open?: boolean | undefined;
   /** Print the per-source timings D50 asks for on stderr. */
   readonly verbose: boolean;
 };
@@ -106,6 +111,25 @@ function writeAtomic(path: string, text: string): void {
   renameSync(temp, path);
 }
 
+/**
+ * Hand a file to the platform's opener (`open` on macOS, `xdg-open` elsewhere),
+ * detached so this short-lived command never waits on the viewer, and a no-op
+ * under a test run so the suite launches nothing. Opening is best-effort: a
+ * missing opener never changes the exit code, since the outputs are already on
+ * disk (C4).
+ */
+function openFile(path: string): void {
+  if (process.env['VITEST'] !== undefined || process.env['NODE_ENV'] === 'test') return;
+  const opener = platform() === 'darwin' ? 'open' : 'xdg-open';
+  try {
+    const child = spawn(opener, [path], { stdio: 'ignore', detached: true });
+    child.on('error', () => {});
+    child.unref();
+  } catch {
+    /* the map and the SVG are written; a viewer that will not launch is not a failure */
+  }
+}
+
 function counted(total: number, noun: string): string {
   return `${String(total)} ${noun}${total === 1 ? '' : 's'}`;
 }
@@ -160,10 +184,20 @@ export function run(options: Options): Outcome {
       writeAtomic(out, serialize(map));
     });
 
+    if (options.svg !== undefined) {
+      const svgOut = resolve(options.svg);
+      const svg = timed(timings, 'render', () => renderSvg(map));
+      timed(timings, 'write svg', () => {
+        writeAtomic(svgOut, svg);
+      });
+      if (options.open === true) openFile(svgOut);
+    }
+
     const { category } = map.weather.checks;
+    const wrote = options.svg === undefined ? options.out : `${options.out} and ${options.svg}`;
     return {
       exitCode: 0,
-      stdout: `${category}, ${counted(map.weather.changed.length, 'file')} changed, ${counted(map.notices.length, 'notice')}, wrote ${options.out}\n`,
+      stdout: `${category}, ${counted(map.weather.changed.length, 'file')} changed, ${counted(map.notices.length, 'notice')}, wrote ${wrote}\n`,
       stderr: options.verbose ? report(timings) : '',
     };
   } catch (error) {

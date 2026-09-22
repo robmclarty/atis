@@ -36,6 +36,7 @@
   ],
   "dependencies": {
     "core": "workspace:*",
+    "svg": "workspace:*",
     "typescript": "6.0.3"
   },
   "engines": {

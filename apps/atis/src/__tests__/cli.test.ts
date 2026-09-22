@@ -93,6 +93,46 @@ test('the built command writes a map of this repository that passes assertMap', 
   expect(result.stderr).toMatch(/log\s+\d+ ms/);
 }, MINUTE);
 
+test('--svg writes the still render beside the map in one run', () => {
+  const dir = temp('svg');
+  const out = join(dir, 'map.json');
+  const svg = join(dir, 'atis.svg');
+  const result = atis(['--repo', REPO, '--base', 'HEAD~1', '--out', out, '--svg', svg]);
+  expect(result.status).toBe(0);
+
+  // The map is still written, and passes assertMap.
+  expect(mapAt(out).meta.schema_version).toBe(1);
+
+  // The SVG is a whole document carrying both materials of D12: the #world
+  // group (the organic layer) and the #chrome group (the brutalist frame).
+  const image = readFileSync(svg, 'utf8');
+  expect(image.startsWith('<svg')).toBe(true);
+  expect(image).toContain('id="world"');
+  expect(image).toContain('id="chrome"');
+
+  // One line, naming both outputs it wrote.
+  expect(result.stdout.trimEnd().split('\n')).toHaveLength(1);
+  expect(result.stdout).toContain(out);
+  expect(result.stdout).toContain(svg);
+}, MINUTE);
+
+test('--open is a no-op under a test run, and needs --svg', () => {
+  const dir = temp('open');
+  const out = join(dir, 'map.json');
+  const svg = join(dir, 'atis.svg');
+
+  // With --svg it writes both and exits 0; the opener never launches here.
+  const opened = atis(['--repo', REPO, '--base', 'HEAD~1', '--out', out, '--svg', svg, '--open']);
+  expect(opened.status).toBe(0);
+  expect(existsSync(svg)).toBe(true);
+
+  // Without an SVG to open, --open is misuse (C4: exit 2, nothing written).
+  const bare = atis(['--repo', REPO, '--base', 'HEAD~1', '--out', out, '--open']);
+  expect(bare.status).toBe(2);
+  expect(bare.stdout).toBe('');
+  expect(bare.stderr).toContain('--open needs --svg');
+}, MINUTE);
+
 test('a copy with no .check/ is NOINST, with the evidence channels absent rather than faked', () => {
   const copy = copyOfThisRepo('noinst');
   rmSync(join(copy, '.check'), { recursive: true, force: true });

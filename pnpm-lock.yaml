@@ -47,6 +47,9 @@ importers:
       core:
         specifier: workspace:*
         version: link:../../libs/core
+      svg:
+        specifier: workspace:*
+        version: link:../../libs/svg
       typescript:
         specifier: 6.0.3
         version: 6.0.3

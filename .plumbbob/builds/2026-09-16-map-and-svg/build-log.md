@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 19 — feat(svg): render the notice labels and the HUD grade blocks
+**Current step:** 20 — feat(cli): add --svg and --open to write and show the static render
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -41,7 +41,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 16. feat(core): draw cell membranes as Bubble Set contours over the layout
 - ☑ 17. feat(svg): render the field, terraces, membranes and organelles
 - ☑ 18. feat(svg): render the weather layer over the terrain
-- ☐ 19. feat(svg): render the notice labels and the HUD grade blocks
+- ☑ 19. feat(svg): render the notice labels and the HUD grade blocks
 - ☐ 20. feat(cli): add --svg and --open to write and show the static render
 - ☐ 21. docs(design): record the colour and chrome tokens the SVG settled
 - ☐ 22. chore(fixtures): generate map.json and the SVG for five historical PRs
@@ -76,6 +76,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] svg: added and modified stains are the same disc, told apart only by data-kind; if the glance test wants them distinct, a rim or a value is the change
 - [x] svg: global storm markers hang at the field's top-right corner; step 19's HUD may want that corner and can move them through STORM_INSET
 - [ ] chrome: a notice on a global slot name (red-check-slot, security-finding) keeps its row and gets no leader; point it at that slot's storm in the field's corner once weather.ts exports the storm anchor
+- [ ] USAGE text in apps/atis/src/index.ts omits --svg and --open (index.ts is outside step 20's seam)
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -1094,3 +1095,58 @@ folder, so it rides the branch into the PR.)*
   **5.** Three paths outside the seam: the tokens, one exported pathOf, and the greyscale test scoped to the terrain
 
   The weather's colours, widths and spacings went into `libs/svg/src/tokens.ts`, whose header names it the single source of every colour and size the still renderer draws with and which step 21 documents; a second home for them in `weather.ts` would have been the drift D51 warns of. `terrain.ts` changed by one word, `export` on `pathOf`, so the glow is traced through the very same path the membrane is, and the two can never disagree. Step 17's test that every colour in the output is greyscale and dim now reads only the markup before `id="weather"`, since the weather is luminous by design; the assertion on the terrain is unchanged. Two things worth your eye are parked rather than built: added and modified stains are the same disc, distinguished only by `data-kind`, and the global storms sit in the corner step 19's HUD may want.
+
+- 2026-09-22 — step 19 checkpointed · eb0ef7240 — feat(svg): render the notice labels and the HUD grade blocks (1 drift, 71m)
+
+  **Summary**: `#chrome` now frames the world: a strip of nine grade blocks across the top in §7's order, the category solid in its hue with its letters on it and every other block outlined with a bold numeral, a block muted to a dash when its input is absent, stale, empty or head-only; a column of at most six notice rows down the right, each a numbered tier box, the target, the kind in small caps, the why and the thresholds that produced it; one dotted leader from each row's box to the same numbered box beside its target on the map; and on the map a thin ring in the category hue and the kind written under the primary's box, a thick ink ring round a secondary, the box alone for a tertiary. Fifteen tests assert the block order, the numbers, the muting, the six-row cap, one leader per placed notice, the tier emphasis, that nothing under `#chrome` grades, filters, fades or animates, and a golden per category; the render was checked by eye for IFR, VFR and NOINST, and the gate is green in full.
+
+  1. The chrome frames the world instead of overlaying it, so the storms keep the field's corner and STORM_INSET is untouched
+  2. Every HUD number is read from the map, and a muted block names why in `data-reason`
+  3. The primary's ring and label borrow the category hue, so hue keeps its one meaning
+  4. Each notice is one numbered box in its row and beside its target, joined by one dotted leader, and a target carries one ring for its strongest tier
+  5. Two lines of `render.test.ts` strayed outside the seam, and the five goldens regenerate with one env var
+
+  **Readout**: Step 19 - feat(svg): render the notice labels and the HUD grade blocks
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored
+               - D12 (materials)
+               - D23 (head-only-check)
+               - D41 (artifact-trust)
+               - D48 (shore-groups)
+               - D9 (thresholds)
+               - D6 (flight-categories)
+               - D33 (svg-package)
+               - D11 (mood)
+  constraints  11 of 11 honored
+  seam         strayed: 1 path outside the seam
+               → libs/svg/src/__tests__/render.test.ts
+  diff         +2510 -14 across 11 files
+  spent        71 min · 1 turn · 9s gate · green first run
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Recommendation**: Approve and checkpoint. The gate is green in full, every element the done-when names is drawn in its order and asserted on the demo map or a hand-built one, the three states were checked by eye at 2×, and the two strays are the render test's own assumptions about a world-sized canvas.
+
+  **1.** The chrome frames the world instead of overlaying it, so the storms keep the field's corner and STORM_INSET is untouched
+
+  The build-order note expected the HUD to take the field's top-right corner from the global storms. Overlaying the strip on the world would have covered the shore, whose groups run along the top and reach the corner on a wide repo, so the chrome is a frame instead: the canvas is the world plus a HUD strip above it and a 300-pixel notice column beside it, the world is set down under the strip by a `translate`, and a hard rule runs where each meets the field. The strip is one row on the demo's 780-pixel canvas and wraps only when a canvas is too narrow for the blocks, so a wide Size numeral cannot push a block off the sheet. Nothing in `#world` moved and no storm token changed; the note is resolved by the framing rather than by a new inset. The whole sheet sits on one flat `#ground` rect drawn first, a shade above the field so the frame reads as chrome and the world as a dark window in it.
+
+  **2.** Every HUD number is read from the map, and a muted block names why in `data-reason`
+
+  `Checks n/m` counts the slots that passed over the slots that ran, so a skipped slot is in neither (the demo reads 6/8 with security skipped); `Patch cov` is the covered share of every changed executable line over the whole change; `Mutants k survived` is the length of `evidence.mutants`, the live mutants core already joined to the changed lines; `Reach` counts distinct cells; `Size` sums the changed set with a true minus sign; `Notices p·s·t` tallies the six drawn; `Other n` appears only when the `other` group has files. A block mutes with `data-muted="true"`, the dash in place of its numeral and a `data-reason` of `absent` (no `.check/` trusted, or the channel never produced), `stale` (the owning slot is named in `meta.instruments.stale`, checked before the value so it fires even if a map ever carried both), `empty` (coverage that measured no executable line, which has no share to report) or `head-only` (the Health Δ block, D23). The category block is never muted: NOINST is a verdict, so its letters sit on the muted grey with no hue rather than on a dash.
+
+  **3.** The primary's ring and label borrow the category hue, so hue keeps its one meaning
+
+  §5.4 gives the primary a saturated hue and C11 says hue means state and nothing else, so rather than mint an attention hue the primary's ring, its box and its label take the verdict's own: red on an IFR map, green on a VFR one, and plain ink on NOINST, which has no hue. That keeps the map's one red thing the IFR thing, and the letters still ride beside every hue in the category block. VFR green and MVFR blue are new tokens beside the IFR and LIFR hues from step 18; the blue is set apart from the change cyan so the two never read as one. The tertiary box on the map is a small dark box with a muted frame, so it marks without shouting.
+
+  **4.** Each notice is one numbered box in its row and beside its target, joined by one dotted leader, and a target carries one ring for its strongest tier
+
+  The boxes hang off the lower right of a placed file, just past the emphasis ring, clear of the clone glyph at the upper right, the old name at the right and the stitches below, and flip to the lower left when a run would leave the field; under a skinned group they hang from its foot. Several notices on one target line up side by side in rank order, so the demo's `pm/index.ts` reads `[1][2][3]` with `deleted-export` under them, and its skin carries one ring for the strongest tier rather than three nested ones. The leaders are laid under the rows and the marks, so each visibly ends where its box begins, and a test checks every leader's two ends against the two box centres. A target the field cannot place, a global slot's name say, keeps its row with `data-unplaced="true"` and gets no leader and no mark; pointing it at the slot's storm is parked, since that anchor lives in `weather.ts`. Rows are word-wrapped from the monospace estimate the blocks are sized by (C5), and a lone word past the budget is cut rather than left to run off the column.
+
+  **5.** Two lines of `render.test.ts` strayed outside the seam, and the five goldens regenerate with one env var
+
+  The canvas is no longer the world's size, so the render test's `viewBox="0 0 480 660"` prefix now checks only the prefix (the field's own 480×660 is still asserted on the rect), and its label round-trip on the awkward map now reads the world's text only, since the chrome writes text of its own. Nothing else outside the seam moved. The demo golden is regenerated and four more sit under `fixtures/categories/`, each the demo with its verdict swapped by the test's own `variant` (green slots and passed stitches for VFR and MVFR, nothing trusted for NOINST); `ATIS_UPDATE_GOLDENS=1 pnpm vitest run libs/svg` writes them all back, which is the recipe the test header records.
