@@ -3616,7 +3616,7 @@
     {
       "kind": "deleted-export",
       "target": "libs/core/src/pm/index.ts",
-      "why": "`legacyResolve` no longer exported, and 1 files still import it",
+      "why": "`legacyResolve` no longer exported, and 1 file still imports it",
       "inputs": {
         "cells_reached": 4,
         "uncovered_fraction": 0.556,

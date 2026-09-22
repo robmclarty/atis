@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 21 — docs(design): record the colour and chrome tokens the SVG settled
+**Current step:** 25 — fix(core): weigh missing co-change notices by rate and support
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -43,7 +43,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 18. feat(svg): render the weather layer over the terrain
 - ☑ 19. feat(svg): render the notice labels and the HUD grade blocks
 - ☑ 20. feat(cli): add --svg and --open to write and show the static render
-- ☐ 21. docs(design): record the colour and chrome tokens the SVG settled
+- ☑ 21. docs(design): record the colour and chrome tokens the SVG settled
 - ☐ 22. chore(fixtures): generate map.json and the SVG for five historical PRs
 - ☐ 23. chore(glance): run glance-test round one and record the verdicts
 - ☑ 24. fix(core): send hook folders to the scripts shore group
@@ -1196,3 +1196,52 @@ folder, so it rides the branch into the PR.)*
   **4.** The done-when's `#world`/`#chrome` is a selector, so the test reads the ids
 
   The renderer emits `<g id="world">` and `<g id="chrome">`, not a literal `#world`; the plan uses the `#`-prefix the way `intent.md` names groups throughout, so the test asserts `id="world"` and `id="chrome"` are present rather than a substring that never appears.
+
+- 2026-09-22 — step 21 checkpointed · e52a61404 — docs(design): record the colour and chrome tokens the SVG settled (1 drift, 20m)
+
+  **Summary**: The look the SVG settled on is now recorded. `libs/svg/src/tokens.ts` is the single source of every colour, stroke, font and size the renderer draws with (three stray literals extracted, one duplicated constant folded in), and `docs/design.md` documents all 99 tokens by channel and where each appears, held to completeness by a test. The rendered bytes did not change, so the goldens still hold.
+
+  1. tokens.ts is now the single source
+  2. design.md documents every token, written from the SVG
+  3. A test holds the doc to the file
+  4. Motion (§5.5) tokens deferred on purpose
+  5. Three renderer files edited beyond the seam
+
+  **Readout**: Step 21 - docs(design): record the colour and chrome tokens the SVG settled
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    3 of 3 honored
+  constraints  11 of 11 honored
+  seam         strayed: 3 paths outside the seam
+               - libs/svg/src/chrome.ts
+               - libs/svg/src/patterns.ts
+               - libs/svg/src/weather.ts
+  diff         +268 -14 across 6 files
+  spent        20 min · 3 turns · 14s gate · green first run
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Recommendation**: Approve and checkpoint step 21. The gate is green on all eight slots, the rendered SVG is byte-identical so the goldens still hold, and a test now keeps the doc naming every token the renderer reads.
+
+  **1.** tokens.ts is now the single source
+
+  An audit of the renderer turned up no stray hex colours, but three visual literals lived outside the file: the hatch stroke width, the chrome hairline (the framed HUD block, the tertiary notice box and the hard rule all drew it as a bare `1`), and the arrowhead's rendered size. These became `HATCH_WIDTH`, `CHROME_STROKE_WIDTH` and `ARROW_SIZE`. A fourth, the `0.35` baseline share, was duplicated in `weather.ts` and `chrome.ts`; it is now one `LABEL_BASELINE`. Each new token is named by its meaning and placed in its channel's section.
+
+  **2.** design.md documents every token, written from the SVG
+
+  The doc opens on the two materials (D12) and the one-meaning-per-channel rule (C11), then runs a table per channel (type, base tissue, state, reach and evidence, history, ghosts and storms, chrome), each row a token with its value and where it lands in the SVG's named groups. A closing section lists the fixed geometry that carries no token (the clone glyphs, the arrowhead triangle, the glow filter region) so the inventory reads as complete on purpose.
+
+  **3.** A test holds the doc to the file
+
+  `tokens.test.ts` reads `design.md` and asserts every export of `tokens.ts` is named in it, with word-boundary matching so `NOTICE_BOX` is not satisfied by `NOTICE_BOX_GAP`. It is the forward direction only: the doc deliberately also names non-token geometry, which a reverse check would flag.
+
+  **4.** Motion (§5.5) tokens deferred on purpose
+
+  D51 makes `tokens.ts` the shared home for the motion constants "from step 21 on", but this build does not touch §5.5 (the still renderer animates nothing, C10) and Q3 stays open by Rob's choice as the log of his balance patches. So no motion numbers were invented; step 21 establishes the file as their future home and leaves the values to the phase 1b spike (C2).
+
+  **5.** Three renderer files edited beyond the seam
+
+  `chrome.ts`, `weather.ts` and `patterns.ts` were edited to read the newly extracted tokens. That is outside the declared seam paths but is what the done-when's "single source" requires; the values are unchanged, so the rendered bytes and the goldens are untouched.

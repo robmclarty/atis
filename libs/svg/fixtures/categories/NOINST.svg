@@ -193,8 +193,8 @@
         </g>
         <text x="505" y="54" font-size="8" font-weight="bold" fill="#e6edf3">libs/core/src/pm/index.ts</text>
         <text x="505" y="63.4" font-size="7" font-variant="small-caps" fill="#e6edf3">deleted-export</text>
-        <text x="505" y="73.5" font-size="8" fill="#e6edf3">`legacyResolve` no longer exported, and 1 files still</text>
-        <text x="505" y="83.9" font-size="8" fill="#e6edf3">import it</text>
+        <text x="505" y="73.5" font-size="8" fill="#e6edf3">`legacyResolve` no longer exported, and 1 file still</text>
+        <text x="505" y="83.9" font-size="8" fill="#e6edf3">imports it</text>
         <text x="505" y="93.3" font-size="7" fill="#6b7480">severity 8</text>
       </g>
       <g data-notice="2" data-tier="secondary" data-kind="interface-change" data-target="libs/core/src/pm/index.ts">

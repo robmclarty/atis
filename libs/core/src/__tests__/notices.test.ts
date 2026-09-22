@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 
 import { DEFAULT_CONFIG } from '../config.js';
-import type { NoticeKind } from '../config.js';
+import type { Config, NoticeKind } from '../config.js';
 import { computeEvidence } from '../evidence.js';
 import type { CheckArtifacts, CheckSummarySlot, Dead, Health } from '../evidence.js';
 import { identifyGroups } from '../groups.js';
@@ -173,6 +173,11 @@ function noticesFor(scenario: Scenario): readonly Notice[] {
 
 function kindsOf(notices: readonly Notice[]): readonly string[] {
   return notices.map((notice) => notice.kind);
+}
+
+/** Where a target lands in the ranking, so a test can assert one notice above another. */
+function rankOf(notices: readonly Notice[], path: string): number {
+  return notices.findIndex((notice) => notice.target === path);
 }
 
 /**
@@ -378,6 +383,31 @@ test('a deleted file keeps the consumers only the base graph can see', () => {
   expect(notices[0]?.inputs['consumers']).toBe(1);
 });
 
+test('the deleted-export why pluralises its consumer count', () => {
+  const one = noticesFor({
+    changed: [change('src/pm/tools.ts')],
+    names: { 'src/pm/index.ts > src/pm/tools.ts': ['resolve'] },
+  });
+  expect(one[0]?.kind).toBe('deleted-export');
+  expect(one[0]?.why).toContain('1 file still imports it');
+
+  // Three base importers of a deleted file's name, so the clause reads as a plural.
+  const three = noticesFor({
+    changed: [{ path: 'src/pm/gone.ts', kind: 'deleted', added: 0, deleted: 12, hunks: [] }],
+    files: ['src/pm/gone.ts', 'src/a.ts', 'src/b.ts', 'src/c.ts'],
+    deleted: ['src/pm/gone.ts'],
+    baseEdges: ['src/a.ts > src/pm/gone.ts', 'src/b.ts > src/pm/gone.ts', 'src/c.ts > src/pm/gone.ts'],
+    baseNames: {
+      'src/a.ts > src/pm/gone.ts': ['helper'],
+      'src/b.ts > src/pm/gone.ts': ['helper'],
+      'src/c.ts > src/pm/gone.ts': ['helper'],
+    },
+  });
+  expect(three[0]?.kind).toBe('deleted-export');
+  expect(three[0]?.inputs['consumers']).toBe(3);
+  expect(three[0]?.why).toContain('3 files still import it');
+});
+
 test('a ghost is the file that usually comes along, named by what expected it', () => {
   const cochange: readonly Cochange[] = [
     { a: 'src/pm/util.ts', b: 'src/doctor.ts', rate: 0.8, support: 4 },
@@ -393,6 +423,40 @@ test('a ghost is the file that usually comes along, named by what expected it', 
   expect(notice?.why).toContain('src/pm/util.ts');
   // A file this change already touches is not absent, however often the two travel together.
   expect(findGhosts(cochange, ['src/pm/util.ts', 'src/doctor.ts'], DEFAULT_CONFIG.notices)).toEqual([]);
+});
+
+test('a ghost is ranked by its rate and support, so the path alphabet no longer decides (D55)', () => {
+  // Four co-change ghosts at the severity floor, so only their rate and support can
+  // separate them; support 2 needs the gate lowered to admit the quiet one.
+  const config: Config = { ...DEFAULT_CONFIG, notices: { ...DEFAULT_CONFIG.notices, cochange_support: 2 } };
+  const rank = (strong: string, weak: string): readonly Notice[] =>
+    rankNotices({
+      ...inputsFor({
+        cochange: [
+          { a: 'src/pm/util.ts', b: strong, rate: 0.857, support: 6 },
+          { a: 'src/pm/util.ts', b: weak, rate: 0.5, support: 2 },
+          { a: 'src/pm/util.ts', b: 'src/mike.ts', rate: 0.6, support: 3 },
+          { a: 'src/pm/util.ts', b: 'src/november.ts', rate: 0.6, support: 3 },
+        ],
+      }),
+      config,
+    });
+
+  // The strong ghost sorts last alphabetically and still ranks first.
+  const late = rank('src/zulu.ts', 'src/alpha.ts');
+  expect(kindsOf(late)).toEqual(['missing-cochange', 'missing-cochange', 'missing-cochange', 'missing-cochange']);
+  expect(rankOf(late, 'src/zulu.ts')).toBeLessThan(rankOf(late, 'src/alpha.ts'));
+  // And with the paths swapped it still wins: the weight decides, not the path.
+  const early = rank('src/alpha.ts', 'src/zulu.ts');
+  expect(rankOf(early, 'src/alpha.ts')).toBeLessThan(rankOf(early, 'src/zulu.ts'));
+
+  // The strong ghost is the primary, weighed severity × (1 + rate) × (1 + log(1 + support)).
+  expect(late[0]?.target).toBe('src/zulu.ts');
+  expect(late[0]?.tier).toBe('primary');
+  expect(late[0]?.weight).toBe(10.941);
+  // Its inputs carry the pair's rate and support and no zeroed §5.4 factors (D9).
+  expect(late[0]?.inputs).toEqual({ rate: 0.857, support: 6 });
+  expect(late[0]?.thresholds).toEqual({ severity: 2, cochange_rate: 0.5, cochange_support: 2 });
 });
 
 test('a missing channel produces no candidate at all, rather than a candidate with a zero in it', () => {

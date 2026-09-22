@@ -139,6 +139,18 @@ function score(severity: number, factors: Factors): number {
 }
 
 /**
+ * D55's rank for a ghost. A ghost is the file that did *not* change, so §5.4's
+ * three factors are all zero for it and would tie every ghost at its bare
+ * severity, leaving the order to the path alphabet: on checkride PR 4 that cut
+ * `translate.ts` (rate 0.857 over 6 commits) for `README.md` (rate 0.5). It is
+ * scored instead by the two numbers a ghost does have, in the same shape §5.4
+ * takes: rate for the linear factor, support for the logarithmic one.
+ */
+function cochangeWeight(severity: number, rate: number, support: number): number {
+  return severity * (1 + rate) * (1 + Math.log(1 + support));
+}
+
+/**
  * The measurements behind one candidate, looked up by its target. A target
  * that is not a changed file (a slot name, a shore group, a ghost that never
  * came along) has none, which leaves its severity unscaled.
@@ -413,6 +425,11 @@ function ghostCandidates(inputs: NoticeInputs, ghosts: readonly Ghost[]): readon
   }));
 }
 
+/** The clause the deleted-export `why` ends on, singular for a lone consumer (`1 file still imports it`). */
+function stillImports(consumers: number): string {
+  return consumers === 1 ? '1 file still imports it' : `${String(consumers)} files still import it`;
+}
+
 /**
  * Exported symbols this change removed that something still imports (D39).
  * The consumers are the base graph's, because a file this change deleted has
@@ -450,7 +467,7 @@ function deletedExportCandidates(inputs: NoticeInputs, changed: ReadonlyMap<stri
     return {
       kind: 'deleted-export' as const,
       target: path,
-      why: `${names.map((name) => `\`${name}\``).join(', ')} no longer exported, and ${String(importers.size)} files still import it`,
+      why: `${names.map((name) => `\`${name}\``).join(', ')} no longer exported, and ${stillImports(importers.size)}`,
       inputs: { names: names.length, consumers: importers.size },
       thresholds: {},
     };
@@ -535,14 +552,22 @@ export function rankNotices(inputs: NoticeInputs): readonly Notice[] {
   return candidatesFor(inputs, ghosts)
     .filter((candidate) => candidate.slot === undefined || spokenFor.get(candidate.slot)?.has(candidate.target) !== true)
     .map((candidate): Ranked => {
-      const factors = factorsFor(candidate.target, evidence, history);
+      const severityOf = severity[candidate.kind];
+      // D55: a ghost is the file that did *not* change, so §5.4's reach, coverage
+      // and churn are all zero for it; it is weighed by the rate and support it
+      // carries instead, and its inputs are those two numbers alone, with no
+      // zeroed factors dragged in. Every other kind keeps the changed-file factors.
+      const factors = candidate.kind === 'missing-cochange' ? undefined : factorsFor(candidate.target, evidence, history);
+      const weight = factors
+        ? score(severityOf, factors)
+        : cochangeWeight(severityOf, candidate.inputs['rate'] ?? 0, candidate.inputs['support'] ?? 0);
       return {
         kind: candidate.kind,
         target: candidate.target,
         why: candidate.why,
         inputs: { ...factors, ...candidate.inputs },
-        thresholds: { severity: severity[candidate.kind], ...candidate.thresholds },
-        weight: round(score(severity[candidate.kind], factors)),
+        thresholds: { severity: severityOf, ...candidate.thresholds },
+        weight: round(weight),
       };
     })
     .toSorted(
