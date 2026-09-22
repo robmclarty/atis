@@ -129,3 +129,61 @@ export const BUGFIX_FULL_AT = 0.5;
 export const HATCH_PITCH = 4;
 export const STIPPLE_PITCH = 4;
 export const STIPPLE_DOT = 0.7;
+
+/**
+ * The chrome (§7, D12) is the other material: flat blocks, hard edges, high
+ * contrast, one monospace face, and technical-drawing annotations. Nothing
+ * here glows, blurs or grades. It frames the world on its own flat ground,
+ * a shade above the field so the frame reads as a sheet and not as more
+ * field, with a hard rule wherever it meets the world.
+ */
+export const CHROME_GROUND = '#1a1f27';
+export const CHROME_RULE = '#2b333d';
+export const CHROME_INK = '#e6edf3';
+export const CHROME_MUTED = '#6b7480';
+/** The quiet edge the chrome keeps between its ground and what it writes. */
+export const CHROME_PAD = 10;
+/** A muted block's value: the dash that stands where a number would be faked (C2, D41). */
+export const MUTED_DASH = '—';
+/**
+ * The advance of one monospace glyph as a share of the font size. The SVG
+ * loads no font (C5), so the chrome sizes its blocks and wraps its text from
+ * this estimate; the local face lands within the padding either way.
+ */
+export const MONO_ADVANCE = 0.6;
+
+/** The category hues (§5.3, D6): VFR green, MVFR blue, IFR red, LIFR magenta; the letters always ride beside the hue (C11). NOINST has none. */
+export const VFR_HUE = '#4fd37a';
+export const MVFR_HUE = '#5b8def';
+/** The ink the category letters are written in, on their solid block. */
+export const CATEGORY_LETTERS = '#0a0c0f';
+
+/** The HUD strip: one row of grade blocks, wrapping only when the canvas is too narrow for them. */
+export const HUD_PAD = 8;
+export const HUD_BLOCK_HEIGHT = 20;
+export const HUD_BLOCK_PAD = 6;
+export const HUD_BLOCK_GAP = 3;
+export const HUD_FONT_SIZE = 9;
+export const CATEGORY_FONT_SIZE = 13;
+
+/** The notice column (§5.4): the width the frame reserves, and the type each row is set in. */
+export const NOTICE_COLUMN = 300;
+export const NOTICE_TEXT_SIZE = 8;
+export const NOTICE_SMALL_SIZE = 7;
+export const NOTICE_LEADING = 1.3;
+export const NOTICE_ROW_GAP = 10;
+/** The numbered box each notice is marked with, in its row and at its target. */
+export const NOTICE_BOX = 10;
+export const NOTICE_NUMERAL_SIZE = 7;
+export const NOTICE_BOX_GAP = 3;
+export const NOTICE_TEXT_GAP = 5;
+
+/** Tier emphasis on the map (§5.4): a ring past the evidence skin, thin in the category hue for the primary, thick in ink for a secondary. */
+export const EMPHASIS_PAD = 5;
+export const PRIMARY_RING_WIDTH = 1.5;
+export const SECONDARY_RING_WIDTH = 3;
+export const SECONDARY_BOX_WIDTH = 2;
+/** The dotted leader from a notice's row to its mark (§5.6): thin ink, round dots. */
+export const LEADER_INK = '#9aa5b1';
+export const LEADER_WIDTH = 1;
+export const LEADER_DASH = '0.1 3';

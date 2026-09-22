@@ -124,14 +124,15 @@ test('paths and names with <, & and quotes round-trip through the attributes and
   expect(ids).toContain(AWKWARD_FILE);
   expect(ids).toContain(AWKWARD_DOC);
   expect(ids).toContain('single:src/<weird>&"q\'s".ts');
-  const labels = [...svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map(([, text]) => unescape(text ?? ''));
+  const world = svg.slice(0, svg.indexOf('<g id="chrome"'));
+  const labels = [...world.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map(([, text]) => unescape(text ?? ''));
   expect(labels).toEqual([AWKWARD_GROUP]);
   expect(svg).toContain('data-group="docs &amp; &lt;notes&gt;"');
 });
 
 test('the world is drawn bottom up: field, terraces, shore, membranes, organelles', () => {
   const svg = renderSvg(demo());
-  expect(svg.startsWith('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 660"')).toBe(true);
+  expect(svg.startsWith('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ')).toBe(true);
   const order = ['world', 'field', 'terraces', 'shore', 'membranes', 'organelles'].map((id) => svg.indexOf(`id="${id}"`));
   expect(order.every((at) => at >= 0)).toBe(true);
   expect(order).toEqual([...order].toSorted((a, b) => a - b));

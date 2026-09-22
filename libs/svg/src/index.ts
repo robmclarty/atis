@@ -4,6 +4,7 @@
  * renderer of phase 2 (D33).
  */
 
+export * from './chrome.js';
 export * from './el.js';
 export * from './patterns.js';
 export * from './render.js';

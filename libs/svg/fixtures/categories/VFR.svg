@@ -139,12 +139,9 @@
         </g>
         <circle data-id="libs/core/src/pm/tools.ts" data-line="27" data-status="NoCoverage" cx="108.27" cy="535.28" r="2.5" fill="#0a0c0f"/>
         <circle data-id="libs/core/src/pm/tools.ts" data-line="64" data-status="Survived" cx="113.49" cy="535.28" r="2.5" fill="#0a0c0f"/>
-        <line data-id="libs/core/src/pm/index.ts" data-test="libs/core/src/__tests__/pm.test.ts" data-status="failed" stroke="#f0546a" x1="121.66" y1="442.13" x2="121.66" y2="445.13"/>
-        <line data-id="libs/core/src/pm/index.ts" data-test="libs/core/src/__tests__/pm.test.ts" data-status="failed" stroke="#f0546a" x1="121.66" y1="447.13" x2="121.66" y2="450.13"/>
-        <line data-id="libs/core/src/pm/legacy.ts" data-test="libs/core/src/__tests__/pm.test.ts" data-status="failed" stroke="#f0546a" x1="112.15" y1="492.48" x2="112.15" y2="495.48"/>
-        <line data-id="libs/core/src/pm/legacy.ts" data-test="libs/core/src/__tests__/pm.test.ts" data-status="failed" stroke="#f0546a" x1="112.15" y1="497.48" x2="112.15" y2="500.48"/>
-        <line data-id="libs/core/src/pm/tools.ts" data-test="libs/core/src/__tests__/pm.test.ts" data-status="failed" stroke="#f0546a" x1="110.88" y1="551.08" x2="110.88" y2="554.08"/>
-        <line data-id="libs/core/src/pm/tools.ts" data-test="libs/core/src/__tests__/pm.test.ts" data-status="failed" stroke="#f0546a" x1="110.88" y1="556.08" x2="110.88" y2="559.08"/>
+        <line data-id="libs/core/src/pm/index.ts" data-test="libs/core/src/__tests__/pm.test.ts" data-status="passed" stroke="#e6edf3" x1="121.66" y1="442.13" x2="121.66" y2="450.13"/>
+        <line data-id="libs/core/src/pm/legacy.ts" data-test="libs/core/src/__tests__/pm.test.ts" data-status="passed" stroke="#e6edf3" x1="112.15" y1="492.48" x2="112.15" y2="500.48"/>
+        <line data-id="libs/core/src/pm/tools.ts" data-test="libs/core/src/__tests__/pm.test.ts" data-status="passed" stroke="#e6edf3" x1="110.88" y1="551.08" x2="110.88" y2="559.08"/>
       </g>
       <g id="edges" fill="none" stroke-width="1">
         <path data-from="libs/core/src/pm/tools.ts" data-to="libs/core/src/util/format.ts" data-kind="new-cross-module" d="M103.29 551.63Q76.81 574.7 66.97 610.08" stroke="#5fd8ea" marker-end="url(#arrow-new-cross-module)"/>
@@ -154,31 +151,17 @@
       <g id="ghosts" fill="none" stroke="#7c8590" stroke-dasharray="2 2">
         <circle data-id="libs/core/src/util/format.ts" data-with="libs/core/src/pm/index.ts" data-rate="0.6" cx="64.7" cy="618.24" r="11.47"/>
       </g>
-      <g id="storms" fill="#f0546a">
-        <g data-slot="dead" data-over="directory:libs/core/src/util">
-          <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(43.48 556.32)"/>
-          <text x="49.48" y="559.12" font-size="8" font-variant="small-caps">dead</text>
-        </g>
-        <g data-slot="dead" data-over="package:libs/core">
-          <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(146.49 308.69)"/>
-          <text x="152.49" y="311.49" font-size="8" font-variant="small-caps">dead</text>
-        </g>
-        <g data-slot="test" data-over="folder:libs/core/src/pm">
-          <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(121.01 405.47)"/>
-          <text x="127.01" y="408.27" font-size="8" font-variant="small-caps">test</text>
-        </g>
-      </g>
     </g>
   </g>
   <g id="chrome">
     <g id="hud">
-      <g data-block="category" data-category="IFR">
-        <rect x="10" y="8" width="35.4" height="20" fill="#f0546a"/>
-        <text x="16" y="22.55" font-size="13" fill="#0a0c0f"><tspan font-weight="bold">IFR</tspan></text>
+      <g data-block="category" data-category="VFR">
+        <rect x="10" y="8" width="35.4" height="20" fill="#4fd37a"/>
+        <text x="16" y="22.55" font-size="13" fill="#0a0c0f"><tspan font-weight="bold">VFR</tspan></text>
       </g>
       <g data-block="checks">
         <rect x="48.4" y="8" width="66" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="54.4" y="21.15" font-size="9" fill="#e6edf3"><tspan>Checks </tspan><tspan font-weight="bold">6/8</tspan></text>
+        <text x="54.4" y="21.15" font-size="9" fill="#e6edf3"><tspan>Checks </tspan><tspan font-weight="bold">8/8</tspan></text>
       </g>
       <g data-block="patch-cov">
         <rect x="117.4" y="8" width="82.2" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
@@ -224,7 +207,7 @@
     <g id="notices">
       <g data-notice="1" data-tier="primary" data-kind="deleted-export" data-target="libs/core/src/pm/index.ts">
         <g data-mark="1" data-tier="primary">
-          <rect x="490" y="46" width="10" height="10" fill="#f0546a"/>
+          <rect x="490" y="46" width="10" height="10" fill="#4fd37a"/>
           <text x="495" y="53.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#0a0c0f">1</text>
         </g>
         <text x="505" y="54" font-size="8" font-weight="bold" fill="#e6edf3">libs/core/src/pm/index.ts</text>
@@ -291,9 +274,9 @@
     </g>
     <g id="marks">
       <g data-target="libs/core/src/pm/index.ts">
-        <circle data-target="libs/core/src/pm/index.ts" data-tier="primary" fill="none" stroke="#f0546a" stroke-width="1.5" cx="121.66" cy="474.68" r="12.45"/>
+        <circle data-target="libs/core/src/pm/index.ts" data-tier="primary" fill="none" stroke="#4fd37a" stroke-width="1.5" cx="121.66" cy="474.68" r="12.45"/>
         <g data-mark="1" data-tier="primary">
-          <rect x="132.58" y="485.6" width="10" height="10" fill="#f0546a"/>
+          <rect x="132.58" y="485.6" width="10" height="10" fill="#4fd37a"/>
           <text x="137.58" y="493.05" font-size="7" font-weight="bold" text-anchor="middle" fill="#0a0c0f">1</text>
         </g>
         <g data-mark="2" data-tier="secondary">
@@ -304,7 +287,7 @@
           <rect x="158.58" y="485.6" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
           <text x="163.58" y="493.05" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">3</text>
         </g>
-        <text data-target="libs/core/src/pm/index.ts" x="132.58" y="505.6" font-size="7" font-variant="small-caps" fill="#f0546a">deleted-export</text>
+        <text data-target="libs/core/src/pm/index.ts" x="132.58" y="505.6" font-size="7" font-variant="small-caps" fill="#4fd37a">deleted-export</text>
       </g>
       <g data-target="apps/cli/src/doctor.ts">
         <g data-mark="4" data-tier="tertiary">

@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 18 — feat(svg): render the weather layer over the terrain
+**Current step:** 19 — feat(svg): render the notice labels and the HUD grade blocks
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -40,13 +40,15 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 15. feat(core): lay out organelles within bands with a seeded force simulation
 - ☑ 16. feat(core): draw cell membranes as Bubble Set contours over the layout
 - ☑ 17. feat(svg): render the field, terraces, membranes and organelles
-- ☐ 18. feat(svg): render the weather layer over the terrain
+- ☑ 18. feat(svg): render the weather layer over the terrain
 - ☐ 19. feat(svg): render the notice labels and the HUD grade blocks
 - ☐ 20. feat(cli): add --svg and --open to write and show the static render
 - ☐ 21. docs(design): record the colour and chrome tokens the SVG settled
 - ☐ 22. chore(fixtures): generate map.json and the SVG for five historical PRs
 - ☐ 23. chore(glance): run glance-test round one and record the verdicts
 - ☑ 24. fix(core): send hook folders to the scripts shore group
+- ☐ 25. fix(core): weigh missing co-change notices by rate and support
+- ☐ 26. fix(core): send TypeScript config files to the config shore group
 
 ## Park list
 
@@ -54,25 +56,26 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 > go straight back to the step. Acting the instant an idea arrives is the disease.
 > Capture is one line (`/plumbbob:park` composes it). Harvest happens only at the boundary.
 
-- [ ] test and shore patterns: vitest __snapshots__/*.snap and .gitkeep land in other, and a tests/ folder counts as terrain; decide whether the defaults grow once step 14 or 22 shows real repos
-- [ ] generated TypeScript is terrain today: a committed dist/ or a .d.ts file scans like source; decide whether the scan drops it once step 14 or 22 shows a repo that commits one
-- [ ] changed test files need a home in changed[]: step 9 gives them the group id 'tests' (D4 keeps them off the terrain, D48 demands exactly one cell or group), so step 12 must list a tests group in terrain.groups or assertMap rejects every PR that touches a test
-- [ ] a changed source file the coverage report never names yields no gap, so an uninstrumented new file can read as VFR; D27's gap rule needs a third state (unmeasured) or the notices step needs an 'untested changed file' candidate
-- [ ] core's CheckArtifacts is the .check contract but nothing proves apps/atis still satisfies it once step 12 stops importing every field; consider a type-level conformance assertion in apps/atis
-- [ ] computeEvidence runs computeReach once per changed file, which recomputes newCrossModule each time; harmless at spike scale, worth a narrow per-file reach export if a large PR shows up in step 14
-- [ ] notices.ts: the deleted-export `why` says "1 files still import it"; pluralise the consumer count
-- [ ] C1's struct rule, when it lands, scopes to shipped sources: tests under __tests__/ may import node:* to read fixtures (Rob, 2026-09-17)
-- [ ] atis writes map.json into the working directory by default; .gitignore does not cover it, so a run in this repo leaves an untracked file
-- [ ] the fixture procedure must name the worktree directory after the repo: meta.repo is basename(--repo), so /tmp/atis-spike-cr-pr4 wrote repo: "atis-spike-cr-pr4" into the map; step 22's five fixtures need the same care, or the CLI should read the name from the origin remote
-- [ ] readCheck loses the coverage and test channels when --repo reaches the repository through a symlink: on macOS /tmp is /private/tmp, so relativeToRepo() in apps/atis/src/sources/check.ts falls back to the absolute coverage key and nothing joins to a changed path; patch_coverage came back [] with no reason. A realpathSync on the repo in run.ts (or in relativeToRepo) fixes it. Found by the step-14 spike; the fixture is generated from the realpath as a workaround.
-- [ ] the notice tie-break is alphabetical, so the strongest missing-cochange loses to markdown: on checkride PR 4 all four tertiary candidates weigh exactly 2 (severity 2, cells_reached 0, history_weight 0) and byPath cut src/pm/translate.ts (rate 0.857, support 6, a source file in the changed cell) in favour of README.md (rate 0.5) and package.json. score() gives a co-change candidate no credit for rate or support, so the alphabet is doing the ranking in the tertiary tier (P1, C7).
-- [ ] pnpm check --all on a historical commit runs pnpm audit against today's advisory database, so the security slot goes red for reasons the PR did not cause and the map reads IFR: checkride PR 4's fixture carries a red-check-slot notice and an IFR category from 15 advisories in a 2026 lockfile. Step 22's five fixtures need a call: skip security beside mutation, or record in each README that the category includes an audit the PR is not responsible for.
-- [ ] contours are two thirds of the demo golden's lines: the CLI's pretty-printed map.json puts every coordinate on its own line, so a compact writer for contours (one point per line, or a flat array) is worth deciding before step 22 commits five fixtures
-- [ ] on synthetic fields packed at the collide pad (480 to 2000 files) the bubble-set routing leaves a neighbour's centre under a skin a handful of times even after the harder second cut; revisit the field or the layout's cell spacing if a step-22 repo shows one
-- [ ] a root vitest.config.ts is terrain: it draws as a one-file directory cell named '.' on band 0 (with an empty package:. beside it) because classifyFile sends every .ts to terrain before D48's config rule (*.config.*) can claim it; decide whether TypeScript config files are shore
-- [ ] svg: draw a cell's own dents and clone_family on its membrane (§5.1 names cells too; step 17 drew them on organelles only, as the done-when scoped)
-- [ ] svg: added and modified stains are the same disc, told apart only by data-kind; if the glance test wants them distinct, a rim or a value is the change
-- [ ] svg: global storm markers hang at the field's top-right corner; step 19's HUD may want that corner and can move them through STORM_INSET
+- [x] test and shore patterns: vitest __snapshots__/*.snap and .gitkeep land in other, and a tests/ folder counts as terrain; decide whether the defaults grow once step 14 or 22 shows real repos
+- [x] generated TypeScript is terrain today: a committed dist/ or a .d.ts file scans like source; decide whether the scan drops it once step 14 or 22 shows a repo that commits one
+- [x] changed test files need a home in changed[]: step 9 gives them the group id 'tests' (D4 keeps them off the terrain, D48 demands exactly one cell or group), so step 12 must list a tests group in terrain.groups or assertMap rejects every PR that touches a test
+- [x] a changed source file the coverage report never names yields no gap, so an uninstrumented new file can read as VFR; D27's gap rule needs a third state (unmeasured) or the notices step needs an 'untested changed file' candidate
+- [x] core's CheckArtifacts is the .check contract but nothing proves apps/atis still satisfies it once step 12 stops importing every field; consider a type-level conformance assertion in apps/atis
+- [x] computeEvidence runs computeReach once per changed file, which recomputes newCrossModule each time; harmless at spike scale, worth a narrow per-file reach export if a large PR shows up in step 14
+- [x] notices.ts: the deleted-export `why` says "1 files still import it"; pluralise the consumer count
+- [x] C1's struct rule, when it lands, scopes to shipped sources: tests under __tests__/ may import node:* to read fixtures (Rob, 2026-09-17)
+- [x] atis writes map.json into the working directory by default; .gitignore does not cover it, so a run in this repo leaves an untracked file
+- [x] the fixture procedure must name the worktree directory after the repo: meta.repo is basename(--repo), so /tmp/atis-spike-cr-pr4 wrote repo: "atis-spike-cr-pr4" into the map; step 22's five fixtures need the same care, or the CLI should read the name from the origin remote
+- [x] readCheck loses the coverage and test channels when --repo reaches the repository through a symlink: on macOS /tmp is /private/tmp, so relativeToRepo() in apps/atis/src/sources/check.ts falls back to the absolute coverage key and nothing joins to a changed path; patch_coverage came back [] with no reason. A realpathSync on the repo in run.ts (or in relativeToRepo) fixes it. Found by the step-14 spike; the fixture is generated from the realpath as a workaround.
+- [x] the notice tie-break is alphabetical, so the strongest missing-cochange loses to markdown: on checkride PR 4 all four tertiary candidates weigh exactly 2 (severity 2, cells_reached 0, history_weight 0) and byPath cut src/pm/translate.ts (rate 0.857, support 6, a source file in the changed cell) in favour of README.md (rate 0.5) and package.json. score() gives a co-change candidate no credit for rate or support, so the alphabet is doing the ranking in the tertiary tier (P1, C7).
+- [x] pnpm check --all on a historical commit runs pnpm audit against today's advisory database, so the security slot goes red for reasons the PR did not cause and the map reads IFR: checkride PR 4's fixture carries a red-check-slot notice and an IFR category from 15 advisories in a 2026 lockfile. Step 22's five fixtures need a call: skip security beside mutation, or record in each README that the category includes an audit the PR is not responsible for.
+- [x] contours are two thirds of the demo golden's lines: the CLI's pretty-printed map.json puts every coordinate on its own line, so a compact writer for contours (one point per line, or a flat array) is worth deciding before step 22 commits five fixtures
+- [x] on synthetic fields packed at the collide pad (480 to 2000 files) the bubble-set routing leaves a neighbour's centre under a skin a handful of times even after the harder second cut; revisit the field or the layout's cell spacing if a step-22 repo shows one
+- [x] a root vitest.config.ts is terrain: it draws as a one-file directory cell named '.' on band 0 (with an empty package:. beside it) because classifyFile sends every .ts to terrain before D48's config rule (*.config.*) can claim it; decide whether TypeScript config files are shore
+- [x] svg: draw a cell's own dents and clone_family on its membrane (§5.1 names cells too; step 17 drew them on organelles only, as the done-when scoped)
+- [x] svg: added and modified stains are the same disc, told apart only by data-kind; if the glance test wants them distinct, a rim or a value is the change
+- [x] svg: global storm markers hang at the field's top-right corner; step 19's HUD may want that corner and can move them through STORM_INSET
+- [ ] chrome: a notice on a global slot name (red-check-slot, security-finding) keeps its row and gets no leader; point it at that slot's storm in the field's corner once weather.ts exports the storm anchor
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -90,7 +93,18 @@ from sprawling across branches.
 
 Harvest results this boundary:
 
-- (none yet)
+- 2026-09-17, boundary after step 18 (8867706), 19 items; Rob confirmed every proposed class:
+  - build order after this harvest: 19, 20, 21, 25, 26, 22, 23; see [build-order.md](build-order.md)
+  - **blocker** · the notice tie-break is alphabetical → [D55 (cochange-weight)](intent.md#d55), fix step 25
+  - **blocker** · pnpm audit at a historical commit reads IFR → [D56 (fixtures-skip-audit)](intent.md#d56), folded into step 22's procedure (it regenerates PR 4 anyway, so no separate step)
+  - **blocker** · a root vitest.config.ts is terrain → [D57 (ts-config-is-shore)](intent.md#d57), fix step 26
+  - **tangent**, fold into step 20 · map.json is not gitignored; readCheck loses coverage through a symlinked `--repo` (a `realpathSync` in run.ts); a compact writer for contours before step 22 commits five maps
+  - **tangent**, fold into step 22's procedure · name the worktree after the repo, since meta.repo is basename(--repo)
+  - **tangent**, fold into step 19 · storm markers yield the corner to the HUD through STORM_INSET
+  - **tangent**, rides with step 25 · pluralise the deleted-export consumer count
+  - **tangent**, wait for step 22's fixtures or step 23's glance · snapshot and .gitkeep patterns; committed dist/ and .d.ts as terrain; an unmeasured changed file reads as VFR (a blocker the moment a fixture PR adds a file the coverage report never names); reach recomputed per changed file; a bubble set leaving a neighbour under a skin; dents and clone_family on membranes; added and modified stains alike (D38 lets the glance decide the last two)
+  - **tangent**, defer past this build · a type-level CheckArtifacts conformance in apps/atis; C1's struct rule scoping to shipped sources (kept in memory; amend C1 when the rule lands)
+  - **tangent**, kill · a tests group in terrain.groups: step 12 already emits it from shoreGroups in map.ts
 
 ## Log
 
@@ -1021,3 +1035,62 @@ folder, so it rides the branch into the PR.)*
   **5.** Dents and clone glyphs are drawn on organelles only; the cell-level versions are parked
 
   §5.1 gives cells `dents` and a `clone_family` too, and the demo's `package:libs/core` carries three dents and a family, but the done-when scopes the polygon and the glyph to `#organelles`, so a membrane carries its `data-kind` and its thickness and nothing else this step. That is parked as one line rather than built. Two smaller calls in the same spirit: an unreachable organelle gets `data-reachable="false"` and no invented look, since D26 already puts it in the deepest band and C2 forbids faking a channel; and the `tests` group, whose files got no place on the field (D4), draws no block, no label and no empty contour.
+
+- 2026-09-18 — step 18 checkpointed · 886770652 — feat(svg): render the weather layer over the terrain (1 drift, 27m)
+
+  **Summary**: `#weather` now draws every channel of §5.2 over the terrain, each in the one channel P3 gives it: the changed set stained by kind, a deleted file as a hollow outline and a renamed one as a dashed outline labelled with its old path, reach as a warm blurred glow that fills each reached cell dimmer per membrane crossed and lights each barrel it crossed, patch coverage as a skin closed for the covered share and dark for the rest, live mutants as bites in that skin, stitches as short strokes torn red where the test failed, storms over the field or the cells a red slot names, ghosts as dashed rings, churn and bug-fix rate as hatching and stipple by value, and the exceptional edges as the only lines, bowed apart in a cycle. Thirteen tests assert each encoding on the demo map or a hand-built one, a git-only map draws its changed set and its reach and nothing else, the demo golden is regenerated, both renders were checked by eye, and the gate is green in full.
+
+  1. Every channel of §5.2 is drawn, and each keeps its one meaning: fill is state, the rim is evidence, the glow is reach, the pattern is history
+  2. A package's glow is cut around the cells it holds, so util stays dark under a reached libs/core
+  3. The skin is a dark open ring with the closed arc laid over it, because a pale arc alone vanished against the glow
+  4. A red slot naming a test file hangs its storm over the cells that test stitches
+  5. Three paths outside the seam: the tokens, one exported pathOf, and the greyscale test scoped to the terrain
+
+  **Readout**: Step 18 - feat(svg): render the weather layer over the terrain
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored
+               - D35 (static-encodings)
+               - D40 (rename-identity)
+               - D5 (reach-by-module-hop)
+               - D45 (nested-cells)
+               - D4 (tests-not-terrain)
+               - D48 (shore-groups)
+               - D12 (materials)
+               - D11 (mood)
+               - D6 (flight-categories)
+               - D33 (svg-package)
+  constraints  11 of 11 honored
+  seam         strayed: 3 paths outside the seam
+               - libs/svg/src/__tests__/render.test.ts
+               - libs/svg/src/terrain.ts
+               - libs/svg/src/tokens.ts
+  diff         +1238 -6 across 9 files
+  spent        27 min · 1 turn · 8s gate · green first run
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Recommendation**: Approve and checkpoint. The gate is green in full, every encoding the done-when names is asserted on the demo map or a hand-built one and was checked by eye at 2× and 4×, and the three strays are the file the tokens belong in, one `export` keyword, and the terrain test the weather's own light would otherwise fail.
+
+  **1.** Every channel of §5.2 is drawn, and each keeps its one meaning: fill is state, the rim is evidence, the glow is reach, the pattern is history
+
+  Hue is state and nothing else. The change hue fills an added or modified organelle and stains a changed shore file at its small mark; a deleted file is that hue as an outline with `fill="none"` over the base tissue's dim body; a renamed file is a dashed outline at its one position with `from` written beside it in the same hue (D40). IFR red marks a torn stitch and a storm; LIFR magenta a cycle or a boundary edge; a cross-cell import this change introduced is the change's own hue. Luminance is reach and evidence: the glow is a warm off-white blurred through one `feGaussianBlur`, the skin and a passed stitch are a pale light, and a stitch whose test was not run is unlit, since not run is not a pass (C2). Texture is history: one `<pattern>` for hatching and one for stipple, both in a neutral ink, overlaid on every organelle that carries a value at an opacity proportional to it and full at a churn of 3 or a bug-fix rate of 0.5, so a measured zero draws nothing. The stain deliberately has no rim of its own: the rim is where evidence draws, so a git-only map's stained disc has no outline rather than one that could be read as a closed skin. Every list is sorted by path and the glow's opacity is `0.45 × 0.6^hops`, which stays strictly decreasing at two decimals seven crossings out; a test walks that sequence. The stain is a circle at the organelle's radius, so a dented file keeps its teeth in the base grey and shape stays conformance. The mutant dent is §5.2's own "soft dent", drawn as a dark bite in the evidence light rather than as a pulled vertex, for the same reason.
+
+  **2.** A package's glow is cut around the cells it holds, so util stays dark under a reached libs/core
+
+  D45 makes a package's contour a ring around all of its descendants, so filling `package:libs/core` at one hop would have lit `util/` too, which the reach never enters and which the map draws as a ghost. Each reached cell's glow is therefore its own territory: the contour with its direct children's contours appended as subpaths under `fill-rule="evenodd"`, so a child the reach entered glows on its own at its own hop and a child it did not enter stays dark. The first render had util lit; the second does not, and the test asserts the package path carries two holes and the folder's none. The glows are laid dimmest first, so the changed cell's light lands on top, and each `via` file is lit as a disc just past its edge. Where the barrel sits inside the changed cell, as both of the demo's do, the crossing reads as a brighter spot in the cell's own glow rather than as a separate light; that is the geometry, not a gap.
+
+  **3.** The skin is a dark open ring with the closed arc laid over it, because a pale arc alone vanished against the glow
+
+  The first pass drew the coverage arc as a pale stroke on the organelle's own edge, and at 2× it was invisible: the changed cell glows warm white under it and the stain is a light cyan, so a pale arc had nothing to contrast with. The skin is now a ring one pixel past the edge, drawn first as an open ring in the field's own dark and then as the closed arc over it, from the top clockwise, using `pathLength="1"` so the dash length is the fraction itself and a test reads it straight off the attribute (`0.57 1` for 4 of 7). The gap now reads as a gap even over a lit cell, and a survived mutant is a bite through both. The mutant dents lost the pale rims the first pass gave them, which at 2× read as a pair of eyes; the stitches grew from 7 to 8 pixels at a stroke of 2 so a torn one is legible at 1×. A file whose coverage entry has no changed executable line gets no ring rather than a closed one.
+
+  **4.** A red slot naming a test file hangs its storm over the cells that test stitches
+
+  A scoped slot names files, and the done-when hangs its storm over their cells. Three kinds of named file have no cell of their own: a test file, which is evidence and has no place on the field (D4); a shore file, which has a group; and a path the map does not know. The storm resolves a test file through `evidence.stitches` to the cells of the files it imports, which is a join on data the map already carries and not an invention, so the demo's red `test` slot, scoped to `pm.test.ts`, hangs over `pm/`, exactly where its three torn stitches are; a shore file hangs its storm over its group's contour; an unknown path hangs nothing. Global red slots stack at the field's top-right corner with the label to the left of the bolt, and two slots naming one cell stack above it. Green and skipped slots draw nothing, and a test asserts the demo's six green slots and one skipped slot hang no storm.
+
+  **5.** Three paths outside the seam: the tokens, one exported pathOf, and the greyscale test scoped to the terrain
+
+  The weather's colours, widths and spacings went into `libs/svg/src/tokens.ts`, whose header names it the single source of every colour and size the still renderer draws with and which step 21 documents; a second home for them in `weather.ts` would have been the drift D51 warns of. `terrain.ts` changed by one word, `export` on `pathOf`, so the glow is traced through the very same path the membrane is, and the two can never disagree. Step 17's test that every colour in the output is greyscale and dim now reads only the markup before `id="weather"`, since the weather is luminous by design; the assertion on the terrain is unchanged. Two things worth your eye are parked rather than built: added and modified stains are the same disc, distinguished only by `data-kind`, and the global storms sit in the corner step 19's HUD may want.
