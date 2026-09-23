@@ -1,0 +1,208 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 761" width="780" height="761" font-family="ui-monospace, Menlo, Consolas, monospace">
+  <rect id="ground" x="0" y="0" width="780" height="761" fill="#1a1f27"/>
+  <g id="world" transform="translate(0 36)">
+    <rect id="field" x="0" y="0" width="480" height="725" fill="#0a0c0f"/>
+    <g id="terraces">
+      <g data-band="0">
+        <rect x="0" y="232" width="480" height="96" fill="#10141a"/>
+        <line x1="0" y1="232" x2="480" y2="232" stroke="#222831" stroke-width="1"/>
+      </g>
+      <g data-band="1">
+        <rect x="0" y="328" width="480" height="109" fill="#10141a"/>
+        <line x1="0" y1="328" x2="480" y2="328" stroke="#222831" stroke-width="1"/>
+      </g>
+      <g data-band="2">
+        <rect x="0" y="437" width="480" height="96" fill="#10141a"/>
+        <line x1="0" y1="437" x2="480" y2="437" stroke="#222831" stroke-width="1"/>
+      </g>
+      <g data-band="3">
+        <rect x="0" y="533" width="480" height="96" fill="#10141a"/>
+        <line x1="0" y1="533" x2="480" y2="533" stroke="#222831" stroke-width="1"/>
+      </g>
+      <g data-band="4">
+        <rect x="0" y="629" width="480" height="96" fill="#10141a"/>
+        <line x1="0" y1="629" x2="480" y2="629" stroke="#222831" stroke-width="1"/>
+      </g>
+    </g>
+    <g id="shore">
+      <rect x="0" y="0" width="480" height="232" fill="#161b21"/>
+      <g data-group="prompts">
+        <path d="M43 56L46.22 56.63L50.11 56.37L54 55L57.38 52.44L60.4 49.22L63.33 46L66.37 43.25L69.19 40.64L71.33 37.67L72.43 34L72.35 30.11L71 26.67L68.37 24.2L64.63 22.69L60 22L54.78 22.02L49.56 22.86L45 24.67L41.64 27.52L39.47 31.26L38.33 35.67L38.06 40.47L38.38 45.2L39 49.33L39.74 52.47L40.93 54.64L43 56Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id=".claude/skills/version/SKILL.md" cx="49" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="AGENTS.md" cx="67" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="CLAUDE.md" cx="49" cy="51" r="4" fill="#2d343c"/>
+        <text x="38.06" y="19" font-size="8" font-variant="small-caps" fill="#5d6670">prompts</text>
+      </g>
+      <g data-group="docs">
+        <path d="M118.67 56.67L121.53 58.2L125.36 59.36L130 60L135.22 59.98L140.44 59.14L145 57.33L148.36 54.46L150.53 50.54L151.67 45.67L151.88 40.02L151.12 34.31L149.33 29.33L146.46 25.74L142.54 23.48L137.67 22.33L132.02 22.12L126.31 22.88L121.33 24.67L117.74 27.52L115.48 31.26L114.33 35.67L114.06 40.47L114.38 45.2L115 49.33L115.73 52.49L116.83 54.84L118.67 56.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id="CHANGELOG.md" cx="125" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="LICENSE" cx="143" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="README.md" cx="125" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="plans/checkride-plan.md" cx="143" cy="51" r="4" fill="#2d343c"/>
+        <text x="114.06" y="19.12" font-size="8" font-variant="small-caps" fill="#5d6670">docs</text>
+      </g>
+      <g data-group="config">
+        <path d="M195 128L198.22 128.63L202.11 128.37L206 127L209.81 124.46L215.85 121.32L227 118.33L244.77 116.01L265.12 113.99L282.67 111.67L293.3 108.22L298.15 101.89L299.67 90.67L299.88 73.69L299.12 54.64L297.33 38.33L294.01 28.41L286.99 23.81L273.67 22.33L252.91 22.12L229.42 22.88L209.33 24.67L197.3 27.96L191.93 34.81L190.33 47.67L190.06 67.58L190.38 90.09L191 109.33L191.74 120.91L192.93 126.2L195 128Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id=".markdownlint-cli2.jsonc" cx="201" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".oxlintrc.json" cx="219" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="checkride.config.json" cx="237" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="cspell.json" cx="255" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="fallow.toml" cx="273" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="rules/no-class.yml" cx="291" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="rules/no-deep-sibling-import.yml" cx="201" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="rules/no-default-export.yml" cx="219" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="rules/no-logic-in-barrel.yml" cx="237" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="rules/require-js-extension.yml" cx="255" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="sgconfig.yml" cx="273" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="stryker.config.mjs" cx="291" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="templates/flat/fallow.toml" cx="201" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="templates/flat/tsconfig.json" cx="219" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="templates/hybrid/fallow.toml" cx="237" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="templates/hybrid/tsconfig.json" cx="255" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="templates/monorepo/fallow.toml" cx="273" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="templates/monorepo/tsconfig.json" cx="291" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="templates/shared/cspell.json" cx="201" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id="templates/shared/rules/no-class.yml" cx="219" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id="templates/shared/rules/no-deep-sibling-import.yml" cx="237" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id="templates/shared/rules/no-default-export.yml" cx="255" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id="templates/shared/rules/require-js-extension.yml" cx="273" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id="templates/shared/sgconfig.yml" cx="291" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id="templates/shared/tsconfig.base.json" cx="201" cy="105" r="4" fill="#2d343c"/>
+        <circle data-id="templates/shared/vitest.config.ts.template" cx="219" cy="105" r="4" fill="#2d343c"/>
+        <circle data-id="tsconfig.base.json" cx="237" cy="105" r="4" fill="#2d343c"/>
+        <circle data-id="tsconfig.json" cx="255" cy="105" r="4" fill="#2d343c"/>
+        <circle data-id="tsconfig.test.json" cx="273" cy="105" r="4" fill="#2d343c"/>
+        <circle data-id="vitest.config.ts" cx="291" cy="105" r="4" fill="#2d343c"/>
+        <circle data-id="vitest.e2e.config.ts" cx="201" cy="123" r="4" fill="#2d343c"/>
+        <text x="190.06" y="19.12" font-size="8" font-variant="small-caps" fill="#5d6670">config</text>
+      </g>
+      <g data-group="settings">
+        <path d="M348.67 40.33L354.62 40.75L361.38 40.58L367.33 39.67L371.21 37.94L373.23 35.62L374 33L373.98 30.36L373.14 27.86L371.33 25.67L368.47 23.9L364.64 22.65L360 22L354.79 22L349.65 22.67L345.33 24L342.4 25.95L340.72 28.27L340 30.67L339.98 32.89L340.47 34.89L341.33 36.67L342.57 38.21L344.77 39.46L348.67 40.33Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id=".gitignore" cx="349" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".npmrc" cx="367" cy="33" r="4" fill="#2d343c"/>
+        <text x="339.98" y="19" font-size="8" font-variant="small-caps" fill="#5d6670">settings</text>
+      </g>
+      <g data-group="deps">
+        <path d="M42.67 204.67L45.64 206.2L50.25 207.36L57 208L66 207.98L75.67 207.14L84 205.33L89.47 202.46L92.42 198.54L93.67 193.67L93.88 188.02L93.12 182.31L91.33 177.33L88.35 173.74L83.65 171.48L76.67 170.33L67.25 170.12L57.09 170.88L48.33 172.67L42.63 175.52L39.59 179.26L38.33 183.67L38.06 188.47L38.38 193.2L39 197.33L39.73 200.49L40.83 202.84L42.67 204.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id="package.json" cx="49" cy="181" r="4" fill="#2d343c"/>
+        <circle data-id="pnpm-lock.yaml" cx="67" cy="181" r="4" fill="#2d343c"/>
+        <circle data-id="pnpm-workspace.yaml" cx="85" cy="181" r="4" fill="#2d343c"/>
+        <circle data-id="templates/flat/pnpm-workspace.yaml" cx="49" cy="199" r="4" fill="#2d343c"/>
+        <circle data-id="templates/hybrid/pnpm-workspace.yaml" cx="67" cy="199" r="4" fill="#2d343c"/>
+        <circle data-id="templates/monorepo/pnpm-workspace.yaml" cx="85" cy="199" r="4" fill="#2d343c"/>
+        <text x="38.06" y="167.12" font-size="8" font-variant="small-caps" fill="#5d6670">deps</text>
+      </g>
+      <g data-group="ci">
+        <path d="M140 188L142.57 187.96L145.21 187.04L147.33 185L148.42 181.83L148.25 178.28L146.67 175.33L143.73 173.77L140.27 173.68L137.33 175L135.72 177.54L135.28 180.68L135.67 183.67L136.57 185.9L137.99 187.32L140 188Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id=".github/workflows/ci.yml" cx="143" cy="181" r="4" fill="#2d343c"/>
+        <text x="135.28" y="170.68" font-size="8" font-variant="small-caps" fill="#5d6670">ci</text>
+      </g>
+      <g data-group="examples">
+        <path d="M194.67 204.67L197.53 206.2L201.36 207.36L206 208L211.22 207.98L216.44 207.14L221 205.33L224.36 202.46L226.53 198.54L227.67 193.67L227.88 188.02L227.12 182.31L225.33 177.33L222.46 173.74L218.54 171.48L213.67 170.33L208.02 170.12L202.31 170.88L197.33 172.67L193.74 175.52L191.48 179.26L190.33 183.67L190.06 188.47L190.38 193.2L191 197.33L191.73 200.49L192.83 202.84L194.67 204.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id="templates/shared/gitignore" cx="201" cy="181" r="4" fill="#2d343c"/>
+        <circle data-id="templates/shared/markdownlint-cli2.jsonc" cx="219" cy="181" r="4" fill="#2d343c"/>
+        <circle data-id="templates/shared/npmrc" cx="201" cy="199" r="4" fill="#2d343c"/>
+        <circle data-id="templates/shared/oxlintrc.json" cx="219" cy="199" r="4" fill="#2d343c"/>
+        <text x="190.06" y="167.12" font-size="8" font-variant="small-caps" fill="#5d6670">examples</text>
+      </g>
+      <g data-group="data">
+        <path d="M274 188L276.57 187.96L279.21 187.04L281.33 185L282.42 181.83L282.25 178.28L280.67 175.33L277.73 173.77L274.27 173.68L271.33 175L269.72 177.54L269.28 180.68L269.67 183.67L270.57 185.9L271.99 187.32L274 188Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id="test/fixtures/existing-biome/biome.json" cx="277" cy="181" r="4" fill="#2d343c"/>
+        <text x="269.28" y="170.68" font-size="8" font-variant="small-caps" fill="#5d6670">data</text>
+      </g>
+    </g>
+    <g id="membranes" fill="#7a838e" fill-opacity="0.08" stroke="#4b535e" stroke-linejoin="round">
+      <path data-id="package:." data-kind="package" stroke-width="4.15" d="M29.33 438L31.06 440.69L33.38 443.53L36 446.67L38.64 450.2L41.14 454.02L43.33 458L45.14 461.95L46.64 465.6L48 468.67L49.33 470.99L50.67 473.01L52 475.33L53.33 478.35L54.67 481.65L56 484.67L57.33 487.01L58.67 489.21L60 492L61.31 495.9L62.47 500.54L63.33 505.33L63.78 509.75L63.78 513.58L63.33 516.67L62.47 518.99L61.31 521.01L60 523.33L58.64 526.37L57.14 529.85L55.33 533.33L53.16 536.52L50.84 539.7L48.67 543.33L46.91 547.7L45.75 552.52L45.33 557.33L45.83 561.83L47.51 566.17L50.67 570.67L55.41 575.51L61.04 580.49L66.67 585.33L71.51 589.8L75.16 593.98L77.33 598L77.83 601.95L76.84 605.6L74.67 608.67L71.65 610.94L68.35 612.62L65.33 614L62.99 615.41L60.79 617.26L58 620L54.17 623.98L50.05 629.14L46.67 635.33L44.89 642.32L44.89 649.46L46.67 656L50.07 661.33L54.37 665.33L58.67 668L62.25 669.43L65.09 670.12L67.33 670.67L69.21 671.48L71.23 672.3L74 672.67L77.9 672.2L82.54 670.69L87.33 668L91.73 664L95.38 658.67L98 652L99.43 644.22L100.12 636.44L100.67 630L101.53 625.8L102.69 623.09L104 620.67L105.38 617.63L107.06 614.15L109.33 610.67L112.37 607.58L115.85 605.09L119.33 603.33L122.47 602.32L125.31 601.46L128 600L130.62 597.43L132.94 594.12L134.67 590.67L135.63 587.56L136.15 584.89L136.67 582.67L137.48 580.79L138.3 578.77L138.67 576L138.2 572.1L136.69 567.46L134 562.67L130.1 558.25L125.46 554.42L120.67 551.33L116.22 549.04L112.22 547.19L108.67 545.33L105.51 543.11L102.49 540.44L99.33 537.33L95.88 533.75L92.57 529.58L90 524.67L88.62 519.04L88.27 513.41L88.67 508.67L89.51 505.43L90.49 503.23L91.33 501.33L91.9 499.09L92.77 496.25L94.67 492.67L98.02 488.1L101.98 481.9L105.33 473.33L107.23 462.2L108.1 450.47L108.67 440.67L109.53 434.59L110.69 431.19L112 428.67L113.33 425.65L114.67 422.35L116 419.33L117.31 417.04L118.47 415.19L119.33 413.33L119.83 411.16L120.17 408.84L120.67 406.67L121.51 404.84L122.49 403.16L123.33 401.33L123.78 399.16L123.78 396.84L123.33 394.67L122.49 392.84L121.51 391.16L120.67 389.33L120.1 387.11L119.23 384.44L117.33 381.33L113.9 377.8L109.43 373.98L104.67 370L100.25 366L96.42 362L93.33 358L91.16 354.02L90.17 350.2L90.67 346.67L92.79 343.51L96.1 340.49L100 337.33L103.93 333.83L107.41 330.17L110 326.67L111.43 323.56L112.12 320.89L112.67 318.67L113.51 316.81L114.49 314.96L115.33 312.67L115.78 309.65L115.78 306.35L115.33 303.33L114.44 301.04L113.11 299.19L111.33 297.33L109.11 295.16L106.44 292.84L103.33 290.67L99.85 288.86L96.37 287.36L93.33 286L90.94 284.69L88.4 283.53L84.67 282.67L79.14 282.22L72.86 282.22L67.33 282.67L63.6 283.53L61.06 284.69L58.67 286L55.65 287.38L52.35 289.06L49.33 291.33L47.06 294.35L45.38 297.65L44 300.67L42.67 303.01L41.33 305.21L40 308L38.72 311.85L37.73 316.15L37.33 320L37.78 322.81L39.11 325.19L41.33 328L44.37 331.9L47.85 336.54L51.33 341.33L54.44 345.83L57.11 350.17L59.33 354.67L61.09 359.46L62.25 364.1L62.67 368L62.22 370.77L60.89 372.79L58.67 374.67L55.56 376.94L51.56 379.95L46.67 384L41.04 389.23L35.41 395.21L30.67 401.33L27.48 407.11L25.63 412.44L24.67 417.33L24.22 421.73L24.22 425.38L24.67 428L25.51 429.46L26.49 430.32L27.33 431.33L27.85 433.06L28.37 435.38L29.33 438Z"/>
+      <path data-id="single:src/adapters.ts" data-kind="single" stroke-width="2.62" d="M50 663.33L52.54 665.14L55.68 666.64L58.67 668L61.04 669.31L63.41 670.47L66.67 671.33L71.36 671.78L76.64 671.78L81.33 671.33L84.57 670.44L86.77 669.11L88.67 667.33L90.84 665.09L93.16 662.25L95.33 658.67L97.11 654.3L98.44 649.48L99.33 644.67L99.7 640.2L99.19 636.02L97.33 632L93.88 628.05L89.23 624.4L84 621.33L78.72 619.09L73.73 617.58L69.33 616.67L65.75 616.22L62.91 616.22L60.67 616.67L58.84 617.56L57.16 618.89L55.33 620.67L53.16 622.91L50.84 625.75L48.67 629.33L46.89 633.7L45.56 638.52L44.67 643.33L44.22 647.73L44.22 651.38L44.67 654L45.51 655.46L46.49 656.32L47.33 657.33L47.88 659.04L48.57 661.19L50 663.33Z"/>
+      <path data-id="single:src/cli.ts" data-kind="single" stroke-width="2.5" d="M84.33 328.67L86.04 329.63L88.19 330.15L90.33 330.67L92.16 331.51L93.84 332.49L95.67 333.33L97.89 333.7L100.56 333.19L103.67 331.33L107.12 327.88L110.43 323.23L113 318L114.38 312.74L114.73 307.93L114.33 304L113.44 301.23L112.11 299.21L110.33 297.33L108.06 295.19L105.05 293.04L101 291.33L95.84 290.49L90.38 290.84L85.67 292.67L82.48 296.12L80.63 300.77L79.67 306L79.22 311.23L79.22 315.88L79.67 319.33L80.51 321.26L81.49 322.3L82.33 323.33L82.85 325.01L83.37 326.99L84.33 328.67Z"/>
+      <path data-id="single:src/config.ts" data-kind="single" stroke-width="2.82" d="M51.67 572.33L55.1 574.11L59.57 575.44L64.33 576.33L68.78 576.73L72.78 576.38L76.33 575L79.44 572.38L82.11 568.73L84.33 564.33L86.11 559.47L87.44 554.31L88.33 549L88.7 543.74L88.19 538.93L86.33 535L82.88 532.28L78.23 530.6L73 529.67L67.69 529.3L62.53 529.81L57.67 531.67L53.27 535.15L49.62 539.96L47 545.67L45.62 551.74L45.27 557.37L45.67 561.67L46.51 564.06L47.49 565.27L48.33 566.33L48.9 568.04L49.77 570.19L51.67 572.33Z"/>
+      <path data-id="single:src/doctor.ts" data-kind="single" stroke-width="2.82" d="M36 438.33L38.64 440.09L41.14 441.25L43.33 441.67L45.16 441.3L46.84 440.48L48.67 439.67L50.86 439.12L53.36 438.43L56 437L58.62 434.36L60.94 430.53L62.67 425.67L63.53 420.01L63.36 414.21L62 409L59.38 404.95L55.73 401.94L51.33 399.67L46.54 397.91L41.9 396.75L38 396.33L35.26 396.73L33.41 397.72L32 399L30.67 400.41L29.33 402.26L28 405L26.69 408.9L25.53 413.54L24.67 418.33L24.22 422.73L24.22 426.38L24.67 429L25.56 430.46L26.89 431.32L28.67 432.33L30.86 434.04L33.36 436.19L36 438.33Z"/>
+      <path data-id="single:src/init.ts" data-kind="single" stroke-width="3" d="M75 412L77.62 414.64L81.27 417.14L85.67 419.33L90.51 421.11L95.49 422.44L100.33 423.33L104.78 423.73L108.78 423.38L112.33 422L115.42 419.31L117.91 415.14L119.67 409.33L120.48 401.95L119.96 393.83L117.67 386L113.32 379.36L107.35 374.2L100.33 370.67L92.9 368.86L85.77 368.69L79.67 370L75.17 372.67L72.16 376.67L70.33 382L69.42 388.44L69.25 394.89L69.67 400L70.51 402.86L71.49 404.25L72.33 405.33L72.88 407.06L73.57 409.38L75 412Z"/>
+      <path data-id="single:src/links.ts" data-kind="single" stroke-width="2.21" d="M103.67 600.33L105.84 600.83L108.16 601.17L110.33 601.67L112.19 602.48L114.04 603.3L116.33 603.67L119.37 603.22L122.85 601.89L126.33 599.67L129.44 596.58L132.11 592.75L134.33 588.33L136.09 583.49L137.25 578.51L137.67 573.67L137.22 569.25L135.89 565.42L133.67 562.33L130.65 560.06L127.35 558.38L124.33 557L122.06 555.72L120.38 554.73L119 554.33L117.64 554.7L116.14 555.52L114.33 556.33L112.14 556.88L109.64 557.57L107 559L104.36 561.62L101.86 565.27L99.67 569.67L97.89 574.51L96.56 579.49L95.67 584.33L95.22 588.73L95.22 592.38L95.67 595L96.53 596.43L97.69 597.12L99 597.67L100.36 598.51L101.86 599.49L103.67 600.33Z"/>
+      <path data-id="single:src/orchestrator.ts" data-kind="single" stroke-width="3.44" d="M59 486.33L61.54 488.14L64.68 489.64L67.67 491L70.04 492.31L72.41 493.47L75.67 494.33L80.36 494.78L85.64 494.78L90.33 494.33L93.57 493.44L95.77 492.11L97.67 490.33L99.84 488.09L102.16 485.25L104.33 481.67L106.11 477.32L107.44 472.68L108.33 468.33L108.78 464.75L108.78 461.91L108.33 459.67L107.47 457.86L106.31 456.36L105 455L103.59 453.67L101.74 452.33L99 451L95.1 449.69L90.46 448.53L85.67 447.67L81.25 447.22L77.42 447.22L74.33 447.67L71.99 448.6L69.79 450.28L67 453L63.17 456.9L59.05 461.54L55.67 466.33L53.81 470.73L53.3 474.38L53.67 477L54.51 478.46L55.49 479.32L56.33 480.33L56.88 482.04L57.57 484.19L59 486.33Z"/>
+    </g>
+    <g id="organelles" fill="#333a43" stroke="#5f6873" stroke-width="1">
+      <circle data-id="src/adapters.ts" cx="74.04" cy="645.8" r="13.8"/>
+      <circle data-id="src/cli.ts" cx="90.77" cy="313.69" r="11.31"/>
+      <circle data-id="src/config.ts" cx="73.22" cy="556.43" r="11.84"/>
+      <circle data-id="src/doctor.ts" cx="53.68" cy="420.32" r="13.68"/>
+      <circle data-id="src/index.ts" cx="62.8" cy="317.84" r="6.97"/>
+      <circle data-id="src/init.ts" cx="91.36" cy="402.12" r="18.15"/>
+      <circle data-id="src/links.ts" cx="114.34" cy="579.83" r="11.12"/>
+      <circle data-id="src/orchestrator.ts" cx="82.64" cy="468.93" r="13.98"/>
+    </g>
+    <g id="weather">
+      <defs>
+        <pattern id="hatch" patternUnits="userSpaceOnUse" width="4" height="4">
+          <path d="M0 4L4 0" stroke="#cfd6de" stroke-width="1"/>
+        </pattern>
+        <pattern id="stipple" patternUnits="userSpaceOnUse" width="4" height="4">
+          <circle cx="2" cy="2" r="0.7" fill="#cfd6de"/>
+        </pattern>
+        <filter id="glow" x="-25%" y="-25%" width="150%" height="150%">
+          <feGaussianBlur stdDeviation="6"/>
+        </filter>
+        <marker id="arrow-boundary" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto" fill="#e35ce0">
+          <path d="M0 0L6 3L0 6Z"/>
+        </marker>
+        <marker id="arrow-cycle" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto" fill="#e35ce0">
+          <path d="M0 0L6 3L0 6Z"/>
+        </marker>
+        <marker id="arrow-new-cross-module" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto" fill="#5fd8ea">
+          <path d="M0 0L6 3L0 6Z"/>
+        </marker>
+      </defs>
+      <g id="reach" fill="#f6e7c9" filter="url(#glow)">
+        <path data-id="single:src/cli.ts" data-hops="0" d="M84.33 328.67L86.04 329.63L88.19 330.15L90.33 330.67L92.16 331.51L93.84 332.49L95.67 333.33L97.89 333.7L100.56 333.19L103.67 331.33L107.12 327.88L110.43 323.23L113 318L114.38 312.74L114.73 307.93L114.33 304L113.44 301.23L112.11 299.21L110.33 297.33L108.06 295.19L105.05 293.04L101 291.33L95.84 290.49L90.38 290.84L85.67 292.67L82.48 296.12L80.63 300.77L79.67 306L79.22 311.23L79.22 315.88L79.67 319.33L80.51 321.26L81.49 322.3L82.33 323.33L82.85 325.01L83.37 326.99L84.33 328.67Z" opacity="0.45"/>
+      </g>
+      <g id="changed" fill="#5fd8ea" stroke="#5fd8ea" stroke-width="1.5">
+        <circle data-id="src/cli.ts" data-kind="modified" cx="90.77" cy="313.69" r="11.31" stroke="none"/>
+      </g>
+      <g id="history">
+        <circle data-id="src/cli.ts" data-churn="0.17" cx="90.77" cy="313.69" r="11.31" fill="url(#hatch)" fill-opacity="0.04"/>
+        <circle data-id="src/cli.ts" data-bugfix="1" cx="90.77" cy="313.69" r="11.31" fill="url(#stipple)" fill-opacity="0.7"/>
+      </g>
+    </g>
+  </g>
+  <g id="chrome">
+    <g id="hud">
+      <g data-block="category" data-category="LIFR">
+        <rect x="10" y="8" width="43.2" height="20" fill="#e35ce0"/>
+        <text x="16" y="22.55" font-size="13" fill="#0a0c0f"><tspan font-weight="bold">LIFR</tspan></text>
+      </g>
+      <g data-block="checks" data-muted="true" data-reason="absent">
+        <rect x="56.2" y="8" width="55.2" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="62.2" y="21.15" font-size="9" fill="#6b7480"><tspan>Checks </tspan><tspan font-weight="bold">—</tspan></text>
+      </g>
+      <g data-block="patch-cov" data-muted="true" data-reason="absent">
+        <rect x="114.4" y="8" width="71.4" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="120.4" y="21.15" font-size="9" fill="#6b7480"><tspan>Patch cov </tspan><tspan font-weight="bold">—</tspan></text>
+      </g>
+      <g data-block="mutants" data-muted="true" data-reason="absent">
+        <rect x="188.8" y="8" width="60.6" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="194.8" y="21.15" font-size="9" fill="#6b7480"><tspan>Mutants </tspan><tspan font-weight="bold">—</tspan></text>
+      </g>
+      <g data-block="reach">
+        <rect x="252.4" y="8" width="82.2" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="258.4" y="21.15" font-size="9" fill="#e6edf3"><tspan>Reach </tspan><tspan font-weight="bold">1</tspan><tspan> cells</tspan></text>
+      </g>
+      <g data-block="size">
+        <rect x="337.6" y="8" width="120" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="343.6" y="21.15" font-size="9" fill="#e6edf3"><tspan>Size </tspan><tspan font-weight="bold">+76 −4</tspan><tspan>, 2 files</tspan></text>
+      </g>
+      <g data-block="health" data-muted="true" data-reason="head-only">
+        <rect x="460.6" y="8" width="66" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="466.6" y="21.15" font-size="9" fill="#6b7480"><tspan>Health Δ </tspan><tspan font-weight="bold">—</tspan></text>
+      </g>
+      <g data-block="notices">
+        <rect x="529.6" y="8" width="82.2" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="535.6" y="21.15" font-size="9" fill="#e6edf3"><tspan>Notices </tspan><tspan font-weight="bold">0·0·0</tspan></text>
+      </g>
+    </g>
+    <g id="rules" stroke="#2b333d" stroke-width="1">
+      <line x1="0" y1="36" x2="780" y2="36"/>
+      <line x1="480" y1="36" x2="480" y2="761"/>
+    </g>
+    <g id="notices"/>
+  </g>
+</svg>

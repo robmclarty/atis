@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 26 — fix(core): send TypeScript config files to the config shore group
+**Current step:** 22 — chore(fixtures): generate map.json and the SVG for five historical PRs
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -48,7 +48,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☐ 23. chore(glance): run glance-test round one and record the verdicts
 - ☑ 24. fix(core): send hook folders to the scripts shore group
 - ☑ 25. fix(core): weigh missing co-change notices by rate and support
-- ☐ 26. fix(core): send TypeScript config files to the config shore group
+- ☑ 26. fix(core): send TypeScript config files to the config shore group
 
 ## Park list
 
@@ -77,6 +77,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] svg: global storm markers hang at the field's top-right corner; step 19's HUD may want that corner and can move them through STORM_INSET
 - [ ] chrome: a notice on a global slot name (red-check-slot, security-finding) keeps its row and gets no leader; point it at that slot's storm in the field's corner once weather.ts exports the storm anchor
 - [ ] USAGE text in apps/atis/src/index.ts omits --svg and --open (index.ts is outside step 20's seam)
+- [ ] checkride v0.1.1 summary.json omits checks_run yet says schema_version:1, so atis reads PR2 evidence as harness_broken -> LIFR git-only; decide if atis should tolerate the older schema-1 shape or if this is the intended glance case (matters for step 23, a reader may hold for the harness not the change)
+- [ ] shore table leaves common .json to the loud 'other' residual (.claude-plugin/plugin.json in checkride; .mcp.json, .ridgeline/settings.json, .codegraph/config.json, bench/*.json, packages/core/src/flow-schema.json in fascicle); on fascicle PR5's 3-file git-only change the other-group is the PRIMARY notice, so repo census headlines a small fix -- D48 wants the table to grow; candidate rules: .claude-plugin/**->prompts, .mcp.json/.ridgeline/**/.codegraph/**->config, bench/**->data (matters for step 23 glance reading)
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -1292,3 +1294,49 @@ folder, so it rides the branch into the PR.)*
   **4.** The pluralisation cascaded to six goldens beyond the seam
 
   The demo map's lone-consumer `why` changed, and the five SVG goldens render that same core map, so all six were regenerated deterministically through the sanctioned `ATIS_UPDATE_GOLDENS=1` path; the only change in each is `1 files still import it` → `1 file still imports it` (the SVG wrap re-broke `import it` → `imports it`). `fixtures/checkride-pr4/map.json` is left for step 22 to regenerate, as the plan asks.
+
+- 2026-09-22 — step 26 checkpointed · 872f2e4a0 — fix(core): send TypeScript config files to the config shore group (30m)
+
+  **Summary**: A `.ts`/`.tsx` that configures a tool now reads as shore, not terrain: `classifyFile` consults the shore's `config` row and returns `other`, so a `vitest.config.ts` founds no cell, sits on no terrace, and lands in the `config` group. The rule has one home (the config table) and stays override-aware, and it cost no new import edge, so the `dead` slot stays green.
+
+  1. `classifyFile` reads the `config` row through an injected matcher (D57)
+  2. The matcher is single-source and override-aware (D48, D28)
+  3. Config files enter neither depth nor reach
+  4. No cycle, and the seam stayed loose
+  5. One flag: the no-table path and the fixture
+
+  **Readout**: Step 26 - fix(core): send TypeScript config files to the config shore group
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    3 of 3 honored
+  constraints  11 of 11 honored
+  seam         held: 5 of 7 declared, no strays
+  diff         +100 -25 across 5 files
+  spent        30 min · 1 turn · 15s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Approve and checkpoint. The done-when is met with the gate green and the demo golden byte-identical, the rule has a single home and honors overrides, and the diff stayed inside the seam.
+
+  **1.** `classifyFile` reads the `config` row through an injected matcher (D57)
+
+  `classifyFile(path, isConfig?)` gains an optional predicate: a `.ts`/`.tsx` that matches the `config` row is `other`, checked after the test read so a `*.config.test.ts` stays evidence (D4). The predicate is injected rather than imported, so `modules.ts` stays a leaf and nothing new points back into it.
+
+  **2.** The matcher is single-source and override-aware (D48, D28)
+
+  `configMatcher(rules)` in `groups.ts` compiles the `config` row's own patterns with the glob compiler already there, so there is no second copy of the rule to drift, and `buildMap` builds it from the reviewed repo's `config.groups` — an `atis.config.json` override of that row moves the terrain/shore boundary with it.
+
+  **3.** Config files enter neither depth nor reach
+
+  `buildMap` threads the matcher into `identifyModules` (no cell), hands `computeDepth` the file list and edges with config paths filtered out (no terrace), and `identifyGroups` claims the file for `config`. Reach needs no change: a file that founds no cell is skipped by the walk and routed to its group by the existing shore logic.
+
+  **4.** No cycle, and the seam stayed loose
+
+  Passing a predicate (not importing the compiler into `modules.ts`) kept the module graph acyclic, which `dead` confirms. `config.ts` and `reach.ts` were in the seam as orientation but needed no change: `CONFIG_GROUP_ID` sits beside `OTHER_GROUP` in `groups.ts`, matching the existing style.
+
+  **5.** One flag: the no-table path and the fixture
+
+  Two older `identifyModules` tests still pass config-named files without the table, exercising the name-only fallback the graph sources take; the new tests cover the with-table (D57) behavior. The committed `fixtures/checkride-pr4/map.json` still carries the old `directory:.`/`package:.` shape and is left for step 22 to regenerate, as the done-when directs.
