@@ -53,3 +53,9 @@ signal above (they touch PR 4's `docs/contract.md`, `docs/tools.md`, `AGENTS.md`
 "PR 4's tool search was unbounded" (`aa2a08a`), the map's top notice points at the barrel
 whose interface PR 4 changed, which is the right neighbourhood but not the finding itself.
 Step 23 judges whether that counts as the flagged thing landing in the top three.
+
+Step 30 refreshed this map after the render and shore fixes. The only number that moved is the
+notice count, 6 down to 5: the sixth was the loud `other` residual, and step 28's shore table
+claimed the file behind it. The category and all five surviving notices are unchanged, so
+nothing above is affected — the budget is simply one row shorter, and a shore-bookkeeping row
+no longer sits below the three co-change ghosts.

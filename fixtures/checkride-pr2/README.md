@@ -92,6 +92,15 @@ though the rules post-date it. They are what carry the IFR category, so read the
 the primary notice as saying different things: the category is largely the repository's
 standing state, the primary notice is the change.
 
+This is the one fixture whose `map.json` step 30 left unchanged apart from the two timestamps
+(`meta.generated_at` and the harness's own `weather.checks.timestamp`, both of which a re-run
+must move): it carried no `other` residual for step 28 to claim, so nothing in the shore or
+the terrain moved. Its `atis.svg` did change. Two of its notices — `red-check-slot` on `dead` and on `snippets` — name a slot
+rather than a file, and step 27 gives such a notice a leader from its HUD row to the storm
+marker in the field corner instead of leaving it with no leader at all. Those two dotted
+leaders are new here, and this fixture is the clearest place to read that fix: a reader can
+now trace every one of the six rows to something on the map.
+
 ## Ground truth
 
 See [`truth.md`](./truth.md).

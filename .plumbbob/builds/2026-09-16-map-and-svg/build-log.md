@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 29 — fix(cli): name --svg and --open in the usage text
+**Current step:** 30 — chore(fixtures): refresh the five maps after the render and shore fixes
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -51,7 +51,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 26. fix(core): send TypeScript config files to the config shore group
 - ☑ 27. fix(svg): point a global-slot notice's leader at its storm marker
 - ☑ 28. fix(core): send plugin, MCP and bench JSON to their shore groups
-- ☐ 29. fix(cli): name --svg and --open in the usage text
+- ☑ 29. fix(cli): name --svg and --open in the usage text
 - ☐ 30. chore(fixtures): refresh the five maps after the render and shore fixes
 
 ## Park list
@@ -1505,3 +1505,44 @@ folder, so it rides the branch into the PR.)*
   **5.** The D48 decision text is left as the plan-time record
 
   Step 24 changed the same table and amended only its own step checkbox in `intent.md`, not D48's enumerated defaults, so the decision reads as what was decided on 2026-09-16 and `config.ts` is the live table. I followed that precedent rather than editing the decision under it.
+
+- 2026-09-24 — step 29 checkpointed · 35e3faa91 — fix(cli): name --svg and --open in the usage text (6m)
+
+  **Summary**: The shipped `--help` now names the two flags step 20 added: `--svg <file>` and `--open` sit between `--out` and `--verbose`, on the same one-line-per-flag grid as everything else, and `--open`'s line carries its prerequisite. Two lines of string and two test assertions; no behaviour moved.
+
+  1. Both flags land in the parser's order, on the column the other six already use
+  2. The --open line names its prerequisite in the words the misuse message already uses
+  3. The test walks all eight flags and pins the --open line on its own
+  4. The step asked for haiku and this ran on Opus 5
+
+  **Readout**: Step 29 - fix(cli): name --svg and --open in the usage text
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    1 of 1 honored
+  constraints  11 of 11 honored
+  seam         held: 2 of 2 declared, no strays
+  diff         +17 -1 across 2 files
+  spent        6 min · 1 turn · 14s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Approve and checkpoint. The check is green first run, the real `--help` was run and read back, and the change is two documentation lines and their tests inside the declared seam.
+
+  **1.** Both flags land in the parser's order, on the column the other six already use
+
+  `cli.ts` declares its options `repo, base, out, svg, open, verbose, version, help`, so the two new lines go after `--out` and before `--verbose` and the help text reads in the same order the parser does. Every description in that block starts at column 18, and `--svg <file>` and `--open` are padded to match, so the column is unbroken. I built `apps/atis` and ran the real `node dist/cli.js --help` rather than trusting the string in isolation: the grid holds in a terminal.
+
+  **2.** The --open line names its prerequisite in the words the misuse message already uses
+
+  `cli.ts` refuses `--open` without `--svg` with `atis: --open needs --svg <file>`, and that refusal prints `USAGE` underneath it. The line now reads `open the rendered SVG in the platform viewer (needs --svg)`, so a reader who trips the refusal finds the same phrase in the text printed below it instead of a second wording for one rule. Naming the viewer rather than the mechanism keeps the line honest about what the flag does without promising which opener runs, which is `open` or `xdg-open` by platform and best-effort either way.
+
+  **3.** The test walks all eight flags and pins the --open line on its own
+
+  The existing `the usage text names every flag the bin parses` test grew from six entries to eight; past 120 columns as one line, it reformats to one flag per line, which is why its diff is larger than the two entries it gained. That loop proves both flags are named but not that `--open` explains itself, so a second test finds the `  --open` line in the text and asserts it contains `--svg`. Splitting them means a future edit that drops the prerequisite fails with the reason in the test name rather than inside a loop over eight strings.
+
+  **4.** The step asked for haiku and this ran on Opus 5
+
+  The plan's `- model: haiku (one string and its test)` was the right call for the size of this change, and the session model was never switched. Nothing about the diff needed the bigger model; flagging it so the record matches what actually ran. No action needed unless you want the step rebuilt to honour the recommendation.

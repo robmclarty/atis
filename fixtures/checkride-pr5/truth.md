@@ -37,3 +37,7 @@ PR 5 stopped the doctor reporting a healthy Yarn PnP project as broken (`src/doc
 file the two follow-ups rewrote. If the ground truth is "PR 5's doctor change was thin where
 it reached" (`a488f6c`, `aa2a08a`), the map flagged the right file, one tier below the
 interface-change primary. Step 23 judges whether that lands in the top three.
+
+Step 30 refreshed this map after the render and shore fixes and moved nothing above: the
+category, all six notices and every weather count held. Only the shore changed, from 12 groups
+to 11, when step 28 claimed the file that had been the `other` residual.

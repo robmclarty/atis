@@ -55,3 +55,9 @@ that is not the review's reason. Whether that counts is the judgement round one 
 
 Under step 22's blind procedure this map was `NOINST` and could only point at the tools
 barrel; that version is superseded.
+
+Step 30 refreshed it after the render and shore fixes. Nothing above moved: the category, the
+six notices and their order, and the files they name are all unchanged. What changed is the
+shore, 10 groups down to 9, where step 28's rules claimed the six-file `other` residual, and
+the map is 18 units narrower because the shore strip is what sets its width. The `README.md`
+tabulates the seven files that changed group.

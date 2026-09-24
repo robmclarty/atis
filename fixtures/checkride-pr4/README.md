@@ -79,20 +79,26 @@ Named per D56. All 17 slots that ran came back green; nothing is red on this fix
 
 ## What it says
 
-`MVFR, 11 files changed, 6 notices`. The terrain now carries `layout` (step 15), so this is
+`MVFR, 11 files changed, 5 notices`. The terrain now carries `layout` (step 15), so this is
 terrain, weather, notices and positions.
 
 | | |
 | --- | --- |
 | category | MVFR — the changed lines are covered, the reach is bounded, no slot is red |
-| terrain | 43 cells, 91 organelles, 7 bands, 12 shore groups |
+| terrain | 43 cells, 91 organelles, 7 bands, 11 shore groups |
 | weather | 11 changed, 33 files reached, 3 co-change ghosts, 0 new dependencies |
-| notices | 6 — 1 primary, 2 secondary, 3 tertiary, the full budget of C7 |
+| notices | 5 — 1 primary, 2 secondary, 2 tertiary; one under the C7 budget, and C7 does not pad |
 | primary | `interface-change` on `src/pm/index.ts` (8 readers, band 4) |
 | improvements | empty, and the HUD's Health Δ block is muted: `.check/` is read at head only (D23) |
 
-The sixth notice is the loud `other` residual (D48): one `.json` file
-(`.claude-plugin/plugin.json`) that no shore rule claims. It is surfaced, not dumped.
+The sixth notice used to be the loud `other` residual (D48): one `.json` file,
+`.claude-plugin/plugin.json`, that no shore rule claimed. Step 28 gave `.claude-plugin/**` to
+the `prompts` row, so `other` is empty here, the shore is 11 groups rather than 12, and the
+tertiary row that named the residual is gone with nothing ranked behind it to take the slot
+([C7 (budget)](../../.plumbbob/builds/2026-09-16-map-and-svg/intent.md#c7) never pads). No
+other number moved: the terrain, the weather and the four surviving notices are byte-identical
+to the step-22 map, and no organelle changed position — only the shore repacked around the
+file that left `other`.
 
 ## Ground truth
 

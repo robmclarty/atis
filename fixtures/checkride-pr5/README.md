@@ -72,7 +72,7 @@ Named per D56. All 17 slots that ran came back green; nothing is red on this fix
 | | |
 | --- | --- |
 | category | IFR — the change has uncovered lines that reach across cells |
-| terrain | 43 cells, 91 organelles, 7 bands, 12 shore groups |
+| terrain | 43 cells, 91 organelles, 7 bands, 11 shore groups |
 | weather | 7 changed, 33 files reached, 4 co-change ghosts, 0 new dependencies |
 | notices | 6 — 1 primary, 2 secondary, 3 tertiary |
 | primary | `interface-change` on `src/pm/index.ts` (8 readers, band 4) |
@@ -80,6 +80,13 @@ Named per D56. All 17 slots that ran came back green; nothing is red on this fix
 
 The `uncovered-high-reach` notice is what earns the IFR category: `src/doctor.ts` is the
 file the change is really about, and its new lines are not covered where they reach.
+
+The shore is 11 groups rather than the 12 of the step-22 map: step 28 gave
+`.claude-plugin/**` to the `prompts` row, which emptied the loud `other` residual (D48). It
+cost this fixture no notice — `other` never ranked into the budget here, because the sixth
+slot was already held by a co-change ghost weighing more than the residual's flat 2 — so the
+six notices, the category and every terrain and weather count are byte-identical to step 22,
+and no organelle moved. Only the shore repacked.
 
 ## Ground truth
 

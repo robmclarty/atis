@@ -47,3 +47,8 @@ notice are driven by different things: IFR comes largely from four red fallow sl
 the repository's standing state, while the primary notice is genuinely about this change.
 A reader who judges on the grade and a reader who judges on the top notice will not
 necessarily agree here, which is worth watching in round one.
+
+Step 30 refreshed this fixture and the map came back unchanged bar its two timestamps — it had
+no `other` residual for step 28 to claim. The render did change: the `dead` and `snippets`
+rows target slots rather than files, and step 27 now draws each a leader to the storm marker
+in the field corner, so all six rows have something on the map to point at.

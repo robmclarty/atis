@@ -81,7 +81,7 @@ Named per D56. 15 slots ran.
 | | |
 | --- | --- |
 | category | IFR |
-| terrain | 117 cells, 165 organelles, 7 bands, 10 shore groups (the whole workspace, D43) |
+| terrain | 117 cells, 165 organelles, 7 bands, 9 shore groups (the whole workspace, D43) |
 | weather | 18 changed, 8 files reached, 0 ghosts, 0 new dependencies |
 | notices | 6 — all `red-check-slot` |
 | primary | `red-check-slot` on `examples/pr-improve/src/tools/run_shell.ts` (`dead` is red and names it) |
@@ -97,6 +97,38 @@ It comes with a caveat worth carrying into step 23: **every** notice here is a
 the six-slot budget entirely. The map is reporting the repository's standing state, which on
 this fixture happens to coincide with the changed files. PR 5 next door renders almost
 identically despite changing 3 files rather than 18. That crowding is parked.
+
+### What step 30 moved
+
+Step 28's shore rules emptied the loud `other` residual (D48), which on this workspace held
+six files, and they are the only reason any number above differs from the step-22 map:
+
+| file | was | now | rule |
+| --- | --- | --- | --- |
+| `.mcp.json` | `other` | `config` | `.mcp.json` |
+| `.ridgeline/settings.json` | `other` | `config` | `.ridgeline/**` |
+| `.codegraph/config.json` | `other` | `config` | `.codegraph/**` |
+| `bench/reviewer/baseline.json` | `other` | `data` | `bench/**` |
+| `bench/reviewer/cases.json` | `other` | `data` | `bench/**` |
+| `packages/core/src/flow-schema.json` | `other` | `data` | `*-schema.json` |
+| `.codegraph/.gitignore` | `settings` | `config` | `.codegraph/**` |
+
+The last row is a side effect step 28's done-when did not name. `other` was never its group,
+so it is not part of the residual this step was clearing; it moves because the shore table is
+first-match and the new `.codegraph/**` pattern on the `config` row now wins ahead of the
+bare `.gitignore` on the `settings` row below it. Grouping a tool's dotfolder with that tool's
+config rather than with the repository's own settings is the reading D48's ordering already
+implies, so it stands, and it is recorded here rather than left as an unexplained `settings`
+count of 4.
+
+Nothing else about this map moved. The notices, the category, the red slots, all seven band
+assignments, every cell membrane and every one of the 165 organelle positions are unchanged;
+only the shore repacked, and 57 shore marks took new grid positions because their blocks
+changed size. That repacking narrowed `terrain.layout.width` from 672 to 654 — the shore
+strip, not the terrain, is what sets the width on this workspace (it is the largest of the
+minimum, the shore extent and the terrain extent), and one fewer group block means a shorter
+strip. The SVG is 18 units narrower as a result (`viewBox` `0 0 954 1090`, was `0 0 972 1090`)
+and the HUD column sits at x 669 rather than 687.
 
 ## Ground truth
 

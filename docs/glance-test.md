@@ -14,6 +14,25 @@ All five are generated under [D58](../.plumbbob/builds/2026-09-16-map-and-svg/in
 security`). Step 22 first built them against each commit's own pinned toolchain, which left
 checkride PR 2 unreadable and both fascicle fixtures blind; those maps are superseded.
 
+Step 30 re-ran all five through that same procedure so they carry step 27's global-slot
+leaders and step 28's shore-table rules. Every category in the table below survived the re-run
+unchanged, as did every terrain and weather count, every cell membrane and every organelle
+position; the deltas are confined to the shore and to one notice, and each fixture's
+`README.md` names its own. The `other` residual is now empty on all five: checkride's
+`.claude-plugin/plugin.json` went to `prompts`, and fascicle's `.mcp.json`,
+`.ridgeline/settings.json`, `.codegraph/config.json`, `bench/reviewer/{baseline,cases}.json`
+and `packages/core/src/flow-schema.json` went to `config` and `data`. Two consequences matter
+for round one:
+
+- **checkride PR 4 now shows five notices, not six.** Its sixth was the shore residual, and
+  with the residual gone nothing ranked behind it to take the slot (C7 does not pad). No
+  fixture's budget is spent on shore bookkeeping any more, so all 29 notice rows a reader
+  sees across the five maps are about code or the harness.
+- **Three slot-targeted notices gained leaders.** `dead` and `snippets` on checkride PR 2 and
+  `attw` on fascicle PR 5 name a slot rather than a file, and step 27 points each at the storm
+  marker in the field corner. Before, those rows were the only ones a reader could not trace
+  to anything, which would have confounded the ten-second read.
+
 ## The five
 
 | # | fixture | change | category | ground truth (one line, needs Rob) |

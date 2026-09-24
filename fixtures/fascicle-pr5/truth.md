@@ -38,3 +38,10 @@ behind the parked notice-crowding question.
 
 Under step 22's blind procedure this map was `NOINST` with the shore residual as its only
 notice; that version is superseded.
+
+Step 30 refreshed it after the render and shore fixes; the category and all six notices held,
+and the shore went from 10 groups to 9 as step 28's rules claimed the `other` residual. One
+render change bears on the reading above: the `attw` row, the one notice with nothing to do
+with the three changed files, was previously the only row drawn without a leader. Step 27
+gives it one, pointing at the storm marker in the field corner. A reader can now see that the
+row is about the whole field, which is the distinction round one is being asked to test.

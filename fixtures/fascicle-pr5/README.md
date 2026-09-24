@@ -74,7 +74,7 @@ minutes without a `summary.json`), `publint` (no tool detected), `format` and `p
 | | |
 | --- | --- |
 | category | IFR |
-| terrain | 117 cells, 165 organelles, 7 bands, 10 shore groups |
+| terrain | 117 cells, 165 organelles, 7 bands, 9 shore groups |
 | weather | 3 changed, 4 files reached, 0 ghosts, 0 new dependencies |
 | notices | 6 — all `red-check-slot` |
 | primary | `red-check-slot` on `examples/pr-improve/src/tools/run_shell.ts` (`dead` is red and names it) |
@@ -89,6 +89,23 @@ repository — has nothing to do with the three changed files at all.
 For the glance test that makes PR 5 a useful adversarial case: the ground truth is near-calm,
 but the map presents an IFR grade and six red rows. If a reader holds here, the reason will
 say whether they were reading the change or the repository.
+
+### What step 30 moved
+
+The shore is 9 groups rather than 10: step 28's rules emptied the loud `other` residual (D48)
+by the same seven moves as PR 4 next door, which that fixture's `README.md` tabulates — the
+two trees share a shore. The consequences are the same too: `terrain.layout.width` narrowed
+from 672 to 654 because the shore strip sets the width here, the SVG is 18 units narrower
+(`viewBox` `0 0 954 1090`), and 57 shore marks repacked while no organelle, membrane or band
+moved.
+
+The render gained one thing this fixture in particular needed. The sixth notice targets
+`attw`, a slot name rather than a file, and until step 27 it was the one row on this map with
+no leader — the reader was told a slot was red with nothing on the map to look at. It now
+draws a leader to the storm marker in the field corner, which is exactly where a repo-wide
+finding belongs. That does not fix the crowding parked above; it does make the crowding
+legible, because a reader can now see that one of the six rows points at the whole field
+rather than at any of the three changed files.
 
 ## Ground truth
 

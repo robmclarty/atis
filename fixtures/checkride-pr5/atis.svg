@@ -35,14 +35,15 @@
     <g id="shore">
       <rect x="0" y="0" width="484" height="452" fill="#161b21"/>
       <g data-group="prompts">
-        <path d="M43 74L46.22 74.63L50.11 74.37L54 73L57.48 70.46L61.19 67.32L66 64.33L72.43 62.01L79.46 59.99L85.67 57.67L89.96 54.56L92.48 50.56L93.67 45.67L93.88 40.02L93.12 34.31L91.33 29.33L88.35 25.74L83.65 23.48L76.67 22.33L67.25 22.12L57.09 22.88L48.33 24.67L42.63 27.63L39.59 32.15L38.33 38.67L38.06 47.25L38.38 56.42L39 64.33L39.74 69.58L40.93 72.53L43 74Z" fill="none" stroke="#3b434d" stroke-width="1"/>
-        <circle data-id=".claude/skills/version/SKILL.md" cx="49" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id="AGENTS.md" cx="67" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id="CLAUDE.md" cx="85" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id="examples/agent-loop/.claude/settings.json" cx="49" cy="51" r="4" fill="#2d343c"/>
-        <circle data-id="examples/agent-loop/AGENTS.md" cx="67" cy="51" r="4" fill="#2d343c"/>
-        <circle data-id="skills/check/SKILL.md" cx="85" cy="51" r="4" fill="#2d343c"/>
-        <circle data-id="skills/qa/SKILL.md" cx="49" cy="69" r="4" fill="#2d343c"/>
+        <path d="M42.67 74.67L45.53 76.2L49.36 77.36L54 78L59.22 78L64.44 77.33L69 76L72.4 74.05L74.83 71.73L76.67 69.33L78.27 67.1L79.95 65.01L82 63L84.59 60.96L87.41 58.7L90 56L92 52.67L93.33 48.67L94 44L93.98 38.78L93.14 33.56L91.33 29L88.35 25.64L83.65 23.47L76.67 22.33L67.25 22.12L57.09 22.88L48.33 24.67L42.63 27.63L39.59 32.15L38.33 38.67L38.06 47.25L38.38 56.42L39 64.33L39.73 69.6L40.83 72.73L42.67 74.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id=".claude-plugin/plugin.json" cx="49" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".claude/skills/version/SKILL.md" cx="67" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="AGENTS.md" cx="85" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="CLAUDE.md" cx="49" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="examples/agent-loop/.claude/settings.json" cx="67" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="examples/agent-loop/AGENTS.md" cx="85" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="skills/check/SKILL.md" cx="49" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="skills/qa/SKILL.md" cx="67" cy="69" r="4" fill="#2d343c"/>
         <text x="38.06" y="19.12" font-size="8" font-variant="small-caps" fill="#5d6670">prompts</text>
       </g>
       <g data-group="docs">
@@ -259,11 +260,6 @@
         <circle data-id="src/__tests__/fixtures/baseline-oxlint.json" cx="273" cy="383" r="4" fill="#2d343c"/>
         <circle data-id="test/fixtures/existing-biome/biome.json" cx="291" cy="383" r="4" fill="#2d343c"/>
         <text x="262.06" y="333.12" font-size="8" font-variant="small-caps" fill="#5d6670">data</text>
-      </g>
-      <g data-group="other">
-        <path d="M364 354L366.57 353.96L369.21 353.04L371.33 351L372.42 347.83L372.25 344.28L370.67 341.33L367.73 339.77L364.27 339.68L361.33 341L359.72 343.54L359.28 346.68L359.67 349.67L360.57 351.9L361.99 353.32L364 354Z" fill="none" stroke="#3b434d" stroke-width="1"/>
-        <circle data-id=".claude-plugin/plugin.json" cx="367" cy="347" r="4" fill="#2d343c"/>
-        <text x="359.28" y="336.68" font-size="8" font-variant="small-caps" fill="#5d6670">other</text>
       </g>
     </g>
     <g id="membranes" fill="#7a838e" fill-opacity="0.08" stroke="#4b535e" stroke-linejoin="round">
@@ -514,10 +510,6 @@
       <g data-block="notices">
         <rect x="570.4" y="8" width="82.2" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
         <text x="576.4" y="21.15" font-size="9" fill="#e6edf3"><tspan>Notices </tspan><tspan font-weight="bold">1·2·3</tspan></text>
-      </g>
-      <g data-block="other">
-        <rect x="655.6" y="8" width="49.8" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="661.6" y="21.15" font-size="9" fill="#e6edf3"><tspan>Other </tspan><tspan font-weight="bold">1</tspan></text>
       </g>
     </g>
     <g id="rules" stroke="#2b333d" stroke-width="1">

@@ -1,39 +1,39 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 972 1090" width="972" height="1090" font-family="ui-monospace, Menlo, Consolas, monospace">
-  <rect id="ground" x="0" y="0" width="972" height="1090" fill="#1a1f27"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 954 1090" width="954" height="1090" font-family="ui-monospace, Menlo, Consolas, monospace">
+  <rect id="ground" x="0" y="0" width="954" height="1090" fill="#1a1f27"/>
   <g id="world" transform="translate(0 36)">
-    <rect id="field" x="0" y="0" width="672" height="1054" fill="#0a0c0f"/>
+    <rect id="field" x="0" y="0" width="654" height="1054" fill="#0a0c0f"/>
     <g id="terraces">
       <g data-band="0">
-        <rect x="0" y="340" width="672" height="105" fill="#10141a"/>
-        <line x1="0" y1="340" x2="672" y2="340" stroke="#222831" stroke-width="1"/>
+        <rect x="0" y="340" width="654" height="105" fill="#10141a"/>
+        <line x1="0" y1="340" x2="654" y2="340" stroke="#222831" stroke-width="1"/>
       </g>
       <g data-band="1">
-        <rect x="0" y="445" width="672" height="96" fill="#10141a"/>
-        <line x1="0" y1="445" x2="672" y2="445" stroke="#222831" stroke-width="1"/>
+        <rect x="0" y="445" width="654" height="96" fill="#10141a"/>
+        <line x1="0" y1="445" x2="654" y2="445" stroke="#222831" stroke-width="1"/>
       </g>
       <g data-band="2">
-        <rect x="0" y="541" width="672" height="96" fill="#10141a"/>
-        <line x1="0" y1="541" x2="672" y2="541" stroke="#222831" stroke-width="1"/>
+        <rect x="0" y="541" width="654" height="96" fill="#10141a"/>
+        <line x1="0" y1="541" x2="654" y2="541" stroke="#222831" stroke-width="1"/>
       </g>
       <g data-band="3">
-        <rect x="0" y="637" width="672" height="125" fill="#10141a"/>
-        <line x1="0" y1="637" x2="672" y2="637" stroke="#222831" stroke-width="1"/>
+        <rect x="0" y="637" width="654" height="125" fill="#10141a"/>
+        <line x1="0" y1="637" x2="654" y2="637" stroke="#222831" stroke-width="1"/>
       </g>
       <g data-band="4">
-        <rect x="0" y="762" width="672" height="100" fill="#10141a"/>
-        <line x1="0" y1="762" x2="672" y2="762" stroke="#222831" stroke-width="1"/>
+        <rect x="0" y="762" width="654" height="100" fill="#10141a"/>
+        <line x1="0" y1="762" x2="654" y2="762" stroke="#222831" stroke-width="1"/>
       </g>
       <g data-band="5">
-        <rect x="0" y="862" width="672" height="96" fill="#10141a"/>
-        <line x1="0" y1="862" x2="672" y2="862" stroke="#222831" stroke-width="1"/>
+        <rect x="0" y="862" width="654" height="96" fill="#10141a"/>
+        <line x1="0" y1="862" x2="654" y2="862" stroke="#222831" stroke-width="1"/>
       </g>
       <g data-band="6">
-        <rect x="0" y="958" width="672" height="96" fill="#10141a"/>
-        <line x1="0" y1="958" x2="672" y2="958" stroke="#222831" stroke-width="1"/>
+        <rect x="0" y="958" width="654" height="96" fill="#10141a"/>
+        <line x1="0" y1="958" x2="654" y2="958" stroke="#222831" stroke-width="1"/>
       </g>
     </g>
     <g id="shore">
-      <rect x="0" y="0" width="672" height="340" fill="#161b21"/>
+      <rect x="0" y="0" width="654" height="340" fill="#161b21"/>
       <g data-group="prompts">
         <path d="M43 56L46.22 56.63L50.11 56.37L54 55L57.38 52.44L60.4 49.22L63.33 46L66.37 43.25L69.19 40.64L71.33 37.67L72.43 34L72.35 30.11L71 26.67L68.37 24.2L64.63 22.69L60 22L54.78 22.02L49.56 22.86L45 24.67L41.64 27.52L39.47 31.26L38.33 35.67L38.06 40.47L38.38 45.2L39 49.33L39.74 52.47L40.93 54.64L43 56Z" fill="none" stroke="#3b434d" stroke-width="1"/>
         <circle data-id=".claude/skills/version/SKILL.md" cx="49" cy="33" r="4" fill="#2d343c"/>
@@ -125,68 +125,71 @@
         <text x="114.06" y="19.12" font-size="8" font-variant="small-caps" fill="#5d6670">docs</text>
       </g>
       <g data-group="config">
-        <path d="M302.67 110.67L305.98 112.2L312.91 113.36L326 114L346.33 113.98L369.33 113.14L389 111.33L400.8 108.12L406.09 101.88L407.67 90.67L407.88 73.69L407.12 54.64L405.33 38.33L402.01 28.41L394.99 23.81L381.67 22.33L360.91 22.12L337.42 22.88L317.33 24.67L305.3 27.85L299.93 33.93L298.33 44.67L298.06 60.8L298.38 78.86L299 94.33L299.73 103.83L300.83 108.51L302.67 110.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
-        <circle data-id=".markdownlint-cli2.jsonc" cx="309" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id=".oxlintrc.json" cx="327" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id="cspell.json" cx="345" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id="examples/amplify/target/tsconfig.json" cx="363" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id="examples/amplify/target/vitest.config.ts" cx="381" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id="examples/amplify/vitest.config.ts" cx="399" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id="examples/red-green-refactor/vitest.config.ts" cx="309" cy="51" r="4" fill="#2d343c"/>
-        <circle data-id="fallow.toml" cx="327" cy="51" r="4" fill="#2d343c"/>
-        <circle data-id="packages/engine/tsconfig.json" cx="345" cy="51" r="4" fill="#2d343c"/>
-        <circle data-id="rules/model-call-is-sole-bridge.yml" cx="363" cy="51" r="4" fill="#2d343c"/>
-        <circle data-id="rules/no-adapter-import-from-core.yml" cx="381" cy="51" r="4" fill="#2d343c"/>
-        <circle data-id="rules/no-child-process-outside-claude-cli.yml" cx="399" cy="51" r="4" fill="#2d343c"/>
-        <circle data-id="rules/no-class.yml" cx="309" cy="69" r="4" fill="#2d343c"/>
-        <circle data-id="rules/no-composer-cross-import.yml" cx="327" cy="69" r="4" fill="#2d343c"/>
-        <circle data-id="rules/no-core-import-from-composites.yml" cx="345" cy="69" r="4" fill="#2d343c"/>
-        <circle data-id="rules/no-core-value-import-in-engine.yml" cx="363" cy="69" r="4" fill="#2d343c"/>
-        <circle data-id="rules/no-default-export.yml" cx="381" cy="69" r="4" fill="#2d343c"/>
-        <circle data-id="rules/no-engine-import-from-viewer.yml" cx="399" cy="69" r="4" fill="#2d343c"/>
-        <circle data-id="rules/no-kind-switch-in-runner.yml" cx="309" cy="87" r="4" fill="#2d343c"/>
-        <circle data-id="rules/no-process-env-in-core.yml" cx="327" cy="87" r="4" fill="#2d343c"/>
-        <circle data-id="rules/no-provider-sdk-in-claude-cli.yml" cx="345" cy="87" r="4" fill="#2d343c"/>
-        <circle data-id="rules/no-provider-sdk-outside-providers.yml" cx="363" cy="87" r="4" fill="#2d343c"/>
-        <circle data-id="rules/no-semicolons-types.yml" cx="381" cy="87" r="4" fill="#2d343c"/>
-        <circle data-id="rules/no-semicolons.yml" cx="399" cy="87" r="4" fill="#2d343c"/>
-        <circle data-id="rules/snake-case-exports.yml" cx="309" cy="105" r="4" fill="#2d343c"/>
-        <circle data-id="sgconfig.yml" cx="327" cy="105" r="4" fill="#2d343c"/>
-        <circle data-id="stryker.config.mjs" cx="345" cy="105" r="4" fill="#2d343c"/>
-        <circle data-id="tsconfig.json" cx="363" cy="105" r="4" fill="#2d343c"/>
-        <circle data-id="tsdown.config.ts" cx="381" cy="105" r="4" fill="#2d343c"/>
-        <circle data-id="vitest.config.ts" cx="399" cy="105" r="4" fill="#2d343c"/>
+        <path d="M302.67 128.67L305.75 130.2L311.14 131.36L320 132L332.78 132L346.89 131.33L359 130L366.62 128.05L370.6 125.73L372.67 123.33L374.37 121.11L376.74 119.11L380.67 117.33L386.63 115.72L393.48 113.95L399.67 111.67L403.96 108.22L406.48 101.89L407.67 90.67L407.88 73.69L407.12 54.64L405.33 38.33L402.01 28.41L394.99 23.81L381.67 22.33L360.91 22.12L337.42 22.88L317.33 24.67L305.3 27.96L299.93 34.81L298.33 47.67L298.06 67.58L298.38 90.09L299 109.33L299.73 120.94L300.83 126.4L302.67 128.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id=".codegraph/.gitignore" cx="309" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".codegraph/config.json" cx="327" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".markdownlint-cli2.jsonc" cx="345" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".mcp.json" cx="363" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".oxlintrc.json" cx="381" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".ridgeline/settings.json" cx="399" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="cspell.json" cx="309" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="examples/amplify/target/tsconfig.json" cx="327" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="examples/amplify/target/vitest.config.ts" cx="345" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="examples/amplify/vitest.config.ts" cx="363" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="examples/red-green-refactor/vitest.config.ts" cx="381" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="fallow.toml" cx="399" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="packages/engine/tsconfig.json" cx="309" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="rules/model-call-is-sole-bridge.yml" cx="327" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="rules/no-adapter-import-from-core.yml" cx="345" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="rules/no-child-process-outside-claude-cli.yml" cx="363" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="rules/no-class.yml" cx="381" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="rules/no-composer-cross-import.yml" cx="399" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="rules/no-core-import-from-composites.yml" cx="309" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id="rules/no-core-value-import-in-engine.yml" cx="327" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id="rules/no-default-export.yml" cx="345" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id="rules/no-engine-import-from-viewer.yml" cx="363" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id="rules/no-kind-switch-in-runner.yml" cx="381" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id="rules/no-process-env-in-core.yml" cx="399" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id="rules/no-provider-sdk-in-claude-cli.yml" cx="309" cy="105" r="4" fill="#2d343c"/>
+        <circle data-id="rules/no-provider-sdk-outside-providers.yml" cx="327" cy="105" r="4" fill="#2d343c"/>
+        <circle data-id="rules/no-semicolons-types.yml" cx="345" cy="105" r="4" fill="#2d343c"/>
+        <circle data-id="rules/no-semicolons.yml" cx="363" cy="105" r="4" fill="#2d343c"/>
+        <circle data-id="rules/snake-case-exports.yml" cx="381" cy="105" r="4" fill="#2d343c"/>
+        <circle data-id="sgconfig.yml" cx="399" cy="105" r="4" fill="#2d343c"/>
+        <circle data-id="stryker.config.mjs" cx="309" cy="123" r="4" fill="#2d343c"/>
+        <circle data-id="tsconfig.json" cx="327" cy="123" r="4" fill="#2d343c"/>
+        <circle data-id="tsdown.config.ts" cx="345" cy="123" r="4" fill="#2d343c"/>
+        <circle data-id="vitest.config.ts" cx="363" cy="123" r="4" fill="#2d343c"/>
         <text x="298.06" y="19.12" font-size="8" font-variant="small-caps" fill="#5d6670">config</text>
       </g>
       <g data-group="settings">
-        <path d="M450.67 56.67L453.53 58.2L457.36 59.36L462 60L467.22 60L472.44 59.33L477 58L480.4 56.05L482.83 53.73L484.67 51.33L486.27 49.1L487.95 47.01L490 45L492.57 42.95L495.21 40.6L497.33 37.67L498.43 34L498.35 30.11L497 26.67L494.26 24.2L489.74 22.69L483 22L474 22.02L464.33 22.86L456 24.67L450.53 27.52L447.58 31.26L446.33 35.67L446.06 40.47L446.38 45.2L447 49.33L447.73 52.49L448.83 54.84L450.67 56.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
-        <circle data-id=".codegraph/.gitignore" cx="457" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id=".gitignore" cx="475" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id=".npmrc" cx="493" cy="33" r="4" fill="#2d343c"/>
+        <path d="M450.67 56.67L453.53 58.2L457.36 59.36L462 60L467.22 59.98L472.44 59.14L477 57.33L480.36 54.46L482.53 50.54L483.67 45.67L483.88 40.02L483.12 34.31L481.33 29.33L478.46 25.74L474.54 23.48L469.67 22.33L464.02 22.12L458.31 22.88L453.33 24.67L449.74 27.52L447.48 31.26L446.33 35.67L446.06 40.47L446.38 45.2L447 49.33L447.73 52.49L448.83 54.84L450.67 56.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id=".gitignore" cx="457" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".npmrc" cx="475" cy="33" r="4" fill="#2d343c"/>
         <circle data-id="examples/amplify/.gitignore" cx="457" cy="51" r="4" fill="#2d343c"/>
         <circle data-id="examples/pr-improve/.gitignore" cx="475" cy="51" r="4" fill="#2d343c"/>
-        <text x="446.06" y="19" font-size="8" font-variant="small-caps" fill="#5d6670">settings</text>
+        <text x="446.06" y="19.12" font-size="8" font-variant="small-caps" fill="#5d6670">settings</text>
       </g>
       <g data-group="deps">
-        <path d="M544.67 92.67L547.53 94.2L551.36 95.36L556 96L561.22 96L566.44 95.33L571 94L574.4 92.05L576.83 89.73L578.67 87.33L580.48 85.11L583.63 83.11L589.67 81.33L599.41 79.72L610.7 77.95L620.67 75.67L627.07 72.44L630.37 67.67L631.67 60.67L631.88 51.25L631.12 41.09L629.33 32.33L626.12 26.63L619.88 23.59L608.67 22.33L591.69 22.12L572.64 22.88L556.33 24.67L546.41 27.74L541.81 33.04L540.33 41.67L540.06 54.02L540.38 67.64L541 79.33L541.73 86.72L542.83 90.62L544.67 92.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
-        <circle data-id="examples/amplify/package.json" cx="551" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id="examples/amplify/target/package.json" cx="569" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id="examples/mcp-server/package.json" cx="587" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id="examples/pr-improve/package.json" cx="605" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id="examples/red-green-refactor/package.json" cx="623" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id="package.json" cx="551" cy="51" r="4" fill="#2d343c"/>
-        <circle data-id="packages/agents/package.json" cx="569" cy="51" r="4" fill="#2d343c"/>
-        <circle data-id="packages/composites/package.json" cx="587" cy="51" r="4" fill="#2d343c"/>
-        <circle data-id="packages/config/package.json" cx="605" cy="51" r="4" fill="#2d343c"/>
-        <circle data-id="packages/core/package.json" cx="623" cy="51" r="4" fill="#2d343c"/>
-        <circle data-id="packages/engine/package.json" cx="551" cy="69" r="4" fill="#2d343c"/>
-        <circle data-id="packages/fascicle/package.json" cx="569" cy="69" r="4" fill="#2d343c"/>
-        <circle data-id="packages/observability/package.json" cx="587" cy="69" r="4" fill="#2d343c"/>
-        <circle data-id="packages/stores/package.json" cx="605" cy="69" r="4" fill="#2d343c"/>
-        <circle data-id="packages/viewer/package.json" cx="623" cy="69" r="4" fill="#2d343c"/>
-        <circle data-id="pnpm-lock.yaml" cx="551" cy="87" r="4" fill="#2d343c"/>
-        <circle data-id="pnpm-workspace.yaml" cx="569" cy="87" r="4" fill="#2d343c"/>
-        <text x="540.06" y="19.12" font-size="8" font-variant="small-caps" fill="#5d6670">deps</text>
+        <path d="M526.67 92.67L529.53 94.2L533.36 95.36L538 96L543.22 96L548.44 95.33L553 94L556.4 92.05L558.83 89.73L560.67 87.33L562.48 85.11L565.63 83.11L571.67 81.33L581.41 79.72L592.7 77.95L602.67 75.67L609.07 72.44L612.37 67.67L613.67 60.67L613.88 51.25L613.12 41.09L611.33 32.33L608.12 26.63L601.88 23.59L590.67 22.33L573.69 22.12L554.64 22.88L538.33 24.67L528.41 27.74L523.81 33.04L522.33 41.67L522.06 54.02L522.38 67.64L523 79.33L523.73 86.72L524.83 90.62L526.67 92.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id="examples/amplify/package.json" cx="533" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="examples/amplify/target/package.json" cx="551" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="examples/mcp-server/package.json" cx="569" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="examples/pr-improve/package.json" cx="587" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="examples/red-green-refactor/package.json" cx="605" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="package.json" cx="533" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="packages/agents/package.json" cx="551" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="packages/composites/package.json" cx="569" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="packages/config/package.json" cx="587" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="packages/core/package.json" cx="605" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="packages/engine/package.json" cx="533" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="packages/fascicle/package.json" cx="551" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="packages/observability/package.json" cx="569" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="packages/stores/package.json" cx="587" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="packages/viewer/package.json" cx="605" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="pnpm-lock.yaml" cx="533" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id="pnpm-workspace.yaml" cx="551" cy="87" r="4" fill="#2d343c"/>
+        <text x="522.06" y="19.12" font-size="8" font-variant="small-caps" fill="#5d6670">deps</text>
       </g>
       <g data-group="scripts">
         <path d="M42.67 312.67L45.64 314.2L50.25 315.36L57 316L66 316L75.67 315.33L84 314L89.51 312.05L92.72 309.73L94.67 307.33L96.37 305.11L98.74 303.11L102.67 301.33L108.63 299.72L115.48 297.95L121.67 295.67L125.96 292.44L128.48 287.67L129.67 280.67L129.88 271.25L129.12 261.09L127.33 252.33L124.12 246.63L117.88 243.59L106.67 242.33L89.69 242.12L70.64 242.88L54.33 244.67L44.41 247.74L39.81 253.04L38.33 261.67L38.06 274.02L38.38 287.64L39 299.33L39.73 306.72L40.83 310.62L42.67 312.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
@@ -219,19 +222,12 @@
         <text x="168.06" y="239.12" font-size="8" font-variant="small-caps" fill="#5d6670">assets</text>
       </g>
       <g data-group="data">
-        <path d="M252 260L254.57 259.96L257.21 259.04L259.33 257L260.42 253.83L260.25 250.28L258.67 247.33L255.73 245.77L252.27 245.68L249.33 247L247.72 249.54L247.28 252.68L247.67 255.67L248.57 257.9L249.99 259.32L252 260Z" fill="none" stroke="#3b434d" stroke-width="1"/>
-        <circle data-id="examples/pr-improve/fixtures/pr-sample.patch" cx="255" cy="253" r="4" fill="#2d343c"/>
-        <text x="247.28" y="242.68" font-size="8" font-variant="small-caps" fill="#5d6670">data</text>
-      </g>
-      <g data-group="other">
-        <path d="M306.67 276.67L309.64 278.2L314.25 279.36L321 280L330 279.98L339.67 279.14L348 277.33L353.47 274.46L356.42 270.54L357.67 265.67L357.88 260.02L357.12 254.31L355.33 249.33L352.35 245.74L347.65 243.48L340.67 242.33L331.25 242.12L321.09 242.88L312.33 244.67L306.63 247.52L303.59 251.26L302.33 255.67L302.06 260.47L302.38 265.2L303 269.33L303.73 272.49L304.83 274.84L306.67 276.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
-        <circle data-id=".codegraph/config.json" cx="313" cy="253" r="4" fill="#2d343c"/>
-        <circle data-id=".mcp.json" cx="331" cy="253" r="4" fill="#2d343c"/>
-        <circle data-id=".ridgeline/settings.json" cx="349" cy="253" r="4" fill="#2d343c"/>
-        <circle data-id="bench/reviewer/baseline.json" cx="313" cy="271" r="4" fill="#2d343c"/>
-        <circle data-id="bench/reviewer/cases.json" cx="331" cy="271" r="4" fill="#2d343c"/>
-        <circle data-id="packages/core/src/flow-schema.json" cx="349" cy="271" r="4" fill="#2d343c"/>
-        <text x="302.06" y="239.12" font-size="8" font-variant="small-caps" fill="#5d6670">other</text>
+        <path d="M248.67 276.67L251.53 278.2L255.36 279.36L260 280L265.22 279.98L270.44 279.14L275 277.33L278.36 274.46L280.53 270.54L281.67 265.67L281.88 260.02L281.12 254.31L279.33 249.33L276.46 245.74L272.54 243.48L267.67 242.33L262.02 242.12L256.31 242.88L251.33 244.67L247.74 247.52L245.48 251.26L244.33 255.67L244.06 260.47L244.38 265.2L245 269.33L245.73 272.49L246.83 274.84L248.67 276.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id="bench/reviewer/baseline.json" cx="255" cy="253" r="4" fill="#2d343c"/>
+        <circle data-id="bench/reviewer/cases.json" cx="273" cy="253" r="4" fill="#2d343c"/>
+        <circle data-id="examples/pr-improve/fixtures/pr-sample.patch" cx="255" cy="271" r="4" fill="#2d343c"/>
+        <circle data-id="packages/core/src/flow-schema.json" cx="273" cy="271" r="4" fill="#2d343c"/>
+        <text x="244.06" y="239.12" font-size="8" font-variant="small-caps" fill="#5d6670">data</text>
       </g>
     </g>
     <g id="membranes" fill="#7a838e" fill-opacity="0.08" stroke="#4b535e" stroke-linejoin="round">
@@ -576,7 +572,7 @@
         <path data-id="folder:examples/pr-improve/src/tools" data-hops="0" d="M154 987.67L155.48 989.84L156.52 992.16L158 994.33L160.52 996.19L163.48 998.04L166 1000.33L167.38 1003.35L167.73 1006.65L167.33 1009.67L166.49 1011.96L165.51 1013.81L164.67 1015.67L164.22 1017.84L164.22 1020.16L164.67 1022.33L165.51 1024.16L166.49 1025.84L167.33 1027.67L167.78 1029.84L167.78 1032.16L167.33 1034.33L166.49 1036.23L165.51 1038.43L164.67 1041.67L164.27 1046.38L164.62 1051.84L166 1057L168.62 1061L172.27 1063.67L176.67 1065L181.53 1065.07L186.69 1064.26L192 1063L197.33 1061.69L202.67 1060.53L208 1059.67L213.28 1059.15L218.27 1058.63L222.67 1057.67L226.3 1055.99L229.48 1054.01L232.67 1052.33L236.15 1051.3L239.63 1050.26L242.67 1048.33L244.84 1044.9L245.83 1040.43L245.33 1035.67L243.31 1031.25L240.69 1027.42L238.67 1024.33L238.2 1021.99L239.36 1019.79L242 1017L245.95 1013.17L250.94 1009.05L256.67 1005.67L262.77 1003.81L268.57 1003.3L273.33 1003.67L276.59 1004.51L278.96 1005.49L281.33 1006.33L284.35 1006.7L287.65 1006.19L290.67 1004.33L292.89 1000.88L294.22 996.23L294.67 991L294.22 985.69L292.89 980.53L290.67 975.67L287.68 971.15L284.54 966.63L282 961.67L280.54 956.06L279.68 950.6L278.67 946.33L276.96 943.96L274.81 942.93L272.67 942.33L270.79 941.52L268.77 940.7L266 940.33L262.07 940.68L257.26 941.32L252 941.67L246.74 941.27L241.93 940.28L238 939L235.23 937.69L233.21 936.53L231.33 935.67L229.14 935.27L226.64 935.62L224 937L221.38 939.57L219.06 942.88L217.33 946.33L216.42 949.44L216.25 952.11L216.67 954.33L217.38 956.23L217.51 958.43L216 961.67L212.22 966.33L207.11 971.44L202 975.67L197.95 978.04L194.94 979.07L192.67 979.67L190.81 980.43L188.96 980.9L186.67 980.33L183.58 978.28L179.75 975.49L175.33 973L170.54 971.62L165.9 971.27L162 971.67L159.21 972.51L157.01 973.49L154.67 974.33L151.65 974.85L148.35 975.37L145.33 976.33L143.11 978.01L141.78 979.99L141.33 981.67L141.78 982.63L143.11 983.15L145.33 983.67L148.32 984.56L151.46 985.89L154 987.67Z" opacity="0.45"/>
       </g>
       <g id="changed" fill="#5fd8ea" stroke="#5fd8ea" stroke-width="1.5">
-        <circle data-id="cspell.json" data-kind="modified" cx="345" cy="33" r="4" stroke="none"/>
+        <circle data-id="cspell.json" data-kind="modified" cx="309" cy="51" r="4" stroke="none"/>
         <circle data-id="examples/pr-improve/SPEC.md" data-kind="modified" cx="179" cy="159" r="4" stroke="none"/>
         <circle data-id="examples/pr-improve/src/tools/edit_file.ts" data-kind="added" cx="142.1" cy="982.1" r="9.85" stroke="none"/>
         <circle data-id="examples/pr-improve/src/tools/index.ts" data-kind="added" cx="287.67" cy="999.25" r="7.67" stroke="none"/>
@@ -586,7 +582,7 @@
         <circle data-id="examples/pr-improve/src/tools/read_file.ts" data-kind="added" cx="173.17" cy="984.85" r="8.51" stroke="none"/>
         <circle data-id="examples/pr-improve/src/tools/run_shell.ts" data-kind="added" cx="225.67" cy="979.72" r="12.46" stroke="none"/>
         <circle data-id="examples/pr-improve/src/tools/write_file.ts" data-kind="added" cx="270.74" cy="983.21" r="9" stroke="none"/>
-        <circle data-id="vitest.config.ts" data-kind="modified" cx="399" cy="105" r="4" stroke="none"/>
+        <circle data-id="vitest.config.ts" data-kind="modified" cx="363" cy="123" r="4" stroke="none"/>
       </g>
       <g id="history">
         <circle data-id="examples/pr-improve/src/tools/edit_file.ts" data-churn="1.12" cx="142.1" cy="982.1" r="9.85" fill="url(#hatch)" fill-opacity="0.26"/>
@@ -622,8 +618,8 @@
       </g>
       <g id="storms" fill="#f0546a">
         <g data-slot="attw" data-over="field">
-          <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(660 12)"/>
-          <text x="654" y="14.8" font-size="8" font-variant="small-caps" text-anchor="end">attw</text>
+          <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(642 12)"/>
+          <text x="636" y="14.8" font-size="8" font-variant="small-caps" text-anchor="end">attw</text>
         </g>
         <g data-slot="dead" data-over="directory:examples/amplify/target/src">
           <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(77.04 1001.44)"/>
@@ -898,12 +894,12 @@
           <text x="383.67" y="586.47" font-size="8" font-variant="small-caps">health</text>
         </g>
         <g data-slot="lint" data-over="field">
-          <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(660 26)"/>
-          <text x="654" y="28.8" font-size="8" font-variant="small-caps" text-anchor="end">lint</text>
+          <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(642 26)"/>
+          <text x="636" y="28.8" font-size="8" font-variant="small-caps" text-anchor="end">lint</text>
         </g>
         <g data-slot="snippets" data-over="field">
-          <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(660 40)"/>
-          <text x="654" y="42.8" font-size="8" font-variant="small-caps" text-anchor="end">snippets</text>
+          <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(642 40)"/>
+          <text x="636" y="42.8" font-size="8" font-variant="small-caps" text-anchor="end">snippets</text>
         </g>
       </g>
     </g>
@@ -942,83 +938,79 @@
         <rect x="554.2" y="8" width="82.2" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
         <text x="560.2" y="21.15" font-size="9" fill="#e6edf3"><tspan>Notices </tspan><tspan font-weight="bold">1·2·3</tspan></text>
       </g>
-      <g data-block="other">
-        <rect x="639.4" y="8" width="49.8" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="645.4" y="21.15" font-size="9" fill="#e6edf3"><tspan>Other </tspan><tspan font-weight="bold">6</tspan></text>
-      </g>
     </g>
     <g id="rules" stroke="#2b333d" stroke-width="1">
-      <line x1="0" y1="36" x2="972" y2="36"/>
-      <line x1="672" y1="36" x2="672" y2="1090"/>
+      <line x1="0" y1="36" x2="954" y2="36"/>
+      <line x1="654" y1="36" x2="654" y2="1090"/>
     </g>
     <g id="leaders" stroke="#9aa5b1" stroke-width="1" stroke-dasharray="0.1 3" stroke-linecap="round" fill="none">
-      <line data-notice="1" x1="687" y1="51" x2="245.14" y2="1035.19"/>
-      <line data-notice="2" x1="687" y1="100" x2="189.84" y2="1037.52"/>
-      <line data-notice="3" x1="687" y1="149" x2="202.84" y2="1037.52"/>
-      <line data-notice="4" x1="687" y1="198" x2="268.65" y2="1045.08"/>
-      <line data-notice="5" x1="687" y1="247" x2="159.72" y2="1035.72"/>
-      <line data-notice="6" x1="687" y1="296" x2="172.72" y2="1035.72"/>
+      <line data-notice="1" x1="669" y1="51" x2="245.14" y2="1035.19"/>
+      <line data-notice="2" x1="669" y1="100" x2="189.84" y2="1037.52"/>
+      <line data-notice="3" x1="669" y1="149" x2="202.84" y2="1037.52"/>
+      <line data-notice="4" x1="669" y1="198" x2="268.65" y2="1045.08"/>
+      <line data-notice="5" x1="669" y1="247" x2="159.72" y2="1035.72"/>
+      <line data-notice="6" x1="669" y1="296" x2="172.72" y2="1035.72"/>
     </g>
     <g id="notices">
       <g data-notice="1" data-tier="primary" data-kind="red-check-slot" data-target="examples/pr-improve/src/tools/run_shell.ts">
         <g data-mark="1" data-tier="primary">
-          <rect x="682" y="46" width="10" height="10" fill="#f0546a"/>
-          <text x="687" y="53.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#0a0c0f">1</text>
+          <rect x="664" y="46" width="10" height="10" fill="#f0546a"/>
+          <text x="669" y="53.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#0a0c0f">1</text>
         </g>
-        <text x="697" y="54" font-size="8" font-weight="bold" fill="#e6edf3">examples/pr-improve/src/tools/run_shell.ts</text>
-        <text x="697" y="63.4" font-size="7" font-variant="small-caps" fill="#e6edf3">red-check-slot</text>
-        <text x="697" y="73.5" font-size="8" fill="#e6edf3">the `dead` check is red and names this file</text>
-        <text x="697" y="82.9" font-size="7" fill="#6b7480">severity 10</text>
+        <text x="679" y="54" font-size="8" font-weight="bold" fill="#e6edf3">examples/pr-improve/src/tools/run_shell.ts</text>
+        <text x="679" y="63.4" font-size="7" font-variant="small-caps" fill="#e6edf3">red-check-slot</text>
+        <text x="679" y="73.5" font-size="8" fill="#e6edf3">the `dead` check is red and names this file</text>
+        <text x="679" y="82.9" font-size="7" fill="#6b7480">severity 10</text>
       </g>
       <g data-notice="2" data-tier="secondary" data-kind="red-check-slot" data-target="examples/pr-improve/src/tools/read_file.ts">
         <g data-mark="2" data-tier="secondary">
-          <rect x="682" y="95" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
-          <text x="687" y="102.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">2</text>
+          <rect x="664" y="95" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
+          <text x="669" y="102.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">2</text>
         </g>
-        <text x="697" y="103" font-size="8" font-weight="bold" fill="#e6edf3">examples/pr-improve/src/tools/read_file.ts</text>
-        <text x="697" y="112.4" font-size="7" font-variant="small-caps" fill="#e6edf3">red-check-slot</text>
-        <text x="697" y="122.5" font-size="8" fill="#e6edf3">the `dead` check is red and names this file</text>
-        <text x="697" y="131.9" font-size="7" fill="#6b7480">severity 10</text>
+        <text x="679" y="103" font-size="8" font-weight="bold" fill="#e6edf3">examples/pr-improve/src/tools/read_file.ts</text>
+        <text x="679" y="112.4" font-size="7" font-variant="small-caps" fill="#e6edf3">red-check-slot</text>
+        <text x="679" y="122.5" font-size="8" fill="#e6edf3">the `dead` check is red and names this file</text>
+        <text x="679" y="131.9" font-size="7" fill="#6b7480">severity 10</text>
       </g>
       <g data-notice="3" data-tier="secondary" data-kind="red-check-slot" data-target="examples/pr-improve/src/tools/read_file.ts">
         <g data-mark="3" data-tier="secondary">
-          <rect x="682" y="144" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
-          <text x="687" y="151.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">3</text>
+          <rect x="664" y="144" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
+          <text x="669" y="151.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">3</text>
         </g>
-        <text x="697" y="152" font-size="8" font-weight="bold" fill="#e6edf3">examples/pr-improve/src/tools/read_file.ts</text>
-        <text x="697" y="161.4" font-size="7" font-variant="small-caps" fill="#e6edf3">red-check-slot</text>
-        <text x="697" y="171.5" font-size="8" fill="#e6edf3">the `dupes` check is red and names this file</text>
-        <text x="697" y="180.9" font-size="7" fill="#6b7480">severity 10</text>
+        <text x="679" y="152" font-size="8" font-weight="bold" fill="#e6edf3">examples/pr-improve/src/tools/read_file.ts</text>
+        <text x="679" y="161.4" font-size="7" font-variant="small-caps" fill="#e6edf3">red-check-slot</text>
+        <text x="679" y="171.5" font-size="8" fill="#e6edf3">the `dupes` check is red and names this file</text>
+        <text x="679" y="180.9" font-size="7" fill="#6b7480">severity 10</text>
       </g>
       <g data-notice="4" data-tier="tertiary" data-kind="red-check-slot" data-target="examples/pr-improve/src/tools/list_dir.ts">
         <g data-mark="4" data-tier="tertiary">
-          <rect x="682" y="193" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
-          <text x="687" y="200.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">4</text>
+          <rect x="664" y="193" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="669" y="200.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">4</text>
         </g>
-        <text x="697" y="201" font-size="8" font-weight="bold" fill="#e6edf3">examples/pr-improve/src/tools/list_dir.ts</text>
-        <text x="697" y="210.4" font-size="7" font-variant="small-caps" fill="#e6edf3">red-check-slot</text>
-        <text x="697" y="220.5" font-size="8" fill="#e6edf3">the `dead` check is red and names this file</text>
-        <text x="697" y="229.9" font-size="7" fill="#6b7480">severity 10</text>
+        <text x="679" y="201" font-size="8" font-weight="bold" fill="#e6edf3">examples/pr-improve/src/tools/list_dir.ts</text>
+        <text x="679" y="210.4" font-size="7" font-variant="small-caps" fill="#e6edf3">red-check-slot</text>
+        <text x="679" y="220.5" font-size="8" fill="#e6edf3">the `dead` check is red and names this file</text>
+        <text x="679" y="229.9" font-size="7" fill="#6b7480">severity 10</text>
       </g>
       <g data-notice="5" data-tier="tertiary" data-kind="red-check-slot" data-target="examples/pr-improve/src/tools/edit_file.ts">
         <g data-mark="5" data-tier="tertiary">
-          <rect x="682" y="242" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
-          <text x="687" y="249.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">5</text>
+          <rect x="664" y="242" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="669" y="249.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">5</text>
         </g>
-        <text x="697" y="250" font-size="8" font-weight="bold" fill="#e6edf3">examples/pr-improve/src/tools/edit_file.ts</text>
-        <text x="697" y="259.4" font-size="7" font-variant="small-caps" fill="#e6edf3">red-check-slot</text>
-        <text x="697" y="269.5" font-size="8" fill="#e6edf3">the `dead` check is red and names this file</text>
-        <text x="697" y="278.9" font-size="7" fill="#6b7480">severity 10</text>
+        <text x="679" y="250" font-size="8" font-weight="bold" fill="#e6edf3">examples/pr-improve/src/tools/edit_file.ts</text>
+        <text x="679" y="259.4" font-size="7" font-variant="small-caps" fill="#e6edf3">red-check-slot</text>
+        <text x="679" y="269.5" font-size="8" fill="#e6edf3">the `dead` check is red and names this file</text>
+        <text x="679" y="278.9" font-size="7" fill="#6b7480">severity 10</text>
       </g>
       <g data-notice="6" data-tier="tertiary" data-kind="red-check-slot" data-target="examples/pr-improve/src/tools/edit_file.ts">
         <g data-mark="6" data-tier="tertiary">
-          <rect x="682" y="291" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
-          <text x="687" y="298.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">6</text>
+          <rect x="664" y="291" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="669" y="298.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">6</text>
         </g>
-        <text x="697" y="299" font-size="8" font-weight="bold" fill="#e6edf3">examples/pr-improve/src/tools/edit_file.ts</text>
-        <text x="697" y="308.4" font-size="7" font-variant="small-caps" fill="#e6edf3">red-check-slot</text>
-        <text x="697" y="318.5" font-size="8" fill="#e6edf3">the `dupes` check is red and names this file</text>
-        <text x="697" y="327.9" font-size="7" fill="#6b7480">severity 10</text>
+        <text x="679" y="299" font-size="8" font-weight="bold" fill="#e6edf3">examples/pr-improve/src/tools/edit_file.ts</text>
+        <text x="679" y="308.4" font-size="7" font-variant="small-caps" fill="#e6edf3">red-check-slot</text>
+        <text x="679" y="318.5" font-size="8" fill="#e6edf3">the `dupes` check is red and names this file</text>
+        <text x="679" y="327.9" font-size="7" fill="#6b7480">severity 10</text>
       </g>
     </g>
     <g id="marks">
