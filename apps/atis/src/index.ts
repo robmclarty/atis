@@ -19,6 +19,8 @@ export const USAGE = `${NAME} ${VERSION}: a weather map for code changes.
   --repo <path>   the repository to read (default: the working directory)
   --base <ref>    the ref the change is measured from (required)
   --out <file>    where to write the map (default: map.json)
+  --svg <file>    also render that map as a static SVG at <file>
+  --open          open the rendered SVG in the platform viewer (needs --svg)
   --verbose       print per-source timings on stderr
   --version, -V   print the version
   --help, -h      print this text

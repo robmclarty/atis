@@ -14,7 +14,21 @@ test('the version constant matches package.json', () => {
 });
 
 test('the usage text names every flag the bin parses', () => {
-  for (const flag of ['--repo <path>', '--base <ref>', '--out <file>', '--verbose', '--version', '--help']) {
+  for (const flag of [
+    '--repo <path>',
+    '--base <ref>',
+    '--out <file>',
+    '--svg <file>',
+    '--open',
+    '--verbose',
+    '--version',
+    '--help',
+  ]) {
     expect(USAGE).toContain(flag);
   }
+});
+
+test('the usage text tells a reader that --open needs --svg', () => {
+  const line = USAGE.split('\n').find((text) => text.startsWith('  --open'));
+  expect(line).toContain('--svg');
 });

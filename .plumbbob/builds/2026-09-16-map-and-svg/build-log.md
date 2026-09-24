@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 28 — fix(core): send plugin, MCP and bench JSON to their shore groups
+**Current step:** 29 — fix(cli): name --svg and --open in the usage text
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -50,7 +50,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 25. fix(core): weigh missing co-change notices by rate and support
 - ☑ 26. fix(core): send TypeScript config files to the config shore group
 - ☑ 27. fix(svg): point a global-slot notice's leader at its storm marker
-- ☐ 28. fix(core): send plugin, MCP and bench JSON to their shore groups
+- ☑ 28. fix(core): send plugin, MCP and bench JSON to their shore groups
 - ☐ 29. fix(cli): name --svg and --open in the usage text
 - ☐ 30. chore(fixtures): refresh the five maps after the render and shore fixes
 
@@ -1459,3 +1459,49 @@ folder, so it rides the branch into the PR.)*
   **5.** Two committed fixtures will gain leaders when step 30 regenerates them
 
   `fixtures/checkride-pr2/` carries two global-slot notices (`dead`, `snippets`) and `fixtures/fascicle-pr5/` carries one (`attw`); those three rows are exactly the ones drawing no leader today. Their `atis.svg` files are left untouched here, as the done-when asks. The five `libs/svg` goldens are unaffected, because no map behind them pairs a red global slot with a notice naming it.
+
+- 2026-09-24 — step 28 checkpointed · 2e2d6bf5b — fix(core): send plugin, MCP and bench JSON to their shore groups (4m)
+
+  **Summary**: Six patterns joined the default shore table and the loud `other` residual now empties on all five fixture repos. `.claude-plugin/**` goes to `prompts`, `.mcp.json` with `.ridgeline/**` and `.codegraph/**` to `config`, and `bench/**` with `*.schema.json` and `*-schema.json` to `data`. `groups.ts` needed no change: step 24's `except` support and the glob compiler already carry everything the new rows ask for, so this is a table edit plus its tests.
+
+  1. The agent-era folders sort by what they steer, not by extension
+  2. flow-schema.json is claimed, not left loud
+  3. The residual verified against the five committed maps, not just the tests
+  4. One move the step did not ask for, pinned on purpose
+  5. The D48 decision text is left as the plan-time record
+
+  **Readout**: Step 28 - fix(core): send plugin, MCP and bench JSON to their shore groups
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    2 of 2 honored
+  constraints  11 of 11 honored
+  seam         held: 2 of 3 declared, no strays
+  diff         +48 -2 across 2 files
+  spent        4 min · 1 turn · 14s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Approve and checkpoint. The check is green, the residual empties on every fixture, and the one move beyond the brief is named above with a one-line undo if you want it the other way.
+
+  **1.** The agent-era folders sort by what they steer, not by extension
+
+  `.claude-plugin/` packages prompts and skills, so it joins `prompts` beside `.claude/**` and inherits that row's `hooks/**` exception, which keeps a plugin's hook scripts in `scripts` exactly as step 24 left them. `.mcp.json`, `.ridgeline/**` and `.codegraph/**` configure a tool the way `fallow.toml` does, so they join `config`. `bench/**` is a benchmark corpus, which is recorded input and output rather than code, so it joins `data`.
+
+  **2.** flow-schema.json is claimed, not left loud
+
+  The step asked me to rule on `packages/core/src/flow-schema.json` either way. It is a JSON Schema document (`$schema`, `$defs`, a `title` of "fascicle Flow DSL"), and D48 already sends `schema/**` to `data`, so the kind is settled and only the location was novel. Claiming `*.schema.json` and `*-schema.json` for `data` says a schema is data wherever it sits, which also empties fascicle's residual completely rather than leaving one file behind. The alternative, a new row for schemas, would have added a group id to the table for a single file, and the narrow globs avoid blanket-claiming `*.json`.
+
+  **3.** The residual verified against the five committed maps, not just the tests
+
+  I re-sorted every shore path out of each committed `map.json` through the new table in a scratch test. `other` comes back empty on all five, and nine files move in total: one `.claude-plugin/plugin.json` on each checkride fixture, seven on each fascicle fixture. That scratch test is deleted; the committed fixtures are untouched, left for step 30 as the done-when asks.
+
+  **4.** One move the step did not ask for, pinned on purpose
+
+  `.codegraph/.gitignore` moves from `settings` to `config`, because `.codegraph/**` is tried before the `settings` row's bare `.gitignore`. That is the table's existing grain rather than a new wrinkle: `.claude/**` and `.vale/**` already outrank `settings` for everything inside them, and a tool's own ignore file belongs with the tool. I pinned both it and the root `.gitignore` in the test so the boundary is deliberate. Say the word and I will except it instead.
+
+  **5.** The D48 decision text is left as the plan-time record
+
+  Step 24 changed the same table and amended only its own step checkbox in `intent.md`, not D48's enumerated defaults, so the decision reads as what was decided on 2026-09-16 and `config.ts` is the live table. I followed that precedent rather than editing the decision under it.
