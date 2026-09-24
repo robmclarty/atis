@@ -42,8 +42,16 @@ The next thirty commits after the merge (`a3ef265`) that touch a PR 4 file:
 
 ## What the map says now, for comparison
 
-`NOINST`, primary notice `interface-change` on `examples/pr-improve/src/tools/index.ts`. The
-map points at the tools barrel — the directory every review finding sits in — but as a
-git-only map it cannot name the byte-cap or symlink bugs themselves. Step 23 judges whether
-"the tools cell is the primary notice" counts as the flagged thing landing in the top three,
-or whether a reader needs the line-level finding the map cannot give without evidence.
+`IFR`, and the top three notices name `run_shell.ts`, `read_file.ts` and `read_file.ts` again
+— three of the four files the review's findings sit in. `edit_file.ts` and `list_dir.ts` take
+the tertiary rows.
+
+On the face of it that is notice precision (§11.5) passing well: the file carrying three of
+the seven findings, including both `run_shell.ts` mediums, is the primary notice. Step 23
+should check one thing before crediting it. These are `red-check-slot` notices — fallow's
+`dead` and `dupes` rules naming those files — not findings about the byte cap, the timeout or
+the symlink TOCTOU the review actually raised. The map points at the right files for a reason
+that is not the review's reason. Whether that counts is the judgement round one has to make.
+
+Under step 22's blind procedure this map was `NOINST` and could only point at the tools
+barrel; that version is superseded.

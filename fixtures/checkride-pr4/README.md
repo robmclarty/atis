@@ -1,8 +1,8 @@
 # checkride PR 4
 
-The spike fixture, regenerated for the glance test. This is the change step 14 first
-pointed atis at; step 22 rebuilds it under the D56 procedure (the `security` slot skipped)
-so it carries the PR's weather rather than the calendar's, and adds the still render.
+The spike fixture, regenerated for the glance test. This is the change step 14 first pointed
+atis at; it is now rebuilt under D58 (historical tree, current harness) with the `security`
+slot skipped per D56, so it carries the PR's weather rather than the calendar's.
 
 ## The change
 
@@ -20,19 +20,19 @@ PR 4 changes a barrel (`src/pm/index.ts`), adds a module file (`src/pm/tools.ts`
 two consumers (`src/doctor.ts`, `src/orchestrator.ts`) and carries tests, so reach,
 evidence and the interface-change notice are all exercised by one change.
 
-## The toolchain at that commit
+## The toolchain
 
-Read from the worktree's own `package.json` and lockfile, never from this machine's global
-installs (D22). Fallow files are read by key and their `schema_version` is recorded in
-`meta.instruments`, never gated on (D41).
+The tree is historical; the harness is current (D58). checkride and fallow are installed
+into the worktree at their latest versions rather than the ones `ae5078c` pinned, because
+atis only ever ships against current checkride. Fallow files are read by key and their
+`schema_version` is recorded in `meta.instruments`, never gated on (D41).
 
 | tool | version | how atis knows |
 | --- | --- | --- |
-| checkride | 0.9.4 | the repository is checkride; `package.json` `version` at `ae5078c` |
-| fallow | 3.9.1 | `devDependencies.fallow` at `ae5078c` |
-| fallow `health` / `dead` / `dupes` schema | 7 | `meta.instruments.fallow_schemas` |
+| checkride | 0.13.0 | installed into the worktree by the D58 procedure, not the 0.9.4 the commit pinned |
+| fallow | 3.28.0 | installed into the worktree, not the 3.9.1 the commit pinned |
 | checkride summary schema | 1 | required by `readCheck` before anything under `.check/` is read |
-| node | 22 | the engine both packages declare |
+| node | 22 | the engine the package declares |
 
 ## The commands
 
@@ -40,11 +40,13 @@ installs (D22). Fallow files are read by key and their `schema_version` is recor
 # 1. A worktree at the head of the PR, named for the repo so meta.repo reads `checkride`.
 git -C ~/Projects/checkride/code/checkride worktree add /tmp/atis-fixtures/checkride ae5078c --detach
 
-# 2. Its own pinned toolchain, and the .check/ atis reads for evidence. The security and
-#    mutation slots are skipped (see "Skipped slots" below); every other slot runs.
+# 2. The current harness, and the .check/ atis reads for evidence (D58). Run the installed
+#    binary, never `pnpm check`: checkride's repo dogfoods itself, so its own check script
+#    runs that commit's built CLI instead of the checkride we just installed.
 cd /tmp/atis-fixtures/checkride
 pnpm install
-pnpm check --all --skip security,mutation
+pnpm add -D checkride@0.13.0 fallow@3.28.0 --config.minimumReleaseAge=0
+pnpm exec checkride --all --skip security,mutation
 
 # 3. The map and the still render. --repo takes the resolved path, not the /tmp symlink:
 #    on macOS /tmp is /private/tmp, and istanbul's absolute coverage keys will not
@@ -62,16 +64,18 @@ git -C ~/Projects/checkride/code/checkride worktree remove --force /tmp/atis-fix
 
 ## Skipped slots
 
-Named per D56. Everything else in checkride 0.9.4's `--all` set ran green.
+Named per D56. All 17 slots that ran came back green; nothing is red on this fixture.
 
 - `security` — skipped on purpose (D56). `pnpm audit` runs against today's advisory
   database, not the one that existed when PR 4 merged, so it earns a red slot and an IFR
-  category the PR did not cause (15 advisories on this lockfile). At step 14 this slot was
-  red and made the map IFR; skipping it is what makes the regenerated map read MVFR.
-- `mutation` — skipped because it does not complete in a bounded run: stryker on
-  checkride's suite ran past ten minutes without finishing, so per D56 ("mutation included
-  where the run completes") it is dropped and named here rather than left to hang.
-- `format` — checkride 0.9.4 skips this slot itself under `--all`; atis records it skipped.
+  category the PR did not cause (15 advisories on this lockfile). Skipping it is what makes
+  this map read MVFR.
+- `mutation` — skipped: stryker on this suite ran past fifteen minutes without writing a
+  `summary.json`, so per D56 ("mutation included where the run completes") it is dropped and
+  named here. It *does* complete on checkride PR 2's much smaller tree, which is why that
+  fixture keeps it; the clause is judged per fixture, not once for all five.
+- `format`, `prose` — checkride 0.13.0 skips these itself (`prose` finds no tool for the
+  slot); atis records them skipped.
 
 ## What it says
 

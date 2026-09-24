@@ -1,7 +1,7 @@
 {
   "meta": {
     "schema_version": 1,
-    "generated_at": "2026-09-22T04:42:22.519Z",
+    "generated_at": "2026-09-23T01:08:53.362Z",
     "repo": "checkride",
     "base": "fee5ed6",
     "head": "ae5078cc8b570a3ba5247ff7d6723966797ef0a2",
@@ -10,9 +10,9 @@
     "instruments": {
       "mode": "check",
       "fallow_schemas": {
-        "health": 7,
-        "dead": 7,
-        "dupes": 7
+        "health": 11,
+        "dead": 9,
+        "dupes": 10
       }
     }
   },
@@ -442,7 +442,7 @@
         "band": 6,
         "interface_size": 9,
         "body_loc": 1191,
-        "function_count": 112,
+        "function_count": 113,
         "fan_in": 0,
         "fan_out": 1,
         "dents": []
@@ -465,7 +465,7 @@
         "band": 6,
         "interface_size": 7,
         "body_loc": 808,
-        "function_count": 84,
+        "function_count": 85,
         "fan_in": 0,
         "fan_out": 5,
         "dents": []
@@ -481,7 +481,7 @@
         "band": 0,
         "interface_size": 29,
         "body_loc": 9887,
-        "function_count": 677,
+        "function_count": 680,
         "fan_in": 0,
         "fan_out": 0,
         "dents": []
@@ -544,7 +544,7 @@
         "band": 0,
         "interface_size": 4,
         "body_loc": 355,
-        "function_count": 27,
+        "function_count": 28,
         "fan_in": 0,
         "fan_out": 5,
         "dents": []
@@ -1257,7 +1257,7 @@
         "band": 0,
         "reachable": true,
         "loc": 355,
-        "function_count": 27,
+        "function_count": 28,
         "dents": []
       },
       {
@@ -1426,6 +1426,7 @@
         "band": 6,
         "reachable": false,
         "loc": 23,
+        "function_count": 1,
         "dents": []
       },
       {
@@ -1554,6 +1555,7 @@
         "band": 6,
         "reachable": false,
         "loc": 25,
+        "function_count": 1,
         "dents": []
       },
       {
@@ -21045,7 +21047,7 @@
     "checks": {
       "category": "MVFR",
       "checks_run": 17,
-      "timestamp": "2026-09-22T04:42:05.047Z",
+      "timestamp": "2026-09-23T01:08:50.713Z",
       "slots": [
         {
           "name": "attw",
@@ -21102,15 +21104,33 @@
           "scope": "global"
         },
         {
+          "name": "mutation",
+          "ok": true,
+          "skipped": true,
+          "scope": "global"
+        },
+        {
           "name": "pack",
           "ok": true,
           "skipped": false,
           "scope": "global"
         },
         {
+          "name": "prose",
+          "ok": true,
+          "skipped": true,
+          "scope": "global"
+        },
+        {
           "name": "publint",
           "ok": true,
           "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "security",
+          "ok": true,
+          "skipped": true,
           "scope": "global"
         },
         {

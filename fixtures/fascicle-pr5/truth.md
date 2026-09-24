@@ -25,7 +25,16 @@ spec) fully closed the run_shell byte-cap and symlink issues, or left the remain
 
 ## What the map says now, for comparison
 
-`NOINST`, and its only notice is the `other` residual — the map flags nothing about the three
-changed tool files. For the glance test this is a "merge / quiet" case, and a useful negative
-control: if a reader holds here, it is on the residual notice, not the change. Whether the
-residual should rank at all on a change this small is the parked question.
+`IFR`, with six `red-check-slot` notices led by `run_shell.ts` — nearly identical to PR 4's
+map next door, which changes eighteen files rather than three. One of the six (`attw`, red for
+the whole repository) has nothing to do with the change at all.
+
+So the map and the ground truth disagree: the truth here is near-calm, and the map shows an
+IFR grade and six red rows, none of which is about the three-file fix as such. That makes PR 5
+the adversarial case of the five. A reader who holds is reading the repository's standing
+state; a reader who merges is reading the change. Round one should record which, because it
+is the clearest test of whether the encodings separate the two — and it is the evidence
+behind the parked notice-crowding question.
+
+Under step 22's blind procedure this map was `NOINST` with the shore residual as its only
+notice; that version is superseded.

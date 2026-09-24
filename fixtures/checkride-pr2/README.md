@@ -1,9 +1,9 @@
 # checkride PR 2
 
-The oldest fixture, and the one atis cannot read the evidence for. checkride was `v0.1.1`
-when PR 2 merged, and its `.check/summary.json` from that era omits a field the schema-1
-contract now requires, so atis falls back to a git-only map. It is here on purpose: the
-glance test needs a change atis can only see through git.
+The oldest fixture, and the one that proved D58. Its tree is from June 2026, when checkride
+was `v0.1.1`; run against that era's own harness it produced nothing atis could read, and the
+map came out LIFR with zero notices. Run against the *current* harness it produces the
+sharpest finding of the five: 11 mutants survive on the lines this PR changed.
 
 ## The change
 
@@ -17,14 +17,20 @@ glance test needs a change atis can only see through git.
 | merge base | `bffc4d96bf7fd385b25476735ed28024483c35b1` |
 | size | 2 files, +76 −4 (`src/cli.ts`, `test/e2e/bin-entrypoint.e2e.test.ts`) |
 
-## The toolchain at that commit
+## The toolchain
+
+The tree is historical; the harness is current (D58). This is the fixture that forced that
+decision: checkride v0.1.1's `.check/summary.json` declares `schema_version: 1` yet omits
+`checks_run`, which atis's schema-1 parser requires, so the commit's own harness read as
+`harness_broken` and atis refused to quote anything under `.check/` (D41). Rather than teach
+atis a format nothing will send, the procedure installs the current harness.
 
 | tool | version | how atis knows |
 | --- | --- | --- |
-| checkride | 0.1.1 | `package.json` `version` at `937bb1d` |
-| fallow | 2.48.0 | `devDependencies.fallow` at `937bb1d` |
+| checkride | 0.13.0 | installed into the worktree, not the 0.1.1 the commit pinned |
+| fallow | 3.28.0 | installed into the worktree, not the 2.48.0 the commit pinned |
+| checkride summary schema | 1 | `checks_run` present, so `readCheck` trusts the folder |
 | node | 24 | the engine the package declares (`>=24.0.0`) |
-| checkride summary schema | 1 (declared) | `.check/summary.json` says `schema_version: 1` but omits `checks_run` |
 
 ## The commands
 
@@ -32,11 +38,13 @@ glance test needs a change atis can only see through git.
 # 1. A worktree at the head of the PR, named for the repo.
 git -C ~/Projects/checkride/code/checkride worktree add /tmp/atis-fixtures/checkride 937bb1d --detach
 
-# 2. checkride v0.1.1 builds and runs itself. --all --skip is honoured, but this version has
-#    no security or mutation slot, so nothing is skipped; nine slots run green.
+# 2. The current harness (D58). Run the installed binary, never `pnpm check`: checkride's
+#    repo dogfoods itself, so its own check script would run this commit's v0.1.1 CLI.
+#    Mutation is kept here — it completes on this small tree (see "Skipped slots").
 cd /tmp/atis-fixtures/checkride
 pnpm install
-pnpm check --all --skip security,mutation
+pnpm add -D checkride@0.13.0 fallow@3.28.0 --config.minimumReleaseAge=0
+pnpm exec checkride --all --skip security
 
 # 3. The map and the still render, --repo resolved past the /tmp symlink.
 cd ~/Projects/atis/code/atis
@@ -52,35 +60,37 @@ git -C ~/Projects/checkride/code/checkride worktree remove --force /tmp/atis-fix
 
 ## Skipped slots
 
-There is nothing to skip. checkride 0.1.1 has no `security` and no `mutation` slot, so
-`--skip security,mutation` is a no-op; the nine slots it does run (`types`, `lint`,
-`struct`, `dead`, `test`, `docs`, `links`, `spell`, `typecheck-tests`) all pass. atis reads
-none of them, for the reason below.
+Named per D56. 16 slots ran.
 
-## Why it is git-only
-
-The check runs green and writes `.check/summary.json`, but that file declares
-`schema_version: 1` while omitting `checks_run`, a number atis's schema-1 parser requires.
-So atis reads the summary as `harness_broken` and refuses to trust anything under `.check/`
-(D41): a harness it cannot parse is not a harness it will quote. The map falls to
-`instruments: git-only`.
-
-This is a real, and useful, state: a reader looking at this map sees `LIFR` — the worst
-category — sourced entirely from the unreadable harness, not from anything about the two-file
-change. That confound is exactly what step 23 should watch for, and step 22 parked it for
-`/plumbbob:refine`: should atis tolerate the older schema-1 shape, or is this the intended
-"old repo" fixture?
+- `security` — skipped per D56 (today's advisory database, not this PR's weather).
+- `mutation` — **not** skipped. It completes on this tree in about 96 seconds, so D56's
+  "included where the run completes" clause is satisfied rather than waived. This is the only
+  fixture of the five that keeps it, and it earns the primary notice.
+- `attw`, `publint` — checkride finds no tool for these slots on this old tree.
+- `format`, `prose` — checkride 0.13.0 skips these itself.
 
 ## What it says
 
-`LIFR, 2 files changed, 0 notices`, git-only.
+`IFR, 2 files changed, 6 notices`.
 
 | | |
 | --- | --- |
-| category | LIFR — `harness_broken`; no instruments atis will trust |
+| category | IFR |
 | terrain | 8 cells, 8 organelles, 5 bands, 9 shore groups |
-| weather | 2 changed, 1 file reached, no evidence, no ghosts |
-| notices | 0 — nothing cleared the budget without evidence or reach |
+| weather | 2 changed, 1 file reached, no ghosts, no new dependencies |
+| notices | 6 — 1 primary, 2 secondary, 3 tertiary |
+| primary | `survived-mutants` on `src/cli.ts` — 11 mutants survived on the changed lines |
+| red slots | `dead`, `dupes`, `health`, `snippets` |
+
+The primary notice is the one that matters: PR 2 added an end-to-end test for the bin
+symlink, and mutation testing says the lines it changed are still weakly pinned. That is a
+statement about *this change*, and it is what replaced a map with no notices at all.
+
+The four red slots are current fallow rules firing on June-2026 code. Rob's ruling
+(2026-09-22) is that these are real weather — the complexity is genuinely in the tree — even
+though the rules post-date it. They are what carry the IFR category, so read the category and
+the primary notice as saying different things: the category is largely the repository's
+standing state, the primary notice is the change.
 
 ## Ground truth
 

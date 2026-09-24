@@ -1,8 +1,9 @@
 # fascicle PR 4
 
-The largest fixture, and the only one of the five with a real review. fascicle is not a
-checkride repo, so atis reads it git-only; but it is a pnpm workspace, and PR 4 lives inside
-one member (`examples/pr-improve`), which is what exercises D43's workspace-member scan.
+The largest fixture, and the only one of the five with a real review. fascicle does not use
+checkride — its own harness is `scripts/check.mjs` — so under step 22's procedure this map was
+blind (`NOINST`, two notices, pointing only at the tools barrel). Under D58 the current
+checkride is installed into the worktree and the map names the exact files the review flagged.
 
 ## The change
 
@@ -18,18 +19,22 @@ one member (`examples/pr-improve`), which is what exercises D43's workspace-memb
 
 fascicle's GitHub history was rewritten, so the merge SHAs on GitHub are not in the local
 clone; the SHAs above are local (D44). One knot follows from that rewrite: PR 4's branch tip
-`c7407b5` is itself titled *Merge pull request #5*, because PR 5 was merged into PR 4's
-branch before PR 4 landed. `c7407b5` is therefore PR 4's head here and PR 5's merge in the
-next fixture over. The base–head diff is the same 18 files whether the head is read as
-`c7407b5` or the merge `a3ef265`.
+`c7407b5` is itself titled *Merge pull request #5*, because PR 5 was merged into PR 4's branch
+before PR 4 landed. `c7407b5` is therefore PR 4's head here and PR 5's merge in the next
+fixture over.
 
-## The toolchain at that commit
+## The toolchain
+
+The tree is historical; the harness is current (D58), and here it is also *foreign* — fascicle
+ships no checkride, so the procedure installs one rather than reading the repo's own
+`scripts/check.mjs`, whose `summary.json` carries no `schema_version` and which atis therefore
+cannot trust (D41).
 
 | tool | version | how atis knows |
 | --- | --- | --- |
-| fascicle | 0.4.1 | `package.json` `version` at `c7407b5` |
-| fallow | 2.40.3 | `devDependencies.fallow` at `c7407b5` |
-| harness | `scripts/check.mjs` (not checkride) | `package.json` `scripts.check` |
+| checkride | 0.13.0 | installed into the worktree; fascicle ships none |
+| fallow | 3.28.0 | installed into the worktree, not the 2.40.3 the commit pinned |
+| checkride summary schema | 1 | `checks_run` present, so `readCheck` trusts the folder |
 | node | 22 | the engine the package declares |
 
 ## The commands
@@ -37,9 +42,17 @@ next fixture over. The base–head diff is the same 18 files whether the head is
 ```sh
 # 1. A worktree at the head of the PR, named for the repo so meta.repo reads `fascicle`.
 git -C ~/Projects/fascicle/code/fascicle worktree add /tmp/atis-fixtures/fascicle c7407b5 --detach
+cd /tmp/atis-fixtures/fascicle
+pnpm install
 
-# 2. No check is run for this fixture: see "Why it is git-only" below. atis reads the git
-#    trees at base and head directly and needs no install to draw the terrain.
+# 2. Approve esbuild's build script first. checkride shells out to `pnpm install`, and
+#    pnpm 11 exits 1 while any build script is unapproved, which aborts the whole run:
+#    set `esbuild: true` under allowBuilds in pnpm-workspace.yaml.
+#    -w is required: fascicle is a workspace root, and a bare `pnpm add` refuses.
+pnpm add -D -w checkride@0.13.0 fallow@3.28.0 --config.minimumReleaseAge=0
+pnpm exec checkride --all --skip security,mutation
+
+# 3. The map and the still render, --repo resolved past the /tmp symlink.
 cd ~/Projects/atis/code/atis
 node apps/atis/dist/cli.js \
   --repo "$(cd /tmp/atis-fixtures/fascicle && pwd -P)" \
@@ -47,35 +60,43 @@ node apps/atis/dist/cli.js \
   --out fixtures/fascicle-pr4/map.json \
   --svg fixtures/fascicle-pr4/atis.svg
 
-# 3. The worktree is not kept.
+# 4. The worktree is not kept.
 git -C ~/Projects/fascicle/code/fascicle worktree remove --force /tmp/atis-fixtures/fascicle
 ```
 
-## Why it is git-only
+## Skipped slots
 
-fascicle's harness is its own `scripts/check.mjs`, not checkride. It writes a
-`.check/summary.json`, but that summary carries no `schema_version`, so atis's schema-1
-parser rejects it before reading any slot (D41): with no `schema_version: 1`, the folder is
-not a harness atis will quote. The result is `instruments: git-only` whether the check is run
-or not, so step 22 does not run it. The security-equivalent slot (`pnpm audit`) and mutation
-would both be skipped under D56 regardless.
+Named per D56. 15 slots ran.
+
+- `security` — skipped per D56.
+- `mutation` — skipped: stryker ran past fifteen minutes on this workspace without writing a
+  `summary.json`, so D56's "where the run completes" clause drops it.
+- `publint` — checkride finds no tool for the slot here.
+- `format`, `prose` — checkride 0.13.0 skips these itself.
 
 ## What it says
 
-`NOINST, 18 files changed, 2 notices`, git-only.
+`IFR, 18 files changed, 6 notices`.
 
 | | |
 | --- | --- |
-| category | NOINST — no instruments; the map is terrain, git weather and positions |
+| category | IFR |
 | terrain | 117 cells, 165 organelles, 7 bands, 10 shore groups (the whole workspace, D43) |
 | weather | 18 changed, 8 files reached, 0 ghosts, 0 new dependencies |
-| notices | 2 — 1 primary, 1 secondary |
-| primary | `interface-change` on `examples/pr-improve/src/tools/index.ts` — the tools barrel |
-| secondary | the loud `other` residual (D48): 6 `.json` files no shore rule claims |
+| notices | 6 — all `red-check-slot` |
+| primary | `red-check-slot` on `examples/pr-improve/src/tools/run_shell.ts` (`dead` is red and names it) |
+| red slots | `attw`, `dead`, `dupes`, `health`, `lint`, `snippets` |
 
-The primary notice points at `examples/pr-improve/src/tools/` — the directory the review's
-findings cluster in (see `truth.md`). The map has no evidence to add, so it says where to
-look, not what is wrong.
+The primary notice names `run_shell.ts` — the single file carrying three of the review's seven
+findings (see `truth.md`). The rest of the budget names `read_file.ts`, `edit_file.ts` and
+`list_dir.ts`, which is where the remaining findings live. That is a real gain over the
+step-22 map, which could only point at the tools barrel.
+
+It comes with a caveat worth carrying into step 23: **every** notice here is a
+`red-check-slot`, and the `interface-change` notice that used to be primary is pushed out of
+the six-slot budget entirely. The map is reporting the repository's standing state, which on
+this fixture happens to coincide with the changed files. PR 5 next door renders almost
+identically despite changing 3 files rather than 18. That crowding is parked.
 
 ## Ground truth
 

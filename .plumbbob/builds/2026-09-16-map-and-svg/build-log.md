@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 22 — chore(fixtures): generate map.json and the SVG for five historical PRs
+**Current step:** none (at the boundary)
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -44,7 +44,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 19. feat(svg): render the notice labels and the HUD grade blocks
 - ☑ 20. feat(cli): add --svg and --open to write and show the static render
 - ☑ 21. docs(design): record the colour and chrome tokens the SVG settled
-- ☐ 22. chore(fixtures): generate map.json and the SVG for five historical PRs
+- ☑ 22. chore(fixtures): generate map.json and the SVG for five historical PRs
 - ☐ 23. chore(glance): run glance-test round one and record the verdicts
 - ☑ 24. fix(core): send hook folders to the scripts shore group
 - ☑ 25. fix(core): weigh missing co-change notices by rate and support
@@ -75,10 +75,11 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] svg: draw a cell's own dents and clone_family on its membrane (§5.1 names cells too; step 17 drew them on organelles only, as the done-when scoped)
 - [x] svg: added and modified stains are the same disc, told apart only by data-kind; if the glance test wants them distinct, a rim or a value is the change
 - [x] svg: global storm markers hang at the field's top-right corner; step 19's HUD may want that corner and can move them through STORM_INSET
-- [ ] chrome: a notice on a global slot name (red-check-slot, security-finding) keeps its row and gets no leader; point it at that slot's storm in the field's corner once weather.ts exports the storm anchor
-- [ ] USAGE text in apps/atis/src/index.ts omits --svg and --open (index.ts is outside step 20's seam)
-- [ ] checkride v0.1.1 summary.json omits checks_run yet says schema_version:1, so atis reads PR2 evidence as harness_broken -> LIFR git-only; decide if atis should tolerate the older schema-1 shape or if this is the intended glance case (matters for step 23, a reader may hold for the harness not the change)
-- [ ] shore table leaves common .json to the loud 'other' residual (.claude-plugin/plugin.json in checkride; .mcp.json, .ridgeline/settings.json, .codegraph/config.json, bench/*.json, packages/core/src/flow-schema.json in fascicle); on fascicle PR5's 3-file git-only change the other-group is the PRIMARY notice, so repo census headlines a small fix -- D48 wants the table to grow; candidate rules: .claude-plugin/**->prompts, .mcp.json/.ridgeline/**/.codegraph/**->config, bench/**->data (matters for step 23 glance reading)
+- [x] chrome: a notice on a global slot name (red-check-slot, security-finding) keeps its row and gets no leader; point it at that slot's storm in the field's corner once weather.ts exports the storm anchor
+- [x] USAGE text in apps/atis/src/index.ts omits --svg and --open (index.ts is outside step 20's seam)
+- [x] checkride v0.1.1 summary.json omits checks_run yet says schema_version:1, so atis reads PR2 evidence as harness_broken -> LIFR git-only; decide if atis should tolerate the older schema-1 shape or if this is the intended glance case (matters for step 23, a reader may hold for the harness not the change)
+- [x] shore table leaves common .json to the loud 'other' residual (.claude-plugin/plugin.json in checkride; .mcp.json, .ridgeline/settings.json, .codegraph/config.json, bench/*.json, packages/core/src/flow-schema.json in fascicle); on fascicle PR5's 3-file git-only change the other-group is the PRIMARY notice, so repo census headlines a small fix -- D48 wants the table to grow; candidate rules: .claude-plugin/**->prompts, .mcp.json/.ridgeline/**/.codegraph/**->config, bench/**->data (matters for step 23 glance reading)
+- [ ] repo-wide red slots crowd out change-specific notices: under D58 every fascicle notice is a red-check-slot (dead/dupes on the tool files, attw global) and the interface-change notice that used to be primary is pushed out of the six-slot budget entirely; fascicle PR4 and PR5 now render nearly identical maps despite 18 vs 3 changed files. Decide whether a red slot naming an unchanged file, or a global slot, should compete on equal footing with a notice about the change (P1, C7; compare D55's cochange-weight fix)
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -108,6 +109,13 @@ Harvest results this boundary:
   - **tangent**, wait for step 22's fixtures or step 23's glance · snapshot and .gitkeep patterns; committed dist/ and .d.ts as terrain; an unmeasured changed file reads as VFR (a blocker the moment a fixture PR adds a file the coverage report never names); reach recomputed per changed file; a bubble set leaving a neighbour under a skin; dents and clone_family on membranes; added and modified stains alike (D38 lets the glance decide the last two)
   - **tangent**, defer past this build · a type-level CheckArtifacts conformance in apps/atis; C1's struct rule scoping to shipped sources (kept in memory; amend C1 when the rule lands)
   - **tangent**, kill · a tests group in terrain.groups: step 12 already emits it from shoreGroups in map.ts
+
+- 2026-09-22, boundary after step 22 (78cf406), 4 items; Rob confirmed every class and overrode two actions:
+  - **blocker** · checkride v0.1.1's summary omits `checks_run` → [D58 (fixtures-current-toolchain)](intent.md#d58). Rob's call, and it reversed the proposal: the fix is not a tolerance branch in atis's parser but running the *current* harness on the historical tree. Proved at the boundary — PR 2 goes from LIFR / git-only / 0 notices to IFR / 6 notices led by `survived-mutants` on `src/cli.ts`, a real finding about the PR's own changed lines. The builder had mis-read [D22 (local-fallow)](intent.md#d22) (pinned-versus-global) as licensing a historical harness.
+  - **tangent**, into the new step (Rob: "i'd like this in the build") · a global-slot notice keeps its row and gets no leader. The builder proposed deferring it as unexercised; that was an artifact of the wrong harness, and under D58 `red-check-slot` notices carry 4 of PR 2's 6 rows, so it fires constantly.
+  - **tangent**, into the new step (Rob: "fix it") · `USAGE` in `apps/atis/src/index.ts` omits `--svg` and `--open`.
+  - **tangent**, into the new step (Rob: "this has value outside of step 23 right? if so, let's do it") · grow D48's shore table so common `.json` stops falling to the loud `other` residual; candidate rules `.claude-plugin/**`→prompts, `.mcp.json` / `.ridgeline/**` / `.codegraph/**`→config, `bench/**`→data.
+  - consequence · all five fixtures are regenerated under D58, and PR 2's `truth.md` is rewritten: it currently reads "calm — the fix held", which the mutation finding contradicts. Rob also ruled (i) on the open question the proof raised: findings current fallow rules raise on older code stay as real weather, folded into D58.
 
 ## Log
 
@@ -1340,3 +1348,64 @@ folder, so it rides the branch into the PR.)*
   **5.** One flag: the no-table path and the fixture
 
   Two older `identifyModules` tests still pass config-named files without the table, exercising the name-only fallback the graph sources take; the new tests cover the with-table (D57) behavior. The committed `fixtures/checkride-pr4/map.json` still carries the old `directory:.`/`package:.` shape and is left for step 22 to regenerate, as the done-when directs.
+
+- 2026-09-23 — step 22 checkpointed · 78cf4061c — chore(fixtures): generate map.json and the SVG for five historical PRs (1175m)
+
+  **Summary**: Five fixtures now sit under `fixtures/<repo>-pr<n>/`, each with a `map.json` that passes `assertMap`, an `atis.svg`, a `README.md`, and a `truth.md`, and `docs/glance-test.md` lists all five with their ground truth beside the §11 protocol, ready for step 23. They were built by running the step-14 worktree procedure against real checkride and fascicle history, and they span every flight category — MVFR, IFR, LIFR, and two NOINST — because each reads the repo's real state rather than a tuned one. The gate is green across all eight slots.
+
+  1. The five span every category by using each repo's real state, not by tuning
+  2. checkride PR 4 came back MVFR, not step 14's IFR, exactly as D56 intended
+  3. checkride PR 2 is a git-only LIFR, and it is parked
+  4. fascicle is git-only too, yet its terrain is full, and PR 4 has the one review
+  5. truth.md is drafted from history, every unconfirmed line marked needs Rob
+
+  **Readout**: Step 22 - chore(fixtures): generate map.json and the SVG for five historical PRs
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    3 of 3 honored
+               - D44 (ground-truth-source), D43 (scan-roots), D41 (artifact-trust)
+  constraints  11 of 11 honored
+  seam         held: 2 of 2 declared, no strays
+  diff         +109575 -239 across 21 files
+  spent        19h 35m · 1 turn · 15s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Approve and checkpoint. The gate is green, all five maps pass `assertMap` with a real spread across the categories, and the ground truth is drafted honestly and left to Rob rather than overclaimed, which is what step 23 needs to run round one.
+
+  **1.** The five span every category by using each repo's real state, not by tuning
+
+  checkride PR 4 is MVFR, PR 5 IFR, PR 2 LIFR; fascicle PR 4 and PR 5 are NOINST. Two carry
+  real checkride evidence, one has evidence atis cannot read, two are git-only workspaces.
+
+  **2.** checkride PR 4 came back MVFR, not step 14's IFR, exactly as D56 intended
+
+  Skipping the `security` slot drops the calendar's 15 advisories, so the regenerated map
+  carries the PR's weather (covered lines, bounded reach) instead of the lockfile's age.
+  `mutation` is skipped and named because stryker ran past ten minutes without completing, so
+  D56's "where the run completes" applies; `format` is checkride's own default skip.
+
+  **3.** checkride PR 2 is a git-only LIFR, and it is parked
+
+  checkride v0.1.1's `.check/summary.json` declares `schema_version: 1` but omits `checks_run`,
+  which atis's schema-1 parser requires, so atis reads it `harness_broken` and falls to
+  git-only (D41). The map's LIFR is the unreadable harness, not the two-file change — a real
+  confound for step 23, parked for `/plumbbob:refine`.
+
+  **4.** fascicle is git-only too, yet its terrain is full, and PR 4 has the one review
+
+  fascicle's own `scripts/check.mjs` writes a summary with no `schema_version`, so atis reads
+  it git-only whether or not it runs — no install needed. D43's workspace-member scan still
+  draws the whole 117-cell workspace from `examples/pr-improve`, and PR 4 carries a real
+  7-suggestion review (run_shell byte cap/timeout, symlink TOCTOU) that is the richest ground
+  truth of the five.
+
+  **5.** truth.md is drafted from history, every unconfirmed line marked needs Rob
+
+  Each `truth.md` lists the follow-up commits within the next thirty that touch the PR's files,
+  with subject and stat; reasons are cautious and marked **needs Rob** for Rob to confirm
+  before step 23, and the two calm PRs (checkride 2, fascicle 5) are recorded as such. The loud
+  `other` residual (D48) is parked: it ranks *primary* on fascicle PR 5's small change.

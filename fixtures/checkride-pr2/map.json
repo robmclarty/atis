@@ -1,15 +1,19 @@
 {
   "meta": {
     "schema_version": 1,
-    "generated_at": "2026-09-22T04:46:59.848Z",
+    "generated_at": "2026-09-23T01:10:57.708Z",
     "repo": "checkride",
     "base": "bffc4d9",
     "head": "937bb1d7f316aeb9ab347bcb9b2317af4eae86ab",
     "merge_base": "bffc4d96bf7fd385b25476735ed28024483c35b1",
     "mode": "change",
     "instruments": {
-      "mode": "git-only",
-      "reason": "harness_broken"
+      "mode": "check",
+      "fallow_schemas": {
+        "health": 11,
+        "dead": 9,
+        "dupes": 10
+      }
     }
   },
   "terrain": {
@@ -25,9 +29,15 @@
         "band": 0,
         "interface_size": 28,
         "body_loc": 1728,
+        "function_count": 122,
         "fan_in": 0,
         "fan_out": 0,
-        "dents": []
+        "dents": [
+          "cognitive",
+          "crap",
+          "cyclomatic"
+        ],
+        "clone_family": "family-1"
       },
       {
         "id": "single:src/adapters.ts",
@@ -55,6 +65,7 @@
         "band": 0,
         "interface_size": 4,
         "body_loc": 139,
+        "function_count": 14,
         "fan_in": 0,
         "fan_out": 3,
         "dents": []
@@ -70,9 +81,12 @@
         "band": 3,
         "interface_size": 7,
         "body_loc": 160,
+        "function_count": 14,
         "fan_in": 4,
         "fan_out": 1,
-        "dents": []
+        "dents": [
+          "crap"
+        ]
       },
       {
         "id": "single:src/doctor.ts",
@@ -85,9 +99,11 @@
         "band": 1,
         "interface_size": 7,
         "body_loc": 244,
+        "function_count": 20,
         "fan_in": 2,
         "fan_out": 3,
-        "dents": []
+        "dents": [],
+        "clone_family": "family-1"
       },
       {
         "id": "single:src/init.ts",
@@ -100,9 +116,14 @@
         "band": 1,
         "interface_size": 9,
         "body_loc": 521,
+        "function_count": 42,
         "fan_in": 2,
         "fan_out": 3,
-        "dents": []
+        "dents": [
+          "cognitive",
+          "crap",
+          "cyclomatic"
+        ]
       },
       {
         "id": "single:src/links.ts",
@@ -115,6 +136,7 @@
         "band": 3,
         "interface_size": 2,
         "body_loc": 132,
+        "function_count": 7,
         "fan_in": 1,
         "fan_out": 0,
         "dents": []
@@ -130,9 +152,14 @@
         "band": 2,
         "interface_size": 15,
         "body_loc": 259,
+        "function_count": 25,
         "fan_in": 4,
         "fan_out": 3,
-        "dents": []
+        "dents": [
+          "cognitive",
+          "cyclomatic"
+        ],
+        "clone_family": "family-1"
       }
     ],
     "organelles": [
@@ -152,6 +179,7 @@
         "band": 0,
         "reachable": true,
         "loc": 139,
+        "function_count": 14,
         "dents": [],
         "churn_ratio": 0.16560509554140126,
         "age_days": 0,
@@ -164,7 +192,10 @@
         "band": 3,
         "reachable": true,
         "loc": 160,
-        "dents": []
+        "function_count": 14,
+        "dents": [
+          "crap"
+        ]
       },
       {
         "id": "src/doctor.ts",
@@ -173,7 +204,9 @@
         "band": 1,
         "reachable": true,
         "loc": 244,
-        "dents": []
+        "function_count": 20,
+        "dents": [],
+        "clone_family": "family-1"
       },
       {
         "id": "src/index.ts",
@@ -191,7 +224,12 @@
         "band": 1,
         "reachable": true,
         "loc": 521,
-        "dents": []
+        "function_count": 42,
+        "dents": [
+          "cognitive",
+          "crap",
+          "cyclomatic"
+        ]
       },
       {
         "id": "src/links.ts",
@@ -200,6 +238,7 @@
         "band": 3,
         "reachable": true,
         "loc": 132,
+        "function_count": 7,
         "dents": []
       },
       {
@@ -209,7 +248,12 @@
         "band": 2,
         "reachable": true,
         "loc": 259,
-        "dents": []
+        "function_count": 25,
+        "dents": [
+          "cognitive",
+          "cyclomatic"
+        ],
+        "clone_family": "family-1"
       }
     ],
     "bands": [
@@ -3711,16 +3755,319 @@
         "via": []
       }
     ],
-    "evidence": {},
+    "evidence": {
+      "patch_coverage": [
+        {
+          "path": "src/cli.ts",
+          "changed_executable": 6,
+          "covered": 5,
+          "uncovered_lines": [
+            164
+          ]
+        }
+      ],
+      "mutants": [
+        {
+          "path": "src/cli.ts",
+          "line": 158,
+          "status": "Survived"
+        },
+        {
+          "path": "src/cli.ts",
+          "line": 160,
+          "status": "NoCoverage"
+        },
+        {
+          "path": "src/cli.ts",
+          "line": 160,
+          "status": "Survived"
+        },
+        {
+          "path": "src/cli.ts",
+          "line": 160,
+          "status": "Survived"
+        },
+        {
+          "path": "src/cli.ts",
+          "line": 160,
+          "status": "Survived"
+        },
+        {
+          "path": "src/cli.ts",
+          "line": 161,
+          "status": "Survived"
+        },
+        {
+          "path": "src/cli.ts",
+          "line": 162,
+          "status": "Survived"
+        },
+        {
+          "path": "src/cli.ts",
+          "line": 163,
+          "status": "NoCoverage"
+        },
+        {
+          "path": "src/cli.ts",
+          "line": 164,
+          "status": "NoCoverage"
+        },
+        {
+          "path": "src/cli.ts",
+          "line": 168,
+          "status": "NoCoverage"
+        },
+        {
+          "path": "src/cli.ts",
+          "line": 168,
+          "status": "Survived"
+        }
+      ],
+      "stitches": [
+        {
+          "test": "src/__tests__/cli.test.ts",
+          "targets": [
+            "src/cli.ts"
+          ],
+          "status": "passed"
+        }
+      ]
+    },
     "checks": {
-      "category": "LIFR",
-      "checks_run": 0,
-      "reason": "harness_broken",
-      "slots": []
+      "category": "IFR",
+      "checks_run": 16,
+      "timestamp": "2026-09-23T01:10:56.160Z",
+      "slots": [
+        {
+          "name": "attw",
+          "ok": true,
+          "skipped": true,
+          "scope": "global"
+        },
+        {
+          "name": "build",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "dead",
+          "ok": false,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "docs",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "dupes",
+          "ok": false,
+          "skipped": false,
+          "scope": [
+            "src/doctor.ts",
+            "src/orchestrator.ts"
+          ]
+        },
+        {
+          "name": "format",
+          "ok": true,
+          "skipped": true,
+          "scope": "global"
+        },
+        {
+          "name": "health",
+          "ok": false,
+          "skipped": false,
+          "scope": [
+            "src/config.ts",
+            "src/init.ts",
+            "src/orchestrator.ts"
+          ]
+        },
+        {
+          "name": "links",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "lint",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "mutation",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "pack",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "prose",
+          "ok": true,
+          "skipped": true,
+          "scope": "global"
+        },
+        {
+          "name": "publint",
+          "ok": true,
+          "skipped": true,
+          "scope": "global"
+        },
+        {
+          "name": "security",
+          "ok": true,
+          "skipped": true,
+          "scope": "global"
+        },
+        {
+          "name": "smoke",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "snippets",
+          "ok": false,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "spell",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "struct",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "test",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "typecheck-tests",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        },
+        {
+          "name": "types",
+          "ok": true,
+          "skipped": false,
+          "scope": "global"
+        }
+      ]
     },
     "ghosts": [],
     "deps_added": [],
     "improvements": []
   },
-  "notices": []
+  "notices": [
+    {
+      "kind": "survived-mutants",
+      "target": "src/cli.ts",
+      "why": "11 mutants survived on the changed lines",
+      "inputs": {
+        "cells_reached": 1,
+        "uncovered_fraction": 0.167,
+        "history_weight": 1.166,
+        "mutants": 11
+      },
+      "thresholds": {
+        "severity": 6
+      },
+      "weight": 25.679,
+      "tier": "primary"
+    },
+    {
+      "kind": "red-check-slot",
+      "target": "dead",
+      "why": "the `dead` check is red for the whole repository",
+      "inputs": {
+        "cells_reached": 0,
+        "uncovered_fraction": 0,
+        "history_weight": 0
+      },
+      "thresholds": {
+        "severity": 10
+      },
+      "weight": 10,
+      "tier": "secondary"
+    },
+    {
+      "kind": "red-check-slot",
+      "target": "snippets",
+      "why": "the `snippets` check is red for the whole repository",
+      "inputs": {
+        "cells_reached": 0,
+        "uncovered_fraction": 0,
+        "history_weight": 0
+      },
+      "thresholds": {
+        "severity": 10
+      },
+      "weight": 10,
+      "tier": "secondary"
+    },
+    {
+      "kind": "red-check-slot",
+      "target": "src/config.ts",
+      "why": "the `health` check is red and names this file",
+      "inputs": {
+        "cells_reached": 0,
+        "uncovered_fraction": 0,
+        "history_weight": 0
+      },
+      "thresholds": {
+        "severity": 10
+      },
+      "weight": 10,
+      "tier": "tertiary"
+    },
+    {
+      "kind": "red-check-slot",
+      "target": "src/doctor.ts",
+      "why": "the `dupes` check is red and names this file",
+      "inputs": {
+        "cells_reached": 0,
+        "uncovered_fraction": 0,
+        "history_weight": 0
+      },
+      "thresholds": {
+        "severity": 10
+      },
+      "weight": 10,
+      "tier": "tertiary"
+    },
+    {
+      "kind": "red-check-slot",
+      "target": "src/init.ts",
+      "why": "the `health` check is red and names this file",
+      "inputs": {
+        "cells_reached": 0,
+        "uncovered_fraction": 0,
+        "history_weight": 0
+      },
+      "thresholds": {
+        "severity": 10
+      },
+      "weight": 10,
+      "tier": "tertiary"
+    }
+  ]
 }

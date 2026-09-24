@@ -19,13 +19,14 @@ differ on evidence, not on shape.
 PR 5 reworks `src/doctor.ts` and `src/pm/tools.ts`, touches the barrel `src/pm/index.ts`,
 and carries tests. It sits on top of PR 4, so the terrain is the same tree one commit later.
 
-## The toolchain at that commit
+## The toolchain
+
+The tree is historical; the harness is current (D58).
 
 | tool | version | how atis knows |
 | --- | --- | --- |
-| checkride | 0.9.4 | `package.json` `version` at `9511268` |
-| fallow | 3.9.1 | `devDependencies.fallow` at `9511268` |
-| fallow `health` / `dead` / `dupes` schema | 7 | `meta.instruments.fallow_schemas` |
+| checkride | 0.13.0 | installed into the worktree, not the 0.9.4 `9511268` pinned |
+| fallow | 3.28.0 | installed into the worktree, not the 3.9.1 `9511268` pinned |
 | checkride summary schema | 1 | required by `readCheck` before anything under `.check/` is read |
 | node | 22 | the engine the package declares |
 
@@ -35,10 +36,12 @@ and carries tests. It sits on top of PR 4, so the terrain is the same tree one c
 # 1. A worktree at the head of the PR, named for the repo so meta.repo reads `checkride`.
 git -C ~/Projects/checkride/code/checkride worktree add /tmp/atis-fixtures/checkride 9511268 --detach
 
-# 2. Its own pinned toolchain and the .check/ atis reads. Security and mutation skipped.
+# 2. The current harness (D58). Run the installed binary, never `pnpm check`: checkride's
+#    repo dogfoods itself, so its own check script runs that commit's built CLI.
 cd /tmp/atis-fixtures/checkride
 pnpm install
-pnpm check --all --skip security,mutation
+pnpm add -D checkride@0.13.0 fallow@3.28.0 --config.minimumReleaseAge=0
+pnpm exec checkride --all --skip security,mutation
 
 # 3. The map and the still render, --repo resolved past the /tmp symlink.
 cd ~/Projects/atis/code/atis
@@ -54,11 +57,13 @@ git -C ~/Projects/checkride/code/checkride worktree remove --force /tmp/atis-fix
 
 ## Skipped slots
 
-Named per D56. Everything else in checkride 0.9.4's `--all` set ran green.
+Named per D56. All 17 slots that ran came back green; nothing is red on this fixture.
 
 - `security` — skipped per D56 (the calendar's advisory database, not the PR's weather).
-- `mutation` — skipped: does not complete in a bounded run on this suite (see PR 4).
-- `format` — checkride 0.9.4 skips this slot itself under `--all`.
+- `mutation` — skipped: stryker ran past fifteen minutes on this suite without writing a
+  `summary.json`. It completes on checkride PR 2's smaller tree, so D56's clause is judged
+  per fixture.
+- `format`, `prose` — checkride 0.13.0 skips these itself; atis records them skipped.
 
 ## What it says
 
