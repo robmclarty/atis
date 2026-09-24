@@ -112,10 +112,13 @@ export const DEFAULT_CONFIG: Config = {
   // D48's groups in its order, except that `prompts` is tried before `docs`:
   // first match wins, and `*.md` would otherwise swallow AGENTS.md and CLAUDE.md.
   // Hook folders inside `.claude/` or a skill are code, so they fall through to `scripts`.
+  // The agent-era dotfolders sort by what they steer: `.claude-plugin/` packages prompts
+  // and skills, while `.mcp.json`, `.ridgeline/` and `.codegraph/` configure a tool the
+  // way `fallow.toml` does. A schema and a benchmark corpus are data wherever they sit.
   groups: [
     {
       id: 'prompts',
-      patterns: ['AGENTS.md', 'CLAUDE.md', '.claude/**', '.cursor/**', 'skills/**', 'prompts/**'],
+      patterns: ['AGENTS.md', 'CLAUDE.md', '.claude/**', '.claude-plugin/**', '.cursor/**', 'skills/**', 'prompts/**'],
       except: ['hooks/**'],
     },
     { id: 'docs', patterns: ['*.md', 'docs/**', 'research/**', '.plumbbob/**', 'LICENSE'] },
@@ -131,6 +134,9 @@ export const DEFAULT_CONFIG: Config = {
         '.markdownlint*',
         '.oxlintrc*',
         '.vale/**',
+        '.mcp.json',
+        '.ridgeline/**',
+        '.codegraph/**',
       ],
     },
     {
@@ -143,6 +149,20 @@ export const DEFAULT_CONFIG: Config = {
     { id: 'examples', patterns: ['examples/**', 'templates/**'], outside_members: true },
     { id: 'assets', patterns: ['site/**', ...IMAGES, ...FONTS, '*.css', '*.html', '*.svg'] },
     // Only non-test files reach the table, so `test/**` holds just the fixtures and data beside the tests.
-    { id: 'data', patterns: ['fixtures/**', '**/__fixtures__/**', 'schema/**', '*.csv', 'test/**'] },
+    // A JSON Schema is the `schema/**` row's kind of file, so it lands in `data` even when
+    // it sits beside the source it describes (fascicle's `packages/core/src/flow-schema.json`).
+    {
+      id: 'data',
+      patterns: [
+        'fixtures/**',
+        '**/__fixtures__/**',
+        'schema/**',
+        '*.schema.json',
+        '*-schema.json',
+        'bench/**',
+        '*.csv',
+        'test/**',
+      ],
+    },
   ],
 };

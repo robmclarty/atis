@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 27 — fix(svg): point a global-slot notice's leader at its storm marker
+**Current step:** 28 — fix(core): send plugin, MCP and bench JSON to their shore groups
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -49,7 +49,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 24. fix(core): send hook folders to the scripts shore group
 - ☑ 25. fix(core): weigh missing co-change notices by rate and support
 - ☑ 26. fix(core): send TypeScript config files to the config shore group
-- ☐ 27. fix(svg): point a global-slot notice's leader at its storm marker
+- ☑ 27. fix(svg): point a global-slot notice's leader at its storm marker
 - ☐ 28. fix(core): send plugin, MCP and bench JSON to their shore groups
 - ☐ 29. fix(cli): name --svg and --open in the usage text
 - ☐ 30. chore(fixtures): refresh the five maps after the render and shore fixes
@@ -1413,3 +1413,49 @@ folder, so it rides the branch into the PR.)*
   with subject and stat; reasons are cautious and marked **needs Rob** for Rob to confirm
   before step 23, and the two calm PRs (checkride 2, fascicle 5) are recorded as such. The loud
   `other` residual (D48) is parked: it ranks *primary* on fascicle PR 5's small change.
+
+- 2026-09-24 — step 27 checkpointed · 2d5e63ff1 — fix(svg): point a global-slot notice's leader at its storm marker (12m)
+
+  **Summary**: A notice that names a red global slot rather than a file now points somewhere. `weather.ts` exports `globalStormAnchors`, the field-corner position each global slot's storm already hung at, and draws its own storms from it, so the two can no longer drift. `chrome.ts` reads that map as a third and last fallback in `anchorOf`, which turns the slot notice into an ordinary point anchor and lets the existing leader and mark geometry carry it the rest of the way. The five goldens render byte for byte, so nothing that was already pointing at an organelle moved.
+
+  1. The corner the storms hung at is now a named export rather than an inline expression
+  2. A slot-named notice becomes an ordinary point anchor, so it gets the leader geometry unchanged
+  3. A slot with no storm still gets no leader, which is the C2 half of the change
+  4. The test pins the pointing case and both not-pointing cases
+  5. Two committed fixtures will gain leaders when step 30 regenerates them
+
+  **Readout**: Step 27 - fix(svg): point a global-slot notice's leader at its storm marker
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    2 of 2 honored
+  constraints  11 of 11 honored
+  seam         held: 3 of 3 declared, no strays
+  diff         +101 -14 across 3 files
+  spent        12 min · 1 turn · 14s gate · green first run
+  ```
+
+  **Verdict**: ◐ A hair off (2 commits outside the ledger)
+
+  **Recommendation**: Approve and checkpoint. The gate is green, the diff is the three seam files and nothing else, and the five goldens render byte for byte, so the only thing still moving is the fixture refresh step 30 already owns.
+
+  **1.** The corner the storms hung at is now a named export rather than an inline expression
+
+  `drawStorms` computed `layout.width - STORM_INSET` and its stacking row inline, in the branch that draws a `scope: global` slot. That expression is now `globalStormAnchors(weather, layout)`, a `ReadonlyMap<string, Position>` from slot name to the bolt's own spot, and `drawStorms` maps over the same sorted red-slot list and reads its corner from there. The stacking order is unchanged by construction: the exported map indexes the global red slots in the same name order the storms are drawn in, which is what the old `row('field')` counter counted. A `STORM_RADIUS` of 6, the bolt glyph's own half height, sits beside `STORM_GLYPH` rather than in `tokens.ts`, since it is a property of that path string and the glyph already lives here.
+
+  **2.** A slot-named notice becomes an ordinary point anchor, so it gets the leader geometry unchanged
+
+  `anchorOf` tried the layout's positions, then its contours, then gave up. It now tries the storm anchors last, and a hit returns `{ kind: 'point', at: storm }`. Everything downstream is untouched: `marksFor` hangs the run off the anchor, flips it to the lower left because the field's right corner leaves no room on the right, `boxCentre` finds the box, and `drawLeaders` draws the same dotted line it draws for a file. A file wins a name collision, since positions and contours are keyed by path and only the third lookup is keyed by a slot.
+
+  **3.** A slot with no storm still gets no leader, which is the C2 half of the change
+
+  The anchor map holds only slots that are red and not skipped, the exact condition a storm is drawn under. A notice naming a green global slot, or a name no slot in the map claims, finds nothing, keeps its `data-unplaced="true"` row and draws no leader and no mark. That is deliberate: pointing at a corner where no bolt is drawn would be a mark with nothing behind it.
+
+  **4.** The test pins the pointing case and both not-pointing cases
+
+  The new test turns the demo's `lint` slot red, hands the sixth notice its name, and asserts three joins: the bolt is at `(width − STORM_INSET, STORM_INSET)` in `#storms`, the sixth leader ends exactly at the centre of the sixth mark, and that mark sits to the storm's left rather than off an organelle. It also re-checks that the primary's mark is still at its own file. The pre-existing case that used a green `lint` was retargeted to an unclaimed name so it keeps testing "no slot claims this", and a green-slot case was added beside it. Reverting the `anchorOf` branch fails the new test and nothing else.
+
+  **5.** Two committed fixtures will gain leaders when step 30 regenerates them
+
+  `fixtures/checkride-pr2/` carries two global-slot notices (`dead`, `snippets`) and `fixtures/fascicle-pr5/` carries one (`attw`); those three rows are exactly the ones drawing no leader today. Their `atis.svg` files are left untouched here, as the done-when asks. The five `libs/svg` goldens are unaffected, because no map behind them pairs a red global slot with a notice naming it.

@@ -52,6 +52,32 @@ test('hook folders under .claude/, a skill or a plugin are scripts, whatever the
   expect(groupOf('.claude/settings.json')).toBe('prompts');
 });
 
+test('the agent-era plugin, MCP and tool folders sort by what they steer', () => {
+  expect(groupOf('.claude-plugin/plugin.json')).toBe('prompts');
+  expect(groupOf('.claude-plugin/marketplace.json')).toBe('prompts');
+  expect(groupOf('.claude-plugin/hooks/gate.sh')).toBe('scripts');
+  expect(groupOf('.mcp.json')).toBe('config');
+  expect(groupOf('.ridgeline/settings.json')).toBe('config');
+  expect(groupOf('.codegraph/config.json')).toBe('config');
+  // A folder row outranks a bare filename below it, as `.claude/**` and `.vale/**` already do,
+  // so a tool's own `.gitignore` goes with the tool rather than to `settings`.
+  expect(groupOf('.codegraph/.gitignore')).toBe('config');
+  expect(groupOf('.gitignore')).toBe('settings');
+});
+
+test('a schema or a benchmark corpus is data wherever it sits', () => {
+  expect(groupOf('bench/reviewer/baseline.json')).toBe('data');
+  expect(groupOf('bench/reviewer/cases.json')).toBe('data');
+  expect(groupOf('packages/core/src/flow-schema.json')).toBe('data');
+  expect(groupOf('libs/core/src/map.schema.json')).toBe('data');
+});
+
+test('other still fires for an extension no row claims, JSON included', () => {
+  expect(groupOf('telemetry.json')).toBe(OTHER_GROUP);
+  expect(groupOf('vendor/blob.bin')).toBe(OTHER_GROUP);
+  expect(groupOf('notes.xyz')).toBe(OTHER_GROUP);
+});
+
 test('patterns without a leading slash match at any depth', () => {
   expect(groupOf('apps/atis/fixtures/check/coverage/coverage-final.json')).toBe('data');
   expect(groupOf('libs/core/src/__fixtures__/tree.json')).toBe('data');
