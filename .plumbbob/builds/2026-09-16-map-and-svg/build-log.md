@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** none (at the boundary)
+**Current step:** 27 — fix(svg): point a global-slot notice's leader at its storm marker
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -49,6 +49,10 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 24. fix(core): send hook folders to the scripts shore group
 - ☑ 25. fix(core): weigh missing co-change notices by rate and support
 - ☑ 26. fix(core): send TypeScript config files to the config shore group
+- ☐ 27. fix(svg): point a global-slot notice's leader at its storm marker
+- ☐ 28. fix(core): send plugin, MCP and bench JSON to their shore groups
+- ☐ 29. fix(cli): name --svg and --open in the usage text
+- ☐ 30. chore(fixtures): refresh the five maps after the render and shore fixes
 
 ## Park list
 

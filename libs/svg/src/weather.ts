@@ -26,6 +26,7 @@
 
 import type {
   ChangedFile,
+  CheckSlot,
   Contour,
   Evidence,
   ExceptionalEdge,
@@ -88,6 +89,8 @@ import {
 
 /** The storm glyph: a bolt, drawn about its own origin. */
 const STORM_GLYPH = 'M1 -6L-3 1H0L-1 6L3 -1H0Z';
+/** The bolt's own half height: what a mark or a ring hung on a storm clears it by. */
+const STORM_RADIUS = 6;
 const PASSED = 'passed';
 const FAILED = 'failed';
 const TOP = -Math.PI / 2;
@@ -466,6 +469,25 @@ function topOf(contour: Contour): readonly [number, number] | undefined {
   return top;
 }
 
+/** The slots a storm is drawn for: red and not skipped, in name order, which is the order they stack in (C3). */
+function stormSlots(weather: Weather): readonly CheckSlot[] {
+  return weather.checks.slots.filter((slot) => !slot.ok && !slot.skipped).toSorted((a, b) => byPath(a.name, b.name));
+}
+
+/**
+ * Where each global slot's storm hangs: in from the field's top right
+ * corner, stacked in the order the storms are drawn. The chrome reads this
+ * so that a notice naming a slot rather than a file has something to point
+ * its leader at (chrome.ts); a slot with no storm is absent from it rather
+ * than given a corner of its own (C2).
+ */
+export function globalStormAnchors(weather: Weather, layout: Layout): ReadonlyMap<string, Position> {
+  const global = stormSlots(weather).filter((slot) => slot.scope === 'global');
+  return new Map(
+    global.map((slot, index) => [slot.name, { x: layout.width - STORM_INSET, y: STORM_INSET + index * STORM_ROW, r: STORM_RADIUS }] as const),
+  );
+}
+
 /** One storm: the bolt at (x, y) and the slot's name beside it, to the right, or to the left at the field's edge. */
 function drawStorm(slot: string, over: string, x: number, y: number, atEdge: boolean): Markup {
   return el('g', { 'data-slot': slot, 'data-over': over }, [
@@ -492,16 +514,17 @@ function drawStorm(slot: string, over: string, x: number, y: number, atEdge: boo
  */
 function drawStorms(weather: Weather, terrain: Terrain, layout: Layout): Markup | undefined {
   const contours = layout.contours ?? {};
-  const red = weather.checks.slots.filter((slot) => !slot.ok && !slot.skipped).toSorted((a, b) => byPath(a.name, b.name));
+  const corners = globalStormAnchors(weather, layout);
   const rows = new Map<string, number>();
   const row = (place: string): number => {
     const count = rows.get(place) ?? 0;
     rows.set(place, count + 1);
     return count;
   };
-  const storms = red.flatMap((slot) => {
+  const storms = stormSlots(weather).flatMap((slot) => {
     if (slot.scope === 'global') {
-      return [drawStorm(slot.name, 'field', layout.width - STORM_INSET, STORM_INSET + row('field') * STORM_ROW, true)];
+      const at = corners.get(slot.name);
+      return at === undefined ? [] : [drawStorm(slot.name, 'field', at.x, at.y, true)];
     }
     return placesOf(slot.scope, terrain, weather.evidence.stitches ?? []).flatMap((place) => {
       const top = topOf(contours[place] ?? []);
