@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 23 — chore(glance): run glance-test round one and record the verdicts
+**Current step:** 31 — feat(cli): read npm, yarn and bun workspaces as scan roots
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -45,7 +45,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 20. feat(cli): add --svg and --open to write and show the static render
 - ☑ 21. docs(design): record the colour and chrome tokens the SVG settled
 - ☑ 22. chore(fixtures): generate map.json and the SVG for five historical PRs
-- ☐ 23. chore(glance): run glance-test round one and record the verdicts
+- ☑ 23. chore(glance): run glance-test round one and record the verdicts
 - ☑ 24. fix(core): send hook folders to the scripts shore group
 - ☑ 25. fix(core): weigh missing co-change notices by rate and support
 - ☑ 26. fix(core): send TypeScript config files to the config shore group
@@ -53,6 +53,10 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 28. fix(core): send plugin, MCP and bench JSON to their shore groups
 - ☑ 29. fix(cli): name --svg and --open in the usage text
 - ☑ 30. chore(fixtures): refresh the five maps after the render and shore fixes
+- ☐ 31. feat(cli): read npm, yarn and bun workspaces as scan roots
+- ☐ 32. chore(fixtures): select five reviewed outside PRs and record their ground truth
+- ☐ 33. chore(fixtures): generate map.json and the SVG for the five outside PRs
+- ☐ 34. chore(glance): retake glance-test round one on the outside fixtures
 
 ## Park list
 
@@ -83,19 +87,20 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] USAGE text in apps/atis/src/index.ts omits --svg and --open (index.ts is outside step 20's seam)
 - [x] checkride v0.1.1 summary.json omits checks_run yet says schema_version:1, so atis reads PR2 evidence as harness_broken -> LIFR git-only; decide if atis should tolerate the older schema-1 shape or if this is the intended glance case (matters for step 23, a reader may hold for the harness not the change)
 - [x] shore table leaves common .json to the loud 'other' residual (.claude-plugin/plugin.json in checkride; .mcp.json, .ridgeline/settings.json, .codegraph/config.json, bench/*.json, packages/core/src/flow-schema.json in fascicle); on fascicle PR5's 3-file git-only change the other-group is the PRIMARY notice, so repo census headlines a small fix -- D48 wants the table to grow; candidate rules: .claude-plugin/**->prompts, .mcp.json/.ridgeline/**/.codegraph/**->config, bench/**->data (matters for step 23 glance reading)
-- [ ] repo-wide red slots crowd out change-specific notices: under D58 every fascicle notice is a red-check-slot (dead/dupes on the tool files, attw global) and the interface-change notice that used to be primary is pushed out of the six-slot budget entirely; fascicle PR4 and PR5 now render nearly identical maps despite 18 vs 3 changed files. Decide whether a red slot naming an unchanged file, or a global slot, should compete on equal footing with a notice about the change (P1, C7; compare D55's cochange-weight fix)
-- [ ] glance-test blinding is impossible as written: Rob wrote all five fixture PRs (ae5078cc, 937bb1d7, 9511268f on checkride; 13ef5143, c7407b50 on fascicle) and under D44 authors their ground truth too, so SPEC 11's 'three readers who did not write or review the PR' and the step-23 done-when's 'Rob plus two' cannot both hold; the sheet records Rob's row as unblinded and leans on the two recruited readers, but whether his verdicts count toward the 4-of-5 needs Rob's ruling
-- [ ] SPEC 11 criterion 5 does not say whether naming the right file for the wrong reason counts as the flagged thing landing in the top three: on fascicle PR4 and PR5 the primary notice is run_shell.ts for a dead-code slot, not for the byte cap, the timeout or the symlink TOCTOU the review found, so round one scores 3 of 5 strict or 5 of 5 generous off the same table; decide the reading before it decides a pass
-- [ ] a blanket 'hold' passes glance-test criterion 4's verdict half: four of the five fixtures expect hold (only fascicle PR5 is merge), so a reader who holds on everything scores 4 of 5 without reading the map, and only the hold-reason half stands between that and a pass; the five need a calmer PR or two, or the pass line needs a merge-side floor
-- [ ] SPEC 11 counts 'four of five verdicts' but never says how three readers collapse to one verdict per PR; the round-one sheet takes majority (2 of 3), the alternative reads all fifteen verdicts and needs twelve, a strictly harder bar -- fix the rule in the spec so round two scores the same way
-- [ ] glance round one encoding: standing-state storms outshout the change -- a red slot naming cells the change did not touch draws the same bolt as one naming a changed file (69 of 71 storms on each fascicle map sit off the changed cell); recede untouched-cell storms into the terrain so the change's own red reads first (docs/glance-test.md round one, fail line 1)
-- [ ] glance round one encoding: the flight category is set by the repo's standing state -- repo-wide red slots make four of five fixtures IFR, so the category cannot tell the changes apart; derive it from the change's own evidence and report standing state beside it (fail line 2; see the red-slot budget park)
-- [ ] glance round one encoding: 'Checks 17/17' reads as the verdict -- it is the HUD's most legible number and says only that the gate passed, which it did on every PR checkride let merge; the reader merged checkride PR 5 over an IFR category on the strength of it (fail line 3)
-- [ ] glance round one encoding: the change's own evidence is too quiet for ten seconds -- the open skin on src/doctor.ts (6 untested changed lines reaching 3 cells, the file aa2a08a later repaired) was checkride PR 5's whole signal and read as calm; skins, bites and glow need to out-rank the terrain at a glance (fail line 4)
-- [ ] glance round two fixtures: use other projects' TypeScript PRs with public reviews -- the commit a reviewer asked changes on is a hold, the commit they approved a merge, ground truth in the reviewer's words; balances verdicts, takes the author out of the reader's chair, replaces recollection with a record (Rob, 2026-09-24; changes D54 and D44)
-- [ ] glance protocol: give every reader the same one-minute legend before the first map, saying what each mark and HUD block measures and not how to weigh it; round one ran with none and SPEC 11 is silent on it
-- [ ] Go is the next ecosystem atis must read (Rob, 2026-09-24: 'our new product at work is using a Go backend ... that is the direction we need to move in'): a Go producer (go list -json for the import graph, go test -coverprofile for coverage, a Go-aware history filter) writing the same scan and .check inputs, not a widening of the TypeScript scan; SPEC 12 puts languages beyond TypeScript in phase 5, and Rob wants it sooner
-- [ ] checkride's jest adapter runs 'jest --ci --json' without --coverage, so a jest repo yields test results but no patch coverage; worth giving it the same coverage run vitest gets (checkride's repo, not atis's), found at refine pass three while settling Q19
+- [x] repo-wide red slots crowd out change-specific notices: under D58 every fascicle notice is a red-check-slot (dead/dupes on the tool files, attw global) and the interface-change notice that used to be primary is pushed out of the six-slot budget entirely; fascicle PR4 and PR5 now render nearly identical maps despite 18 vs 3 changed files. Decide whether a red slot naming an unchanged file, or a global slot, should compete on equal footing with a notice about the change (P1, C7; compare D55's cochange-weight fix)
+- [x] glance-test blinding is impossible as written: Rob wrote all five fixture PRs (ae5078cc, 937bb1d7, 9511268f on checkride; 13ef5143, c7407b50 on fascicle) and under D44 authors their ground truth too, so SPEC 11's 'three readers who did not write or review the PR' and the step-23 done-when's 'Rob plus two' cannot both hold; the sheet records Rob's row as unblinded and leans on the two recruited readers, but whether his verdicts count toward the 4-of-5 needs Rob's ruling
+- [x] SPEC 11 criterion 5 does not say whether naming the right file for the wrong reason counts as the flagged thing landing in the top three: on fascicle PR4 and PR5 the primary notice is run_shell.ts for a dead-code slot, not for the byte cap, the timeout or the symlink TOCTOU the review found, so round one scores 3 of 5 strict or 5 of 5 generous off the same table; decide the reading before it decides a pass
+- [x] a blanket 'hold' passes glance-test criterion 4's verdict half: four of the five fixtures expect hold (only fascicle PR5 is merge), so a reader who holds on everything scores 4 of 5 without reading the map, and only the hold-reason half stands between that and a pass; the five need a calmer PR or two, or the pass line needs a merge-side floor
+- [x] SPEC 11 counts 'four of five verdicts' but never says how three readers collapse to one verdict per PR; the round-one sheet takes majority (2 of 3), the alternative reads all fifteen verdicts and needs twelve, a strictly harder bar -- fix the rule in the spec so round two scores the same way
+- [x] glance round one encoding: standing-state storms outshout the change -- a red slot naming cells the change did not touch draws the same bolt as one naming a changed file (69 of 71 storms on each fascicle map sit off the changed cell); recede untouched-cell storms into the terrain so the change's own red reads first (docs/glance-test.md round one, fail line 1)
+- [x] glance round one encoding: the flight category is set by the repo's standing state -- repo-wide red slots make four of five fixtures IFR, so the category cannot tell the changes apart; derive it from the change's own evidence and report standing state beside it (fail line 2; see the red-slot budget park)
+- [x] glance round one encoding: 'Checks 17/17' reads as the verdict -- it is the HUD's most legible number and says only that the gate passed, which it did on every PR checkride let merge; the reader merged checkride PR 5 over an IFR category on the strength of it (fail line 3)
+- [x] glance round one encoding: the change's own evidence is too quiet for ten seconds -- the open skin on src/doctor.ts (6 untested changed lines reaching 3 cells, the file aa2a08a later repaired) was checkride PR 5's whole signal and read as calm; skins, bites and glow need to out-rank the terrain at a glance (fail line 4)
+- [x] glance round two fixtures: use other projects' TypeScript PRs with public reviews -- the commit a reviewer asked changes on is a hold, the commit they approved a merge, ground truth in the reviewer's words; balances verdicts, takes the author out of the reader's chair, replaces recollection with a record (Rob, 2026-09-24; changes D54 and D44)
+- [x] glance protocol: give every reader the same one-minute legend before the first map, saying what each mark and HUD block measures and not how to weigh it; round one ran with none and SPEC 11 is silent on it
+- [x] Go is the next ecosystem atis must read (Rob, 2026-09-24: 'our new product at work is using a Go backend ... that is the direction we need to move in'): a Go producer (go list -json for the import graph, go test -coverprofile for coverage, a Go-aware history filter) writing the same scan and .check inputs, not a widening of the TypeScript scan; SPEC 12 puts languages beyond TypeScript in phase 5, and Rob wants it sooner
+- [x] checkride's jest adapter runs 'jest --ci --json' without --coverage, so a jest repo yields test results but no patch coverage; worth giving it the same coverage run vitest gets (checkride's repo, not atis's), found at refine pass three while settling Q19
+- [ ] git.ts memberDirs still reads only pnpm-workspace.yaml, so readManifests' deps_added (D47) misses npm/yarn/bun member manifests; route it through parseManifestWorkspaces before step 33
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -132,6 +137,22 @@ Harvest results this boundary:
   - **tangent**, into the new step (Rob: "fix it") · `USAGE` in `apps/atis/src/index.ts` omits `--svg` and `--open`.
   - **tangent**, into the new step (Rob: "this has value outside of step 23 right? if so, let's do it") · grow D48's shore table so common `.json` stops falling to the loud `other` residual; candidate rules `.claude-plugin/**`→prompts, `.mcp.json` / `.ridgeline/**` / `.codegraph/**`→config, `bench/**`→data.
   - consequence · all five fixtures are regenerated under D58, and PR 2's `truth.md` is rewritten: it currently reads "calm — the fix held", which the mutation finding contradicts. Rob also ruled (i) on the open question the proof raised: findings current fallow rules raise on older code stay as real weather, folded into D58.
+
+- 2026-09-24, boundary after step 23 (fdfe6e1), 13 items; Rob confirmed every proposed class:
+  - build order unchanged: 31, then the encodings refine seats its steps, then 32, 33, 34; see [build-order.md](build-order.md)
+  - **blocker**, already folded · glance-test blinding is impossible as written → [D62 (retake-reader-blind)](intent.md#d62)
+  - **blocker**, already folded · a blanket "hold" passes criterion 4's verdict half → [D60 (fixture-balance)](intent.md#d60)
+  - **blocker**, already folded · use other projects' reviewed PRs as fixtures → [D59 (outside-fixtures)](intent.md#d59), steps 32 to 34
+  - **blocker** · repo-wide red slots crowd change-specific notices out of the budget → [Q23 (standing-state-notices)](intent.md#q23), for the encodings refine
+  - **blocker** · standing-state storms outshout the change → [Q24 (standing-state-storms)](intent.md#q24), for the encodings refine
+  - **blocker** · the category is set by the repo's standing state → [Q25 (category-from-change)](intent.md#q25), for the encodings refine
+  - **blocker** · "Checks 17/17" reads as the verdict → [Q26 (checks-block)](intent.md#q26), for the encodings refine
+  - **blocker** · the change's own evidence is too quiet for ten seconds → [Q27 (quiet-evidence)](intent.md#q27), for the encodings refine
+  - **blocker** · criterion 5's "right file for the wrong reason" → [D65 (notice-precision-reading)](intent.md#d65); step 34 scores by it
+  - **blocker** · a fixed legend before the first map → [D66 (legend-briefing)](intent.md#d66); step 34 writes and reads it
+  - **tangent**, defer to phase 2 · how three readers collapse to one verdict: moot while Rob reads alone (D62), back if round two finds readers
+  - **tangent**, defer past this build · Go as the next ecosystem, Rob's quote with it: seed for the next build's frame
+  - **tangent**, kill here · checkride's jest adapter runs without `--coverage`: D64's harness route covers atis's need, and the adapter fix is checkride's backlog
 
 ## Log
 
@@ -1607,3 +1628,44 @@ folder, so it rides the branch into the PR.)*
   **5.** The reconciliation covers the five-row table by confirming it needs no change
 
   Every category in `docs/glance-test.md`'s five-row table survived the re-run, so the table itself is untouched; I recorded that explicitly in the prose above it along with the two deltas that do matter for round one, so step 23 can see the table was checked rather than merely left alone. Each fixture's `README.md` "What it says" and each `truth.md` comparison section now name their own shifts, and the two fascicle READMEs carry the seven-row group-move table and the width story.
+
+- 2026-09-25 — step 23 checkpointed · fdfe6e1dc — chore(glance): run glance-test round one and record the verdicts (1616m)
+
+  **Summary**: Round one ran with one reader and failed: Rob scored 2 of 5 against the history, and could not tell merge from hold at a glance. The map separated the five by the repository's standing state (storms, red, the Checks block, the category they drive) rather than by the change, and the change's own evidence was too quiet to compete. Four encodings to change are parked for refine, with two protocol changes for round two.
+
+  1. Ground truth came from the commit messages, and two of my drafted verdicts were wrong
+  2. The reader followed the map four times out of five, and the map was wrong on two of those
+  3. Four encodings to change, each parked
+  4. Two protocol changes for round two, parked beside them
+
+  **Readout**: Step 23 - chore(glance): run glance-test round one and record the verdicts
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    bent: D44 (ground-truth-source)
+               → truth read from the follow-up commits at Rob's ask, not recollection
+  seam         held: 1 of 1 declared, no strays
+  diff         +138 -29 across 1 file
+  spent        26h 56m · 10 turns · 14s gate · green first run
+  ```
+
+  **Verdict**: ○ Out of plumb (decisions bent)
+
+  **Recommendation**: Land step 23 as a recorded fail, then run `/plumbbob:refine` on the parked encodings. D38 says a fail parks the encodings rather than failing the build, and the round-two fixture change wants deciding before any encoding work, since the current five cannot score a fix fairly.
+
+  **1.** Ground truth came from the commit messages, and two of my drafted verdicts were wrong
+
+  Rob could not recall the PRs, so the verdicts come from what the follow-ups say. `aa2a08a` names "three defects in the tool-resolution work merged by #4 and #5", which makes both of those holds. `414f336` says fascicle PR 5 left `pnpm check` failing on main, so it is a hold, not the near-calm merge I had drafted. checkride PR 2 is a merge: nothing repaired it, and my earlier hold took the map's own notice as ground truth, which is circular.
+
+  **2.** The reader followed the map four times out of five, and the map was wrong on two of those
+
+  Rob merged checkride 4 and 5 and held the other three, reading calm against stormy. The map agreed with that on every PR except checkride 5, where it said IFR and flagged `src/doctor.ts`, the file `aa2a08a` later repaired, but the signal was one small open skin and "Checks 17/17" out-shouted it. On the fascicle maps 69 of 71 storms sit off the changed cell.
+
+  **3.** Four encodings to change, each parked
+
+  Standing-state storms outshout the change; the category is set by standing state, making four of five IFR; "Checks 17/17" reads as the verdict; the change's own evidence is too quiet for ten seconds.
+
+  **4.** Two protocol changes for round two, parked beside them
+
+  Fixtures from other projects' reviewed PRs, where the commit a reviewer asked changes on is a hold and the approved commit a merge, and a fixed one-minute legend before the first map.

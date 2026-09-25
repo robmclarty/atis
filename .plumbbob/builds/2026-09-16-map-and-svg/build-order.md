@@ -5,12 +5,11 @@ Step numbers are identities, not order. The undone steps run in this sequence
 
 | Order | Step | Title                                                                  | How to start it      |
 | ----- | ---- | ---------------------------------------------------------------------- | -------------------- |
-| 1     | 23   | chore(glance): run glance-test round one and record the verdicts       | `looks good` to land |
-| 2     | 31   | feat(cli): read npm, yarn and bun workspaces as scan roots             | `/plumbbob:build 31` |
-| —     | —    | the four encoding fixes, from their own `/plumbbob:refine` pass        | not written yet      |
-| 3     | 32   | chore(fixtures): select five reviewed outside PRs and record their ground truth | `/plumbbob:build 32` |
-| 4     | 33   | chore(fixtures): generate map.json and the SVG for the five outside PRs | `/plumbbob:build 33` |
-| 5     | 34   | chore(glance): retake glance-test round one on the outside fixtures    | `/plumbbob:build 34` |
+| 1     | 31   | feat(cli): read npm, yarn and bun workspaces as scan roots             | `/plumbbob:build 31` |
+| —     | —    | the encoding fixes, from `/plumbbob:refine` on Q23 to Q27            | not written yet      |
+| 2     | 32   | chore(fixtures): select five reviewed outside PRs and record their ground truth | `/plumbbob:build 32` |
+| 3     | 33   | chore(fixtures): generate map.json and the SVG for the five outside PRs | `/plumbbob:build 33` |
+| 4     | 34   | chore(glance): retake glance-test round one on the outside fixtures    | `/plumbbob:build 34` |
 
 ## The gap before step 32
 
@@ -18,7 +17,7 @@ Step numbers are identities, not order. The undone steps run in this sequence
 parked encodings ahead of step 32, designed against round one's failures, so
 the builder never tunes the encodings to fixtures whose ground truth it has
 already read. Those steps do not exist yet. After step 31 lands, run
-`/plumbbob:refine` on the parked encodings (and the parked legend briefing)
+`/plumbbob:refine` on the five encoding questions, [Q23](intent.md#q23) to [Q27](intent.md#q27),
 before `/plumbbob:build`, since a bare build would otherwise pick step 32 next.
 The refine pass writes its steps and re-runs `plumbbob order` to seat them
 between 31 and 32.

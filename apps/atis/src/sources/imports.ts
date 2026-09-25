@@ -6,9 +6,10 @@
  * `.ts` and `.tsx` ones are parsed for their exports and for every static
  * import, `export … from` and `import()` specifier, and each specifier is
  * resolved with `ts.resolveModuleName` under NodeNext, so `./foo.js` lands on
- * `foo.ts`. Workspace packages resolve by name through `pnpm-workspace.yaml`
- * and their own manifests; bare npm packages are dropped. Nothing resolves
- * through `node_modules`, which an extracted commit does not have anyway.
+ * `foo.ts`. Workspace packages resolve by name through `pnpm-workspace.yaml`,
+ * or the root manifest's `workspaces` when there is none, and their own
+ * manifests; bare npm packages are dropped. Nothing resolves through
+ * `node_modules`, which an extracted commit does not have anyway.
  *
  * One process reads the whole tree, so the graph that feeds depth, layout,
  * reach and stitches is scanned once, not once per file.
@@ -292,6 +293,27 @@ function unquote(value: string): string {
   return /^(['"]).*\1$/.test(trimmed) ? trimmed.slice(1, -1) : trimmed;
 }
 
+/**
+ * The `workspaces` globs of a root `package.json`, in order (D64): the array
+ * npm and bun write, or yarn's `{ "packages": [...] }` object. A `!` glob keeps
+ * its mark, as an exclusion, and a manifest that will not parse names none.
+ */
+export function parseManifestWorkspaces(json: string): readonly string[] {
+  let manifest: unknown;
+  try {
+    manifest = JSON.parse(json);
+  } catch {
+    return [];
+  }
+  const field = isRecord(manifest) ? manifest['workspaces'] : undefined;
+  const globs = isRecord(field) ? field['packages'] : field;
+  if (!Array.isArray(globs)) return [];
+  return globs.flatMap((glob) => {
+    const value = text(glob);
+    return value === undefined ? [] : [value];
+  });
+}
+
 const GLOB_TOKEN = /\*\*\/|\*\*|\*|\?|[^*?]+/g;
 
 const GLOB_SOURCE: ReadonlyMap<string, string> = new Map([
@@ -301,9 +323,9 @@ const GLOB_SOURCE: ReadonlyMap<string, string> = new Map([
   ['?', '[^/]'],
 ]);
 
-/** A workspace glob, anchored at the repo root the way pnpm reads it. */
+/** A workspace glob, anchored at the repo root the way pnpm reads it; npm's `./packages/a` is `packages/a`. */
 export function globToRegExp(glob: string): RegExp {
-  const tokens = glob.match(GLOB_TOKEN) ?? [];
+  const tokens = normalizePath(glob).match(GLOB_TOKEN) ?? [];
   const source = tokens
     .map((token) => GLOB_SOURCE.get(token) ?? token.replace(/[.+^${}()|[\]\\]/g, '\\$&'))
     .join('');
@@ -325,10 +347,19 @@ function readManifest(root: string, dir: string, paths: ReadonlySet<string>): Re
   }
 }
 
-/** The workspace members: `pnpm-workspace.yaml`'s globs, else the root alone (D43). */
+/**
+ * The workspace globs: `pnpm-workspace.yaml`'s when the file exists, since pnpm
+ * never reads `workspaces`, else the root manifest's `workspaces` (D43, D64).
+ */
+function workspaceGlobs(root: string, paths: ReadonlySet<string>): readonly string[] {
+  if (paths.has(WORKSPACE_FILE)) return parseWorkspaceGlobs(readFileSync(join(root, WORKSPACE_FILE), 'utf8'));
+  if (paths.has(MANIFEST)) return parseManifestWorkspaces(readFileSync(join(root, MANIFEST), 'utf8'));
+  return [];
+}
+
+/** The workspace members: the root, plus every directory the workspace globs match (D43, D64). */
 function readMembers(root: string, tree: Tree, paths: ReadonlySet<string>): readonly Member[] {
-  const yaml = paths.has(WORKSPACE_FILE) ? readFileSync(join(root, WORKSPACE_FILE), 'utf8') : '';
-  const globs = parseWorkspaceGlobs(yaml);
+  const globs = workspaceGlobs(root, paths);
   const include = globs.filter((glob) => !glob.startsWith('!')).map(globToRegExp);
   const exclude = globs.filter((glob) => glob.startsWith('!')).map((glob) => globToRegExp(glob.slice(1)));
   const matched = [...tree.directories].filter(

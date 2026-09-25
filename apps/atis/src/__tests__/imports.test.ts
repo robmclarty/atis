@@ -2,9 +2,10 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
+import { identifyModules } from 'core';
 import { afterAll, beforeAll, expect, test } from 'vitest';
 
-import { parseFallowEntryPoints, parseWorkspaceGlobs, scanImports } from '../sources/index.js';
+import { parseFallowEntryPoints, parseManifestWorkspaces, parseWorkspaceGlobs, scanImports } from '../sources/index.js';
 import type { Scan, ScannedFile } from '../sources/index.js';
 
 /**
@@ -106,6 +107,53 @@ export const app = value;
   'src/lib/value.ts': `export const value = 1;\n`,
 };
 
+/**
+ * An npm or bun repo (D64): `workspaces` is an array, `./` prefixes and all,
+ * and a `!` glob drops a member the way it would in `pnpm-workspace.yaml`.
+ */
+const NPM: Readonly<Record<string, string>> = {
+  'package.json': `{ "name": "npm-root", "private": true, "workspaces": ["./packages/*", "!packages/legacy"] }\n`,
+  'packages/a/package.json': `{ "name": "@npm/a", "main": "src/index.ts" }\n`,
+  'packages/a/src/index.ts': `export const a = 1;\n`,
+  'packages/b/package.json': `{ "name": "@npm/b", "exports": { ".": "./src/index.ts" } }\n`,
+  'packages/b/src/index.ts': `import { a } from '@npm/a';
+import { legacy } from '@npm/legacy';
+
+export const b = a + legacy;
+`,
+  'packages/legacy/package.json': `{ "name": "@npm/legacy", "main": "src/index.ts" }\n`,
+  'packages/legacy/src/index.ts': `export const legacy = 0;\n`,
+};
+
+/** The `apps/*` and `libs/*` members a yarn repo and a two-manifest repo share. */
+const APPS_AND_LIBS: Readonly<Record<string, string>> = {
+  'apps/web/package.json': `{ "name": "web", "main": "src/index.ts" }\n`,
+  'apps/web/src/index.ts': `import { util } from 'util-lib';
+
+export const web = util;
+`,
+  'libs/util/package.json': `{ "name": "util-lib" }\n`,
+  'libs/util/src/index.ts': `export const util = 1;\n`,
+};
+
+/** A yarn repo: `workspaces` is an object whose `packages` holds the globs. */
+const YARN: Readonly<Record<string, string>> = {
+  'package.json': `{
+  "name": "yarn-root",
+  "private": true,
+  "workspaces": { "packages": ["apps/*", "libs/*"], "nohoist": ["**/react"] }
+}
+`,
+  ...APPS_AND_LIBS,
+};
+
+/** Both manifests: pnpm never reads `workspaces`, so `pnpm-workspace.yaml` wins. */
+const BOTH: Readonly<Record<string, string>> = {
+  'pnpm-workspace.yaml': `packages:\n  - 'libs/*'\n`,
+  'package.json': `{ "name": "both", "private": true, "workspaces": ["apps/*", "libs/*"] }\n`,
+  ...APPS_AND_LIBS,
+};
+
 function writeTree(root: string, tree: Readonly<Record<string, string>>): string {
   for (const [path, content] of Object.entries(tree)) {
     const file = join(root, path);
@@ -113,6 +161,22 @@ function writeTree(root: string, tree: Readonly<Record<string, string>>): string
     writeFileSync(file, content);
   }
   return root;
+}
+
+const scratch: string[] = [];
+
+/** Write a tree into its own `mkdtemp` directory and scan it; `afterAll` removes it. */
+function scanTree(tree: Readonly<Record<string, string>>): Scan {
+  const dir = writeTree(mkdtempSync(join(tmpdir(), 'atis-tree-')), tree);
+  scratch.push(dir);
+  return scanImports(dir);
+}
+
+function packageCells(found: Scan): readonly string[] {
+  const roots = found.members.map((member) => member.dir);
+  return identifyModules(found.files, found.edges, roots)
+    .cells.filter((cell) => cell.kind === 'package')
+    .map((cell) => cell.path);
 }
 
 function fileIn(scan: Scan, path: string): ScannedFile {
@@ -132,8 +196,7 @@ beforeAll(() => {
 });
 
 afterAll(() => {
-  rmSync(workspace, { recursive: true, force: true });
-  rmSync(flat, { recursive: true, force: true });
+  for (const dir of [workspace, flat, ...scratch]) rmSync(dir, { recursive: true, force: true });
 });
 
 test('every tracked file is listed, classified and sorted, whether it is parsed or not', () => {
@@ -192,10 +255,44 @@ test('members come from the workspace globs, entries from bin, main and exports'
   ]);
 });
 
-test('without a workspace file the root package stands alone', () => {
+test('without a workspace file or a workspaces field the root package stands alone', () => {
   const rootOnly = scanImports(flat);
   expect(rootOnly.members).toEqual([{ name: 'flat', dir: '.', entry: ['src/index.ts'] }]);
   expect(rootOnly.edges).toEqual([{ from: 'src/index.ts', to: 'src/lib/value.ts', names: ['value'], line: 1 }]);
+});
+
+test('the workspaces array npm and bun write names the members, exclusions and all', () => {
+  const npm = scanTree(NPM);
+  expect(npm.members).toEqual([
+    { name: 'npm-root', dir: '.', entry: [] },
+    { name: '@npm/a', dir: 'packages/a', entry: ['packages/a/src/index.ts'] },
+    { name: '@npm/b', dir: 'packages/b', entry: ['packages/b/src/index.ts'] },
+  ]);
+  expect(npm.edges).toEqual([
+    { from: 'packages/b/src/index.ts', to: 'packages/a/src/index.ts', names: ['a'], line: 1 },
+  ]);
+  // The excluded `legacy` is no member, so its files fall to the root package.
+  expect(packageCells(npm)).toEqual(['.', 'packages/a', 'packages/b']);
+});
+
+test("yarn's workspaces object names the members through its packages", () => {
+  const yarn = scanTree(YARN);
+  expect(yarn.members).toEqual([
+    { name: 'yarn-root', dir: '.', entry: [] },
+    { name: 'web', dir: 'apps/web', entry: ['apps/web/src/index.ts'] },
+    { name: 'util-lib', dir: 'libs/util', entry: [] },
+  ]);
+  expect(yarn.edges).toEqual([
+    { from: 'apps/web/src/index.ts', to: 'libs/util/src/index.ts', names: ['util'], line: 1 },
+  ]);
+  expect(packageCells(yarn)).toEqual(['apps/web', 'libs/util']);
+});
+
+test('pnpm-workspace.yaml wins when a workspaces field sits beside it', () => {
+  const both = scanTree(BOTH);
+  expect(both.members.map((member) => member.dir)).toEqual(['.', 'libs/util']);
+  // `apps/web` is a member only in the ignored `workspaces`, so it stays in the root package.
+  expect(packageCells(both)).toEqual(['.', 'libs/util']);
 });
 
 test('the same tree scans the same way twice', () => {
@@ -210,6 +307,19 @@ test('parseWorkspaceGlobs reads the block list, the flow list and exclusions', (
   ]);
   expect(parseWorkspaceGlobs(`packages: ['apps/*', "libs/*"]\n`)).toEqual(['apps/*', 'libs/*']);
   expect(parseWorkspaceGlobs('onlyBuiltDependencies:\n  - fallow\n')).toEqual([]);
+});
+
+test('parseManifestWorkspaces reads the array, the yarn object and exclusions', () => {
+  expect(parseManifestWorkspaces('{ "workspaces": ["packages/*", "!packages/legacy"] }')).toEqual([
+    'packages/*',
+    '!packages/legacy',
+  ]);
+  expect(parseManifestWorkspaces('{ "workspaces": { "packages": ["apps/*"], "nohoist": ["**/react"] } }')).toEqual([
+    'apps/*',
+  ]);
+  expect(parseManifestWorkspaces('{ "workspaces": { "nohoist": ["**/react"] } }')).toEqual([]);
+  expect(parseManifestWorkspaces('{ "name": "flat" }')).toEqual([]);
+  expect(parseManifestWorkspaces('{ "name": ')).toEqual([]);
 });
 
 test('parseFallowEntryPoints collapses the ./ segments fallow leaves in workspace paths', () => {
