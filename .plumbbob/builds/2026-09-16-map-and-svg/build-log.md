@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 30 — chore(fixtures): refresh the five maps after the render and shore fixes
+**Current step:** 23 — chore(glance): run glance-test round one and record the verdicts
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -52,7 +52,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 27. fix(svg): point a global-slot notice's leader at its storm marker
 - ☑ 28. fix(core): send plugin, MCP and bench JSON to their shore groups
 - ☑ 29. fix(cli): name --svg and --open in the usage text
-- ☐ 30. chore(fixtures): refresh the five maps after the render and shore fixes
+- ☑ 30. chore(fixtures): refresh the five maps after the render and shore fixes
 
 ## Park list
 
@@ -84,6 +84,18 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] checkride v0.1.1 summary.json omits checks_run yet says schema_version:1, so atis reads PR2 evidence as harness_broken -> LIFR git-only; decide if atis should tolerate the older schema-1 shape or if this is the intended glance case (matters for step 23, a reader may hold for the harness not the change)
 - [x] shore table leaves common .json to the loud 'other' residual (.claude-plugin/plugin.json in checkride; .mcp.json, .ridgeline/settings.json, .codegraph/config.json, bench/*.json, packages/core/src/flow-schema.json in fascicle); on fascicle PR5's 3-file git-only change the other-group is the PRIMARY notice, so repo census headlines a small fix -- D48 wants the table to grow; candidate rules: .claude-plugin/**->prompts, .mcp.json/.ridgeline/**/.codegraph/**->config, bench/**->data (matters for step 23 glance reading)
 - [ ] repo-wide red slots crowd out change-specific notices: under D58 every fascicle notice is a red-check-slot (dead/dupes on the tool files, attw global) and the interface-change notice that used to be primary is pushed out of the six-slot budget entirely; fascicle PR4 and PR5 now render nearly identical maps despite 18 vs 3 changed files. Decide whether a red slot naming an unchanged file, or a global slot, should compete on equal footing with a notice about the change (P1, C7; compare D55's cochange-weight fix)
+- [ ] glance-test blinding is impossible as written: Rob wrote all five fixture PRs (ae5078cc, 937bb1d7, 9511268f on checkride; 13ef5143, c7407b50 on fascicle) and under D44 authors their ground truth too, so SPEC 11's 'three readers who did not write or review the PR' and the step-23 done-when's 'Rob plus two' cannot both hold; the sheet records Rob's row as unblinded and leans on the two recruited readers, but whether his verdicts count toward the 4-of-5 needs Rob's ruling
+- [ ] SPEC 11 criterion 5 does not say whether naming the right file for the wrong reason counts as the flagged thing landing in the top three: on fascicle PR4 and PR5 the primary notice is run_shell.ts for a dead-code slot, not for the byte cap, the timeout or the symlink TOCTOU the review found, so round one scores 3 of 5 strict or 5 of 5 generous off the same table; decide the reading before it decides a pass
+- [ ] a blanket 'hold' passes glance-test criterion 4's verdict half: four of the five fixtures expect hold (only fascicle PR5 is merge), so a reader who holds on everything scores 4 of 5 without reading the map, and only the hold-reason half stands between that and a pass; the five need a calmer PR or two, or the pass line needs a merge-side floor
+- [ ] SPEC 11 counts 'four of five verdicts' but never says how three readers collapse to one verdict per PR; the round-one sheet takes majority (2 of 3), the alternative reads all fifteen verdicts and needs twelve, a strictly harder bar -- fix the rule in the spec so round two scores the same way
+- [ ] glance round one encoding: standing-state storms outshout the change -- a red slot naming cells the change did not touch draws the same bolt as one naming a changed file (69 of 71 storms on each fascicle map sit off the changed cell); recede untouched-cell storms into the terrain so the change's own red reads first (docs/glance-test.md round one, fail line 1)
+- [ ] glance round one encoding: the flight category is set by the repo's standing state -- repo-wide red slots make four of five fixtures IFR, so the category cannot tell the changes apart; derive it from the change's own evidence and report standing state beside it (fail line 2; see the red-slot budget park)
+- [ ] glance round one encoding: 'Checks 17/17' reads as the verdict -- it is the HUD's most legible number and says only that the gate passed, which it did on every PR checkride let merge; the reader merged checkride PR 5 over an IFR category on the strength of it (fail line 3)
+- [ ] glance round one encoding: the change's own evidence is too quiet for ten seconds -- the open skin on src/doctor.ts (6 untested changed lines reaching 3 cells, the file aa2a08a later repaired) was checkride PR 5's whole signal and read as calm; skins, bites and glow need to out-rank the terrain at a glance (fail line 4)
+- [ ] glance round two fixtures: use other projects' TypeScript PRs with public reviews -- the commit a reviewer asked changes on is a hold, the commit they approved a merge, ground truth in the reviewer's words; balances verdicts, takes the author out of the reader's chair, replaces recollection with a record (Rob, 2026-09-24; changes D54 and D44)
+- [ ] glance protocol: give every reader the same one-minute legend before the first map, saying what each mark and HUD block measures and not how to weigh it; round one ran with none and SPEC 11 is silent on it
+- [ ] Go is the next ecosystem atis must read (Rob, 2026-09-24: 'our new product at work is using a Go backend ... that is the direction we need to move in'): a Go producer (go list -json for the import graph, go test -coverprofile for coverage, a Go-aware history filter) writing the same scan and .check inputs, not a widening of the TypeScript scan; SPEC 12 puts languages beyond TypeScript in phase 5, and Rob wants it sooner
+- [ ] checkride's jest adapter runs 'jest --ci --json' without --coverage, so a jest repo yields test results but no patch coverage; worth giving it the same coverage run vitest gets (checkride's repo, not atis's), found at refine pass three while settling Q19
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -1546,3 +1558,52 @@ folder, so it rides the branch into the PR.)*
   **4.** The step asked for haiku and this ran on Opus 5
 
   The plan's `- model: haiku (one string and its test)` was the right call for the size of this change, and the session model was never switched. Nothing about the diff needed the bigger model; flagging it so the record matches what actually ran. No action needed unless you want the step rebuilt to honour the recommendation.
+
+- 2026-09-24 — step 30 checkpointed · 73fe57332 — chore(fixtures): refresh the five maps after the render and shore fixes (19m)
+
+  **Summary**: All five fixtures re-ran through the D58 procedure recorded in their own READMEs, and every `map.json` passes `assertMap`. The refresh is remarkably contained: every category, every terrain and weather count, every cell membrane, every band assignment and every one of the organelle positions came back unchanged on all five. Only the shore repacked, and only one notice moved — checkride PR 4 drops from six to five, because its sixth was the loud `other` residual that step 28 has now claimed. The `other` group is empty on all five maps, which is what this step was sent to confirm.
+
+  1. The `other` residual is gone from all five, and only checkride PR 4 paid a notice for it
+  2. Step 27's leaders landed on exactly the three notices that needed them
+  3. Both fascicle maps are 18 units narrower, and the shore is why
+  4. One group move step 28 did not name, recorded rather than left unexplained
+  5. The reconciliation covers the five-row table by confirming it needs no change
+
+  **Readout**: Step 30 - chore(fixtures): refresh the five maps after the render and shore fixes
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored:
+               - D58 (fixtures-current-toolchain)
+               - D56 (fixtures-skip-audit)
+               - D48 (shore-groups)
+  constraints  11 of 11 honored
+  seam         held: 2 of 2 declared, no strays
+  diff         +1189 -1326 across 21 files
+  spent        19 min · 1 turn · 14s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Land it. The gate is green, the done-when is met point by point, and the refresh turned out to be a narrow one: the terrain is byte-stable across all five, so the only things step 23 reads differently are the empty `other` residual, checkride PR 4's five-notice budget and three new leaders.
+
+  **1.** The `other` residual is gone from all five, and only checkride PR 4 paid a notice for it
+
+  Step 28's rules land exactly as its done-when predicted: `.claude-plugin/plugin.json` joins `prompts` on the two checkride maps, and fascicle's `.mcp.json`, `.ridgeline/settings.json` and `.codegraph/config.json` join `config` while `bench/reviewer/{baseline,cases}.json` and `packages/core/src/flow-schema.json` join `data`. checkride PR 4 is the only fixture that had ranked the residual into its notice budget, so it is the only one whose notice count moved, 6 down to 5 with nothing behind it to take the slot — C7 (budget) does not pad, and the README now says so. checkride PR 5 and both fascicle maps had `other` files but never a residual notice, because their sixth slot was already held by something weighing more than the residual's flat 2. checkride PR 2 had no residual at all, and its map came back unchanged apart from its two timestamps, which is a live confirmation of C3 (deterministic) on a re-run a day later.
+
+  **2.** Step 27's leaders landed on exactly the three notices that needed them
+
+  Three notices across the five maps target a slot rather than a file: `dead` and `snippets` on checkride PR 2, and `attw` on fascicle PR 5. Each now draws a dotted leader from its HUD row to the storm marker in the field corner, where before it was the one row on the map a reader could not trace to anything. checkride PR 2 gains two and fascicle PR 5 gains one; checkride PR 4 loses one, the leader that belonged to the residual notice. I noted in fascicle PR 5's README that this bears directly on the crowding question parked for step 23: the `attw` row is the one notice with nothing to do with the three changed files, and a reader can now see that it points at the whole field.
+
+  **3.** Both fascicle maps are 18 units narrower, and the shore is why
+
+  `terrain.layout.width` is the largest of a minimum, the shore extent and the terrain extent, and on fascicle's workspace the shore strip is what binds. Losing one group block shortened the strip, so the width fell from 672 to 654, the `viewBox` went from `0 0 972 1090` to `0 0 954 1090`, and the HUD column moved from x 687 to x 669. checkride's width is set by its terrain, so dropping a group there changed nothing. Fifty-seven shore marks took new grid positions on each fascicle map as the blocks resized around them, and I checked that none of them is an organelle: zero of the 165 moved, and the only contours that differ are shore-group contours.
+
+  **4.** One group move step 28 did not name, recorded rather than left unexplained
+
+  `.codegraph/.gitignore` moved from `settings` to `config` on both fascicle maps. It was never in `other`, so it is not part of the residual this step was clearing; it moves because the shore table is first-match and step 28's new `.codegraph/**` pattern on the `config` row now wins ahead of the bare `.gitignore` on the `settings` row below it. Grouping a tool's dotfolder with that tool's config is the reading D48's own ordering implies, so I let it stand and tabulated it in fascicle PR 4's README, rather than leave a `settings` count of 4 with no account of the fifth file.
+
+  **5.** The reconciliation covers the five-row table by confirming it needs no change
+
+  Every category in `docs/glance-test.md`'s five-row table survived the re-run, so the table itself is untouched; I recorded that explicitly in the prose above it along with the two deltas that do matter for round one, so step 23 can see the table was checked rather than merely left alone. Each fixture's `README.md` "What it says" and each `truth.md` comparison section now name their own shifts, and the two fascicle READMEs carry the seven-row group-move table and the width story.
