@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 36 — fix(core): set the flight category from the change's red slots
+**Current step:** 37 — fix(core): spend the notice budget only on the change's red slots
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -58,7 +58,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☐ 33. chore(fixtures): generate map.json and the SVG for the five outside PRs
 - ☐ 34. chore(glance): retake glance-test round one on the outside fixtures
 - ☑ 35. feat(cli): name the files a red lint or struct slot reports
-- ☐ 36. fix(core): set the flight category from the change's red slots
+- ☑ 36. fix(core): set the flight category from the change's red slots
 - ☐ 37. fix(core): spend the notice budget only on the change's red slots
 - ☐ 38. fix(svg): draw standing-state storms as grey terrain
 - ☐ 39. fix(svg): count red slots in the HUD's Gate and Standing blocks
@@ -108,6 +108,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] Go is the next ecosystem atis must read (Rob, 2026-09-24: 'our new product at work is using a Go backend ... that is the direction we need to move in'): a Go producer (go list -json for the import graph, go test -coverprofile for coverage, a Go-aware history filter) writing the same scan and .check inputs, not a widening of the TypeScript scan; SPEC 12 puts languages beyond TypeScript in phase 5, and Rob wants it sooner
 - [x] checkride's jest adapter runs 'jest --ci --json' without --coverage, so a jest repo yields test results but no patch coverage; worth giving it the same coverage run vitest gets (checkride's repo, not atis's), found at refine pass three while settling Q19
 - [ ] git.ts memberDirs still reads only pnpm-workspace.yaml, so readManifests' deps_added (D47) misses npm/yarn/bun member manifests; route it through parseManifestWorkspaces before step 33
+- [ ] security-finding counts the repo's vulnerabilities at head, which is standing state by D67's reading; now that a global red security slot no longer suppresses it, should it spend the budget only when the change's dependency delta touches it?
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -1768,3 +1769,53 @@ folder, so it rides the branch into the PR.)*
   **4.** The evidence tests show the done-when case and the edges
 
   One test has a red lint with errors on changed `src/pm/tools.ts` and a warning on `src/doctor.ts`, and it scopes to `['src/pm/tools.ts']`. Another has a warnings-only red struct, which scopes to every file it names. The old "four slots" test is now six, with `types` standing in as the global example. The unread test also covers red `lint` and `struct` with no channel, or with empty reports, and all stay global.
+
+- 2026-09-28 — step 36 checkpointed · 77f15b657 — fix(core): set the flight category from the change's red slots (32m)
+
+  **Summary**: A red slot now makes the change IFR only when it names a changed file or tears a stitch on one. Standing and global red leave the category to the change's own evidence, so checkride PR 2's shape reads MVFR.
+
+  1. One exported helper, `splitRedSlots`, splits every red slot into the change's red and the standing state
+  2. A torn stitch puts the files it imports on the change, not the failing test itself
+  3. `categoryOf`'s red-slot rung reads `split.change`, and `buildMap` passes the stitches in
+  4. The old "any red slot is IFR" test is gone, because D69 reverses it
+
+  **Readout**: Step 36 - fix(core): set the flight category from the change's red slots
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    3 of 3 honored
+  constraints  11 of 11 honored
+  seam         held: 4 of 4 declared, no strays
+  diff         +217 -8 across 4 files
+  spent        32 min · 1 turn · 15s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Approve and land step 36. The split is exactly D67's rule and the category reads only its change half, per D69. Its output shape was chosen with steps 37 to 39 in mind, so those steps can read it without widening it.
+
+  **1.** One exported helper, `splitRedSlots`, splits every red slot into the change's red and the standing state
+
+  It lives in `evidence.ts` and reaches the `core` barrel through the existing `export *`. It takes `{ slots, changed, stitches }`, all of which sit on `map.json`, so steps 37 to 39 (notices, storms, the Gate and Standing blocks) can make the same split from the map without re-deriving it. It returns `{ change, standing }`. Each red slot sits in exactly one list, and each entry carries `name`, `global`, the changed files it is on the change through (`change`), and the other files it names (`standing`). Green and skipped slots appear in neither list. The `global` flag is what step 39's Standing tail will name. `changed` is typed `Pick<ChangedFile, 'path'>[]` because the split reads only paths, which also lets the tests pass the diff straight in.
+
+  **2.** A torn stitch puts the files it imports on the change, not the failing test itself
+
+  Under a red `test`, a named test file whose stitch status is `failed` contributes the changed files it imports to `change`. The test path goes into neither list, since per D4 (tests-not-terrain) it is evidence, not the change. If it were in `standing`, step 38's storms would draw a grey bolt over the same cells the red one sits on. A failing test that is itself a changed file (the demo's `pm.test.ts`) counts both ways: its own path plus its torn targets. That choice sets what step 37 targets, one `red-check-slot` per changed file, so it is worth a look now.
+
+  **3.** `categoryOf`'s red-slot rung reads `split.change`, and `buildMap` passes the stitches in
+
+  `CategoryInputs` gains a required `stitches` field, and `buildMap` passes `evidence.evidence.stitches ?? []`. Both LIFR rungs (vacuous green, and a structural finding on a changed file) are unchanged and still run first. The demo golden stays IFR because its failing test is itself in the diff, so no fixture moved.
+
+  **4.** The old "any red slot is IFR" test is gone, because D69 reverses it
+
+  That test proved IFR from a global `lint` with no channel, which is now standing state and reads VFR. It is replaced by six tests in `evidence.test.ts`:
+
+  - a changed-file red, which reads IFR
+  - an untouched-file red, which reads VFR and is still reported in `slots`
+  - a global red, which reads VFR
+  - a torn stitch, which reads IFR, beside the same failure on a change it imports nothing of, which reads VFR
+  - checkride PR 2's shape (global `dead` and `snippets`, `dupes` and `health` on untouched files, one uncovered changed line on a one-cell file), which reads MVFR with all four red slots standing
+  - a direct unit test of the split
+
+  `map.test.ts` adds a buildMap-level pair: the demo with its test file left out of the diff reads IFR when the stitch tears and MVFR when it holds.

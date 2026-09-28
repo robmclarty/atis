@@ -203,8 +203,10 @@ test('the demo map ranks the six notices the budget holds', () => {
     'tertiary',
     'tertiary',
   ]);
-  expect(notices[0]?.kind).toBe('deleted-export');
+  // `pm.test.ts` failed and imports `pm/index.ts`, so the torn stitch puts the red `test` on it (D67).
+  expect(notices[0]?.kind).toBe('red-check-slot');
   expect(notices[0]?.target).toBe('libs/core/src/pm/index.ts');
+  expect(notices[1]?.kind).toBe('deleted-export');
   // The file that usually comes along and did not (CHID eq. 3).
   expect(weather.ghosts).toEqual([
     { path: 'libs/core/src/util/format.ts', with: ['libs/core/src/pm/index.ts'], rate: 0.6, support: 3 },

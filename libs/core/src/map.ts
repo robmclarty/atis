@@ -521,6 +521,7 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
       changed: reach.changed,
       files: evidence.files,
       checks,
+      stitches: evidence.evidence.stitches ?? [],
       cells,
       groups,
       history: history.files,

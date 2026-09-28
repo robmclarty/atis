@@ -15,8 +15,8 @@
  */
 
 import type { Config, NoticeConfig, NoticeKind } from './config.js';
-import { pathsOf, structuralFindings } from './evidence.js';
-import type { CheckArtifacts, FileEvidence } from './evidence.js';
+import { pathsOf, splitRedSlots, structuralFindings } from './evidence.js';
+import type { CheckArtifacts, FileEvidence, RedSplit } from './evidence.js';
 import { OTHER_GROUP } from './groups.js';
 import type { FileHistory } from './history.js';
 import { classifyFile } from './modules.js';
@@ -31,6 +31,7 @@ import type {
   Group,
   Notice,
   NoticeTier,
+  Stitch,
 } from './schema.js';
 
 /**
@@ -49,8 +50,6 @@ export const HEAD_ONLY = 'present at head, not measured as introduced by this ch
 /** A namespace import takes whatever the target has, so no name of its own can go missing (C2). */
 const STAR = '*';
 
-const GLOBAL = 'global';
-
 /** npm audit's roll-up key, which would count every vulnerability a second time. */
 const TOTAL = 'total';
 
@@ -62,8 +61,10 @@ export type NoticeInputs = {
   readonly changed: readonly ChangedFile[];
   /** `computeEvidence`'s per-file result: the coverage, the mutants and the reach each candidate is scaled by. */
   readonly files: readonly FileEvidence[];
-  /** The verdict block: a red slot is the loudest candidate there is. */
+  /** The verdict block: a red slot on the change is the loudest candidate there is. */
   readonly checks: Checks;
+  /** `computeEvidence`'s stitches, empty when the run had no test report: a torn one puts a red `test` on the change (D67). */
+  readonly stitches: readonly Stitch[];
   /** The assembled cells; `band` and `fan_in` are what make an interface change worth a label. */
   readonly cells: readonly Cell[];
   /** The shore (D48): a non-empty `other` group is a notice of its own, so the table grows instead of the dump. */
@@ -93,9 +94,9 @@ type Candidate = {
   readonly inputs: Readonly<Record<string, number>>;
   readonly thresholds: Readonly<Record<string, number>>;
   /**
-   * The check slot whose own artifact produced this candidate. A red slot
-   * already names its findings on the map, so a candidate that slot would only
-   * repeat is dropped rather than spending a second of the six (C7).
+   * The check slot whose own artifact produced this candidate. A red slot on
+   * the change already names its findings there, so a candidate that slot
+   * would only repeat is dropped rather than spending a second of the six (C7).
    */
   readonly slot?: string;
 };
@@ -116,10 +117,6 @@ function byPath(a: string, b: string): number {
 
 function ran(check: CheckArtifacts): RanCheck | undefined {
   return check.mode === 'check' ? check : undefined;
-}
-
-function isRed(slot: Checks['slots'][number]): boolean {
-  return !slot.ok && !slot.skipped;
 }
 
 /** Round a measurement to three decimals so a notice reads as a number rather than as a float. */
@@ -173,24 +170,39 @@ function factorsFor(
   };
 }
 
-/** The paths each red slot already names on the map, keyed by slot; a global one names itself. */
-function redTargets(checks: Checks): ReadonlyMap<string, ReadonlySet<string>> {
-  return new Map(
-    checks.slots
-      .filter(isRed)
-      .map((slot) => [slot.name, new Set(slot.scope === GLOBAL ? [slot.name] : slot.scope)] as const),
-  );
+/** The changed files each slot on the change already names on the map, keyed by slot (D67). */
+function redTargets(red: RedSplit): ReadonlyMap<string, ReadonlySet<string>> {
+  return new Map(red.change.map((slot) => [slot.name, new Set(slot.change)] as const));
 }
 
-/** The gate saying no, per file it named, and once for the whole repository when it named none (D27). */
-function redSlotCandidates(checks: Checks): readonly Candidate[] {
-  return checks.slots.filter(isRed).flatMap((slot): Candidate[] => {
-    const shared = { kind: 'red-check-slot', inputs: {}, thresholds: {} } as const;
-    if (slot.scope === GLOBAL) {
-      return [{ ...shared, target: slot.name, why: `the \`${slot.name}\` check is red for the whole repository` }];
-    }
-    return slot.scope.map((path) => ({ ...shared, target: path, why: `the \`${slot.name}\` check is red and names this file` }));
-  });
+/** `a`, `a and b`, `a, b and c`: the slots a red notice names, in the order the split sorted them. */
+function listed(names: readonly string[]): string {
+  const quoted = names.map((name) => `\`${name}\``);
+  const last = quoted.at(-1) ?? '';
+  return quoted.length < 2 ? last : `${quoted.slice(0, -1).join(', ')} and ${last}`;
+}
+
+/**
+ * The gate saying no to this change: one candidate per changed file the
+ * change's red names, however many slots name it, its `why` listing them all.
+ * Standing red, on untouched files or the whole repository, is drawn and
+ * counted but never spends the budget (D67).
+ */
+function redSlotCandidates(red: RedSplit): readonly Candidate[] {
+  const slotsOn = new Map<string, string[]>();
+  for (const slot of red.change) {
+    for (const path of slot.change) slotsOn.set(path, [...(slotsOn.get(path) ?? []), slot.name]);
+  }
+  return [...slotsOn].map(([path, names]) => ({
+    kind: 'red-check-slot',
+    target: path,
+    why:
+      names.length === 1
+        ? `the ${listed(names)} check is red on this changed file`
+        : `the ${listed(names)} checks are red on this changed file`,
+    inputs: { slots: names.length },
+    thresholds: {},
+  }));
 }
 
 /** A cycle or a boundary violation on a file this change touched: §5.3 calls it LIFR and §5.4 wants it labelled. */
@@ -513,14 +525,14 @@ function otherGroupCandidates(inputs: NoticeInputs): readonly Candidate[] {
   ];
 }
 
-function candidatesFor(inputs: NoticeInputs, ghosts: readonly Ghost[]): readonly Candidate[] {
+function candidatesFor(inputs: NoticeInputs, ghosts: readonly Ghost[], red: RedSplit): readonly Candidate[] {
   const changed = new Map(inputs.changed.map((file) => [file.path, file] as const));
   const history = new Map(inputs.history.map((file) => [file.path, file] as const));
   const home = cellOf(inputs.cells);
   const check = ran(inputs.check);
 
   return [
-    ...redSlotCandidates(inputs.checks),
+    ...redSlotCandidates(red),
     ...(check === undefined ? [] : structuralCandidates(check, changed)),
     ...(check === undefined ? [] : thresholdCandidates(check, changed)),
     ...(check === undefined ? [] : securityCandidates(check)),
@@ -539,17 +551,18 @@ function candidatesFor(inputs: NoticeInputs, ghosts: readonly Ghost[]): readonly
 /**
  * Rank every candidate of §5.4 and keep the six the map has room for (C7).
  * Ties break by path and then by kind, as the step asks, and finally by `why`,
- * so two red slots naming one file still land in a fixed order and two runs
- * over one input produce one map (C3).
+ * so two kinds on one file land in a fixed order and two runs over one input
+ * produce one map (C3).
  */
 export function rankNotices(inputs: NoticeInputs): readonly Notice[] {
   const evidence = new Map(inputs.files.map((file) => [file.path, file] as const));
   const history = new Map(inputs.history.map((file) => [file.path, file] as const));
   const ghosts = findGhosts(inputs.cochange, inputs.changed.map((file) => file.path), inputs.config.notices);
-  const spokenFor = redTargets(inputs.checks);
+  const red = splitRedSlots({ slots: inputs.checks.slots, changed: inputs.changed, stitches: inputs.stitches });
+  const spokenFor = redTargets(red);
   const { severity } = inputs.config.notices;
 
-  return candidatesFor(inputs, ghosts)
+  return candidatesFor(inputs, ghosts, red)
     .filter((candidate) => candidate.slot === undefined || spokenFor.get(candidate.slot)?.has(candidate.target) !== true)
     .map((candidate): Ranked => {
       const severityOf = severity[candidate.kind];

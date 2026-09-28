@@ -273,7 +273,7 @@ test('the notice list draws at most six rows in rank order, each with its why an
     expect(row?.text).toContain(notice.why);
     for (const [key, value] of Object.entries(notice.thresholds)) expect(row?.text).toContain(`${key} ${String(value)}`);
   }
-  expect(rows[3]?.text).toContain('severity 4 · large_lines 100 · hot_churn_ratio 2 · hot_bugfix_rate 0.3');
+  expect(rows.find((row) => row.kind === 'large-hot-change')?.text).toContain('severity 4 · large_lines 100 · hot_churn_ratio 2 · hot_bugfix_rate 0.3');
 
   // A seventh notice has no row: the budget is C7's, whatever the renderer is handed.
   const extra: Notice = { ...(map.notices[5] ?? map.notices[0]), kind: 'bedrock-change', why: 'a seventh' } as Notice;
@@ -392,7 +392,7 @@ test('a target with several notices carries one ring, for its strongest tier, an
   const map = demo();
   const marks = drawn(chromeOf(renderSvg(map)), 'marks');
   const runs = [...marks.matchAll(/<g data-target="([^"]+)">/g)].map(([, target]) => target);
-  expect(runs).toEqual(['libs/core/src/pm/index.ts', 'apps/cli/src/doctor.ts', 'libs/core/src/pm/tools.ts']);
+  expect(runs).toEqual(['libs/core/src/pm/index.ts', 'libs/core/src/pm/tools.ts', 'apps/cli/src/doctor.ts']);
   expect([...marks.matchAll(/<circle data-target="([^"]+)" data-tier="(\w+)"/g)].map(([, target, tier]) => [target, tier])).toEqual([
     ['libs/core/src/pm/index.ts', 'primary'],
   ]);

@@ -3614,6 +3614,22 @@
   },
   "notices": [
     {
+      "kind": "red-check-slot",
+      "target": "libs/core/src/pm/index.ts",
+      "why": "the `test` check is red on this changed file",
+      "inputs": {
+        "cells_reached": 4,
+        "uncovered_fraction": 0.556,
+        "history_weight": 3.163,
+        "slots": 1
+      },
+      "thresholds": {
+        "severity": 10
+      },
+      "weight": 169.03,
+      "tier": "primary"
+    },
+    {
       "kind": "deleted-export",
       "target": "libs/core/src/pm/index.ts",
       "why": "`legacyResolve` no longer exported, and 1 file still imports it",
@@ -3628,7 +3644,7 @@
         "severity": 8
       },
       "weight": 135.224,
-      "tier": "primary"
+      "tier": "secondary"
     },
     {
       "kind": "interface-change",
@@ -3664,7 +3680,23 @@
         "high_reach_cells": 3
       },
       "weight": 118.321,
-      "tier": "secondary"
+      "tier": "tertiary"
+    },
+    {
+      "kind": "red-check-slot",
+      "target": "libs/core/src/pm/tools.ts",
+      "why": "the `test` check is red on this changed file",
+      "inputs": {
+        "cells_reached": 4,
+        "uncovered_fraction": 0.222,
+        "history_weight": 1,
+        "slots": 1
+      },
+      "thresholds": {
+        "severity": 10
+      },
+      "weight": 63.775,
+      "tier": "tertiary"
     },
     {
       "kind": "large-hot-change",
@@ -3683,39 +3715,6 @@
         "hot_bugfix_rate": 0.3
       },
       "weight": 58.371,
-      "tier": "tertiary"
-    },
-    {
-      "kind": "uncovered-high-reach",
-      "target": "libs/core/src/pm/tools.ts",
-      "why": "2 changed lines are uncovered and the change reaches 4 cells",
-      "inputs": {
-        "cells_reached": 4,
-        "uncovered_fraction": 0.222,
-        "history_weight": 1,
-        "uncovered_lines": 2
-      },
-      "thresholds": {
-        "severity": 7,
-        "high_reach_cells": 3
-      },
-      "weight": 44.642,
-      "tier": "tertiary"
-    },
-    {
-      "kind": "survived-mutants",
-      "target": "libs/core/src/pm/tools.ts",
-      "why": "2 mutants survived on the changed lines",
-      "inputs": {
-        "cells_reached": 4,
-        "uncovered_fraction": 0.222,
-        "history_weight": 1,
-        "mutants": 2
-      },
-      "thresholds": {
-        "severity": 6
-      },
-      "weight": 38.265,
       "tier": "tertiary"
     }
   ]

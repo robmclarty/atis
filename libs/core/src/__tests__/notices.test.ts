@@ -148,12 +148,13 @@ function inputsFor(scenario: Scenario): NoticeInputs {
   const changed = scenario.changed ?? [change('src/pm/util.ts')];
   const check = scenario.check ?? NO_CHECK;
   const placed = computeReach({ changed, modules, groups, headEdges, baseEdges });
-  const { files } = computeEvidence({ changed: placed.changed, modules, groups, headEdges, baseEdges, check });
+  const { evidence, files } = computeEvidence({ changed: placed.changed, modules, groups, headEdges, baseEdges, check });
 
   return {
     changed: placed.changed,
     files,
     checks: scenario.checks ?? NOINST,
+    stitches: evidence.stitches ?? [],
     cells: cellsFor(modules, scenario),
     groups,
     history: scenario.history ?? [],
@@ -186,7 +187,7 @@ function rankOf(notices: readonly Notice[], path: string): number {
  * first is that row's candidate and nothing else.
  */
 const ONE_OF_EACH: Readonly<Record<NoticeKind, Scenario>> = {
-  'red-check-slot': { checks: verdict([red('types')]) },
+  'red-check-slot': { checks: verdict([red('lint', ['src/pm/util.ts'])]) },
   'cycle-or-boundary': {
     check: ran({ dead: { ...NO_DEAD, circular_dependencies: [{ files: ['src/pm/util.ts', 'src/pm/probe.ts'] }] } }),
   },
@@ -286,6 +287,7 @@ test('two runs over one input produce one ranking, and the input order cannot ch
     headEdges: [...inputs.headEdges].toReversed(),
     baseEdges: [...inputs.baseEdges].toReversed(),
     checks: { ...inputs.checks, slots: [...inputs.checks.slots].toReversed() },
+    stitches: [...inputs.stitches].toReversed(),
   });
 
   expect(JSON.stringify(second)).toBe(JSON.stringify(first));
@@ -348,6 +350,67 @@ test('a red slot names its findings itself, so the same slot does not spend a se
   expect(kindsOf(quiet)).toEqual(['threshold-breached']);
   // The red slot says it louder and points at the same file; the threshold notice does not repeat it.
   expect(kindsOf(loud)).toEqual(['red-check-slot']);
+});
+
+test('a global red slot yields no notice, and no longer speaks for the finding its slot would repeat (D67)', () => {
+  expect(noticesFor({ checks: verdict([red('types')]) })).toEqual([]);
+
+  // A red `security` is global, so it is standing state: the vulnerabilities it counted take the row instead.
+  const security = noticesFor({
+    check: ran({ security: { vulnerabilities: { high: 2, total: 2 } } }),
+    checks: verdict([red('security')]),
+  });
+  expect(kindsOf(security)).toEqual(['security-finding']);
+});
+
+test('a file two red slots name takes one row, its why naming both, and their untouched files take none (D67)', () => {
+  const notices = noticesFor({
+    changed: [change('src/pm/tools.ts')],
+    checks: verdict([red('lint', ['src/pm/tools.ts']), red('health', ['src/doctor.ts', 'src/pm/tools.ts'])]),
+  });
+
+  expect(notices.map((notice) => [notice.kind, notice.target])).toEqual([['red-check-slot', 'src/pm/tools.ts']]);
+  expect(notices[0]?.why).toBe('the `health` and `lint` checks are red on this changed file');
+  expect(notices[0]?.inputs['slots']).toBe(2);
+});
+
+test('a torn stitch puts a red test slot on the changed file the failing test imports, not on the test (D67)', () => {
+  const notices = noticesFor({
+    changed: [change('src/pm/tools.ts')],
+    check: ran({ test: { results: [{ path: 'src/__tests__/tools.test.ts', status: 'failed' }] } }),
+    checks: verdict([red('test', ['src/__tests__/tools.test.ts'])]),
+  });
+
+  expect(notices.map((notice) => [notice.kind, notice.target])).toEqual([['red-check-slot', 'src/pm/tools.ts']]);
+  expect(notices[0]?.why).toBe('the `test` check is red on this changed file');
+});
+
+test("checkride PR 2's shape ranks no standing or global red, so the change's own finding stands alone (D67)", () => {
+  const notices = noticesFor({
+    // One changed file whose reach stays in its own cell, with one uncovered changed line and a mutant alive on it.
+    check: ran({
+      coverage: [{ path: 'src/pm/util.ts', statements: [{ line: 10, hits: 3 }, { line: 12, hits: 0 }] }],
+      mutation: [{ path: 'src/pm/util.ts', mutants: [{ line: 10, status: 'Survived' }] }],
+      dead: NO_DEAD,
+      dupes: { clone_families: [{ files: ['src/doctor.ts', 'src/index.ts'] }] },
+      health: {
+        ...NO_HEALTH,
+        findings: [
+          { path: 'src/doctor.ts', exceeded: 'crap' },
+          { path: 'src/pm/probe.ts', exceeded: 'cognitive' },
+        ],
+      },
+    }),
+    // Global `dead` and `snippets`, and `dupes` and `health` on files the change never touched: all standing state.
+    checks: verdict([
+      red('dead'),
+      red('dupes', ['src/doctor.ts', 'src/index.ts']),
+      red('health', ['src/doctor.ts', 'src/pm/probe.ts']),
+      red('snippets'),
+    ]),
+  });
+
+  expect(notices.map((notice) => [notice.kind, notice.target])).toEqual([['survived-mutants', 'src/pm/util.ts']]);
 });
 
 test('a consumer that has already dropped the name is not a live consumer', () => {
