@@ -140,37 +140,37 @@
         <rect x="10" y="8" width="58.8" height="20" fill="#6b7480"/>
         <text x="16" y="22.55" font-size="13" fill="#0a0c0f"><tspan font-weight="bold">NOINST</tspan></text>
       </g>
-      <g data-block="checks" data-muted="true" data-reason="absent">
-        <rect x="71.8" y="8" width="55.2" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
-        <text x="77.8" y="21.15" font-size="9" fill="#6b7480"><tspan>Checks </tspan><tspan font-weight="bold">—</tspan></text>
-      </g>
       <g data-block="patch-cov" data-muted="true" data-reason="absent">
-        <rect x="130" y="8" width="71.4" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
-        <text x="136" y="21.15" font-size="9" fill="#6b7480"><tspan>Patch cov </tspan><tspan font-weight="bold">—</tspan></text>
+        <rect x="71.8" y="8" width="71.4" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="77.8" y="21.15" font-size="9" fill="#6b7480"><tspan>Patch cov </tspan><tspan font-weight="bold">—</tspan></text>
       </g>
       <g data-block="mutants" data-muted="true" data-reason="absent">
-        <rect x="204.4" y="8" width="60.6" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
-        <text x="210.4" y="21.15" font-size="9" fill="#6b7480"><tspan>Mutants </tspan><tspan font-weight="bold">—</tspan></text>
+        <rect x="146.2" y="8" width="60.6" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="152.2" y="21.15" font-size="9" fill="#6b7480"><tspan>Mutants </tspan><tspan font-weight="bold">—</tspan></text>
       </g>
       <g data-block="reach">
-        <rect x="268" y="8" width="82.2" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="274" y="21.15" font-size="9" fill="#e6edf3"><tspan>Reach </tspan><tspan font-weight="bold">4</tspan><tspan> cells</tspan></text>
+        <rect x="209.8" y="8" width="82.2" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="215.8" y="21.15" font-size="9" fill="#e6edf3"><tspan>Reach </tspan><tspan font-weight="bold">4</tspan><tspan> cells</tspan></text>
       </g>
       <g data-block="size">
-        <rect x="353.2" y="8" width="136.2" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="359.2" y="21.15" font-size="9" fill="#e6edf3"><tspan>Size </tspan><tspan font-weight="bold">+243 −102</tspan><tspan>, 8 files</tspan></text>
+        <rect x="295" y="8" width="136.2" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="301" y="21.15" font-size="9" fill="#e6edf3"><tspan>Size </tspan><tspan font-weight="bold">+243 −102</tspan><tspan>, 8 files</tspan></text>
+      </g>
+      <g data-block="gate" data-muted="true" data-reason="absent">
+        <rect x="434.2" y="8" width="44.4" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="440.2" y="21.15" font-size="9" fill="#6b7480"><tspan>Gate </tspan><tspan font-weight="bold">—</tspan></text>
       </g>
       <g data-block="health" data-muted="true" data-reason="head-only">
-        <rect x="492.4" y="8" width="66" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
-        <text x="498.4" y="21.15" font-size="9" fill="#6b7480"><tspan>Health Δ </tspan><tspan font-weight="bold">—</tspan></text>
+        <rect x="481.6" y="8" width="66" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="487.6" y="21.15" font-size="9" fill="#6b7480"><tspan>Health Δ </tspan><tspan font-weight="bold">—</tspan></text>
       </g>
       <g data-block="notices">
-        <rect x="561.4" y="8" width="82.2" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="567.4" y="21.15" font-size="9" fill="#e6edf3"><tspan>Notices </tspan><tspan font-weight="bold">1·2·3</tspan></text>
+        <rect x="550.6" y="8" width="82.2" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="556.6" y="21.15" font-size="9" fill="#e6edf3"><tspan>Notices </tspan><tspan font-weight="bold">1·2·3</tspan></text>
       </g>
       <g data-block="other">
-        <rect x="646.6" y="8" width="49.8" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="652.6" y="21.15" font-size="9" fill="#e6edf3"><tspan>Other </tspan><tspan font-weight="bold">1</tspan></text>
+        <rect x="635.8" y="8" width="49.8" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="641.8" y="21.15" font-size="9" fill="#e6edf3"><tspan>Other </tspan><tspan font-weight="bold">1</tspan></text>
       </g>
     </g>
     <g id="rules" stroke="#2b333d" stroke-width="1">

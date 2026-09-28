@@ -22,7 +22,7 @@
  * list draws at most six rows, in the map's rank order, and pads nothing.
  */
 
-import { OTHER_GROUP } from 'core';
+import { OTHER_GROUP, splitRedSlots } from 'core';
 import type { Contour, FlightCategory, Layout, MapJson, Notice, NoticeTier, Position } from 'core';
 
 import { el, num } from './el.js';
@@ -86,14 +86,15 @@ export const CATEGORY_HUES: Readonly<Partial<Record<FlightCategory, string>>> = 
   LIFR: LIFR_HUE,
 };
 
-/** The HUD blocks of §7, by their `data-block`, in the order the row draws them. */
+/** The HUD blocks of §7, by their `data-block`, in the order the row draws them: the change's own evidence beside the category, then the red slots (D70). */
 export const HUD_ORDER: readonly string[] = [
   'category',
-  'checks',
   'patch-cov',
   'mutants',
   'reach',
   'size',
+  'gate',
+  'standing',
   'health',
   'notices',
   'other',
@@ -182,12 +183,25 @@ function isStale(map: MapJson, slot: string): boolean {
   return (map.meta.instruments.stale ?? []).some((entry) => entry.startsWith(`${slot}:`));
 }
 
-/** `Checks n/m`: the slots that passed over the slots that ran; a skipped slot is in neither (D41). Muted when no `.check/` was trusted. */
-function checksBlock(map: MapJson): Block {
-  if (map.meta.instruments.mode !== 'check') return muted('checks', 'Checks', 'absent');
-  const ran = map.weather.checks.slots.filter((slot) => !slot.skipped);
-  const passed = ran.filter((slot) => slot.ok);
-  return block('checks', 'Checks', `${String(passed.length)}/${String(ran.length)}`);
+/**
+ * `Gate n red` and `Standing n red`: the red slots, counted and never passed,
+ * each in exactly one block by core's split (D67, D70). The gate counts the
+ * change's red and reads `pass` with no numeral when there is none; it is
+ * muted when no `.check/` was trusted, and when no slot ran, since a gate
+ * nothing went through has passed nothing (C2). The standing block counts
+ * the slots whose red is wholly standing, names the global ones in its tail,
+ * and is not drawn when there are none.
+ */
+function gateBlocks(map: MapJson): readonly Block[] {
+  if (map.meta.instruments.mode !== 'check') return [muted('gate', 'Gate', 'absent')];
+  const { changed, checks, evidence } = map.weather;
+  if (checks.slots.every((slot) => slot.skipped)) return [muted('gate', 'Gate', 'empty')];
+  const red = splitRedSlots({ slots: checks.slots, changed, stitches: evidence.stitches ?? [] });
+  const gate = red.change.length === 0 ? block('gate', 'Gate', 'pass') : block('gate', 'Gate', String(red.change.length), ' red');
+  if (red.standing.length === 0) return [gate];
+  const global = red.standing.filter((slot) => slot.global).map((slot) => slot.name);
+  const tail = global.length === 0 ? ' red' : ` red, global: ${global.join(', ')}`;
+  return [gate, block('standing', 'Standing', String(red.standing.length), tail)];
 }
 
 /** `Patch cov x%`: the covered share of every changed executable line, over the whole change. */
@@ -216,7 +230,7 @@ function tierCounts(notices: readonly Notice[]): Readonly<Record<NoticeTier, num
   return counts;
 }
 
-/** The HUD row of §7 in `HUD_ORDER`; `Other` only when the shore's `other` group is non-empty (D48). */
+/** The HUD row of §7 in `HUD_ORDER`; `Standing` only when some red is wholly standing (D70), `Other` only when the shore's `other` group is non-empty (D48). */
 function blocksOf(map: MapJson, notices: readonly Notice[]): readonly Block[] {
   const { changed, reach, checks } = map.weather;
   const cells = new Set(reach.map((entry) => entry.cell)).size;
@@ -226,11 +240,11 @@ function blocksOf(map: MapJson, notices: readonly Notice[]): readonly Block[] {
   const other = map.terrain.groups.find((group) => group.id === OTHER_GROUP);
   const blocks: readonly Block[] = [
     block('category', '', checks.category),
-    checksBlock(map),
     coverageBlock(map),
     mutantBlock(map),
     block('reach', 'Reach', String(cells), ' cells'),
     block('size', 'Size', `+${String(added)} ${MINUS}${String(deleted)}`, `, ${String(changed.length)} files`),
+    ...gateBlocks(map),
     muted('health', 'Health Δ', 'head-only'),
     block('notices', 'Notices', [tiers.primary, tiers.secondary, tiers.tertiary].map(String).join(DOT)),
     ...(other === undefined || other.files.length === 0 ? [] : [block('other', 'Other', String(other.files.length))]),

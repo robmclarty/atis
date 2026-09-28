@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 38 — fix(svg): draw standing-state storms as grey terrain
+**Current step:** 39 — fix(svg): count red slots in the HUD's Gate and Standing blocks
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -60,7 +60,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 35. feat(cli): name the files a red lint or struct slot reports
 - ☑ 36. fix(core): set the flight category from the change's red slots
 - ☑ 37. fix(core): spend the notice budget only on the change's red slots
-- ☐ 38. fix(svg): draw standing-state storms as grey terrain
+- ☑ 38. fix(svg): draw standing-state storms as grey terrain
 - ☐ 39. fix(svg): count red slots in the HUD's Gate and Standing blocks
 - ☐ 40. fix(svg): light a skin's uncovered arc instead of its covered one
 - ☐ 41. fix(cli): read npm, yarn and bun packages for the dependency delta
@@ -1883,3 +1883,51 @@ folder, so it rides the branch into the PR.)*
   **5.** I parked the security-finding question
 
   With a global red `security` slot no longer suppressing it, `security-finding` still counts the repo's vulnerabilities at head. By D67's reading that is standing state. It rarely bites, because the fixtures skip `security` (D56). But whether it should spend the budget only when the change's dependency delta touches it is a design call, so it's a park line, not an edit.
+
+- 2026-09-28 — step 38 checkpointed · 7c947cd21 — fix(svg): draw standing-state storms as grey terrain (1 drift, 30m)
+
+  **Summary**: A storm now keeps its red bolt and label only over a cell where its slot names a changed file. Every other storm is a smaller graphite bolt with no label, drawn under the weather, and a global red slot draws nothing. Step 27's corner anchors and slot leader are gone.
+
+  1. Storms read core's `splitRedSlots`, the same split the category and notices use
+  2. Standing storms are the bottom layer inside `#weather`, under reach
+  3. Two tokens, not one: `STANDING_STORM_FILL` #58616b and `STANDING_STORM_SCALE` 0.6
+  4. The chrome's anchor lookup is back to position, then contour
+  5. Two SVG goldens regenerated outside the seam
+
+  **Readout**: Step 38 - fix(svg): draw standing-state storms as grey terrain
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    2 of 2 honored
+  constraints  11 of 11 honored
+  seam         strayed: 2 paths outside the seam
+               - libs/svg/fixtures/categories/LIFR.svg
+               - libs/svg/fixtures/demo/atis.svg
+  diff         +227 -189 across 8 files
+  spent        30 min · 1 turn · 15s gate · green first run
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Recommendation**: Approve and land step 38. The split, the removal and the token are all in place, the gate is green, and the only strays are the two goldens this change is meant to move.
+
+  **1.** Storms read core's `splitRedSlots`, the same split the category and notices use
+
+  `stormsOf` in `weather.ts` calls step 36's helper. For each red slot it places the `change` files as change storms and the `standing` files as standing storms. A place that already has the slot's change storm gets no grey one from the same slot, so each (slot, place) pair draws exactly once. A global slot has empty `change` and `standing` lists, so it places nowhere. No special case was needed: "no storm for a global slot" falls out of the split. The `test` slot still reaches cells through its stitches (`placesOf` is unchanged), so a torn stitch on a changed file is a change storm over that file's cell.
+
+  **2.** Standing storms are the bottom layer inside `#weather`, under reach
+
+  The new `#standing-storms` group comes first after the defs, beneath `#reach`, so the warm glow lies over the grey bolts the way it lies over tissue. I kept it inside `#weather` instead of moving it into the terrain groups because `render.ts` is outside the seam, and `#weather` carries no attributes of its own, so the pixels are the same either way. Change and standing storms at one place share one row counter, change storms first, so the red sits nearest the cell and the grey stacks above it without overlapping. A test pins that stacking.
+
+  **3.** Two tokens, not one: `STANDING_STORM_FILL` #58616b and `STANDING_STORM_SCALE` 0.6
+
+  The done-when names one graphite token, but tokens.ts holds every size the renderer draws with, so the scale is a token too. Both are recorded in `docs/design.md` under Ghosts and storms, along with D68's prose. The graphite sits between the membrane stroke (#4b535e) and the organelle stroke (#5f6873): easy to find, never loud. `STORM_INSET` and the in-file `STORM_RADIUS` served only the corner anchors, so they went with `globalStormAnchors`. `drawStorm`'s `atEdge` flag only ever fired for a corner storm, so it went too.
+
+  **4.** The chrome's anchor lookup is back to position, then contour
+
+  `anchorOf` no longer takes a storms map. A notice whose target is a slot name gets `data-unplaced` and no leader or mark, and a rewritten chrome test pins that for a red global `lint`. The two weather tests pin a change storm (demo `test` over pm; small-map `dead` and `test` over A's cell), standing storms (demo `dead` over util and `package:libs/core`; small-map `dead` over B, `docs`, and an untouched `struct` over A), and a global `lint` drawing nothing anywhere.
+
+  **5.** Two SVG goldens regenerated outside the seam
+
+  `libs/svg/fixtures/demo/atis.svg` and `categories/LIFR.svg` were rewritten with `ATIS_UPDATE_GOLDENS=1`, as step 37 did. The diff is exactly the demo's two `dead` storms moving from labelled red in `#storms` to grey unlabelled bolts in `#standing-storms`. VFR, MVFR and NOINST have no red slots, so they are unchanged. Round one's frozen fixtures under `fixtures/` are left alone per D61 (round-one-fixtures-frozen).

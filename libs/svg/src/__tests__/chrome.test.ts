@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { assertMap } from 'core';
-import type { FlightCategory, MapJson, Notice, NoticeTier, Organelle } from 'core';
+import type { CheckSlot, FlightCategory, MapJson, Notice, NoticeTier, Organelle } from 'core';
 import { expect, test } from 'vitest';
 
 import { CATEGORY_HUES, HUD_ORDER, NOTICE_BUDGET, wrap } from '../chrome.js';
@@ -180,20 +180,37 @@ function tiered(): MapJson {
   };
 }
 
-test('the HUD draws the blocks of §7 in order, with Other only when the other group has files', () => {
+/** The demo with some slots' verdicts swapped: `red` names the slots to turn red, each with its scope, and `green` the slots to turn green. */
+function slotsSet(map: MapJson, red: Readonly<Record<string, CheckSlot['scope']>>, green: readonly string[] = []): MapJson {
+  const slots = map.weather.checks.slots.map((slot): CheckSlot => {
+    const scope = red[slot.name];
+    if (scope !== undefined) return { ...slot, ok: false, skipped: false, scope };
+    return green.includes(slot.name) ? { ...slot, ok: true, scope: 'global' } : slot;
+  });
+  return { ...map, weather: { ...map.weather, checks: { ...map.weather.checks, slots } } };
+}
+
+test('the HUD draws the blocks of §7 in order, with Standing only when some red is standing and Other only when the other group has files', () => {
+  // The change's own evidence sits beside the category; the gate and the standing state follow it (D70).
+  expect(HUD_ORDER).toEqual(['category', 'patch-cov', 'mutants', 'reach', 'size', 'gate', 'standing', 'health', 'notices', 'other']);
   const map = demo();
   expect(blockIds(chromeOf(renderSvg(map)))).toEqual(HUD_ORDER);
 
   const groups = map.terrain.groups.filter((entry) => entry.id !== 'other');
   const without = chromeOf(renderSvg({ ...map, terrain: { ...map.terrain, groups } }));
   expect(blockIds(without)).toEqual(HUD_ORDER.filter((id) => id !== 'other'));
+
+  // `dead` names only untouched files; green, nothing is standing and the block is not drawn.
+  const clear = chromeOf(renderSvg(slotsSet(map, {}, ['dead'])));
+  expect(blockIds(clear)).toEqual(HUD_ORDER.filter((id) => id !== 'standing'));
 });
 
 test('every HUD number is read from the map', () => {
   const chrome = chromeOf(renderSvg(demo()));
   const read = (id: string): string => textOf(blockOf(chrome, id) ?? '');
-  // Six of the eight slots that ran are green; security was skipped and counts in neither.
-  expect(read('checks')).toBe('Checks 6/8');
+  // `test` tore a stitch on the change; `dead` names only files the change never touched (D67).
+  expect(read('gate')).toBe('Gate 1 red');
+  expect(read('standing')).toBe('Standing 1 red');
   // 4 + 4 + 7 covered of 7 + 9 + 9 changed executable lines.
   expect(read('patch-cov')).toBe('Patch cov 60%');
   expect(read('mutants')).toBe('Mutants 2 survived');
@@ -203,26 +220,59 @@ test('every HUD number is read from the map', () => {
   expect(read('notices')).toBe('Notices 1·2·3');
   expect(read('other')).toBe('Other 1');
   // The value is the big numeral: bold, after a plain label.
-  expect(blockOf(chrome, 'checks')).toMatch(/<tspan>Checks <\/tspan><tspan font-weight="bold">6\/8<\/tspan>/);
+  expect(blockOf(chrome, 'gate')).toMatch(/<tspan>Gate <\/tspan><tspan font-weight="bold">1<\/tspan><tspan> red<\/tspan>/);
+});
+
+test('the gate counts the change\'s red and never passes a ratio; the standing block counts the rest and names the global slots (D70)', () => {
+  const map = demo();
+  const read = (source: MapJson, id: string): string | undefined => {
+    const markup = blockOf(chromeOf(renderSvg(source)), id);
+    return markup === undefined ? undefined : textOf(markup);
+  };
+
+  // Nothing red on the change: the gate passes with no numeral, bold like any value, and the standing red stays in its own block.
+  const standingOnly = slotsSet(map, {}, ['test']);
+  expect(read(standingOnly, 'gate')).toBe('Gate pass');
+  expect(blockOf(chromeOf(renderSvg(standingOnly)), 'gate')).toMatch(/<tspan>Gate <\/tspan><tspan font-weight="bold">pass<\/tspan><\/text>/);
+  expect(read(standingOnly, 'standing')).toBe('Standing 1 red');
+
+  // Every slot green: the gate passes and there is no standing block.
+  expect(read(variant('VFR'), 'gate')).toBe('Gate pass');
+  expect(read(variant('VFR'), 'standing')).toBeUndefined();
+
+  // Two slots red on changed files count two; a slot that names a changed file and untouched ones is the change's alone.
+  const two = slotsSet(map, { lint: ['apps/cli/src/doctor.ts', 'libs/core/src/util/text.ts'] });
+  expect(read(two, 'gate')).toBe('Gate 2 red');
+  expect(read(two, 'standing')).toBe('Standing 1 red');
+
+  // Global red is wholly standing: counted with the untouched-file red and named in the tail, in name order (C3).
+  const global = slotsSet(map, { types: 'global', lint: 'global' });
+  expect(read(global, 'gate')).toBe('Gate 1 red');
+  expect(read(global, 'standing')).toBe('Standing 3 red, global: lint, types');
+
+  // Each red slot sits in exactly one block: the two counts add up to every red slot.
+  const count = (id: string): number => Number(/(\d+) red/.exec(read(global, id) ?? '')?.[1]);
+  expect(count('gate') + count('standing')).toBe(global.weather.checks.slots.filter((slot) => !slot.ok && !slot.skipped).length);
 });
 
 test('a block whose input is absent or stale is muted with a dash, and the category letters are always present', () => {
   const muted = (chrome: string, id: string): string | undefined =>
     /data-muted="true" data-reason="([\w-]+)"/.exec(blockOf(chrome, id) ?? '')?.[1];
   const live = chromeOf(renderSvg(demo()));
-  for (const id of ['category', 'checks', 'patch-cov', 'mutants', 'reach', 'size', 'notices', 'other']) {
+  for (const id of ['category', 'patch-cov', 'mutants', 'reach', 'size', 'gate', 'standing', 'notices', 'other']) {
     expect(muted(live, id), `${id} is live`).toBeUndefined();
   }
   // The delta needs a base-side run this build never makes (D23).
   expect(muted(live, 'health')).toBe('head-only');
   expect(textOf(blockOf(live, 'health') ?? '')).toContain(MUTED_DASH);
 
-  // No `.check/` was trusted: the verdict is NOINST and every evidence block is a dash (C2, D41).
+  // No `.check/` was trusted: the verdict is NOINST, every evidence block is a dash, and there is no standing state to count (C2, D41).
   const none = chromeOf(renderSvg(variant('NOINST')));
-  expect(muted(none, 'checks')).toBe('absent');
+  expect(muted(none, 'gate')).toBe('absent');
   expect(muted(none, 'patch-cov')).toBe('absent');
   expect(muted(none, 'mutants')).toBe('absent');
-  expect(textOf(blockOf(none, 'checks') ?? '')).toBe(`Checks ${MUTED_DASH}`);
+  expect(textOf(blockOf(none, 'gate') ?? '')).toBe(`Gate ${MUTED_DASH}`);
+  expect(blockOf(none, 'standing')).toBeUndefined();
   expect(textOf(blockOf(none, 'category') ?? '')).toBe('NOINST');
   expect(blockOf(none, 'category')).toContain(`fill="${CHROME_MUTED}"`);
   expect(muted(none, 'reach')).toBeUndefined();
@@ -247,6 +297,11 @@ test('a block whose input is absent or stale is muted with a dash, and the categ
     }),
   );
   expect(muted(empty, 'patch-cov')).toBe('empty');
+
+  // A run in which every slot was skipped put nothing through the gate, so it cannot pass (C2).
+  const vacuous = { ...map, weather: { ...map.weather, checks: { ...map.weather.checks, checks_run: 0, slots: map.weather.checks.slots.map((slot) => ({ ...slot, ok: true, skipped: true, scope: 'global' as const })) } } };
+  expect(muted(chromeOf(renderSvg(vacuous)), 'gate')).toBe('empty');
+  expect(textOf(blockOf(chromeOf(renderSvg(vacuous)), 'gate') ?? '')).toBe(`Gate ${MUTED_DASH}`);
 
   // Every category writes its letters on its own hue; NOINST, which has none, on the muted grey (C11).
   for (const category of CATEGORIES) {
