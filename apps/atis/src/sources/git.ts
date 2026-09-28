@@ -13,7 +13,7 @@ import { execFileSync } from 'node:child_process';
 
 import type { ChangeKind, Commit, DepAdded, Hunk } from 'core';
 
-import { globToRegExp, parseWorkspaceGlobs } from './imports.js';
+import { globToRegExp, parseManifestWorkspaces, parseWorkspaceGlobs } from './imports.js';
 
 /** One changed file between the merge-base and `HEAD`; hunks are on the head side. */
 export type DiffChange = {
@@ -257,10 +257,20 @@ function directoriesOf(paths: Iterable<string>): ReadonlySet<string> {
   return dirs;
 }
 
-/** The workspace member directories at `sha`: `pnpm-workspace.yaml`'s globs, else the root alone (D43). */
+/**
+ * The workspace globs at `sha`: `pnpm-workspace.yaml`'s when the file exists,
+ * since pnpm never reads `workspaces`, else the root manifest's `workspaces`
+ * (D43, D64), the same order the scan reads them in.
+ */
+function workspaceGlobs(repo: string, sha: string, files: ReadonlySet<string>): readonly string[] {
+  if (files.has(WORKSPACE_FILE)) return parseWorkspaceGlobs(showFile(repo, sha, WORKSPACE_FILE) ?? '');
+  if (files.has(MANIFEST)) return parseManifestWorkspaces(showFile(repo, sha, MANIFEST) ?? '');
+  return [];
+}
+
+/** The workspace member directories at `sha`: the root, plus every directory the workspace globs match (D43, D64). */
 function memberDirs(repo: string, sha: string, files: ReadonlySet<string>): readonly string[] {
-  const yaml = showFile(repo, sha, WORKSPACE_FILE);
-  const globs = yaml === undefined ? [] : parseWorkspaceGlobs(yaml);
+  const globs = workspaceGlobs(repo, sha, files);
   const include = globs.filter((glob) => !glob.startsWith('!')).map(globToRegExp);
   const exclude = globs.filter((glob) => glob.startsWith('!')).map((glob) => globToRegExp(glob.slice(1)));
   const matched = [...directoriesOf(files)].filter(

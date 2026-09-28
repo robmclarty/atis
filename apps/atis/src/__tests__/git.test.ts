@@ -1,9 +1,10 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { expect, test } from 'vitest';
+import { afterAll, expect, test } from 'vitest';
 
 import { diffManifests, parseDiff, parseLog, readDiff, readLog, readManifests } from '../sources/index.js';
 
@@ -17,6 +18,30 @@ function fixture(name: string): string {
 
 function logFixture(name: string): string {
   return readFileSync(join(LOG_FIXTURES, name), 'utf8');
+}
+
+const repos: string[] = [];
+
+afterAll(() => {
+  for (const dir of repos) rmSync(dir, { recursive: true, force: true });
+});
+
+/** A throwaway repo whose commits carry no author config of the machine running the test. */
+function tempRepo(prefix: string): { readonly dir: string; readonly git: (args: readonly string[]) => string } {
+  const dir = mkdtempSync(join(tmpdir(), `atis-git-${prefix}-`));
+  repos.push(dir);
+  const git = (args: readonly string[]): string =>
+    execFileSync('git', ['-c', 'user.name=atis', '-c', 'user.email=atis@example.invalid', '-c', 'commit.gpgsign=false', ...args], {
+      cwd: dir,
+      encoding: 'utf8',
+    });
+  git(['init', '--quiet']);
+  return { dir, git };
+}
+
+function writeJson(dir: string, path: string, value: unknown): void {
+  mkdirSync(dirname(join(dir, path)), { recursive: true });
+  writeFileSync(join(dir, path), `${JSON.stringify(value, null, 2)}\n`);
 }
 
 test('parseDiff turns captured name-status, numstat and unified text into sorted changed[]', () => {
@@ -127,4 +152,20 @@ test('readDiff against this repo with --base HEAD~1', () => {
     expect(typeof dep.manifest).toBe('string');
     expect(typeof dep.name).toBe('string');
   }
+});
+
+test('readManifests reads the members of a package.json workspaces repo, with no pnpm-workspace.yaml (D64)', () => {
+  const { dir, git } = tempRepo('workspaces');
+  writeJson(dir, 'package.json', { name: 'root', private: true, workspaces: ['packages/*'] });
+  writeJson(dir, 'packages/a/package.json', { name: 'a', dependencies: { 'left-pad': '^1.0.0' } });
+  writeJson(dir, 'examples/demo/package.json', { name: 'demo' });
+  git(['add', '--all']);
+  git(['commit', '--quiet', '--no-verify', '-m', 'base']);
+  const base = git(['rev-parse', 'HEAD']).trim();
+
+  writeJson(dir, 'packages/a/package.json', { name: 'a', dependencies: { 'left-pad': '^1.0.0', zod: '^3.0.0' } });
+  writeJson(dir, 'examples/demo/package.json', { name: 'demo', dependencies: { chalk: '^5.0.0' } });
+  git(['commit', '--quiet', '--no-verify', '--all', '-m', 'head']);
+
+  expect(readManifests(dir, base)).toEqual([{ manifest: 'packages/a/package.json', name: 'zod', range: '^3.0.0', dev: false }]);
 });

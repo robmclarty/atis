@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 40 — fix(svg): light a skin's uncovered arc instead of its covered one
+**Current step:** 41 — fix(cli): read npm, yarn and bun packages for the dependency delta
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -62,7 +62,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 37. fix(core): spend the notice budget only on the change's red slots
 - ☑ 38. fix(svg): draw standing-state storms as grey terrain
 - ☑ 39. fix(svg): count red slots in the HUD's Gate and Standing blocks
-- ☐ 40. fix(svg): light a skin's uncovered arc instead of its covered one
+- ☑ 40. fix(svg): light a skin's uncovered arc instead of its covered one
 - ☐ 41. fix(cli): read npm, yarn and bun packages for the dependency delta
 
 ## Park list
@@ -1983,3 +1983,53 @@ folder, so it rides the branch into the PR.)*
   **5.** The five SVG goldens under `libs/svg/fixtures` changed too, outside the seam
 
   They were regenerated with `ATIS_UPDATE_GOLDENS=1`, the same way step 38 regenerated them. The VFR, MVFR and NOINST goldens only swap the Checks block for Gate. On the 780-wide demo and LIFR canvases the extra Standing block pushes `Notices` and `Other` onto a second HUD row. That drops the world by one row (23 px), which accounts for most of their diff lines. `layOutHud` already wraps like this when a row doesn't fit.
+
+- 2026-09-28 — step 40 checkpointed · 0a6deb09a — fix(svg): light a skin's uncovered arc instead of its covered one (1 drift, 14m)
+
+  **Summary**: A changed file's skin now draws its gap instead of its closure. Untested changed lines are lit at full strength from the top clockwise over a dim hairline, a closed skin is hairline all round, and a live mutant is a lit notch. On checkride PR 5's `src/doctor.ts` (6 of 19 uncovered), 6/19 of the ring is now the brightest mark on that file.
+
+  1. The skin lights its uncovered share over a dim hairline
+  2. The lit stroke went from 1.5 to 2.5, clear of the tier rings
+  3. A live mutant is a lit notch
+  4. Four SVG goldens outside the seam were regenerated
+  5. I parked a clash with the secondary tier ring
+
+  **Readout**: Step 40 - fix(svg): light a skin's uncovered arc instead of its covered one
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    2 of 2 honored
+  constraints  11 of 11 honored
+  seam         strayed: 4 paths outside the seam
+               - libs/svg/fixtures/categories/LIFR.svg
+               - libs/svg/fixtures/categories/MVFR.svg
+               - libs/svg/fixtures/categories/VFR.svg
+               - libs/svg/fixtures/demo/atis.svg
+  diff         +188 -98 across 8 files
+  spent        14 min · 2 turns · 15s gate · green first run
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Recommendation**: Approve and checkpoint step 40. The done-when is met, the gate is green, and the one visual clash it exposed is parked for a chrome step rather than stretched into this seam.
+
+  **1.** The skin lights its uncovered share over a dim hairline
+
+  `drawIntegrity` now draws a full hairline ring in `EVIDENCE_LIGHT` (`INTEGRITY_CLOSED_WIDTH` 1, `INTEGRITY_CLOSED_OPACITY` 0.3). On top of it, the uncovered share `(changed_executable - covered) / changed_executable` is drawn at full strength, `INTEGRITY_GAP_WIDTH` wide, from the top clockwise. The lit arc covers its own share of the hairline, so what shows as hairline is exactly the covered share. A closed skin skips the lit arc and is hairline all round. The old dark under-ring in `FIELD_FILL` is gone, since the gap is no longer dark. The uncovered count is clamped at zero. Core never writes `covered > changed_executable`, but a negative dash would make SVG ignore the whole dasharray and light a full ring.
+
+  **2.** The lit stroke went from 1.5 to 2.5, clear of the tier rings
+
+  The lit stroke was 1.5 before. It is now 2.5px at the canvas's native scale (the SVG is 1 unit to 1px), which leaves a readable arc on a radius-4 organelle, the layout's minimum. `INTEGRITY_PAD` moved from 1 to 1.25, so the skin spans r+0 to r+2.5 and ends 1 unit short of a secondary tier ring (r+3.5). A test pins that clearance so a later width change can't merge the two. `INTEGRITY_WIDTH` is gone. `INTEGRITY_GAP_WIDTH` keeps its name, because it was already the width of the open part; now it is lit instead of dark.
+
+  **3.** A live mutant is a lit notch
+
+  `drawDents` keeps its name, since the done-when cites it. Each live mutant is now a filled `EVIDENCE_LIGHT` wedge: its mouth spans the skin's outer edge, `MUTANT_NOTCH_WIDTH` (4) wide along the tangent, and its point sits `MUTANT_NOTCH_DEPTH` (2) inside the organelle's edge. The notches are still spread round the top. `MUTANT_DENT_RADIUS` and `MUTANT_DENT_SPACING` are renamed to `MUTANT_NOTCH_*`, which also keeps "dent" meaning only conformance (`DENT_VERTICES`). `docs/design.md` records the new rows, plus a sentence in the luminance section that evidence lights what the tests left open.
+
+  **4.** Four SVG goldens outside the seam were regenerated
+
+  The demo, VFR, MVFR and LIFR goldens under `libs/svg/fixtures/` were rewritten with `ATIS_UPDATE_GOLDENS=1`, as step 38 did. Each diff is 8 lines: the three skins and the two demo notches, nothing else. NOINST carries no evidence and did not move. The seam row will name these four files.
+
+  **5.** I parked a clash with the secondary tier ring
+
+  I rendered checkride PR 5 and looked at `src/doctor.ts` zoomed in. The 6/19 arc reads plainly over the hairline, and the closed skin on `src/pm/tools.ts` stays a dim stain. But `doctor.ts` is a secondary notice target, and its tier ring is `CHROME_INK` (the same pale as the evidence light) at width 3, just past the skin. At native scale that ring can make the whole skin look lit. The ring lives in `chrome.ts`, outside this seam, so I parked it rather than editing it.
