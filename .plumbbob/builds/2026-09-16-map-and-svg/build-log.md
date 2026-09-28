@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 41 — fix(cli): read npm, yarn and bun packages for the dependency delta
+**Current step:** 42 — fix(svg): draw a secondary notice's ring in chrome grey, clear of the lit skin
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -63,7 +63,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 38. fix(svg): draw standing-state storms as grey terrain
 - ☑ 39. fix(svg): count red slots in the HUD's Gate and Standing blocks
 - ☑ 40. fix(svg): light a skin's uncovered arc instead of its covered one
-- ☐ 41. fix(cli): read npm, yarn and bun packages for the dependency delta
+- ☑ 41. fix(cli): read npm, yarn and bun packages for the dependency delta
+- ☐ 42. fix(svg): draw a secondary notice's ring in chrome grey, clear of the lit skin
 
 ## Park list
 
@@ -107,9 +108,9 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] glance protocol: give every reader the same one-minute legend before the first map, saying what each mark and HUD block measures and not how to weigh it; round one ran with none and SPEC 11 is silent on it
 - [x] Go is the next ecosystem atis must read (Rob, 2026-09-24: 'our new product at work is using a Go backend ... that is the direction we need to move in'): a Go producer (go list -json for the import graph, go test -coverprofile for coverage, a Go-aware history filter) writing the same scan and .check inputs, not a widening of the TypeScript scan; SPEC 12 puts languages beyond TypeScript in phase 5, and Rob wants it sooner
 - [x] checkride's jest adapter runs 'jest --ci --json' without --coverage, so a jest repo yields test results but no patch coverage; worth giving it the same coverage run vitest gets (checkride's repo, not atis's), found at refine pass three while settling Q19
-- [ ] git.ts memberDirs still reads only pnpm-workspace.yaml, so readManifests' deps_added (D47) misses npm/yarn/bun member manifests; route it through parseManifestWorkspaces before step 33
-- [ ] security-finding counts the repo's vulnerabilities at head, which is standing state by D67's reading; now that a global red security slot no longer suppresses it, should it spend the budget only when the change's dependency delta touches it?
-- [ ] a secondary notice's tier ring (CHROME_INK, SECONDARY_RING_WIDTH 3, EMPHASIS_PAD 5) is the evidence light's own colour and heavier than the lit skin 1 unit inside it, so a secondary target's skin reads lit all round (checkride PR 5's src/doctor.ts); chrome.ts, outside step 40's seam
+- [x] git.ts memberDirs still reads only pnpm-workspace.yaml, so readManifests' deps_added (D47) misses npm/yarn/bun member manifests; route it through parseManifestWorkspaces before step 33
+- [x] security-finding counts the repo's vulnerabilities at head, which is standing state by D67's reading; now that a global red security slot no longer suppresses it, should it spend the budget only when the change's dependency delta touches it?
+- [x] a secondary notice's tier ring (CHROME_INK, SECONDARY_RING_WIDTH 3, EMPHASIS_PAD 5) is the evidence light's own colour and heavier than the lit skin 1 unit inside it, so a secondary target's skin reads lit all round (checkride PR 5's src/doctor.ts); chrome.ts, outside step 40's seam
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -162,6 +163,12 @@ Harvest results this boundary:
   - **tangent**, defer to phase 2 · how three readers collapse to one verdict: moot while Rob reads alone (D62), back if round two finds readers
   - **tangent**, defer past this build · Go as the next ecosystem, Rob's quote with it: seed for the next build's frame
   - **tangent**, kill here · checkride's jest adapter runs without `--coverage`: D64's harness route covers atis's need, and the adapter fix is checkride's backlog
+
+- 2026-09-27, boundary after step 41 (18dc902), 3 items; Rob confirmed every proposed class:
+  - build order after this harvest: 42, 32, 33, 34; see [build-order.md](build-order.md)
+  - **blocker**, already folded · `memberDirs` read only `pnpm-workspace.yaml`, so `deps_added` missed npm, yarn and bun members → step 41 (18dc902), under [D64 (fixture-eligibility)](intent.md#d64) and [D47 (dependency-delta)](intent.md#d47); nothing new in intent
+  - **blocker** · a secondary notice's ring is the evidence light's own colour, 1 unit outside the lit gap, so its target reads as wholly uncovered → [D72 (tier-ring-not-evidence)](intent.md#d72), fix step 42, ordered ahead of step 33 so the outside SVGs render with it
+  - **tangent**, defer past this build · `security-finding` spends the budget on standing vulnerabilities, by [D67 (standing-state-notices)](intent.md#d67)'s reading: no fixture runs the `security` slot ([D56 (fixtures-skip-audit)](intent.md#d56), [D58 (fixtures-current-toolchain)](intent.md#d58)), so the retake cannot see it, and tying it to the change needs per-package advisories `security.json` does not carry; seed for the next build's frame, with step 41's complete `deps_added` as the other half of that link
 
 ## Log
 
@@ -2033,3 +2040,39 @@ folder, so it rides the branch into the PR.)*
   **5.** I parked a clash with the secondary tier ring
 
   I rendered checkride PR 5 and looked at `src/doctor.ts` zoomed in. The 6/19 arc reads plainly over the hairline, and the closed skin on `src/pm/tools.ts` stays a dim stain. But `doctor.ts` is a secondary notice target, and its tier ring is `CHROME_INK` (the same pale as the evidence light) at width 3, just past the skin. At native scale that ring can make the whole skin look lit. The ring lives in `chrome.ts`, outside this seam, so I parked it rather than editing it.
+
+- 2026-09-28 — step 41 checkpointed · 18dc90215 — fix(cli): read npm, yarn and bun packages for the dependency delta (2m)
+
+  **Summary**: The git source now finds workspace members the same way the scan does. It reads `pnpm-workspace.yaml` when the repo has one, and otherwise the root `package.json`'s `workspaces`. So on an npm, yarn or bun repo, a dependency added to a member's manifest lands in `deps_added`. Before this, only the root manifest was diffed.
+
+  1. memberDirs reads its globs through a new workspaceGlobs helper that mirrors the scan's order
+  2. A temp-repo test shows a member's new dependency landing and a non-member's staying out
+  3. The source no longer prints git's missing-file error on repos that don't use pnpm
+
+  **Readout**: Step 41 - fix(cli): read npm, yarn and bun packages for the dependency delta
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    3 of 3 honored
+  constraints  11 of 11 honored
+  seam         held: 2 of 2 declared, no strays
+  diff         +57 -6 across 2 files
+  spent        2 min · 1 turn · 16s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Approve and land step 41. The done-when is met, the new test failed before the fix and passes after it, and every check passes. That clears the gap step 31 parked, before step 32 picks outside fixtures that may well use npm or yarn.
+
+  **1.** memberDirs reads its globs through a new workspaceGlobs helper that mirrors the scan's order
+
+  `git.ts` gains a three-line `workspaceGlobs(repo, sha, files)`. It checks `pnpm-workspace.yaml` first, because pnpm never reads `workspaces`, and then the root `package.json` through step 31's `parseManifestWorkspaces`. That is the same order `imports.ts` uses. Both readers now share both parsers and `globToRegExp`, so yarn's `{ "packages": [...] }` form and `!` exclusions work here with no new code. The order logic itself is still written twice: once over the filesystem in `imports.ts` and once over `git show` in `git.ts`. Folding those together would have meant a reader interface that crosses the seam, and three lines didn't seem worth that.
+
+  **2.** A temp-repo test shows a member's new dependency landing and a non-member's staying out
+
+  The new test in `git.test.ts` builds a throwaway repo. Its root `package.json` names `workspaces: ["packages/*"]`, and there is no pnpm file. It commits a base, then adds `zod` to `packages/a` and `chalk` to `examples/demo`, which is not a member. `readManifests` returns only the `zod` row. I ran the test against the old `git.ts` first: it failed with `[]` and passes with the fix. The repo's commits carry an `atis` identity through `-c` flags, so the test never depends on the machine's git config, and nothing reads an author field ([C6 (no-people)](#c6)).
+
+  **3.** The source no longer prints git's missing-file error on repos that don't use pnpm
+
+  The old `memberDirs` called `git show <sha>:pnpm-workspace.yaml` without checking first. On every repo without the file, git wrote `fatal: path 'pnpm-workspace.yaml' does not exist` to stderr, twice per run. The new helper checks the `ls-tree` file set first, so that output is gone. It is a side effect of the fix, not a separate change.

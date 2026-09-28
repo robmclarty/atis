@@ -177,7 +177,7 @@ emphasis rings.
 | `CHROME_GROUND` | `#1a1f27` | `#ground`, the sheet the world and chrome sit on; also the fill of a secondary or tertiary numbered box |
 | `CHROME_RULE` | `#2b333d` | `#rules`, the hard rules between the chrome and the world |
 | `CHROME_STROKE_WIDTH` | `1` | the brutalist hairline: a framed HUD block, a tertiary notice box, and the hard rules |
-| `CHROME_INK` | `#e6edf3` | the default ink: HUD labels and values, notice text, secondary rings and boxes, and non-primary box numerals |
+| `CHROME_INK` | `#e6edf3` | the default ink: HUD labels and values, notice text, secondary boxes, and non-primary box numerals; never a ring on the map, since it is `EVIDENCE_LIGHT`'s colour (D72) |
 | `CHROME_MUTED` | `#6b7480` | a muted block or the NOINST category block, a tertiary box frame, and the thresholds line |
 | `CHROME_PAD` | `10` | the quiet edge the chrome keeps around what it writes, and the HUD and column insets |
 | `MUTED_DASH` | `—` | the dash that stands where a number would be faked (C2, D41) |
@@ -198,9 +198,9 @@ emphasis rings.
 | `NOTICE_TEXT_GAP` | `5` | the gap from a box to its row's text |
 | `EMPHASIS_PAD` | `5` | how far a tier ring sits past a target's evidence skin |
 | `PRIMARY_RING_WIDTH` | `1.5` | the thin ring in the category hue round a primary's target |
-| `SECONDARY_RING_WIDTH` | `3` | the thick ink ring round a secondary's target |
+| `SECONDARY_RING_WIDTH` | `3` | the thick ring round a secondary's target, in `LEADER_INK`; its inner edge (`EMPHASIS_PAD` less half this) clears the lit gap's outer edge (`INTEGRITY_PAD` plus half `INTEGRITY_GAP_WIDTH`) by a band of dark field |
 | `SECONDARY_BOX_WIDTH` | `2` | the thicker frame on a secondary's numbered box |
-| `LEADER_INK` | `#9aa5b1` | `#leaders`, the dotted lines from a notice row to its mark |
+| `LEADER_INK` | `#9aa5b1` | `#leaders`, the dotted lines from a notice row to its mark, and the secondary ring round its target, so no mark on the map shares the evidence light's colour (D72) |
 | `LEADER_WIDTH` | `1` | a leader's width |
 | `LEADER_DASH` | `0.1 3` | a leader's round-dotted dash |
 

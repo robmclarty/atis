@@ -158,6 +158,7 @@ export const CHROME_GROUND = '#1a1f27';
 export const CHROME_RULE = '#2b333d';
 /** The brutalist hairline (D12): the width of a framed HUD block, a tertiary notice box, and the hard rule where the chrome meets the world. */
 export const CHROME_STROKE_WIDTH = 1;
+/** The default ink, the evidence light's colour, so it stays in the chrome's own blocks and never rings a skin on the map (D72). */
 export const CHROME_INK = '#e6edf3';
 export const CHROME_MUTED = '#6b7480';
 /** The quiet edge the chrome keeps between its ground and what it writes. */
@@ -199,12 +200,18 @@ export const NOTICE_NUMERAL_SIZE = 7;
 export const NOTICE_BOX_GAP = 3;
 export const NOTICE_TEXT_GAP = 5;
 
-/** Tier emphasis on the map (§5.4): a ring past the evidence skin, thin in the category hue for the primary, thick in ink for a secondary. */
+/**
+ * Tier emphasis on the map (§5.4): a ring past the evidence skin, thin in
+ * the category hue for the primary, thick in the leaders' grey for a
+ * secondary (D72). The secondary's inner edge, at `EMPHASIS_PAD` less half
+ * its width, sits past the lit gap's outer edge, at `INTEGRITY_PAD` plus
+ * half the gap's width, so a band of dark field always parts the two.
+ */
 export const EMPHASIS_PAD = 5;
 export const PRIMARY_RING_WIDTH = 1.5;
 export const SECONDARY_RING_WIDTH = 3;
 export const SECONDARY_BOX_WIDTH = 2;
-/** The dotted leader from a notice's row to its mark (§5.6): thin ink, round dots. */
+/** The dotted leader from a notice's row to its mark (§5.6): thin grey ink, round dots. The secondary ring borrows this grey, so the chrome on the map is never the evidence light. */
 export const LEADER_INK = '#9aa5b1';
 export const LEADER_WIDTH = 1;
 export const LEADER_DASH = '0.1 3';

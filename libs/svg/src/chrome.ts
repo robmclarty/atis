@@ -11,7 +11,8 @@
  * technical-drawing manner of §5.6: a dotted leader from each notice's row
  * to a numbered mark beside its target; round the primary a thin ring in
  * the category hue with its kind written under the mark; round a secondary
- * a thick ring in ink; for a tertiary the mark alone. A notice whose target
+ * a thick ring in the leaders' grey, never the evidence light (D72); for a
+ * tertiary the mark alone. A notice whose target
  * the field does not place, a slot's name say, keeps its row and draws no
  * leader, since a global slot hangs no storm (D68).
  *
@@ -530,10 +531,16 @@ function boxCentre(marks: Marks, rank: number): readonly [number, number] {
   return [marks.x + index * (NOTICE_BOX + NOTICE_BOX_GAP) + NOTICE_BOX / 2, marks.y + NOTICE_BOX / 2];
 }
 
-/** The emphasis on a target's skin: a ring past the evidence skin, or the contour re-traced, thin in the hue for the primary and thick in ink for a secondary. */
+/**
+ * The emphasis on a target's skin: a ring past the evidence skin, or the
+ * contour re-traced, thin in the hue for the primary and thick in the
+ * leaders' grey for a secondary. Never in the chrome's ink, which is the
+ * evidence light's colour, so a ring round a skin cannot read as its gap
+ * lit all round (D72, C11).
+ */
 function drawEmphasis(marks: Marks, tier: NoticeTier, hue: string, worldY: number): Markup | undefined {
   if (tier === 'tertiary') return undefined;
-  const stroke = tier === 'primary' ? hue : CHROME_INK;
+  const stroke = tier === 'primary' ? hue : LEADER_INK;
   const width = tier === 'primary' ? PRIMARY_RING_WIDTH : SECONDARY_RING_WIDTH;
   const shared = { 'data-target': marks.target, 'data-tier': tier, fill: 'none', stroke, 'stroke-width': width };
   if (marks.anchor.kind === 'point') {

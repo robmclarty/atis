@@ -11,8 +11,13 @@ import { renderSvg } from '../render.js';
 import {
   CHROME_INK,
   CHROME_MUTED,
+  EMPHASIS_PAD,
+  EVIDENCE_LIGHT,
   IFR_HUE,
+  INTEGRITY_GAP_WIDTH,
+  INTEGRITY_PAD,
   LEADER_DASH,
+  LEADER_INK,
   MUTED_DASH,
   NOTICE_BOX,
   PRIMARY_RING_WIDTH,
@@ -390,7 +395,7 @@ test('a notice naming a red global slot keeps its row and draws no leader, since
   expect(drawn(chrome, 'marks')).not.toContain('data-mark="6"');
 });
 
-test('tier emphasis on the map: the primary a ring in the category hue and its kind, a secondary a thick ring in ink, a tertiary the mark alone', () => {
+test('tier emphasis on the map: the primary a ring in the category hue and its kind, a secondary a thick ring in the leaders\' grey, a tertiary the mark alone', () => {
   const map = tiered();
   const marks = drawn(chromeOf(renderSvg(map)), 'marks');
   const rings = [...marks.matchAll(/<circle data-target="([^"]+)" data-tier="(\w+)" fill="none" stroke="([^"]+)" stroke-width="([\d.]+)"/g)].map(
@@ -398,7 +403,7 @@ test('tier emphasis on the map: the primary a ring in the category hue and its k
   );
   expect(rings).toEqual([
     { target: 'src/a.ts', tier: 'primary', stroke: IFR_HUE, width: PRIMARY_RING_WIDTH },
-    { target: 'src/b.ts', tier: 'secondary', stroke: CHROME_INK, width: SECONDARY_RING_WIDTH },
+    { target: 'src/b.ts', tier: 'secondary', stroke: LEADER_INK, width: SECONDARY_RING_WIDTH },
   ]);
   // The primary's kind is written in the hue under its mark; nobody else gets a label.
   const labels = [...marks.matchAll(/<text data-target="([^"]+)"[^>]*fill="([^"]+)">([^<]*)<\/text>/g)].map(([, target, fill, text]) => [target, fill, text]);
@@ -409,6 +414,38 @@ test('tier emphasis on the map: the primary a ring in the category hue and its k
   expect(boxes[1]?.[0]).toBeGreaterThan(240);
   expect(boxes[2]?.[0]).toBeLessThan(470);
   for (const [, y] of boxes) expect(y).toBeGreaterThan(100);
+});
+
+test('a secondary ring never shares the evidence light and clears the lit gap by dark field, round a file or along a cell (D72, C11)', () => {
+  // The chrome's ink is the evidence light's colour, which is the whole reason the ring cannot be drawn in it.
+  expect(CHROME_INK).toBe(EVIDENCE_LIGHT);
+  expect(LEADER_INK).not.toBe(EVIDENCE_LIGHT);
+
+  // The dark band between the lit gap's outer edge and the ring's inner edge, from the tokens alone.
+  const gapOuter = INTEGRITY_PAD + INTEGRITY_GAP_WIDTH / 2;
+  const ringInner = EMPHASIS_PAD - SECONDARY_RING_WIDTH / 2;
+  expect(ringInner - gapOuter).toBeGreaterThan(0);
+
+  // Round a file: the drawn ring, measured off its own radius.
+  const map = tiered();
+  const layout = map.terrain.layout;
+  expect(layout).toBeDefined();
+  if (layout === undefined) return;
+  const ring = /<circle data-target="src\/b\.ts" data-tier="secondary" fill="none" stroke="([^"]+)" stroke-width="([\d.]+)" cx="[\d.]+" cy="[\d.]+" r="([\d.]+)"/.exec(
+    drawn(chromeOf(renderSvg(map)), 'marks'),
+  );
+  expect(ring, 'the secondary ring is drawn').not.toBeNull();
+  expect(ring?.[1]).not.toBe(EVIDENCE_LIGHT);
+  expect(Number(ring?.[3]) - Number(ring?.[2]) / 2).toBeGreaterThan((layout.positions['src/b.ts']?.r ?? 0) + gapOuter);
+
+  // Along a cell: the contour re-traced in the same grey.
+  const cellular: MapJson = {
+    ...map,
+    terrain: { ...map.terrain, layout: { ...layout, contours: { 'folder:src': [[80, 80], [480, 80], [480, 120], [80, 120], [80, 80]] } } },
+    notices: map.notices.map((notice) => (notice.tier === 'secondary' ? { ...notice, target: 'folder:src' } : notice)),
+  };
+  const traced = /<path data-target="folder:src" data-tier="secondary" fill="none" stroke="([^"]+)"/.exec(drawn(chromeOf(renderSvg(cellular)), 'marks'));
+  expect(traced?.[1]).toBe(LEADER_INK);
 });
 
 test('a target with several notices carries one ring, for its strongest tier, and one mark per notice side by side', () => {
