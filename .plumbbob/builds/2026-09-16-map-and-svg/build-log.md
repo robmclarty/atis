@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 39 — fix(svg): count red slots in the HUD's Gate and Standing blocks
+**Current step:** 40 — fix(svg): light a skin's uncovered arc instead of its covered one
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -61,7 +61,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 36. fix(core): set the flight category from the change's red slots
 - ☑ 37. fix(core): spend the notice budget only on the change's red slots
 - ☑ 38. fix(svg): draw standing-state storms as grey terrain
-- ☐ 39. fix(svg): count red slots in the HUD's Gate and Standing blocks
+- ☑ 39. fix(svg): count red slots in the HUD's Gate and Standing blocks
 - ☐ 40. fix(svg): light a skin's uncovered arc instead of its covered one
 - ☐ 41. fix(cli): read npm, yarn and bun packages for the dependency delta
 
@@ -109,6 +109,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] checkride's jest adapter runs 'jest --ci --json' without --coverage, so a jest repo yields test results but no patch coverage; worth giving it the same coverage run vitest gets (checkride's repo, not atis's), found at refine pass three while settling Q19
 - [ ] git.ts memberDirs still reads only pnpm-workspace.yaml, so readManifests' deps_added (D47) misses npm/yarn/bun member manifests; route it through parseManifestWorkspaces before step 33
 - [ ] security-finding counts the repo's vulnerabilities at head, which is standing state by D67's reading; now that a global red security slot no longer suppresses it, should it spend the budget only when the change's dependency delta touches it?
+- [ ] a secondary notice's tier ring (CHROME_INK, SECONDARY_RING_WIDTH 3, EMPHASIS_PAD 5) is the evidence light's own colour and heavier than the lit skin 1 unit inside it, so a secondary target's skin reads lit all round (checkride PR 5's src/doctor.ts); chrome.ts, outside step 40's seam
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -1931,3 +1932,54 @@ folder, so it rides the branch into the PR.)*
   **5.** Two SVG goldens regenerated outside the seam
 
   `libs/svg/fixtures/demo/atis.svg` and `categories/LIFR.svg` were rewritten with `ATIS_UPDATE_GOLDENS=1`, as step 37 did. The diff is exactly the demo's two `dead` storms moving from labelled red in `#storms` to grey unlabelled bolts in `#standing-storms`. VFR, MVFR and NOINST have no red slots, so they are unchanged. Round one's frozen fixtures under `fixtures/` are left alone per D61 (round-one-fixtures-frozen).
+
+- 2026-09-28 — step 39 checkpointed · bf024ab52 — fix(svg): count red slots in the HUD's Gate and Standing blocks (1 drift, 5m)
+
+  **Summary**: The HUD's `Checks n/m` block is gone. A `Gate` block now counts only the red slots on the change (`Gate 1 red`, or `Gate pass` with no numeral), and a `Standing n red` block counts the wholly standing red and names the global slots. Both sit after size, so the change's own evidence is what sits beside the category.
+
+  1. Both blocks read core's `splitRedSlots`, the same split the category, the notices and the storms use
+  2. A run where every slot was skipped mutes the gate as `empty` instead of reading `Gate pass`
+  3. The Standing tail reads `, global: lint, types`, a format I chose
+  4. Gate and Standing sit right after Size, ahead of the muted Health Δ
+  5. The five SVG goldens under `libs/svg/fixtures` changed too, outside the seam
+
+  **Readout**: Step 39 - fix(svg): count red slots in the HUD's Gate and Standing blocks
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    2 of 2 honored
+  constraints  11 of 11 honored
+  seam         strayed: 5 paths outside the seam
+               - libs/svg/fixtures/categories/LIFR.svg
+               - libs/svg/fixtures/categories/MVFR.svg
+               - libs/svg/fixtures/categories/NOINST.svg
+               - libs/svg/fixtures/categories/VFR.svg
+               - libs/svg/fixtures/demo/atis.svg
+  diff         +319 -242 across 7 files
+  spent        5 min · 1 turn · 15s gate · green first run
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Recommendation**: Approve and checkpoint. The done-when is met and the gate is green. The two judgment calls, the `empty` mute and the tail format, are both small and easy to revert if you'd rather keep strictly to D70's text.
+
+  **1.** Both blocks read core's `splitRedSlots`, the same split the category, the notices and the storms use
+
+  `gateBlocks` in `chrome.ts` calls `splitRedSlots` with the map's slots, changed set and stitches, exactly as `weather.ts` does for the storms. The gate counts `red.change` and the standing block counts `red.standing`, so each red slot lands in exactly one block. A test adds the two numerals and checks the total equals every red slot. On the demo, `test` tears a stitch on the change and `dead` names only untouched files, so the row reads `Gate 1 red` and then `Standing 1 red`.
+
+  **2.** A run where every slot was skipped mutes the gate as `empty` instead of reading `Gate pass`
+
+  The done-when names three gate states: n red, pass, and muted `absent` with no trusted `.check/`. A fourth case exists: a trusted `.check/` in which no slot ran, the vacuous green that core already calls LIFR. Under the literal three states that run would read `Gate pass`, a pass nothing went through. I muted it as `empty` instead, the reason the coverage block already uses for "nothing to measure", per C2 (never-fake). A test pins it. This is a small addition beyond the done-when. Drop it if you want exactly the three states.
+
+  **3.** The Standing tail reads `, global: lint, types`, a format I chose
+
+  D70 says the tail names the global slots but gives no format. The block follows the existing `Size +a −d, f files` pattern: a comma, then the phrase. The colon keeps `global` from reading as part of the first slot's name. The slots are listed in name order (C3). With no global slot the tail is just ` red`.
+
+  **4.** Gate and Standing sit right after Size, ahead of the muted Health Δ
+
+  D70 lists the change's blocks as patch coverage, mutants, reach and size, so both new blocks follow Size immediately and `Health Δ` comes after them. The new `HUD_ORDER` is category, patch-cov, mutants, reach, size, gate, standing, health, notices, other. A test pins that literal list. Health Δ is arguably change evidence too; if you want it ahead of the gate, it's a one-line swap.
+
+  **5.** The five SVG goldens under `libs/svg/fixtures` changed too, outside the seam
+
+  They were regenerated with `ATIS_UPDATE_GOLDENS=1`, the same way step 38 regenerated them. The VFR, MVFR and NOINST goldens only swap the Checks block for Gate. On the 780-wide demo and LIFR canvases the extra Standing block pushes `Notices` and `Other` onto a second HUD row. That drops the world by one row (23 px), which accounts for most of their diff lines. `layOutHud` already wraps like this when a row doesn't fit.

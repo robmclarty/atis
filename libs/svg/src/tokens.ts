@@ -88,15 +88,22 @@ export const REACH_BLUR = 6;
 export const CROSSING_PAD = 3;
 export const CROSSING_OPACITY = 0.9;
 
-/** Evidence is luminance too (C11): the closed part of a changed skin and a stitch that passed, in a pale light. */
+/** Evidence is luminance too (C11): the gap in a changed skin, a live mutant's notch and a stitch that passed, in a pale light. */
 export const EVIDENCE_LIGHT = '#e6edf3';
-/** The skin: a ring this far past the edge, open all round in the dark this wide, closed in the light this wide. */
-export const INTEGRITY_PAD = 1;
+/**
+ * The skin draws its gap, not its closure (D71): a ring this far past the
+ * edge, the uncovered share lit at full strength this wide, which is 2.5px
+ * at the canvas's native scale and so still reads on the smallest organelle,
+ * and the covered share a hairline this wide at this strength.
+ */
+export const INTEGRITY_PAD = 1.25;
 export const INTEGRITY_GAP_WIDTH = 2.5;
-export const INTEGRITY_WIDTH = 1.5;
-/** A live mutant: a small dent in the skin, this big, spread this far apart round the top of the ring. */
-export const MUTANT_DENT_RADIUS = 2.5;
-export const MUTANT_DENT_SPACING = Math.PI / 6;
+export const INTEGRITY_CLOSED_WIDTH = 1;
+export const INTEGRITY_CLOSED_OPACITY = 0.3;
+/** A live mutant: a lit notch cut through the skin, this wide across it, its point this far inside the edge, spread this far apart round the top of the ring. */
+export const MUTANT_NOTCH_WIDTH = 4;
+export const MUTANT_NOTCH_DEPTH = 2;
+export const MUTANT_NOTCH_SPACING = Math.PI / 6;
 /** A stitch: a short stroke across the edge, spread this far apart round the bottom of the ring; torn, it breaks by this gap. */
 export const STITCH_LENGTH = 8;
 export const STITCH_WIDTH = 2;

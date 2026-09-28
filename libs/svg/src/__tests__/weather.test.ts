@@ -11,15 +11,22 @@ import { GLOW_ID, HATCH_ID, STIPPLE_ID } from '../patterns.js';
 import { renderSvg } from '../render.js';
 import {
   CHANGE_HUE,
+  EMPHASIS_PAD,
   EVIDENCE_LIGHT,
   FIELD_FILL,
   GHOST_PAD,
   GHOST_STROKE,
   IFR_HUE,
+  INTEGRITY_CLOSED_OPACITY,
+  INTEGRITY_CLOSED_WIDTH,
+  INTEGRITY_GAP_WIDTH,
+  INTEGRITY_PAD,
   LIFR_HUE,
-  MUTANT_DENT_RADIUS,
+  MUTANT_NOTCH_DEPTH,
+  MUTANT_NOTCH_WIDTH,
   RENAME_DASH,
   RENAME_LABEL_SIZE,
+  SECONDARY_RING_WIDTH,
   STANDING_STORM_FILL,
   STANDING_STORM_SCALE,
   STITCH_UNLIT,
@@ -231,45 +238,104 @@ test('reach glows through a blur, fills each reached cell at an opacity strictly
   expect(new Set(written).size).toBe(written.length);
 });
 
-test('patch coverage closes each changed skin by covered over changed_executable, from the top clockwise, and leaves the rest dark', () => {
-  const evidence = drawn(renderSvg(demo()), 'evidence');
-  const skins = [...evidence.matchAll(/<g data-id="([^"]+)" data-covered="(\d+)" data-changed="(\d+)">([\s\S]*?)<\/g>/g)].map(
-    ([, id, covered, changed, body]) => ({ id, covered: Number(covered), changed: Number(changed), body: body ?? '' }),
-  );
+type Skin = { readonly id: string; readonly covered: number; readonly changed: number; readonly rings: readonly string[] };
+
+/** Each changed skin in an evidence layer: whose it is, its counts, and the rings it is drawn with, bottom up. */
+function skinsIn(evidence: string): readonly Skin[] {
+  return [...evidence.matchAll(/<g data-id="([^"]+)" data-covered="(\d+)" data-changed="(\d+)">([\s\S]*?)<\/g>/g)].map(([, id, covered, changed, body]) => ({
+    id: id ?? '',
+    covered: Number(covered),
+    changed: Number(changed),
+    rings: [...(body ?? '').matchAll(/<circle [^>]*\/>/g)].map(([ring]) => ring),
+  }));
+}
+
+/** A ring's numeric attribute, as written. */
+function attr(ring: string | undefined, name: string): number {
+  return Number(new RegExp(` ${name}="([\\d.]+)"`).exec(ring ?? '')?.[1]);
+}
+
+test('a changed skin lights its uncovered share at full strength from the top clockwise over a dim hairline all round (D71)', () => {
+  const coverage = [
+    { path: A, changed_executable: 19, covered: 13, uncovered_lines: [2, 3, 5, 7, 11, 13] },
+    { path: B, changed_executable: 5, covered: 5, uncovered_lines: [] },
+  ];
+  const modifiedB: ChangedFile = { ...MODIFIED_A, path: B, cell: CELL_B };
+  const evidence = drawn(renderSvg(small({ weather: { changed: [MODIFIED_A, modifiedB], evidence: { patch_coverage: coverage } } })), 'evidence');
+  const [open, closed] = skinsIn(evidence);
+  expect([open?.id, closed?.id]).toEqual([A, B]);
+
+  // Six of nineteen changed lines ran untested: the hairline all round, then six nineteenths of the ring lit over it.
+  const [hairline, gap] = open?.rings ?? [];
+  expect(open?.rings).toHaveLength(2);
+  for (const ring of [hairline, gap]) {
+    expect(ring).toContain(`stroke="${EVIDENCE_LIGHT}"`);
+    expect(attr(ring, 'r')).toBe(AT_A.r + INTEGRITY_PAD);
+  }
+  expect(attr(hairline, 'stroke-width')).toBe(INTEGRITY_CLOSED_WIDTH);
+  expect(attr(hairline, 'stroke-opacity')).toBe(INTEGRITY_CLOSED_OPACITY);
+  expect(hairline).not.toContain('stroke-dasharray');
+  expect(attr(gap, 'stroke-width')).toBe(INTEGRITY_GAP_WIDTH);
+  expect(gap).not.toContain('stroke-opacity');
+  expect(gap).toContain('pathLength="1"');
+  expect(Number(/stroke-dasharray="([\d.]+) 1"/.exec(gap ?? '')?.[1])).toBeCloseTo(6 / 19, 2);
+  expect(gap).toContain(`transform="rotate(-90 ${AT_A.x} ${AT_A.y})"`);
+  // The lit gap reads as heavier than the hairline it rides on, and lies clear of a tier ring past it.
+  expect(INTEGRITY_GAP_WIDTH).toBeGreaterThan(2 * INTEGRITY_CLOSED_WIDTH);
+  expect(INTEGRITY_PAD + INTEGRITY_GAP_WIDTH / 2).toBeLessThan(EMPHASIS_PAD - SECONDARY_RING_WIDTH / 2);
+
+  // A skin the tests closed is the hairline alone: no light where there is no gap.
+  expect(closed?.rings).toHaveLength(1);
+  expect(attr(closed?.rings[0], 'stroke-width')).toBe(INTEGRITY_CLOSED_WIDTH);
+  expect(attr(closed?.rings[0], 'stroke-opacity')).toBe(INTEGRITY_CLOSED_OPACITY);
+});
+
+test("the demo's skins each light the share of their changed lines left uncovered", () => {
+  const skins = skinsIn(drawn(renderSvg(demo()), 'evidence'));
   expect(skins.map((skin) => [skin.id, skin.covered, skin.changed])).toEqual([
     ['apps/cli/src/doctor.ts', 4, 7],
     ['libs/core/src/pm/index.ts', 4, 9],
     ['libs/core/src/pm/tools.ts', 7, 9],
   ]);
   for (const skin of skins) {
-    const closed = /stroke-dasharray="([\d.]+) 1"/.exec(skin.body)?.[1];
-    expect(Number(closed)).toBeCloseTo(skin.covered / skin.changed, 2);
-    // The open ring beneath is the field's own dark, so a gap reads as a gap even over a glowing cell.
-    expect(skin.body.indexOf(`stroke="${FIELD_FILL}"`)).toBeLessThan(skin.body.indexOf(`stroke="${EVIDENCE_LIGHT}"`));
-    expect(skin.body).toContain('pathLength="1"');
-    expect(skin.body).toMatch(/transform="rotate\(-90 /);
+    const lit = /stroke-dasharray="([\d.]+) 1"/.exec(skin.rings[1] ?? '')?.[1];
+    expect(Number(lit)).toBeCloseTo((skin.changed - skin.covered) / skin.changed, 2);
   }
 });
 
-test('survived and no-coverage mutants are small dents in the changed skin', () => {
+test('a live mutant is a lit notch cut through the skin, round the top of the ring (D71)', () => {
   const map = demo();
   const at = map.terrain.layout?.positions['libs/core/src/pm/tools.ts'];
   expect(at).toBeDefined();
   if (at === undefined) return;
   const evidence = drawn(renderSvg(map), 'evidence');
-  const dents = [...evidence.matchAll(new RegExp(`<circle data-id="([^"]+)" data-line="(\\d+)" data-status="(\\w+)" cx="([\\d.]+)" cy="([\\d.]+)" r="([\\d.]+)" fill="${FIELD_FILL}"/>`, 'g'))].map(
-    ([, id, line, status, cx, cy, r]) => ({ id, line: Number(line), status, cx: Number(cx), cy: Number(cy), r: Number(r) }),
+  const notches = [...evidence.matchAll(/<path data-id="([^"]+)" data-line="(\d+)" data-status="(\w+)" d="([^"]+)" fill="([^"]+)"\/>/g)].map(
+    ([, id, line, status, d, fill]) => ({
+      id,
+      line: Number(line),
+      status,
+      fill,
+      points: [...(d ?? '').matchAll(/[ML]([\d.-]+) ([\d.-]+)/g)].map(([, x, y]) => ({ x: Number(x), y: Number(y) })),
+    }),
   );
-  expect(dents.map((dent) => [dent.id, dent.line, dent.status])).toEqual([
+  expect(notches.map((notch) => [notch.id, notch.line, notch.status])).toEqual([
     ['libs/core/src/pm/tools.ts', 27, 'NoCoverage'],
     ['libs/core/src/pm/tools.ts', 64, 'Survived'],
   ]);
-  for (const dent of dents) {
-    expect(dent.r).toBe(MUTANT_DENT_RADIUS);
-    expect(Math.hypot(dent.cx - at.x, dent.cy - at.y)).toBeCloseTo(at.r, 1);
-    expect(dent.cy).toBeLessThan(at.y);
+  const out = (point: { readonly x: number; readonly y: number } | undefined): number => Math.hypot((point?.x ?? 0) - at.x, (point?.y ?? 0) - at.y);
+  for (const notch of notches) {
+    // Lit, never the field's dark: a mutant that lived adds light rather than taking it away.
+    expect(notch.fill).toBe(EVIDENCE_LIGHT);
+    expect(notch.fill).not.toBe(FIELD_FILL);
+    const [left, point, right] = notch.points;
+    expect(notch.points).toHaveLength(3);
+    // Its mouth spans the skin's outer edge, the notch's width across; its point sits inside the organelle's edge.
+    expect(Math.hypot((left?.x ?? 0) - (right?.x ?? 0), (left?.y ?? 0) - (right?.y ?? 0))).toBeCloseTo(MUTANT_NOTCH_WIDTH, 1);
+    expect(out(left)).toBeGreaterThan(at.r + INTEGRITY_PAD);
+    expect(out(point)).toBeCloseTo(at.r - MUTANT_NOTCH_DEPTH, 1);
+    expect(point?.y).toBeLessThan(at.y);
   }
-  expect(dents[0]?.cx).not.toBe(dents[1]?.cx);
+  expect(notches[0]?.points[1]?.x).not.toBe(notches[1]?.points[1]?.x);
 });
 
 test('stitches are short strokes across the edge: torn in the IFR hue when the test failed, lit when it passed, unlit when it was not run', () => {

@@ -99,7 +99,9 @@ ride on the category hue.
 
 Luminance means reach and evidence (§5.2, C11). These are the only luminous
 marks on the map, luminous because each means something (§5.6): a warm glow for
-reach, a pale light for evidence.
+reach, a pale light for evidence. Evidence lights what the tests left open
+rather than what they closed (D71), so worse evidence draws more light and a
+changed file whose evidence is closed stays a dim stain.
 
 | Token | Value | Where it appears |
 | --- | --- | --- |
@@ -109,12 +111,14 @@ reach, a pale light for evidence.
 | `REACH_BLUR` | `6` | the Gaussian blur (`stdDeviation`) the glow is drawn through |
 | `CROSSING_PAD` | `3` | a barrel the reach crosses is lit as a disc this far past its edge |
 | `CROSSING_OPACITY` | `0.9` | that crossing disc's opacity |
-| `EVIDENCE_LIGHT` | `#e6edf3` | the closed part of a changed file's integrity skin, and a stitch that passed |
-| `INTEGRITY_PAD` | `1` | the integrity skin sits this far past the organelle's edge |
-| `INTEGRITY_GAP_WIDTH` | `2.5` | the dark under-ring, the width of the skin's open part |
-| `INTEGRITY_WIDTH` | `1.5` | the lit part of the skin, closed for the covered share of changed lines |
-| `MUTANT_DENT_RADIUS` | `2.5` | a live mutant is a dark bite this big out of the skin |
-| `MUTANT_DENT_SPACING` | `π/6` | how far apart the bites spread round the top of the ring |
+| `EVIDENCE_LIGHT` | `#e6edf3` | a changed file's integrity skin (its gap lit, its closed share a dim hairline), a live mutant's notch, and a stitch that passed |
+| `INTEGRITY_PAD` | `1.25` | the integrity skin sits this far past the organelle's edge |
+| `INTEGRITY_GAP_WIDTH` | `2.5` | the skin draws its gap, not its closure (D71): the uncovered share of changed lines, lit at full strength from the top clockwise, this wide, which is 2.5px at the canvas's native scale and reads on the smallest organelle (radius 4) |
+| `INTEGRITY_CLOSED_WIDTH` | `1` | the covered share of the skin, a hairline this wide; a closed skin is this hairline all round |
+| `INTEGRITY_CLOSED_OPACITY` | `0.3` | that hairline's strength, so a closed skin stays dim and a gap is the light |
+| `MUTANT_NOTCH_WIDTH` | `4` | a live mutant is a lit notch this wide across the skin's outer edge (D71) |
+| `MUTANT_NOTCH_DEPTH` | `2` | how far inside the organelle's edge the notch's point reaches |
+| `MUTANT_NOTCH_SPACING` | `π/6` | how far apart the notches spread round the top of the ring |
 | `STITCH_LENGTH` | `8` | a stitch is a short stroke across the edge, this long |
 | `STITCH_WIDTH` | `2` | the `#evidence` group's stroke width, which the stitch strokes take |
 | `STITCH_SPACING` | `π/6` | how far apart stitches spread round the bottom of the ring |

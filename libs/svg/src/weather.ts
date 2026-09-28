@@ -10,9 +10,9 @@
  * magenta is a cycle or a boundary crossed. Luminance is reach and evidence:
  * a warm glow fills the changed cell and, one membrane on, the next cell
  * dimmer (D5), each barrel the reach crosses lit at the crossing; a changed
- * file's skin is closed for the share of its changed lines the tests ran and
- * open for the rest, bitten where a mutant lived, stitched where a test
- * imports it. Texture is history: hatching by churn, stipple by bug-fix
+ * file's skin is lit for the share of its changed lines the tests did not
+ * run and a dim hairline for the rest (D71), notched in light where a mutant
+ * lived, stitched where a test imports it. Texture is history: hatching by churn, stipple by bug-fix
  * rate. A ghost is a dashed outline round a file that usually changes with
  * these and did not. A storm hangs over each cell where a red slot names a
  * changed file; the same slot over a cell the change did not touch is
@@ -59,17 +59,18 @@ import {
   EDGE_BOW,
   EDGE_WIDTH,
   EVIDENCE_LIGHT,
-  FIELD_FILL,
   GHOST_DASH,
   GHOST_PAD,
   GHOST_STROKE,
   IFR_HUE,
+  INTEGRITY_CLOSED_OPACITY,
+  INTEGRITY_CLOSED_WIDTH,
   INTEGRITY_GAP_WIDTH,
   INTEGRITY_PAD,
-  INTEGRITY_WIDTH,
   LABEL_BASELINE,
-  MUTANT_DENT_RADIUS,
-  MUTANT_DENT_SPACING,
+  MUTANT_NOTCH_DEPTH,
+  MUTANT_NOTCH_SPACING,
+  MUTANT_NOTCH_WIDTH,
   REACH_DECAY,
   REACH_GLOW,
   REACH_ORIGIN_OPACITY,
@@ -261,26 +262,31 @@ function drawHistory(terrain: Terrain, layout: Layout): Markup | undefined {
 
 /**
  * Membrane integrity: the changed file's skin as a ring just past its edge,
- * open all round in the dark of the field, then closed from the top
- * clockwise for the share of its changed executable lines the tests ran;
- * the gap is what stays dark. A file with no changed executable line has no
- * skin to close and gets no ring, rather than a closed one (C2).
+ * drawing its gap rather than its closure (D71). The whole ring is a dim
+ * hairline, and over it the share of its changed executable lines the tests
+ * did not run is lit at full strength from the top clockwise, so worse
+ * evidence draws more light; a closed skin is hairline all round. A file
+ * with no changed executable line has no skin and gets no ring, rather than
+ * a closed one (C2).
  */
 function drawIntegrity(coverage: PatchCoverage, at: Position): Markup | undefined {
   if (coverage.changed_executable <= 0) return undefined;
-  const closed = coverage.covered / coverage.changed_executable;
-  const ring = { cx: at.x, cy: at.y, r: at.r + INTEGRITY_PAD, fill: 'none' };
-  return el('g', { 'data-id': coverage.path, 'data-covered': coverage.covered, 'data-changed': coverage.changed_executable }, [
-    el('circle', { ...ring, stroke: FIELD_FILL, 'stroke-width': INTEGRITY_GAP_WIDTH }),
-    el('circle', {
-      ...ring,
-      stroke: EVIDENCE_LIGHT,
-      'stroke-width': INTEGRITY_WIDTH,
-      pathLength: 1,
-      'stroke-dasharray': `${num(closed)} 1`,
-      transform: `rotate(-90 ${num(at.x)} ${num(at.y)})`,
-    }),
-  ]);
+  const open = Math.max(coverage.changed_executable - coverage.covered, 0) / coverage.changed_executable;
+  const ring = { cx: at.x, cy: at.y, r: at.r + INTEGRITY_PAD, fill: 'none', stroke: EVIDENCE_LIGHT };
+  const hairline = el('circle', { ...ring, 'stroke-width': INTEGRITY_CLOSED_WIDTH, 'stroke-opacity': INTEGRITY_CLOSED_OPACITY });
+  const gap =
+    open > 0
+      ? [
+          el('circle', {
+            ...ring,
+            'stroke-width': INTEGRITY_GAP_WIDTH,
+            pathLength: 1,
+            'stroke-dasharray': `${num(open)} 1`,
+            transform: `rotate(-90 ${num(at.x)} ${num(at.y)})`,
+          }),
+        ]
+      : [];
+  return el('g', { 'data-id': coverage.path, 'data-covered': coverage.covered, 'data-changed': coverage.changed_executable }, [hairline, ...gap]);
 }
 
 /** The mutants on each file, by line. */
@@ -294,18 +300,25 @@ function mutantsByPath(mutants: readonly Mutant[]): ReadonlyMap<string, readonly
   return byPathMap;
 }
 
-/** Live mutants as small dents: a dark bite out of the skin per mutant, spread round the top of the ring. */
+/**
+ * Live mutants as lit notches (D71): per mutant, a wedge in the evidence
+ * light cut from the skin's outer edge to a point inside the organelle's,
+ * spread round the top of the ring, so a mutant that lived adds light where
+ * a dark bite took it away.
+ */
 function drawDents(path: string, mutants: readonly Mutant[], at: Position): readonly Markup[] {
+  const outer = at.r + INTEGRITY_PAD + INTEGRITY_GAP_WIDTH / 2;
+  const half = MUTANT_NOTCH_WIDTH / 2;
   return mutants.map((mutant, index) => {
-    const [cx, cy] = onRing(at, spread(TOP, index, mutants.length, MUTANT_DENT_SPACING), at.r);
-    return el('circle', {
+    const angle = spread(TOP, index, mutants.length, MUTANT_NOTCH_SPACING);
+    const [bx, by] = onRing(at, angle, outer);
+    const [tx, ty] = [-Math.sin(angle) * half, Math.cos(angle) * half];
+    return el('path', {
       'data-id': path,
       'data-line': mutant.line,
       'data-status': mutant.status,
-      cx,
-      cy,
-      r: MUTANT_DENT_RADIUS,
-      fill: FIELD_FILL,
+      d: pathOf([[bx - tx, by - ty], onRing(at, angle, at.r - MUTANT_NOTCH_DEPTH), [bx + tx, by + ty]]),
+      fill: EVIDENCE_LIGHT,
     });
   });
 }

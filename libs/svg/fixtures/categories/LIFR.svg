@@ -130,19 +130,19 @@
       </g>
       <g id="evidence" stroke-width="2">
         <g data-id="apps/cli/src/doctor.ts" data-covered="4" data-changed="7">
-          <circle cx="151.41" cy="259.97" r="14.03" fill="none" stroke="#0a0c0f" stroke-width="2.5"/>
-          <circle cx="151.41" cy="259.97" r="14.03" fill="none" stroke="#e6edf3" stroke-width="1.5" pathLength="1" stroke-dasharray="0.57 1" transform="rotate(-90 151.41 259.97)"/>
+          <circle cx="151.41" cy="259.97" r="14.28" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+          <circle cx="151.41" cy="259.97" r="14.28" fill="none" stroke="#e6edf3" stroke-width="2.5" pathLength="1" stroke-dasharray="0.43 1" transform="rotate(-90 151.41 259.97)"/>
         </g>
         <g data-id="libs/core/src/pm/index.ts" data-covered="4" data-changed="9">
-          <circle cx="121.66" cy="438.68" r="8.45" fill="none" stroke="#0a0c0f" stroke-width="2.5"/>
-          <circle cx="121.66" cy="438.68" r="8.45" fill="none" stroke="#e6edf3" stroke-width="1.5" pathLength="1" stroke-dasharray="0.44 1" transform="rotate(-90 121.66 438.68)"/>
+          <circle cx="121.66" cy="438.68" r="8.7" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+          <circle cx="121.66" cy="438.68" r="8.7" fill="none" stroke="#e6edf3" stroke-width="2.5" pathLength="1" stroke-dasharray="0.56 1" transform="rotate(-90 121.66 438.68)"/>
         </g>
         <g data-id="libs/core/src/pm/tools.ts" data-covered="7" data-changed="9">
-          <circle cx="110.88" cy="545.01" r="11.07" fill="none" stroke="#0a0c0f" stroke-width="2.5"/>
-          <circle cx="110.88" cy="545.01" r="11.07" fill="none" stroke="#e6edf3" stroke-width="1.5" pathLength="1" stroke-dasharray="0.78 1" transform="rotate(-90 110.88 545.01)"/>
+          <circle cx="110.88" cy="545.01" r="11.32" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+          <circle cx="110.88" cy="545.01" r="11.32" fill="none" stroke="#e6edf3" stroke-width="2.5" pathLength="1" stroke-dasharray="0.22 1" transform="rotate(-90 110.88 545.01)"/>
         </g>
-        <circle data-id="libs/core/src/pm/tools.ts" data-line="27" data-status="NoCoverage" cx="108.27" cy="535.28" r="2.5" fill="#0a0c0f"/>
-        <circle data-id="libs/core/src/pm/tools.ts" data-line="64" data-status="Survived" cx="113.49" cy="535.28" r="2.5" fill="#0a0c0f"/>
+        <path data-id="libs/core/src/pm/tools.ts" data-line="27" data-status="NoCoverage" d="M105.69 533.39L108.79 537.21L109.56 532.35Z" fill="#e6edf3"/>
+        <path data-id="libs/core/src/pm/tools.ts" data-line="64" data-status="Survived" d="M112.2 532.35L112.97 537.21L116.07 533.39Z" fill="#e6edf3"/>
         <line data-id="libs/core/src/pm/index.ts" data-test="libs/core/src/__tests__/pm.test.ts" data-status="failed" stroke="#f0546a" x1="121.66" y1="442.13" x2="121.66" y2="445.13"/>
         <line data-id="libs/core/src/pm/index.ts" data-test="libs/core/src/__tests__/pm.test.ts" data-status="failed" stroke="#f0546a" x1="121.66" y1="447.13" x2="121.66" y2="450.13"/>
         <line data-id="libs/core/src/pm/legacy.ts" data-test="libs/core/src/__tests__/pm.test.ts" data-status="failed" stroke="#f0546a" x1="112.15" y1="492.48" x2="112.15" y2="495.48"/>
