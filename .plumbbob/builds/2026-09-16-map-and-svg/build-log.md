@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 35 — feat(cli): name the files a red lint or struct slot reports
+**Current step:** 36 — fix(core): set the flight category from the change's red slots
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -57,7 +57,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☐ 32. chore(fixtures): select five reviewed outside PRs and record their ground truth
 - ☐ 33. chore(fixtures): generate map.json and the SVG for the five outside PRs
 - ☐ 34. chore(glance): retake glance-test round one on the outside fixtures
-- ☐ 35. feat(cli): name the files a red lint or struct slot reports
+- ☑ 35. feat(cli): name the files a red lint or struct slot reports
 - ☐ 36. fix(core): set the flight category from the change's red slots
 - ☐ 37. fix(core): spend the notice budget only on the change's red slots
 - ☐ 38. fix(svg): draw standing-state storms as grey terrain
@@ -1723,3 +1723,48 @@ folder, so it rides the branch into the PR.)*
   **5.** Parked: the dependency delta still reads only `pnpm-workspace.yaml`
 
   `git.ts`'s `memberDirs`, which feeds D47's `deps_added`, has its own yaml-only copy of the member reader, and it is outside this seam. On an npm, yarn or bun fixture, a dependency added to a member's manifest would go unnoticed. I parked it with a note to route it through `parseManifestWorkspaces` before step 33 generates the outside fixtures.
+
+- 2026-09-28 — step 35 checkpointed · 948a5e16f — feat(cli): name the files a red lint or struct slot reports (14m)
+
+  **Summary**: A red `lint` or `struct` slot now lands on the files its own JSON names instead of covering the whole field. That makes six file-scoped slots, and a missing, stale, unparseable or file-less report still falls back to global.
+
+  1. A red slot names only the files carrying an error, the way `test` names only failed tests
+  2. The two parsers read real oxlint and ast-grep output, tested from captured strings
+  3. `readCheck` gains two slot-table rows and nothing else
+  4. The evidence tests show the done-when case and the edges
+
+  **Readout**: Step 35 - feat(cli): name the files a red lint or struct slot reports
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored:
+               - D27 (category-defaults)
+               - D30 (pure-parsers)
+               - D41 (artifact-trust)
+               - D67 (standing-state-notices)
+  constraints  11 of 11 honored
+  seam         held: 4 of 4 declared, no strays
+  diff         +224 -11 across 4 files
+  spent        14 min · 1 turn · 15s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Approve and land step 35. Choosing error over warning is the one judgment beyond the plan's letter, and if you'd rather a red slot name every finding, removing `failingPaths`'s error filter is the only change.
+
+  **1.** A red slot names only the files carrying an error, the way `test` names only failed tests
+
+  Neither D67 nor the done-when says which severities count, so I had to decide. oxlint and ast-grep both write `severity: "error"` or `"warning"` on every finding, and only errors fail the slot by default. If every finding counted, a red lint in a repo like volley (104 warnings) would pull in every warned file the change touches, the same mis-attribution D67 exists to stop. So `failingPaths` in `libs/core/src/evidence.ts` takes the error files, and falls back to every finding only when a red slot carries no error at all. That fallback covers a run that denies warnings. The parsers keep each finding's severity and core makes the call, matching how `parseTest` keeps every status and core filters `failed`.
+
+  **2.** The two parsers read real oxlint and ast-grep output, tested from captured strings
+
+  `parseLint` reads `diagnostics[].filename` and `parseStruct` reads the bare array's `[].file`. Each keeps the path and severity, drops `./`, sorts by path, and drops a finding that is missing either key. A non-record `lint.json` or a non-array `struct.json` is `undefined`, so the channel mutes. A probe over the real artifacts on disk read all 104 of volley's diagnostics and all 97 of storium's matches. Biome's `lint.json` (tiny-kit) parses to no diagnostics, so a red biome slot stays global: an unknown shape names nothing rather than guessing.
+
+  **3.** `readCheck` gains two slot-table rows and nothing else
+
+  `lint` owns `lint.json` and `struct` owns `struct.json`, both through the existing `readChannel`, so the ran/skipped/unlisted gating and stale muting come for free. The gated fixture now also carries a skipped `struct` with its file present and an unlisted `lint.json`, and both stay unread. `map.ts` needed no change, because stale entries are already generic, and the sources barrel re-exports with `export *`.
+
+  **4.** The evidence tests show the done-when case and the edges
+
+  One test has a red lint with errors on changed `src/pm/tools.ts` and a warning on `src/doctor.ts`, and it scopes to `['src/pm/tools.ts']`. Another has a warnings-only red struct, which scopes to every file it names. The old "four slots" test is now six, with `types` standing in as the global example. The unread test also covers red `lint` and `struct` with no channel, or with empty reports, and all stay global.

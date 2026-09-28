@@ -459,7 +459,13 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
   const graphs = { modules, groups, headEdges: head.edges, baseEdges: base.edges } as const;
   const reach = computeReach({ ...graphs, changed: inputs.diff });
   const evidence = computeEvidence({ ...graphs, changed: reach.changed, check: inputs.check });
-  const checks = computeCategory({ check: inputs.check, changed: reach.changed, files: evidence.files, config });
+  const checks = computeCategory({
+    check: inputs.check,
+    changed: reach.changed,
+    files: evidence.files,
+    stitches: evidence.evidence.stitches ?? [],
+    config,
+  });
 
   const ran = inputs.check.mode === 'check' ? inputs.check : undefined;
   const signals: Signals = {

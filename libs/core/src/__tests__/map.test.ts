@@ -146,6 +146,29 @@ test('the demo map carries the evidence the check run produced and nothing it di
   expect(map.weather.improvements).toEqual([]);
 });
 
+test('buildMap threads the stitches to the category, so a torn one makes the change IFR and a held one does not (D69)', () => {
+  // The demo with its test file left out of the diff and its coverage clean:
+  // the red `test` slot now names a file this change did not touch, the
+  // `dead` slot names only untouched files, and nothing else reaches IFR.
+  const inputs = inputsFor('demo');
+  const check = inputs.check as Extract<CheckArtifacts, { mode: 'check' }>;
+  const withStatus = (status: string): BuildInputs => ({
+    ...inputs,
+    diff: inputs.diff.filter((file) => !file.path.endsWith('pm.test.ts')),
+    check: { ...check, coverage: [], test: { results: [{ path: 'libs/core/src/__tests__/pm.test.ts', status }] } },
+  });
+
+  const torn = buildMap(withStatus('failed'), DEFAULT_CONFIG);
+  expect(torn.weather.changed.map((file) => file.path)).not.toContain('libs/core/src/__tests__/pm.test.ts');
+  expect(torn.weather.evidence.stitches?.map((stitch) => stitch.status)).toEqual(['failed']);
+  expect(torn.weather.checks.category).toBe('IFR');
+
+  // The same red `test` slot with the stitch held names no file, so it is standing state; the escaped barrel is what is left.
+  const held = buildMap(withStatus('passed'), DEFAULT_CONFIG);
+  expect(held.weather.checks.slots.find((slot) => slot.name === 'test')).toEqual({ name: 'test', ok: false, skipped: false, scope: 'global' });
+  expect(held.weather.checks.category).toBe('MVFR');
+});
+
 test('the demo map dents the cells that break a rule and marks the clone family', () => {
   const map = buildMap(inputsFor('demo'), DEFAULT_CONFIG);
   const cells = new Map(map.terrain.cells.map((cell) => [cell.id, cell]));

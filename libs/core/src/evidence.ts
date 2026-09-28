@@ -348,7 +348,39 @@ export type CategoryInputs = {
   readonly changed: readonly ChangedFile[];
   /** `computeEvidence`'s per-file result: the gaps, the reach and the escaped interfaces D27 counts. */
   readonly files: readonly FileEvidence[];
+  /** `computeEvidence`'s stitches, empty when the run had no test report: a torn one puts a red `test` on the change (D67). */
+  readonly stitches: readonly Stitch[];
   readonly config: Config;
+};
+
+/**
+ * One red slot as D67 splits it: the changed files it is on the change
+ * through, and every other file it names, which is standing state. A global
+ * slot names no file at all, so its red is standing state whole.
+ */
+export type RedSlot = {
+  readonly name: string;
+  readonly global: boolean;
+  /** The changed files the slot names, and for `test` the changed files each torn stitch it names imports; sorted (C3). */
+  readonly change: readonly string[];
+  /** Every other file the slot names; sorted (C3), and empty on a global slot. */
+  readonly standing: readonly string[];
+};
+
+/** The red slots, each in exactly one list, both in name order (C3). */
+export type RedSplit = {
+  /** The change's red: every slot with at least one changed file behind it. */
+  readonly change: readonly RedSlot[];
+  /** The standing state: every global slot, and every slot that names no changed file. */
+  readonly standing: readonly RedSlot[];
+};
+
+/** What the split reads, all of it on `map.json`, so a renderer can make the same split the category did. */
+export type RedSplitInputs = {
+  readonly slots: readonly CheckSlot[];
+  /** The changed set; the split reads only its paths. */
+  readonly changed: readonly Pick<ChangedFile, 'path'>[];
+  readonly stitches: readonly Stitch[];
 };
 
 /**
@@ -427,6 +459,45 @@ function isRed(slot: CheckSlot): boolean {
   return !slot.ok && !slot.skipped;
 }
 
+/**
+ * D67's split of the red slots into the change's red and the standing state.
+ * A slot is on the change through each changed file it names, and `test` also
+ * through each failing test it names that imports a changed file, which is a
+ * torn stitch (D4): the test is not the change, but the files it tore on are.
+ * Every other file a slot names, and every global slot, is standing state.
+ * The category, the notices and the render all read this one split.
+ */
+export function splitRedSlots(inputs: RedSplitInputs): RedSplit {
+  const changed = new Set(inputs.changed.map((file) => file.path));
+  const torn = new Map(
+    inputs.stitches
+      .filter((stitch) => stitch.status === FAILED)
+      .map((stitch) => [stitch.test, stitch.targets.filter((target) => changed.has(target))] as const),
+  );
+
+  const slots = inputs.slots
+    .filter(isRed)
+    .toSorted((a, b) => byPath(a.name, b.name))
+    .map((slot): RedSlot => {
+      if (slot.scope === GLOBAL) return { name: slot.name, global: true, change: [], standing: [] };
+      const through = (path: string): readonly string[] => [
+        ...(changed.has(path) ? [path] : []),
+        ...(slot.name === 'test' ? (torn.get(path) ?? []) : []),
+      ];
+      return {
+        name: slot.name,
+        global: false,
+        change: sortUnique(slot.scope.flatMap(through)),
+        standing: sortUnique(slot.scope.filter((path) => through(path).length === 0)),
+      };
+    });
+
+  return {
+    change: slots.filter((slot) => slot.change.length > 0),
+    standing: slots.filter((slot) => slot.change.length === 0),
+  };
+}
+
 /** A gap: a changed file with at least one uncovered changed executable line (D27). */
 function hasGap(file: FileEvidence): boolean {
   return file.coverage !== undefined && file.coverage.uncovered_lines.length > 0;
@@ -436,14 +507,17 @@ function hasGap(file: FileEvidence): boolean {
  * §5.3's ladder with D27's numbers, worst rung first. A vacuous green (no
  * check ran at all) and a cycle or boundary violation on a file this change
  * touched are the two things that make a green summary worse than no summary.
+ * A red slot is IFR only when it is the change's red (D69): standing state
+ * leaves the category to the change's own evidence.
  */
 function categoryOf(inputs: CategoryInputs, check: RanCheck, slots: readonly CheckSlot[]): FlightCategory {
   const changed = new Set(inputs.changed.map((file) => file.path));
   const highReach = inputs.config.category.high_reach_cells;
+  const red = splitRedSlots({ slots, changed: inputs.changed, stitches: inputs.stitches });
 
   if (check.summary.checks_run === 0) return 'LIFR';
   if (structuralFindings(check.dead).some((finding) => pathsOf(finding).some((path) => changed.has(path)))) return 'LIFR';
-  if (slots.some(isRed)) return 'IFR';
+  if (red.change.length > 0) return 'IFR';
   if (inputs.files.some((file) => hasGap(file) && file.cells_reached >= highReach)) return 'IFR';
   if (inputs.files.some((file) => hasGap(file) || file.escaped_interface)) return 'MVFR';
   return 'VFR';

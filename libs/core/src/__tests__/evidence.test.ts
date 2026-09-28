@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 
 import { DEFAULT_CONFIG } from '../config.js';
-import { HARNESS_BROKEN, UNKNOWN_STATUS, computeCategory, computeEvidence } from '../evidence.js';
+import { HARNESS_BROKEN, UNKNOWN_STATUS, computeCategory, computeEvidence, splitRedSlots } from '../evidence.js';
 import type { CheckArtifacts, CheckSummarySlot, Dead, EvidenceInputs, FileEvidence } from '../evidence.js';
 import { identifyGroups } from '../groups.js';
 import { identifyModules } from '../modules.js';
@@ -140,11 +140,11 @@ function fileAt(files: readonly FileEvidence[], path: string): FileEvidence {
   return found;
 }
 
-/** Evidence into category, the way step 12 chains them. */
+/** Evidence into category, the way `buildMap` chains them, stitches and all. */
 function categoryFor(world: World, changed: readonly DiffFile[], check: CheckArtifacts): Checks {
   const inputs = inputsFor(world, changed, check);
-  const { files } = computeEvidence(inputs);
-  return computeCategory({ check, changed: inputs.changed, files, config: DEFAULT_CONFIG });
+  const { evidence, files } = computeEvidence(inputs);
+  return computeCategory({ check, changed: inputs.changed, files, stitches: evidence.stitches ?? [], config: DEFAULT_CONFIG });
 }
 
 test('patch coverage measures the statements inside the head-side hunks, folded onto lines as istanbul folds them', () => {
@@ -306,12 +306,118 @@ test('an escaped interface with no gap anywhere is MVFR', () => {
   expect(checks.category).toBe('MVFR');
 });
 
-test('any red slot is IFR, and a skipped slot is not red', () => {
-  const red = categoryFor(CHAIN, [change('src/pm/tools.ts')], ran(TOOLS_CLOSED, [slot('types'), slot('lint', false)]));
+test('a red slot naming a changed file is IFR, and a skipped slot is not red (D69)', () => {
+  const red = categoryFor(
+    CHAIN,
+    [change('src/pm/tools.ts')],
+    ran({ ...TOOLS_CLOSED, lint: { diagnostics: [{ path: 'src/pm/tools.ts', severity: 'error' }] } }, [slot('types'), slot('lint', false)]),
+  );
   expect(red.category).toBe('IFR');
 
   const skipped = categoryFor(CHAIN, [change('src/pm/tools.ts')], ran(TOOLS_CLOSED, [slot('types'), slot('mutation', false, true)]));
   expect(skipped.category).toBe('VFR');
+});
+
+test('a red slot naming only untouched files, and a global red slot, each leave an otherwise VFR change VFR (D69)', () => {
+  const untouched = categoryFor(
+    CHAIN,
+    [change('src/pm/tools.ts')],
+    ran({ ...TOOLS_CLOSED, lint: { diagnostics: [{ path: 'src/doctor.ts', severity: 'error' }] } }, [slot('types'), slot('lint', false)]),
+  );
+  expect(untouched.category).toBe('VFR');
+  // The slot is still reported, scoped to the file it named: standing state is counted beside the category, never hidden (D70).
+  expect(untouched.slots).toContainEqual({ name: 'lint', ok: false, skipped: false, scope: ['src/doctor.ts'] });
+
+  // A red `types` has no raw output about files, so it is global, and global red is standing state.
+  const global = categoryFor(CHAIN, [change('src/pm/tools.ts')], ran(TOOLS_CLOSED, [slot('types', false), slot('lint')]));
+  expect(global.category).toBe('VFR');
+});
+
+test('a torn stitch puts a red test slot on the change, though the failing test is not itself a changed file', () => {
+  const failing = { test: { results: [{ path: 'src/__tests__/tools.test.ts', status: 'failed' }] } };
+
+  // `tools.test.ts` imports the changed `tools.ts` and failed: the stitch tore on the change.
+  const torn = categoryFor(CHAIN, [change('src/pm/tools.ts')], ran({ ...TOOLS_CLOSED, ...failing }, [slot('types'), slot('test', false)]));
+  expect(torn.category).toBe('IFR');
+
+  // The same failure on a change it imports nothing of is standing state: `util.ts` has no test.
+  const standing = categoryFor(
+    CHAIN,
+    [change('src/pm/util.ts')],
+    ran({ coverage: [{ path: 'src/pm/util.ts', statements: [{ line: 10, hits: 1 }] }], ...failing }, [slot('types'), slot('test', false)]),
+  );
+  expect(standing.category).toBe('VFR');
+});
+
+test("checkride PR 2's shape reads MVFR on its own evidence: all four red slots are standing state (D69)", () => {
+  const checks = categoryFor(
+    CHAIN,
+    // One changed file whose reach stays in its own cell, with one uncovered changed line.
+    [change('src/pm/util.ts')],
+    ran(
+      {
+        coverage: [{ path: 'src/pm/util.ts', statements: [{ line: 10, hits: 3 }, { line: 12, hits: 0 }] }],
+        dead: NO_DEAD,
+        dupes: { clone_families: [{ files: ['src/doctor.ts', 'src/index.ts'] }] },
+        health: {
+          file_scores: [],
+          findings: [
+            { path: 'src/doctor.ts', exceeded: 'crap' },
+            { path: 'src/pm/probe.ts', exceeded: 'cognitive' },
+          ],
+        },
+      },
+      [
+        slot('dead', false),
+        slot('dupes', false),
+        slot('health', false),
+        slot('lint'),
+        slot('snippets', false),
+        slot('test'),
+        slot('types'),
+      ],
+    ),
+  );
+
+  expect(checks.category).toBe('MVFR');
+  expect(splitRedSlots({ slots: checks.slots, changed: [change('src/pm/util.ts')], stitches: [] })).toEqual({
+    change: [],
+    standing: [
+      { name: 'dead', global: true, change: [], standing: [] },
+      { name: 'dupes', global: false, change: [], standing: ['src/doctor.ts', 'src/index.ts'] },
+      { name: 'health', global: false, change: [], standing: ['src/doctor.ts', 'src/pm/probe.ts'] },
+      { name: 'snippets', global: true, change: [], standing: [] },
+    ],
+  });
+});
+
+test('the split keeps each red slot in one list and divides its files between the change and the standing state', () => {
+  const split = splitRedSlots({
+    slots: [
+      { name: 'types', ok: false, skipped: false, scope: 'global' },
+      { name: 'health', ok: false, skipped: false, scope: ['src/doctor.ts', 'src/pm/tools.ts'] },
+      { name: 'test', ok: false, skipped: false, scope: ['src/__tests__/other.test.ts', 'src/__tests__/tools.test.ts'] },
+      { name: 'lint', ok: true, skipped: false, scope: 'global' },
+      { name: 'mutation', ok: false, skipped: true, scope: 'global' },
+    ],
+    changed: [change('src/pm/tools.ts'), change('src/pm/util.ts')],
+    stitches: [
+      { test: 'src/__tests__/tools.test.ts', targets: ['src/pm/tools.ts', 'src/pm/util.ts'], status: 'failed' },
+      // A stitch that held is no tear, even under a red `test`.
+      { test: 'src/__tests__/other.test.ts', targets: ['src/pm/util.ts'], status: 'passed' },
+    ],
+  });
+
+  expect(split).toEqual({
+    change: [
+      // On the change through `tools.ts`; the `doctor.ts` it also names is standing state.
+      { name: 'health', global: false, change: ['src/pm/tools.ts'], standing: ['src/doctor.ts'] },
+      // The torn stitch carries the red onto both files it imports; the test it tore in is not itself the change.
+      { name: 'test', global: false, change: ['src/pm/tools.ts', 'src/pm/util.ts'], standing: ['src/__tests__/other.test.ts'] },
+    ],
+    // A green slot and a skipped one are in neither list.
+    standing: [{ name: 'types', global: true, change: [], standing: [] }],
+  });
 });
 
 test('a summary that ran no check at all is LIFR, however green it claims to be', () => {
