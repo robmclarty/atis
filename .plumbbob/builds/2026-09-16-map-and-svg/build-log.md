@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 37 — fix(core): spend the notice budget only on the change's red slots
+**Current step:** 38 — fix(svg): draw standing-state storms as grey terrain
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -59,7 +59,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☐ 34. chore(glance): retake glance-test round one on the outside fixtures
 - ☑ 35. feat(cli): name the files a red lint or struct slot reports
 - ☑ 36. fix(core): set the flight category from the change's red slots
-- ☐ 37. fix(core): spend the notice budget only on the change's red slots
+- ☑ 37. fix(core): spend the notice budget only on the change's red slots
 - ☐ 38. fix(svg): draw standing-state storms as grey terrain
 - ☐ 39. fix(svg): count red slots in the HUD's Gate and Standing blocks
 - ☐ 40. fix(svg): light a skin's uncovered arc instead of its covered one
@@ -1819,3 +1819,67 @@ folder, so it rides the branch into the PR.)*
   - a direct unit test of the split
 
   `map.test.ts` adds a buildMap-level pair: the demo with its test file left out of the diff reads IFR when the stitch tears and MVFR when it holds.
+
+- 2026-09-28 — step 37 checkpointed · e92d2f65c — fix(core): spend the notice budget only on the change's red slots (1 drift, 5m)
+
+  **Summary**: Red-slot notices now come only from the change's red, one row per changed file with its `why` listing every slot that names it, so standing and global red no longer spend any of the six rows.
+
+  1. `redSlotCandidates` and the suppression both read step 36's split
+  2. The stitches reach `rankNotices` through one line in `map.ts`, outside the seam
+  3. The demo golden changed, and six more files outside the seam changed with it
+  4. The tests cover the three cases the done-when names, plus two more
+  5. I parked the security-finding question
+
+  **Readout**: Step 37 - fix(core): spend the notice budget only on the change's red slots
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    1 of 1 honored
+  constraints  11 of 11 honored
+  seam         strayed: 9 paths outside the seam
+               - libs/core/fixtures/demo/map.json
+               - libs/core/src/__tests__/map.test.ts
+               - libs/core/src/map.ts
+               - libs/svg/fixtures/categories/LIFR.svg
+               - libs/svg/fixtures/categories/MVFR.svg
+               - libs/svg/fixtures/categories/NOINST.svg
+               - libs/svg/fixtures/categories/VFR.svg
+               - libs/svg/fixtures/demo/atis.svg
+               - libs/svg/src/__tests__/chrome.test.ts
+  diff         +437 -364 across 11 files
+  spent        5 min · 1 turn · 15s gate · green first run
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Recommendation**: Approve and land step 37 with its planned subject. The step does what the done-when asks, the gate is green, and everything outside the seam is either the one-line threading or a golden rebuilt deterministically from the new ranking.
+
+  **1.** `redSlotCandidates` and the suppression both read step 36's split
+
+  `rankNotices` calls `splitRedSlots` once. `redSlotCandidates` walks `red.change` and groups each slot's changed files into one candidate per path. The `why` reads "the `lint` check is red on this changed file", or "the `health` and `lint` checks are red on this changed file" when two slots name it. The candidate's `inputs` carries `slots: n` as the measurement echo (D9, D28), and it does not change the weight. `redTargets`, which drops a finding a red slot already speaks for, now keys only the change's red slots to their changed files. A global slot yields nothing and suppresses nothing. The old `GLOBAL` constant and the local `isRed` are gone because the split owns both.
+
+  **2.** The stitches reach `rankNotices` through one line in `map.ts`, outside the seam
+
+  The split needs the stitches to see a torn `test`, so `NoticeInputs` gains a required `stitches` field. `buildMap` passes `evidence.evidence.stitches ?? []` the same way step 36 threaded them to `computeCategory`. I made the field required rather than optional so production can't silently drop a torn stitch.
+
+  **3.** The demo golden changed, and six more files outside the seam changed with it
+
+  The demo's failing `pm.test.ts` imports `pm/index.ts` and `pm/tools.ts`, which the change touched. That torn stitch now puts a red `test` notice on each of them. Before, the red candidate sat on the test file itself, which had no reach and never ranked. The red notice on `pm/index.ts` (weight 169) is now primary, and `large-hot-change` moves to the last row. So `libs/core/fixtures/demo/map.json` was rewritten from `buildMap`. The five SVG goldens that render it were regenerated with `ATIS_UPDATE_GOLDENS=1`, as in step 25. Three assertions in other tests followed:
+  - `map.test.ts` pins the new primary.
+  - `chrome.test.ts` finds the `large-hot-change` row by kind instead of by index 3.
+  - `chrome.test.ts` expects the marks' target order index, tools, doctor.
+
+  **4.** The tests cover the three cases the done-when names, plus two more
+
+  - **checkride PR 2's shape:** global `dead` and `snippets`, plus `dupes` and `health` on untouched files, ranks only the `survived-mutants` notice on the changed file.
+  - **Two slots on one file:** a file named by `lint` and `health` takes one row that lists both, and `health`'s untouched `doctor.ts` takes none.
+  - **A global red slot:** it yields nothing.
+  - **A torn stitch (added):** the notice lands on the changed file, not on the test.
+  - **A global red `security` slot (added):** it no longer hides the `security-finding` notice.
+
+  `ONE_OF_EACH` now drives the red row with a `lint` slot naming the changed file instead of a global `types`.
+
+  **5.** I parked the security-finding question
+
+  With a global red `security` slot no longer suppressing it, `security-finding` still counts the repo's vulnerabilities at head. By D67's reading that is standing state. It rarely bites, because the fixtures skip `security` (D56). But whether it should spend the budget only when the change's dependency delta touches it is a design call, so it's a park line, not an edit.

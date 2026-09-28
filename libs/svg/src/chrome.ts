@@ -11,9 +11,9 @@
  * technical-drawing manner of §5.6: a dotted leader from each notice's row
  * to a numbered mark beside its target; round the primary a thin ring in
  * the category hue with its kind written under the mark; round a secondary
- * a thick ring in ink; for a tertiary the mark alone. A notice that names a
- * red global slot rather than a file points at that slot's storm in the
- * field's corner, since the storm is where the map says it.
+ * a thick ring in ink; for a tertiary the mark alone. A notice whose target
+ * the field does not place, a slot's name say, keeps its row and draws no
+ * leader, since a global slot hangs no storm (D68).
  *
  * Every number in the HUD is read from the map (D33), and a block whose
  * input the map does not carry, or carries as stale, is muted with a dash
@@ -28,7 +28,6 @@ import type { Contour, FlightCategory, Layout, MapJson, Notice, NoticeTier, Posi
 import { el, num } from './el.js';
 import type { Attrs, Markup } from './el.js';
 import { pathOf } from './terrain.js';
-import { globalStormAnchors } from './weather.js';
 import {
   CATEGORY_FONT_SIZE,
   CATEGORY_LETTERS,
@@ -335,29 +334,20 @@ function footOf(contour: Contour): readonly [number, number] | undefined {
   return foot;
 }
 
-/**
- * A target's anchor: its position when the layout placed it, else its
- * contour when core skinned it, else the storm of the global slot it names,
- * else nothing to point at. A file wins the name, since only the last of
- * the three is keyed by a slot rather than a path.
- */
-function anchorOf(target: string, layout: Layout, storms: ReadonlyMap<string, Position>): Anchor | undefined {
+/** A target's anchor: its position when the layout placed it, else its contour when core skinned it, else nothing to point at. */
+function anchorOf(target: string, layout: Layout): Anchor | undefined {
   const at = layout.positions[target];
   if (at !== undefined) return { kind: 'point', at };
   const contour = layout.contours?.[target];
-  if (contour === undefined) {
-    const storm = storms.get(target);
-    return storm === undefined ? undefined : { kind: 'point', at: storm };
-  }
+  if (contour === undefined) return undefined;
   const foot = footOf(contour);
   return foot === undefined ? undefined : { kind: 'contour', contour, foot };
 }
 
 /** The six the list has room for, in the map's rank order (C7), each with its anchor when the field has one. */
 function noticesInBudget(map: MapJson, layout: Layout): readonly Ranked[] {
-  const storms = globalStormAnchors(map.weather, layout);
   return map.notices.slice(0, NOTICE_BUDGET).map((notice, index): Ranked => {
-    const anchor = anchorOf(notice.target, layout, storms);
+    const anchor = anchorOf(notice.target, layout);
     return { rank: index + 1, notice, ...(anchor === undefined ? {} : { anchor }) };
   });
 }
@@ -494,8 +484,7 @@ function strongest(tiers: readonly NoticeTier[]): NoticeTier {
  * past its emphasis ring, so they stay clear of the glyph at its upper
  * right, the old name at its right and the stitches under it; below the
  * foot of a skinned group. A run that would leave the field hangs to the
- * lower left instead, its order kept, which is every storm's run, since a
- * storm sits in the field's right corner by construction.
+ * lower left instead, its order kept.
  */
 function marksFor(target: string, anchor: Anchor, ranks: readonly number[], layout: Layout, worldY: number): Marks {
   const run = ranks.length * NOTICE_BOX + (ranks.length - 1) * NOTICE_BOX_GAP;
@@ -504,7 +493,7 @@ function marksFor(target: string, anchor: Anchor, ranks: readonly number[], layo
       ? [anchor.at.x + (anchor.at.r + EMPHASIS_PAD + NOTICE_BOX_GAP) * SQRT_HALF, anchor.at.y + (anchor.at.r + EMPHASIS_PAD + NOTICE_BOX_GAP) * SQRT_HALF]
       : [anchor.foot[0] - NOTICE_BOX / 2, anchor.foot[1] + NOTICE_BOX_GAP];
   const fits = right + run <= layout.width - CHROME_PAD;
-  // A group's foot is on the shore, which the layout keeps inside the field, so only a point anchor's run ever flips.
+  // A group's foot is on the shore, which the layout keeps inside the field, so only a file's run ever flips.
   const left = anchor.kind === 'point' ? anchor.at.x - (anchor.at.r + EMPHASIS_PAD + NOTICE_BOX_GAP) * SQRT_HALF - run : right;
   return { target, anchor, ranks, x: fits ? right : left, y: y + worldY };
 }

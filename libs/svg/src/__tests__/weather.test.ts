@@ -20,8 +20,9 @@ import {
   MUTANT_DENT_RADIUS,
   RENAME_DASH,
   RENAME_LABEL_SIZE,
+  STANDING_STORM_FILL,
+  STANDING_STORM_SCALE,
   STITCH_UNLIT,
-  STORM_INSET,
   TEXTURE_INK,
   TEXTURE_MAX_OPACITY,
 } from '../tokens.js';
@@ -156,7 +157,7 @@ function small({ weather = {}, a = {}, edges = [] }: Small = {}): MapJson {
 
 test('the weather is drawn inside the world after the organelles, its definitions first and its layers bottom up', () => {
   const svg = renderSvg(demo());
-  const order = ['organelles', 'weather', 'reach', 'changed', 'history', 'evidence', 'edges', 'ghosts', 'storms'].map((id) => svg.indexOf(`id="${id}"`));
+  const order = ['organelles', 'weather', 'standing-storms', 'reach', 'changed', 'history', 'evidence', 'edges', 'ghosts', 'storms'].map((id) => svg.indexOf(`id="${id}"`));
   expect(order.every((at) => at >= 0)).toBe(true);
   expect(order).toEqual([...order].toSorted((a, b) => a - b));
   const weather = drawn(svg, 'weather');
@@ -312,54 +313,98 @@ test('stitches are short strokes across the edge: torn in the IFR hue when the t
   }
 });
 
-test('a red slot is a storm over the field when global and over each cell it names when scoped; green and skipped slots are no storm', () => {
+/** Each storm in a storm layer: its slot, its place, where its bolt hangs, how it is scaled, and its label, if it has one. */
+function stormsIn(layer: string): readonly { readonly slot: string; readonly over: string; readonly x: number; readonly y: number; readonly scale?: string; readonly label?: string }[] {
+  return [
+    ...layer.matchAll(
+      /<(?:g|path) data-slot="(\w+)" data-over="([^"]+)"(?:>\s*<path)? d="[^"]+" transform="translate\(([\d.]+) ([\d.]+)\)(?: scale\(([\d.]+)\))?"\/>(?:\s*<text[^>]*>([^<]*)<\/text>)?/g,
+    ),
+  ].map(([, slot, over, x, y, scale, label]) => ({
+    slot: slot ?? '',
+    over: over ?? '',
+    x: Number(x),
+    y: Number(y),
+    ...(scale === undefined ? {} : { scale }),
+    ...(label === undefined ? {} : { label }),
+  }));
+}
+
+test("a red slot is a labelled IFR storm only over a cell where it names a changed file, and a small grey bolt beneath the weather over every other cell (D68)", () => {
   const map = demo();
   const svg = renderSvg(map);
   const storms = drawn(svg, 'storms');
+  const standing = drawn(svg, 'standing-storms');
   expect(storms).toContain(`fill="${IFR_HUE}"`);
-  const marks = [...storms.matchAll(/<g data-slot="(\w+)" data-over="([^"]+)">\s*<path d="[^"]+" transform="translate\(([\d.]+) ([\d.]+)\)"\/>\s*<text[^>]*>([^<]*)<\/text>/g)].map(
-    ([, slot, over, x, y, label]) => ({ slot, over: over ?? '', x: Number(x), y: Number(y), label }),
-  );
-  // `dead` names files in two cells; `test` names a test file, which hangs over the cells it stitches (D4).
-  expect(marks.map((mark) => [mark.slot, mark.over, mark.label])).toEqual([
-    ['dead', 'directory:libs/core/src/util', 'dead'],
-    ['dead', 'package:libs/core', 'dead'],
-    ['test', 'folder:libs/core/src/pm', 'test'],
+  expect(standing).toContain(`fill="${STANDING_STORM_FILL}"`);
+  expect(standing).not.toContain(IFR_HUE);
+  // `test` names the changed pm.test.ts, whose torn stitch lands on the changed files in pm: the change's storm, with its label.
+  expect(stormsIn(storms).map((storm) => [storm.slot, storm.over, storm.label])).toEqual([['test', 'folder:libs/core/src/pm', 'test']]);
+  // `dead` names only files the change did not touch: standing state, a smaller bolt with no label in either layer.
+  const grey = stormsIn(standing);
+  expect(grey.map((storm) => [storm.slot, storm.over, storm.scale, storm.label])).toEqual([
+    ['dead', 'directory:libs/core/src/util', String(STANDING_STORM_SCALE), undefined],
+    ['dead', 'package:libs/core', String(STANDING_STORM_SCALE), undefined],
   ]);
-  for (const mark of marks) {
-    const top = Math.min(...(map.terrain.layout?.contours?.[mark.over] ?? []).map(([, y]) => y));
-    expect(mark.y).toBeLessThan(top);
+  expect(standing).not.toContain('<text');
+  expect(storms).not.toContain('data-slot="dead"');
+  for (const storm of [...stormsIn(storms), ...grey]) {
+    const top = Math.min(...(map.terrain.layout?.contours?.[storm.over] ?? []).map(([, y]) => y));
+    expect(storm.y).toBeLessThan(top);
   }
   // Only the red slots: the demo's six green ones and its skipped one hang nothing.
-  expect(count(storms, /data-slot=/g)).toBe(3);
+  expect(count(svg, /data-slot=/g)).toBe(3);
+});
 
-  const global = small({
-    weather: {
-      changed: [MODIFIED_A],
-      evidence: { stitches: [{ test: TEST, targets: [A], status: 'failed' }] },
-      checks: {
-        category: 'IFR',
-        checks_run: 5,
-        slots: [
-          { name: 'types', ok: true, skipped: false, scope: 'global' },
-          { name: 'lint', ok: false, skipped: false, scope: 'global' },
-          { name: 'security', ok: false, skipped: true, scope: 'global' },
-          { name: 'docs', ok: false, skipped: false, scope: [DOC] },
-          { name: 'test', ok: false, skipped: false, scope: [TEST] },
-        ],
+test('a global red slot hangs no storm; a slot naming a changed and an untouched file splits across the two layers', () => {
+  const TEST_B = 'src/__tests__/b.test.ts';
+  const svg = renderSvg(
+    small({
+      weather: {
+        changed: [MODIFIED_A],
+        evidence: {
+          stitches: [
+            { test: TEST, targets: [A], status: 'failed' },
+            { test: TEST_B, targets: [A], status: 'passed' },
+          ],
+        },
+        checks: {
+          category: 'IFR',
+          checks_run: 6,
+          slots: [
+            { name: 'dead', ok: false, skipped: false, scope: [A, B] },
+            { name: 'docs', ok: false, skipped: false, scope: [DOC] },
+            { name: 'lint', ok: false, skipped: false, scope: 'global' },
+            { name: 'security', ok: false, skipped: true, scope: 'global' },
+            { name: 'struct', ok: false, skipped: false, scope: [TEST_B] },
+            { name: 'test', ok: false, skipped: false, scope: [TEST] },
+            { name: 'types', ok: true, skipped: false, scope: 'global' },
+          ],
+        },
       },
-    },
-  });
-  const field = drawn(renderSvg(global), 'storms');
-  const over = [...field.matchAll(/<g data-slot="(\w+)" data-over="([^"]+)">/g)].map(([, slot, at]) => [slot, at]);
-  expect(over).toEqual([
-    ['docs', 'docs'],
-    ['lint', 'field'],
-    ['test', CELL_A],
+    }),
+  );
+  // The global slot is nowhere on the field: no corner storm, no grey bolt; the HUD is where it is counted (D70).
+  expect(svg).not.toContain('data-slot="lint"');
+  expect(svg).not.toContain('data-over="field"');
+  expect(svg).not.toContain('data-slot="security"');
+  expect(svg).not.toContain('data-slot="types"');
+
+  // `dead` is the change's over A's cell and standing over B's; `test` is on the change through its torn stitch on A.
+  const storms = stormsIn(drawn(svg, 'storms'));
+  expect(storms.map((storm) => [storm.slot, storm.over, storm.label])).toEqual([
+    ['dead', CELL_A, 'dead'],
+    ['test', CELL_A, 'test'],
   ]);
-  // The global storm hangs at the field's top right corner, its label to the left of the bolt.
-  expect(field).toContain(`translate(${num(240 - STORM_INSET)} ${num(STORM_INSET)})`);
-  expect(field).toMatch(/<text [^>]*text-anchor="end">lint<\/text>/);
+  const grey = stormsIn(drawn(svg, 'standing-storms'));
+  expect(grey.map((storm) => [storm.slot, storm.over])).toEqual([
+    ['dead', CELL_B],
+    ['docs', 'docs'],
+    ['struct', CELL_A],
+  ]);
+  // Over A's cell the change's two storms stack nearest the cell, and the standing `struct` above them, so no bolt covers another.
+  const overA = [...storms, ...grey].filter((storm) => storm.over === CELL_A).map((storm) => storm.y);
+  expect(overA).toEqual([...overA].toSorted((a, b) => b - a));
+  expect(new Set(overA).size).toBe(3);
 });
 
 test('a ghost is a dashed outline round the untouched file that usually changes with these', () => {

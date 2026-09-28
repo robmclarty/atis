@@ -22,9 +22,9 @@ Every channel carries one meaning and no other (P3, C11):
 The sections below are those channels, plus the base tissue the weather is drawn
 over and the chrome that frames it. Each mark lands in a named group under the
 root `<svg>`: `#world` holds `#field`, `#terraces`, `#shore`, `#membranes`,
-`#organelles` and `#weather` (itself `#reach`, `#changed`, `#history`,
-`#evidence`, `#edges`, `#ghosts`, `#storms`); `#chrome` holds `#ground`, `#hud`,
-`#rules`, `#leaders`, `#notices` and `#marks`.
+`#organelles` and `#weather` (itself `#standing-storms`, `#reach`, `#changed`,
+`#history`, `#evidence`, `#edges`, `#ghosts`, `#storms`, bottom up); `#chrome`
+holds `#ground`, `#hud`, `#rules`, `#leaders`, `#notices` and `#marks`.
 
 Every value here is read by the renderer from `libs/svg/src/tokens.ts`, which is
 the single source; the value shown beside each token is a copy for reading, and
@@ -88,7 +88,7 @@ ride on the category hue.
 | `RENAME_LABEL_GAP` | `4` | the gap from the mark to that old-path label |
 | `VFR_HUE` | `#4fd37a` | the VFR category block, and the emphasis of a notice under a VFR category |
 | `MVFR_HUE` | `#5b8def` | the MVFR category block and its emphasis |
-| `IFR_HUE` | `#f0546a` | the IFR category, a torn stitch, and every storm in `#storms` |
+| `IFR_HUE` | `#f0546a` | the IFR category, a torn stitch, and every storm on the change in `#storms` |
 | `LIFR_HUE` | `#e35ce0` | the LIFR category, and a `cycle` or `boundary` exceptional edge and its arrow |
 | `CATEGORY_LETTERS` | `#0a0c0f` | the near-black ink the category letters and the primary box numeral are written in, on their bright block |
 | `EDGE_WIDTH` | `1` | `#edges`: the exceptional edges, the only drawn lines on the map (§5.1) |
@@ -141,7 +141,12 @@ value, so a hot file reads hot in either pattern.
 
 The last two weather marks (§5.2). A ghost is a missing co-change, a dim
 outline round a file that did not change: it names an absence, so it does not
-glow. A storm is a red slot, its bolt and slot name filled in the IFR hue above.
+glow. A storm is a red slot on the change, its bolt and slot name filled in the
+IFR hue above, hung only over a cell where the slot names a changed file (D68).
+The same slot over a cell the change did not touch is standing state, and
+standing state is terrain: a smaller bolt in graphite with no label, laid
+beneath the weather so it reads as texture on the ground and never as red. A
+global red slot names no cell and hangs no storm.
 
 | Token | Value | Where it appears |
 | --- | --- | --- |
@@ -150,9 +155,10 @@ glow. A storm is a red slot, its bolt and slot name filled in the IFR hue above.
 | `GHOST_PAD` | `3` | how far past the file's edge it sits |
 | `STORM_LABEL_SIZE` | `8` | the slot name beside a storm bolt in `#storms` |
 | `STORM_LABEL_GAP` | `6` | the gap from the bolt to its label |
-| `STORM_LIFT` | `10` | how far a storm hangs above the cell it names |
-| `STORM_ROW` | `14` | the row height when two slots stack over one place |
-| `STORM_INSET` | `12` | how far a global storm sits in from the field's top-right corner |
+| `STORM_LIFT` | `10` | how far a storm hangs above the cell it names, on the change or standing |
+| `STORM_ROW` | `14` | the row height when two slots stack over one place, the change's nearest the cell |
+| `STANDING_STORM_FILL` | `#58616b` | `#standing-storms`: the graphite bolt of a red slot over a cell the change did not touch |
+| `STANDING_STORM_SCALE` | `0.6` | how much smaller that bolt is than a change storm's |
 
 ## Chrome (the brutalist frame)
 
@@ -202,7 +208,8 @@ purpose, not by omission:
 
 - the clone-family glyphs (`GLYPHS` in `terrain.ts`) and the storm bolt
   (`STORM_GLYPH` in `weather.ts`): fixed path shapes drawn about their own
-  origin, coloured by `GLYPH_STROKE` and `IFR_HUE` and offset by `GLYPH_OFFSET`;
+  origin, coloured by `GLYPH_STROKE`, `IFR_HUE` or `STANDING_STORM_FILL` and
+  offset by `GLYPH_OFFSET`;
 - the exceptional-edge arrowhead's triangle (`patterns.ts`): a fixed shape in a
   six-unit box, rendered at `ARROW_SIZE` and filled per edge kind;
 - the reach glow's filter region (the `-25%`/`150%` bounds in `patterns.ts`):

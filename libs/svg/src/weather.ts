@@ -14,9 +14,11 @@
  * open for the rest, bitten where a mutant lived, stitched where a test
  * imports it. Texture is history: hatching by churn, stipple by bug-fix
  * rate. A ghost is a dashed outline round a file that usually changes with
- * these and did not. A storm hangs over each cell a red slot names, or over
- * the field when the slot is global. The exceptional edges are the only
- * lines on the map (§5.1).
+ * these and did not. A storm hangs over each cell where a red slot names a
+ * changed file; the same slot over a cell the change did not touch is
+ * standing state, a small grey bolt laid beneath the weather as terrain, and
+ * a global slot hangs none (D68). The exceptional edges are the only lines
+ * on the map (§5.1).
  *
  * All of it is read from `map.json` and nothing else (D33). A channel the
  * map does not carry is not drawn: no group, no default, no placeholder
@@ -24,9 +26,9 @@
  * mark. Every list is sorted by path, so the same map is the same bytes (C3).
  */
 
+import { splitRedSlots } from 'core';
 import type {
   ChangedFile,
-  CheckSlot,
   Contour,
   Evidence,
   ExceptionalEdge,
@@ -74,12 +76,13 @@ import {
   RENAME_DASH,
   RENAME_LABEL_GAP,
   RENAME_LABEL_SIZE,
+  STANDING_STORM_FILL,
+  STANDING_STORM_SCALE,
   STITCH_LENGTH,
   STITCH_SPACING,
   STITCH_TEAR,
   STITCH_UNLIT,
   STITCH_WIDTH,
-  STORM_INSET,
   STORM_LABEL_GAP,
   STORM_LABEL_SIZE,
   STORM_LIFT,
@@ -89,8 +92,6 @@ import {
 
 /** The storm glyph: a bolt, drawn about its own origin. */
 const STORM_GLYPH = 'M1 -6L-3 1H0L-1 6L3 -1H0Z';
-/** The bolt's own half height: what a mark or a ring hung on a storm clears it by. */
-const STORM_RADIUS = 6;
 const PASSED = 'passed';
 const FAILED = 'failed';
 const TOP = -Math.PI / 2;
@@ -469,89 +470,119 @@ function topOf(contour: Contour): readonly [number, number] | undefined {
   return top;
 }
 
-/** The slots a storm is drawn for: red and not skipped, in name order, which is the order they stack in (C3). */
-function stormSlots(weather: Weather): readonly CheckSlot[] {
-  return weather.checks.slots.filter((slot) => !slot.ok && !slot.skipped).toSorted((a, b) => byPath(a.name, b.name));
-}
+/** A red slot over one place, and whether it is the change's there or standing state (D68). */
+type Storm = { readonly slot: string; readonly place: string; readonly change: boolean };
+
+/** A storm with the point its bolt hangs at. */
+type Hung = Storm & { readonly x: number; readonly y: number };
 
 /**
- * Where each global slot's storm hangs: in from the field's top right
- * corner, stacked in the order the storms are drawn. The chrome reads this
- * so that a notice naming a slot rather than a file has something to point
- * its leader at (chrome.ts); a slot with no storm is absent from it rather
- * than given a corner of its own (C2).
+ * The storms, from core's split of the red slots (D67): each slot is the
+ * change's over every place a changed file it names sits on, and standing
+ * state over every other place its files sit on. A global slot names no
+ * file, so it hangs nothing; the HUD counts it instead (D68). The change's
+ * storms come first, each list in slot name order (C3).
  */
-export function globalStormAnchors(weather: Weather, layout: Layout): ReadonlyMap<string, Position> {
-  const global = stormSlots(weather).filter((slot) => slot.scope === 'global');
-  return new Map(
-    global.map((slot, index) => [slot.name, { x: layout.width - STORM_INSET, y: STORM_INSET + index * STORM_ROW, r: STORM_RADIUS }] as const),
+function stormsOf(weather: Weather, terrain: Terrain): readonly Storm[] {
+  const stitches = weather.evidence.stitches ?? [];
+  const red = splitRedSlots({ slots: weather.checks.slots, changed: weather.changed, stitches });
+  const change = red.change.flatMap((slot) =>
+    placesOf(slot.change, terrain, stitches).map((place): Storm => ({ slot: slot.name, place, change: true })),
   );
-}
-
-/** One storm: the bolt at (x, y) and the slot's name beside it, to the right, or to the left at the field's edge. */
-function drawStorm(slot: string, over: string, x: number, y: number, atEdge: boolean): Markup {
-  return el('g', { 'data-slot': slot, 'data-over': over }, [
-    el('path', { d: STORM_GLYPH, transform: `translate(${num(x)} ${num(y)})` }),
-    el(
-      'text',
-      {
-        x: atEdge ? x - STORM_LABEL_GAP : x + STORM_LABEL_GAP,
-        y: y + STORM_LABEL_SIZE * LABEL_BASELINE,
-        'font-size': STORM_LABEL_SIZE,
-        'font-variant': 'small-caps',
-        'text-anchor': atEdge ? 'end' : undefined,
-      },
-      [slot],
-    ),
-  ]);
+  const standing = [...red.change, ...red.standing]
+    .toSorted((a, b) => byPath(a.name, b.name))
+    .flatMap((slot) => {
+      const onChange = new Set(placesOf(slot.change, terrain, stitches));
+      return placesOf(slot.standing, terrain, stitches)
+        .filter((place) => !onChange.has(place))
+        .map((place): Storm => ({ slot: slot.name, place, change: false }));
+    });
+  return [...change, ...standing];
 }
 
 /**
- * Storms (§5.2): one per red slot, over the field at its top right corner
- * when the slot is global, else over each cell or shore group the slot's
- * files place on, stacked where two slots name the same place. A skipped
- * slot is not red, and a green one is no storm.
+ * Each storm hung above the top of its place's contour, stacked where two
+ * hang over one place in the order they come, so the change's red sits
+ * nearest the cell and the grey stacks above it. A place with no contour
+ * hangs nothing.
  */
-function drawStorms(weather: Weather, terrain: Terrain, layout: Layout): Markup | undefined {
+function hang(storms: readonly Storm[], layout: Layout): readonly Hung[] {
   const contours = layout.contours ?? {};
-  const corners = globalStormAnchors(weather, layout);
   const rows = new Map<string, number>();
-  const row = (place: string): number => {
-    const count = rows.get(place) ?? 0;
-    rows.set(place, count + 1);
-    return count;
-  };
-  const storms = stormSlots(weather).flatMap((slot) => {
-    if (slot.scope === 'global') {
-      const at = corners.get(slot.name);
-      return at === undefined ? [] : [drawStorm(slot.name, 'field', at.x, at.y, true)];
-    }
-    return placesOf(slot.scope, terrain, weather.evidence.stitches ?? []).flatMap((place) => {
-      const top = topOf(contours[place] ?? []);
-      if (top === undefined) return [];
-      return [drawStorm(slot.name, place, top[0], top[1] - STORM_LIFT - row(place) * STORM_ROW, false)];
-    });
+  return storms.flatMap((storm) => {
+    const top = topOf(contours[storm.place] ?? []);
+    if (top === undefined) return [];
+    const row = rows.get(storm.place) ?? 0;
+    rows.set(storm.place, row + 1);
+    return [{ ...storm, x: top[0], y: top[1] - STORM_LIFT - row * STORM_ROW }];
   });
-  return storms.length === 0 ? undefined : el('g', { id: 'storms', fill: IFR_HUE }, storms);
+}
+
+/**
+ * The change's storms (§5.2, D68): the bolt in the IFR hue with the slot's
+ * name to its right, over each cell or shore group where a red slot names a
+ * changed file. A skipped slot is not red, and a green one is no storm.
+ */
+function drawStorms(storms: readonly Hung[]): Markup | undefined {
+  const bolts = storms
+    .filter((storm) => storm.change)
+    .map((storm) =>
+      el('g', { 'data-slot': storm.slot, 'data-over': storm.place }, [
+        el('path', { d: STORM_GLYPH, transform: `translate(${num(storm.x)} ${num(storm.y)})` }),
+        el(
+          'text',
+          {
+            x: storm.x + STORM_LABEL_GAP,
+            y: storm.y + STORM_LABEL_SIZE * LABEL_BASELINE,
+            'font-size': STORM_LABEL_SIZE,
+            'font-variant': 'small-caps',
+          },
+          [storm.slot],
+        ),
+      ]),
+    );
+  return bolts.length === 0 ? undefined : el('g', { id: 'storms', fill: IFR_HUE }, bolts);
+}
+
+/**
+ * The standing storms (D68): a red slot over a cell the change did not
+ * touch is terrain, not weather, so its bolt is smaller, graphite, and
+ * carries no label, the way §5.3 keeps unchanged terrain greyscale.
+ */
+function drawStandingStorms(storms: readonly Hung[]): Markup | undefined {
+  const bolts = storms
+    .filter((storm) => !storm.change)
+    .map((storm) =>
+      el('path', {
+        'data-slot': storm.slot,
+        'data-over': storm.place,
+        d: STORM_GLYPH,
+        transform: `translate(${num(storm.x)} ${num(storm.y)}) scale(${num(STANDING_STORM_SCALE)})`,
+      }),
+    );
+  return bolts.length === 0 ? undefined : el('g', { id: 'standing-storms', fill: STANDING_STORM_FILL }, bolts);
 }
 
 /**
  * The weather over the terrain: its definitions first, then the layers
- * bottom up. Reach glows under everything; the changed set is stained over
- * it; history textures go over the stains, so a hot file stays hot when it
- * is changed; evidence sits on the outlines; the exceptional edges cross the
- * bodies they join; then the ghosts, and the storms on top. A layer with
- * nothing to draw is left out rather than emptied (C2).
+ * bottom up. The standing storms lie under everything, since they are
+ * terrain (D68); reach glows over them; the changed set is stained over it;
+ * history textures go over the stains, so a hot file stays hot when it is
+ * changed; evidence sits on the outlines; the exceptional edges cross the
+ * bodies they join; then the ghosts, and the change's storms on top. A
+ * layer with nothing to draw is left out rather than emptied (C2).
  */
 export function drawWeather(map: MapJson, layout: Layout): Markup {
+  const storms = hang(stormsOf(map.weather, map.terrain), layout);
   const layers = [
+    drawStandingStorms(storms),
     drawReach(map.weather, map.terrain, layout),
     drawChanged(map.weather.changed, layout),
     drawHistory(map.terrain, layout),
     drawEvidence(map.weather.evidence, layout),
     drawEdges(map.terrain, layout),
     drawGhosts(map.weather.ghosts, layout),
-    drawStorms(map.weather, map.terrain, layout),
+    drawStorms(storms),
   ].flatMap((layer) => (layer === undefined ? [] : [layer]));
   return el('g', { id: 'weather' }, [drawDefs(), ...layers]);
 }

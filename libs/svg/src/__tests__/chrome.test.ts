@@ -17,7 +17,6 @@ import {
   NOTICE_BOX,
   PRIMARY_RING_WIDTH,
   SECONDARY_RING_WIDTH,
-  STORM_INSET,
 } from '../tokens.js';
 
 /**
@@ -316,17 +315,10 @@ test('one dotted leader per placed notice, from the centre of its row box to the
   expect([...drawn(unplaced, 'leaders').matchAll(/<line data-notice="(\d)"/g)].map(([, rank]) => rank)).toEqual(['1', '2', '3', '4', '5']);
   expect(drawn(unplaced, 'marks')).not.toContain('data-mark="6"');
 
-  // The demo's six notices all name files, and a green global slot raises no storm, so neither map draws a seventh leader.
-  const green: Notice = { ...stray, target: 'lint', why: 'the `lint` check is red for the whole repository' };
-  const calm = chromeOf(renderSvg({ ...map, notices: [...map.notices.slice(0, 5), green] }));
-  expect([...drawn(calm, 'leaders').matchAll(/<line data-notice="(\d)"/g)].map(([, rank]) => rank)).toEqual(['1', '2', '3', '4', '5']);
 });
 
-test("a notice naming a red global slot points its leader at that slot's storm in the field's corner", () => {
+test('a notice naming a red global slot keeps its row and draws no leader, since the slot hangs no storm (D68)', () => {
   const map = demo();
-  const layout = map.terrain.layout;
-  expect(layout, 'the demo is laid out').toBeDefined();
-  const width = layout?.width ?? 0;
 
   // `lint` turns red for the whole repository, and the sixth notice names it rather than a file.
   const slot: Notice = { tier: 'tertiary', kind: 'red-check-slot', target: 'lint', why: 'the `lint` check is red for the whole repository', inputs: {}, thresholds: { severity: 10 }, weight: 10 };
@@ -335,36 +327,12 @@ test("a notice naming a red global slot points its leader at that slot's storm i
     weather: { ...map.weather, checks: { ...map.weather.checks, slots: map.weather.checks.slots.map((each) => (each.name === 'lint' ? { ...each, ok: false } : each)) } },
     notices: [...map.notices.slice(0, 5), slot],
   });
+  expect(svg).not.toContain('data-slot="lint"');
 
-  // The storm is the bolt weather.ts drew at the corner; the chrome points at that same spot.
-  const storms = drawn(svg, 'storms');
-  const bolt = /<g data-slot="lint" data-over="field">\s*<path d="[^"]+" transform="translate\(([\d.]+) ([\d.]+)\)"\/>/.exec(storms);
-  expect(bolt, 'the global slot raises a storm over the field').not.toBeNull();
-  expect(Number(bolt?.[1])).toBe(width - STORM_INSET);
-  expect(Number(bolt?.[2])).toBe(STORM_INSET);
-
-  // Its row is placed, so it gets the leader geometry a file-targeted notice gets: a line from its row box to its mark.
   const chrome = chromeOf(svg);
-  expect(drawn(chrome, 'notices')).toMatch(/<g data-notice="6" data-tier="tertiary" data-kind="red-check-slot" data-target="lint">/);
-  const ranks = [...drawn(chrome, 'leaders').matchAll(/<line data-notice="(\d)"/g)].map(([, rank]) => rank);
-  expect(ranks).toEqual(['1', '2', '3', '4', '5', '6']);
-  const marks = drawn(chrome, 'marks');
-  expect(marks).toContain('data-mark="6"');
-  const leader = /<line data-notice="6" x1="[\d.]+" y1="[\d.]+" x2="([\d.]+)" y2="([\d.]+)"\/>/.exec(drawn(chrome, 'leaders'));
-  expect([Number(leader?.[1]), Number(leader?.[2])]).toEqual(boxCentre(marks, 6));
-
-  // The mark hangs off the bolt, not off an organelle: the run flips to the storm's left, since the corner leaves no room on its right.
-  const [markX, markY] = boxCentre(marks, 6);
-  expect(markX).toBeLessThan(width - STORM_INSET);
-  expect(markX).toBeGreaterThan(width - STORM_INSET - NOTICE_BOX * 3);
-  expect(markY).toBeGreaterThan(STORM_INSET);
-
-  // A file-targeted notice is untouched: the primary still points at its own organelle.
-  const primary = map.notices[0];
-  const at = layout?.positions[primary?.target ?? ''];
-  expect(at, 'the primary names a placed file').toBeDefined();
-  const [firstX] = boxCentre(marks, 1);
-  expect(Math.abs(firstX - (at?.x ?? 0))).toBeLessThan((at?.r ?? 0) + NOTICE_BOX * 2);
+  expect(drawn(chrome, 'notices')).toMatch(/<g data-notice="6" data-tier="tertiary" data-kind="red-check-slot" data-target="lint" data-unplaced="true">/);
+  expect([...drawn(chrome, 'leaders').matchAll(/<line data-notice="(\d)"/g)].map(([, rank]) => rank)).toEqual(['1', '2', '3', '4', '5']);
+  expect(drawn(chrome, 'marks')).not.toContain('data-mark="6"');
 });
 
 test('tier emphasis on the map: the primary a ring in the category hue and its kind, a secondary a thick ring in ink, a tertiary the mark alone', () => {

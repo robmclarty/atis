@@ -116,12 +116,18 @@ export const GHOST_STROKE = '#7c8590';
 export const GHOST_DASH = '2 2';
 export const GHOST_PAD = 3;
 
-/** A storm, a red slot (§5.2): a bolt and the slot's name, this far above the cell it names or in from the field's corner. */
+/** A storm, a red slot on the change (§5.2, D68): a bolt and the slot's name, this far above the cell where it names a changed file. */
 export const STORM_LABEL_SIZE = 8;
 export const STORM_LABEL_GAP = 6;
 export const STORM_LIFT = 10;
 export const STORM_ROW = 14;
-export const STORM_INSET = 12;
+/**
+ * A standing storm, a red slot over a cell the change did not touch (D68):
+ * terrain rather than weather, so a bolt this much smaller, in graphite and
+ * with no label, drawn beneath the weather.
+ */
+export const STANDING_STORM_FILL = '#58616b';
+export const STANDING_STORM_SCALE = 0.6;
 
 /** History is texture (C11): hatching for churn, stipple for bug-fix rate, one neutral ink at an opacity by value, full at these values. */
 export const TEXTURE_INK = '#cfd6de';
