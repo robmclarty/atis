@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 31 — feat(cli): read npm, yarn and bun workspaces as scan roots
+**Current step:** 35 — feat(cli): name the files a red lint or struct slot reports
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -53,10 +53,17 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 28. fix(core): send plugin, MCP and bench JSON to their shore groups
 - ☑ 29. fix(cli): name --svg and --open in the usage text
 - ☑ 30. chore(fixtures): refresh the five maps after the render and shore fixes
-- ☐ 31. feat(cli): read npm, yarn and bun workspaces as scan roots
+- ☑ 31. feat(cli): read npm, yarn and bun workspaces as scan roots
 - ☐ 32. chore(fixtures): select five reviewed outside PRs and record their ground truth
 - ☐ 33. chore(fixtures): generate map.json and the SVG for the five outside PRs
 - ☐ 34. chore(glance): retake glance-test round one on the outside fixtures
+- ☐ 35. feat(cli): name the files a red lint or struct slot reports
+- ☐ 36. fix(core): set the flight category from the change's red slots
+- ☐ 37. fix(core): spend the notice budget only on the change's red slots
+- ☐ 38. fix(svg): draw standing-state storms as grey terrain
+- ☐ 39. fix(svg): count red slots in the HUD's Gate and Standing blocks
+- ☐ 40. fix(svg): light a skin's uncovered arc instead of its covered one
+- ☐ 41. fix(cli): read npm, yarn and bun packages for the dependency delta
 
 ## Park list
 
@@ -1669,3 +1676,50 @@ folder, so it rides the branch into the PR.)*
   **4.** Two protocol changes for round two, parked beside them
 
   Fixtures from other projects' reviewed PRs, where the commit a reviewer asked changes on is a hold and the approved commit a merge, and a fixed one-minute legend before the first map.
+
+- 2026-09-25 — step 31 checkpointed · d02e4cc8b — feat(cli): read npm, yarn and bun workspaces as scan roots (4m)
+
+  **Summary**: When a repo has no `pnpm-workspace.yaml`, the scan now reads its members from the `workspaces` field in `package.json`. Both shapes work: the array npm and bun write, and yarn's `{ "packages": [...] }` object. They go through the same globbing and `!` exclusions as the yaml. Members still resolve by name and become `kind: package` cells, and the yaml wins when both are present.
+
+  1. A pure `parseManifestWorkspaces` reads both shapes of the field
+  2. `pnpm-workspace.yaml` wins as soon as the file exists
+  3. `globToRegExp` now drops a leading `./`, which `git.ts` also picks up
+  4. The tests assert members, name-resolved edges and package cells for each shape
+  5. Parked: the dependency delta still reads only `pnpm-workspace.yaml`
+
+  **Readout**: Step 31 - feat(cli): read npm, yarn and bun workspaces as scan roots
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    2 of 2 honored
+               - D30 (pure-parsers), D42 (committed-files-vs-gate)
+  constraints  11 of 11 honored
+  seam         held: 2 of 2 declared, no strays
+  diff         +153 -12 across 2 files
+  spent        4 min · 1 turn · 14s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Approve and checkpoint step 31. It meets the done-when, the gate is green, and the one gap it leaves is parked with a deadline ahead of step 33.
+
+  **1.** A pure `parseManifestWorkspaces` reads both shapes of the field
+
+  It sits beside `parseWorkspaceGlobs` in `imports.ts` and follows the same D30 (pure-parsers) pattern: it takes a manifest string and returns the globs in order, keeping `!` exclusions. It takes the array, or the `packages` array of yarn's object (bun accepts that object too). It returns nothing for a missing field, an object with no `packages`, entries that aren't strings, or JSON that won't parse. That last case matches how `readManifest` already treats a broken manifest. A new `workspaceGlobs` picks which source to read, and `readMembers` runs the same include and exclude matching over its result as before.
+
+  **2.** `pnpm-workspace.yaml` wins as soon as the file exists
+
+  The check is whether the file exists, not whether it has a `packages:` key, because pnpm itself never reads `workspaces`. So a pnpm repo that also carries a `workspaces` field, maybe left over from a migration, maps the way pnpm installs it. The "both" test uses a yaml listing only `libs/*` beside a field listing `apps/*` and `libs/*`. Only `libs/util` becomes a member, and `apps/web` stays in the root package cell.
+
+  **3.** `globToRegExp` now drops a leading `./`, which `git.ts` also picks up
+
+  npm's docs write members as `./packages/a`, and a raw `./` would never match a directory path. The fix is one `normalizePath` call inside `globToRegExp`, so it also applies to the pnpm reader and to the copy of that matcher in `git.ts`, which imports it. For globs without `./` the result is byte-identical; with `./` the pattern now matches what pnpm matches.
+
+  **4.** The tests assert members, name-resolved edges and package cells for each shape
+
+  Each of the npm, yarn and both-present trees is written from strings into its own `mkdtemp` directory (D42 (committed-files-vs-gate)). Each test checks the member list, an edge resolved by package name, and the package cells `identifyModules` from `core` makes from those members. The npm tree also shows that an excluded `packages/legacy` neither becomes a member nor resolves by name. The "neither" case is the existing flat test, renamed. The package-cell checks also show that the root `.` becomes a package cell whenever it holds files no member claims.
+
+  **5.** Parked: the dependency delta still reads only `pnpm-workspace.yaml`
+
+  `git.ts`'s `memberDirs`, which feeds D47's `deps_added`, has its own yaml-only copy of the member reader, and it is outside this seam. On an npm, yarn or bun fixture, a dependency added to a member's manifest would go unnoticed. I parked it with a note to route it through `parseManifestWorkspaces` before step 33 generates the outside fixtures.

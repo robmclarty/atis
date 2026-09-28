@@ -356,7 +356,7 @@ test('no .check/ is NOINST with the reason it was not read, never green and neve
   expect(checks).toEqual({ category: 'NOINST', checks_run: 0, reason: '.check/ is absent', slots: [] });
 });
 
-test('a red slot is scoped to the paths its own output names, for the four slots whose output is about files', () => {
+test('a red slot is scoped to the paths its own output names, for the six slots whose output is about files', () => {
   const checks = categoryFor(
     CHAIN,
     [change('src/pm/tools.ts')],
@@ -375,8 +375,18 @@ test('a red slot is scoped to the paths its own output names, for the four slots
             { files: ['src/pm/tools.ts', 'src/doctor.ts'], groups: [{ instances: [{ file: 'src/index.ts', start_line: 1 }] }] },
           ],
         },
+        lint: { diagnostics: [{ path: 'src/pm/probe.ts', severity: 'error' }] },
+        struct: { matches: [{ path: 'src/pm/util.ts', severity: 'error' }] },
       },
-      [slot('test', false), slot('health', false), slot('dead', false), slot('dupes', false), slot('lint', false)],
+      [
+        slot('test', false),
+        slot('health', false),
+        slot('dead', false),
+        slot('dupes', false),
+        slot('lint', false),
+        slot('struct', false),
+        slot('types', false),
+      ],
     ),
   );
 
@@ -387,13 +397,65 @@ test('a red slot is scoped to the paths its own output names, for the four slots
     dead: ['src/pm/util.ts'],
     // A clone family names its files directly and its instances one level down; both, deduplicated and sorted.
     dupes: ['src/doctor.ts', 'src/index.ts', 'src/pm/tools.ts'],
-    // Nothing in `lint.json` is read, so its storm marker covers the whole field.
-    lint: 'global',
+    lint: ['src/pm/probe.ts'],
+    struct: ['src/pm/util.ts'],
+    // `types` has no raw output about files, so its storm marker covers the whole field.
+    types: 'global',
   });
 });
 
-test('a red slot whose own output was never read stays global rather than guessing at a scope', () => {
-  const checks = categoryFor(CHAIN, [change('src/pm/tools.ts')], ran({}, [slot('test', false), slot('dead', false)]));
+test('a red lint naming one changed file among warnings elsewhere is scoped to that file alone (D67)', () => {
+  const checks = categoryFor(
+    CHAIN,
+    [change('src/pm/tools.ts')],
+    ran(
+      {
+        ...TOOLS_CLOSED,
+        lint: {
+          diagnostics: [
+            { path: 'src/doctor.ts', severity: 'warning' },
+            { path: 'src/pm/tools.ts', severity: 'error' },
+            { path: 'src/pm/tools.ts', severity: 'error' },
+          ],
+        },
+      },
+      [slot('types'), slot('lint', false)],
+    ),
+  );
 
-  expect(checks.slots.map((entry) => entry.scope)).toEqual(['global', 'global']);
+  // The error is what failed the slot; the warning on `doctor.ts` did not.
+  expect(checks.slots.find((entry) => entry.name === 'lint')?.scope).toEqual(['src/pm/tools.ts']);
+});
+
+test('a red lint or struct with no error among its findings was failed by its warnings, so every one names its file', () => {
+  const checks = categoryFor(
+    CHAIN,
+    [change('src/pm/tools.ts')],
+    ran(
+      {
+        struct: {
+          matches: [
+            { path: 'src/pm/util.ts', severity: 'warning' },
+            { path: 'src/doctor.ts', severity: 'hint' },
+          ],
+        },
+      },
+      [slot('struct', false)],
+    ),
+  );
+
+  expect(checks.slots).toEqual([{ name: 'struct', ok: false, skipped: false, scope: ['src/doctor.ts', 'src/pm/util.ts'] }]);
+});
+
+test('a red slot whose own output was never read, or named no file, stays global rather than guessing at a scope', () => {
+  const unread = categoryFor(
+    CHAIN,
+    [change('src/pm/tools.ts')],
+    ran({}, [slot('test', false), slot('dead', false), slot('lint', false), slot('struct', false)]),
+  );
+  expect(unread.slots.map((entry) => entry.scope)).toEqual(['global', 'global', 'global', 'global']);
+
+  // Clean reports under red slots: each failed on something its findings do not show.
+  const empty = categoryFor(CHAIN, [change('src/pm/tools.ts')], ran({ lint: { diagnostics: [] }, struct: { matches: [] } }, [slot('lint', false), slot('struct', false)]));
+  expect(empty.slots.map((entry) => entry.scope)).toEqual(['global', 'global']);
 });

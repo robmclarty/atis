@@ -5,7 +5,20 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, beforeAll, expect, test } from 'vitest';
 
-import { parseCoverage, parseDead, parseDupes, parseHealth, parseMutation, parseSecurity, parseSummary, parseTest, readCheck, readCheckDir } from '../sources/index.js';
+import {
+  parseCoverage,
+  parseDead,
+  parseDupes,
+  parseHealth,
+  parseLint,
+  parseMutation,
+  parseSecurity,
+  parseStruct,
+  parseSummary,
+  parseTest,
+  readCheck,
+  readCheckDir,
+} from '../sources/index.js';
 import type { CheckInputs } from '../sources/index.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -28,6 +41,22 @@ function expectCheck(result: CheckInputs): Extract<CheckInputs, { mode: 'check' 
   if (result.mode !== 'check') throw new Error(`expected mode "check", got a git-only reason: ${result.reason}`);
   return result;
 }
+
+/** oxlint 1.x `--format=json` as it lands in `lint.json`: an error and a warning, captured from a run and trimmed to two files. */
+const OXLINT_REPORT = `{ "diagnostics": [{"message": "\`debugger\` statement is not allowed","code": "eslint(no-debugger)","severity": "error","url": "https://oxc.rs/docs/guide/usage/linter/rules/eslint/no-debugger.html","help": "Remove the debugger statement","filename": "src/b.ts","labels": [{"span": {"offset": 0,"length": 9,"line": 1,"column": 1}}]},
+{"message": "Unexpected console statement.","code": "eslint(no-console)","severity": "warning","url": "https://oxc.rs/docs/guide/usage/linter/rules/eslint/no-console.html","help": "Delete this console statement.","filename": "src/a.ts","labels": [{"span": {"offset": 10,"length": 11,"line": 2,"column": 1}}]}],
+              "number_of_files": 2,
+              "number_of_rules": 97,
+              "threads_count": 8,
+              "start_time": 0.008714208
+            }
+            `;
+
+/** ast-grep 0.x `scan --json=compact` as it lands in `struct.json`: a bare array of matches, captured and trimmed to its keys. */
+const AST_GREP_REPORT = JSON.stringify([
+  { text: 'var x = 1;', range: { start: { line: 1, column: 0 }, end: { line: 1, column: 10 } }, file: 'src/a.ts', language: 'TypeScript', ruleId: 'no-var', severity: 'warning', message: 'no var' },
+  { text: 'class A {}', range: { start: { line: 0, column: 0 }, end: { line: 0, column: 10 } }, file: 'src/a.ts', language: 'TypeScript', ruleId: 'no-class', severity: 'error', message: 'no classes' },
+]);
 
 // ---------------------------------------------------------------------------
 // parseSummary
@@ -186,6 +215,63 @@ test('parseSecurity reads metadata.vulnerabilities, and is undefined without it 
 });
 
 // ---------------------------------------------------------------------------
+// lint and struct: the files a red slot names (D67)
+// ---------------------------------------------------------------------------
+
+test('parseLint reads each oxlint diagnostic\'s filename and severity, sorted by path', () => {
+  expect(parseLint(OXLINT_REPORT)).toEqual({
+    diagnostics: [
+      { path: 'src/a.ts', severity: 'warning' },
+      { path: 'src/b.ts', severity: 'error' },
+    ],
+  });
+});
+
+test('parseLint drops a diagnostic with no filename or severity, and is undefined without a diagnostics list (C2)', () => {
+  const report = JSON.stringify({ diagnostics: [{ filename: './src/a.ts', severity: 'error' }, { message: 'no file', severity: 'error' }, 'nope'] });
+  expect(parseLint(report)).toEqual({ diagnostics: [{ path: 'src/a.ts', severity: 'error' }] });
+  expect(parseLint(JSON.stringify({ number_of_files: 3 }))).toBeUndefined();
+  expect(parseLint('{ not json')).toBeUndefined();
+});
+
+test('parseStruct reads each ast-grep match\'s file and severity, sorted by path then severity', () => {
+  expect(parseStruct(AST_GREP_REPORT)).toEqual({
+    matches: [
+      { path: 'src/a.ts', severity: 'error' },
+      { path: 'src/a.ts', severity: 'warning' },
+    ],
+  });
+  expect(parseStruct('[]')).toEqual({ matches: [] });
+});
+
+test('parseStruct is undefined on anything but a bare array of matches (C2)', () => {
+  expect(parseStruct(JSON.stringify({ matches: [] }))).toBeUndefined();
+  expect(parseStruct('not json')).toBeUndefined();
+});
+
+test('lint.json and struct.json are read when their slots ran and were not skipped (D41, D67)', () => {
+  const root = writeTree(tempRepo('lint-struct'), {
+    '.check/summary.json': JSON.stringify({
+      schema_version: 1,
+      ok: false,
+      checks_run: 2,
+      timestamp: '2026-01-01T00:00:00.000Z',
+      total_duration_ms: 1000,
+      checks: [
+        { name: 'lint', ok: false, skipped: false },
+        { name: 'struct', ok: false },
+      ],
+    }),
+    '.check/lint.json': OXLINT_REPORT,
+    '.check/struct.json': AST_GREP_REPORT,
+  });
+  const result = expectCheck(readCheck(root));
+  rmSync(root, { recursive: true, force: true });
+  expect(result.lint?.diagnostics.map((entry) => entry.path)).toEqual(['src/a.ts', 'src/b.ts']);
+  expect(result.struct?.matches).toHaveLength(2);
+});
+
+// ---------------------------------------------------------------------------
 // readCheck: absent, empty, summary-less, invalid and harness_broken (D41)
 // ---------------------------------------------------------------------------
 
@@ -243,11 +329,14 @@ beforeAll(() => {
       checks: [
         { name: 'mutation', ok: true, skipped: false },
         { name: 'security', ok: true, skipped: true },
+        { name: 'struct', ok: true, skipped: true },
       ],
     }),
     '.check/mutation.json': JSON.stringify({ files: { 'src/a.ts': { mutants: [{ status: 'Survived', location: { start: { line: 1 } } }] } } }),
     '.check/security.json': JSON.stringify({ metadata: { vulnerabilities: { high: 0 } } }),
+    '.check/struct.json': AST_GREP_REPORT,
     '.check/dead.json': JSON.stringify({ circular_dependencies: [], re_export_cycles: [], boundary_violations: [], unused_exports: [] }),
+    '.check/lint.json': OXLINT_REPORT,
   });
   // The run window is [timestamp - total_duration_ms, ∞) = [2025-12-31T23:59:59.000Z, ∞); backdate
   // mutation.json a full year earlier so it unambiguously predates it.
@@ -270,12 +359,14 @@ test('a listed slot\'s file older than the run window is muted as stale, its age
 test('a skipped slot\'s raw file is never read, and never counted as stale either', () => {
   const result = expectCheck(gatedResult);
   expect(result.security).toBeUndefined();
-  expect(result.stale.some((entry) => entry.slot === 'security')).toBe(false);
+  expect(result.struct).toBeUndefined();
+  expect(result.stale.some((entry) => entry.slot === 'security' || entry.slot === 'struct')).toBe(false);
 });
 
 test('a raw file present but absent from checks[] is never read (the unlisted-slot case, D41)', () => {
   const result = expectCheck(gatedResult);
   expect(result.dead).toBeUndefined();
+  expect(result.lint).toBeUndefined();
 });
 
 // ---------------------------------------------------------------------------

@@ -26,11 +26,14 @@ import type {
   Health,
   HealthFileScore,
   HealthFinding,
+  Lint,
   Mutation,
   MutationFile,
+  ReportedFinding,
   ReportedMutant,
   Security,
   StaleChannel,
+  Struct,
   TestReport,
   TestResult,
 } from 'core';
@@ -267,6 +270,32 @@ export function parseSecurity(text: string): Security | undefined {
   return { vulnerabilities: result };
 }
 
+/** Each finding's file (under `pathKey`) and severity; a finding missing either names nothing. */
+function reportedFindings(raws: readonly unknown[], pathKey: string): readonly ReportedFinding[] {
+  return raws
+    .flatMap((raw): readonly ReportedFinding[] => {
+      if (!isRecord(raw)) return [];
+      const path = raw[pathKey];
+      const severity = raw['severity'];
+      return typeof path === 'string' && typeof severity === 'string' ? [{ path: normalizePath(path), severity }] : [];
+    })
+    .toSorted((a, b) => byPath(a.path, b.path) || byPath(a.severity, b.severity));
+}
+
+/** `lint.json` (oxlint `--format=json`): `diagnostics[{ filename, severity }]`, `filename` repo-relative. */
+export function parseLint(text: string): Lint | undefined {
+  const value = parseJson(text);
+  if (!isRecord(value)) return undefined;
+  const diagnostics = value['diagnostics'];
+  return Array.isArray(diagnostics) ? { diagnostics: reportedFindings(diagnostics, 'filename') } : undefined;
+}
+
+/** `struct.json` (ast-grep `--json=compact`): a bare array of matches, `[{ file, severity }]`, `file` repo-relative. */
+export function parseStruct(text: string): Struct | undefined {
+  const value = parseJson(text);
+  return Array.isArray(value) ? { matches: reportedFindings(value, 'file') } : undefined;
+}
+
 /** `.check/`, or a `reason` it cannot be trusted: absent, empty, or no schema-1 `summary.json` (D41). */
 function resolveSummary(dir: string): { readonly summary: CheckSummary } | { readonly reason: string } {
   if (!existsSync(dir) || !statSync(dir).isDirectory()) return { reason: '.check/ is absent' };
@@ -311,6 +340,8 @@ function readChannels(dir: string, repo: string, summary: CheckSummary): Omit<Ex
   const test = readChannel('test', 'test.json', (text) => parseTest(text, repo));
   const mutation = readChannel('mutation', 'mutation.json', parseMutation);
   const security = readChannel('security', 'security.json', parseSecurity);
+  const lint = readChannel('lint', 'lint.json', parseLint);
+  const struct = readChannel('struct', 'struct.json', parseStruct);
 
   const fallow_schemas: { health?: number; dead?: number; dupes?: number } = {
     ...(healthRaw?.schema_version === undefined ? {} : { health: healthRaw.schema_version }),
@@ -328,6 +359,8 @@ function readChannels(dir: string, repo: string, summary: CheckSummary): Omit<Ex
     ...(mutation === undefined ? {} : { mutation }),
     ...(test === undefined ? {} : { test }),
     ...(security === undefined ? {} : { security }),
+    ...(lint === undefined ? {} : { lint }),
+    ...(struct === undefined ? {} : { struct }),
   };
 }
 

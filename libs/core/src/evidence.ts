@@ -85,6 +85,15 @@ export type TestReport = { readonly results: readonly TestResult[] };
 
 export type Security = { readonly vulnerabilities: Readonly<Record<string, number>> };
 
+/** One finding a lint or struct tool reports, kept to the file it names and the severity the tool gave it. */
+export type ReportedFinding = { readonly path: string; readonly severity: string };
+
+/** oxlint's `lint.json`: its diagnostics. */
+export type Lint = { readonly diagnostics: readonly ReportedFinding[] };
+
+/** ast-grep's `struct.json`: its matches. */
+export type Struct = { readonly matches: readonly ReportedFinding[] };
+
 /** A channel muted for staleness: its slot ran, but the raw file predates the run window (D41). */
 export type StaleChannel = { readonly slot: string; readonly file: string; readonly age_ms: number };
 
@@ -103,6 +112,8 @@ export type CheckArtifacts =
       readonly mutation?: Mutation;
       readonly test?: TestReport;
       readonly security?: Security;
+      readonly lint?: Lint;
+      readonly struct?: Struct;
     };
 
 type RanCheck = Extract<CheckArtifacts, { mode: 'check' }>;
@@ -123,6 +134,9 @@ const LIVE_MUTANTS: ReadonlySet<string> = new Set(['survived', 'nocoverage']);
 
 /** Vitest's one failing outcome; a pending or skipped result is not what makes the slot red. */
 const FAILED = 'failed';
+
+/** oxlint's and ast-grep's failing severity; a warning fails the slot only when the run denies warnings. */
+const ERROR = 'error';
 
 const GLOBAL = 'global';
 
@@ -370,7 +384,18 @@ export function structuralFindings(dead: Dead | undefined): readonly unknown[] {
   return [...dead.circular_dependencies, ...dead.re_export_cycles, ...dead.boundary_violations];
 }
 
-/** The paths a red slot's own raw output names, for the four slots whose output is about files (D27). */
+/**
+ * The files a red lint or struct slot names: the ones carrying an error,
+ * because an error is what fails the slot. A red slot with no error among its
+ * findings was failed by its warnings (a run that denies them), so then every
+ * finding names its file.
+ */
+function failingPaths(findings: readonly ReportedFinding[]): readonly string[] {
+  const errors = findings.filter((finding) => finding.severity === ERROR);
+  return sortUnique((errors.length === 0 ? findings : errors).map((finding) => finding.path));
+}
+
+/** The paths a red slot's own raw output names, for the six slots whose output is about files (D27, D67). */
 function namedPaths(slot: string, check: RanCheck): readonly string[] {
   if (slot === 'test') {
     return sortUnique((check.test?.results ?? []).filter((result) => result.status === FAILED).map((result) => result.path));
@@ -380,10 +405,12 @@ function namedPaths(slot: string, check: RanCheck): readonly string[] {
     return sortUnique([...structuralFindings(check.dead), ...(check.dead?.unused_exports ?? [])].flatMap(pathsOf));
   }
   if (slot === 'dupes') return sortUnique((check.dupes?.clone_families ?? []).flatMap(pathsOf));
+  if (slot === 'lint') return failingPaths(check.lint?.diagnostics ?? []);
+  if (slot === 'struct') return failingPaths(check.struct?.matches ?? []);
   return [];
 }
 
-/** A red slot is scoped to the paths its output names; every other slot, and one that named none, is global (D27). */
+/** A red slot is scoped to the paths its output names; every other slot, and one that named none, is global (D27, D67). */
 function scopeOf(slot: CheckSummarySlot, check: RanCheck): CheckSlot['scope'] {
   if (slot.ok || slot.skipped) return GLOBAL;
   const paths = namedPaths(slot.name, check);
