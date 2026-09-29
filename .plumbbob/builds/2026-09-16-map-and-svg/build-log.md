@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 51 — docs(inspiration): cite the five outside repos the retake read
+**Current step:** 52 — chore(fixtures): refresh the five retake maps after the fifth pass
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -73,7 +73,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 48. feat(cli): read a published package's exported names as wide
 - ☑ 49. fix(cli): scan .mts and .cts files as TypeScript
 - ☑ 50. fix(core): sort the outside repos' tooling files into shore groups by kind
-- ☐ 51. docs(inspiration): cite the five outside repos the retake read
+- ☑ 51. docs(inspiration): cite the five outside repos the retake read
 - ☐ 52. chore(fixtures): refresh the five retake maps after the fifth pass
 
 ## Park list
@@ -129,9 +129,11 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] glance protocol for round two: one read of the D66 legend does not teach the marks; Rob after the retake: 'i just need to better learn what the graphics actually mean. i'm just guessing and intuiting', and read copy A as 'moved or renamed' on a change that renamed nothing; candidates: a practice map before the scored five, or a legend inset on the map
 - [x] the shore rules were written against checkride and fascicle: on the retake's outside repos the Other block reads 43 to 106 files (apollo-client, TanStack form, hono, trpc), so common tooling files fall through; group them by kind rather than widen the residual
 - [x] cli.test.ts runs the built dist/cli.js while checkride's types slot rebuilds dist in parallel, so the first gate after a change to a cross-package contract can go red on a half-rebuilt dist (step 43: core's new buildMap met the old scanner's scans, exit 2) and green on the rerun; make the test wait on, or own, the build it runs
-- [ ] follow a name a barrel imports and then exports with a bare export { a } in the public-name walk; D75 follows only export … from, export * and export type *
-- [ ] an index.mts or index.cts founds no barrel, and a dist/ .mjs or .cjs target maps to no src/ .mts or .cts, since core's barrelOf and the scan's candidates still name only .ts and .tsx (found at step 49, D77)
-- [ ] shore residual after step 50: the retake still leaves kinds no row names in other (trpc: docker-compose.yaml, prisma migration_lock.toml and migrations/meta/*.json, serverless.yml, vitest.workspace.json, robots.txt, ATTRIBUTION.txt; hono: deno.*.json variants, package.cjs.json, runtime-tests static fixtures); candidates docker-compose*.y*ml to ci, migrations/** to data, vitest.workspace.* to config
+- [x] follow a name a barrel imports and then exports with a bare export { a } in the public-name walk; D75 follows only export … from, export * and export type *
+- [x] an index.mts or index.cts founds no barrel, and a dist/ .mjs or .cjs target maps to no src/ .mts or .cts, since core's barrelOf and the scan's candidates still name only .ts and .tsx (found at step 49, D77)
+- [x] shore residual after step 50: the retake still leaves kinds no row names in other (trpc: docker-compose.yaml, prisma migration_lock.toml and migrations/meta/*.json, serverless.yml, vitest.workspace.json, robots.txt, ATTRIBUTION.txt; hono: deno.*.json variants, package.cjs.json, runtime-tests static fixtures); candidates docker-compose*.y*ml to ci, migrations/** to data, vitest.workspace.* to config
+- [ ] apollo-client's body-only QueryManager.ts edit still raises interface-change after step 47: the class's inferred method returns leave its shape uncompared, which keeps the notice (C2), so D76's fix did not move it on the refreshed retake-1
+- [ ] retake-1's HUD Standing block (a nine-name global tail) overruns its box into Health Δ in a Quick Look render; the geometry is unchanged since step 39, so check the monospace width estimate against the fonts a viewer actually falls back to
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -213,6 +215,12 @@ Harvest results this boundary:
 - 2026-09-28, boundary after step 45 (e149bbe), 1 item; Rob confirmed the proposed class:
   - build order unchanged: 46 to 52; see [build-order.md](build-order.md)
   - **tangent**, defer past this build · `cli.test.ts` runs the built `dist/cli.js` while checkride's `types` slot rebuilds `dist` in parallel, so the first gate after a cross-package contract change can go red on a half-rebuilt `dist` and green on the rerun (step 43). Steps 46 and 48 change the `Scan` contract across `apps/atis` and `libs/core` and may hit it; the workaround is a rerun when the red names `cli.test.ts` and `dist`. The fix, a test that waits on or owns its build, sits outside every remaining seam; seed for the next build's frame
+
+- 2026-09-29, boundary after step 51 (abfc185), 3 items; Rob confirmed every proposed class:
+  - build order unchanged: 52; see [build-order.md](build-order.md)
+  - **tangent**, defer past this build · the public-name walk skips a name a barrel imports and then re-exports with a bare `export { a }` ([D75 (public-surface-width)](intent.md#d75)): no non-test `index`, `mod` or `main` file across the five retake clones has a one-line or multi-line `export { … }` with no `from`, so step 52's refresh loses nothing; seed for the next build's frame, beside the next item as the public-surface walk's gaps
+  - **tangent**, defer past this build · an `index.mts` or `index.cts` founds no barrel and a `dist/` `.mjs` or `.cjs` target maps to no `src/` `.mts` or `.cts` ([D77 (mts-cts)](intent.md#d77)): the five retake clones hold no `.mts` or `.cts` source outside tests, benchmarks and examples, so `barrelOf` and the target mapping never meet one here; seed for the next build's frame
+  - **tangent**, defer past this build · the shore residual after step 50 (trpc: compose files, Prisma migrations and `migration_lock.toml`, `serverless.yml`, `vitest.workspace.json`, `robots.txt`, `ATTRIBUTION.txt`; hono: `deno.*.json` variants, `package.cjs.json`, runtime-tests static fixtures): the fix is `libs/core/src/config.ts`, outside step 52's seam, the counts already fell from 106 to 16 and 53 to 12, the residual stays loud by design ([D48 (shore-groups)](intent.md#d48)), and step 52's table does not score the Other block; seed for the next build's frame with the candidates `docker-compose*.y*ml` to `ci`, `migrations/**` to `data` and `vitest.workspace.*` to `config`
 
 ## Log
 
@@ -2767,3 +2775,47 @@ folder, so it rides the branch into the PR.)*
   **5.** Every new pattern has a path in the groups test, and two are not from the census
 
   The `CENSUS` table in `groups.test.ts` gives each added pattern one path, using the census's own path wherever one exists. `.node-version` appears in no retake repo. `*.snap` and `__snapshots__/**` both match apollo's `.snap` files, so `__snapshots__/**` gets its own pin: a non-`.snap` snapshot shaped like foundry's ast-grep ones. The comment above the table says so. Two trpc paths (a `.sql` and a `.prisma`) sat inside workspace members, so their rows carry a third column naming the member. Without it, `examples/**` would claim them. The old shore test expected `.gitkeep` in `other` and now expects it in `settings`.
+
+- 2026-09-29 — step 51 checkpointed · abfc18513 — docs(inspiration): cite the five outside repos the retake read (5m)
+
+  **Summary**: `docs/inspiration.md` now has a section 5, "Fixtures (trees and reviews, no code taken)". It has one row for each of the retake's five outside repos. Each row gives the project with its owner, link and licence, then the pull request and fixture commit. It also says what was taken: the tree, the reviewer's words, and the tooling names that repo's tree gave the shore table. Each row points to its `fixtures/retake-<n>/` folder, its copy letter in `docs/glance-test.md`, and the shore rows in `libs/core/src/config.ts`.
+
+  1. The section sits between the libraries and "Not borrowed", which becomes section 6
+  2. Each repo's tooling names come from its own map, not from step 50's whole list
+  3. All five licences are MIT, and each owner is its LICENSE's copyright line
+  4. The rows name each reviewer by GitHub handle, the way `truth.md` does
+
+  **Readout**: Step 51 - docs(inspiration): cite the five outside repos the retake read
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored:
+               - D54 (glance-prs)
+               - D59 (outside-fixtures)
+               - D62 (retake-reader-blind)
+  constraints  11 of 11 honored
+  seam         held: 1 of 1 declared, no strays
+  diff         +23 -1 across 1 file
+  spent        5 min · 1 turn · 19s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Approve it. Every fact in the rows traces to a fixture README, a `truth.md`, the licence API, or the census against step 50's patterns, and the gate is green.
+
+  **1.** The section sits between the libraries and "Not borrowed", which becomes section 6
+
+  The intro said ideas and code "are kept apart below". It now gets one more sentence naming fixtures as a third kind that has its own section. The new section opens with a paragraph covering what every row shares. The retake (D59) read five outside PRs so its ground truth would be a record nobody in the room wrote. It took three things from each, none of them code. The fixture folders hold file paths, export names and measurements, never source. The licence column records the terms each tree was read under, and no row is a dependency. That is the done-when's "no row claims code", stated once for all five rows. Nothing in the repo links to the old `#5-not-borrowed-on-purpose` anchor, so the renumbering breaks no link.
+
+  **2.** Each repo's tooling names come from its own map, not from step 50's whole list
+
+  A scratch script in `/tmp` (not committed) copied `globToRegExp` from `libs/core/src/groups.ts`. It matched each retake `map.json`'s `other` group, as generated before step 50, against the patterns step 50 added. Each row lists only the names its own tree matched. For example, remeda gets 5 (`.codesandbox/`, `.husky/`, `.npmignore`, `.nvmrc`, `.prettierignore`), while tRPC gets 17, including `www/`, `*.mdx` pages, `*.sql` migrations and `*.prisma` schemas. Apollo's root `config/` and hono's `benchmarks/` are both named. Under hono's `benchmarks/`, the `.mts` files became terrain at step 49 and the rest went to `data` at step 50.
+
+  **3.** All five licences are MIT, and each owner is its LICENSE's copyright line
+
+  The licences come from GitHub's licence API (`gh api repos/<r>/license`, a read). Each owner is copied from the copyright line in that repo's LICENSE: Apollo Graph, Inc.; Tanner Linsley; Alex Johansson; "remeda" (written here as "the remeda authors"); Yusuke Wada and Hono contributors. The first column uses section 2's form: bold name, owner, link, licence.
+
+  **4.** The rows name each reviewer by GitHub handle, the way `truth.md` does
+
+  The ground truth is quoted words, so the rows credit whoever wrote them: `jerelmiller`, `crutchcorn`, `KATT`, `eranhirsch` and `yusukebe`. C6 (no-people) covers `map.json` and the SVG, not the docs, and a credit is not a per-person metric under P9. If you would rather the rows say "the maintainer's review" and leave the names in `truth.md`, that is a one-line change per row. The rows go in retake order, 1 to 5, not the done-when's order, so the folders read in sequence. Each row also gives its copy letter (D, B, E, A, C) from the retake key.

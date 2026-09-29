@@ -420,3 +420,64 @@ Parked beside the encodings, since it changes the test rather than the map:
   better learn what the graphics actually mean. i'm just guessing and intuiting." A read
   the map does not bear out on A ("moved or renamed", on a change that renamed nothing)
   points the same way.
+
+## After the fifth pass: unscored (2026-09-29)
+
+Step 52 regenerated the five retake maps in place after the fifth pass (steps 43 to 50), by
+step 33's procedure at the same checkride, fallow and stryker versions (D78). Each fixture's
+`README.md` records the rerun. Every rerun ran the same checkride slots as step 33 with the
+same ones red, so what moved below is atis, not the evidence.
+
+**Read blind by no one.** Everyone who could read these five has seen the PRs and their ground
+truth (D63), so this table is unscored. It gives no verdict and makes no claim under §11. It
+records whether each fix moved the map that exposed its fault. The retake's own tables above
+stand as read, round one's five stay frozen (D61), and round two judges the fixes on fresh
+fixtures.
+
+| copy | fixture | map | category | notice 1 | notice 2 | notice 3 |
+| --- | --- | --- | --- | --- | --- | --- |
+| A | `retake-4` | before | MVFR | `survived-mutants` on `src/randomInt.ts` | `missing-cochange` on `mapping.md` | `other-group` on `other` |
+|  |  | after | MVFR | `interface-change` on `src/randomInt.ts` | `interface-change` on `src/index.ts` | `survived-mutants` on `src/randomInt.ts` |
+| B | `retake-2` | before | IFR | `red-check-slot`, `dupes` on `packages/vue-form/src/useForm.tsx` | `uncovered-high-reach` on `packages/vue-form/src/useFormId.ts` | `survived-mutants` on `packages/vue-form/src/useFormId.ts` |
+|  |  | after | IFR | `uncovered-high-reach` on `packages/vue-form/src/useFormId.ts` | `interface-change` on `packages/vue-form/src/useForm.tsx` | `survived-mutants` on `packages/vue-form/src/useFormId.ts` |
+| C | `retake-5` | before | IFR | `red-check-slot`, `health` on `src/router/reg-exp-router/router.ts` | `survived-mutants` on `src/router/reg-exp-router/router.ts` | `large-hot-change` on `src/router/reg-exp-router/router.ts` |
+|  |  | after | IFR | `red-check-slot`, `health` on `src/router/reg-exp-router/router.ts` | `interface-change` on `src/router/reg-exp-router/router.ts` | `survived-mutants` on `src/router/reg-exp-router/router.ts` |
+| D | `retake-1` | before | IFR | `red-check-slot`, `health` on `src/core/QueryManager.ts` | `red-check-slot`, `health` on `src/react/hooks/useLazyQuery.ts` | `interface-change` on `src/core/QueryManager.ts` |
+|  |  | after | IFR | `red-check-slot`, `test` on `src/react/hooks/__tests__/useLazyQuery.test.tsx` | `interface-change` on `src/core/QueryManager.ts` | `red-check-slot`, `health` on `src/core/ObservableQuery.ts` |
+| E | `retake-3` | before | IFR | `red-check-slot`, `dupes` on `packages/tanstack-react-query/src/internals/utils.ts` | `uncovered-high-reach` on `packages/tanstack-react-query/src/internals/createOptionsProxy.ts` | `red-check-slot`, `dupes` on `packages/tanstack-react-query/src/internals/mutationOptions.ts` |
+|  |  | after | IFR | `interface-change` on `packages/tanstack-react-query/src/internals/createOptionsProxy.ts` | `uncovered-high-reach` on `packages/tanstack-react-query/src/internals/createOptionsProxy.ts` | `survived-mutants` on `packages/tanstack-react-query/src/internals/createOptionsProxy.ts` |
+
+Against the retake's three encodings:
+
+1. **A `health` or `dupes` red on a touched file (D73, step 44).** The `dupes` primaries on B
+   and E are gone: their findings sit on lines neither change touched, so both slots now read
+   as standing. D's `health` rows on `QueryManager.ts` and `useLazyQuery.ts` went the same
+   way, leaving the one on `ObservableQuery.ts`. C keeps its `health` primary on `router.ts`,
+   because the finding is on `add`, whose lines the change rewrote and which D73 records the
+   change took over all three thresholds. No category moved. B and E still read IFR, now on one uncovered
+   changed line that reaches 4 and 7 cells. C's IFR is still that one `health` red, and D's
+   is its failing tests and the `health` red on `ObservableQuery.ts`.
+2. **A failing test on the change (D74, step 45).** D's failing `useLazyQuery` tests are
+   notice 1, up from notice 6.
+3. **A published package's public types (D75 and D76, steps 46 to 48).** E's break now
+   reaches the map: an `interface-change` on `internals/types.ts` names `TRPCMutationKey`
+   and `TRPCQueryKey` as reshaped. It is notice 5, outside the top three. Every interface
+   notice on E carries the same severity at the same reach, so each file's history and
+   uncovered share order them. `types.ts` has less of both than `createOptionsProxy.ts`,
+   which takes notice 1 for its own reshaped options type.
+
+What else the refresh turned up:
+
+- **An uncompared shape still raises the notice.** D's body-only edit to `QueryManager.ts`
+  is notice 2, where it was notice 3. The `QueryManager` class has methods whose return
+  types are inferred, so the scan records its shape as not compared, and step 47 keeps the
+  notice rather than read that silence as unchanged (C2). B's `useForm.tsx` and C's
+  `router.ts` enter the top three the same way, on the uncompared shapes of `useForm` and
+  `RegExpRouter`. Parked for the next refine.
+- **A's mutants moved from notice 1 to notice 3.** The PR adds `randomInt`, a public name,
+  to `src/randomInt.ts` and to the barrel `src/index.ts`, and both now rank as interface
+  changes ahead of the three mutants on the `bigint` branch. The finding stays in the top
+  three.
+- **The Other block** reads 0, 41, 12, 2 and 16 on A to E, down from 5, 72, 53, 43 and 106,
+  which is what step 50 measured. All five maps now read their entry points from the
+  repository's own fallow (step 43).

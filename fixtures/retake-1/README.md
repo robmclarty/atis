@@ -33,8 +33,21 @@ The TypeScript files are `src/core/ObservableQuery.ts`, `src/core/QueryManager.t
 
 ## Generation
 
-Step 33 generates `map.json` and `atis.svg` here by the D58 worktree procedure and records its
-commands, skipped slots and harness changes in this section.
+Step 33 generated `map.json` and `atis.svg` here by the D58 worktree procedure. Step 52
+regenerated both in place after the fifth pass (steps 43 to 50, D78), by the same procedure at
+the same harness versions. The toolchain, commands, harness changes and skipped slots below are
+that rerun's. Two things differ from step 33's run:
+
+- **Step 0 changed nothing.** The clone step 33 hydrated was still in `/tmp/atis-retake/`, full,
+  with no object missing at the fixture commit. The step stays in the commands for a fresh
+  clone.
+- **The atis command no longer switches off pnpm's dependency check.** Since step 43, atis runs
+  the worktree's own `node_modules/.bin/fallow` directly, never through `pnpm exec`, so no
+  package manager re-lays the tree or writes ahead of fallow's JSON. The map's
+  `meta.instruments.entry_points` reads `fallow`.
+
+No harness file changed. The same 14 slots ran with the same 13 red, and the suite failed the
+same nine `useLazyQuery` tests.
 
 ## The toolchain
 
@@ -120,12 +133,10 @@ NODE_OPTIONS="--expose-gc --experimental-import-meta-resolve --disable-warning=E
 # 7. The map and the still render. --repo takes the resolved path, not the /tmp symlink:
 #    on macOS /tmp is /private/tmp, and istanbul's absolute coverage keys will not
 #    relativise against the unresolved one, which silently empties patch_coverage.
-#    atis reads the entry points from the repo's own fallow through `pnpm exec`. On this npm
-#    repo, pnpm's dependency check would reinstall node_modules in pnpm's layout and print to
-#    stdout ahead of fallow's JSON, so atis would quietly fall back to manifest-only entry
-#    points. Switching that check off makes atis read fallow's list.
+#    atis runs the worktree's own node_modules/.bin/fallow for the entry points (step 43),
+#    and meta.instruments.entry_points records whether it read them.
 cd ~/Projects/atis/code/atis
-pnpm_config_verify_deps_before_run=false node apps/atis/dist/cli.js \
+node apps/atis/dist/cli.js \
   --repo "$(cd /tmp/atis-fixtures/retake-1/apollo-client && pwd -P)" \
   --base d2a60d45e734a2518dad2443f85d82553cd6456a \
   --out fixtures/retake-1/map.json \

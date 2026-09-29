@@ -31,8 +31,21 @@ The fourth file is a changeset.
 
 ## Generation
 
-Step 33 generates `map.json` and `atis.svg` here by the D58 worktree procedure and records its
-commands, skipped slots and harness changes in this section.
+Step 33 generated `map.json` and `atis.svg` here by the D58 worktree procedure. Step 52
+regenerated both in place after the fifth pass (steps 43 to 50, D78), by the same procedure at
+the same harness versions. The toolchain, commands, harness changes and skipped slots below are
+that rerun's. Two things differ from step 33's run:
+
+- **Step 0 changed nothing.** The clone step 33 hydrated was still in `/tmp/atis-retake/`, full,
+  with no object missing at the fixture commit. The step stays in the commands for a fresh
+  clone.
+- **The atis command no longer switches off pnpm's dependency check.** Since step 43, atis runs
+  the worktree's own `node_modules/.bin/fallow` directly, never through `pnpm exec`, so no
+  package manager re-lays the tree or writes ahead of fallow's JSON. The map's
+  `meta.instruments.entry_points` reads `fallow`.
+
+No harness file changed. The same 14 slots ran with the same nine red, and mutation completed
+again.
 
 ## The toolchain
 
@@ -140,10 +153,10 @@ NX_NO_CLOUD=true NX_DAEMON=false NODE_OPTIONS=--max-old-space-size=12288 \
 # 6. The map and the still render. --repo takes the resolved path, not the /tmp symlink:
 #    on macOS /tmp is /private/tmp, and istanbul's absolute coverage keys will not
 #    relativise against the unresolved one, which silently empties patch_coverage.
-#    atis reads the entry points from the repo's own fallow through `pnpm exec`; switching
-#    pnpm's dependency check off keeps its narration off stdout, ahead of fallow's JSON.
+#    atis runs the worktree's own node_modules/.bin/fallow for the entry points (step 43),
+#    and meta.instruments.entry_points records whether it read them.
 cd ~/Projects/atis/code/atis
-pnpm_config_verify_deps_before_run=false node apps/atis/dist/cli.js \
+node apps/atis/dist/cli.js \
   --repo "$(cd /tmp/atis-fixtures/retake-2/form && pwd -P)" \
   --base 5d1128141a705ebb24ade1275b3117bb4c8b1bdc \
   --out fixtures/retake-2/map.json \

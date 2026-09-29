@@ -1,39 +1,39 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1052 1853" width="1052" height="1853" font-family="ui-monospace, Menlo, Consolas, monospace">
-  <rect id="ground" x="0" y="0" width="1052" height="1853" fill="#1a1f27"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1034 1853" width="1034" height="1853" font-family="ui-monospace, Menlo, Consolas, monospace">
+  <rect id="ground" x="0" y="0" width="1034" height="1853" fill="#1a1f27"/>
   <g id="world" transform="translate(0 36)">
-    <rect id="field" x="0" y="0" width="752" height="1817" fill="#0a0c0f"/>
+    <rect id="field" x="0" y="0" width="734" height="1817" fill="#0a0c0f"/>
     <g id="terraces">
       <g data-band="0">
-        <rect x="0" y="858" width="752" height="96" fill="#10141a"/>
-        <line x1="0" y1="858" x2="752" y2="858" stroke="#222831" stroke-width="1"/>
+        <rect x="0" y="858" width="734" height="96" fill="#10141a"/>
+        <line x1="0" y1="858" x2="734" y2="858" stroke="#222831" stroke-width="1"/>
       </g>
       <g data-band="1">
-        <rect x="0" y="954" width="752" height="248" fill="#10141a"/>
-        <line x1="0" y1="954" x2="752" y2="954" stroke="#222831" stroke-width="1"/>
+        <rect x="0" y="954" width="734" height="248" fill="#10141a"/>
+        <line x1="0" y1="954" x2="734" y2="954" stroke="#222831" stroke-width="1"/>
       </g>
       <g data-band="2">
-        <rect x="0" y="1202" width="752" height="96" fill="#10141a"/>
-        <line x1="0" y1="1202" x2="752" y2="1202" stroke="#222831" stroke-width="1"/>
+        <rect x="0" y="1202" width="734" height="96" fill="#10141a"/>
+        <line x1="0" y1="1202" x2="734" y2="1202" stroke="#222831" stroke-width="1"/>
       </g>
       <g data-band="3">
-        <rect x="0" y="1298" width="752" height="96" fill="#10141a"/>
-        <line x1="0" y1="1298" x2="752" y2="1298" stroke="#222831" stroke-width="1"/>
+        <rect x="0" y="1298" width="734" height="96" fill="#10141a"/>
+        <line x1="0" y1="1298" x2="734" y2="1298" stroke="#222831" stroke-width="1"/>
       </g>
       <g data-band="4">
-        <rect x="0" y="1394" width="752" height="96" fill="#10141a"/>
-        <line x1="0" y1="1394" x2="752" y2="1394" stroke="#222831" stroke-width="1"/>
+        <rect x="0" y="1394" width="734" height="96" fill="#10141a"/>
+        <line x1="0" y1="1394" x2="734" y2="1394" stroke="#222831" stroke-width="1"/>
       </g>
       <g data-band="5">
-        <rect x="0" y="1490" width="752" height="96" fill="#10141a"/>
-        <line x1="0" y1="1490" x2="752" y2="1490" stroke="#222831" stroke-width="1"/>
+        <rect x="0" y="1490" width="734" height="96" fill="#10141a"/>
+        <line x1="0" y1="1490" x2="734" y2="1490" stroke="#222831" stroke-width="1"/>
       </g>
       <g data-band="6">
-        <rect x="0" y="1586" width="752" height="231" fill="#10141a"/>
-        <line x1="0" y1="1586" x2="752" y2="1586" stroke="#222831" stroke-width="1"/>
+        <rect x="0" y="1586" width="734" height="231" fill="#10141a"/>
+        <line x1="0" y1="1586" x2="734" y2="1586" stroke="#222831" stroke-width="1"/>
       </g>
     </g>
     <g id="shore">
-      <rect x="0" y="0" width="752" height="858" fill="#161b21"/>
+      <rect x="0" y="0" width="734" height="858" fill="#161b21"/>
       <g data-group="docs">
         <path d="M42.67 830.67L46.2 832.2L54.69 833.36L72 834L99.89 833.98L131.78 833.14L159 831.33L175.02 823.68L181.86 786.32L183.67 690.67L183.88 522.58L183.12 325.75L181.33 158.33L177.79 63.96L169.21 28.26L151.67 22.33L123.36 22.12L90.98 22.88L63.33 24.67L47.07 32.3L40.15 69.48L38.33 164.67L38.06 331.91L38.38 527.75L39 694.33L39.73 788.27L40.83 824.06L42.67 830.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
         <circle data-id=".github/pull_request_template.md" cx="49" cy="33" r="4" fill="#2d343c"/>
@@ -399,58 +399,58 @@
         <text x="38.06" y="19.12" font-size="8" font-variant="small-caps" fill="#5d6670">docs</text>
       </g>
       <g data-group="config">
-        <path d="M226.67 74.67L229.64 76.2L234.25 77.36L241 78L250 78L259.67 77.33L268 76L273.51 74.05L276.72 71.73L278.67 69.33L280.27 67.1L281.95 65.01L284 63L286.59 60.96L289.41 58.7L292 56L294 52.67L295.33 48.67L296 44L295.98 38.78L295.14 33.56L293.33 29L290.23 25.64L284.77 23.47L275.67 22.33L262.47 22.12L247.86 22.88L235.33 24.67L227.52 27.63L223.7 32.15L222.33 38.67L222.06 47.25L222.38 56.42L223 64.33L223.73 69.6L224.83 72.73L226.67 74.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
-        <circle data-id="eslint.config.js" cx="233" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id="examples/vanilla/tsconfig.json" cx="251" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id="lint-staged.config.js" cx="269" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id="prettier.config.js" cx="287" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id="release.config.js" cx="233" cy="51" r="4" fill="#2d343c"/>
-        <circle data-id="tsconfig.dist.json" cx="251" cy="51" r="4" fill="#2d343c"/>
-        <circle data-id="tsconfig.json" cx="269" cy="51" r="4" fill="#2d343c"/>
-        <circle data-id="tsconfig.source.json" cx="287" cy="51" r="4" fill="#2d343c"/>
-        <circle data-id="tsconfig.tests.json" cx="233" cy="69" r="4" fill="#2d343c"/>
-        <circle data-id="tsup.config.ts" cx="251" cy="69" r="4" fill="#2d343c"/>
-        <circle data-id="vitest.config.ts" cx="269" cy="69" r="4" fill="#2d343c"/>
+        <path d="M226.67 74.67L229.75 76.2L235.14 77.36L244 78L256.78 77.98L270.89 77.14L283 75.33L290.58 72.35L294.31 67.65L295.67 60.67L295.88 51.25L295.12 41.09L293.33 32.33L290.23 26.63L284.77 23.59L275.67 22.33L262.47 22.12L247.86 22.88L235.33 24.67L227.52 27.63L223.7 32.15L222.33 38.67L222.06 47.25L222.38 56.42L223 64.33L223.73 69.6L224.83 72.73L226.67 74.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id=".prettierignore" cx="233" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="eslint.config.js" cx="251" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="examples/vanilla/tsconfig.json" cx="269" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="lint-staged.config.js" cx="287" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="prettier.config.js" cx="233" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="release.config.js" cx="251" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="tsconfig.dist.json" cx="269" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="tsconfig.json" cx="287" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="tsconfig.source.json" cx="233" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="tsconfig.tests.json" cx="251" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="tsup.config.ts" cx="269" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="vitest.config.ts" cx="287" cy="69" r="4" fill="#2d343c"/>
         <text x="222.06" y="19.12" font-size="8" font-variant="small-caps" fill="#5d6670">config</text>
       </g>
       <g data-group="settings">
-        <path d="M338.67 56.67L341.53 58.2L345.36 59.36L350 60L355.22 60L360.44 59.33L365 58L368.4 56.05L370.83 53.73L372.67 51.33L374.27 49.1L375.95 47.01L378 45L380.57 42.95L383.21 40.6L385.33 37.67L386.43 34L386.35 30.11L385 26.67L382.26 24.2L377.74 22.69L371 22L362 22.02L352.33 22.86L344 24.67L338.53 27.52L335.58 31.26L334.33 35.67L334.06 40.47L334.38 45.2L335 49.33L335.73 52.49L336.83 54.84L338.67 56.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <path d="M338.67 56.67L341.64 58.2L346.25 59.36L353 60L362 59.98L371.67 59.14L380 57.33L385.47 54.46L388.42 50.54L389.67 45.67L389.88 40.02L389.12 34.31L387.33 29.33L384.35 25.74L379.65 23.48L372.67 22.33L363.25 22.12L353.09 22.88L344.33 24.67L338.63 27.52L335.59 31.26L334.33 35.67L334.06 40.47L334.38 45.2L335 49.33L335.73 52.49L336.83 54.84L338.67 56.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
         <circle data-id=".gitattributes" cx="345" cy="33" r="4" fill="#2d343c"/>
         <circle data-id=".gitignore" cx="363" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id=".vscode/extensions.json" cx="381" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id=".vscode/settings.json" cx="345" cy="51" r="4" fill="#2d343c"/>
-        <circle data-id="examples/vanilla/.gitignore" cx="363" cy="51" r="4" fill="#2d343c"/>
-        <text x="334.06" y="19" font-size="8" font-variant="small-caps" fill="#5d6670">settings</text>
+        <circle data-id=".nvmrc" cx="381" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".vscode/extensions.json" cx="345" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id=".vscode/settings.json" cx="363" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="examples/vanilla/.gitignore" cx="381" cy="51" r="4" fill="#2d343c"/>
+        <text x="334.06" y="19.12" font-size="8" font-variant="small-caps" fill="#5d6670">settings</text>
       </g>
       <g data-group="deps">
-        <path d="M433 56L436.22 56.63L440.11 56.37L444 55L447.38 52.44L450.4 49.22L453.33 46L456.37 43.25L459.19 40.64L461.33 37.67L462.43 34L462.35 30.11L461 26.67L458.37 24.2L454.63 22.69L450 22L444.78 22.02L439.56 22.86L435 24.67L431.64 27.52L429.47 31.26L428.33 35.67L428.06 40.47L428.38 45.2L429 49.33L429.74 52.47L430.93 54.64L433 56Z" fill="none" stroke="#3b434d" stroke-width="1"/>
-        <circle data-id="examples/vanilla/package.json" cx="439" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id="package-lock.json" cx="457" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id="package.json" cx="439" cy="51" r="4" fill="#2d343c"/>
-        <text x="428.06" y="19" font-size="8" font-variant="small-caps" fill="#5d6670">deps</text>
+        <path d="M432.67 56.67L435.53 58.2L439.36 59.36L444 60L449.22 59.98L454.44 59.14L459 57.33L462.36 54.46L464.53 50.54L465.67 45.67L465.88 40.02L465.12 34.31L463.33 29.33L460.46 25.74L456.54 23.48L451.67 22.33L446.02 22.12L440.31 22.88L435.33 24.67L431.74 27.52L429.48 31.26L428.33 35.67L428.06 40.47L428.38 45.2L429 49.33L429.73 52.49L430.83 54.84L432.67 56.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id=".npmignore" cx="439" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="examples/vanilla/package.json" cx="457" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="package-lock.json" cx="439" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="package.json" cx="457" cy="51" r="4" fill="#2d343c"/>
+        <text x="428.06" y="19.12" font-size="8" font-variant="small-caps" fill="#5d6670">deps</text>
       </g>
       <g data-group="ci">
-        <path d="M508.67 56.67L511.53 58.2L515.36 59.36L520 60L525.22 59.98L530.44 59.14L535 57.33L538.36 54.46L540.53 50.54L541.67 45.67L541.88 40.02L541.12 34.31L539.33 29.33L536.46 25.74L532.54 23.48L527.67 22.33L522.02 22.12L516.31 22.88L511.33 24.67L507.74 27.52L505.48 31.26L504.33 35.67L504.06 40.47L504.38 45.2L505 49.33L505.73 52.49L506.83 54.84L508.67 56.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
-        <circle data-id=".github/dependabot.yml" cx="515" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id=".github/workflows/ci.yml" cx="533" cy="33" r="4" fill="#2d343c"/>
+        <path d="M508.67 56.67L511.53 58.2L515.36 59.36L520 60L525.22 60L530.44 59.33L535 58L538.4 56.05L540.83 53.73L542.67 51.33L544.27 49.1L545.95 47.01L548 45L550.57 42.95L553.21 40.6L555.33 37.67L556.43 34L556.35 30.11L555 26.67L552.26 24.2L547.74 22.69L541 22L532 22.02L522.33 22.86L514 24.67L508.53 27.52L505.58 31.26L504.33 35.67L504.06 40.47L504.38 45.2L505 49.33L505.73 52.49L506.83 54.84L508.67 56.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id=".codesandbox/ci.json" cx="515" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".github/dependabot.yml" cx="533" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".github/workflows/ci.yml" cx="551" cy="33" r="4" fill="#2d343c"/>
         <circle data-id=".github/workflows/codecov.yml" cx="515" cy="51" r="4" fill="#2d343c"/>
         <circle data-id=".github/workflows/pr_titles.yml" cx="533" cy="51" r="4" fill="#2d343c"/>
-        <text x="504.06" y="19.12" font-size="8" font-variant="small-caps" fill="#5d6670">ci</text>
+        <text x="504.06" y="19" font-size="8" font-variant="small-caps" fill="#5d6670">ci</text>
+      </g>
+      <g data-group="scripts">
+        <path d="M606 40L608.57 39.96L611.21 39.04L613.33 37L614.42 33.83L614.25 30.28L612.67 27.33L609.73 25.77L606.27 25.68L603.33 27L601.72 29.54L601.28 32.68L601.67 35.67L602.57 37.9L603.99 39.32L606 40Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id=".husky/pre-commit" cx="609" cy="33" r="4" fill="#2d343c"/>
+        <text x="601.28" y="22.68" font-size="8" font-variant="small-caps" fill="#5d6670">scripts</text>
       </g>
       <g data-group="examples">
-        <path d="M590.67 40.33L596.62 40.75L603.38 40.58L609.33 39.67L613.21 37.94L615.23 35.62L616 33L615.98 30.36L615.14 27.86L613.33 25.67L610.47 23.9L606.64 22.65L602 22L596.79 22L591.65 22.67L587.33 24L584.4 25.95L582.72 28.27L582 30.67L581.98 32.89L582.47 34.89L583.33 36.67L584.57 38.21L586.77 39.46L590.67 40.33Z" fill="none" stroke="#3b434d" stroke-width="1"/>
-        <circle data-id="examples/vanilla/index.html" cx="591" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id="examples/vanilla/src/styles.css" cx="609" cy="33" r="4" fill="#2d343c"/>
-        <text x="581.98" y="19" font-size="8" font-variant="small-caps" fill="#5d6670">examples</text>
-      </g>
-      <g data-group="other">
-        <path d="M660.67 56.67L663.53 58.2L667.36 59.36L672 60L677.22 60L682.44 59.33L687 58L690.4 56.05L692.83 53.73L694.67 51.33L696.27 49.1L697.95 47.01L700 45L702.57 42.95L705.21 40.6L707.33 37.67L708.43 34L708.35 30.11L707 26.67L704.26 24.2L699.74 22.69L693 22L684 22.02L674.33 22.86L666 24.67L660.53 27.52L657.58 31.26L656.33 35.67L656.06 40.47L656.38 45.2L657 49.33L657.73 52.49L658.83 54.84L660.67 56.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
-        <circle data-id=".codesandbox/ci.json" cx="667" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id=".husky/pre-commit" cx="685" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id=".npmignore" cx="703" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id=".nvmrc" cx="667" cy="51" r="4" fill="#2d343c"/>
-        <circle data-id=".prettierignore" cx="685" cy="51" r="4" fill="#2d343c"/>
-        <text x="656.06" y="19" font-size="8" font-variant="small-caps" fill="#5d6670">other</text>
+        <path d="M666.67 40.33L672.62 40.75L679.38 40.58L685.33 39.67L689.21 37.94L691.23 35.62L692 33L691.98 30.36L691.14 27.86L689.33 25.67L686.47 23.9L682.64 22.65L678 22L672.79 22L667.65 22.67L663.33 24L660.4 25.95L658.72 28.27L658 30.67L657.98 32.89L658.47 34.89L659.33 36.67L660.57 38.21L662.77 39.46L666.67 40.33Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id="examples/vanilla/index.html" cx="667" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="examples/vanilla/src/styles.css" cx="685" cy="33" r="4" fill="#2d343c"/>
+        <text x="657.98" y="19" font-size="8" font-variant="small-caps" fill="#5d6670">examples</text>
       </g>
     </g>
     <g id="membranes" fill="#7a838e" fill-opacity="0.08" stroke="#4b535e" stroke-linejoin="round">
@@ -1122,53 +1122,62 @@
       </g>
       <g data-block="notices">
         <rect x="863.2" y="8" width="82.2" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="869.2" y="21.15" font-size="9" fill="#e6edf3"><tspan>Notices </tspan><tspan font-weight="bold">1·2·0</tspan></text>
-      </g>
-      <g data-block="other">
-        <rect x="948.4" y="8" width="49.8" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="954.4" y="21.15" font-size="9" fill="#e6edf3"><tspan>Other </tspan><tspan font-weight="bold">5</tspan></text>
+        <text x="869.2" y="21.15" font-size="9" fill="#e6edf3"><tspan>Notices </tspan><tspan font-weight="bold">1·2·1</tspan></text>
       </g>
     </g>
     <g id="rules" stroke="#2b333d" stroke-width="1">
-      <line x1="0" y1="36" x2="1052" y2="36"/>
-      <line x1="752" y1="36" x2="752" y2="1853"/>
+      <line x1="0" y1="36" x2="1034" y2="36"/>
+      <line x1="734" y1="36" x2="734" y2="1853"/>
     </g>
     <g id="leaders" stroke="#9aa5b1" stroke-width="1" stroke-dasharray="0.1 3" stroke-linecap="round" fill="none">
-      <line data-notice="1" x1="767" y1="51" x2="553.11" y2="1134.27"/>
-      <line data-notice="3" x1="767" y1="159.4" x2="672" y2="104"/>
+      <line data-notice="1" x1="749" y1="51" x2="553.11" y2="1134.27"/>
+      <line data-notice="2" x1="749" y1="110.4" x2="405.8" y2="994.34"/>
+      <line data-notice="3" x1="749" y1="180.2" x2="566.11" y2="1134.27"/>
     </g>
     <g id="notices">
-      <g data-notice="1" data-tier="primary" data-kind="survived-mutants" data-target="src/randomInt.ts">
+      <g data-notice="1" data-tier="primary" data-kind="interface-change" data-target="src/randomInt.ts">
         <g data-mark="1" data-tier="primary">
-          <rect x="762" y="46" width="10" height="10" fill="#5b8def"/>
-          <text x="767" y="53.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#0a0c0f">1</text>
+          <rect x="744" y="46" width="10" height="10" fill="#5b8def"/>
+          <text x="749" y="53.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#0a0c0f">1</text>
         </g>
-        <text x="777" y="54" font-size="8" font-weight="bold" fill="#e6edf3">src/randomInt.ts</text>
-        <text x="777" y="63.4" font-size="7" font-variant="small-caps" fill="#e6edf3">survived-mutants</text>
-        <text x="777" y="73.5" font-size="8" fill="#e6edf3">3 mutants survived on the changed lines</text>
-        <text x="777" y="82.9" font-size="7" fill="#6b7480">severity 6</text>
+        <text x="759" y="54" font-size="8" font-weight="bold" fill="#e6edf3">src/randomInt.ts</text>
+        <text x="759" y="63.4" font-size="7" font-variant="small-caps" fill="#e6edf3">interface-change</text>
+        <text x="759" y="73.5" font-size="8" fill="#e6edf3">the interface of `src/randomInt.ts` changed</text>
+        <text x="759" y="83.9" font-size="8" fill="#e6edf3">(`randomInt` added) and `remeda` publishes `randomInt`</text>
+        <text x="759" y="93.3" font-size="7" fill="#6b7480">severity 8 · fan_in_high 6 · deep_band 4</text>
       </g>
-      <g data-notice="2" data-tier="secondary" data-kind="missing-cochange" data-target="mapping.md" data-unplaced="true">
+      <g data-notice="2" data-tier="secondary" data-kind="interface-change" data-target="src/index.ts">
         <g data-mark="2" data-tier="secondary">
-          <rect x="762" y="95" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
-          <text x="767" y="102.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">2</text>
+          <rect x="744" y="105.4" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
+          <text x="749" y="112.85" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">2</text>
         </g>
-        <text x="777" y="103" font-size="8" font-weight="bold" fill="#e6edf3">mapping.md</text>
-        <text x="777" y="112.4" font-size="7" font-variant="small-caps" fill="#e6edf3">missing-cochange</text>
-        <text x="777" y="122.5" font-size="8" fill="#e6edf3">usually changes with `src/index.ts` (40 commits, rate</text>
-        <text x="777" y="132.9" font-size="8" fill="#e6edf3">0.563) and did not</text>
-        <text x="777" y="142.3" font-size="7" fill="#6b7480">severity 2 · cochange_rate 0.5 · cochange_support 3</text>
+        <text x="759" y="113.4" font-size="8" font-weight="bold" fill="#e6edf3">src/index.ts</text>
+        <text x="759" y="122.8" font-size="7" font-variant="small-caps" fill="#e6edf3">interface-change</text>
+        <text x="759" y="132.9" font-size="8" fill="#e6edf3">the interface of `.` changed (`randomInt` added) and</text>
+        <text x="759" y="143.3" font-size="8" fill="#e6edf3">`remeda` publishes `LazyDefinition`, `LazyEvaluator`,</text>
+        <text x="759" y="153.7" font-size="8" fill="#e6edf3">`LazyResult` and 142 more</text>
+        <text x="759" y="163.1" font-size="7" fill="#6b7480">severity 8 · fan_in_high 6 · deep_band 4</text>
       </g>
-      <g data-notice="3" data-tier="secondary" data-kind="other-group" data-target="other">
+      <g data-notice="3" data-tier="secondary" data-kind="survived-mutants" data-target="src/randomInt.ts">
         <g data-mark="3" data-tier="secondary">
-          <rect x="762" y="154.4" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
-          <text x="767" y="161.85" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">3</text>
+          <rect x="744" y="175.2" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
+          <text x="749" y="182.65" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">3</text>
         </g>
-        <text x="777" y="162.4" font-size="8" font-weight="bold" fill="#e6edf3">other</text>
-        <text x="777" y="171.8" font-size="7" font-variant="small-caps" fill="#e6edf3">other-group</text>
-        <text x="777" y="181.9" font-size="8" fill="#e6edf3">5 files no shore rule claims: .json, .npmignore,</text>
-        <text x="777" y="192.3" font-size="8" fill="#e6edf3">.nvmrc, .prettierignore, pre-commit</text>
-        <text x="777" y="201.7" font-size="7" fill="#6b7480">severity 2</text>
+        <text x="759" y="183.2" font-size="8" font-weight="bold" fill="#e6edf3">src/randomInt.ts</text>
+        <text x="759" y="192.6" font-size="7" font-variant="small-caps" fill="#e6edf3">survived-mutants</text>
+        <text x="759" y="202.7" font-size="8" fill="#e6edf3">3 mutants survived on the changed lines</text>
+        <text x="759" y="212.1" font-size="7" fill="#6b7480">severity 6</text>
+      </g>
+      <g data-notice="4" data-tier="tertiary" data-kind="missing-cochange" data-target="mapping.md" data-unplaced="true">
+        <g data-mark="4" data-tier="tertiary">
+          <rect x="744" y="224.2" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="749" y="231.65" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">4</text>
+        </g>
+        <text x="759" y="232.2" font-size="8" font-weight="bold" fill="#e6edf3">mapping.md</text>
+        <text x="759" y="241.6" font-size="7" font-variant="small-caps" fill="#e6edf3">missing-cochange</text>
+        <text x="759" y="251.7" font-size="8" fill="#e6edf3">usually changes with `src/index.ts` (40 commits, rate</text>
+        <text x="759" y="262.1" font-size="8" fill="#e6edf3">0.563) and did not</text>
+        <text x="759" y="271.5" font-size="7" fill="#6b7480">severity 2 · cochange_rate 0.5 · cochange_support 3</text>
       </g>
     </g>
     <g id="marks">
@@ -1178,13 +1187,17 @@
           <rect x="548.11" y="1129.27" width="10" height="10" fill="#5b8def"/>
           <text x="553.11" y="1136.72" font-size="7" font-weight="bold" text-anchor="middle" fill="#0a0c0f">1</text>
         </g>
-        <text data-target="src/randomInt.ts" x="548.11" y="1149.27" font-size="7" font-variant="small-caps" fill="#5b8def">survived-mutants</text>
-      </g>
-      <g data-target="other">
-        <path data-target="other" data-tier="secondary" fill="none" stroke="#9aa5b1" stroke-width="3" d="M660.67 56.67L663.53 58.2L667.36 59.36L672 60L677.22 60L682.44 59.33L687 58L690.4 56.05L692.83 53.73L694.67 51.33L696.27 49.1L697.95 47.01L700 45L702.57 42.95L705.21 40.6L707.33 37.67L708.43 34L708.35 30.11L707 26.67L704.26 24.2L699.74 22.69L693 22L684 22.02L674.33 22.86L666 24.67L660.53 27.52L657.58 31.26L656.33 35.67L656.06 40.47L656.38 45.2L657 49.33L657.73 52.49L658.83 54.84L660.67 56.67Z" transform="translate(0 36)"/>
         <g data-mark="3" data-tier="secondary">
-          <rect x="667" y="99" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
-          <text x="672" y="106.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">3</text>
+          <rect x="561.11" y="1129.27" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
+          <text x="566.11" y="1136.72" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">3</text>
+        </g>
+        <text data-target="src/randomInt.ts" x="548.11" y="1149.27" font-size="7" font-variant="small-caps" fill="#5b8def">interface-change</text>
+      </g>
+      <g data-target="src/index.ts">
+        <circle data-target="src/index.ts" data-tier="secondary" fill="none" stroke="#9aa5b1" stroke-width="3" cx="387.15" cy="975.69" r="16.31"/>
+        <g data-mark="2" data-tier="secondary">
+          <rect x="400.8" y="989.34" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
+          <text x="405.8" y="996.79" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">2</text>
         </g>
       </g>
     </g>

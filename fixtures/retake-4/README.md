@@ -31,8 +31,26 @@ docs pages under `docs/src/content/mapping/lodash/`.
 
 ## Generation
 
-Step 33 generates `map.json` and `atis.svg` here by the D58 worktree procedure and records its
-commands, skipped slots and harness changes in this section.
+Step 33 generated `map.json` and `atis.svg` here by the D58 worktree procedure. Step 52
+regenerated both in place after the fifth pass (steps 43 to 50, D78), by the same procedure at
+the same harness versions. The toolchain, commands, harness changes and skipped slots below are
+that rerun's. Three things differ from step 33's run:
+
+- **Step 0 changed nothing.** The clone step 33 hydrated was still in `/tmp/atis-retake/`, full.
+  The step stays in the commands for a fresh clone.
+- **The atis command no longer switches off pnpm's dependency check.** Since step 43, atis runs
+  the worktree's own `node_modules/.bin/fallow` directly, never through `pnpm exec`, so no
+  package manager re-lays the tree or writes ahead of fallow's JSON. The map's
+  `meta.instruments.entry_points` reads `fallow`.
+- **Step 7 now resets the shared clone's `core.hooksPath`.** `HUSKY=0` covers the install only.
+  checkride's `pack` slot runs `npm pack`, which runs the repo's `prepare` script (`husky`)
+  again, and husky set the shared clone's `core.hooksPath` to `.husky/_` mid-run. Setting
+  `HUSKY=0` on the checkride run as well does not fix this: husky then prints
+  `HUSKY=0 skip install` ahead of `npm pack`'s JSON, and the `pack` slot goes red. The rerun
+  tried that once and discarded the result.
+
+No harness file changed. The same 15 slots ran with the same six red, and mutation completed
+again.
 
 ## The toolchain
 
@@ -122,19 +140,19 @@ npx --no-install checkride --all --skip security
 # 6. The map and the still render. --repo takes the resolved path, not the /tmp symlink:
 #    on macOS /tmp is /private/tmp, and istanbul's absolute coverage keys will not
 #    relativise against the unresolved one, which silently empties patch_coverage.
-#    atis reads the entry points from the repo's own fallow through `pnpm exec`. On this npm
-#    repo, pnpm's dependency check would reinstall node_modules in pnpm's layout and print to
-#    stdout ahead of fallow's JSON, so atis would quietly fall back to manifest-only entry
-#    points. Switching that check off makes atis read fallow's list.
+#    atis runs the worktree's own node_modules/.bin/fallow for the entry points (step 43),
+#    and meta.instruments.entry_points records whether it read them.
 cd ~/Projects/atis/code/atis
-pnpm_config_verify_deps_before_run=false node apps/atis/dist/cli.js \
+node apps/atis/dist/cli.js \
   --repo "$(cd /tmp/atis-fixtures/retake-4/remeda && pwd -P)" \
   --base 71be3884e05c30860e9db28b1c2d439669b877b0 \
   --out fixtures/retake-4/map.json \
   --svg fixtures/retake-4/atis.svg
 
-# 7. The worktree is not kept.
+# 7. The worktree is not kept. The `pack` slot's `npm pack` ran `prepare` (husky) without
+#    HUSKY=0, which pointed the shared clone's core.hooksPath at .husky/_; unset it.
 git -C /tmp/atis-retake/remeda worktree remove --force /tmp/atis-fixtures/retake-4/remeda
+git -C /tmp/atis-retake/remeda config --unset core.hooksPath
 ```
 
 ## Harness changes in the worktree
@@ -161,8 +179,9 @@ repo.
 - `.prettierignore` — `.check/` appended. Without it the `format` slot checked checkride's own
   `.check/*.json` artifacts, so it went red or green depending on which files existed when it
   ran, not on the repo's formatting.
-- `HUSKY=0` at install time (an environment variable, not a file), so the `prepare` script
-  does not rewrite the shared clone's `core.hooksPath`.
+- `HUSKY=0` at install time (an environment variable, not a file), so the install's `prepare`
+  script does not rewrite the shared clone's `core.hooksPath`. The `pack` slot's `npm pack`
+  runs `prepare` again without it, and step 7 unsets what that writes.
 
 ## Skipped slots
 
