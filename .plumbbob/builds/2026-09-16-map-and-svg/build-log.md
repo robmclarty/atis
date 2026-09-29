@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 52 — chore(fixtures): refresh the five retake maps after the fifth pass
+**Current step:** none (at the boundary)
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -74,7 +74,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 49. fix(cli): scan .mts and .cts files as TypeScript
 - ☑ 50. fix(core): sort the outside repos' tooling files into shore groups by kind
 - ☑ 51. docs(inspiration): cite the five outside repos the retake read
-- ☐ 52. chore(fixtures): refresh the five retake maps after the fifth pass
+- ☑ 52. chore(fixtures): refresh the five retake maps after the fifth pass
 
 ## Park list
 
@@ -2819,3 +2819,52 @@ folder, so it rides the branch into the PR.)*
   **4.** The rows name each reviewer by GitHub handle, the way `truth.md` does
 
   The ground truth is quoted words, so the rows credit whoever wrote them: `jerelmiller`, `crutchcorn`, `KATT`, `eranhirsch` and `yusukebe`. C6 (no-people) covers `map.json` and the SVG, not the docs, and a credit is not a per-person metric under P9. If you would rather the rows say "the maintainer's review" and leave the names in `truth.md`, that is a one-line change per row. The rows go in retake order, 1 to 5, not the done-when's order, so the folders read in sequence. Each row also gives its copy letter (D, B, E, A, C) from the retake key.
+
+- 2026-09-29 — step 52 checkpointed · 221f9602f — chore(fixtures): refresh the five retake maps after the fifth pass (31m)
+
+  **Summary**: All five retake maps are regenerated in place by step 33's procedure, at the same checkride, fallow and stryker versions. Each rerun ran the same slots as step 33 with the same ones red, so everything that moved came from steps 43 to 50. All five maps pass `assertMap`, and `docs/glance-test.md` gains the unscored "after the fifth pass" table. Categories held on all five. Three of the four `dupes` or `health` primaries are gone, D's failing test is notice 1, and E's break reaches the map, but only at notice 5.
+
+  1. Each fix moved the map that exposed it, except for one interface notice
+  2. D's body-only `QueryManager.ts` edit still raises `interface-change`, now at notice 2 (parked)
+  3. The READMEs record the rerun, and remeda's gained a hooksPath reset
+  4. The Other residual lands exactly where step 50 predicted
+  5. A HUD overrun seen in a Quick Look render is not new, and it is parked
+
+  **Readout**: Step 52 - chore(fixtures): refresh the five retake maps after the fifth pass
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored:
+               - D58 (fixtures-current-toolchain), D56 (fixtures-skip-audit)
+               - D64 (fixture-eligibility), D78 (retake-refresh)
+               - D61 (round-one-fixtures-frozen)
+  constraints  11 of 11 honored
+  seam         held: 2 of 2 declared, no strays
+  diff         +141563 -143992 across 16 files
+  spent        31 min · 16 turns · 16s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Approve and land step 52. The maps, READMEs and table meet the done-when, and the one fix that didn't move its map is recorded and parked for the next refine rather than patched here.
+
+  **1.** Each fix moved the map that exposed it, except for one interface notice
+
+  Against the retake's three encodings. D73: the `dupes` primaries on B and E and the `health` rows on D's `QueryManager.ts` and `useLazyQuery.ts` all went standing. C keeps its `health` primary because the finding is on `add`, which the change rewrote. D74: D's failing `useLazyQuery` tests went from notice 6 to notice 1. D75 and D76: E's `internals/types.ts` now draws an `interface-change` naming `TRPCMutationKey` and `TRPCQueryKey` as reshaped. It ranks fifth because every interface notice on E has the same severity and reach, so file history and uncovered share decide the order, and `createOptionsProxy.ts` has more of both. No category moved: B and E stay IFR on one uncovered changed line reaching 4 and 7 cells.
+
+  **2.** D's body-only `QueryManager.ts` edit still raises `interface-change`, now at notice 2 (parked)
+
+  D76 was meant to clear this. The `QueryManager` class has methods with inferred return types, so the scan can't print its shape and records it as not compared. Step 47 keeps the notice in that case rather than read silence as unchanged (C2 (never-fake)), and the `why` says "could not be compared". B's `useForm.tsx` and C's `router.ts` enter their top three the same way. I recorded this in the table's notes and parked it for the next refine instead of touching `libs/core` from a fixtures step. A side effect worth knowing: A's mutants on the buggy `bigint` line fell from notice 1 to notice 3, behind two real `randomInt added` interface notices. They are still in the top three.
+
+  **3.** The READMEs record the rerun, and remeda's gained a hooksPath reset
+
+  Every README's Generation section now says what the rerun changed: step 0 was a no-op on the kept clones, and the atis command drops `pnpm_config_verify_deps_before_run=false`, since step 43 runs `node_modules/.bin/fallow` directly. All five maps' `meta.instruments.entry_points` read `fallow`. On remeda I found that checkride's `pack` slot runs `npm pack`, which re-runs the repo's `prepare` script (`husky`) without `HUSKY=0`, and that set the shared clone's `core.hooksPath` mid-run. I tried `HUSKY=0` on the checkride line and it turned `pack` red: husky prints `HUSKY=0 skip install` ahead of npm's JSON, which I confirmed directly. So I restored the first run's map and SVG, which match step 33's slots, and added a `git config --unset core.hooksPath` to step 7 with the reason.
+
+  **4.** The Other residual lands exactly where step 50 predicted
+
+  The Other residual reads 0, 41, 12, 2 and 16 on A to E, down from 5, 72, 53, 43 and 106. That matches step 50's measurement file for file. It is in the notes, not scored.
+
+  **5.** A HUD overrun seen in a Quick Look render is not new, and it is parked
+
+  Rendered through Quick Look, retake-1's Standing block (nine global slot names) runs past its box into Health Δ. The block geometry is byte-identical to step 33's render, so this step didn't cause it. It is probably the viewer's fallback font being wider than the render's width estimate. Parked, since `libs/svg` is outside this seam. The five worktrees are removed and remeda's clone hooksPath is unset again.
