@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 48 — feat(cli): read a published package's exported names as wide
+**Current step:** 49 — fix(cli): scan .mts and .cts files as TypeScript
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -70,7 +70,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 45. fix(core): rank a failing test on the change ahead of every weighed notice
 - ☑ 46. feat(cli): fingerprint the shape of each exported declaration
 - ☑ 47. fix(core): raise interface-change only when an exported name or shape moved
-- ☐ 48. feat(cli): read a published package's exported names as wide
+- ☑ 48. feat(cli): read a published package's exported names as wide
 - ☐ 49. fix(cli): scan .mts and .cts files as TypeScript
 - ☐ 50. fix(core): sort the outside repos' tooling files into shore groups by kind
 - ☐ 51. docs(inspiration): cite the five outside repos the retake read
@@ -130,6 +130,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] the shore rules were written against checkride and fascicle: on the retake's outside repos the Other block reads 43 to 106 files (apollo-client, TanStack form, hono, trpc), so common tooling files fall through; group them by kind rather than widen the residual
 - [x] cli.test.ts runs the built dist/cli.js while checkride's types slot rebuilds dist in parallel, so the first gate after a change to a cross-package contract can go red on a half-rebuilt dist (step 43: core's new buildMap met the old scanner's scans, exit 2) and green on the rerun; make the test wait on, or own, the build it runs
 - [ ] follow a name a barrel imports and then exports with a bare export { a } in the public-name walk; D75 follows only export … from, export * and export type *
+- [ ] an index.mts or index.cts founds no barrel, and a dist/ .mjs or .cjs target maps to no src/ .mts or .cts, since core's barrelOf and the scan's candidates still name only .ts and .tsx (found at step 49, D77)
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -2584,3 +2585,78 @@ folder, so it rides the branch into the PR.)*
   **4.** Six golden fixtures outside the seam moved with the new `why`
 
   `libs/core/fixtures/demo/map.json` changed only in that notice's `why` and its four new counts. The five SVG goldens under `libs/svg/fixtures/` render that map, so each moved two wrapped text lines of the notice label, with the same line count and no layout shift. I regenerated them the way their tests' docstrings prescribe: core's golden from `buildMap`, and the SVGs with `ATIS_UPDATE_GOLDENS=1`. The seam row will list them. The ten outside maps under `fixtures/` are untouched; step 52 refreshes them.
+
+- 2026-09-29 — step 48 checkpointed · 0ef3ec9a2 — feat(cli): read a published package's exported names as wide (774m)
+
+  **Summary**: trpc #6976's break now raises `interface-change`: the scan reads which workspace packages are published and marks each re-export, and core follows a published name back to the file that declares it, so that file reads as wide even with a fan-in of 1.
+
+  1. The scan reads whether a package publishes, and through which files
+  2. Depth entry points still come only from bin, main and exports, as D43 says
+  3. Re-export edges carry the names they pass on
+  4. Core walks from each published entry to find the public names
+  5. A file holding a public name counts as an interface file, not only as wide
+  6. Tests cover the three cases the done-when names, in both core and the CLI
+
+  **Readout**: Step 48 - feat(cli): read a published package's exported names as wide
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored
+               - D75 (public-surface-width)
+               - D76 (interface-shape)
+               - D43 (scan-roots)
+               - D30 (pure-parsers)
+  constraints  11 of 11 honored
+  seam         held: 6 of 6 declared, no strays
+  diff         +692 -99 across 6 files
+  spent        12h 54m · 1 turn · 16s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Approve and checkpoint. Every part of the done-when has a test, the gate is green, and the only call past the letter of D75 is highlight 5 (the interface gate), which is easy to reverse if you'd rather keep it to width alone.
+
+  **1.** The scan reads whether a package publishes, and through which files
+
+  Each member now carries `published` and `surface`. `published` is true when the manifest isn't `private: true`, or when it has a `publishConfig`. `surface` lists the source files that `exports`, `main`, `types` and `module` point to, plus fallow's entries tagged `package.json exports`, `main` or `module`. `parseFallowEntryPoints` now returns `{ path, tag }` rather than bare paths, so the tag survives. `package.json types` is not in that tag set because it doesn't appear among the fallow binary's strings; I checked, since the first draft included it.
+
+  The `dist/`→`src/` mapping now also handles `.mjs`, `.cjs`, `.d.mts` and `.d.cts`, and removes an `esm`, `cjs`, `es`, `mjs` or `types` format folder after `dist/`. It tries the path with the folder first, then without.
+
+  **2.** Depth entry points still come only from bin, main and exports, as D43 says
+
+  The first draft also made `types` and `module` targets into depth entry points. D43 lists only `bin`, `main` and `exports`, so I changed it back: `types` and `module` feed the surface and nothing else. A test checks this: a package whose only field is `module` has a surface but no entry. The wider mapping does still change depth where a built target now resolves, for example trpc's `.mjs`. D75 gives that as the reason for the wider mapping.
+
+  **3.** Re-export edges carry the names they pass on
+
+  An edge built from `export … from` now carries `reexports: [{ name, as }]`:
+
+  - `export { a as b }` passes `a` as `b`.
+  - `export * as ns` passes `*` as `ns`.
+  - A bare `export *` or `export type *` passes `*` as `*`.
+
+  The edge's `names` are unchanged, so `deleted-export` reads it as before. `takenNames` became `passedNames`, since the old list is just the `name` half of each pair.
+
+  **4.** Core walks from each published entry to find the public names
+
+  `findPublicNames` in `notices.ts` starts from every export of each published member's surface files. It then follows re-export edges by name: a star passes a name on only if the target exports it, a namespace re-export passes the whole target, and a named re-export passes only its own name. It remembers each file and name it has visited, so a cycle stops. `buildMap` runs the walk on the base scan and the head scan and unions the results, so a name public on either side counts; the map test shows this with only the base publishing. `rekeyScan` rewrites `surface` paths after a rename, just as it does `entry`.
+
+  One approximation remains. If a file both declares a name and gets the same name through a star, the star's target is also marked public, even though JavaScript lets the local declaration win. Nothing in the fixtures hits this.
+
+  **5.** A file holding a public name counts as an interface file, not only as wide
+
+  In `interfaceCandidates`, a public name makes the file wide whatever its fan-in, as D75 says. It also lets the file pass the interface-file gate, even when it's neither a barrel nor imported from another cell. My reasoning: its readers are the package's users, outside the repo.
+
+  The notice still fires only under step 47's rule, when a name was added, removed or reshaped; a test checks that an unmoved public file raises nothing. The `why` names who publishes and which names, for example: "… and `@trpc/tanstack-react-query` publishes `TRPCMutationKey` and `TRPCQueryKey`". `inputs` gains `public_names`.
+
+  The flag: the done-when only asks for "wide". This gate change is my own call, and it's the one to push back on if you disagree.
+
+  **6.** Tests cover the three cases the done-when names, in both core and the CLI
+
+  - **trpc's shape, in the CLI:** a manifest whose `.` export names only `.mjs`, `.cjs`, `.d.mts` and `.d.cts` files is scanned twice, once with the key reshaped, and `buildMap` raises `interface-change` on the internals file (fan-in 1, `public_names: 2`).
+  - **A private package:** the same package made `private: true` raises nothing. A `private` package with `publishConfig` is published; one without is not.
+  - **A name the barrel keeps back:** `export { createContext }` leaves `INTERNAL` internal. The core walk test covers renames, `export * as ns`, a two-hop star chain, a plain import that doesn't count as a re-export, and a star cycle.
+
+  The demo golden is unchanged, because its members don't carry the new fields.
+
+  I parked one gap: a barrel that imports a name and re-exports it with a bare `export { a }`. D75 names only the three `from` forms.

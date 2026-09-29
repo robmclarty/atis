@@ -3,13 +3,14 @@
  *
  * `scanImports` is handed a directory holding one extracted commit (D32, D46)
  * and reads it the way the compiler would: every tracked file is listed, the
- * `.ts` and `.tsx` ones are parsed for their exports and for every static
- * import, `export … from` and `import()` specifier, and each specifier is
- * resolved with `ts.resolveModuleName` under NodeNext, so `./foo.js` lands on
- * `foo.ts`. Workspace packages resolve by name through `pnpm-workspace.yaml`,
- * or the root manifest's `workspaces` when there is none, and their own
- * manifests; bare npm packages are dropped. Nothing resolves through
- * `node_modules`, which an extracted commit does not have anyway.
+ * `.ts`, `.tsx`, `.mts` and `.cts` ones are parsed for their exports and for
+ * every static import, `export … from` and `import()` specifier, and each
+ * specifier is resolved with `ts.resolveModuleName` under NodeNext, so
+ * `./foo.js` lands on `foo.ts` and `./foo.mjs` on `foo.mts`. Workspace
+ * packages resolve by name through `pnpm-workspace.yaml`, or the root
+ * manifest's `workspaces` when there is none, and their own manifests; bare
+ * npm packages are dropped. Nothing resolves through `node_modules`, which an
+ * extracted commit does not have anyway.
  *
  * Beside each exported name the scan records the shape the compiler declares
  * for it (D76): the file's emitted declarations, printed, so a body-only edit
@@ -90,7 +91,8 @@ export type ScanOptions = {
 
 /** The name a namespace import takes, and the one `export * from` takes. */
 const STAR = '*';
-const TYPESCRIPT = /\.tsx?$/;
+/** The files the scan parses: `.ts`, `.tsx`, `.mts` and `.cts`, declarations included (D77). */
+const TYPESCRIPT = /\.(?:[cm]?ts|tsx)$/;
 const MANIFEST = 'package.json';
 const WORKSPACE_FILE = 'pnpm-workspace.yaml';
 /** The reviewed repo's own fallow, relative to its working tree (D22). */
@@ -496,6 +498,8 @@ function shapesOf(source: ts.SourceFile, names: readonly string[]): ExportShapes
 }
 
 function parseSource(path: string, content: string): Parsed {
+  // The compiler gives `.mts` and `.cts` no kind of their own: they parse as
+  // `.ts` does, and a `.d.mts` or `.d.cts` is a declaration file by its name (D77).
   const kind = path.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
   const source = ts.createSourceFile(path, content, ts.ScriptTarget.Latest, true, kind);
   const exports: string[] = [];

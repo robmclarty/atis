@@ -228,6 +228,27 @@ const FORMATS: Readonly<Record<string, string>> = {
   'packages/internal/src/index.ts': `export const internal: number = 1;\n`,
 };
 
+/**
+ * hono's benchmarks' shape (D77): NodeNext modules in `.mts` and `.cts`,
+ * declarations in a `.d.mts`, a `.test.mts` and a `vite.config.mts`.
+ */
+const NODENEXT: Readonly<Record<string, string>> = {
+  'package.json': `{ "name": "bench", "type": "module" }\n`,
+  'src/index.mts': `import { handle } from './handle.mjs';
+import type { Options } from './types.mjs';
+import { legacy } from './legacy.cjs';
+
+export function run(options: Options): string {
+  return handle(options) + legacy;
+}
+`,
+  'src/handle.mts': `export function handle(options: unknown): string {\n  return String(options);\n}\n`,
+  'src/types.d.mts': `export interface Options {\n  readonly verbose: boolean;\n}\n`,
+  'src/legacy.cts': `export const legacy: string = 'legacy';\n`,
+  'src/handle.test.mts': `import { handle } from './handle.mjs';\n\nhandle({});\n`,
+  'vite.config.mts': `export default { test: {} };\n`,
+};
+
 function writeTree(root: string, tree: Readonly<Record<string, string>>): string {
   for (const [path, content] of Object.entries(tree)) {
     const file = join(root, path);
@@ -710,6 +731,42 @@ test('main, module and types map through format folders, and private publishes o
   expect([...findPublicNames([formats]).keys()]).toEqual(['packages/flipped/src/index.ts', 'packages/vue-form/src/index.ts']);
   // Depth still enters through bin, main and exports alone, so a `types` or `module` target is surface, not entry (D43).
   expect(formats.members.map((member) => member.entry)).toEqual([[], [], [], ['packages/vue-form/src/index.ts']]);
+});
+
+test('.mts and .cts files are parsed as TypeScript, and ./x.mjs lands on x.mts the way NodeNext would (D77)', () => {
+  const found = scanTree(NODENEXT);
+
+  expect(found.files.map((file) => [file.path, file.kind])).toEqual([
+    ['package.json', 'other'],
+    ['src/handle.mts', 'source'],
+    ['src/handle.test.mts', 'test'],
+    ['src/index.mts', 'source'],
+    ['src/legacy.cts', 'source'],
+    ['src/types.d.mts', 'source'],
+    ['vite.config.mts', 'source'],
+  ]);
+  expect(fileIn(found, 'src/index.mts').exports).toEqual(['run']);
+  expect(fileIn(found, 'src/legacy.cts').shapes).toEqual({ legacy: 'const legacy: string;' });
+  // A `.d.mts` is a declaration file by its name, so its shape is read as written.
+  expect(fileIn(found, 'src/types.d.mts').shapes).toEqual({
+    Options: 'interface Options {\n    readonly verbose: boolean;\n}',
+  });
+  expect(found.edges).toEqual([
+    { from: 'src/handle.test.mts', to: 'src/handle.mts', names: ['handle'], line: 1 },
+    { from: 'src/index.mts', to: 'src/handle.mts', names: ['handle'], line: 1 },
+    { from: 'src/index.mts', to: 'src/types.d.mts', names: ['Options'], line: 2 },
+    { from: 'src/index.mts', to: 'src/legacy.cts', names: ['legacy'], line: 3 },
+  ]);
+
+  // The map sends the config to the shore and the test to evidence, as it would a `.ts` (D57).
+  const { terrain } = mapOf(found);
+  expect(terrain.organelles.map((organelle) => organelle.path)).toEqual([
+    'src/handle.mts',
+    'src/index.mts',
+    'src/legacy.cts',
+    'src/types.d.mts',
+  ]);
+  expect(terrain.groups.find((group) => group.id === 'config')?.files).toEqual(['vite.config.mts']);
 });
 
 test('the same tree scans the same way twice', () => {

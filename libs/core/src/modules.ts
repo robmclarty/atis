@@ -53,21 +53,23 @@ export type Modules = {
   readonly organelles: readonly ModuleOrganelle[];
 };
 
-const TYPESCRIPT = /\.tsx?$/;
-const TEST_NAME = /\.(?:test|spec)\.tsx?$/;
+/** `.ts`, `.tsx`, and the `.mts` and `.cts` NodeNext modules, declarations included (D77). */
+const TYPESCRIPT = /\.(?:[cm]?ts|tsx)$/;
+const TEST_NAME = /\.(?:test|spec)\.(?:[cm]?ts|tsx)$/;
 const TEST_DIR = /(?:^|\/)(?:__tests__|test)\//;
 
 /** No config table in hand: a name-only read, where nothing counts as tool config. */
 const NOT_CONFIG = (): boolean => false;
 
 /**
- * Classify a tracked path: TypeScript is terrain unless it is a test (D4), and
- * a `.ts`/`.tsx` that configures a tool is shore too (D57), so a
- * `vitest.config.ts` founds no cell. `isConfig` is the shore's `config` row,
- * compiled by `configMatcher`; `buildMap` threads the reviewed repo's own table
- * through, so an `atis.config.json` override moves that boundary with it. The
- * graph sources that read a scanned tree and have no table (depth, reach, the
- * import scan) fall back to the name, where a config file founds no cell anyway.
+ * Classify a tracked path: TypeScript (`.mts` and `.cts` too, D77) is terrain
+ * unless it is a test (D4), and one that configures a tool is shore too (D57),
+ * so a `vitest.config.ts` or a `vite.config.mts` founds no cell. `isConfig` is
+ * the shore's `config` row, compiled by `configMatcher`; `buildMap` threads the
+ * reviewed repo's own table through, so an `atis.config.json` override moves
+ * that boundary with it. The graph sources that read a scanned tree and have no
+ * table (depth, reach, the import scan) fall back to the name, where a config
+ * file founds no cell anyway.
  */
 export function classifyFile(path: string, isConfig: (path: string) => boolean = NOT_CONFIG): FileKind {
   if (!TYPESCRIPT.test(path)) return 'other';

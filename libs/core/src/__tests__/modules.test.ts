@@ -37,6 +37,12 @@ test.each([
   ['src/view.spec.tsx', 'test'],
   ['test/e2e/run.ts', 'test'],
   ['packages/core/test/fixtures/tree.ts', 'test'],
+  ['benchmarks/handle-event/index.mts', 'source'],
+  ['src/loader.cts', 'source'],
+  ['src/types.d.mts', 'source'],
+  ['src/index.d.cts', 'source'],
+  ['src/handler.test.mts', 'test'],
+  ['src/loader.spec.cts', 'test'],
   ['README.md', 'other'],
   ['scripts/release.mjs', 'other'],
   ['test/fixtures/biome.json', 'other'],
@@ -55,6 +61,26 @@ test('a .ts that configures a tool is shore, not terrain, once the config table 
   expect(classifyFile('src/config.ts', isConfig)).toBe('source');
   // Without the table, the name-only read leaves it terrain, the fallback the graph sources take.
   expect(classifyFile('vitest.config.ts')).toBe('source');
+});
+
+test('a .mts or .cts file sorts as a .ts does: an organelle, a test, or tool config (D77)', () => {
+  const modules = identifyModules(
+    [
+      file('benchmarks/handle-event/index.mts', 30, 1),
+      file('src/loader.cts', 20, 1),
+      file('src/handler.test.mts', 40),
+      file('vite.config.mts', 10, 1),
+    ],
+    [],
+    [],
+    isConfig,
+  );
+
+  expect(classifyFile('vite.config.mts', isConfig)).toBe('other');
+  expect(modules.organelles.map((organelle) => [organelle.path, organelle.cell])).toEqual([
+    ['benchmarks/handle-event/index.mts', 'directory:benchmarks/handle-event'],
+    ['src/loader.cts', 'single:src/loader.cts'],
+  ]);
 });
 
 test('memberOf picks the innermost member and normalises the roots', () => {
