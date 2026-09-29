@@ -113,7 +113,7 @@ test('parseSummary is harness_broken when schema_version: 1 but the rest of the 
 // the fallow readers: health, dead, dupes
 // ---------------------------------------------------------------------------
 
-test('parseHealth reads file_scores, findings by path with the exceeded threshold, and fan_in_p95, dropping a malformed row', () => {
+test('parseHealth reads file_scores, findings by path with the exceeded threshold and the lines they span, and fan_in_p95, dropping a malformed row', () => {
   const parsed = parseHealth(
     JSON.stringify({
       schema_version: 9,
@@ -121,14 +121,20 @@ test('parseHealth reads file_scores, findings by path with the exceeded threshol
         { path: './src/a.ts', fan_in: 3, fan_out: 1, lines: 10, function_count: 2, maintainability_index: 90, crap_max: 1 },
         { path: 'src/broken.ts' },
       ],
-      findings: [{ path: 'src/a.ts', exceeded: 'cyclomatic' }],
+      findings: [
+        // hono #5266's `add`, as fallow writes it: the span is what a hunk has to meet (D73).
+        { path: './src/router.ts', name: 'add', line: 67, col: 2, cyclomatic: 22, cognitive: 34, line_count: 60, exceeded: 'all' },
+        // A finding with no lines cannot be placed against a hunk, so it is malformed like one with no threshold.
+        { path: 'src/a.ts', exceeded: 'cyclomatic' },
+        { path: 'src/a.ts', line: 4, line_count: 9 },
+      ],
       target_thresholds: { fan_in_p95: 6 },
     }),
   );
   expect(parsed).toEqual({
     value: {
       file_scores: [{ path: 'src/a.ts', fan_in: 3, fan_out: 1, lines: 10, function_count: 2, maintainability_index: 90, crap_max: 1 }],
-      findings: [{ path: 'src/a.ts', exceeded: 'cyclomatic' }],
+      findings: [{ path: 'src/router.ts', exceeded: 'all', line: 67, line_count: 60 }],
       fan_in_p95: 6,
     },
     schema_version: 9,
@@ -387,10 +393,10 @@ test('reads the trimmed checkride fixture: mode check, the summary, and every fa
   expect(result.fallow_schemas).toEqual({ health: 9, dead: 9, dupes: 9 });
 });
 
-test('health.json: file_scores, findings by path with the exceeded threshold, and fan_in_p95', () => {
+test('health.json: file_scores, findings by path with the exceeded threshold and their lines, and fan_in_p95', () => {
   const result = expectCheck(fixtureResult);
   expect(result.health?.file_scores).toHaveLength(3);
-  expect(result.health?.findings).toEqual([{ path: 'src/gate.ts', exceeded: 'cyclomatic' }]);
+  expect(result.health?.findings).toEqual([{ path: 'src/gate.ts', exceeded: 'cyclomatic', line: 42, line_count: 95 }]);
   expect(result.health?.fan_in_p95).toBe(6);
 });
 

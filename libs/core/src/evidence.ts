@@ -53,7 +53,13 @@ export type HealthFileScore = {
   readonly crap_max: number;
 };
 
-export type HealthFinding = { readonly path: string; readonly exceeded: string };
+/** One function over a threshold: its file, the rule it broke, and the `line_count` lines it spans from `line` at head (D73). */
+export type HealthFinding = {
+  readonly path: string;
+  readonly exceeded: string;
+  readonly line: number;
+  readonly line_count: number;
+};
 
 export type Health = {
   readonly file_scores: readonly HealthFileScore[];
@@ -148,6 +154,9 @@ const PATH_LIST_KEYS = ['files', 'paths', 'cycle', 'shared_files'];
 
 /** And under these as nested records: a cycle's `edges`, a clone family's `groups` and their `instances`. */
 const NESTED_KEYS = ['edges', 'groups', 'instances'];
+
+/** The two slots whose findings name a region of a file rather than the file: a function over a threshold, a clone (D73). */
+const LINE_SLOTS: ReadonlySet<string> = new Set(['health', 'dupes']);
 
 function byPath(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
@@ -354,33 +363,39 @@ export type CategoryInputs = {
 };
 
 /**
- * One red slot as D67 splits it: the changed files it is on the change
- * through, and every other file it names, which is standing state. A global
- * slot names no file at all, so its red is standing state whole.
+ * One red slot as D67 and D73 split it: the changed files it is on the
+ * change through, and every file it names. What it names off the change is
+ * standing state, and a global slot names no file at all, so its red is
+ * standing state whole.
  */
 export type RedSlot = {
   readonly name: string;
   readonly global: boolean;
-  /** The changed files the slot names, and for `test` the changed files each torn stitch it names imports; sorted (C3). */
+  /** The changed files the slot is on the change through; sorted (C3). */
   readonly change: readonly string[];
-  /** Every other file the slot names; sorted (C3), and empty on a global slot. */
-  readonly standing: readonly string[];
+  /** Every file the slot's own output names, its scope; sorted (C3), and empty on a global slot. */
+  readonly named: readonly string[];
 };
 
 /** The red slots, each in exactly one list, both in name order (C3). */
 export type RedSplit = {
   /** The change's red: every slot with at least one changed file behind it. */
   readonly change: readonly RedSlot[];
-  /** The standing state: every global slot, and every slot that names no changed file. */
+  /** The standing state: every global slot, and every slot with no changed file behind it. */
   readonly standing: readonly RedSlot[];
 };
 
-/** What the split reads, all of it on `map.json`, so a renderer can make the same split the category did. */
+/** A finding's lines at head, first to last: a `health` function or one `dupes` clone instance (D73). */
+export type Span = { readonly path: string; readonly start: number; readonly end: number };
+
+/** What the split reads: the scoped slots, the change's lines, the torn stitches, and the lines each finding covers. */
 export type RedSplitInputs = {
   readonly slots: readonly CheckSlot[];
-  /** The changed set; the split reads only its paths. */
-  readonly changed: readonly Pick<ChangedFile, 'path'>[];
+  /** The changed set with its head-side hunks, where a `health` or `dupes` finding has to land to be the change's (D73). */
+  readonly changed: readonly Pick<ChangedFile, 'path' | 'hunks'>[];
   readonly stitches: readonly Stitch[];
+  /** The spans of the `health` and `dupes` findings, by slot name; a slot with none here puts no file on the change. */
+  readonly spans: ReadonlyMap<string, readonly Span[]>;
 };
 
 /**
@@ -459,43 +474,128 @@ function isRed(slot: CheckSlot): boolean {
   return !slot.ok && !slot.skipped;
 }
 
+/** A `health` finding's span: its function, `line_count` lines from `line`. */
+export function healthSpan(finding: HealthFinding): Span {
+  return { path: finding.path, start: finding.line, end: finding.line + finding.line_count - 1 };
+}
+
 /**
- * D67's split of the red slots into the change's red and the standing state.
- * A slot is on the change through each changed file it names, and `test` also
- * through each failing test it names that imports a changed file, which is a
- * torn stitch (D4): the test is not the change, but the files it tore on are.
- * Every other file a slot names, and every global slot, is standing state.
- * The category, the notices and the render all read this one split.
+ * The lines each copy in a clone family spans, read by key as the rest of
+ * fallow's findings are (D41): `groups[].instances[]`, each with `file`,
+ * `start_line` and `end_line`. An instance missing one of them spans no
+ * lines, so it can put no file on the change.
+ */
+function cloneSpans(family: unknown): readonly Span[] {
+  const groups = isRecord(family) && Array.isArray(family['groups']) ? family['groups'] : [];
+  return groups.flatMap((group: unknown): readonly Span[] => {
+    const instances = isRecord(group) && Array.isArray(group['instances']) ? group['instances'] : [];
+    return instances.flatMap((instance: unknown): readonly Span[] => {
+      if (!isRecord(instance)) return [];
+      const { file, start_line: start, end_line: end } = instance;
+      return typeof file === 'string' && typeof start === 'number' && typeof end === 'number' ? [{ path: file, start, end }] : [];
+    });
+  });
+}
+
+/** The spans of the two line-scoped slots' findings, by slot name (D73). */
+function findingSpans(check: RanCheck): ReadonlyMap<string, readonly Span[]> {
+  return new Map([
+    ['health', (check.health?.findings ?? []).map(healthSpan)],
+    ['dupes', (check.dupes?.clone_families ?? []).flatMap(cloneSpans)],
+  ]);
+}
+
+/**
+ * Whether one head-side hunk meets a finding's lines. A hunk that wrote
+ * lines meets the span it overlaps. A pure deletion wrote none and sits
+ * between head lines `start` and `start + 1`, so it meets the span that holds
+ * both of them: a deletion inside the function or the clone (D73).
+ */
+function meets(span: Span, hunk: Hunk): boolean {
+  if (hunk.count === 0) return span.start <= hunk.start && hunk.start < span.end;
+  return hunk.start <= span.end && span.start < hunk.start + hunk.count;
+}
+
+/**
+ * Whether a finding lands on this change: its file changed, and one of the
+ * file's head-side hunks meets its lines (D73). A finding on lines the change
+ * never touched was there before it, as far as a head-only read can tell.
+ */
+export function spanOnChange(span: Span, hunks: ReadonlyMap<string, readonly Hunk[]>): boolean {
+  return (hunks.get(span.path) ?? []).some((hunk) => meets(span, hunk));
+}
+
+/** Each red slot in exactly one list: the change's when some changed file is behind it, else the standing state's. */
+function partition(slots: readonly RedSlot[]): RedSplit {
+  return {
+    change: slots.filter((slot) => slot.change.length > 0),
+    standing: slots.filter((slot) => slot.change.length === 0),
+  };
+}
+
+/**
+ * D67's split of the red slots into the change's red and the standing state,
+ * with D73's line rule. A slot is on the change through each changed file it
+ * names, and `test` also through each failing test it names that imports a
+ * changed file, which is a torn stitch (D4): the test is not the change, but
+ * the files it tore on are. `health` and `dupes` name a region of a file
+ * rather than the file, so either is on the change only through a changed
+ * file where one of its findings meets a hunk. Every other file a slot names,
+ * and every global slot, is standing state. `computeCategory` makes this
+ * split once and records it on the map, where the notices and the render
+ * read it back through `readRedSplit`.
  */
 export function splitRedSlots(inputs: RedSplitInputs): RedSplit {
-  const changed = new Set(inputs.changed.map((file) => file.path));
+  const hunks = new Map(inputs.changed.map((file) => [file.path, file.hunks] as const));
   const torn = new Map(
     inputs.stitches
       .filter((stitch) => stitch.status === FAILED)
-      .map((stitch) => [stitch.test, stitch.targets.filter((target) => changed.has(target))] as const),
+      .map((stitch) => [stitch.test, stitch.targets.filter((target) => hunks.has(target))] as const),
   );
 
   const slots = inputs.slots
     .filter(isRed)
     .toSorted((a, b) => byPath(a.name, b.name))
     .map((slot): RedSlot => {
-      if (slot.scope === GLOBAL) return { name: slot.name, global: true, change: [], standing: [] };
-      const through = (path: string): readonly string[] => [
-        ...(changed.has(path) ? [path] : []),
-        ...(slot.name === 'test' ? (torn.get(path) ?? []) : []),
-      ];
-      return {
-        name: slot.name,
-        global: false,
-        change: sortUnique(slot.scope.flatMap(through)),
-        standing: sortUnique(slot.scope.filter((path) => through(path).length === 0)),
+      if (slot.scope === GLOBAL) return { name: slot.name, global: true, change: [], named: [] };
+      const met = new Set(
+        (inputs.spans.get(slot.name) ?? []).filter((span) => spanOnChange(span, hunks)).map((span) => span.path),
+      );
+      const through = (path: string): readonly string[] => {
+        if (LINE_SLOTS.has(slot.name)) return met.has(path) ? [path] : [];
+        return [...(hunks.has(path) ? [path] : []), ...(slot.name === 'test' ? (torn.get(path) ?? []) : [])];
       };
+      return { name: slot.name, global: false, change: sortUnique(slot.scope.flatMap(through)), named: sortUnique(slot.scope) };
     });
 
-  return {
-    change: slots.filter((slot) => slot.change.length > 0),
-    standing: slots.filter((slot) => slot.change.length === 0),
-  };
+  return partition(slots);
+}
+
+/**
+ * The split as `map.json` records it: each red slot that names files carries
+ * the changed files `splitRedSlots` put it on the change through. The notices
+ * and every renderer read the split back from here rather than remaking it,
+ * which they could not do from the map, since the line rule reads findings
+ * the map does not carry (D73).
+ */
+export function readRedSplit(slots: readonly CheckSlot[]): RedSplit {
+  return partition(
+    slots
+      .filter(isRed)
+      .toSorted((a, b) => byPath(a.name, b.name))
+      .map(
+        (slot): RedSlot =>
+          slot.scope === GLOBAL
+            ? { name: slot.name, global: true, change: [], named: [] }
+            : { name: slot.name, global: false, change: slot.change ?? [], named: slot.scope },
+      ),
+  );
+}
+
+/** Each red slot that names files, with the changed files the split put it on the change through recorded on it (D73). */
+function recordSplit(slots: readonly CheckSlot[], red: RedSplit): readonly CheckSlot[] {
+  const change = new Map([...red.change, ...red.standing].map((slot) => [slot.name, slot.change] as const));
+  return slots.map((slot) => (isRed(slot) && slot.scope !== GLOBAL ? { ...slot, change: change.get(slot.name) ?? [] } : slot));
 }
 
 /** A gap: a changed file with at least one uncovered changed executable line (D27). */
@@ -510,10 +610,9 @@ function hasGap(file: FileEvidence): boolean {
  * A red slot is IFR only when it is the change's red (D69): standing state
  * leaves the category to the change's own evidence.
  */
-function categoryOf(inputs: CategoryInputs, check: RanCheck, slots: readonly CheckSlot[]): FlightCategory {
+function categoryOf(inputs: CategoryInputs, check: RanCheck, red: RedSplit): FlightCategory {
   const changed = new Set(inputs.changed.map((file) => file.path));
   const highReach = inputs.config.category.high_reach_cells;
-  const red = splitRedSlots({ slots, changed: inputs.changed, stitches: inputs.stitches });
 
   if (check.summary.checks_run === 0) return 'LIFR';
   if (structuralFindings(check.dead).some((finding) => pathsOf(finding).some((path) => changed.has(path)))) return 'LIFR';
@@ -525,9 +624,10 @@ function categoryOf(inputs: CategoryInputs, check: RanCheck, slots: readonly Che
 
 /**
  * The verdict block of `weather`: the flight category of §5.3, the slots the
- * run reports and the paths each red one names. No `.check/` is NOINST and
- * never green (D27); a `summary.json` that claimed schema 1 and then failed
- * its shape is a broken harness, which is LIFR.
+ * run reports, the paths each red one names, and the changed files the split
+ * put each on the change through (D73). No `.check/` is NOINST and never
+ * green (D27); a `summary.json` that claimed schema 1 and then failed its
+ * shape is a broken harness, which is LIFR.
  */
 export function computeCategory(inputs: CategoryInputs): Checks {
   const { check } = inputs;
@@ -541,10 +641,11 @@ export function computeCategory(inputs: CategoryInputs): Checks {
   }
 
   const slots = scopedSlots(check);
+  const red = splitRedSlots({ slots, changed: inputs.changed, stitches: inputs.stitches, spans: findingSpans(check) });
   return {
-    category: categoryOf(inputs, check, slots),
+    category: categoryOf(inputs, check, red),
     checks_run: check.summary.checks_run,
     timestamp: check.summary.timestamp,
-    slots,
+    slots: recordSplit(slots, red),
   };
 }

@@ -213,6 +213,36 @@ test('rejects a changed entry with both cell and group', () => {
   expect(() => assertMap(withBoth)).toThrow(/weather\.changed\[0\]/);
 });
 
+function withSlots(slots: readonly Record<string, unknown>[]): unknown {
+  const map = minimalMap();
+  return { ...map, weather: { ...map.weather, checks: { category: 'IFR', checks_run: slots.length, slots } } };
+}
+
+test('accepts the split recorded on each red slot that names files, empty when its red is all standing (D73)', () => {
+  const map = withSlots([
+    { name: 'health', ok: false, skipped: false, scope: ['src/foo/index.ts', 'src/bar.ts'], change: ['src/foo/index.ts'] },
+    { name: 'dupes', ok: false, skipped: false, scope: ['src/bar.ts'], change: [] },
+    { name: 'types', ok: false, skipped: false, scope: 'global' },
+    { name: 'lint', ok: true, skipped: false, scope: 'global' },
+  ]);
+  expect(assertMap(map)).toEqual(map);
+});
+
+test('rejects a red slot that names files without its split, a split on any other slot, and a split naming an unchanged file', () => {
+  expect(() => assertMap(withSlots([{ name: 'health', ok: false, skipped: false, scope: ['src/foo/index.ts'] }]))).toThrow(
+    /weather\.checks\.slots\[0\]\.change: a red slot that names files/,
+  );
+  expect(() => assertMap(withSlots([{ name: 'types', ok: false, skipped: false, scope: 'global', change: [] }]))).toThrow(
+    /weather\.checks\.slots\[0\]\.change: only a red slot/,
+  );
+  expect(() =>
+    assertMap(withSlots([{ name: 'health', ok: true, skipped: false, scope: ['src/foo/index.ts'], change: ['src/foo/index.ts'] }])),
+  ).toThrow(/weather\.checks\.slots\[0\]\.change: only a red slot/);
+  expect(() => assertMap(withSlots([{ name: 'health', ok: false, skipped: false, scope: ['src/bar.ts'], change: ['src/bar.ts'] }]))).toThrow(
+    /weather\.checks\.slots\[0\]\.change\[0\]: not a changed file/,
+  );
+});
+
 test('rejects a changed entry naming an unknown group', () => {
   const map = minimalMap();
   const withUnknownGroup = {

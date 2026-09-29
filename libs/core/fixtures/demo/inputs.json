@@ -223,7 +223,7 @@
         { "path": "libs/core/src/util/format.ts", "fan_in": 3, "fan_out": 1, "lines": 52, "function_count": 5, "maintainability_index": 80.3, "crap_max": 7.5 },
         { "path": "libs/core/src/util/text.ts", "fan_in": 1, "fan_out": 1, "lines": 37, "function_count": 4, "maintainability_index": 86.7, "crap_max": 4 }
       ],
-      "findings": [{ "path": "libs/core/src/pm/tools.ts", "exceeded": "cyclomatic_crap" }],
+      "findings": [{ "path": "libs/core/src/pm/tools.ts", "exceeded": "cyclomatic_crap", "line": 41, "line_count": 38 }],
       "fan_in_p95": 2
     },
     "dead": {

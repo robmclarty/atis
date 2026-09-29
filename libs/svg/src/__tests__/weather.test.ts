@@ -437,12 +437,12 @@ test('a global red slot hangs no storm; a slot naming a changed and an untouched
           category: 'IFR',
           checks_run: 6,
           slots: [
-            { name: 'dead', ok: false, skipped: false, scope: [A, B] },
-            { name: 'docs', ok: false, skipped: false, scope: [DOC] },
+            { name: 'dead', ok: false, skipped: false, scope: [A, B], change: [A] },
+            { name: 'docs', ok: false, skipped: false, scope: [DOC], change: [] },
             { name: 'lint', ok: false, skipped: false, scope: 'global' },
             { name: 'security', ok: false, skipped: true, scope: 'global' },
-            { name: 'struct', ok: false, skipped: false, scope: [TEST_B] },
-            { name: 'test', ok: false, skipped: false, scope: [TEST] },
+            { name: 'struct', ok: false, skipped: false, scope: [TEST_B], change: [] },
+            { name: 'test', ok: false, skipped: false, scope: [TEST], change: [A] },
             { name: 'types', ok: true, skipped: false, scope: 'global' },
           ],
         },
@@ -471,6 +471,31 @@ test('a global red slot hangs no storm; a slot naming a changed and an untouched
   const overA = [...storms, ...grey].filter((storm) => storm.over === CELL_A).map((storm) => storm.y);
   expect(overA).toEqual([...overA].toSorted((a, b) => b - a));
   expect(new Set(overA).size).toBe(3);
+});
+
+test('the storms read the split core recorded: a red naming a changed file hangs grey when none of its findings met a hunk (D73)', () => {
+  const stormsFor = (change: readonly string[]): string =>
+    renderSvg(
+      small({
+        weather: {
+          changed: [MODIFIED_A],
+          checks: { category: 'IFR', checks_run: 1, slots: [{ name: 'health', ok: false, skipped: false, scope: [A, B], change }] },
+        },
+      }),
+    );
+
+  // `health` names the changed A, but core found no hunk inside its finding there: both of its storms are standing state.
+  const unmet = stormsFor([]);
+  expect(group(unmet, 'storms')).toBeUndefined();
+  expect(stormsIn(drawn(unmet, 'standing-storms')).map((storm) => [storm.slot, storm.over])).toEqual([
+    ['health', CELL_A],
+    ['health', CELL_B],
+  ]);
+
+  // The same slot with the finding met is the change's over A, and standing over B alone.
+  const met = stormsFor([A]);
+  expect(stormsIn(drawn(met, 'storms')).map((storm) => [storm.slot, storm.over, storm.label])).toEqual([['health', CELL_A, 'health']]);
+  expect(stormsIn(drawn(met, 'standing-storms')).map((storm) => [storm.slot, storm.over])).toEqual([['health', CELL_B]]);
 });
 
 test('a ghost is a dashed outline round the untouched file that usually changes with these', () => {

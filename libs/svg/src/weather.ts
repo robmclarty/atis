@@ -26,7 +26,7 @@
  * mark. Every list is sorted by path, so the same map is the same bytes (C3).
  */
 
-import { splitRedSlots } from 'core';
+import { readRedSplit } from 'core';
 import type {
   ChangedFile,
   Contour,
@@ -490,15 +490,16 @@ type Storm = { readonly slot: string; readonly place: string; readonly change: b
 type Hung = Storm & { readonly x: number; readonly y: number };
 
 /**
- * The storms, from core's split of the red slots (D67): each slot is the
- * change's over every place a changed file it names sits on, and standing
- * state over every other place its files sit on. A global slot names no
- * file, so it hangs nothing; the HUD counts it instead (D68). The change's
- * storms come first, each list in slot name order (C3).
+ * The storms, from core's split of the red slots as the map records it (D67,
+ * D73): each slot is the change's over every place a changed file it is on
+ * the change through sits on, and standing state over every other place the
+ * files it names sit on. A global slot names no file, so it hangs nothing;
+ * the HUD counts it instead (D68). The change's storms come first, each list
+ * in slot name order (C3).
  */
 function stormsOf(weather: Weather, terrain: Terrain): readonly Storm[] {
   const stitches = weather.evidence.stitches ?? [];
-  const red = splitRedSlots({ slots: weather.checks.slots, changed: weather.changed, stitches });
+  const red = readRedSplit(weather.checks.slots);
   const change = red.change.flatMap((slot) =>
     placesOf(slot.change, terrain, stitches).map((place): Storm => ({ slot: slot.name, place, change: true })),
   );
@@ -506,7 +507,7 @@ function stormsOf(weather: Weather, terrain: Terrain): readonly Storm[] {
     .toSorted((a, b) => byPath(a.name, b.name))
     .flatMap((slot) => {
       const onChange = new Set(placesOf(slot.change, terrain, stitches));
-      return placesOf(slot.standing, terrain, stitches)
+      return placesOf(slot.named, terrain, stitches)
         .filter((place) => !onChange.has(place))
         .map((place): Storm => ({ slot: slot.name, place, change: false }));
     });

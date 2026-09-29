@@ -1,8 +1,8 @@
 import { expect, test } from 'vitest';
 
 import { DEFAULT_CONFIG } from '../config.js';
-import { HARNESS_BROKEN, UNKNOWN_STATUS, computeCategory, computeEvidence, splitRedSlots } from '../evidence.js';
-import type { CheckArtifacts, CheckSummarySlot, Dead, EvidenceInputs, FileEvidence } from '../evidence.js';
+import { HARNESS_BROKEN, UNKNOWN_STATUS, computeCategory, computeEvidence, readRedSplit, splitRedSlots } from '../evidence.js';
+import type { CheckArtifacts, CheckSummarySlot, Dead, EvidenceInputs, FileEvidence, Health, RedSplit } from '../evidence.js';
 import { identifyGroups } from '../groups.js';
 import { identifyModules } from '../modules.js';
 import type { ImportEdge, ScannedFile } from '../modules.js';
@@ -325,8 +325,8 @@ test('a red slot naming only untouched files, and a global red slot, each leave 
     ran({ ...TOOLS_CLOSED, lint: { diagnostics: [{ path: 'src/doctor.ts', severity: 'error' }] } }, [slot('types'), slot('lint', false)]),
   );
   expect(untouched.category).toBe('VFR');
-  // The slot is still reported, scoped to the file it named: standing state is counted beside the category, never hidden (D70).
-  expect(untouched.slots).toContainEqual({ name: 'lint', ok: false, skipped: false, scope: ['src/doctor.ts'] });
+  // The slot is still reported, scoped to the file it named and on the change through none: standing state is counted beside the category, never hidden (D70).
+  expect(untouched.slots).toContainEqual({ name: 'lint', ok: false, skipped: false, scope: ['src/doctor.ts'], change: [] });
 
   // A red `types` has no raw output about files, so it is global, and global red is standing state.
   const global = categoryFor(CHAIN, [change('src/pm/tools.ts')], ran(TOOLS_CLOSED, [slot('types', false), slot('lint')]));
@@ -362,8 +362,8 @@ test("checkride PR 2's shape reads MVFR on its own evidence: all four red slots 
         health: {
           file_scores: [],
           findings: [
-            { path: 'src/doctor.ts', exceeded: 'crap' },
-            { path: 'src/pm/probe.ts', exceeded: 'cognitive' },
+            { path: 'src/doctor.ts', exceeded: 'crap', line: 12, line_count: 30 },
+            { path: 'src/pm/probe.ts', exceeded: 'cognitive', line: 4, line_count: 18 },
           ],
         },
       },
@@ -380,18 +380,18 @@ test("checkride PR 2's shape reads MVFR on its own evidence: all four red slots 
   );
 
   expect(checks.category).toBe('MVFR');
-  expect(splitRedSlots({ slots: checks.slots, changed: [change('src/pm/util.ts')], stitches: [] })).toEqual({
+  expect(readRedSplit(checks.slots)).toEqual({
     change: [],
     standing: [
-      { name: 'dead', global: true, change: [], standing: [] },
-      { name: 'dupes', global: false, change: [], standing: ['src/doctor.ts', 'src/index.ts'] },
-      { name: 'health', global: false, change: [], standing: ['src/doctor.ts', 'src/pm/probe.ts'] },
-      { name: 'snippets', global: true, change: [], standing: [] },
+      { name: 'dead', global: true, change: [], named: [] },
+      { name: 'dupes', global: false, change: [], named: ['src/doctor.ts', 'src/index.ts'] },
+      { name: 'health', global: false, change: [], named: ['src/doctor.ts', 'src/pm/probe.ts'] },
+      { name: 'snippets', global: true, change: [], named: [] },
     ],
   });
 });
 
-test('the split keeps each red slot in one list and divides its files between the change and the standing state', () => {
+test('the split keeps each red slot in one list and puts it on the change only through the changed files behind it', () => {
   const split = splitRedSlots({
     slots: [
       { name: 'types', ok: false, skipped: false, scope: 'global' },
@@ -406,17 +406,184 @@ test('the split keeps each red slot in one list and divides its files between th
       // A stitch that held is no tear, even under a red `test`.
       { test: 'src/__tests__/other.test.ts', targets: ['src/pm/util.ts'], status: 'passed' },
     ],
+    spans: new Map([
+      [
+        'health',
+        [
+          { path: 'src/doctor.ts', start: 1, end: 40 },
+          { path: 'src/pm/tools.ts', start: 8, end: 20 },
+        ],
+      ],
+    ]),
   });
 
   expect(split).toEqual({
     change: [
-      // On the change through `tools.ts`; the `doctor.ts` it also names is standing state.
-      { name: 'health', global: false, change: ['src/pm/tools.ts'], standing: ['src/doctor.ts'] },
+      // On the change through `tools.ts`, whose function spans the hunk; the untouched `doctor.ts` it also names is standing state.
+      { name: 'health', global: false, change: ['src/pm/tools.ts'], named: ['src/doctor.ts', 'src/pm/tools.ts'] },
       // The torn stitch carries the red onto both files it imports; the test it tore in is not itself the change.
-      { name: 'test', global: false, change: ['src/pm/tools.ts', 'src/pm/util.ts'], standing: ['src/__tests__/other.test.ts'] },
+      {
+        name: 'test',
+        global: false,
+        change: ['src/pm/tools.ts', 'src/pm/util.ts'],
+        named: ['src/__tests__/other.test.ts', 'src/__tests__/tools.test.ts'],
+      },
     ],
     // A green slot and a skipped one are in neither list.
-    standing: [{ name: 'types', global: true, change: [], standing: [] }],
+    standing: [{ name: 'types', global: true, change: [], named: [] }],
+  });
+});
+
+const ROUTER = 'src/router/reg-exp-router/router.ts';
+const NODE = 'src/router/reg-exp-router/node.ts';
+
+/** hono's reg-exp router at #5266's review commit: its entry reads the router, which reads the trie's nodes. */
+const HONO: World = {
+  files: ['src/router/reg-exp-router/index.ts', ROUTER, NODE],
+  head: imports(`src/router/reg-exp-router/index.ts > ${ROUTER}`, `${ROUTER} > ${NODE}`),
+};
+
+/** Some of that commit's hunks in the router: `add` spans lines 67 to 126 and the change wrote inside it. */
+const ROUTER_HUNKS: readonly Hunk[] = [
+  { start: 1, count: 1 },
+  { start: 10, count: 6 },
+  { start: 69, count: 1 },
+  { start: 114, count: 8 },
+  { start: 171, count: 1 },
+];
+
+/** fallow's `health` findings on the two files at that commit, by the pinned fallow: `add` is the rewrite; `compareKey` and `insert` were not touched. */
+const HONO_HEALTH: Health = {
+  file_scores: [],
+  findings: [
+    { path: NODE, exceeded: 'cognitive_crap', line: 20, line_count: 24 },
+    { path: NODE, exceeded: 'all', line: 51, line_count: 85 },
+    { path: ROUTER, exceeded: 'all', line: 67, line_count: 60 },
+  ],
+};
+
+test("hono #5266's shape: a hunk inside add's span keeps the health red on the change, and node.ts's untouched functions are standing (D73)", () => {
+  const checks = categoryFor(
+    HONO,
+    // node.ts changed only its imports, above both of its findings.
+    [change(ROUTER, ROUTER_HUNKS), change(NODE, [{ start: 1, count: 3 }])],
+    ran({ health: HONO_HEALTH }, [slot('health', false)]),
+  );
+
+  expect(checks.category).toBe('IFR');
+  expect(checks.slots).toEqual([{ name: 'health', ok: false, skipped: false, scope: [NODE, ROUTER], change: [ROUTER] }]);
+});
+
+const QUERY_MANAGER = 'src/core/QueryManager.ts';
+const USE_LAZY_QUERY = 'src/react/hooks/useLazyQuery.ts';
+
+const APOLLO: World = {
+  files: ['src/index.ts', QUERY_MANAGER, USE_LAZY_QUERY],
+  head: imports(`src/index.ts > ${QUERY_MANAGER}`, `${USE_LAZY_QUERY} > ${QUERY_MANAGER}`),
+};
+
+/** Some of fallow's `health` findings on the two files at apollo-client #12633's review commit, by the pinned fallow. */
+const APOLLO_HEALTH: Health = {
+  file_scores: [],
+  findings: [
+    { path: QUERY_MANAGER, exceeded: 'cognitive_crap', line: 461, line_count: 209 },
+    { path: QUERY_MANAGER, exceeded: 'crap', line: 1394, line_count: 155 },
+    { path: QUERY_MANAGER, exceeded: 'crap', line: 1722, line_count: 30 },
+    { path: QUERY_MANAGER, exceeded: 'crap', line: 1761, line_count: 194 },
+    { path: USE_LAZY_QUERY, exceeded: 'crap', line: 316, line_count: 25 },
+  ],
+};
+
+test("apollo-client #12633's shape: a health red whose findings no hunk meets is standing, though it names two changed files (D73)", () => {
+  const checks = categoryFor(
+    APOLLO,
+    // The change wrote between `fetchObservableWithInfo` (1394 to 1548) and `maskOperation` (from 1722), and far above the hook's finding.
+    [change(QUERY_MANAGER, [{ start: 1646, count: 3 }, { start: 1691, count: 3 }]), change(USE_LAZY_QUERY, [{ start: 177, count: 1 }])],
+    ran({ health: APOLLO_HEALTH }, [slot('health', false)]),
+  );
+
+  // Nothing else is measured here, so with its red standing the change reads on its own evidence; the retake map keeps IFR on its failing tests.
+  expect(checks.category).toBe('VFR');
+  expect(readRedSplit(checks.slots)).toEqual({
+    change: [],
+    standing: [{ name: 'health', global: false, change: [], named: [QUERY_MANAGER, USE_LAZY_QUERY] }],
+  });
+});
+
+test('a pure deletion meets the span that holds its position, and one just outside the first or last line does not (D73)', () => {
+  const at = (start: number): RedSplit =>
+    splitRedSlots({
+      slots: [{ name: 'health', ok: false, skipped: false, scope: [ROUTER] }],
+      changed: [change(ROUTER, [{ start, count: 0 }])],
+      stitches: [],
+      spans: new Map([['health', [{ path: ROUTER, start: 67, end: 126 }]]]),
+    });
+  const onChange = (start: number): readonly string[] => at(start).change.map((red) => red.name);
+
+  // Lines deleted after head line 80 sat between 80 and 81, inside `add`; after 125, between it and the closing 126.
+  expect(onChange(80)).toEqual(['health']);
+  expect(onChange(125)).toEqual(['health']);
+  // After 66 they sat just above the function's first line, and after 126 just below its last.
+  expect(onChange(66)).toEqual([]);
+  expect(onChange(126)).toEqual([]);
+
+  // The same through the category: a change that only deleted inside `add` is the change's red.
+  const deleted = categoryFor(HONO, [change(ROUTER, [{ start: 80, count: 0 }])], ran({ health: HONO_HEALTH }, [slot('health', false)]));
+  expect(deleted.category).toBe('IFR');
+  expect(deleted.slots[0]?.change).toEqual([ROUTER]);
+});
+
+test('a dupes red is the change\'s only where one of its clone instances meets a hunk, the instances read by key (D73)', () => {
+  const family = {
+    files: ['src/doctor.ts', 'src/pm/tools.ts'],
+    groups: [
+      {
+        instances: [
+          { file: 'src/doctor.ts', start_line: 40, end_line: 52 },
+          { file: 'src/pm/tools.ts', start_line: 8, end_line: 20 },
+        ],
+      },
+    ],
+  };
+  const checks = categoryFor(
+    CHAIN,
+    // Both copies' files changed, but only the hunk in `tools.ts` lands inside its copy.
+    [change('src/pm/tools.ts'), change('src/doctor.ts', [{ start: 1, count: 2 }])],
+    ran({ ...TOOLS_CLOSED, dupes: { clone_families: [family] } }, [slot('dupes', false)]),
+  );
+
+  expect(checks.category).toBe('IFR');
+  expect(checks.slots).toEqual([
+    { name: 'dupes', ok: false, skipped: false, scope: ['src/doctor.ts', 'src/pm/tools.ts'], change: ['src/pm/tools.ts'] },
+  ]);
+});
+
+test('the category records the split on each red slot that names files, and readRedSplit reads the same split back', () => {
+  const checks = categoryFor(
+    HONO,
+    [change(ROUTER, ROUTER_HUNKS), change(NODE, [{ start: 1, count: 3 }])],
+    ran({ health: HONO_HEALTH, lint: { diagnostics: [{ path: NODE, severity: 'error' }] } }, [
+      slot('health', false),
+      slot('lint', false),
+      slot('test'),
+      slot('types', false),
+    ]),
+  );
+
+  // The line rule is for `health` and `dupes` alone: `lint` is on the change through any changed file it names.
+  expect(checks.slots).toEqual([
+    { name: 'health', ok: false, skipped: false, scope: [NODE, ROUTER], change: [ROUTER] },
+    { name: 'lint', ok: false, skipped: false, scope: [NODE], change: [NODE] },
+    // A green slot and a global one carry no split: there is nothing of theirs for a renderer to place.
+    { name: 'test', ok: true, skipped: false, scope: 'global' },
+    { name: 'types', ok: false, skipped: false, scope: 'global' },
+  ]);
+  expect(readRedSplit(checks.slots)).toEqual({
+    change: [
+      { name: 'health', global: false, change: [ROUTER], named: [NODE, ROUTER] },
+      { name: 'lint', global: false, change: [NODE], named: [NODE] },
+    ],
+    standing: [{ name: 'types', global: true, change: [], named: [] }],
   });
 });
 
@@ -474,7 +641,7 @@ test('a red slot is scoped to the paths its own output names, for the six slots 
             { path: 'src/__tests__/other.test.ts', status: 'passed' },
           ],
         },
-        health: { file_scores: [], findings: [{ path: 'src/doctor.ts', exceeded: 'cyclomatic' }] },
+        health: { file_scores: [], findings: [{ path: 'src/doctor.ts', exceeded: 'cyclomatic', line: 3, line_count: 20 }] },
         dead: { ...NO_DEAD, unused_exports: [{ path: 'src/pm/util.ts', name: 'helper', line: 4 }] },
         dupes: {
           clone_families: [
@@ -550,7 +717,7 @@ test('a red lint or struct with no error among its findings was failed by its wa
     ),
   );
 
-  expect(checks.slots).toEqual([{ name: 'struct', ok: false, skipped: false, scope: ['src/doctor.ts', 'src/pm/util.ts'] }]);
+  expect(checks.slots).toEqual([{ name: 'struct', ok: false, skipped: false, scope: ['src/doctor.ts', 'src/pm/util.ts'], change: [] }]);
 });
 
 test('a red slot whose own output was never read, or named no file, stays global rather than guessing at a scope', () => {

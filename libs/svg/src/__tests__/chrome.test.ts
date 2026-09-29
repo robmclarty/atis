@@ -53,6 +53,11 @@ function demo(): MapJson {
   return assertMap(JSON.parse(readFileSync(join(CORE_FIXTURES, 'demo', 'map.json'), 'utf8')));
 }
 
+/** A slot turned green, which records no split and names no file. */
+function greened(slot: CheckSlot, skipped = slot.skipped): CheckSlot {
+  return { name: slot.name, ok: true, skipped, scope: 'global' };
+}
+
 /** The demo with its verdict swapped: green slots and passed stitches for a VFR or MVFR, nothing trusted for a NOINST. */
 function variant(category: FlightCategory): MapJson {
   const map = demo();
@@ -73,7 +78,7 @@ function variant(category: FlightCategory): MapJson {
       checks: {
         ...weather.checks,
         category,
-        slots: weather.checks.slots.map((slot) => ({ ...slot, ok: true, scope: 'global' as const })),
+        slots: weather.checks.slots.map((slot) => greened(slot)),
       },
       evidence: {
         ...weather.evidence,
@@ -185,12 +190,16 @@ function tiered(): MapJson {
   };
 }
 
+/** A red slot's scope as the map records it: global, or the files it names with the changed files core's split put it on the change through. */
+type RedScope = 'global' | { readonly scope: readonly string[]; readonly change: readonly string[] };
+
 /** The demo with some slots' verdicts swapped: `red` names the slots to turn red, each with its scope, and `green` the slots to turn green. */
-function slotsSet(map: MapJson, red: Readonly<Record<string, CheckSlot['scope']>>, green: readonly string[] = []): MapJson {
+function slotsSet(map: MapJson, red: Readonly<Record<string, RedScope>>, green: readonly string[] = []): MapJson {
   const slots = map.weather.checks.slots.map((slot): CheckSlot => {
-    const scope = red[slot.name];
-    if (scope !== undefined) return { ...slot, ok: false, skipped: false, scope };
-    return green.includes(slot.name) ? { ...slot, ok: true, scope: 'global' } : slot;
+    const turned = red[slot.name];
+    if (turned === 'global') return { name: slot.name, ok: false, skipped: false, scope: 'global' };
+    if (turned !== undefined) return { name: slot.name, ok: false, skipped: false, ...turned };
+    return green.includes(slot.name) ? greened(slot) : slot;
   });
   return { ...map, weather: { ...map.weather, checks: { ...map.weather.checks, slots } } };
 }
@@ -246,9 +255,18 @@ test('the gate counts the change\'s red and never passes a ratio; the standing b
   expect(read(variant('VFR'), 'standing')).toBeUndefined();
 
   // Two slots red on changed files count two; a slot that names a changed file and untouched ones is the change's alone.
-  const two = slotsSet(map, { lint: ['apps/cli/src/doctor.ts', 'libs/core/src/util/text.ts'] });
+  const two = slotsSet(map, { lint: { scope: ['apps/cli/src/doctor.ts', 'libs/core/src/util/text.ts'], change: ['apps/cli/src/doctor.ts'] } });
   expect(read(two, 'gate')).toBe('Gate 2 red');
   expect(read(two, 'standing')).toBe('Standing 1 red');
+
+  // The blocks read the split core recorded rather than remaking it from paths: a `health` red naming the changed
+  // `doctor.ts` whose finding no hunk met is standing state, and the same slot with the finding met is the change's (D73).
+  const unmet = slotsSet(map, { health: { scope: ['apps/cli/src/doctor.ts'], change: [] } });
+  expect(read(unmet, 'gate')).toBe('Gate 1 red');
+  expect(read(unmet, 'standing')).toBe('Standing 2 red');
+  const met = slotsSet(map, { health: { scope: ['apps/cli/src/doctor.ts'], change: ['apps/cli/src/doctor.ts'] } });
+  expect(read(met, 'gate')).toBe('Gate 2 red');
+  expect(read(met, 'standing')).toBe('Standing 1 red');
 
   // Global red is wholly standing: counted with the untouched-file red and named in the tail, in name order (C3).
   const global = slotsSet(map, { types: 'global', lint: 'global' });
@@ -304,7 +322,7 @@ test('a block whose input is absent or stale is muted with a dash, and the categ
   expect(muted(empty, 'patch-cov')).toBe('empty');
 
   // A run in which every slot was skipped put nothing through the gate, so it cannot pass (C2).
-  const vacuous = { ...map, weather: { ...map.weather, checks: { ...map.weather.checks, checks_run: 0, slots: map.weather.checks.slots.map((slot) => ({ ...slot, ok: true, skipped: true, scope: 'global' as const })) } } };
+  const vacuous = { ...map, weather: { ...map.weather, checks: { ...map.weather.checks, checks_run: 0, slots: map.weather.checks.slots.map((slot) => greened(slot, true)) } } };
   expect(muted(chromeOf(renderSvg(vacuous)), 'gate')).toBe('empty');
   expect(textOf(blockOf(chromeOf(renderSvg(vacuous)), 'gate') ?? '')).toBe(`Gate ${MUTED_DASH}`);
 

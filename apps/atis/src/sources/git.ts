@@ -113,11 +113,12 @@ function parseNumstat(output: string): readonly NumstatEntry[] {
 const HEAD_SIDE = 'b/';
 const HUNK_HEADER = /^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@/;
 
+/** A hunk's head side; a pure deletion keeps its `+start,0`, the head line it sits after, since that is where it meets a finding (D73). */
 function parseHunkHeader(line: string): Hunk | undefined {
   const match = HUNK_HEADER.exec(line);
   if (match === null) return undefined;
   const count = match[2] === undefined ? 1 : Number(match[2]);
-  return count === 0 || match[1] === undefined ? undefined : { start: Number(match[1]), count };
+  return match[1] === undefined ? undefined : { start: Number(match[1]), count };
 }
 
 /** `git diff -U0 -M`: the head-side hunks of each file section, keyed by its `+++` path. */

@@ -3539,7 +3539,8 @@
             "libs/core/src/index.ts",
             "libs/core/src/util/format.ts",
             "libs/core/src/util/text.ts"
-          ]
+          ],
+          "change": []
         },
         {
           "name": "dupes",
@@ -3583,6 +3584,12 @@
           "skipped": false,
           "scope": [
             "libs/core/src/__tests__/pm.test.ts"
+          ],
+          "change": [
+            "libs/core/src/__tests__/pm.test.ts",
+            "libs/core/src/pm/index.ts",
+            "libs/core/src/pm/legacy.ts",
+            "libs/core/src/pm/tools.ts"
           ]
         },
         {

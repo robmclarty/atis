@@ -10,12 +10,13 @@
  *
  * Two kinds are approximations this build owns up to. `.check/` is read at
  * head only (D23), so "newly breached" and "newly introduced" cannot be
- * measured; the structural and the threshold candidates fire on a finding
- * present at head that names a changed file, and both say so in their `why`.
+ * measured; the structural candidate fires on a finding present at head that
+ * names a changed file, the threshold candidate on one whose lines the change
+ * touched (D73), and both say so in their `why`.
  */
 
 import type { Config, NoticeConfig, NoticeKind } from './config.js';
-import { pathsOf, splitRedSlots, structuralFindings } from './evidence.js';
+import { healthSpan, pathsOf, readRedSplit, spanOnChange, structuralFindings } from './evidence.js';
 import type { CheckArtifacts, FileEvidence, RedSplit } from './evidence.js';
 import { OTHER_GROUP } from './groups.js';
 import type { FileHistory } from './history.js';
@@ -31,7 +32,6 @@ import type {
   Group,
   Notice,
   NoticeTier,
-  Stitch,
 } from './schema.js';
 
 /**
@@ -61,10 +61,8 @@ export type NoticeInputs = {
   readonly changed: readonly ChangedFile[];
   /** `computeEvidence`'s per-file result: the coverage, the mutants and the reach each candidate is scaled by. */
   readonly files: readonly FileEvidence[];
-  /** The verdict block: a red slot on the change is the loudest candidate there is. */
+  /** The verdict block, with the category's split recorded on its slots: a red slot on the change is the loudest candidate there is (D67, D73). */
   readonly checks: Checks;
-  /** `computeEvidence`'s stitches, empty when the run had no test report: a torn one puts a red `test` on the change (D67). */
-  readonly stitches: readonly Stitch[];
   /** The assembled cells; `band` and `fan_in` are what make an interface change worth a label. */
   readonly cells: readonly Cell[];
   /** The shore (D48): a non-empty `other` group is a notice of its own, so the table grows instead of the dump. */
@@ -223,11 +221,17 @@ function structuralCandidates(check: RanCheck, changed: ReadonlyMap<string, Chan
   }));
 }
 
-/** fallow's four thresholds, breached at head on a file this change touched (D9, D23). */
+/**
+ * fallow's four thresholds, breached at head in a function whose lines this
+ * change touched, by the line rule the split reads a red `health` by (D9,
+ * D23, D73): a finding the change never touched is standing state, and a
+ * green slot does not bring it back as a row of its own.
+ */
 function thresholdCandidates(check: RanCheck, changed: ReadonlyMap<string, ChangedFile>): readonly Candidate[] {
+  const hunks = new Map([...changed].map(([path, file]) => [path, file.hunks] as const));
   const breached = new Map<string, string[]>();
   for (const finding of check.health?.findings ?? []) {
-    if (!changed.has(finding.path)) continue;
+    if (!spanOnChange(healthSpan(finding), hunks)) continue;
     const exceeded = breached.get(finding.path) ?? [];
     if (!exceeded.includes(finding.exceeded)) exceeded.push(finding.exceeded);
     breached.set(finding.path, exceeded);
@@ -235,7 +239,7 @@ function thresholdCandidates(check: RanCheck, changed: ReadonlyMap<string, Chang
   return [...breached].map(([path, exceeded]) => ({
     kind: 'threshold-breached',
     target: path,
-    why: `${exceeded.toSorted(byPath).join(', ')} over threshold on this changed file; ${HEAD_ONLY}`,
+    why: `${exceeded.toSorted(byPath).join(', ')} over threshold in a function this change touched; ${HEAD_ONLY}`,
     inputs: { findings: exceeded.length },
     thresholds: {},
     slot: 'health',
@@ -558,7 +562,7 @@ export function rankNotices(inputs: NoticeInputs): readonly Notice[] {
   const evidence = new Map(inputs.files.map((file) => [file.path, file] as const));
   const history = new Map(inputs.history.map((file) => [file.path, file] as const));
   const ghosts = findGhosts(inputs.cochange, inputs.changed.map((file) => file.path), inputs.config.notices);
-  const red = splitRedSlots({ slots: inputs.checks.slots, changed: inputs.changed, stitches: inputs.stitches });
+  const red = readRedSplit(inputs.checks.slots);
   const spokenFor = redTargets(red);
   const { severity } = inputs.config.notices;
 

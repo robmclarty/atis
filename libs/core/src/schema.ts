@@ -89,6 +89,7 @@ export type Terrain = {
   readonly layout?: Layout;
 };
 
+/** Head-side lines `start` onward, `count` of them; a `count` of 0 is a pure deletion, sitting just after line `start` (D73). */
 export type Hunk = { readonly start: number; readonly count: number };
 
 /** Exactly one of `cell` or `group` is set (D48). */
@@ -134,6 +135,13 @@ export type CheckSlot = {
   readonly ok: boolean;
   readonly skipped: boolean;
   readonly scope: 'global' | readonly string[];
+  /**
+   * The changed files core's split put this red slot on the change through,
+   * sorted, and empty when all of its red is standing state (D67, D73). Set
+   * exactly on a red slot whose scope names files, so a renderer reads the
+   * split rather than remaking it from paths.
+   */
+  readonly change?: readonly string[];
 };
 
 export type Checks = {
@@ -330,6 +338,7 @@ function assertShape(value: unknown): asserts value is MapJson {
   }
 
   const changed = expectArray(weather['changed'], 'weather.changed');
+  const changedPaths = new Set<string>();
   changed.forEach((raw, index) => {
     const entry = expectRecord(raw, `weather.changed[${String(index)}]`);
     const hasCell = entry['cell'] !== undefined;
@@ -341,6 +350,24 @@ function assertShape(value: unknown): asserts value is MapJson {
       const group = expectString(entry['group'], `weather.changed[${String(index)}].group`);
       if (!groupIds.has(group)) fail(`weather.changed[${String(index)}].group`, `unknown group "${group}"`);
     }
+    if (typeof entry['path'] === 'string') changedPaths.add(entry['path']);
+  });
+
+  const checks = expectRecord(weather['checks'], 'weather.checks');
+  const slots = expectArray(checks['slots'], 'weather.checks.slots');
+  slots.forEach((raw, index) => {
+    const at = `weather.checks.slots[${String(index)}]`;
+    const slot = expectRecord(raw, at);
+    const splits = slot['ok'] === false && slot['skipped'] !== true && Array.isArray(slot['scope']);
+    if (slot['change'] === undefined) {
+      if (splits) fail(`${at}.change`, 'a red slot that names files records the changed files it is on the change through');
+      return;
+    }
+    if (!splits) fail(`${at}.change`, 'only a red slot that names files records a change');
+    expectArray(slot['change'], `${at}.change`).forEach((path, entry) => {
+      const pathAt = `${at}.change[${String(entry)}]`;
+      if (!changedPaths.has(expectString(path, pathAt))) fail(pathAt, `not a changed file "${String(path)}"`);
+    });
   });
 }
 

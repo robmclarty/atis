@@ -119,7 +119,12 @@ export function parseSummary(text: string): SummaryParse {
 
 type FallowParse<T> = { readonly value: T; readonly schema_version?: number };
 
-/** `health.json` (fallow): `file_scores[]`, `findings[]` by path with the exceeded threshold, `target_thresholds.fan_in_p95`. */
+/**
+ * `health.json` (fallow): `file_scores[]`, `findings[]` by path with the
+ * exceeded threshold and the function's `line` and `line_count`, which is
+ * where a red `health` meets a change or does not (D73), and
+ * `target_thresholds.fan_in_p95`.
+ */
 export function parseHealth(text: string): FallowParse<Health> | undefined {
   const value = parseJson(text);
   if (!isRecord(value)) return undefined;
@@ -153,7 +158,10 @@ export function parseHealth(text: string): FallowParse<Health> | undefined {
     if (!isRecord(raw)) return [];
     const path = raw['path'];
     const exceeded = raw['exceeded'];
-    return typeof path === 'string' && typeof exceeded === 'string' ? [{ path: normalizePath(path), exceeded }] : [];
+    const line = numberField(raw, 'line');
+    const line_count = numberField(raw, 'line_count');
+    if (typeof path !== 'string' || typeof exceeded !== 'string' || line === undefined || line_count === undefined) return [];
+    return [{ path: normalizePath(path), exceeded, line, line_count }];
   });
 
   const thresholds = value['target_thresholds'];

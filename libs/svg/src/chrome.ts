@@ -23,7 +23,7 @@
  * list draws at most six rows, in the map's rank order, and pads nothing.
  */
 
-import { OTHER_GROUP, splitRedSlots } from 'core';
+import { OTHER_GROUP, readRedSplit } from 'core';
 import type { Contour, FlightCategory, Layout, MapJson, Notice, NoticeTier, Position } from 'core';
 
 import { el, num } from './el.js';
@@ -186,18 +186,18 @@ function isStale(map: MapJson, slot: string): boolean {
 
 /**
  * `Gate n red` and `Standing n red`: the red slots, counted and never passed,
- * each in exactly one block by core's split (D67, D70). The gate counts the
- * change's red and reads `pass` with no numeral when there is none; it is
- * muted when no `.check/` was trusted, and when no slot ran, since a gate
- * nothing went through has passed nothing (C2). The standing block counts
- * the slots whose red is wholly standing, names the global ones in its tail,
- * and is not drawn when there are none.
+ * each in exactly one block by core's split as the map records it (D67, D70,
+ * D73). The gate counts the change's red and reads `pass` with no numeral
+ * when there is none; it is muted when no `.check/` was trusted, and when no
+ * slot ran, since a gate nothing went through has passed nothing (C2). The
+ * standing block counts the slots whose red is wholly standing, names the
+ * global ones in its tail, and is not drawn when there are none.
  */
 function gateBlocks(map: MapJson): readonly Block[] {
   if (map.meta.instruments.mode !== 'check') return [muted('gate', 'Gate', 'absent')];
-  const { changed, checks, evidence } = map.weather;
+  const { checks } = map.weather;
   if (checks.slots.every((slot) => slot.skipped)) return [muted('gate', 'Gate', 'empty')];
-  const red = splitRedSlots({ slots: checks.slots, changed, stitches: evidence.stitches ?? [] });
+  const red = readRedSplit(checks.slots);
   const gate = red.change.length === 0 ? block('gate', 'Gate', 'pass') : block('gate', 'Gate', String(red.change.length), ' red');
   if (red.standing.length === 0) return [gate];
   const global = red.standing.filter((slot) => slot.global).map((slot) => slot.name);

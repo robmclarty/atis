@@ -2,7 +2,7 @@ import { expect, test } from 'vitest';
 
 import { DEFAULT_CONFIG } from '../config.js';
 import type { Config, NoticeKind } from '../config.js';
-import { computeEvidence } from '../evidence.js';
+import { computeCategory, computeEvidence } from '../evidence.js';
 import type { CheckArtifacts, CheckSummarySlot, Dead, Health } from '../evidence.js';
 import { identifyGroups } from '../groups.js';
 import type { FileHistory } from '../history.js';
@@ -61,6 +61,7 @@ type Scenario = {
   readonly bands?: Readonly<Record<string, number>>;
   readonly fanIn?: Readonly<Record<string, number>>;
   readonly check?: CheckArtifacts;
+  /** A verdict built by hand, each red slot that names files carrying its split; else the category's own, made from `check`. */
   readonly checks?: Checks;
   readonly history?: readonly FileHistory[];
   readonly cochange?: readonly Cochange[];
@@ -80,23 +81,28 @@ const NO_DEAD: Dead = {
 
 const NO_HEALTH: Health = { file_scores: [], findings: [] };
 
+/** A function in `util.ts` over the cyclomatic threshold, spanning the quiet change's hunk at lines 10 to 13 (D73). */
+const UTIL_BREACH = { path: 'src/pm/util.ts', exceeded: 'cyclomatic', line: 8, line_count: 12 };
+
 type Ran = Extract<CheckArtifacts, { mode: 'check' }>;
 type Channels = Omit<Ran, 'mode' | 'summary' | 'fallow_schemas' | 'stale'>;
 
-/** A trusted `.check/` carrying the given channels; the summary itself is green, so only the channels speak. */
-function ran(channels: Channels): CheckArtifacts {
-  const checks: readonly CheckSummarySlot[] = [{ name: 'test', ok: true, skipped: false }];
+const GREEN: readonly CheckSummarySlot[] = [{ name: 'test', ok: true, skipped: false }];
+
+/** A trusted `.check/` carrying the given channels; the summary is green unless the scenario says otherwise, so only the channels speak. */
+function ran(channels: Channels, checks: readonly CheckSummarySlot[] = GREEN): CheckArtifacts {
   return {
     mode: 'check',
-    summary: { ok: true, checks_run: 1, timestamp: '2026-09-17T05:52:40.668Z', total_duration_ms: 1_000, checks },
+    summary: { ok: checks.every((slot) => slot.ok), checks_run: checks.length, timestamp: '2026-09-17T05:52:40.668Z', total_duration_ms: 1_000, checks },
     fallow_schemas: {},
     stale: [],
     ...channels,
   };
 }
 
-function red(name: string, scope: CheckSlot['scope'] = 'global'): CheckSlot {
-  return { name, ok: false, skipped: false, scope };
+/** A red slot as `map.json` records it: one that names files carries the changed files the category's split put it on the change through. */
+function red(name: string, scope: CheckSlot['scope'] = 'global', onChange: readonly string[] = []): CheckSlot {
+  return { name, ok: false, skipped: false, scope, ...(scope === 'global' ? {} : { change: onChange }) };
 }
 
 function verdict(slots: readonly CheckSlot[]): Checks {
@@ -135,7 +141,7 @@ function cellsFor(modules: Modules, scenario: Scenario): readonly Cell[] {
   });
 }
 
-/** The composition `buildMap` will use: place the change, read its evidence, then rank the notices off both. */
+/** The composition `buildMap` will use: place the change, read its evidence, split its red, then rank the notices off all three. */
 function inputsFor(scenario: Scenario): NoticeInputs {
   const paths = [...WORLD, ...(scenario.files ?? [])].toSorted();
   const scanned = paths.map((path): ScannedFile => ({ path, loc: 20, exports: scenario.exports?.[path] ?? [] }));
@@ -149,12 +155,16 @@ function inputsFor(scenario: Scenario): NoticeInputs {
   const check = scenario.check ?? NO_CHECK;
   const placed = computeReach({ changed, modules, groups, headEdges, baseEdges });
   const { evidence, files } = computeEvidence({ changed: placed.changed, modules, groups, headEdges, baseEdges, check });
+  const checks =
+    scenario.checks ??
+    (check.mode === 'check'
+      ? computeCategory({ check, changed: placed.changed, files, stitches: evidence.stitches ?? [], config: DEFAULT_CONFIG })
+      : NOINST);
 
   return {
     changed: placed.changed,
     files,
-    checks: scenario.checks ?? NOINST,
-    stitches: evidence.stitches ?? [],
+    checks,
     cells: cellsFor(modules, scenario),
     groups,
     history: scenario.history ?? [],
@@ -187,7 +197,7 @@ function rankOf(notices: readonly Notice[], path: string): number {
  * first is that row's candidate and nothing else.
  */
 const ONE_OF_EACH: Readonly<Record<NoticeKind, Scenario>> = {
-  'red-check-slot': { checks: verdict([red('lint', ['src/pm/util.ts'])]) },
+  'red-check-slot': { checks: verdict([red('lint', ['src/pm/util.ts'], ['src/pm/util.ts'])]) },
   'cycle-or-boundary': {
     check: ran({ dead: { ...NO_DEAD, circular_dependencies: [{ files: ['src/pm/util.ts', 'src/pm/probe.ts'] }] } }),
   },
@@ -204,7 +214,7 @@ const ONE_OF_EACH: Readonly<Record<NoticeKind, Scenario>> = {
     check: ran({ mutation: [{ path: 'src/pm/util.ts', mutants: [{ line: 10, status: 'Survived' }] }] }),
   },
   'threshold-breached': {
-    check: ran({ health: { ...NO_HEALTH, findings: [{ path: 'src/pm/util.ts', exceeded: 'cyclomatic' }] } }),
+    check: ran({ health: { ...NO_HEALTH, findings: [UTIL_BREACH] } }),
   },
   'security-finding': { check: ran({ security: { vulnerabilities: { high: 2, total: 2 } } }) },
   'large-hot-change': {
@@ -222,11 +232,11 @@ const CROWDED: Scenario = {
   files: ['odd.qqq'],
   changed: [change('src/pm/tools.ts'), change('src/pm/index.ts'), change('src/pm/util.ts', 200, 10)],
   bands: { [PM]: 5 },
-  checks: verdict([red('types'), red('test', ['src/doctor.ts', 'src/pm/tools.ts'])]),
+  checks: verdict([red('types'), red('test', ['src/doctor.ts', 'src/pm/tools.ts'], ['src/pm/tools.ts'])]),
   check: ran({
     coverage: [{ path: 'src/pm/tools.ts', statements: [{ line: 10, hits: 0 }] }],
     mutation: [{ path: 'src/pm/index.ts', mutants: [{ line: 10, status: 'Survived' }] }],
-    health: { ...NO_HEALTH, findings: [{ path: 'src/pm/util.ts', exceeded: 'cyclomatic' }] },
+    health: { ...NO_HEALTH, findings: [UTIL_BREACH] },
     security: { vulnerabilities: { high: 1 } },
     dead: { ...NO_DEAD, boundary_violations: [{ from_path: 'src/pm/util.ts', to_path: 'src/doctor.ts' }] },
   }),
@@ -287,7 +297,6 @@ test('two runs over one input produce one ranking, and the input order cannot ch
     headEdges: [...inputs.headEdges].toReversed(),
     baseEdges: [...inputs.baseEdges].toReversed(),
     checks: { ...inputs.checks, slots: [...inputs.checks.slots].toReversed() },
-    stitches: [...inputs.stitches].toReversed(),
   });
 
   expect(JSON.stringify(second)).toBe(JSON.stringify(first));
@@ -343,9 +352,9 @@ test('the rank is the severity scaled by reach, by the evidence gap and by the h
 });
 
 test('a red slot names its findings itself, so the same slot does not spend a second notice on them', () => {
-  const findings = { ...NO_HEALTH, findings: [{ path: 'src/pm/util.ts', exceeded: 'cyclomatic' }] };
+  const findings = { ...NO_HEALTH, findings: [UTIL_BREACH] };
   const quiet = noticesFor({ check: ran({ health: findings }) });
-  const loud = noticesFor({ check: ran({ health: findings }), checks: verdict([red('health', ['src/pm/util.ts'])]) });
+  const loud = noticesFor({ check: ran({ health: findings }), checks: verdict([red('health', ['src/pm/util.ts'], ['src/pm/util.ts'])]) });
 
   expect(kindsOf(quiet)).toEqual(['threshold-breached']);
   // The red slot says it louder and points at the same file; the threshold notice does not repeat it.
@@ -366,7 +375,10 @@ test('a global red slot yields no notice, and no longer speaks for the finding i
 test('a file two red slots name takes one row, its why naming both, and their untouched files take none (D67)', () => {
   const notices = noticesFor({
     changed: [change('src/pm/tools.ts')],
-    checks: verdict([red('lint', ['src/pm/tools.ts']), red('health', ['src/doctor.ts', 'src/pm/tools.ts'])]),
+    checks: verdict([
+      red('lint', ['src/pm/tools.ts'], ['src/pm/tools.ts']),
+      red('health', ['src/doctor.ts', 'src/pm/tools.ts'], ['src/pm/tools.ts']),
+    ]),
   });
 
   expect(notices.map((notice) => [notice.kind, notice.target])).toEqual([['red-check-slot', 'src/pm/tools.ts']]);
@@ -377,8 +389,9 @@ test('a file two red slots name takes one row, its why naming both, and their un
 test('a torn stitch puts a red test slot on the changed file the failing test imports, not on the test (D67)', () => {
   const notices = noticesFor({
     changed: [change('src/pm/tools.ts')],
-    check: ran({ test: { results: [{ path: 'src/__tests__/tools.test.ts', status: 'failed' }] } }),
-    checks: verdict([red('test', ['src/__tests__/tools.test.ts'])]),
+    check: ran({ test: { results: [{ path: 'src/__tests__/tools.test.ts', status: 'failed' }] } }, [
+      { name: 'test', ok: false, skipped: false },
+    ]),
   });
 
   expect(notices.map((notice) => [notice.kind, notice.target])).toEqual([['red-check-slot', 'src/pm/tools.ts']]);
@@ -388,29 +401,44 @@ test('a torn stitch puts a red test slot on the changed file the failing test im
 test("checkride PR 2's shape ranks no standing or global red, so the change's own finding stands alone (D67)", () => {
   const notices = noticesFor({
     // One changed file whose reach stays in its own cell, with one uncovered changed line and a mutant alive on it.
-    check: ran({
-      coverage: [{ path: 'src/pm/util.ts', statements: [{ line: 10, hits: 3 }, { line: 12, hits: 0 }] }],
-      mutation: [{ path: 'src/pm/util.ts', mutants: [{ line: 10, status: 'Survived' }] }],
-      dead: NO_DEAD,
-      dupes: { clone_families: [{ files: ['src/doctor.ts', 'src/index.ts'] }] },
-      health: {
-        ...NO_HEALTH,
-        findings: [
-          { path: 'src/doctor.ts', exceeded: 'crap' },
-          { path: 'src/pm/probe.ts', exceeded: 'cognitive' },
-        ],
+    check: ran(
+      {
+        coverage: [{ path: 'src/pm/util.ts', statements: [{ line: 10, hits: 3 }, { line: 12, hits: 0 }] }],
+        mutation: [{ path: 'src/pm/util.ts', mutants: [{ line: 10, status: 'Survived' }] }],
+        dead: NO_DEAD,
+        dupes: { clone_families: [{ files: ['src/doctor.ts', 'src/index.ts'] }] },
+        health: {
+          ...NO_HEALTH,
+          findings: [
+            { path: 'src/doctor.ts', exceeded: 'crap', line: 12, line_count: 30 },
+            { path: 'src/pm/probe.ts', exceeded: 'cognitive', line: 4, line_count: 18 },
+          ],
+        },
       },
-    }),
-    // Global `dead` and `snippets`, and `dupes` and `health` on files the change never touched: all standing state.
-    checks: verdict([
-      red('dead'),
-      red('dupes', ['src/doctor.ts', 'src/index.ts']),
-      red('health', ['src/doctor.ts', 'src/pm/probe.ts']),
-      red('snippets'),
-    ]),
+      // Global `dead` and `snippets`, and `dupes` and `health` on files the change never touched: all standing state.
+      ['dead', 'dupes', 'health', 'snippets'].map((name) => ({ name, ok: false, skipped: false })),
+    ),
   });
 
   expect(notices.map((notice) => [notice.kind, notice.target])).toEqual([['survived-mutants', 'src/pm/util.ts']]);
+});
+
+test('a health red whose finding no hunk meets is standing, and no threshold-breached row comes back for it (D73)', () => {
+  // The quiet change wrote lines 10 to 13 of `util.ts`; this function over the threshold spans 30 to 41.
+  const untouched = { ...UTIL_BREACH, line: 30 };
+  const health = (finding: typeof UTIL_BREACH, ok: boolean): CheckArtifacts =>
+    ran({ health: { ...NO_HEALTH, findings: [finding] } }, [{ name: 'health', ok, skipped: false }]);
+
+  // Red, the finding is standing state: no red row, and no threshold row returns for it at the lower severity.
+  expect(noticesFor({ check: health(untouched, false) })).toEqual([]);
+  // Green, the untouched finding raises nothing either: the threshold row reads the same line rule as the split.
+  expect(noticesFor({ check: health(untouched, true) })).toEqual([]);
+  // A pure deletion inside the function touches it, so the green slot's finding is a threshold row again.
+  const deleted = noticesFor({ changed: [change('src/pm/util.ts', 0, 2, [{ start: 35, count: 0 }])], check: health(untouched, true) });
+  expect(kindsOf(deleted)).toEqual(['threshold-breached']);
+  expect(deleted[0]?.why).toBe(`cyclomatic over threshold in a function this change touched; ${HEAD_ONLY}`);
+  // Where the change's hunk falls inside the function, the red is the change's: one row, which speaks for the threshold.
+  expect(kindsOf(noticesFor({ check: health(UTIL_BREACH, false) }))).toEqual(['red-check-slot']);
 });
 
 test('a consumer that has already dropped the name is not a live consumer', () => {

@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 43 — fix(cli): run the reviewed repo's fallow directly and record a failed entry-point lookup
+**Current step:** 44 — fix(core): count a health or dupes red as the change's only where its lines meet a hunk
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -65,7 +65,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 40. fix(svg): light a skin's uncovered arc instead of its covered one
 - ☑ 41. fix(cli): read npm, yarn and bun packages for the dependency delta
 - ☑ 42. fix(svg): draw a secondary notice's ring in chrome grey, clear of the lit skin
-- ☐ 43. fix(cli): run the reviewed repo's fallow directly and record a failed entry-point lookup
+- ☑ 43. fix(cli): run the reviewed repo's fallow directly and record a failed entry-point lookup
 - ☐ 44. fix(core): count a health or dupes red as the change's only where its lines meet a hunk
 - ☐ 45. fix(core): rank a failing test on the change ahead of every weighed notice
 - ☐ 46. feat(cli): fingerprint the shape of each exported declaration
@@ -2345,3 +2345,52 @@ folder, so it rides the branch into the PR.)*
   **5.** Copy D may not have been read blind
 
   Step 33's pause flagged that an agent reply might have reached your screen, describing one fixture's failing test and where it lands. Only `retake-1` (copy D) has a red `test` slot. You landed step 33 without asking for a swap. The doc says that if the reply was read, D wasn't blind. It doesn't change the result: without D the verdicts are 2 of 4 and precision is 1 of 2. The blind page and its key are still in `/tmp/atis-glance` and `/tmp/atis-glance-key`, and the key's order is now in the doc. I'll delete both folders once this lands, unless you want to keep the page to practice on.
+
+- 2026-09-29 — step 43 checkpointed · 2767cfc66 — fix(cli): run the reviewed repo's fallow directly and record a failed entry-point lookup (1 red, 1 drift, 11m)
+
+  **Summary**: The scan now runs the reviewed repo's own `node_modules/.bin/fallow` directly. When fallow is missing, fails or prints something unreadable, the map says so: `meta.instruments.entry_points` reads `fallow` or `manifests`, and `entry_points_reason` carries the reason. A live run on this repo reads `fallow`, and a clone with no `node_modules` reads `manifests` with `no local fallow at node_modules/.bin/fallow`.
+
+  1. The binary is run directly, and a test puts a failing pnpm first on PATH to prove it
+  2. The reason travels through `Scan` as a lookup and lands in `meta.instruments` as two flat fields
+  3. Each failure is described in words that stay the same from run to run
+  4. `assertMap` accepts the field and checks it, but does not require it
+  5. Three core fixtures changed outside the seam, and the first gate went red on a race I parked
+
+  **Readout**: Step 43 - fix(cli): run the reviewed repo's fallow directly and record a failed entry-point lookup
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    2 of 2 honored
+  constraints  11 of 11 honored
+  seam         strayed: 3 paths outside the seam
+               - libs/core/fixtures/demo/inputs.json
+               - libs/core/fixtures/demo/map.json
+               - libs/core/fixtures/rename/inputs.json
+  diff         +317 -33 across 9 files
+  spent        11 min · 1 turn · 15s gate · 1 red run
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Recommendation**: Approve and land step 43. The done-when is met in full, including both test cases it names, and the live runs on this repo and a clone without `node_modules` show both values in a real `map.json`.
+
+  **1.** The binary is run directly, and a test puts a failing pnpm first on PATH to prove it
+
+  `fallowEntryPoints` calls `execFileSync` on the resolved `node_modules/.bin/fallow` with `list --entry-points --format json --root <tree>`, so no package manager re-lays an npm, yarn or bun tree or writes to stdout (D22 (local-fallow)). The success test swaps in a stand-in fallow that exits 9 unless its argv is exactly that command. It also puts a `pnpm` first on PATH that prints a line and exits 1, so a lookup routed through pnpm could not succeed. I checked that the test catches the bug: with `pnpm exec` briefly restored, it fails with `reason: "fallow list exited 1"`.
+
+  **2.** The reason travels through `Scan` as a lookup and lands in `meta.instruments` as two flat fields
+
+  Core's `Scan` gains `entry_points: EntryPointLookup`, which is `{ source: 'fallow' }` or `{ source: 'manifests', reason }`, so a manifests lookup cannot exist without a reason. It is the same idiom as `CheckArtifacts`. `buildMap` combines the base and head lookups into flat fields next to `mode` and `reason`: `entry_points: 'fallow'` only when both scans read fallow, otherwise `manifests` with one reason. When the two sides failed the same way the reason appears once; otherwise it is labelled by side (`base: …; head: …`). Core only combines two values it was handed, so nothing in core reads a process (C1 (core-is-pure)). `run.ts` needed no edit, because it already passes each scan to `buildMap` whole.
+
+  **3.** Each failure is described in words that stay the same from run to run
+
+  There are five cases: fallow is missing, it times out, it exits non-zero, it is stopped by a signal, or its output does not parse. On a non-zero exit I probed the real fallow 3.22. With `--format json` it prints its own error as JSON on stdout, e.g. `{"error":true,"message":"Failed to parse config file /private/var/…/.fallowrc.json: …"}`. The reason uses that `message`, falling back to the first stderr line. The extraction is a fresh temp directory every run, so its real path and its given path are both cut back to `.` (C3 (deterministic)). `execFileSync`'s own error message is never used, because it quotes the full command line with the temp path.
+
+  **4.** `assertMap` accepts the field and checks it, but does not require it
+
+  `entry_points` must be `fallow` or `manifests`, and `entry_points_reason` must be a string present exactly when the source is `manifests`. The field is optional in `Instruments`, like the other instruments fields, so the ten committed outside and historical fixture maps (written before this step) and the SVG tests' hand-built maps still pass. `buildMap` always writes it. Step 52's refresh brings the retake maps up to date.
+
+  **5.** Three core fixtures changed outside the seam, and the first gate went red on a race I parked
+
+  `libs/core/fixtures/demo/inputs.json` and `rename/inputs.json` build `Scan`s from JSON, so they gained `entry_points`: the demo stands in for checkride PR 4 and reads `fallow`, while the rename repo has none and reads `manifests`. The demo golden `map.json` gained `"entry_points": "fallow"`, and the SVG golden is unchanged. The first full gate failed in `cli.test.ts` (built command exited 2). The `types` slot rebuilt core's `dist` before the app's, so the new `buildMap` briefly received scans without `entry_points`. Both reruns were green. The race was already there before this step and is parked in the build log.

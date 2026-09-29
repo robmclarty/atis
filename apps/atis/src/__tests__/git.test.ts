@@ -62,6 +62,26 @@ test('parseDiff turns captured name-status, numstat and unified text into sorted
   ]);
 });
 
+test('parseDiff keeps a pure deletion as a hunk of no lines at the head line it follows (D73)', () => {
+  const unified = [
+    'diff --git a/src/keep/modified.ts b/src/keep/modified.ts',
+    '--- a/src/keep/modified.ts',
+    '+++ b/src/keep/modified.ts',
+    '@@ -5,2 +4,0 @@ export function f() {',
+    '-  const a = 1;',
+    '-  const b = 2;',
+    '@@ -9 +7 @@ export function f() {',
+    '-  return a;',
+    '+  return 0;',
+    '',
+  ].join('\n');
+  const [file] = parseDiff('M\tsrc/keep/modified.ts\n', '1\t3\tsrc/keep/modified.ts\n', unified);
+  expect(file?.hunks).toEqual([
+    { start: 4, count: 0 },
+    { start: 7, count: 1 },
+  ]);
+});
+
 test('diffManifests reports a new dependency or devDependency, never a bumped range', () => {
   const before = JSON.stringify({
     name: 'pkg',
