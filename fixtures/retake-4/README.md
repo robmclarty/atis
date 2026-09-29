@@ -33,3 +33,148 @@ docs pages under `docs/src/content/mapping/lodash/`.
 
 Step 33 generates `map.json` and `atis.svg` here by the D58 worktree procedure and records its
 commands, skipped slots and harness changes in this section.
+
+## The toolchain
+
+The tree is historical; the harness is current (D58). checkride and fallow are installed into
+the worktree at their latest versions, because atis only ever ships against current
+checkride. The repo's own runner, coverage provider and lockfile stay as the commit had them.
+
+| tool | version | how atis knows |
+| --- | --- | --- |
+| checkride | 0.13.0 | installed into the worktree; the commit pinned none |
+| fallow | 3.30.0 | installed into the worktree; the commit pinned none |
+| checkride summary schema | 1 | required by `readCheck` before anything under `.check/` is read |
+| node | 24.15.0 | the machine's; `.nvmrc` says 22 and no `engines` field constrains it |
+| npm | 11.12.1 | the machine's; `package-lock.json` (lockfileVersion 3) is honoured by `npm ci` |
+| vitest | 2.0.5 | the lockfile's, unchanged |
+| `@vitest/coverage-v8` | 2.0.5 | already a dev dependency at the repo's vitest major, unchanged |
+| `@stryker-mutator/core` | 10.0.0 | added for the `mutation` slot |
+| `@stryker-mutator/vitest-runner` | 10.0.0 | added for the `mutation` slot; its peer range (`vitest >=2.0.0`) admits 2.0.5 |
+
+## The commands
+
+```sh
+# 0. The scratch clone was a blobless partial clone, and `git log --numstat` (which atis runs
+#    over up to 5000 commits) failed on objects the promisor remote would not hand back. Make
+#    it a full clone first.
+cd /tmp/atis-retake/remeda
+rm -f .git/objects/info/commit-graph
+git config --unset remote.origin.partialclonefilter
+git config --unset remote.origin.promisor
+git fetch --refetch --no-tags origin
+
+# 1. A worktree at the fixture commit, named for the repo so meta.repo reads `remeda`.
+git -C /tmp/atis-retake/remeda worktree add /tmp/atis-fixtures/retake-4/remeda \
+  77ac0658d2ad84fb9b9c6d3e75355ce935efb873 --detach
+
+# 2. The repo's own package manager, honouring its lockfile. HUSKY=0 keeps the `prepare`
+#    script from pointing the shared clone's core.hooksPath at the worktree.
+cd /tmp/atis-fixtures/retake-4/remeda
+HUSKY=0 npm ci
+
+# 3. The current harness (D58), plus stryker for the mutation slot.
+npm install -D --save-exact --ignore-scripts \
+  checkride@0.13.0 fallow@3.30.0 \
+  @stryker-mutator/core@10.0.0 @stryker-mutator/vitest-runner@10.0.0
+
+# 4. Harness edits (see the next section for why).
+cat > vitest.config.ts <<'CONFIG'
+import { defineConfig } from "vitest/config";
+
+export default defineConfig({
+  test: {
+    globals: true,
+    coverage: {
+      include: ["src/**"],
+      exclude: ["src/index.ts", "src/**/*.test-d.ts"],
+      reporter: ["json"],
+      reportsDirectory: ".check/coverage",
+    },
+  },
+});
+CONFIG
+cat > fallow.toml <<'CONFIG'
+# Fixture harness: fallow's defaults. checkride is installed only to drive the run, so it
+# is not an unused dependency.
+ignoreDependencies = ["checkride"]
+CONFIG
+cat > stryker.config.json <<'CONFIG'
+{
+  "packageManager": "npm",
+  "testRunner": "vitest",
+  "plugins": ["@stryker-mutator/vitest-runner"],
+  "reporters": ["clear-text", "json"],
+  "jsonReporter": { "fileName": ".check/mutation.json" },
+  "mutate": ["src/randomInt.ts", "src/index.ts"],
+  "coverageAnalysis": "perTest",
+  "tempDirName": ".stryker-tmp",
+  "cleanTempDir": true
+}
+CONFIG
+printf '\n# checkride writes its artifacts here during the run\n.check/\n' >> .prettierignore
+
+# 5. The .check/ atis reads for evidence. Run the installed binary, never the repo's own
+#    `test` script. Mutation is kept; it completed well inside the fifteen-minute cap.
+rm -rf .check
+npx --no-install checkride --all --skip security
+
+# 6. The map and the still render. --repo takes the resolved path, not the /tmp symlink:
+#    on macOS /tmp is /private/tmp, and istanbul's absolute coverage keys will not
+#    relativise against the unresolved one, which silently empties patch_coverage.
+#    atis reads the entry points from the repo's own fallow through `pnpm exec`. On this npm
+#    repo, pnpm's dependency check would reinstall node_modules in pnpm's layout and print to
+#    stdout ahead of fallow's JSON, so atis would quietly fall back to manifest-only entry
+#    points. Switching that check off makes atis read fallow's list.
+cd ~/Projects/atis/code/atis
+pnpm_config_verify_deps_before_run=false node apps/atis/dist/cli.js \
+  --repo "$(cd /tmp/atis-fixtures/retake-4/remeda && pwd -P)" \
+  --base 71be3884e05c30860e9db28b1c2d439669b877b0 \
+  --out fixtures/retake-4/map.json \
+  --svg fixtures/retake-4/atis.svg
+
+# 7. The worktree is not kept.
+git -C /tmp/atis-retake/remeda worktree remove --force /tmp/atis-fixtures/retake-4/remeda
+```
+
+## Harness changes in the worktree
+
+Every change lives in the worktree and is discarded with it; none of it reaches the reviewed
+repo.
+
+- `package.json` and `package-lock.json` — four dev dependencies added (`checkride`, `fallow`,
+  `@stryker-mutator/core`, `@stryker-mutator/vitest-runner`), all exact-pinned. The lockfile
+  keeps its version 3 format, and vitest, vite and typescript stay at the versions it locked.
+- `vitest.config.ts` — edited: `coverage.reporter` set to `["json"]` and
+  `coverage.reportsDirectory` to `.check/coverage`, so the `test` slot's `--coverage` writes
+  istanbul JSON to `.check/coverage/coverage-final.json`, where atis reads it. The repo's own
+  `include` and `exclude` lists are unchanged, and the v8 provider it already used is kept.
+- `fallow.toml` — created with fallow's defaults and no entry points, since fallow's own
+  detection finds them (171 of them by its `list --entry-points`), so `dead`, `dupes` and
+  `health` run. One line, `ignoreDependencies = ["checkride"]`, keeps the harness's own install
+  from showing up as an unused dev dependency.
+- `stryker.config.json` — created; `mutate` is limited to the PR's two changed non-test source
+  files, and the JSON reporter writes `.check/mutation.json`, the file atis reads. It is JSON
+  rather than the `.mjs` form because the repo's ESLint config types every linted file against
+  `tsconfig.json`, which does not include a root `.mjs`, so the `lint` slot reported the
+  harness's own file as a parse error; checkride detects `stryker.config.json` just as well.
+- `.prettierignore` — `.check/` appended. Without it the `format` slot checked checkride's own
+  `.check/*.json` artifacts, so it went red or green depending on which files existed when it
+  ran, not on the repo's formatting.
+- `HUSKY=0` at install time (an environment variable, not a file), so the `prepare` script
+  does not rewrite the shared clone's `core.hooksPath`.
+
+## Skipped slots
+
+Named per D56. 15 slots ran.
+
+- `security` — skipped per D56 (`--skip security`): the audit runs against today's advisory
+  database, not the one that existed when the PR was open. It is also `pnpm audit`, which
+  checkride reports unavailable under npm.
+- `mutation` — **not** skipped. It completed in about 4 seconds on the two scoped source files
+  and wrote `.check/mutation.json`.
+- `struct`, `docs`, `spell`, `prose` — checkride 0.13.0 skips these itself ("no tool detected
+  for slot"); the repo has none of their detect files, and per the harness policy none was
+  added.
+- `snippets` — ran, and is red on a repo with no tagged doc fences: an opted-in slot with
+  nothing to check refuses to pass vacuously, and `--all` opts it in. It is left as run.

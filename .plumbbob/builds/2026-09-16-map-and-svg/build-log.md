@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 32 — chore(fixtures): select five reviewed outside PRs and record their ground truth
+**Current step:** 33 — chore(fixtures): generate map.json and the SVG for the five outside PRs
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -54,7 +54,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 29. fix(cli): name --svg and --open in the usage text
 - ☑ 30. chore(fixtures): refresh the five maps after the render and shore fixes
 - ☑ 31. feat(cli): read npm, yarn and bun workspaces as scan roots
-- ☐ 32. chore(fixtures): select five reviewed outside PRs and record their ground truth
+- ☑ 32. chore(fixtures): select five reviewed outside PRs and record their ground truth
 - ☐ 33. chore(fixtures): generate map.json and the SVG for the five outside PRs
 - ☐ 34. chore(glance): retake glance-test round one on the outside fixtures
 - ☑ 35. feat(cli): name the files a red lint or struct slot reports
@@ -111,7 +111,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] git.ts memberDirs still reads only pnpm-workspace.yaml, so readManifests' deps_added (D47) misses npm/yarn/bun member manifests; route it through parseManifestWorkspaces before step 33
 - [x] security-finding counts the repo's vulnerabilities at head, which is standing state by D67's reading; now that a global red security slot no longer suppresses it, should it spend the budget only when the change's dependency delta touches it?
 - [x] a secondary notice's tier ring (CHROME_INK, SECONDARY_RING_WIDTH 3, EMPHASIS_PAD 5) is the evidence light's own colour and heavier than the lit skin 1 unit inside it, so a secondary target's skin reads lit all round (checkride PR 5's src/doctor.ts); chrome.ts, outside step 40's seam
-- [ ] D54 wants a docs/inspiration.md row per outside source: cite the retake's five repos there once step 34's verdicts are in, since adding them now would leak through the diff (D62)
+- [x] D54 wants a docs/inspiration.md row per outside source: cite the retake's five repos there once step 34's verdicts are in, since adding them now would leak through the diff (D62)
+- [ ] fallowEntryPoints in imports.ts runs `pnpm exec fallow list` whatever the repo's manager: on an npm, yarn or bun tree pnpm re-lays node_modules and narrates on stdout, the JSON parse throws, and the catch silently returns [] (manifest-only entry points, no trace in meta.instruments); run node_modules/.bin/fallow directly, or pass --config.verify-deps-before-run=false, and record a failed lookup rather than swallow it (C2)
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -170,6 +171,10 @@ Harvest results this boundary:
   - **blocker**, already folded · `memberDirs` read only `pnpm-workspace.yaml`, so `deps_added` missed npm, yarn and bun members → step 41 (18dc902), under [D64 (fixture-eligibility)](intent.md#d64) and [D47 (dependency-delta)](intent.md#d47); nothing new in intent
   - **blocker** · a secondary notice's ring is the evidence light's own colour, 1 unit outside the lit gap, so its target reads as wholly uncovered → [D72 (tier-ring-not-evidence)](intent.md#d72), fix step 42, ordered ahead of step 33 so the outside SVGs render with it
   - **tangent**, defer past this build · `security-finding` spends the budget on standing vulnerabilities, by [D67 (standing-state-notices)](intent.md#d67)'s reading: no fixture runs the `security` slot ([D56 (fixtures-skip-audit)](intent.md#d56), [D58 (fixtures-current-toolchain)](intent.md#d58)), so the retake cannot see it, and tying it to the change needs per-package advisories `security.json` does not carry; seed for the next build's frame, with step 41's complete `deps_added` as the other half of that link
+
+- 2026-09-28, boundary after step 32 (220115a), 1 item; Rob confirmed the proposed class:
+  - build order unchanged: 33, 34; see [build-order.md](build-order.md)
+  - **tangent**, defer until after step 34 · a `docs/inspiration.md` row for each of the retake's outside repos, as [D54 (glance-prs)](intent.md#d54) asks: neither step 33 nor step 34 needs it, and it cannot land before the verdicts without breaking [D62 (retake-reader-blind)](intent.md#d62); pick it up at the boundary after step 34
 
 ## Log
 
@@ -2118,3 +2123,66 @@ folder, so it rides the branch into the PR.)*
   **4.** This step recommended sonnet; it ran on Opus
 
   The plan's `- model:` line for this step is sonnet. The session ran on Opus 5.5, and the diff is small either way.
+
+- 2026-09-29 — step 32 checkpointed · 220115a37 — chore(fixtures): select five reviewed outside PRs and record their ground truth (151m)
+
+  **Summary**: The five retake fixtures are in place as `fixtures/retake-1` to `fixtures/retake-5`. Each has a `README.md` and a `truth.md`, and each fixture is an outside PR whose human review record is public. A second agent re-checked every pick against GitHub and the clones and found that all five qualify. Round one's five `truth.md` files each gain one line pointing at round one's verdict. Nothing in this pause names a repo, a PR or a verdict.
+
+  1. The five come from five different repos, split three and two, and are numbered by a random shuffle
+  2. An independent second agent re-checked every claim and found that all five qualify
+  3. I required TypeScript source with at least two non-test files changed, and three fixtures sit right at that floor
+  4. The work ran in hidden agents, but their reports came back into this session as messages
+  5. Round one's `truth.md` files point at its record, and one follow-up is parked
+
+  **Readout**: Step 32 - chore(fixtures): select five reviewed outside PRs and record their ground truth
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored:
+               - D59 (outside-fixtures)
+               - D60 (fixture-balance)
+               - D61 (round-one-fixtures-frozen)
+               - D62 (retake-reader-blind)
+               - D64 (fixture-eligibility)
+  constraints  11 of 11 honored
+  seam         held: 1 of 1 declared, no strays
+  diff         +490 -0 across 15 files
+  spent        2h 31m · 5 turns · 16s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Approve and land step 32, unless highlight 4's report reached your screen. Every pick passed an independent re-check against the public record, the gate is green, and the pause names nothing.
+
+  **1.** The five come from five different repos, split three and two, and are numbered by a random shuffle
+
+  A hidden agent walked the review timelines with `gh api`. It flipped a coin for which verdict gets three fixtures. For each pick it confirmed four things in a real clone: the merge, the review's `commit_id`, the merge base on the base branch, and the diff counts. Once all five were verified, it numbered the folders with a Fisher-Yates shuffle and re-rolled whenever a verdict came out as one contiguous block. The scratch clones are still in `/tmp/atis-retake/` for step 33. Every README calls its fixture commit "the commit a human review was submitted against". That wording is true for both kinds of fixture, so none of the five READMEs contains a verdict word. I grepped all five to confirm it.
+
+  **2.** An independent second agent re-checked every claim and found that all five qualify
+
+  The verifier re-read nine things through `gh api` and in the clones, and every row passed:
+
+  - each PR merged;
+  - each review is from a human, and its state and commit match;
+  - a merge has no human request for a change, and its approval sits at the merged head;
+  - each quote is verbatim and its link resolves;
+  - each hold's comment names a substantive problem that is really present in the code at that commit;
+  - the merge bases and diff counts match;
+  - the ecosystems match;
+  - no PR was reverted;
+  - `robmclarty` appears in none of them.
+
+  It searched for reverts on all five, not only on the merges, so its report does not show which fixtures are merges. Its lowest confidence, which it still rated moderately high, is a hold whose blocking review is one line. The reasoning behind that review is in the same reviewer's comments on the same commit about 90 minutes earlier, and that `truth.md` quotes both and says where each comes from. The verifier confirmed the problem those comments name in the exported types.
+
+  **3.** I required TypeScript source with at least two non-test files changed, and three fixtures sit right at that floor
+
+  D64 admits "TypeScript or JavaScript", but the scan reads only `.ts` and `.tsx` (`TYPESCRIPT` in `imports.ts`), so a JavaScript-only repo would draw an empty terrain. I therefore counted D64's "3 to 30 changed source files" as `.ts`/`.tsx` files only, and added a floor of two non-test files so the change lands on the terrain. The five change between 3 and 10 such files. Three of them change exactly two non-test files, and in one of those the second file is a one-line re-export. All five have a vitest or jest runner, so none is git-only.
+
+  **4.** The work ran in hidden agents, but their reports came back into this session as messages
+
+  Tool calls show commands in the terminal, so I handed the search, the writing and the verification to subagents. Their calls stay out of your view, and my own messages named nothing. The verifier's report names nothing either. The selection agent's report does name all five with their verdicts. It reached me as an incoming message, and I can't tell whether your terminal displayed it. If you saw a table of repos and PRs, the blind is broken for the retake. Say so, and I'll re-pick five from the rejected pool before step 33 generates anything.
+
+  **5.** Round one's `truth.md` files point at its record, and one follow-up is parked
+
+  Under each round-one title there is now one line giving the ground truth that round one settled, what the reader called, and a link to `docs/glance-test.md#ground-truth-from-the-history`. The line also says that the record supersedes the draft and that the draft stays frozen (D61). D54 asks for a `docs/inspiration.md` row for each outside source. Adding those rows now would leak through the diff (D62), so I parked them for after step 34's verdicts.
