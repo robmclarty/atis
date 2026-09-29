@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 50 — fix(core): sort the outside repos' tooling files into shore groups by kind
+**Current step:** 51 — docs(inspiration): cite the five outside repos the retake read
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -72,7 +72,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 47. fix(core): raise interface-change only when an exported name or shape moved
 - ☑ 48. feat(cli): read a published package's exported names as wide
 - ☑ 49. fix(cli): scan .mts and .cts files as TypeScript
-- ☐ 50. fix(core): sort the outside repos' tooling files into shore groups by kind
+- ☑ 50. fix(core): sort the outside repos' tooling files into shore groups by kind
 - ☐ 51. docs(inspiration): cite the five outside repos the retake read
 - ☐ 52. chore(fixtures): refresh the five retake maps after the fifth pass
 
@@ -2705,3 +2705,65 @@ folder, so it rides the branch into the PR.)*
   **4.** Barrels and published entries still recognise only .ts and .tsx, so I parked that
 
   Two other places name `.ts` and `.tsx` by hand. Core's `barrelOf` looks only for `index.ts` and `index.tsx`. The scan's `candidates` maps a `dist/*.mjs` target back to `src/*.ts` or `.tsx`, never to `.mts`. Neither is in this step's done-when or seam: one is cell placement and the other is D75's entry mapping. I parked them in one line rather than widening the step.
+
+- 2026-09-29 — step 50 checkpointed · ef7bac0e6 — fix(core): sort the outside repos' tooling files into shore groups by kind (11m)
+
+  **Summary**: The shore table now has every row the done-when lists. Across the five retake maps, `other` falls from 43, 72, 106, 5 and 26 files to 2, 41, 16, 0 and 12, and no terrain file is lost. One row is narrower than written. Taken literally, `config/**` would have pulled 27 of apollo-client's TypeScript files out of the terrain, plus `src/config/` modules in seven of your local repos. So the row is anchored at the root, and TypeScript under it stays terrain.
+
+  1. The config folder row is anchored at the root, and its TypeScript stays terrain
+  2. The retake maps' other counts, before and after
+  3. A .gitkeep is now a settings file wherever it sits
+  4. What is left in other is loud on purpose, apart from a few kinds I parked
+  5. Every new pattern has a path in the groups test, and two are not from the census
+
+  **Readout**: Step 50 - fix(core): sort the outside repos' tooling files into shore groups by kind
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    drift: config/** anchored, its TypeScript left as terrain
+  decisions    honored:
+               - D48 (shore-groups), D57 (ts-config-is-shore)
+               - D77 (mts-cts)
+  constraints  11 of 11 honored
+  seam         held: 2 of 2 declared, no strays
+  diff         +162 -7 across 2 files
+  spent        11 min · 1 turn · 19s gate · green first run
+  ```
+
+  **Verdict**: ✗ Not standing (done-when drifted)
+
+  **Recommendation**: Approve the anchored `/config/**` row and land the step. It routes the four root `config/` files the census found, while the literal pattern would have removed 43 TypeScript files from the terrain, across apollo-client and seven local repos.
+
+  **1.** The config folder row is anchored at the root, and its TypeScript stays terrain
+
+  The `config` row does two jobs. It sorts the shore, and through `configMatcher` it decides which `.ts` files are tool config rather than terrain (D57 (ts-config-is-shore)). So any pattern added to that row also removes matching TypeScript from the map. I measured the literal `config/**` against the retake maps and against all 70 repos under `~/Projects/*/code/` and `/tmp/atis-retake/`. It removed 27 terrain files from apollo-client: the 19 build scripts in its root `config/` (`build.ts`, `apiExtractor.ts` and the rest, which import each other) and the 8 files under `src/config/jest/`. Locally it removed 16 files. Most were `src/config/` modules in lodestar, runciter, rob-ot, nurselog-medication and trail-crew. It also took the whole `packages/config` member of ridgeline-mk2 and foundry, and those members' `package.json` files moved from `deps` to `config`.
+
+  The row now reads `/config/**` with an `except` for `.ts`, `.tsx`, `.mts` and `.cts`. That still routes the four root `config/` files the census found (`FixJSDOMEnvironment.js`, `dirname.cjs`, `jest/react-dom-17-client.js`, `size-limit/index.js`). The TypeScript beside them stays terrain, the same way a `scripts/*.ts` does, and no terrain file moves in any of the 70 repos. The cost: a TypeScript tool config inside a root `config/`, such as `config/vitest.config.ts`, would read as terrain, because the `except` covers the whole row. None of the 70 repos has one. A test pins the boundary: `config/build.ts` and `src/config/jest/setup.ts` found no group, and `packages/config/package.json` stays in `deps`.
+
+  The other way out was a second `config` row placed lower in the table. `configMatcher` reads only the first `config` row, so the second row would never touch terrain. I dropped it because it works only through that quirk, and a later cleanup that merged the two rows would silently bring the problem back.
+
+  **2.** The retake maps' other counts, before and after
+
+  Each count comes from `identifyGroups` over the map's own file list (organelles plus every group's files), run once with the table as it was at `a3480f0` and once with this change. Workspace members come from each clone's workspace globs at the map's base, using the scan's own rule (D43, D64). Without them, trpc's two `examples/.test/monotest-tsconfig/*.json` files fall to `examples` instead of `other`. Step 49 is already in both runs, so hono's 27 `.mts` benchmarks count as terrain (D77 (mts-cts)). That is why hono starts at 26 here, although its map says 53.
+
+  | map | in map.json | before | after |
+  | --- | --- | --- | --- |
+  | retake-1 | 43 | 43 | 2 |
+  | retake-2 | 72 | 72 | 41 |
+  | retake-3 | 106 | 106 | 16 |
+  | retake-4 | 5 | 5 | 0 |
+  | retake-5 | 53 | 26 | 12 |
+
+  The commit body will carry this table.
+
+  **3.** A .gitkeep is now a settings file wherever it sits
+
+  The done-when files `.gitkeep` under git files. Settings sits above `scripts` and `data` in the table, so a placeholder there no longer follows its folder. Across the local repos, 19 moved out of `data` (`test/e2e/.gitkeep` and the like), 8 out of `scripts`, and 64 out of `other`. This reverses one small effect of step 24, which sent trellis-exec's `hooks/.gitkeep` to `scripts`. A test pins it at the root, under `test/` and under `scripts/`. The same first-match order sends `www/**/*.mdx`, and any Markdown under `.changeset/`, to `docs` before the folder rows see them, just as `.vale/` Markdown already went.
+
+  **4.** What is left in other is loud on purpose, apart from a few kinds I parked
+
+  retake-2's 41 are Svelte and Vue components and one Expo `app.json`. retake-1's 2 are loose `.cjs` integration tests. Both are code the scan cannot read, which the done-when leaves in `other`, and a test pins `.svelte`, `.vue` and a loose `.cjs` there. trpc's 16 and hono's 12 also hold kinds that no row names: `docker-compose.yaml`, Prisma's `migration_lock.toml` and drizzle's `migrations/meta/*.json`, `serverless.yml`, `vitest.workspace.json`, `robots.txt`, `ATTRIBUTION.txt`, hono's `deno.*.json` variants and its runtime-test static files. I parked those, with candidate rows, rather than add patterns the plan did not list.
+
+  **5.** Every new pattern has a path in the groups test, and two are not from the census
+
+  The `CENSUS` table in `groups.test.ts` gives each added pattern one path, using the census's own path wherever one exists. `.node-version` appears in no retake repo. `*.snap` and `__snapshots__/**` both match apollo's `.snap` files, so `__snapshots__/**` gets its own pin: a non-`.snap` snapshot shaped like foundry's ast-grep ones. The comment above the table says so. Two trpc paths (a `.sql` and a `.prisma`) sat inside workspace members, so their rows carry a third column naming the member. Without it, `examples/**` would claim them. The old shore test expected `.gitkeep` in `other` and now expects it in `settings`.

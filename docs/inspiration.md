@@ -4,6 +4,8 @@ atis is assembled from other people's ideas. This file records where each one
 came from, what was taken, where it lands in atis, and on what terms. Ideas
 are not licensed and are credited out of respect; code and assets are
 licensed and are credited because we must. The two are kept apart below.
+A third kind, other projects' trees and reviews read as test fixtures, is
+neither, and has its own section.
 
 **House rule.** When an idea, an algorithm, or an asset is borrowed, add a
 row here *and* cite the source in a comment at the implementation site (for
@@ -86,7 +88,27 @@ ever matters.
 | `react` | Meta and contributors | MIT | The HUD |
 | `deck.gl` | vis.gl / OpenJS Foundation | MIT | Evaluated, not chosen (§15) |
 
-## 5. Not borrowed, on purpose
+## 5. Fixtures (trees and reviews, no code taken)
+
+The retake of glance-test round one (D59) read five merged pull requests from
+other projects, so that its ground truth would be a record nobody in the room
+wrote. From each, atis took three things, none of them code: the tree at the
+fixture commit, scanned into `map.json` and rendered as `atis.svg`; a human
+reviewer's words at that commit, quoted as the ground truth; and the names of
+the tooling files the tree carries, which the shore table's rows in
+`libs/core/src/config.ts` now sort by kind. The fixture folders hold file
+paths, export names and measurements, never source. The licence column records
+the terms each tree was read under; no row is a dependency.
+
+| Project | Pull request and fixture commit | What was taken | Where in atis |
+| --- | --- | --- | --- |
+| **Apollo Client**, Apollo Graph, Inc. <https://github.com/apollographql/apollo-client>, MIT | [#12633](https://github.com/apollographql/apollo-client/pull/12633), cancel a running `ObservableQuery` link on unsubscribe, at `ea36754` | The tree as a fixture (a hold); `jerelmiller`'s changes-requested review as ground truth; the tooling names `.attw.json`, `.changeset/`, `.circleci/`, `.git-blame-ignore-revs`, `.prettierrc`, `.prettierignore`, `.semgrepignore`, `.size-limit.cjs`, `.size-limits.json`, `api-extractor.json`, `tsdoc.json`, `renovate.json`, `patches/`, a root `config/`, `*.har` recordings and `*.snap` snapshots | `fixtures/retake-1/`; copy D in [glance-test.md](./glance-test.md#round-one-retake-fail-2026-09-29); the shore rows in `libs/core/src/config.ts` |
+| **TanStack Form**, Tanner Linsley. <https://github.com/TanStack/form>, MIT | [#2259](https://github.com/TanStack/form/pull/2259), an SSR-safe default `formId` in vue-form, at `f3474c7` | The tree as a fixture (a merge); `crutchcorn`'s approval as ground truth; the tooling names `.changeset/`, `.nx/`, `nx.json`, `.nvmrc`, `.prettierignore`, `.eslintrc.cjs`, `knip.json`, `codecov.yml`, `angular.json` and `ng-package.json` | `fixtures/retake-2/`; copy B in [glance-test.md](./glance-test.md#round-one-retake-fail-2026-09-29); the shore rows in `libs/core/src/config.ts` |
+| **tRPC**, Alex Johansson. <https://github.com/trpc/trpc>, MIT | [#6976](https://github.com/trpc/trpc/pull/6976), a query and mutation key prefix option, at `e11a7d2` | The tree as a fixture (a hold); `KATT`'s changes-requested review and the inline comments behind it as ground truth; the tooling names `.dockerignore`, `.kodiak.toml`, `.nvmrc`, `.tool-versions`, `.prettierignore`, `.ts-prunerc`, `.env`, `.gitkeep`, `codecov.yml`, `lerna.json`, `turbo.json`, `vercel.json`, `wrangler.jsonc`, `www/`, `*.mdx` pages, `*.sql` migrations and `*.prisma` schemas | `fixtures/retake-3/`; copy E in [glance-test.md](./glance-test.md#round-one-retake-fail-2026-09-29); the shore rows in `libs/core/src/config.ts` |
+| **Remeda**, the remeda authors. <https://github.com/remeda/remeda>, MIT | [#793](https://github.com/remeda/remeda/pull/793), add `randomInt`, at `77ac065` | The tree as a fixture (a hold); `eranhirsch`'s changes-requested review and its inline comments as ground truth; the tooling names `.codesandbox/`, `.husky/`, `.npmignore`, `.nvmrc` and `.prettierignore` | `fixtures/retake-4/`; copy A in [glance-test.md](./glance-test.md#round-one-retake-fail-2026-09-29); the shore rows in `libs/core/src/config.ts` |
+| **Hono**, Yusuke Wada and Hono contributors. <https://github.com/honojs/hono>, MIT | [#5266](https://github.com/honojs/hono/pull/5266), wildcard middleware in the RegExpRouter, at `0a21573` | The tree as a fixture (a merge); `yusukebe`'s approval as ground truth; the tooling names `.prettierrc`, `.tool-versions`, `bunfig.toml`, `jsr.json`, `deno.json`, `deno.lock`, `codecov.yml`, `.octocov.*.yml`, `.gitkeep` and `benchmarks/` | `fixtures/retake-5/`; copy C in [glance-test.md](./glance-test.md#round-one-retake-fail-2026-09-29); the shore rows in `libs/core/src/config.ts` |
+
+## 6. Not borrowed, on purpose
 
 - Per-person metrics from CHID (author merge rate), Git-Truck (authorship
   colouring) and CodeScene (knowledge distribution). Principle P9.
