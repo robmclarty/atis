@@ -9,7 +9,7 @@ import type { FileHistory } from '../history.js';
 import { identifyModules } from '../modules.js';
 import type { Modules, ScannedFile } from '../modules.js';
 import { HEAD_ONLY, findGhosts, rankNotices } from '../notices.js';
-import type { NamedEdge, NoticeInputs } from '../notices.js';
+import type { ExportShapes, NamedEdge, NoticeInputs, ScanFile } from '../notices.js';
 import { computeReach } from '../reach.js';
 import type { DiffFile } from '../reach.js';
 import type { Cell, CheckSlot, Checks, Cochange, DepAdded, Hunk, Notice } from '../schema.js';
@@ -58,6 +58,12 @@ type Scenario = {
   readonly baseNames?: Readonly<Record<string, readonly string[]>>;
   /** What a head file exports; empty unless the scenario says otherwise. */
   readonly exports?: Readonly<Record<string, readonly string[]>>;
+  /** What a base file exported, where it differs from the head's. */
+  readonly baseExports?: Readonly<Record<string, readonly string[]>>;
+  /** The shapes a head file's scan printed; absent unless the scenario says otherwise, which compares like `null` (D76). */
+  readonly shapes?: Readonly<Record<string, ExportShapes>>;
+  /** The shapes a base file's scan printed, where they differ from the head's. */
+  readonly baseShapes?: Readonly<Record<string, ExportShapes>>;
   readonly bands?: Readonly<Record<string, number>>;
   readonly fanIn?: Readonly<Record<string, number>>;
   readonly check?: CheckArtifacts;
@@ -141,6 +147,11 @@ function cellsFor(modules: Modules, scenario: Scenario): readonly Cell[] {
   });
 }
 
+/** A scanned file with the shapes its scan printed, or none where the scan never read them (D76). */
+function withShapes(file: ScannedFile, shapes: ExportShapes | undefined): ScanFile {
+  return shapes === undefined ? file : { ...file, shapes };
+}
+
 /** The composition `buildMap` will use: place the change, read its evidence, split its red, then rank the notices off all three. */
 function inputsFor(scenario: Scenario): NoticeInputs {
   const paths = [...WORLD, ...(scenario.files ?? [])].toSorted();
@@ -148,10 +159,22 @@ function inputsFor(scenario: Scenario): NoticeInputs {
   const headEdges = edgesOf(scenario, false);
   const baseEdges = edgesOf(scenario, true);
   const modules = identifyModules(scanned, headEdges, []);
-  // The terrain is scanned at the merge-base and the exports at head, so a deleted file is in one and not the other.
-  const headFiles = scanned.filter((file) => !(scenario.deleted ?? []).includes(file.path));
-  const groups = identifyGroups(scanned, DEFAULT_CONFIG.groups, []);
   const changed = scenario.changed ?? [change('src/pm/util.ts')];
+  const added = new Set(changed.filter((file) => file.kind === 'added').map((file) => file.path));
+  // The terrain is scanned at the merge-base and the exports at head, so a deleted file is in one and not the other.
+  const headFiles = scanned
+    .filter((file) => !(scenario.deleted ?? []).includes(file.path))
+    .map((file): ScanFile => withShapes(file, scenario.shapes?.[file.path]));
+  const baseFiles = scanned
+    .filter((file) => !added.has(file.path))
+    .map(
+      (file): ScanFile =>
+        withShapes(
+          { ...file, exports: scenario.baseExports?.[file.path] ?? file.exports },
+          scenario.baseShapes?.[file.path] ?? scenario.shapes?.[file.path],
+        ),
+    );
+  const groups = identifyGroups(scanned, DEFAULT_CONFIG.groups, []);
   const check = scenario.check ?? NO_CHECK;
   const placed = computeReach({ changed, modules, groups, headEdges, baseEdges });
   const { evidence, files } = computeEvidence({ changed: placed.changed, modules, groups, headEdges, baseEdges, check });
@@ -170,6 +193,7 @@ function inputsFor(scenario: Scenario): NoticeInputs {
     history: scenario.history ?? [],
     cochange: scenario.cochange ?? [],
     deps_added: scenario.deps_added ?? [],
+    baseFiles,
     headFiles,
     headEdges,
     baseEdges,
@@ -205,7 +229,12 @@ const ONE_OF_EACH: Readonly<Record<NoticeKind, Scenario>> = {
     changed: [change('src/pm/tools.ts')],
     names: { 'src/pm/index.ts > src/pm/tools.ts': ['resolve'] },
   },
-  'interface-change': { changed: [change('src/pm/index.ts')], bands: { [PM]: 5 } },
+  'interface-change': {
+    changed: [change('src/pm/index.ts')],
+    bands: { [PM]: 5 },
+    exports: { 'src/pm/index.ts': ['resolve'] },
+    baseExports: { 'src/pm/index.ts': [] },
+  },
   'uncovered-high-reach': {
     changed: [change('src/pm/tools.ts')],
     check: ran({ coverage: [{ path: 'src/pm/tools.ts', statements: [{ line: 10, hits: 0 }] }] }),
@@ -235,6 +264,8 @@ const CROWDED: Scenario = {
   files: ['odd.qqq'],
   changed: [change('src/pm/tools.ts'), change('src/pm/index.ts'), change('src/pm/util.ts', 200, 10)],
   bands: { [PM]: 5 },
+  exports: { 'src/pm/index.ts': ['resolve'] },
+  baseExports: { 'src/pm/index.ts': [] },
   checks: verdict([red('types'), red('lint', ['src/doctor.ts', 'src/pm/tools.ts'], ['src/pm/tools.ts'])]),
   check: ran({
     coverage: [{ path: 'src/pm/tools.ts', statements: [{ line: 10, hits: 0 }] }],
@@ -456,6 +487,8 @@ const FAILING = 'src/__tests__/tools.test.ts';
 const APOLLO: Scenario = {
   changed: [change(FAILING), change('src/pm/tools.ts'), change('src/pm/index.ts'), change('src/pm/util.ts', 90, 20)],
   bands: { [PM]: 5 },
+  exports: { 'src/pm/index.ts': ['resolve'] },
+  baseExports: { 'src/pm/index.ts': [] },
   checks: verdict([red('health', ['src/pm/tools.ts'], ['src/pm/tools.ts']), red('test', [FAILING], [FAILING])]),
   history: [
     { path: FAILING, churn_ratio: 3.06, bugfix_rate: 0.5 },
@@ -586,6 +619,86 @@ test('the deleted-export why pluralises its consumer count', () => {
   expect(three[0]?.kind).toBe('deleted-export');
   expect(three[0]?.inputs['consumers']).toBe(3);
   expect(three[0]?.why).toContain('3 files still import it');
+});
+
+/** `pm`'s barrel, in band 5 and read from `doctor.ts`: the interface file every D76 case below edits. */
+const BARREL = 'src/pm/index.ts';
+
+/** The barrel's one export, as the scan prints it. */
+const RESOLVE = 'function resolve(slot: string): string;';
+
+/** An edit to the barrel, with the exports and shapes the scenario gives at base and at head. */
+function barrelEdit(scenario: Scenario): Scenario {
+  return { changed: [change(BARREL)], bands: { [PM]: 5 }, ...scenario };
+}
+
+test('a body-only edit to an interface file moves no name and no shape, and raises no notice (D76)', () => {
+  const notices = noticesFor(barrelEdit({ exports: { [BARREL]: ['resolve'] }, shapes: { [BARREL]: { resolve: RESOLVE } } }));
+
+  expect(notices).toEqual([]);
+});
+
+test('a moved fingerprint raises interface-change, its why naming the name that moved (D76)', () => {
+  const notices = noticesFor(
+    barrelEdit({
+      exports: { [BARREL]: ['resolve'] },
+      baseShapes: { [BARREL]: { resolve: RESOLVE } },
+      shapes: { [BARREL]: { resolve: 'function resolve(slot: string, root: string): string;' } },
+    }),
+  );
+
+  expect(rowsOf(notices)).toEqual([['interface-change', BARREL]]);
+  expect(notices[0]?.why).toBe('the interface of `src/pm` changed (`resolve` reshaped) and it sits in band 5');
+  expect(notices[0]?.inputs).toMatchObject({ names_added: 0, names_removed: 0, names_reshaped: 1, names_uncompared: 0 });
+});
+
+test('an added name raises interface-change whatever its shape, and a long list is counted (D76)', () => {
+  const one = noticesFor(
+    barrelEdit({
+      exports: { [BARREL]: ['resolve', 'resolveTool'] },
+      baseExports: { [BARREL]: ['resolve'] },
+      shapes: { [BARREL]: { resolve: RESOLVE, resolveTool: null } },
+    }),
+  );
+  expect(rowsOf(one)).toEqual([['interface-change', BARREL]]);
+  expect(one[0]?.why).toBe('the interface of `src/pm` changed (`resolveTool` added) and it sits in band 5');
+
+  const five = noticesFor(barrelEdit({ exports: { [BARREL]: ['a', 'b', 'c', 'd', 'e'] }, baseExports: { [BARREL]: [] } }));
+  expect(five[0]?.why).toBe('the interface of `src/pm` changed (`a`, `b`, `c` and 2 more added) and it sits in band 5');
+  expect(five[0]?.inputs['names_added']).toBe(5);
+});
+
+test('a removed name a live importer still takes raises deleted-export alone, the destructive kind (D76)', () => {
+  const edit = barrelEdit({
+    exports: { [BARREL]: ['resolve'] },
+    baseExports: { [BARREL]: ['legacy', 'resolve'] },
+    shapes: { [BARREL]: { resolve: RESOLVE } },
+  });
+  const takes = { 'src/doctor.ts > src/pm/index.ts': ['legacy'] };
+
+  // `doctor.ts` still takes `legacy` at head, so the import is broken and deleted-export is the one row.
+  expect(rowsOf(noticesFor({ ...edit, names: takes }))).toEqual([['deleted-export', BARREL]]);
+  // Once the importer has let the name go nothing is broken, and the removed name is an interface change.
+  const mended = noticesFor({ ...edit, baseNames: takes });
+  expect(rowsOf(mended)).toEqual([['interface-change', BARREL]]);
+  expect(mended[0]?.why).toBe('the interface of `src/pm` changed (`legacy` removed) and it sits in band 5');
+});
+
+test('an export whose shape could not be compared keeps the notice, and its why never reads as unchanged (C2, D76)', () => {
+  const inferred = noticesFor(
+    barrelEdit({ exports: { [BARREL]: ['VERSION', 'resolve'] }, shapes: { [BARREL]: { VERSION: null, resolve: RESOLVE } } }),
+  );
+  expect(rowsOf(inferred)).toEqual([['interface-change', BARREL]]);
+  expect(inferred[0]?.why).toBe(
+    'the interface of `src/pm` was touched and it sits in band 5; the shape of `VERSION` could not be compared',
+  );
+  expect(inferred[0]?.inputs).toMatchObject({ names_reshaped: 0, names_uncompared: 1 });
+
+  // A scan that never read the shapes compares the same way, rather than as a match.
+  const unread = noticesFor(barrelEdit({ exports: { [BARREL]: ['resolve'] } }));
+  expect(unread[0]?.why).toBe(
+    'the interface of `src/pm` was touched and it sits in band 5; the shape of `resolve` could not be compared',
+  );
 });
 
 test('a ghost is the file that usually comes along, named by what expected it', () => {

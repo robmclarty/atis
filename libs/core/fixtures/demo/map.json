@@ -3657,13 +3657,17 @@
     {
       "kind": "interface-change",
       "target": "libs/core/src/pm/index.ts",
-      "why": "the interface of `libs/core/src/pm` changed and 2 files read it",
+      "why": "the interface of `libs/core/src/pm` changed (`resolveTool` added) and 2 files read it",
       "inputs": {
         "cells_reached": 4,
         "uncovered_fraction": 0.556,
         "history_weight": 3.163,
         "band": 3,
-        "fan_in": 2
+        "fan_in": 2,
+        "names_added": 1,
+        "names_removed": 0,
+        "names_reshaped": 0,
+        "names_uncompared": 2
       },
       "thresholds": {
         "severity": 8,

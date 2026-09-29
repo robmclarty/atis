@@ -25,7 +25,7 @@ import { computeLayout } from './layout/index.js';
 import { classifyFile, identifyModules } from './modules.js';
 import type { ImportEdge, ModuleCell, Modules, ScannedFile } from './modules.js';
 import { findGhosts, rankNotices } from './notices.js';
-import type { NamedEdge } from './notices.js';
+import type { NamedEdge, ScanFile } from './notices.js';
 import { TESTS_GROUP, computeReach } from './reach.js';
 import type { DiffFile } from './reach.js';
 import { SCHEMA_VERSION } from './schema.js';
@@ -36,20 +36,6 @@ export type ScanMember = { readonly name: string; readonly dir: string; readonly
 
 /** How a scan's entry points were looked up: through the reviewed repo's fallow (D22), or the manifests alone and why (C2). */
 export type EntryPointLookup = { readonly source: 'fallow' } | { readonly source: 'manifests'; readonly reason: string };
-
-/**
- * Each exported name of a file, with its declared shape as the compiler
- * prints it, bodies and initializers dropped and overloads and merged
- * declarations folded in (D76). `null` marks a name whose type is inferred: it
- * cannot be compared, and never reads as unchanged (C2).
- */
-export type ExportShapes = Readonly<Record<string, string | null>>;
-
-/**
- * A scanned file with the shape beside each exported name (D76). `shapes` is
- * absent where a scan did not read them, which compares like `null` (C2).
- */
-export type ScanFile = ScannedFile & { readonly shapes?: ExportShapes };
 
 /**
  * One extracted commit, as the CLI's import scan read it (D21). The shape is
@@ -565,6 +551,7 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
       history: history.files,
       cochange: history.cochange,
       deps_added,
+      baseFiles: base.files,
       headFiles: head.files,
       headEdges: head.edges,
       baseEdges: base.edges,

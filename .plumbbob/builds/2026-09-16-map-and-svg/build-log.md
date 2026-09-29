@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 46 — feat(cli): fingerprint the shape of each exported declaration
+**Current step:** 47 — fix(core): raise interface-change only when an exported name or shape moved
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -68,7 +68,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 43. fix(cli): run the reviewed repo's fallow directly and record a failed entry-point lookup
 - ☑ 44. fix(core): count a health or dupes red as the change's only where its lines meet a hunk
 - ☑ 45. fix(core): rank a failing test on the change ahead of every weighed notice
-- ☐ 46. feat(cli): fingerprint the shape of each exported declaration
+- ☑ 46. feat(cli): fingerprint the shape of each exported declaration
 - ☐ 47. fix(core): raise interface-change only when an exported name or shape moved
 - ☐ 48. feat(cli): read a published package's exported names as wide
 - ☐ 49. fix(cli): scan .mts and .cts files as TypeScript
@@ -2492,3 +2492,47 @@ folder, so it rides the branch into the PR.)*
   **4.** CROWDED's red slot changed from `test` to `lint`
 
   The shared `CROWDED` fixture had a red `test` on `tools.ts`. The budget test's point is that history lifts a cycle over the red gate, and under D74 that is no longer true when the red is `test`. With `lint` the existing budget, determinism, head-only and echo tests keep their meaning unchanged, and the new third test uses the `test` variant to show the lift. The side effect is that the determinism test no longer runs over a red `test`. The lead is picked from the fully tiebroken sort, so it stays deterministic by construction.
+
+- 2026-09-29 — step 46 checkpointed · fc6b66319 — feat(cli): fingerprint the shape of each exported declaration (53m)
+
+  **Summary**: The scan now records the compiler's printed shape beside every exported name of a TypeScript file, or `null` where the type is inferred. A body-only edit leaves a shape alone. A tuple gaining a leading element moves it, and so does an interface gaining a member. `export const x = f()` reads as not compared.
+
+  1. The fingerprint is the compiler's own declaration emit, printed one name at a time
+  2. A re-exported name's shape is its binding, not the declaration it points at
+  3. Core's `Scan` carries the shapes as optional, on a new `ScanFile` type in `map.ts`
+  4. A literal constant's value is its declared type, so changing the value moves its shape
+
+  **Readout**: Step 46 - feat(cli): fingerprint the shape of each exported declaration
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored
+               - D76 (interface-shape)
+               - D30 (pure-parsers)
+               - D21 (import-graph)
+  constraints  11 of 11 honored
+  seam         held: 3 of 3 declared, no strays
+  diff         +430 -22 across 3 files
+  spent        53 min · 1 turn · 16s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Approve and land step 46. The done-when's four cases are pinned by tests that call the pure parser on source strings, the gate went green on the first run, and step 47 can compare the recorded shapes as they are.
+
+  **1.** The fingerprint is the compiler's own declaration emit, printed one name at a time
+
+  `ts.transpileDeclaration` emits each file's `.d.ts` without a program, so bodies and initializers are already gone and an overload's implementation is dropped. The scan parses that output and folds each name's declarations (overloads, merged interfaces, a function merged with a namespace) into one print. Comments, `export`, `default` and `declare` are left out of the print, so a doc-comment edit or a switch from `export function f` to `export { f }` moves nothing. Under `isolatedDeclarations` the compiler reports every declaration whose type it had to infer. A name whose source declaration carries one of those diagnostics, or one that would not parse, is `null`. Everything else it emitted is compared. A `.d.ts` source is read as its own emit, since `transpileDeclaration` refuses one. An emit the compiler fails outright leaves every name in that file `null` (C2 (never-fake)). The emit runs only on files that export something, so test files cost nothing extra. On checkride's working tree, 34 of 2,343 names read as not compared (mostly regex constants and `defineConfig(...)` defaults). On atis, 4 of 1,259 do.
+
+  **2.** A re-exported name's shape is its binding, not the declaration it points at
+
+  `export { greet } from './greet.js'` gives `greet` the shape `greet from "./greet.js"`. `export * as view from` gives `view` the shape `* from "./view.js"`. A name a bare `export *` passes on takes the star's shape once the scan resolves it. `type` leads the shape when only the type crosses. The declaration itself is compared in its own file, which is changed whenever its shape moves, so step 47 fires there and not twice. A barrel fires only when what it binds changes. The other reading, following the name through to the target's shape, would double every notice on a changed barrel. It would also need the scan to resolve shapes across files, which the D30 parser cannot do.
+
+  **3.** Core's `Scan` carries the shapes as optional, on a new `ScanFile` type in `map.ts`
+
+  `ScanFile` is core's `ScannedFile` with `shapes?` added, so `modules.ts`, its callers and the committed demo `inputs.json` stay untouched. The CLI's `ScannedFile` carries `shapes` as required, since the scan always reads them. An absent `shapes` in core means the scan never read them, and step 47 should compare it like `null`. The type's doc says so. Making it required in core would have meant editing `map.test.ts` and the demo fixture, both outside this step's seam.
+
+  **4.** A literal constant's value is its declared type, so changing the value moves its shape
+
+  `export const VERSION = '1.2.3'` prints as `const VERSION = "1.2.3";`, because to the compiler the literal is the type. A version bump in an interface file would therefore raise `interface-change` under step 47. That is the compiler's own reading, and D76 builds on it, so I left it. If it proves noisy on the retake refresh (step 52), it is a small follow-up: widen a literal constant to its base type.

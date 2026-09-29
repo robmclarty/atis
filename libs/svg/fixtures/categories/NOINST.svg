@@ -214,8 +214,8 @@
         </g>
         <text x="505" y="162.4" font-size="8" font-weight="bold" fill="#e6edf3">libs/core/src/pm/index.ts</text>
         <text x="505" y="171.8" font-size="7" font-variant="small-caps" fill="#e6edf3">interface-change</text>
-        <text x="505" y="181.9" font-size="8" fill="#e6edf3">the interface of `libs/core/src/pm` changed and 2 files</text>
-        <text x="505" y="192.3" font-size="8" fill="#e6edf3">read it</text>
+        <text x="505" y="181.9" font-size="8" fill="#e6edf3">the interface of `libs/core/src/pm` changed</text>
+        <text x="505" y="192.3" font-size="8" fill="#e6edf3">(`resolveTool` added) and 2 files read it</text>
         <text x="505" y="201.7" font-size="7" fill="#6b7480">severity 8 · fan_in_high 2 · deep_band 4</text>
       </g>
       <g data-notice="4" data-tier="tertiary" data-kind="uncovered-high-reach" data-target="libs/core/src/pm/index.ts">

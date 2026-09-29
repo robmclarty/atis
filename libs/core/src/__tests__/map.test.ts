@@ -8,6 +8,7 @@ import { DEFAULT_CONFIG } from '../config.js';
 import type { CheckArtifacts } from '../evidence.js';
 import { buildMap } from '../map.js';
 import type { BuildInputs, EntryPointLookup } from '../map.js';
+import type { ExportShapes } from '../notices.js';
 import { assertMap } from '../schema.js';
 import type { Instruments } from '../schema.js';
 
@@ -216,6 +217,39 @@ test('the demo map ranks the six notices the budget holds', () => {
   expect(weather.ghosts).toEqual([
     { path: 'libs/core/src/util/format.ts', with: ['libs/core/src/pm/index.ts'], rate: 0.6, support: 3 },
   ]);
+});
+
+const DEMO_BARREL = 'libs/core/src/pm/index.ts';
+
+test("the demo barrel's interface notice names the name it added, and leaves the one it broke to deleted-export (D76)", () => {
+  const { notices } = buildMap(inputsFor('demo'), DEFAULT_CONFIG);
+
+  // `legacyResolve` went while `libs/core/src/index.ts` still takes it: that is deleted-export's row alone.
+  expect(notices.find((notice) => notice.kind === 'deleted-export')?.why).toContain('`legacyResolve`');
+  expect(notices.find((notice) => notice.kind === 'interface-change')?.why).toBe(
+    'the interface of `libs/core/src/pm` changed (`resolveTool` added) and 2 files read it',
+  );
+});
+
+test('buildMap compares the base shapes with the head shapes, so a body-only edit to the demo barrel raises no interface change (D76)', () => {
+  const inputs = inputsFor('demo');
+  const exports = inputs.base.files.find((file) => file.path === DEMO_BARREL)?.exports ?? [];
+  const printed = Object.fromEntries(exports.map((name) => [name, `declare function ${name}(): void;`]));
+  // Both scans export the base names with the shapes given; only the barrel is touched.
+  const withBarrel = (scan: BuildInputs['base'], shapes: ExportShapes): BuildInputs['base'] => ({
+    ...scan,
+    files: scan.files.map((file) => (file.path === DEMO_BARREL ? { ...file, exports, shapes } : file)),
+  });
+  const kinds = (headShapes: ExportShapes): readonly string[] =>
+    buildMap(
+      { ...inputs, base: withBarrel(inputs.base, printed), head: withBarrel(inputs.head, headShapes) },
+      DEFAULT_CONFIG,
+    )
+      .notices.filter((notice) => notice.target === DEMO_BARREL)
+      .map((notice) => notice.kind);
+
+  expect(kinds(printed)).not.toContain('interface-change');
+  expect(kinds({ ...printed, listSlots: 'declare function listSlots(root: string): void;' })).toContain('interface-change');
 });
 
 test('a rename comes out keyed by the head path with `from` set', () => {

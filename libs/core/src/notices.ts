@@ -56,8 +56,26 @@ const TOTAL = 'total';
 /** The slot whose red on the change takes the first notice, whatever it weighs (D74). */
 const TEST_SLOT = 'test';
 
+/** How many names of each move an interface-change `why` spells out before it counts the rest. */
+const NAMED = 3;
+
 /** An import edge with the names it took out of `to`; the deleted-export candidate reads them (D39). */
 export type NamedEdge = ImportEdge & { readonly names: readonly string[] };
+
+/**
+ * Each exported name of a file, with its declared shape as the compiler
+ * prints it, bodies and initializers dropped and overloads and merged
+ * declarations folded in (D76). `null` marks a name whose type is inferred: it
+ * cannot be compared, and never reads as unchanged (C2).
+ */
+export type ExportShapes = Readonly<Record<string, string | null>>;
+
+/**
+ * A scanned file with the shape beside each exported name, which the
+ * interface-change candidate compares across the two scans (D76). `shapes` is
+ * absent where a scan did not read them, which compares like `null` (C2).
+ */
+export type ScanFile = ScannedFile & { readonly shapes?: ExportShapes };
 
 export type NoticeInputs = {
   /** The placed changed set, keyed by head path, each on one cell or one group (D40, D48). */
@@ -76,8 +94,10 @@ export type NoticeInputs = {
   readonly cochange: readonly Cochange[];
   /** The manifest delta (D47). */
   readonly deps_added: readonly DepAdded[];
+  /** The base scan's files under head paths (D40): the names and shapes each interface file had before (D76). */
+  readonly baseFiles: readonly ScanFile[];
   /** The head scan's files: a name missing from one's `exports[]` is an export this change deleted (D39). */
-  readonly headFiles: readonly ScannedFile[];
+  readonly headFiles: readonly ScanFile[];
   readonly headEdges: readonly NamedEdge[];
   /** The base graph, where a deleted file's consumers still live (D39). */
   readonly baseEdges: readonly NamedEdge[];
@@ -297,13 +317,83 @@ function interfaceFiles(edges: readonly ImportEdge[], home: ReadonlyMap<string, 
   return entrances;
 }
 
-/** A changed interface file on a cell many read, or one far down the abyss: the reviewer's first stop (§5.2). */
-function interfaceCandidates(inputs: NoticeInputs, home: ReadonlyMap<string, string>): readonly Candidate[] {
+/** How one interface file's exported names moved between the base scan and the head scan (D76). */
+type SurfaceMoves = {
+  readonly added: readonly string[];
+  /** Removed names no live importer still takes; the ones one does are deleted-export's (D39). */
+  readonly removed: readonly string[];
+  readonly reshaped: readonly string[];
+  /** Names on both sides whose shape either scan could not print, which never read as unchanged (C2). */
+  readonly uncompared: readonly string[];
+};
+
+/** A name's printed shape, or `null` where the scan read none or could not print it (C2). */
+function shapeOf(file: ScanFile | undefined, name: string): string | null {
+  const shapes = file?.shapes;
+  return shapes !== undefined && Object.hasOwn(shapes, name) ? (shapes[name] ?? null) : null;
+}
+
+/**
+ * The names a changed file added, removed and reshaped, and the ones it kept
+ * whose shape cannot be compared. A file missing from one side (added or
+ * deleted) has every name on the other side added or removed. A removed name
+ * an in-repo importer still takes is left to deleted-export, the destructive
+ * kind, rather than counted twice.
+ */
+function surfaceMoves(
+  base: ScanFile | undefined,
+  head: ScanFile | undefined,
+  broken: ReadonlySet<string>,
+): SurfaceMoves {
+  const before = new Set(base?.exports ?? []);
+  const after = new Set(head?.exports ?? []);
+  const kept = [...after].filter((name) => before.has(name));
+  const shapes = kept.map((name) => [name, shapeOf(base, name), shapeOf(head, name)] as const);
+  return {
+    added: [...after].filter((name) => !before.has(name)).toSorted(byPath),
+    removed: [...before].filter((name) => !after.has(name) && !broken.has(name)).toSorted(byPath),
+    reshaped: shapes
+      .flatMap(([name, was, is]) => (was !== null && is !== null && was !== is ? [name] : []))
+      .toSorted(byPath),
+    uncompared: shapes.flatMap(([name, was, is]) => (was === null || is === null ? [name] : [])).toSorted(byPath),
+  };
+}
+
+/** `a`, `a and b`, `a, b and c`, then `a, b, c and 4 more`: a long list of names counted rather than spelled out. */
+function sampled(names: readonly string[]): string {
+  if (names.length <= NAMED) return listed(names);
+  const shown = names.slice(0, NAMED).map((name) => `\`${name}\``);
+  return `${shown.join(', ')} and ${String(names.length - NAMED)} more`;
+}
+
+/** `` `resolveTool` added, `legacy` removed ``: what moved, in a fixed order. */
+function movesOf({ added, removed, reshaped }: SurfaceMoves): string {
+  return [
+    ...(added.length === 0 ? [] : [`${sampled(added)} added`]),
+    ...(removed.length === 0 ? [] : [`${sampled(removed)} removed`]),
+    ...(reshaped.length === 0 ? [] : [`${sampled(reshaped)} reshaped`]),
+  ].join(', ');
+}
+
+/**
+ * A changed interface file on a cell many read, or one far down the abyss,
+ * whose exported surface moved: a name added or removed, or a name's shape
+ * changed (D76). A body-only edit moves nothing and raises nothing. A kept
+ * name whose shape could not be compared keeps the notice, its `why` saying
+ * so, since silence would read as unchanged (C2).
+ */
+function interfaceCandidates(
+  inputs: NoticeInputs,
+  home: ReadonlyMap<string, string>,
+  broken: LiveConsumers,
+): readonly Candidate[] {
   const { fan_in_high, deep_band } = inputs.config.notices;
   // fallow's own 95th percentile when the run measured one, which is what "high" means in this repository (D9).
   const highFanIn = ran(inputs.check)?.health?.fan_in_p95 ?? fan_in_high;
   const cells = new Map(inputs.cells.map((cell) => [cell.id, cell] as const));
   const entrances = interfaceFiles(inputs.headEdges, home);
+  const baseFiles = new Map(inputs.baseFiles.map((file) => [file.path, file] as const));
+  const headFiles = new Map(inputs.headFiles.map((file) => [file.path, file] as const));
 
   return inputs.changed.flatMap((file): Candidate[] => {
     const cell = file.cell === undefined ? undefined : cells.get(file.cell);
@@ -311,16 +401,32 @@ function interfaceCandidates(inputs: NoticeInputs, home: ReadonlyMap<string, str
     const wide = cell.fan_in !== undefined && cell.fan_in >= highFanIn;
     const deep = cell.band >= deep_band;
     if (!wide && !deep) return [];
+    const moves = surfaceMoves(
+      baseFiles.get(file.path),
+      headFiles.get(file.path),
+      new Set(broken.get(file.path)?.keys()),
+    );
+    const moved = moves.added.length + moves.removed.length + moves.reshaped.length > 0;
+    if (!moved && moves.uncompared.length === 0) return [];
     const reasons = [
       ...(wide ? [`${String(cell.fan_in ?? 0)} files read it`] : []),
       ...(deep ? [`it sits in band ${String(cell.band)}`] : []),
-    ];
+    ].join(' and ');
     return [
       {
         kind: 'interface-change',
         target: file.path,
-        why: `the interface of \`${cell.path}\` changed and ${reasons.join(' and ')}`,
-        inputs: { band: cell.band, ...(cell.fan_in === undefined ? {} : { fan_in: cell.fan_in }) },
+        why: moved
+          ? `the interface of \`${cell.path}\` changed (${movesOf(moves)}) and ${reasons}`
+          : `the interface of \`${cell.path}\` was touched and ${reasons}; the shape of ${sampled(moves.uncompared)} could not be compared`,
+        inputs: {
+          band: cell.band,
+          ...(cell.fan_in === undefined ? {} : { fan_in: cell.fan_in }),
+          names_added: moves.added.length,
+          names_removed: moves.removed.length,
+          names_reshaped: moves.reshaped.length,
+          names_uncompared: moves.uncompared.length,
+        },
         thresholds: { fan_in_high: highFanIn, deep_band },
       },
     ];
@@ -453,6 +559,9 @@ function stillImports(consumers: number): string {
   return consumers === 1 ? '1 file still imports it' : `${String(consumers)} files still import it`;
 }
 
+/** Per changed file, each name it no longer exports that something still imports, and the files that do (D39). */
+type LiveConsumers = ReadonlyMap<string, ReadonlyMap<string, ReadonlySet<string>>>;
+
 /**
  * Exported symbols this change removed that something still imports (D39).
  * The consumers are the base graph's, because a file this change deleted has
@@ -463,7 +572,7 @@ function stillImports(consumers: number): string {
  * and the base importer is kept. A failing test is the test slot's to report,
  * so a test is not a consumer here (D4).
  */
-function deletedExportCandidates(inputs: NoticeInputs, changed: ReadonlyMap<string, ChangedFile>): readonly Candidate[] {
+function liveConsumers(inputs: NoticeInputs, changed: ReadonlyMap<string, ChangedFile>): LiveConsumers {
   const headExports = new Map(inputs.headFiles.map((file) => [file.path, new Set(file.exports)] as const));
   const headTakes = new Map<string, ReadonlySet<string>>();
   for (const edge of inputs.headEdges) headTakes.set(`${edge.from}\n${edge.to}`, new Set(edge.names));
@@ -483,7 +592,11 @@ function deletedExportCandidates(inputs: NoticeInputs, changed: ReadonlyMap<stri
     for (const name of live) gone.set(name, (gone.get(name) ?? new Set<string>()).add(from));
     consumers.set(to, gone);
   }
+  return consumers;
+}
 
+/** One notice per changed file whose removed names still have importers, naming them and counting the importers. */
+function deletedExportCandidates(consumers: LiveConsumers): readonly Candidate[] {
   return [...consumers].map(([path, gone]) => {
     const names = [...gone.keys()].toSorted(byPath);
     const importers = new Set([...gone.values()].flatMap((from) => [...from]));
@@ -541,14 +654,15 @@ function candidatesFor(inputs: NoticeInputs, ghosts: readonly Ghost[], red: RedS
   const history = new Map(inputs.history.map((file) => [file.path, file] as const));
   const home = cellOf(inputs.cells);
   const check = ran(inputs.check);
+  const broken = liveConsumers(inputs, changed);
 
   return [
     ...redSlotCandidates(red),
     ...(check === undefined ? [] : structuralCandidates(check, changed)),
     ...(check === undefined ? [] : thresholdCandidates(check, changed)),
     ...(check === undefined ? [] : securityCandidates(check)),
-    ...deletedExportCandidates(inputs, changed),
-    ...interfaceCandidates(inputs, home),
+    ...deletedExportCandidates(broken),
+    ...interfaceCandidates(inputs, home, broken),
     ...coverageCandidates(inputs),
     ...mutantCandidates(inputs),
     ...hotCandidates(inputs, history),
