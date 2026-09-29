@@ -9,6 +9,7 @@
     "mode": "change",
     "instruments": {
       "mode": "check",
+      "entry_points": "fallow",
       "fallow_schemas": {
         "health": 9,
         "dead": 9,

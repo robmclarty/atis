@@ -1,9 +1,10 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { delimiter, dirname, join } from 'node:path';
 
-import { identifyModules } from 'core';
-import { afterAll, beforeAll, expect, test } from 'vitest';
+import { buildMap, identifyModules } from 'core';
+import type { MapJson } from 'core';
+import { afterAll, beforeAll, expect, test, vi } from 'vitest';
 
 import { parseFallowEntryPoints, parseManifestWorkspaces, parseWorkspaceGlobs, scanImports } from '../sources/index.js';
 import type { Scan, ScannedFile } from '../sources/index.js';
@@ -172,6 +173,47 @@ function scanTree(tree: Readonly<Record<string, string>>): Scan {
   return scanImports(dir);
 }
 
+/** An executable shell script standing in for a real binary. */
+function writeScript(path: string, body: string): void {
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, `#!/bin/sh\n${body}\n`, { mode: 0o755 });
+}
+
+/** A working tree whose own fallow is `body`, run with the scanned tree as `$6`, the value of `--root` (D22). */
+function repoWithFallow(body: string): string {
+  const repo = mkdtempSync(join(tmpdir(), 'atis-repo-'));
+  scratch.push(repo);
+  writeScript(join(repo, 'node_modules', '.bin', 'fallow'), body);
+  return repo;
+}
+
+/** `work`, with a `pnpm` first on PATH that narrates and fails, so a lookup routed through pnpm could not succeed. */
+function underNarratingPnpm<T>(work: () => T): T {
+  const shims = mkdtempSync(join(tmpdir(), 'atis-shims-'));
+  scratch.push(shims);
+  writeScript(join(shims, 'pnpm'), `echo 'Lockfile is up to date, resolution step is skipped'\nexit 1`);
+  vi.stubEnv('PATH', `${shims}${delimiter}${process.env['PATH'] ?? ''}`);
+  try {
+    return work();
+  } finally {
+    vi.unstubAllEnvs();
+  }
+}
+
+/** The map a scan builds with no diff and no `.check/`: only its instruments are read. */
+function mapOf(found: Scan): MapJson {
+  return buildMap({
+    meta: { repo: 'fixture', base: 'main', head: 'head', merge_base: 'base', generated_at: '' },
+    base: found,
+    head: found,
+    diff: [],
+    deps_added: [],
+    commits: [],
+    head_time: 0,
+    check: { mode: 'git-only', reason: '.check/ is absent' },
+  });
+}
+
 function packageCells(found: Scan): readonly string[] {
   const roots = found.members.map((member) => member.dir);
   return identifyModules(found.files, found.edges, roots)
@@ -253,6 +295,66 @@ test('members come from the workspace globs, entries from bin, main and exports'
     { name: '@scope/cli', dir: 'apps/cli', entry: ['apps/cli/src/cli.ts', 'apps/cli/src/index.ts'] },
     { name: 'shared', dir: 'libs/shared', entry: ['libs/shared/src/index.ts'] },
   ]);
+});
+
+test("the reviewed repo's fallow runs as the binary itself, never through pnpm, and its entry points join the manifests", () => {
+  const repo = repoWithFallow(
+    [
+      `[ "$*" = "list --entry-points --format json --root ${workspace}" ] || exit 9`,
+      `echo '{"entry_points":[{"path":"apps/cli/./src/lazy.ts","source":"manual entry"}]}'`,
+    ].join('\n'),
+  );
+  const found = underNarratingPnpm(() => scanImports(workspace, { repo }));
+
+  expect(found.entry_points).toEqual({ source: 'fallow' });
+  expect(found.members.find((member) => member.dir === 'apps/cli')?.entry).toEqual([
+    'apps/cli/src/cli.ts',
+    'apps/cli/src/index.ts',
+    'apps/cli/src/lazy.ts',
+  ]);
+  expect(mapOf(found).meta.instruments).toEqual({ mode: 'git-only', reason: '.check/ is absent', entry_points: 'fallow' });
+});
+
+test('a fallow that is missing, fails or is talked over leaves the manifests, and says why (C2)', () => {
+  // The fixture tree has no `node_modules`, so the default scan had no fallow to ask.
+  expect(scan.entry_points).toEqual({ source: 'manifests', reason: 'no local fallow at node_modules/.bin/fallow' });
+
+  // fallow's own JSON error names the real path of the tree, which is a temp directory, so it is cut to `.` (C3).
+  const rejected = scanImports(workspace, {
+    repo: repoWithFallow(
+      [
+        `printf '{"error":true,"message":"Failed to parse config file %s/.fallowrc.json: Expected string","exit_code":2}' "$(cd "$6" && pwd -P)"`,
+        'exit 2',
+      ].join('\n'),
+    ),
+  });
+  expect(rejected.members).toEqual(scan.members);
+  expect(rejected.entry_points).toEqual({
+    source: 'manifests',
+    reason: 'fallow list exited 2: Failed to parse config file ./.fallowrc.json: Expected string',
+  });
+
+  const crashed = scanImports(workspace, { repo: repoWithFallow(`echo 'thread main panicked' >&2\nexit 101`) });
+  expect(crashed.entry_points).toEqual({ source: 'manifests', reason: 'fallow list exited 101: thread main panicked' });
+
+  // What `pnpm exec` did on an npm tree: a line of narration ahead of the JSON.
+  const narrated = scanImports(workspace, {
+    repo: repoWithFallow(`echo 'Lockfile is up to date, resolution step is skipped'\necho '{"entry_points":[]}'`),
+  });
+  expect(narrated.entry_points).toMatchObject({
+    source: 'manifests',
+    reason: expect.stringMatching(/^fallow list printed no entry points: /),
+  });
+});
+
+test("a failed lookup's reason reaches meta.instruments, and the manifests are named as the source", () => {
+  const found = scanImports(workspace, { repo: repoWithFallow(`echo 'thread main panicked' >&2\nexit 101`) });
+  expect(mapOf(found).meta.instruments).toEqual({
+    mode: 'git-only',
+    reason: '.check/ is absent',
+    entry_points: 'manifests',
+    entry_points_reason: 'fallow list exited 101: thread main panicked',
+  });
 });
 
 test('without a workspace file or a workspaces field the root package stands alone', () => {

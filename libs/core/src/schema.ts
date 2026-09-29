@@ -12,6 +12,8 @@ export type ExceptionalEdgeKind = 'cycle' | 'boundary' | 'new-cross-module';
 export type FlightCategory = 'VFR' | 'MVFR' | 'IFR' | 'LIFR' | 'NOINST';
 export type NoticeTier = 'primary' | 'secondary' | 'tertiary';
 export type InstrumentsMode = 'check' | 'git-only';
+/** Where the depth bands' entry points were read from: the reviewed repo's own fallow, or its manifests alone (D22). */
+export type EntryPointSource = 'fallow' | 'manifests';
 
 export type Position = { readonly x: number; readonly y: number; readonly r: number };
 
@@ -178,6 +180,9 @@ export type FallowSchemas = { readonly health?: number; readonly dead?: number; 
 export type Instruments = {
   readonly mode: InstrumentsMode;
   readonly reason?: string;
+  readonly entry_points?: EntryPointSource;
+  /** Why fallow was not read, set exactly when `entry_points` is `manifests` (C2). */
+  readonly entry_points_reason?: string;
   readonly fallow_schemas?: FallowSchemas;
   readonly stale?: readonly string[];
 };
@@ -218,6 +223,10 @@ function isNoticeTier(value: unknown): value is NoticeTier {
   return value === 'primary' || value === 'secondary' || value === 'tertiary';
 }
 
+function isEntryPointSource(value: unknown): value is EntryPointSource {
+  return value === 'fallow' || value === 'manifests';
+}
+
 function expectRecord(value: unknown, path: string): Record<string, unknown> {
   if (!isRecord(value)) fail(path, 'expected an object');
   return value;
@@ -245,6 +254,17 @@ function assertShape(value: unknown): asserts value is MapJson {
   if (meta['schema_version'] !== SCHEMA_VERSION) {
     fail('meta.schema_version', `expected ${String(SCHEMA_VERSION)}, got ${String(meta['schema_version'])}`);
   }
+
+  const instruments = expectRecord(meta['instruments'], 'meta.instruments');
+  const entryPoints = instruments['entry_points'];
+  if (entryPoints !== undefined && !isEntryPointSource(entryPoints)) {
+    fail('meta.instruments.entry_points', 'expected fallow or manifests');
+  }
+  const entryReason = instruments['entry_points_reason'];
+  if ((entryReason !== undefined) !== (entryPoints === 'manifests')) {
+    fail('meta.instruments.entry_points_reason', 'a reason is required exactly when entry_points is manifests');
+  }
+  if (entryReason !== undefined) expectString(entryReason, 'meta.instruments.entry_points_reason');
 
   const notices = expectArray(root['notices'], 'notices');
   if (notices.length > 6) fail('notices', `at most 6 notices, got ${String(notices.length)}`);

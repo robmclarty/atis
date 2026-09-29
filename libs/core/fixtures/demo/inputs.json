@@ -43,7 +43,8 @@
       { "name": "demo", "dir": ".", "entry": [] },
       { "name": "cli", "dir": "apps/cli", "entry": ["apps/cli/src/index.ts"] },
       { "name": "@demo/core", "dir": "libs/core", "entry": ["libs/core/src/index.ts"] }
-    ]
+    ],
+    "entry_points": { "source": "fallow" }
   },
   "head": {
     "files": [
@@ -83,7 +84,8 @@
       { "name": "demo", "dir": ".", "entry": [] },
       { "name": "cli", "dir": "apps/cli", "entry": ["apps/cli/src/index.ts"] },
       { "name": "@demo/core", "dir": "libs/core", "entry": ["libs/core/src/index.ts"] }
-    ]
+    ],
+    "entry_points": { "source": "fallow" }
   },
   "diff": [
     { "path": "README.md", "kind": "modified", "added": 6, "deleted": 2, "hunks": [{ "start": 12, "count": 6 }] },

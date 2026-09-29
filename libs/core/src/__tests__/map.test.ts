@@ -7,8 +7,9 @@ import { expect, test } from 'vitest';
 import { DEFAULT_CONFIG } from '../config.js';
 import type { CheckArtifacts } from '../evidence.js';
 import { buildMap } from '../map.js';
-import type { BuildInputs } from '../map.js';
+import type { BuildInputs, EntryPointLookup } from '../map.js';
 import { assertMap } from '../schema.js';
+import type { Instruments } from '../schema.js';
 
 /**
  * The fixtures are committed JSON rather than a built object, so the golden is
@@ -78,7 +79,11 @@ test('the demo map reads its terrain from the base and its weather from the head
   // The terraces the bands were quantised into are the strips the field is
   // drawn on, in the same order (D24); step 16 adds the membranes over them.
   expect(map.terrain.layout?.bands.map((band) => band.index)).toEqual([0, 1, 2, 3, 4, 5]);
-  expect(map.meta.instruments).toEqual({ mode: 'check', fallow_schemas: { health: 9, dead: 9, dupes: 9 } });
+  expect(map.meta.instruments).toEqual({
+    mode: 'check',
+    entry_points: 'fallow',
+    fallow_schemas: { health: 9, dead: 9, dupes: 9 },
+  });
 });
 
 test('the demo map places every changed file on one cell or one group', () => {
@@ -244,7 +249,44 @@ test('a rename comes out keyed by the head path with `from` set', () => {
   expect(renamed?.age_days).toBe(377);
 
   expect(map.weather.checks).toEqual({ category: 'NOINST', checks_run: 0, reason: '.check/ is absent', slots: [] });
-  expect(map.meta.instruments).toEqual({ mode: 'git-only', reason: '.check/ is absent' });
+  // The rename repo has no fallow of its own, so its entry points came from the manifests, and the map says so (C2).
+  expect(map.meta.instruments).toEqual({
+    mode: 'git-only',
+    reason: '.check/ is absent',
+    entry_points: 'manifests',
+    entry_points_reason: 'no local fallow at node_modules/.bin/fallow',
+  });
+});
+
+function failed(reason: string): EntryPointLookup {
+  return { source: 'manifests', reason };
+}
+
+test('the entry points read fallow only when both scans did, and name the side that did not (D22, C2)', () => {
+  const inputs = inputsFor('demo');
+  const instruments = (base: EntryPointLookup, head: EntryPointLookup): Instruments => {
+    const map = buildMap(
+      { ...inputs, base: { ...inputs.base, entry_points: base }, head: { ...inputs.head, entry_points: head } },
+      DEFAULT_CONFIG,
+    );
+    expect(() => assertMap(map)).not.toThrow();
+    return map.meta.instruments;
+  };
+
+  expect(instruments({ source: 'fallow' }, { source: 'fallow' })).toMatchObject({ entry_points: 'fallow' });
+  expect(instruments({ source: 'fallow' }, { source: 'fallow' }).entry_points_reason).toBeUndefined();
+  expect(instruments(failed('fallow list exited 2: bad config'), { source: 'fallow' })).toMatchObject({
+    entry_points: 'manifests',
+    entry_points_reason: 'base: fallow list exited 2: bad config',
+  });
+  expect(instruments(failed('no local fallow at node_modules/.bin/fallow'), failed('no local fallow at node_modules/.bin/fallow'))).toMatchObject({
+    entry_points: 'manifests',
+    entry_points_reason: 'no local fallow at node_modules/.bin/fallow',
+  });
+  expect(instruments(failed('fallow list timed out after 60 s'), failed('fallow list exited 2: bad config'))).toMatchObject({
+    entry_points: 'manifests',
+    entry_points_reason: 'base: fallow list timed out after 60 s; head: fallow list exited 2: bad config',
+  });
 });
 
 /** A boundary violation on a file this change touched: the rung §5.3 calls LIFR. */

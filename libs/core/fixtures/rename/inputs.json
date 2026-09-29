@@ -13,7 +13,8 @@
       { "path": "src/old-name.ts", "loc": 36, "kind": "source", "exports": ["helper"] }
     ],
     "edges": [{ "from": "src/index.ts", "to": "src/old-name.ts", "names": ["helper"], "line": 1 }],
-    "members": [{ "name": "rename", "dir": ".", "entry": ["src/index.ts"] }]
+    "members": [{ "name": "rename", "dir": ".", "entry": ["src/index.ts"] }],
+    "entry_points": { "source": "manifests", "reason": "no local fallow at node_modules/.bin/fallow" }
   },
   "head": {
     "files": [
@@ -22,7 +23,8 @@
       { "path": "src/new-name.ts", "loc": 38, "kind": "source", "exports": ["helper"] }
     ],
     "edges": [{ "from": "src/index.ts", "to": "src/new-name.ts", "names": ["helper"], "line": 1 }],
-    "members": [{ "name": "rename", "dir": ".", "entry": ["src/index.ts"] }]
+    "members": [{ "name": "rename", "dir": ".", "entry": ["src/index.ts"] }],
+    "entry_points": { "source": "manifests", "reason": "no local fallow at node_modules/.bin/fallow" }
   },
   "diff": [
     {

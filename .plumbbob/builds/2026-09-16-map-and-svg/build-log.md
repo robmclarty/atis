@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 34 — chore(glance): retake glance-test round one on the outside fixtures
+**Current step:** 43 — fix(cli): run the reviewed repo's fallow directly and record a failed entry-point lookup
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -56,7 +56,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 31. feat(cli): read npm, yarn and bun workspaces as scan roots
 - ☑ 32. chore(fixtures): select five reviewed outside PRs and record their ground truth
 - ☑ 33. chore(fixtures): generate map.json and the SVG for the five outside PRs
-- ☐ 34. chore(glance): retake glance-test round one on the outside fixtures
+- ☑ 34. chore(glance): retake glance-test round one on the outside fixtures
 - ☑ 35. feat(cli): name the files a red lint or struct slot reports
 - ☑ 36. fix(core): set the flight category from the change's red slots
 - ☑ 37. fix(core): spend the notice budget only on the change's red slots
@@ -65,6 +65,16 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 40. fix(svg): light a skin's uncovered arc instead of its covered one
 - ☑ 41. fix(cli): read npm, yarn and bun packages for the dependency delta
 - ☑ 42. fix(svg): draw a secondary notice's ring in chrome grey, clear of the lit skin
+- ☐ 43. fix(cli): run the reviewed repo's fallow directly and record a failed entry-point lookup
+- ☐ 44. fix(core): count a health or dupes red as the change's only where its lines meet a hunk
+- ☐ 45. fix(core): rank a failing test on the change ahead of every weighed notice
+- ☐ 46. feat(cli): fingerprint the shape of each exported declaration
+- ☐ 47. fix(core): raise interface-change only when an exported name or shape moved
+- ☐ 48. feat(cli): read a published package's exported names as wide
+- ☐ 49. fix(cli): scan .mts and .cts files as TypeScript
+- ☐ 50. fix(core): sort the outside repos' tooling files into shore groups by kind
+- ☐ 51. docs(inspiration): cite the five outside repos the retake read
+- ☐ 52. chore(fixtures): refresh the five retake maps after the fifth pass
 
 ## Park list
 
@@ -113,11 +123,12 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] a secondary notice's tier ring (CHROME_INK, SECONDARY_RING_WIDTH 3, EMPHASIS_PAD 5) is the evidence light's own colour and heavier than the lit skin 1 unit inside it, so a secondary target's skin reads lit all round (checkride PR 5's src/doctor.ts); chrome.ts, outside step 40's seam
 - [x] D54 wants a docs/inspiration.md row per outside source: cite the retake's five repos there once step 34's verdicts are in, since adding them now would leak through the diff (D62)
 - [x] fallowEntryPoints in imports.ts runs `pnpm exec fallow list` whatever the repo's manager: on an npm, yarn or bun tree pnpm re-lays node_modules and narrates on stdout, the JSON parse throws, and the catch silently returns [] (manifest-only entry points, no trace in meta.instruments); run node_modules/.bin/fallow directly, or pass --config.verify-deps-before-run=false, and record a failed lookup rather than swallow it (C2)
-- [ ] glance retake (D38): a health or dupes red on a touched file counts as the change's red (D67), though those slots name a file for what it already is; touching an already-complex or already-duplicated file makes the category IFR and takes the primary notice: 4 of 5 retake primaries, and the whole of hono #5266's IFR on an approved merge. Candidates: count such a finding as the change's only where its lines meet a head-side hunk, or hold it standing until phase 3's base-side delta
-- [ ] glance retake (D38): every red-check-slot notice carries severity 10 whatever the slot, and a test file reaches 0 cells, so a failing test on the change ranks below any red on a file with reach: apollo-client #12633's failing useLazyQuery tests, the reviewer's own finding, were notice 6 behind two health rows
-- [ ] glance retake (D38): interface-change reads a cell as wide only by in-repo fan-in (>= p95) or depth, so a published package's exported types read as narrow: trpc #6976's breaking change to TRPCQueryKey and TRPCMutationKey in internals/types.ts (cell fan-in 1, band 1) drew no notice; a library's readers are outside its repo (package.json exports, not private)
-- [ ] glance protocol for round two: one read of the D66 legend does not teach the marks; Rob after the retake: 'i just need to better learn what the graphics actually mean. i'm just guessing and intuiting', and read copy A as 'moved or renamed' on a change that renamed nothing; candidates: a practice map before the scored five, or a legend inset on the map
-- [ ] the shore rules were written against checkride and fascicle: on the retake's outside repos the Other block reads 43 to 106 files (apollo-client, TanStack form, hono, trpc), so common tooling files fall through; group them by kind rather than widen the residual
+- [x] glance retake (D38): a health or dupes red on a touched file counts as the change's red (D67), though those slots name a file for what it already is; touching an already-complex or already-duplicated file makes the category IFR and takes the primary notice: 4 of 5 retake primaries, and the whole of hono #5266's IFR on an approved merge. Candidates: count such a finding as the change's only where its lines meet a head-side hunk, or hold it standing until phase 3's base-side delta
+- [x] glance retake (D38): every red-check-slot notice carries severity 10 whatever the slot, and a test file reaches 0 cells, so a failing test on the change ranks below any red on a file with reach: apollo-client #12633's failing useLazyQuery tests, the reviewer's own finding, were notice 6 behind two health rows
+- [x] glance retake (D38): interface-change reads a cell as wide only by in-repo fan-in (>= p95) or depth, so a published package's exported types read as narrow: trpc #6976's breaking change to TRPCQueryKey and TRPCMutationKey in internals/types.ts (cell fan-in 1, band 1) drew no notice; a library's readers are outside its repo (package.json exports, not private)
+- [x] glance protocol for round two: one read of the D66 legend does not teach the marks; Rob after the retake: 'i just need to better learn what the graphics actually mean. i'm just guessing and intuiting', and read copy A as 'moved or renamed' on a change that renamed nothing; candidates: a practice map before the scored five, or a legend inset on the map
+- [x] the shore rules were written against checkride and fascicle: on the retake's outside repos the Other block reads 43 to 106 files (apollo-client, TanStack form, hono, trpc), so common tooling files fall through; group them by kind rather than widen the residual
+- [ ] cli.test.ts runs the built dist/cli.js while checkride's types slot rebuilds dist in parallel, so the first gate after a change to a cross-package contract can go red on a half-rebuilt dist (step 43: core's new buildMap met the old scanner's scans, exit 2) and green on the rerun; make the test wait on, or own, the build it runs
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -184,6 +195,17 @@ Harvest results this boundary:
 - 2026-09-29, boundary after step 33 (33369ce), 1 item; Rob confirmed the proposed class:
   - build order unchanged: 34; see [build-order.md](build-order.md)
   - **tangent**, defer until after step 34 · `fallowEntryPoints` in `apps/atis/src/sources/imports.ts` runs `pnpm exec fallow list` whatever the repo's manager, so on an npm, yarn or bun tree the JSON parse throws and the scan silently falls back to manifest-only entry points, a [C2 (never-fake)](intent.md#c2) gap in shipped code: step 33 generated the five retake maps with `pnpm_config_verify_deps_before_run=false`, so step 34 reads correct terrain and nothing else in this build calls the lookup on a non-pnpm repo; pick it up at the boundary after step 34 as a fix step or a seed for the next build's frame, and the retake fixtures need no regeneration either way
+
+- 2026-09-29, boundary after step 34 (04462a0), 5 items; Rob confirmed every proposed class, and the actions for the two items carried to this boundary:
+  - build order unchanged until a fifth refine pass seats its steps: the fixes for Q28 to Q30, a shore step, the `fallowEntryPoints` fix ahead of Q30's step, and the `docs/inspiration.md` rows; see [build-order.md](build-order.md)
+  - **blocker** · a `health` or `dupes` red on a touched file counts as the change's red → [Q28 (touched-file-breach)](intent.md#q28), for the fifth refine, settled first since it sets the category and the primary notice the other two rank against
+  - **blocker** · a failing test on the change ranks like a threshold breach → [Q29 (failing-test-rank)](intent.md#q29), after Q28
+  - **blocker** · a published package's public types read as narrow → [Q30 (public-surface-width)](intent.md#q30); the least sure of the three, resting on one fixture (trpc #6976) and a new signal, the package's `exports`
+  - consequence · none of the three can be judged in this build: [D63 (retake-in-this-build)](intent.md#d63) allows one retake and the retake's five are unsealed, so the fixes land in `core` for round two to read on fresh fixtures; Rob took that over stopping the build here
+  - **tangent**, into the fifth refine as a fix step · the shore rules leave 43 to 106 files in the Other block on four outside repos; group them by kind under [D48 (shore-groups)](intent.md#d48), as step 28 did, never by widening the residual
+  - **tangent**, defer past this build · one read of the [D66 (legend-briefing)](intent.md#d66) legend does not teach the marks; seed for round two's protocol in the next build's frame, candidates a practice map before the scored five or a legend inset on the map, with Rob's "i'm just guessing and intuiting"
+  - carried to this boundary, action confirmed · the `docs/inspiration.md` rows for the five outside repos, as [D54 (glance-prs)](intent.md#d54) asks, become a docs step now that the verdicts are in and [D62 (retake-reader-blind)](intent.md#d62) no longer holds them back
+  - carried to this boundary, action confirmed · `fallowEntryPoints` running `pnpm exec fallow list` on any manager becomes a fix step ordered ahead of Q30's: entry points already feed the depth bands, a public-surface signal would plausibly read the same lookup, and it fails silently on npm, yarn and bun repos ([C2 (never-fake)](intent.md#c2))
 
 ## Log
 
@@ -2267,3 +2289,59 @@ folder, so it rides the branch into the PR.)*
   **5.** A follow-up I asked the agent may have leaked one fixture's weather to your screen
 
   One map had a red `test` slot. I needed to know whether it was a flake, which would be spurious weather in the sense D56 rules out. The probe that found it printed aggregate counts about red test slots and stitches. My follow-up then asked the agent whether the red was environmental and whether it lands on the change. The agent answered in more than counts: it said where that red comes from and where it lands, and it described the failing assertion in one line. It named no fixture number, repo or PR. The red is left as it ran, which is the right call for real weather. But if that reply reached your screen, you now know something about one fixture's weather before you read it. The first report also tied the dropped mutation to a fixture number. That is not a verdict, and step 34's shuffled copies renumber the fixtures anyway.
+
+- 2026-09-29 — step 34 checkpointed · 04462a0d3 — chore(glance): retake glance-test round one on the outside fixtures (36m)
+
+  **Summary**: The retake ran blind after the fixed legend, and it failed. You matched 3 of 5 verdicts, and neither of the correct holds gave the reviewer's reason. Only 1 of the 3 holds had the flagged thing in its top three notices. The standing state moved rather than going away: a touched file's own complexity or duplication breach now counts as the change's red. That set the primary notice on four of five maps and made both merges IFR.
+
+  1. The score: 3 of 5 verdicts, no matching hold reason, 1 of 3 on notice precision
+  2. The standing state came back through the touched files, and it set four of five primary notices
+  3. The map found two of the real problems, but it said so quietly
+  4. I parked three encodings and one protocol item for refine, plus one shore tangent
+  5. Copy D may not have been read blind
+
+  **Readout**: Step 34 - chore(glance): retake glance-test round one on the outside fixtures
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    7 of 7 honored
+               - D38 (glance-is-a-step), D59 (outside-fixtures)
+               - D60 (fixture-balance), D62 (retake-reader-blind)
+               - D63 (retake-in-this-build), D65 (notice-precision-reading)
+               - D66 (legend-briefing)
+  constraints  11 of 11 honored
+  seam         held: 1 of 1 declared, no strays
+  diff         +216 -0 across 1 file
+  spent        36 min · 2 turns · 17s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Land step 34 as a recorded fail, then run `/plumbbob:refine` on the three parked encodings, starting with the touched-file breach. D38 makes a fail a park rather than a failed build. The touched-file breach drives both the category and the primary notice, so how it gets settled changes how the other two rank.
+
+  **1.** The score: 3 of 5 verdicts, no matching hold reason, 1 of 3 on notice precision
+
+  The key was A `retake-4` (remeda #793, hold), B `retake-2` (TanStack form #2259, merge), C `retake-5` (hono #5266, merge), D `retake-1` (apollo-client #12633, hold) and E `retake-3` (trpc #6976, hold). You got C, D and E right. A was a hold you merged, and B was a merge you held. Your hold reasons were "something needs fixing" on D and "less than 100%" on E, which was the Patch cov 94% block. The reviewers' findings were an aborted promise resolving with `data: undefined` plus the failing `useLazyQuery` tests (D), and a breaking change to the exported key types (E). Under D65 only A counts for notice precision: its primary notice sits on the bug. The doc records every call with its reason, and names you as the one reader beside the result.
+
+  **2.** The standing state came back through the touched files, and it set four of five primary notices
+
+  D67 counts a red slot as the change's whenever it names a changed file. But `health` and `dupes` name a file for what it already is: a function over a threshold, or a member of a clone family. This build has no base-side metrics, so atis can't tell a breach the change made from one it merely touched. B, C, D and E each have a `health` or `dupes` red on a touched file as their primary notice. On C, hono's approved merge, that one slot is the whole of the IFR. Following the category alone would score 2 of 5, because it ran backwards: both merges were IFR and one hold was MVFR. You beat it by merging C anyway.
+
+  **3.** The map found two of the real problems, but it said so quietly
+
+  On A, all three surviving mutants sit on line 23 of `src/randomInt.ts`. That is the first line of the `bigint` branch the reviewer called biased, and it was the primary notice. But mutants don't move the category, so every block around it read calm: MVFR, Patch cov 100%, Gate pass. On D, the reviewer's own "the `useLazyQuery` tests fail" is on the map as a red `test` slot. It ranked sixth, because every `red-check-slot` notice has severity 10 whatever the slot, and a test file reaches no cells. On E, nothing named `types.ts`. An interface-change notice needs in-repo fan-in at the 95th percentile or a deep band, and trpc's `internals` cell has fan-in 1 in band 1. A library's readers live outside its repo.
+
+  **4.** I parked three encodings and one protocol item for refine, plus one shore tangent
+
+  The three encodings, each parked per D38:
+
+  - a `health` or `dupes` red on a touched file counts as the change's red;
+  - a failing test ranks the same as a threshold breach;
+  - a published package's public types read as narrow.
+
+  The protocol item is your "i just need to better learn what the graphics actually mean". The legend is about thirty items, and one read before five timed maps doesn't teach it. A practice map, or a legend inset on the map, are the candidates. A was "moved or renamed" on a change that renamed nothing, and its only dashed outline was a co-change ghost. The tangent: the Other block read 43 to 106 on four outside repos, because the shore rules only know checkride and fascicle. The `docs/inspiration.md` rows for the five repos and the fallow entry-point fix were both parked earlier for this boundary, and they come up at its harvest.
+
+  **5.** Copy D may not have been read blind
+
+  Step 33's pause flagged that an agent reply might have reached your screen, describing one fixture's failing test and where it lands. Only `retake-1` (copy D) has a red `test` slot. You landed step 33 without asking for a swap. The doc says that if the reply was read, D wasn't blind. It doesn't change the result: without D the verdicts are 2 of 4 and precision is 1 of 2. The blind page and its key are still in `/tmp/atis-glance` and `/tmp/atis-glance-key`, and the key's order is now in the doc. I'll delete both folders once this lands, unless you want to keep the page to practice on.

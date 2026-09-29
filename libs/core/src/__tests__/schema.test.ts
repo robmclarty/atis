@@ -125,6 +125,37 @@ test('accepts a valid map with a layout', () => {
   expect(assertMap(map)).toEqual(map);
 });
 
+function withInstruments(instruments: Record<string, unknown>): unknown {
+  const map = minimalMap();
+  return { ...map, meta: { ...map.meta, instruments } };
+}
+
+test('accepts where the entry points came from, with the reason fallow was not read', () => {
+  const fromFallow = withInstruments({ mode: 'git-only', entry_points: 'fallow' });
+  const fromManifests = withInstruments({
+    mode: 'git-only',
+    entry_points: 'manifests',
+    entry_points_reason: 'no local fallow at node_modules/.bin/fallow',
+  });
+  expect(assertMap(fromFallow)).toEqual(fromFallow);
+  expect(assertMap(fromManifests)).toEqual(fromManifests);
+});
+
+test('rejects an entry-point source it does not know, and a reason that does not pair with manifests', () => {
+  expect(() => assertMap(withInstruments({ mode: 'git-only', entry_points: 'pnpm' }))).toThrow(
+    /meta\.instruments\.entry_points:/,
+  );
+  expect(() => assertMap(withInstruments({ mode: 'git-only', entry_points: 'manifests' }))).toThrow(
+    /meta\.instruments\.entry_points_reason/,
+  );
+  expect(() =>
+    assertMap(withInstruments({ mode: 'git-only', entry_points: 'fallow', entry_points_reason: 'it ran' })),
+  ).toThrow(/meta\.instruments\.entry_points_reason/);
+  expect(() =>
+    assertMap(withInstruments({ mode: 'git-only', entry_points: 'manifests', entry_points_reason: 2 })),
+  ).toThrow(/meta\.instruments\.entry_points_reason/);
+});
+
 test('rejects a wrong schema_version', () => {
   const map = { ...minimalMap(), meta: { ...minimalMap().meta, schema_version: 2 } };
   expect(() => assertMap(map)).toThrow(/meta\.schema_version/);

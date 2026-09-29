@@ -34,6 +34,9 @@ import type { Cell, DepAdded, ExceptionalEdge, Group, Instruments, MapJson, Orga
 /** One workspace member of a scan: its package name, its directory and its entry points (D43). */
 export type ScanMember = { readonly name: string; readonly dir: string; readonly entry: readonly string[] };
 
+/** How a scan's entry points were looked up: through the reviewed repo's fallow (D22), or the manifests alone and why (C2). */
+export type EntryPointLookup = { readonly source: 'fallow' } | { readonly source: 'manifests'; readonly reason: string };
+
 /**
  * One extracted commit, as the CLI's import scan read it (D21). The shape is
  * declared here rather than beside the scanner because core cannot import the
@@ -44,6 +47,7 @@ export type Scan = {
   readonly files: readonly ScannedFile[];
   readonly edges: readonly NamedEdge[];
   readonly members: readonly ScanMember[];
+  readonly entry_points: EntryPointLookup;
 };
 
 /** What the map is of: the commits it spans, and the clock a pure `buildMap` cannot read for itself (C3). */
@@ -117,6 +121,7 @@ function rekeyScan(scan: Scan, renames: ReadonlyMap<string, string>): Scan {
   if (renames.size === 0) return scan;
   const at = (path: string): string => renames.get(path) ?? path;
   return {
+    ...scan,
     files: scan.files.map((file) => ({ ...file, path: at(file.path) })),
     edges: scan.edges.map((edge) => ({ ...edge, from: at(edge.from), to: at(edge.to) })),
     members: scan.members.map((member) => ({ ...member, entry: member.entry.map(at) })),
@@ -409,14 +414,34 @@ function assembleOrganelles(modules: Modules, signals: Signals): readonly Organe
     .toSorted((a, b) => byPath(a.id, b.id));
 }
 
+type EntryPointsRead = Pick<Instruments, 'entry_points' | 'entry_points_reason'>;
+
+/**
+ * Where the entry points the depth bands hang from came from (D22): fallow
+ * only when both scans read it, else the manifests and why, said once when
+ * the two sides failed alike and by side when they did not (C2).
+ */
+function entryPointsOf(base: EntryPointLookup, head: EntryPointLookup): EntryPointsRead {
+  if (base.source === 'fallow' && head.source === 'fallow') return { entry_points: 'fallow' };
+  if (base.source === 'manifests' && head.source === 'manifests' && base.reason === head.reason) {
+    return { entry_points: 'manifests', entry_points_reason: base.reason };
+  }
+  const reasons = [
+    ...(base.source === 'manifests' ? [`base: ${base.reason}`] : []),
+    ...(head.source === 'manifests' ? [`head: ${head.reason}`] : []),
+  ];
+  return { entry_points: 'manifests', entry_points_reason: reasons.join('; ') };
+}
+
 /** What the map was measured with, and what it could not be: the muted channels say so by name (C2, D41). */
-function instrumentsOf(check: CheckArtifacts): Instruments {
-  if (check.mode === 'git-only') return { mode: 'git-only', reason: check.reason };
+function instrumentsOf(check: CheckArtifacts, entries: EntryPointsRead): Instruments {
+  if (check.mode === 'git-only') return { mode: 'git-only', reason: check.reason, ...entries };
   const stale = check.stale
     .map((channel) => `${channel.slot}: ${channel.file}, ${String(channel.age_ms)} ms older than the run`)
     .toSorted(byPath);
   return {
     mode: 'check',
+    ...entries,
     ...(Object.keys(check.fallow_schemas).length === 0 ? {} : { fallow_schemas: check.fallow_schemas }),
     ...(stale.length === 0 ? {} : { stale }),
   };
@@ -493,7 +518,7 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
       head: inputs.meta.head,
       merge_base: inputs.meta.merge_base,
       mode: 'change',
-      instruments: instrumentsOf(inputs.check),
+      instruments: instrumentsOf(inputs.check, entryPointsOf(inputs.base.entry_points, head.entry_points)),
     },
     terrain: {
       cells,

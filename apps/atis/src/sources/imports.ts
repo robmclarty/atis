@@ -16,11 +16,11 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 import { classifyFile, memberOf } from 'core';
-import type { FileKind } from 'core';
+import type { EntryPointLookup, FileKind } from 'core';
 import ts from 'typescript';
 
 /** A tracked file of the scanned commit. `loc` counts the non-blank lines the scan parsed. */
@@ -50,6 +50,8 @@ export type Scan = {
   readonly files: readonly ScannedFile[];
   readonly edges: readonly ScannedEdge[];
   readonly members: readonly ScannedMember[];
+  /** Whether fallow named the entry points or the manifests had to alone, and why (C2). */
+  readonly entry_points: EntryPointLookup;
 };
 
 export type ScanOptions = {
@@ -66,6 +68,9 @@ const STAR = '*';
 const TYPESCRIPT = /\.tsx?$/;
 const MANIFEST = 'package.json';
 const WORKSPACE_FILE = 'pnpm-workspace.yaml';
+/** The reviewed repo's own fallow, relative to its working tree (D22). */
+const FALLOW_BIN = 'node_modules/.bin/fallow';
+const FALLOW_TIMEOUT_MS = 60_000;
 const SKIPPED_DIRECTORIES = new Set(['.git', 'node_modules']);
 
 /** The export conditions a workspace target is read through, source first (D20). */
@@ -525,7 +530,7 @@ function expandStars(
 export function parseFallowEntryPoints(stdout: string): readonly string[] {
   const value: unknown = JSON.parse(stdout);
   const listed = isRecord(value) ? value['entry_points'] : undefined;
-  if (!Array.isArray(listed)) throw new Error('fallow list: no entry_points array in the output');
+  if (!Array.isArray(listed)) throw new Error('no entry_points array in the output');
   return sorted(
     listed.flatMap((entry) => {
       const path = isRecord(entry) ? text(entry['path']) : undefined;
@@ -534,33 +539,85 @@ export function parseFallowEntryPoints(stdout: string): readonly string[] {
   );
 }
 
+/** What the fallow lookup found: the entry points it named, and whether it was read at all (C2). */
+type FallowRead = { readonly paths: readonly string[]; readonly lookup: EntryPointLookup };
+
+function manifestsOnly(reason: string): FallowRead {
+  return { paths: [], lookup: { source: 'manifests', reason } };
+}
+
 /**
- * The reviewed repo's own fallow, never the machine's (D22): the pinned binary
- * knows the conventions its `.check/` was measured with. No local fallow, or a
- * run that fails, simply means the entry points come from the manifests alone.
+ * fallow names files by absolute path, and the extraction's is a fresh temp
+ * directory every run, so it is cut back to `.` before a reason is recorded
+ * (C3). The real path goes first, since it is the longer where `/var` is a
+ * link to `/private/var`.
  */
-function fallowEntryPoints(dir: string, repo: string): readonly string[] {
-  if (!existsSync(join(repo, 'node_modules', '.bin', 'fallow'))) return [];
+function withinTree(message: string, root: string): string {
+  return [realpathSync(root), root].reduce((said, path) => said.split(path).join('.'), message);
+}
+
+/** fallow's own account of a failed run: the `message` of the JSON error it prints, else its first line of stderr. */
+function fallowSaid(stdout: string | undefined, stderr: string | undefined): string | undefined {
   try {
-    const stdout = execFileSync('pnpm', ['exec', 'fallow', 'list', '--entry-points', '--format', 'json', '--root', dir], {
+    const value: unknown = JSON.parse(stdout ?? '');
+    const message = isRecord(value) ? text(value['message']) : undefined;
+    if (message !== undefined) return message;
+  } catch {
+    // Not fallow's JSON error, so whatever it said went to stderr.
+  }
+  return stderr
+    ?.split('\n')
+    .map((line) => line.trim())
+    .find((line) => line !== '');
+}
+
+/** Why a run failed, from what `execFileSync` threw, never from its message, which quotes the temp path. */
+function runFailure(error: unknown): string {
+  const failed = isRecord(error) ? error : {};
+  const status = failed['status'];
+  const signal = text(failed['signal']);
+  if (failed['code'] === 'ETIMEDOUT') return `timed out after ${String(FALLOW_TIMEOUT_MS / 1000)} s`;
+  if (typeof status === 'number') {
+    const said = fallowSaid(text(failed['stdout']), text(failed['stderr']));
+    return said === undefined ? `exited ${String(status)}` : `exited ${String(status)}: ${said}`;
+  }
+  if (signal !== undefined) return `was stopped by ${signal}`;
+  return `could not run: ${text(failed['code']) ?? 'no error code'}`;
+}
+
+/**
+ * The reviewed repo's own fallow, never the machine's (D22), run as the binary
+ * itself: `pnpm exec` would re-lay an npm, yarn or bun tree and narrate over
+ * the JSON on stdout. No local fallow, or a run or a parse that fails, leaves
+ * the manifests to name the entry points alone, and the lookup says why (C2).
+ */
+function fallowEntryPoints(root: string, repo: string): FallowRead {
+  const bin = resolve(repo, FALLOW_BIN);
+  if (!existsSync(bin)) return manifestsOnly(`no local fallow at ${FALLOW_BIN}`);
+  let stdout: string;
+  try {
+    stdout = execFileSync(bin, ['list', '--entry-points', '--format', 'json', '--root', root], {
       cwd: repo,
       encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-      timeout: 60_000,
+      stdio: ['ignore', 'pipe', 'pipe'],
+      timeout: FALLOW_TIMEOUT_MS,
     });
-    return parseFallowEntryPoints(stdout);
-  } catch {
-    return [];
+  } catch (error) {
+    return manifestsOnly(`fallow list ${withinTree(runFailure(error), root)}`);
+  }
+  try {
+    return { paths: parseFallowEntryPoints(stdout), lookup: { source: 'fallow' } };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return manifestsOnly(`fallow list printed no entry points: ${withinTree(message, root)}`);
   }
 }
 
-/** The entry points of each member: fallow's list, if there is one, and every manifest target. */
-function entryPoints(dir: string, context: Context, options: ScanOptions): ReadonlyMap<string, readonly string[]> {
+/** The entry points of each member: every manifest target, and the ones fallow named. */
+function entryPoints(context: Context, fallow: readonly string[]): ReadonlyMap<string, readonly string[]> {
   const dirs = context.members.map((member) => member.dir);
   const found = new Map<string, string[]>(dirs.map((memberDir) => [memberDir, []]));
-  const fromFallow = fallowEntryPoints(dir, options.repo ?? dir).filter(
-    (path) => context.paths.has(path) && classifyFile(path) === 'source',
-  );
+  const fromFallow = fallow.filter((path) => context.paths.has(path) && classifyFile(path) === 'source');
   for (const member of context.members) found.get(member.dir)?.push(...manifestEntries(member, context.paths));
   for (const path of fromFallow) {
     // A root package claims every path, so only a repo without one can have an
@@ -619,7 +676,8 @@ export function scanImports(dir: string, options: ScanOptions = {}): Scan {
     kind: classifyFile(path),
     exports: exports.get(path) ?? [],
   }));
-  const entries = entryPoints(dir, context, options);
+  const fallow = fallowEntryPoints(root, options.repo ?? dir);
+  const entries = entryPoints(context, fallow.paths);
   return {
     files,
     edges: edges.toSorted((a, b) => byPath(a.from, b.from) || a.line - b.line || byPath(a.to, b.to)),
@@ -628,5 +686,6 @@ export function scanImports(dir: string, options: ScanOptions = {}): Scan {
       dir: member.dir,
       entry: sorted(entries.get(member.dir) ?? []),
     })),
+    entry_points: fallow.lookup,
   };
 }
