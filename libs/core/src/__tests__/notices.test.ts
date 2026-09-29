@@ -8,8 +8,8 @@ import { identifyGroups } from '../groups.js';
 import type { FileHistory } from '../history.js';
 import { identifyModules } from '../modules.js';
 import type { Modules, ScannedFile } from '../modules.js';
-import { HEAD_ONLY, findGhosts, rankNotices } from '../notices.js';
-import type { ExportShapes, NamedEdge, NoticeInputs, ScanFile } from '../notices.js';
+import { HEAD_ONLY, findGhosts, findPublicNames, rankNotices } from '../notices.js';
+import type { ExportShapes, NamedEdge, NoticeInputs, PassedName, PublishingMember, ScanFile } from '../notices.js';
 import { computeReach } from '../reach.js';
 import type { DiffFile } from '../reach.js';
 import type { Cell, CheckSlot, Checks, Cochange, DepAdded, Hunk, Notice } from '../schema.js';
@@ -50,8 +50,14 @@ type Scenario = {
   readonly deleted?: readonly string[];
   /** The diff; one quiet modification to `src/pm/util.ts` unless the scenario is about something else. */
   readonly changed?: readonly DiffFile[];
+  /** Extra `'a > b'` edges both graphs have. */
+  readonly edges?: readonly string[];
   /** Extra `'a > b'` edges the base graph had and the head graph lost. */
   readonly baseEdges?: readonly string[];
+  /** What a re-export edge passes on, in both graphs, keyed `'a > b'` (D75). */
+  readonly reexports?: Readonly<Record<string, readonly PassedName[]>>;
+  /** The workspace members and what each publishes; none unless the scenario says otherwise (D75). */
+  readonly members?: readonly PublishingMember[];
   /** The names an edge takes, in both graphs, keyed `'a > b'`. */
   readonly names?: Readonly<Record<string, readonly string[]>>;
   /** The names an edge took at base alone: what a consumer has since dropped. */
@@ -120,10 +126,11 @@ function change(path: string, added = 4, deleted = 1, hunks: readonly Hunk[] = [
 }
 
 function edgesOf(scenario: Scenario, base: boolean): readonly NamedEdge[] {
-  return [...EDGES, ...(base ? (scenario.baseEdges ?? []) : [])].map((pair): NamedEdge => {
+  return [...EDGES, ...(scenario.edges ?? []), ...(base ? (scenario.baseEdges ?? []) : [])].map((pair): NamedEdge => {
     const [from = '', to = ''] = pair.split(' > ');
     const names = (base ? scenario.baseNames?.[pair] : undefined) ?? scenario.names?.[pair] ?? [];
-    return { from, to, names };
+    const reexports = scenario.reexports?.[pair];
+    return { from, to, names, ...(reexports === undefined ? {} : { reexports }) };
   });
 }
 
@@ -183,6 +190,7 @@ function inputsFor(scenario: Scenario): NoticeInputs {
     (check.mode === 'check'
       ? computeCategory({ check, changed: placed.changed, files, stitches: evidence.stitches ?? [], config: DEFAULT_CONFIG })
       : NOINST);
+  const members = scenario.members ?? [];
 
   return {
     changed: placed.changed,
@@ -197,6 +205,10 @@ function inputsFor(scenario: Scenario): NoticeInputs {
     headFiles,
     headEdges,
     baseEdges,
+    publicNames: findPublicNames([
+      { files: baseFiles, edges: baseEdges, members },
+      { files: headFiles, edges: headEdges, members },
+    ]),
     check,
     config: DEFAULT_CONFIG,
   };
@@ -699,6 +711,146 @@ test('an export whose shape could not be compared keeps the notice, and its why 
   expect(unread[0]?.why).toBe(
     'the interface of `src/pm` was touched and it sits in band 5; the shape of `resolve` could not be compared',
   );
+});
+
+function scanOf(path: string, exports: readonly string[]): ScanFile {
+  return { path, loc: 10, exports };
+}
+
+/** A re-export edge: it takes what it passes on (D75). */
+function reexport(from: string, to: string, reexports: readonly PassedName[]): NamedEdge {
+  return { from, to, names: reexports.map((pass) => pass.name), reexports };
+}
+
+test('the public names are what a published entry exposes, followed by name through every kind of re-export (D75)', () => {
+  const found = findPublicNames([
+    {
+      files: [
+        scanOf('src/index.ts', ['Renamed', 'TRPCMutationKey', 'TRPCQueryKey', 'ns']),
+        scanOf('src/internals/types.ts', ['TRPCMutationKey', 'TRPCQueryKey']),
+        scanOf('src/internals/keys.ts', ['TRPCQueryKey', 'unused']),
+        scanOf('src/util.ts', ['helper', 'internal']),
+        scanOf('src/ns.ts', ['a', 'b']),
+        scanOf('src/secret.ts', ['secret']),
+        scanOf('src/loop-a.ts', ['loop']),
+        scanOf('src/loop-b.ts', ['loop']),
+      ],
+      edges: [
+        // `export type * from './internals/types.js'`, which itself `export *`s the keys.
+        reexport('src/index.ts', 'src/internals/types.ts', [{ name: '*', as: '*' }]),
+        reexport('src/internals/types.ts', 'src/internals/keys.ts', [{ name: '*', as: '*' }]),
+        // `export { helper as Renamed } from './util.js'`: `internal` is never passed on.
+        reexport('src/index.ts', 'src/util.ts', [{ name: 'helper', as: 'Renamed' }]),
+        // `export * as ns from './ns.js'` hands `ns` the whole of the target.
+        reexport('src/index.ts', 'src/ns.ts', [{ name: '*', as: 'ns' }]),
+        // An import is no re-export, whatever it takes.
+        { from: 'src/index.ts', to: 'src/secret.ts', names: ['secret'] },
+        // Two files that star each other settle rather than recur.
+        reexport('src/secret.ts', 'src/loop-a.ts', [{ name: '*', as: '*' }]),
+        reexport('src/loop-a.ts', 'src/loop-b.ts', [{ name: '*', as: '*' }]),
+        reexport('src/loop-b.ts', 'src/loop-a.ts', [{ name: '*', as: '*' }]),
+      ],
+      members: [
+        { name: '@trpc/x', published: true, surface: ['src/index.ts'] },
+        { name: 'private-root', published: false, surface: ['src/secret.ts'] },
+        { name: 'unread' },
+      ],
+    },
+  ]);
+
+  expect(Object.fromEntries(found)).toEqual({
+    'src/index.ts': { names: ['Renamed', 'TRPCMutationKey', 'TRPCQueryKey', 'ns'], members: ['@trpc/x'] },
+    'src/internals/types.ts': { names: ['TRPCMutationKey', 'TRPCQueryKey'], members: ['@trpc/x'] },
+    'src/internals/keys.ts': { names: ['TRPCQueryKey'], members: ['@trpc/x'] },
+    'src/util.ts': { names: ['helper'], members: ['@trpc/x'] },
+    'src/ns.ts': { names: ['a', 'b'], members: ['@trpc/x'] },
+  });
+
+  // Published, the private root's star cycle is walked once each way and settles.
+  const loop = findPublicNames([
+    {
+      files: [scanOf('src/loop-a.ts', ['loop']), scanOf('src/loop-b.ts', ['loop'])],
+      edges: [
+        reexport('src/loop-a.ts', 'src/loop-b.ts', [{ name: '*', as: '*' }]),
+        reexport('src/loop-b.ts', 'src/loop-a.ts', [{ name: '*', as: '*' }]),
+      ],
+      members: [{ name: 'loop', published: true, surface: ['src/loop-a.ts'] }],
+    },
+  ]);
+  expect([...loop.keys()]).toEqual(['src/loop-a.ts', 'src/loop-b.ts']);
+});
+
+/** trpc's internals file, which the package barrel re-exports whole and which nothing else reads (D75). */
+const INTERNALS = 'src/internals/types.ts';
+
+const TRPC = '@trpc/tanstack-react-query';
+
+const MUTATION_KEY = 'type TRPCMutationKey = [path: readonly string[]];';
+
+/** The query key before trpc #6976, and after it gained a leading element (D76). */
+const QUERY_KEY = 'type TRPCQueryKey = [path: readonly string[]];';
+const PREFIXED_KEY = 'type TRPCQueryKey = [prefix: readonly string[], path: readonly string[]];';
+
+/**
+ * trpc #6976's shape: `src/index.ts` is the `.` export of a published member
+ * and `export type *`s the internals file, which only it reads, so its cell
+ * has a fan-in of 1 in band 1. The change adds a leading element to the key.
+ */
+function trpc(scenario: Scenario = {}): Scenario {
+  const barrel = `src/index.ts > ${INTERNALS}`;
+  const keys = ['TRPCMutationKey', 'TRPCQueryKey'];
+  return {
+    files: [INTERNALS],
+    edges: [barrel],
+    names: { [barrel]: ['*'] },
+    reexports: { [barrel]: [{ name: '*', as: '*' }] },
+    exports: { 'src/index.ts': keys, [INTERNALS]: keys },
+    baseShapes: { [INTERNALS]: { TRPCMutationKey: MUTATION_KEY, TRPCQueryKey: QUERY_KEY } },
+    shapes: { [INTERNALS]: { TRPCMutationKey: MUTATION_KEY, TRPCQueryKey: PREFIXED_KEY } },
+    members: [{ name: TRPC, published: true, surface: ['src/index.ts'] }],
+    changed: [change(INTERNALS)],
+    bands: { 'directory:src/internals': 1 },
+    fanIn: { 'directory:src/internals': 1 },
+    ...scenario,
+  };
+}
+
+test("trpc #6976's shape reads the internals file's names as public, so a reshaped key raises interface-change (D75)", () => {
+  const notices = noticesFor(trpc());
+
+  expect(rowsOf(notices)).toEqual([['interface-change', INTERNALS]]);
+  expect(notices[0]?.why).toBe(
+    `the interface of \`src/internals\` changed (\`TRPCQueryKey\` reshaped) and \`${TRPC}\` publishes \`TRPCMutationKey\` and \`TRPCQueryKey\``,
+  );
+  expect(notices[0]?.inputs).toMatchObject({ band: 1, fan_in: 1, public_names: 2, names_reshaped: 1 });
+
+  // Wide is not moved: a public file whose names and shapes held still raises nothing (D76).
+  expect(noticesFor(trpc({ shapes: { [INTERNALS]: { TRPCMutationKey: MUTATION_KEY, TRPCQueryKey: QUERY_KEY } } }))).toEqual(
+    [],
+  );
+});
+
+test('a private member without publishConfig publishes no name, so the internals file reads as narrow (D75)', () => {
+  const unpublished = trpc({ members: [{ name: TRPC, published: false, surface: ['src/index.ts'] }] });
+
+  expect(inputsFor(unpublished).publicNames.size).toBe(0);
+  expect(noticesFor(unpublished)).toEqual([]);
+});
+
+test('a name the barrel does not re-export stays internal, and a file holding no public name stays narrow (D75)', () => {
+  const barrel = `src/index.ts > ${INTERNALS}`;
+  // `export type { TRPCQueryKey } from './internals/types.js'`: the mutation key is never passed on.
+  const byName = trpc({
+    names: { [barrel]: ['TRPCQueryKey'] },
+    reexports: { [barrel]: [{ name: 'TRPCQueryKey', as: 'TRPCQueryKey' }] },
+    exports: { 'src/index.ts': ['TRPCQueryKey'], [INTERNALS]: ['TRPCMutationKey', 'TRPCQueryKey'] },
+  });
+  expect(inputsFor(byName).publicNames.get(INTERNALS)).toEqual({ names: ['TRPCQueryKey'], members: [TRPC] });
+
+  // Imported rather than re-exported, the internals file holds no public name and its fan-in of 1 is all it has.
+  const imported = trpc({ reexports: {} });
+  expect(inputsFor(imported).publicNames.has(INTERNALS)).toBe(false);
+  expect(noticesFor(imported)).toEqual([]);
 });
 
 test('a ghost is the file that usually comes along, named by what expected it', () => {

@@ -59,8 +59,20 @@ const TEST_SLOT = 'test';
 /** How many names of each move an interface-change `why` spells out before it counts the rest. */
 const NAMED = 3;
 
-/** An import edge with the names it took out of `to`; the deleted-export candidate reads them (D39). */
-export type NamedEdge = ImportEdge & { readonly names: readonly string[] };
+/**
+ * A name a re-export passes on (D75): `name` as the target exports it, `as`
+ * the name the re-exporting file gives it. `export { a as b } from` passes `a`
+ * as `b`, `export * as ns from` passes `*` as `ns`, and a bare `export *` or
+ * `export type *` passes `*` as `*`, every name under its own.
+ */
+export type PassedName = { readonly name: string; readonly as: string };
+
+/**
+ * An import edge with the names it took out of `to`; the deleted-export
+ * candidate reads them (D39). A re-export edge is marked with the names it
+ * passes on, which the public-name walk follows (D75).
+ */
+export type NamedEdge = ImportEdge & { readonly names: readonly string[]; readonly reexports?: readonly PassedName[] };
 
 /**
  * Each exported name of a file, with its declared shape as the compiler
@@ -76,6 +88,32 @@ export type ExportShapes = Readonly<Record<string, string | null>>;
  * absent where a scan did not read them, which compares like `null` (C2).
  */
 export type ScanFile = ScannedFile & { readonly shapes?: ExportShapes };
+
+/**
+ * A workspace member as the public-name walk reads it (D75). Both fields are
+ * absent where a scan did not read them, which publishes nothing: the
+ * in-repo reading, never a public name guessed at (C2).
+ */
+export type PublishingMember = {
+  readonly name: string;
+  /** Whether its manifest publishes it: not `private: true`, or carrying `publishConfig`. */
+  readonly published?: boolean;
+  /** The source files its `exports`, `main`, `types` and `module` name, with fallow's `package.json` entries. */
+  readonly surface?: readonly string[];
+};
+
+/** One side of the change as the walk reads it: what each file exports, the edges that pass names on, and who publishes. */
+export type PublishedScan = {
+  readonly files: readonly ScanFile[];
+  readonly edges: readonly NamedEdge[];
+  readonly members: readonly PublishingMember[];
+};
+
+/** A file's public names, and the published members that expose them (D75). */
+export type PublicFile = { readonly names: readonly string[]; readonly members: readonly string[] };
+
+/** Per file, the names a published member exposes; a file holding none is absent. */
+export type PublicNames = ReadonlyMap<string, PublicFile>;
 
 export type NoticeInputs = {
   /** The placed changed set, keyed by head path, each on one cell or one group (D40, D48). */
@@ -101,6 +139,8 @@ export type NoticeInputs = {
   readonly headEdges: readonly NamedEdge[];
   /** The base graph, where a deleted file's consumers still live (D39). */
   readonly baseEdges: readonly NamedEdge[];
+  /** The names a published member exposes, from either scan: holding one reads an interface file as wide (D75). */
+  readonly publicNames: PublicNames;
   /** The artifacts behind the structural, threshold and security candidates (D41). */
   readonly check: CheckArtifacts;
   readonly config: Config;
@@ -200,11 +240,15 @@ function redTargets(red: RedSplit): ReadonlyMap<string, ReadonlySet<string>> {
   return new Map(red.change.map((slot) => [slot.name, new Set(slot.change)] as const));
 }
 
-/** `a`, `a and b`, `a, b and c`: the slots a red notice names, in the order the split sorted them. */
+/** `a`, `a and b`, `a, b and c`: clauses run together the way a sentence lists them. */
+function joined(parts: readonly string[]): string {
+  const last = parts.at(-1) ?? '';
+  return parts.length < 2 ? last : `${parts.slice(0, -1).join(', ')} and ${last}`;
+}
+
+/** `` `a` ``, `` `a` and `b` ``: the slots a red notice names, in the order the split sorted them. */
 function listed(names: readonly string[]): string {
-  const quoted = names.map((name) => `\`${name}\``);
-  const last = quoted.at(-1) ?? '';
-  return quoted.length < 2 ? last : `${quoted.slice(0, -1).join(', ')} and ${last}`;
+  return joined(names.map((name) => `\`${name}\``));
 }
 
 /**
@@ -317,6 +361,88 @@ function interfaceFiles(edges: readonly ImportEdge[], home: ReadonlyMap<string, 
   return entrances;
 }
 
+/**
+ * The names of `to` that one public name of a re-exporting file stands for,
+ * through one name its edge passes on: a star passes a name on under its own,
+ * `export * as ns` hands `ns` the whole of `to`, and `export { a as b }` hands
+ * `b` the one name `a`. A name `to` does not export is not passed.
+ */
+function passedOn(pass: PassedName, name: string, target: ReadonlySet<string>): readonly string[] {
+  if (pass.as === STAR) return target.has(name) ? [name] : [];
+  if (pass.as !== name) return [];
+  if (pass.name === STAR) return [...target];
+  return target.has(pass.name) ? [pass.name] : [];
+}
+
+/** One scan's exports and re-export edges, keyed by file, which is all the walk reads. */
+type Passing = {
+  readonly exports: ReadonlyMap<string, ReadonlySet<string>>;
+  readonly reexports: ReadonlyMap<string, readonly NamedEdge[]>;
+};
+
+function passingOf(scan: PublishedScan): Passing {
+  const reexports = new Map<string, NamedEdge[]>();
+  for (const edge of scan.edges) {
+    if (edge.reexports !== undefined) reexports.set(edge.from, [...(reexports.get(edge.from) ?? []), edge]);
+  }
+  return { exports: new Map(scan.files.map((file) => [file.path, new Set(file.exports)] as const)), reexports };
+}
+
+/** Where one public name of `path` leads: each file and name its re-export edges pass it on to. */
+function passedFrom(path: string, name: string, passing: Passing): readonly (readonly [string, string])[] {
+  return (passing.reexports.get(path) ?? []).flatMap((edge) => {
+    const target = passing.exports.get(edge.to) ?? new Set<string>();
+    return (edge.reexports ?? []).flatMap((pass) => passedOn(pass, name, target).map((passed) => [edge.to, passed] as const));
+  });
+}
+
+/**
+ * Every file and name one member exposes: whatever its entry files export,
+ * then each name those files pass on, followed as far as the chain runs. Each
+ * file and name is walked once, so a cycle of re-exports settles.
+ */
+function exposedBy(surface: readonly string[], passing: Passing): readonly (readonly [string, string])[] {
+  const pending = surface.flatMap((path) => [...(passing.exports.get(path) ?? [])].map((name) => [path, name] as const));
+  const seen = new Map<string, readonly [string, string]>();
+  for (let next = pending.pop(); next !== undefined; next = pending.pop()) {
+    const key = `${next[0]}\n${next[1]}`;
+    if (seen.has(key)) continue;
+    seen.set(key, next);
+    pending.push(...passedFrom(next[0], next[1], passing));
+  }
+  return [...seen.values()];
+}
+
+/**
+ * The public names of each file (D75): the names a published member exposes,
+ * through its entry files directly or through `export … from`, `export *` and
+ * `export type *` chains followed by name. A library's readers live outside
+ * its repository, so no in-repo fan-in can see them; this is how they count.
+ * Each scan is walked on its own and the two are unioned, so a name public on
+ * either side of the change is public.
+ */
+export function findPublicNames(scans: readonly PublishedScan[]): PublicNames {
+  const found = new Map<string, { readonly names: Set<string>; readonly members: Set<string> }>();
+  for (const scan of scans) {
+    const passing = passingOf(scan);
+    for (const member of scan.members) {
+      if (member.published !== true) continue;
+      for (const [path, name] of exposedBy(member.surface ?? [], passing)) {
+        const file = found.get(path) ?? { names: new Set<string>(), members: new Set<string>() };
+        file.names.add(name);
+        file.members.add(member.name);
+        found.set(path, file);
+      }
+    }
+  }
+  return new Map(
+    [...found].map(([path, file]) => [
+      path,
+      { names: [...file.names].toSorted(byPath), members: [...file.members].toSorted(byPath) },
+    ]),
+  );
+}
+
 /** How one interface file's exported names moved between the base scan and the head scan (D76). */
 type SurfaceMoves = {
   readonly added: readonly string[];
@@ -375,12 +501,20 @@ function movesOf({ added, removed, reshaped }: SurfaceMoves): string {
   ].join(', ');
 }
 
+/** `` `@scope/pkg` publishes `a` and `b` ``: who exposes a file's public names, and which (D75). */
+function publishes({ names, members }: PublicFile): string {
+  return `${listed(members)} ${members.length === 1 ? 'publishes' : 'publish'} ${sampled(names)}`;
+}
+
 /**
- * A changed interface file on a cell many read, or one far down the abyss,
- * whose exported surface moved: a name added or removed, or a name's shape
- * changed (D76). A body-only edit moves nothing and raises nothing. A kept
- * name whose shape could not be compared keeps the notice, its `why` saying
- * so, since silence would read as unchanged (C2).
+ * A changed interface file on a cell many read, one far down the abyss, or
+ * one holding a name a published member exposes, whose exported surface
+ * moved: a name added or removed, or a name's shape changed (D76). A public
+ * name is read from outside the repository, so it makes its file an
+ * interface and reads as wide whatever the cell's fan-in (D75). A body-only
+ * edit moves nothing and raises nothing. A kept name whose shape could not be
+ * compared keeps the notice, its `why` saying so, since silence would read as
+ * unchanged (C2).
  */
 function interfaceCandidates(
   inputs: NoticeInputs,
@@ -397,10 +531,11 @@ function interfaceCandidates(
 
   return inputs.changed.flatMap((file): Candidate[] => {
     const cell = file.cell === undefined ? undefined : cells.get(file.cell);
-    if (cell === undefined || !(file.is_barrel || entrances.has(file.path))) return [];
-    const wide = cell.fan_in !== undefined && cell.fan_in >= highFanIn;
+    const published = inputs.publicNames.get(file.path);
+    if (cell === undefined || !(file.is_barrel || entrances.has(file.path) || published !== undefined)) return [];
+    const readInRepo = cell.fan_in !== undefined && cell.fan_in >= highFanIn;
     const deep = cell.band >= deep_band;
-    if (!wide && !deep) return [];
+    if (!readInRepo && published === undefined && !deep) return [];
     const moves = surfaceMoves(
       baseFiles.get(file.path),
       headFiles.get(file.path),
@@ -408,10 +543,11 @@ function interfaceCandidates(
     );
     const moved = moves.added.length + moves.removed.length + moves.reshaped.length > 0;
     if (!moved && moves.uncompared.length === 0) return [];
-    const reasons = [
-      ...(wide ? [`${String(cell.fan_in ?? 0)} files read it`] : []),
+    const reasons = joined([
+      ...(readInRepo ? [`${String(cell.fan_in ?? 0)} files read it`] : []),
+      ...(published === undefined ? [] : [publishes(published)]),
       ...(deep ? [`it sits in band ${String(cell.band)}`] : []),
-    ].join(' and ');
+    ]);
     return [
       {
         kind: 'interface-change',
@@ -422,6 +558,7 @@ function interfaceCandidates(
         inputs: {
           band: cell.band,
           ...(cell.fan_in === undefined ? {} : { fan_in: cell.fan_in }),
+          ...(published === undefined ? {} : { public_names: published.names.length }),
           names_added: moves.added.length,
           names_removed: moves.removed.length,
           names_reshaped: moves.reshaped.length,

@@ -252,6 +252,29 @@ test('buildMap compares the base shapes with the head shapes, so a body-only edi
   expect(kinds({ ...printed, listSlots: 'declare function listSlots(root: string): void;' })).toContain('interface-change');
 });
 
+test('buildMap reads the public names off both scans, so a name the base published reads the demo barrel as public (D75)', () => {
+  const inputs = inputsFor('demo');
+  const entry = 'libs/core/src/index.ts';
+  // Only the base scan publishes `@demo/core` and marks its entry's `export { … } from` the barrel.
+  const base: BuildInputs['base'] = {
+    ...inputs.base,
+    edges: inputs.base.edges.map((edge) =>
+      edge.from === entry && edge.to === DEMO_BARREL
+        ? { ...edge, reexports: edge.names.map((name) => ({ name, as: name })) }
+        : edge,
+    ),
+    members: inputs.base.members.map((member) =>
+      member.name === '@demo/core' ? { ...member, published: true, surface: [entry] } : member,
+    ),
+  };
+  const notice = buildMap({ ...inputs, base }, DEFAULT_CONFIG).notices.find((found) => found.kind === 'interface-change');
+
+  expect(notice?.why).toBe(
+    'the interface of `libs/core/src/pm` changed (`resolveTool` added) and 2 files read it and `@demo/core` publishes `legacyResolve`, `listSlots` and `resolveSlot`',
+  );
+  expect(notice?.inputs['public_names']).toBe(3);
+});
+
 test('a rename comes out keyed by the head path with `from` set', () => {
   const map = buildMap(inputsFor('rename'), DEFAULT_CONFIG);
   expect(() => assertMap(map)).not.toThrow();

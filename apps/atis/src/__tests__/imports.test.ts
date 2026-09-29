@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { delimiter, dirname, join } from 'node:path';
 
-import { buildMap, identifyModules } from 'core';
+import { buildMap, findPublicNames, identifyModules } from 'core';
 import type { MapJson } from 'core';
 import { afterAll, beforeAll, expect, test, vi } from 'vitest';
 
@@ -13,7 +13,7 @@ import {
   parseWorkspaceGlobs,
   scanImports,
 } from '../sources/index.js';
-import type { Scan, ScannedFile } from '../sources/index.js';
+import type { Scan, ScannedFile, ScannedMember } from '../sources/index.js';
 
 /**
  * The fixture tree is written from these strings into a `mkdtemp` directory, so
@@ -161,6 +161,73 @@ const BOTH: Readonly<Record<string, string>> = {
   ...APPS_AND_LIBS,
 };
 
+const TRPC_TYPES = 'packages/react-query/src/internals/types.ts';
+
+/**
+ * trpc #6976's shape (D75): a published member whose `.` export names only
+ * built files, `.mjs`, `.cjs`, `.d.mts` and `.d.cts`, and whose barrel
+ * `export type *`s an internals file only it reads, so the cell's fan-in is 1.
+ * The barrel passes on one name of `context.ts` and keeps the other.
+ */
+const TRPC: Readonly<Record<string, string>> = {
+  'package.json': `{ "name": "trpc", "private": true, "workspaces": ["packages/*"] }\n`,
+  'packages/react-query/package.json': `{
+  "name": "@trpc/tanstack-react-query",
+  "type": "module",
+  "exports": {
+    "./package.json": "./package.json",
+    ".": {
+      "import": { "types": "./dist/index.d.mts", "default": "./dist/index.mjs" },
+      "require": { "types": "./dist/index.d.cts", "default": "./dist/index.cjs" }
+    }
+  }
+}
+`,
+  'packages/react-query/src/index.ts': `export type * from './internals/types.js';
+export { createContext } from './internals/context.js';
+`,
+  [TRPC_TYPES]: `export type TRPCQueryKey = [path: readonly string[], opts?: { input?: unknown }];
+export type TRPCMutationKey = [path: readonly string[]];
+`,
+  'packages/react-query/src/internals/context.ts': `import type { TRPCQueryKey } from './types.js';
+
+export function createContext(key: TRPCQueryKey): TRPCQueryKey {
+  return key;
+}
+
+export const INTERNAL: number = 1;
+`,
+};
+
+/** The same package, whose key gained a leading element in #6976. */
+const TRPC_6976: Readonly<Record<string, string>> = {
+  ...TRPC,
+  [TRPC_TYPES]: `export type TRPCQueryKey = [prefix: readonly string[], path: readonly string[], opts?: { input?: unknown }];
+export type TRPCMutationKey = [path: readonly string[]];
+`,
+};
+
+/**
+ * vue-form's shape (D75): no `exports`, and a `main`, `module` and `types`
+ * that each name a format folder under `dist/`, beside a private member that
+ * publishes anyway through `publishConfig` and one that does not.
+ */
+const FORMATS: Readonly<Record<string, string>> = {
+  'package.json': `{ "name": "form", "private": true, "workspaces": ["packages/*"] }\n`,
+  'packages/vue-form/package.json': `{
+  "name": "@tanstack/vue-form",
+  "main": "./dist/cjs/index.cjs",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts"
+}
+`,
+  'packages/vue-form/src/index.ts': `export const useForm: number = 1;\n`,
+  'packages/flipped/package.json': `{ "name": "flipped", "private": true, "publishConfig": { "access": "public" }, "types": "./dist/types/index.d.cts" }\n`,
+  'packages/flipped/src/index.ts': `export const flipped: number = 1;\n`,
+  'packages/internal/package.json': `{ "name": "internal", "private": true, "module": "./dist/mjs/index.mjs" }\n`,
+  'packages/internal/src/index.ts': `export const internal: number = 1;\n`,
+};
+
 function writeTree(root: string, tree: Readonly<Record<string, string>>): string {
   for (const [path, content] of Object.entries(tree)) {
     const file = join(root, path);
@@ -213,6 +280,20 @@ function mapOf(found: Scan): MapJson {
     base: found,
     head: found,
     diff: [],
+    deps_added: [],
+    commits: [],
+    head_time: 0,
+    check: { mode: 'git-only', reason: '.check/ is absent' },
+  });
+}
+
+/** The map of a change from `base` to `head` that modified `path`, with no history and no `.check/`. */
+function changeMap(base: Scan, head: Scan, path: string): MapJson {
+  return buildMap({
+    meta: { repo: 'fixture', base: 'main', head: 'head', merge_base: 'base', generated_at: '' },
+    base,
+    head,
+    diff: [{ path, kind: 'modified', added: 1, deleted: 1, hunks: [{ start: 1, count: 1 }] }],
     deps_added: [],
     commits: [],
     head_time: 0,
@@ -408,7 +489,7 @@ export * from './everything.js';
   });
 });
 
-test('every specifier resolves the way NodeNext would, and npm packages are dropped', () => {
+test('every specifier resolves the way NodeNext would, npm packages are dropped, and a re-export is marked (D75)', () => {
   expect(scan.edges).toEqual([
     { from: 'apps/cli/src/__tests__/index.test.ts', to: 'apps/cli/src/index.ts', names: ['run'], line: 1 },
     { from: 'apps/cli/src/cli.ts', to: 'apps/cli/src/index.ts', names: ['run'], line: 1 },
@@ -416,20 +497,50 @@ test('every specifier resolves the way NodeNext would, and npm packages are drop
     { from: 'apps/cli/src/index.ts', to: 'libs/shared/src/index.ts', names: ['greet'], line: 3 },
     { from: 'apps/cli/src/index.ts', to: 'apps/cli/src/types.ts', names: ['Options'], line: 4 },
     { from: 'apps/cli/src/index.ts', to: 'apps/cli/src/polyfill.ts', names: [], line: 5 },
-    { from: 'apps/cli/src/index.ts', to: 'apps/cli/src/types.ts', names: ['*'], line: 7 },
+    {
+      from: 'apps/cli/src/index.ts',
+      to: 'apps/cli/src/types.ts',
+      names: ['*'],
+      line: 7,
+      reexports: [{ name: '*', as: '*' }],
+    },
     { from: 'apps/cli/src/index.ts', to: 'apps/cli/src/lazy.ts', names: [], line: 14 },
     { from: 'libs/shared/src/__tests__/harness.ts', to: 'libs/shared/src/greet.ts', names: ['greet'], line: 1 },
-    { from: 'libs/shared/src/index.ts', to: 'libs/shared/src/greet.ts', names: ['greet'], line: 1 },
-    { from: 'libs/shared/src/index.ts', to: 'libs/shared/src/view.tsx', names: ['*'], line: 2 },
+    {
+      from: 'libs/shared/src/index.ts',
+      to: 'libs/shared/src/greet.ts',
+      names: ['greet'],
+      line: 1,
+      reexports: [{ name: 'greet', as: 'greet' }],
+    },
+    {
+      from: 'libs/shared/src/index.ts',
+      to: 'libs/shared/src/view.tsx',
+      names: ['*'],
+      line: 2,
+      reexports: [{ name: '*', as: 'view' }],
+    },
     { from: 'libs/shared/src/view.tsx', to: 'libs/shared/src/greet.ts', names: ['greet'], line: 1 },
   ]);
 });
 
-test('members come from the workspace globs, entries from bin, main and exports', () => {
+test('members come from the workspace globs, entries from bin, main and exports, and the surface without the bin (D75)', () => {
   expect(scan.members).toEqual([
-    { name: 'fixture', dir: '.', entry: [] },
-    { name: '@scope/cli', dir: 'apps/cli', entry: ['apps/cli/src/cli.ts', 'apps/cli/src/index.ts'] },
-    { name: 'shared', dir: 'libs/shared', entry: ['libs/shared/src/index.ts'] },
+    { name: 'fixture', dir: '.', entry: [], published: false, surface: [] },
+    {
+      name: '@scope/cli',
+      dir: 'apps/cli',
+      entry: ['apps/cli/src/cli.ts', 'apps/cli/src/index.ts'],
+      published: true,
+      surface: ['apps/cli/src/index.ts'],
+    },
+    {
+      name: 'shared',
+      dir: 'libs/shared',
+      entry: ['libs/shared/src/index.ts'],
+      published: true,
+      surface: ['libs/shared/src/index.ts'],
+    },
   ]);
 });
 
@@ -437,17 +548,17 @@ test("the reviewed repo's fallow runs as the binary itself, never through pnpm, 
   const repo = repoWithFallow(
     [
       `[ "$*" = "list --entry-points --format json --root ${workspace}" ] || exit 9`,
-      `echo '{"entry_points":[{"path":"apps/cli/./src/lazy.ts","source":"manual entry"}]}'`,
+      `echo '{"entry_points":[{"path":"apps/cli/./src/lazy.ts","source":"manual entry"},{"path":"libs/shared/src/greet.ts","source":"package.json exports"}]}'`,
     ].join('\n'),
   );
   const found = underNarratingPnpm(() => scanImports(workspace, { repo }));
+  const member = (dir: string): ScannedMember | undefined => found.members.find((each) => each.dir === dir);
 
   expect(found.entry_points).toEqual({ source: 'fallow' });
-  expect(found.members.find((member) => member.dir === 'apps/cli')?.entry).toEqual([
-    'apps/cli/src/cli.ts',
-    'apps/cli/src/index.ts',
-    'apps/cli/src/lazy.ts',
-  ]);
+  expect(member('apps/cli')?.entry).toEqual(['apps/cli/src/cli.ts', 'apps/cli/src/index.ts', 'apps/cli/src/lazy.ts']);
+  // A `package.json` entry joins the manifest's surface too; a manual one is an entry point and no more (D75).
+  expect(member('apps/cli')?.surface).toEqual(['apps/cli/src/index.ts']);
+  expect(member('libs/shared')?.surface).toEqual(['libs/shared/src/greet.ts', 'libs/shared/src/index.ts']);
   expect(mapOf(found).meta.instruments).toEqual({ mode: 'git-only', reason: '.check/ is absent', entry_points: 'fallow' });
 });
 
@@ -495,16 +606,18 @@ test("a failed lookup's reason reaches meta.instruments, and the manifests are n
 
 test('without a workspace file or a workspaces field the root package stands alone', () => {
   const rootOnly = scanImports(flat);
-  expect(rootOnly.members).toEqual([{ name: 'flat', dir: '.', entry: ['src/index.ts'] }]);
+  expect(rootOnly.members).toEqual([
+    { name: 'flat', dir: '.', entry: ['src/index.ts'], published: true, surface: ['src/index.ts'] },
+  ]);
   expect(rootOnly.edges).toEqual([{ from: 'src/index.ts', to: 'src/lib/value.ts', names: ['value'], line: 1 }]);
 });
 
 test('the workspaces array npm and bun write names the members, exclusions and all', () => {
   const npm = scanTree(NPM);
   expect(npm.members).toEqual([
-    { name: 'npm-root', dir: '.', entry: [] },
-    { name: '@npm/a', dir: 'packages/a', entry: ['packages/a/src/index.ts'] },
-    { name: '@npm/b', dir: 'packages/b', entry: ['packages/b/src/index.ts'] },
+    { name: 'npm-root', dir: '.', entry: [], published: false, surface: [] },
+    { name: '@npm/a', dir: 'packages/a', entry: ['packages/a/src/index.ts'], published: true, surface: ['packages/a/src/index.ts'] },
+    { name: '@npm/b', dir: 'packages/b', entry: ['packages/b/src/index.ts'], published: true, surface: ['packages/b/src/index.ts'] },
   ]);
   expect(npm.edges).toEqual([
     { from: 'packages/b/src/index.ts', to: 'packages/a/src/index.ts', names: ['a'], line: 1 },
@@ -516,9 +629,9 @@ test('the workspaces array npm and bun write names the members, exclusions and a
 test("yarn's workspaces object names the members through its packages", () => {
   const yarn = scanTree(YARN);
   expect(yarn.members).toEqual([
-    { name: 'yarn-root', dir: '.', entry: [] },
-    { name: 'web', dir: 'apps/web', entry: ['apps/web/src/index.ts'] },
-    { name: 'util-lib', dir: 'libs/util', entry: [] },
+    { name: 'yarn-root', dir: '.', entry: [], published: false, surface: [] },
+    { name: 'web', dir: 'apps/web', entry: ['apps/web/src/index.ts'], published: true, surface: ['apps/web/src/index.ts'] },
+    { name: 'util-lib', dir: 'libs/util', entry: [], published: true, surface: [] },
   ]);
   expect(yarn.edges).toEqual([
     { from: 'apps/web/src/index.ts', to: 'libs/util/src/index.ts', names: ['util'], line: 1 },
@@ -531,6 +644,72 @@ test('pnpm-workspace.yaml wins when a workspaces field sits beside it', () => {
   expect(both.members.map((member) => member.dir)).toEqual(['.', 'libs/util']);
   // `apps/web` is a member only in the ignored `workspaces`, so it stays in the root package.
   expect(packageCells(both)).toEqual(['.', 'libs/util']);
+});
+
+test("trpc's .mjs, .cjs, .d.mts and .d.cts targets map to src/index.ts, and its export type * is marked (D75)", () => {
+  const trpc = scanTree(TRPC);
+
+  expect(trpc.members.find((member) => member.dir === 'packages/react-query')).toEqual({
+    name: '@trpc/tanstack-react-query',
+    dir: 'packages/react-query',
+    entry: ['packages/react-query/src/index.ts'],
+    published: true,
+    surface: ['packages/react-query/src/index.ts'],
+  });
+  expect(trpc.edges.filter((edge) => edge.reexports !== undefined)).toEqual([
+    {
+      from: 'packages/react-query/src/index.ts',
+      to: TRPC_TYPES,
+      names: ['*'],
+      line: 1,
+      reexports: [{ name: '*', as: '*' }],
+    },
+    {
+      from: 'packages/react-query/src/index.ts',
+      to: 'packages/react-query/src/internals/context.ts',
+      names: ['createContext'],
+      line: 2,
+      reexports: [{ name: 'createContext', as: 'createContext' }],
+    },
+  ]);
+  // Every name the barrel passes on is public; the one it keeps back is not.
+  expect(Object.fromEntries(findPublicNames([trpc]))).toMatchObject({
+    [TRPC_TYPES]: { names: ['TRPCMutationKey', 'TRPCQueryKey'], members: ['@trpc/tanstack-react-query'] },
+    'packages/react-query/src/internals/context.ts': { names: ['createContext'] },
+  });
+});
+
+test("trpc #6976's reshaped key raises interface-change on the internals file its package publishes (D75, D76)", () => {
+  const notices = changeMap(scanTree(TRPC), scanTree(TRPC_6976), TRPC_TYPES).notices;
+
+  expect(notices.map((notice) => [notice.kind, notice.target])).toEqual([['interface-change', TRPC_TYPES]]);
+  expect(notices[0]?.why).toBe(
+    'the interface of `packages/react-query/src/internals` changed (`TRPCQueryKey` reshaped) and `@trpc/tanstack-react-query` publishes `TRPCMutationKey` and `TRPCQueryKey`',
+  );
+  expect(notices[0]?.inputs).toMatchObject({ fan_in: 1, public_names: 2 });
+
+  // Made private, the package publishes nothing, and a fan-in of 1 in a shallow band is not worth a label.
+  const manifest = 'packages/react-query/package.json';
+  const privately = (tree: Readonly<Record<string, string>>): Scan =>
+    scanTree({ ...tree, [manifest]: (tree[manifest] ?? '').replace('"type"', '"private": true, "type"') });
+  const unpublished = changeMap(privately(TRPC), privately(TRPC_6976), TRPC_TYPES);
+  expect(unpublished.notices).toEqual([]);
+});
+
+test('main, module and types map through format folders, and private publishes only with publishConfig (D75)', () => {
+  const formats = scanTree(FORMATS);
+  const surfaces = formats.members.map((member) => [member.name, member.published, member.surface]);
+
+  expect(surfaces).toEqual([
+    ['form', false, []],
+    ['flipped', true, ['packages/flipped/src/index.ts']],
+    ['internal', false, ['packages/internal/src/index.ts']],
+    ['@tanstack/vue-form', true, ['packages/vue-form/src/index.ts']],
+  ]);
+  // The private member's surface is still read, and publishes no name.
+  expect([...findPublicNames([formats]).keys()]).toEqual(['packages/flipped/src/index.ts', 'packages/vue-form/src/index.ts']);
+  // Depth still enters through bin, main and exports alone, so a `types` or `module` target is surface, not entry (D43).
+  expect(formats.members.map((member) => member.entry)).toEqual([[], [], [], ['packages/vue-form/src/index.ts']]);
 });
 
 test('the same tree scans the same way twice', () => {
@@ -560,7 +739,7 @@ test('parseManifestWorkspaces reads the array, the yarn object and exclusions', 
   expect(parseManifestWorkspaces('{ "name": ')).toEqual([]);
 });
 
-test('parseFallowEntryPoints collapses the ./ segments fallow leaves in workspace paths', () => {
+test('parseFallowEntryPoints collapses the ./ segments fallow leaves in workspace paths and keeps each tag (D75)', () => {
   const stdout = JSON.stringify({
     entry_point_count: 4,
     entry_points: [
@@ -571,9 +750,10 @@ test('parseFallowEntryPoints collapses the ./ segments fallow leaves in workspac
     ],
   });
   expect(parseFallowEntryPoints(stdout)).toEqual([
-    'apps/atis/src/cli.ts',
-    'apps/atis/tsconfig.json',
-    'libs/core/src/index.ts',
+    { path: 'apps/atis/src/cli.ts', tag: 'manual entry' },
+    { path: 'apps/atis/src/cli.ts', tag: 'package.json main' },
+    { path: 'apps/atis/tsconfig.json', tag: 'typescript' },
+    { path: 'libs/core/src/index.ts', tag: 'package.json main' },
   ]);
   expect(() => parseFallowEntryPoints('{"ok":true}')).toThrow(/entry_points/);
 });

@@ -16,6 +16,12 @@
  * moves nothing and a tuple gaining an element does. A name whose type the
  * compiler would have to infer is recorded as not compared (C2).
  *
+ * Each member's manifest is read for whether it publishes (not `private:
+ * true`, or carrying `publishConfig`) and for the files it publishes through
+ * (D75), and each re-export edge is marked with the names it passes on, so
+ * core can follow a published name from the entry that exposes it to the file
+ * that declares it.
+ *
  * One process reads the whole tree, so the graph that feeds depth, layout,
  * reach and stitches is scanned once, not once per file.
  */
@@ -25,7 +31,7 @@ import { existsSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 import { classifyFile, memberOf } from 'core';
-import type { EntryPointLookup, ExportShapes, FileKind } from 'core';
+import type { EntryPointLookup, ExportShapes, FileKind, PassedName } from 'core';
 import ts from 'typescript';
 
 /** A tracked file of the scanned commit. `loc` counts the non-blank lines the scan parsed. */
@@ -38,19 +44,31 @@ export type ScannedFile = {
   readonly shapes: ExportShapes;
 };
 
-/** One resolved dependency: `from` takes `names` out of `to`, at `line` of `from`. */
+/**
+ * One resolved dependency: `from` takes `names` out of `to`, at `line` of
+ * `from`. An `export … from`, `export *` or `export type *` is marked with the
+ * names it passes on and the names it gives them (D75).
+ */
 export type ScannedEdge = {
   readonly from: string;
   readonly to: string;
   readonly names: readonly string[];
   readonly line: number;
+  readonly reexports?: readonly PassedName[];
 };
 
-/** A workspace member (D43): its package name, its directory and its entry points. */
+/**
+ * A workspace member (D43): its package name, its directory and its entry
+ * points, whether its manifest publishes it, and the source files its
+ * `exports`, `main`, `types` and `module` name, which is where its public
+ * names start (D75).
+ */
 export type ScannedMember = {
   readonly name: string;
   readonly dir: string;
   readonly entry: readonly string[];
+  readonly published: boolean;
+  readonly surface: readonly string[];
 };
 
 export type Scan = {
@@ -82,6 +100,18 @@ const SKIPPED_DIRECTORIES = new Set(['.git', 'node_modules']);
 
 /** The export conditions a workspace target is read through, source first (D20). */
 const CONDITIONS = ['source', 'import', 'module', 'node', 'require', 'default', 'types'];
+
+/** What a build emits for one source file: a script in each module format, and its declarations (D75). */
+const EMITTED = /\.d\.[cm]?ts$|\.[cm]?js$/;
+
+/** The folder a build writes one module format into, beside the others, under `dist/` (D75). */
+const FORMAT_FOLDER = /^src\/(?:cjs|es|esm|mjs|types)\//;
+
+/** The manifest fields a published member exposes its names through, beside `exports` (D75). */
+const PUBLISHED_FIELDS = ['main', 'types', 'module'];
+
+/** fallow's tags for the entries it read from those same fields; it reads no `types` (D75). */
+const PUBLISHED_TAGS: ReadonlySet<string> = new Set(['package.json exports', 'package.json main', 'package.json module']);
 
 const RESOLUTION: ts.CompilerOptions = {
   module: ts.ModuleKind.NodeNext,
@@ -163,7 +193,13 @@ function resolutionHost(root: string, tree: Tree, paths: ReadonlySet<string>): t
   };
 }
 
-type Reference = { readonly specifier: string; readonly names: readonly string[]; readonly line: number };
+type Reference = {
+  readonly specifier: string;
+  readonly names: readonly string[];
+  readonly line: number;
+  /** What an `export … from` passes on, absent on an import. */
+  readonly reexports?: readonly PassedName[];
+};
 
 /** An `export * from …`, and the shape it gives every name it passes on. */
 type Star = { readonly specifier: string; readonly shape: string };
@@ -216,10 +252,15 @@ function givenNames(clause: ts.NamedExportBindings | undefined): readonly string
   return clause.elements.map((element) => element.name.text);
 }
 
-/** The names an `export … from` takes out of its target: `export { a as b }` takes `a`. */
-function takenNames(clause: ts.NamedExportBindings | undefined): readonly string[] {
-  if (clause === undefined || ts.isNamespaceExport(clause)) return [STAR];
-  return clause.elements.map((element) => (element.propertyName ?? element.name).text);
+/**
+ * What an `export … from` passes on out of its target, and as what:
+ * `export { a as b }` passes `a` as `b`, `export * as ns` the whole target as
+ * `ns`, and a bare `export *` or `export type *` every name as itself (D75).
+ */
+function passedNames(clause: ts.NamedExportBindings | undefined): readonly PassedName[] {
+  if (clause === undefined) return [{ name: STAR, as: STAR }];
+  if (ts.isNamespaceExport(clause)) return [{ name: STAR, as: clause.name.text }];
+  return clause.elements.map((element) => ({ name: (element.propertyName ?? element.name).text, as: element.name.text }));
 }
 
 /** The names an import takes out of its target; a side-effect import takes none. */
@@ -469,7 +510,8 @@ function parseSource(path: string, content: string): Parsed {
       exports.push(...givenNames(statement.exportClause));
       const specifier = specifierOf(statement.moduleSpecifier);
       if (specifier === undefined) continue;
-      references.push({ specifier, names: takenNames(statement.exportClause), line: lineOf(source, statement) });
+      const reexports = passedNames(statement.exportClause);
+      references.push({ specifier, names: reexports.map((pass) => pass.name), line: lineOf(source, statement), reexports });
       if (statement.exportClause === undefined) {
         stars.push({ specifier, shape: boundShape({ name: STAR, specifier, typeOnly: statement.isTypeOnly }) });
       }
@@ -640,13 +682,17 @@ function exportsEntry(value: unknown, subpath: string): unknown {
 /**
  * The source file a manifest target names: the file a built target was emitted
  * from first (D20), since a repo that commits its `dist/` would otherwise enter
- * itself through generated code, then the target as written.
+ * itself through generated code, then the target as written. A build emits
+ * each module format and its declarations (D75), and may write the formats
+ * side by side in a folder each, which the source tree does not have.
  */
 function candidates(target: string): readonly string[] {
   const clean = normalizePath(target);
-  const stem = clean.replace(/^dist\//, 'src/').replace(/\.d\.ts$|\.js$/, '');
+  const stem = clean.replace(/^dist\//, 'src/').replace(EMITTED, '');
   if (stem === clean) return [clean];
-  return [`${stem}.ts`, `${stem}.tsx`, `${stem}/index.ts`, clean];
+  const flat = clean.startsWith('dist/') ? stem.replace(FORMAT_FOLDER, 'src/') : stem;
+  const stems = flat === stem ? [stem] : [stem, flat];
+  return [...stems.flatMap((path) => [`${path}.ts`, `${path}.tsx`, `${path}/index.ts`]), clean];
 }
 
 /** The scanned TypeScript file a manifest target names, tests and other paths dropped. */
@@ -667,17 +713,42 @@ function memberTargets(member: Member, subpath: string): readonly string[] {
   return [...found, ...(main === undefined ? [] : [main]), 'src/index.ts'];
 }
 
-/** Every entry point a member's own manifest declares: its `bin`, `main` and `exports` targets. */
-function manifestEntries(member: Member, paths: ReadonlySet<string>): readonly string[] {
-  const targets: string[] = [];
-  const bin = member.manifest['bin'];
-  if (isRecord(bin)) for (const value of Object.values(bin)) conditionTargets(value, targets);
-  else conditionTargets(bin, targets);
-  conditionTargets(member.manifest['main'], targets);
+/**
+ * Whether a member's manifest publishes it (D75): anything not `private:
+ * true`, and a private one that carries `publishConfig`, since apollo-client
+ * flips `private` at publish time.
+ */
+function isPublished(member: Member): boolean {
+  return member.manifest['private'] !== true || isRecord(member.manifest['publishConfig']);
+}
+
+function targetsOf(value: unknown): readonly string[] {
+  const found: string[] = [];
+  conditionTargets(value, found);
+  return found;
+}
+
+/** Every target `exports` offers, across each subpath. */
+function exportsTargets(member: Member): readonly string[] {
   const exported = member.manifest['exports'];
-  if (isRecord(exported) && isSubpathMap(exported)) {
-    for (const value of Object.values(exported)) conditionTargets(value, targets);
-  } else conditionTargets(exported, targets);
+  if (!isRecord(exported) || !isSubpathMap(exported)) return targetsOf(exported);
+  return Object.values(exported).flatMap((value) => targetsOf(value));
+}
+
+/** Every entry point a member's own manifest declares: its `bin`, `main` and `exports` targets (D43). */
+function entryTargets(member: Member): readonly string[] {
+  const bin = member.manifest['bin'];
+  const bins = isRecord(bin) ? Object.values(bin).flatMap((value) => targetsOf(value)) : targetsOf(bin);
+  return [...bins, ...targetsOf(member.manifest['main']), ...exportsTargets(member)];
+}
+
+/** Every target a member publishes through: each `exports` subpath, `main`, `types` and `module` (D75). */
+function publishedTargets(member: Member): readonly string[] {
+  return [...exportsTargets(member), ...PUBLISHED_FIELDS.flatMap((field) => targetsOf(member.manifest[field]))];
+}
+
+/** The scanned source files `targets` name, a target that maps to none dropped. */
+function sourcesFor(member: Member, targets: readonly string[], paths: ReadonlySet<string>): readonly string[] {
   return targets.flatMap((target) => {
     const path = sourceFor(member.dir, target, paths);
     return path === undefined ? [] : [path];
@@ -776,28 +847,35 @@ function withStars(
   );
 }
 
+/** One entry point fallow named, with its tag for where it found it: `package.json main`, `vitest`, `manual entry`. */
+export type FallowEntry = { readonly path: string; readonly tag: string };
+
 /**
  * fallow's `list --entry-points --format json`: the `path` of every entry, with
- * the `./` segments it leaves in workspace paths collapsed. Pure, so the shape
- * is tested from a string and not from a fallow run (D30).
+ * the `./` segments it leaves in workspace paths collapsed, and its `source`
+ * tag kept, since the `package.json` ones are a member's published surface
+ * (D75). Pure, so the shape is tested from a string and not from a fallow run
+ * (D30).
  */
-export function parseFallowEntryPoints(stdout: string): readonly string[] {
+export function parseFallowEntryPoints(stdout: string): readonly FallowEntry[] {
   const value: unknown = JSON.parse(stdout);
   const listed = isRecord(value) ? value['entry_points'] : undefined;
   if (!Array.isArray(listed)) throw new Error('no entry_points array in the output');
-  return sorted(
-    listed.flatMap((entry) => {
-      const path = isRecord(entry) ? text(entry['path']) : undefined;
-      return path === undefined ? [] : [normalizePath(path)];
-    }),
-  );
+  const entries = new Map<string, FallowEntry>();
+  for (const entry of listed) {
+    const path = isRecord(entry) ? text(entry['path']) : undefined;
+    if (path === undefined) continue;
+    const found = { path: normalizePath(path), tag: (isRecord(entry) ? text(entry['source']) : undefined) ?? '' };
+    entries.set(`${found.path}\n${found.tag}`, found);
+  }
+  return [...entries.values()].toSorted((a, b) => byPath(a.path, b.path) || byPath(a.tag, b.tag));
 }
 
 /** What the fallow lookup found: the entry points it named, and whether it was read at all (C2). */
-type FallowRead = { readonly paths: readonly string[]; readonly lookup: EntryPointLookup };
+type FallowRead = { readonly entries: readonly FallowEntry[]; readonly lookup: EntryPointLookup };
 
 function manifestsOnly(reason: string): FallowRead {
-  return { paths: [], lookup: { source: 'manifests', reason } };
+  return { entries: [], lookup: { source: 'manifests', reason } };
 }
 
 /**
@@ -860,24 +938,36 @@ function fallowEntryPoints(root: string, repo: string): FallowRead {
     return manifestsOnly(`fallow list ${withinTree(runFailure(error), root)}`);
   }
   try {
-    return { paths: parseFallowEntryPoints(stdout), lookup: { source: 'fallow' } };
+    return { entries: parseFallowEntryPoints(stdout), lookup: { source: 'fallow' } };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return manifestsOnly(`fallow list printed no entry points: ${withinTree(message, root)}`);
   }
 }
 
-/** The entry points of each member: every manifest target, and the ones fallow named. */
-function entryPoints(context: Context, fallow: readonly string[]): ReadonlyMap<string, readonly string[]> {
+/** A member's entry points, which depth falls from, and the ones it publishes through (D43, D75). */
+type Entries = { readonly entry: string[]; readonly surface: string[] };
+
+/**
+ * The entries of each member: its manifest's entry points and every one
+ * fallow named (D43), and apart from them its surface, the published targets
+ * and fallow's entries tagged from those same fields (D75).
+ */
+function memberEntries(context: Context, fallow: readonly FallowEntry[]): ReadonlyMap<string, Entries> {
   const dirs = context.members.map((member) => member.dir);
-  const found = new Map<string, string[]>(dirs.map((memberDir) => [memberDir, []]));
-  const fromFallow = fallow.filter((path) => context.paths.has(path) && classifyFile(path) === 'source');
-  for (const member of context.members) found.get(member.dir)?.push(...manifestEntries(member, context.paths));
-  for (const path of fromFallow) {
+  const found = new Map<string, Entries>(dirs.map((memberDir) => [memberDir, { entry: [], surface: [] }]));
+  for (const member of context.members) {
+    found.get(member.dir)?.entry.push(...sourcesFor(member, entryTargets(member), context.paths));
+    found.get(member.dir)?.surface.push(...sourcesFor(member, publishedTargets(member), context.paths));
+  }
+  for (const { path, tag } of fallow) {
+    if (!context.paths.has(path) || classifyFile(path) !== 'source') continue;
     // A root package claims every path, so only a repo without one can have an
     // entry point that belongs to no member; it has no manifest to hang on.
     const owner = memberOf(path, dirs);
-    if (owner !== undefined) found.get(owner === '' ? '.' : owner)?.push(path);
+    const entries = owner === undefined ? undefined : found.get(owner === '' ? '.' : owner);
+    entries?.entry.push(path);
+    if (PUBLISHED_TAGS.has(tag)) entries?.surface.push(path);
   }
   return found;
 }
@@ -907,9 +997,10 @@ export function scanImports(dir: string, options: ScanOptions = {}): Scan {
     if (!TYPESCRIPT.test(path)) continue;
     const file = parseSource(path, readFileSync(join(root, path), 'utf8'));
     parsed.set(path, file);
-    for (const reference of file.references) {
-      const to = resolveSpecifier(reference.specifier, path, context);
-      if (to !== undefined && to !== path) edges.push({ from: path, to, names: reference.names, line: reference.line });
+    for (const { specifier, names, line, reexports } of file.references) {
+      const to = resolveSpecifier(specifier, path, context);
+      if (to === undefined || to === path) continue;
+      edges.push({ from: path, to, names, line, ...(reexports === undefined ? {} : { reexports }) });
     }
     stars.set(
       path,
@@ -935,14 +1026,16 @@ export function scanImports(dir: string, options: ScanOptions = {}): Scan {
     };
   });
   const fallow = fallowEntryPoints(root, options.repo ?? dir);
-  const entries = entryPoints(context, fallow.paths);
+  const entries = memberEntries(context, fallow.entries);
   return {
     files,
     edges: edges.toSorted((a, b) => byPath(a.from, b.from) || a.line - b.line || byPath(a.to, b.to)),
     members: members.map((member) => ({
       name: member.name,
       dir: member.dir,
-      entry: sorted(entries.get(member.dir) ?? []),
+      entry: sorted(entries.get(member.dir)?.entry ?? []),
+      published: isPublished(member),
+      surface: sorted(entries.get(member.dir)?.surface ?? []),
     })),
     entry_points: fallow.lookup,
   };

@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 47 — fix(core): raise interface-change only when an exported name or shape moved
+**Current step:** 48 — feat(cli): read a published package's exported names as wide
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -69,7 +69,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 44. fix(core): count a health or dupes red as the change's only where its lines meet a hunk
 - ☑ 45. fix(core): rank a failing test on the change ahead of every weighed notice
 - ☑ 46. feat(cli): fingerprint the shape of each exported declaration
-- ☐ 47. fix(core): raise interface-change only when an exported name or shape moved
+- ☑ 47. fix(core): raise interface-change only when an exported name or shape moved
 - ☐ 48. feat(cli): read a published package's exported names as wide
 - ☐ 49. fix(cli): scan .mts and .cts files as TypeScript
 - ☐ 50. fix(core): sort the outside repos' tooling files into shore groups by kind
@@ -129,6 +129,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] glance protocol for round two: one read of the D66 legend does not teach the marks; Rob after the retake: 'i just need to better learn what the graphics actually mean. i'm just guessing and intuiting', and read copy A as 'moved or renamed' on a change that renamed nothing; candidates: a practice map before the scored five, or a legend inset on the map
 - [x] the shore rules were written against checkride and fascicle: on the retake's outside repos the Other block reads 43 to 106 files (apollo-client, TanStack form, hono, trpc), so common tooling files fall through; group them by kind rather than widen the residual
 - [x] cli.test.ts runs the built dist/cli.js while checkride's types slot rebuilds dist in parallel, so the first gate after a change to a cross-package contract can go red on a half-rebuilt dist (step 43: core's new buildMap met the old scanner's scans, exit 2) and green on the rerun; make the test wait on, or own, the build it runs
+- [ ] follow a name a barrel imports and then exports with a bare export { a } in the public-name walk; D75 follows only export … from, export * and export type *
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -2536,3 +2537,50 @@ folder, so it rides the branch into the PR.)*
   **4.** A literal constant's value is its declared type, so changing the value moves its shape
 
   `export const VERSION = '1.2.3'` prints as `const VERSION = "1.2.3";`, because to the compiler the literal is the type. A version bump in an interface file would therefore raise `interface-change` under step 47. That is the compiler's own reading, and D76 builds on it, so I left it. If it proves noisy on the retake refresh (step 52), it is a small follow-up: widen a literal constant to its base type.
+
+- 2026-09-29 — step 47 checkpointed · 46cbcc8c9 — fix(core): raise interface-change only when an exported name or shape moved (1 drift, 10m)
+
+  **Summary**: `interface-change` now fires on a changed interface file only when, between the base and head scans, an exported name was added or removed or a name's fingerprint moved; a body-only edit raises nothing, a removed name an importer still takes is left to `deleted-export`, and an export whose shape could not be compared keeps the notice with a `why` that says so.
+
+  1. The notice now reads the two scans' names and shapes instead of "the file was touched"
+  2. A removed name that an importer still takes counts toward deleted-export alone, name by name
+  3. An export that could not be compared keeps the notice, and the `why` says why
+  4. Six golden fixtures outside the seam moved with the new `why`
+
+  **Readout**: Step 47 - fix(core): raise interface-change only when an exported name or shape moved
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    2 of 2 honored
+  constraints  11 of 11 honored
+  seam         strayed: 6 paths outside the seam
+               - libs/core/fixtures/demo/map.json
+               - libs/svg/fixtures/categories/LIFR.svg
+               - libs/svg/fixtures/categories/MVFR.svg
+               - libs/svg/fixtures/categories/NOINST.svg
+               - libs/svg/fixtures/categories/VFR.svg
+               - libs/svg/fixtures/demo/atis.svg
+  diff         +292 -40 across 10 files
+  spent        10 min · 1 turn · 17s gate · green first run
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Recommendation**: Approve and checkpoint step 47. The done-when's five cases each have a test, the gate is green, and the only stray files are goldens that had to follow the new wording.
+
+  **1.** The notice now reads the two scans' names and shapes instead of "the file was touched"
+
+  `buildMap` hands the rekeyed base files to `rankNotices` as `baseFiles`, beside the head files it already passed, so a renamed file is compared under its head path (D40). A new `surfaceMoves` sorts each changed interface file's exports into added, removed, reshaped (both sides printed a shape and the two differ) and uncompared (a kept name either side printed as `null`, or a scan that never read shapes). The width and depth gate in front of it is unchanged; step 48 widens it. The `why` names what moved, `` the interface of `libs/core/src/pm` changed (`resolveTool` added) and 2 files read it ``, and spells out three names per move before counting the rest, so an added barrel with forty exports stays one readable label. `inputs` gains `names_added`, `names_removed`, `names_reshaped` and `names_uncompared`, so the reviewer can check the count against the claim (D9). `ExportShapes` and `ScanFile` moved from `map.ts` to `notices.ts`, which now reads them, so `map.ts` imports them and no type cycle forms; `core`'s barrel still exports both, and the CLI's import is untouched.
+
+  **2.** A removed name that an importer still takes counts toward deleted-export alone, name by name
+
+  The lookup that finds live consumers is now shared: `liveConsumers` builds the per-file map once, `deletedExportCandidates` turns it into rows as before, and `interfaceCandidates` drops those names from its removed list. I read "raises `deleted-export` alone" per name rather than per file, so a barrel that breaks one import and also adds a name gets both rows. The demo fixture is exactly that case: `legacyResolve` goes while `libs/core/src/index.ts` still imports it, and `resolveTool` arrives, so both notices stay and the interface `why` names only `resolveTool`. The stricter reading, where any `deleted-export` on a file silences its `interface-change`, is a one-line change if you prefer it.
+
+  **3.** An export that could not be compared keeps the notice, and the `why` says why
+
+  A kept name with no comparable shape never reads as unchanged (C2 (never-fake)). With nothing else moved, the notice reads `` the interface of `src/pm` was touched and it sits in band 5; the shape of `VERSION` could not be compared ``. A scan with no `shapes` at all takes the same path, which is why the demo map's notice counts two uncompared names: its fixture inputs predate step 46. Tests cover all five cases the done-when lists, plus an importer that let the removed name go (which turns it back into an interface change) and the three-name cap. In `map.test.ts`, one test runs the demo barrel through `buildMap` with equal shapes on both sides (no notice) and with one moved shape (a notice). A second pins the demo's `why`.
+
+  **4.** Six golden fixtures outside the seam moved with the new `why`
+
+  `libs/core/fixtures/demo/map.json` changed only in that notice's `why` and its four new counts. The five SVG goldens under `libs/svg/fixtures/` render that map, so each moved two wrapped text lines of the notice label, with the same line count and no layout shift. I regenerated them the way their tests' docstrings prescribe: core's golden from `buildMap`, and the SVGs with `ATIS_UPDATE_GOLDENS=1`. The seam row will list them. The ten outside maps under `fixtures/` are untouched; step 52 refreshes them.

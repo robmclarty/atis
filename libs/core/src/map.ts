@@ -24,15 +24,18 @@ import type { Commit, CommitFile, FileHistory } from './history.js';
 import { computeLayout } from './layout/index.js';
 import { classifyFile, identifyModules } from './modules.js';
 import type { ImportEdge, ModuleCell, Modules, ScannedFile } from './modules.js';
-import { findGhosts, rankNotices } from './notices.js';
-import type { NamedEdge, ScanFile } from './notices.js';
+import { findGhosts, findPublicNames, rankNotices } from './notices.js';
+import type { NamedEdge, PublishingMember, ScanFile } from './notices.js';
 import { TESTS_GROUP, computeReach } from './reach.js';
 import type { DiffFile } from './reach.js';
 import { SCHEMA_VERSION } from './schema.js';
 import type { Cell, DepAdded, ExceptionalEdge, Group, Instruments, MapJson, Organelle } from './schema.js';
 
-/** One workspace member of a scan: its package name, its directory and its entry points (D43). */
-export type ScanMember = { readonly name: string; readonly dir: string; readonly entry: readonly string[] };
+/**
+ * One workspace member of a scan: its package name, its directory and its
+ * entry points (D43), and whether it publishes the names its surface exposes (D75).
+ */
+export type ScanMember = PublishingMember & { readonly dir: string; readonly entry: readonly string[] };
 
 /** How a scan's entry points were looked up: through the reviewed repo's fallow (D22), or the manifests alone and why (C2). */
 export type EntryPointLookup = { readonly source: 'fallow' } | { readonly source: 'manifests'; readonly reason: string };
@@ -124,7 +127,11 @@ function rekeyScan(scan: Scan, renames: ReadonlyMap<string, string>): Scan {
     ...scan,
     files: scan.files.map((file) => ({ ...file, path: at(file.path) })),
     edges: scan.edges.map((edge) => ({ ...edge, from: at(edge.from), to: at(edge.to) })),
-    members: scan.members.map((member) => ({ ...member, entry: member.entry.map(at) })),
+    members: scan.members.map((member) => ({
+      ...member,
+      entry: member.entry.map(at),
+      ...(member.surface === undefined ? {} : { surface: member.surface.map(at) }),
+    })),
   };
 }
 
@@ -555,6 +562,7 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
       headFiles: head.files,
       headEdges: head.edges,
       baseEdges: base.edges,
+      publicNames: findPublicNames([base, head]),
       check: inputs.check,
       config,
     }),
