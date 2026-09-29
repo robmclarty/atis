@@ -1,5 +1,7 @@
 # Ground truth · fascicle PR 4
 
+**Round one:** ground truth **hold**, read as hold; [round one's record](../../docs/glance-test.md#ground-truth-from-the-history) settled that verdict and supersedes this draft, which stays frozen as that round's input (D61).
+
 The one fixture with a real review, so its ground truth has two sources: what the review
 found (D44's acknowledged exception — checkride's PRs and all but this one of fascicle's
 carry no review), and what broke after. Reasons are the builder's reading; every line Rob

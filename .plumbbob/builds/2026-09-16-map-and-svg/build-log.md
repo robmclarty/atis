@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 42 — fix(svg): draw a secondary notice's ring in chrome grey, clear of the lit skin
+**Current step:** 32 — chore(fixtures): select five reviewed outside PRs and record their ground truth
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -64,7 +64,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 39. fix(svg): count red slots in the HUD's Gate and Standing blocks
 - ☑ 40. fix(svg): light a skin's uncovered arc instead of its covered one
 - ☑ 41. fix(cli): read npm, yarn and bun packages for the dependency delta
-- ☐ 42. fix(svg): draw a secondary notice's ring in chrome grey, clear of the lit skin
+- ☑ 42. fix(svg): draw a secondary notice's ring in chrome grey, clear of the lit skin
 
 ## Park list
 
@@ -111,6 +111,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] git.ts memberDirs still reads only pnpm-workspace.yaml, so readManifests' deps_added (D47) misses npm/yarn/bun member manifests; route it through parseManifestWorkspaces before step 33
 - [x] security-finding counts the repo's vulnerabilities at head, which is standing state by D67's reading; now that a global red security slot no longer suppresses it, should it spend the budget only when the change's dependency delta touches it?
 - [x] a secondary notice's tier ring (CHROME_INK, SECONDARY_RING_WIDTH 3, EMPHASIS_PAD 5) is the evidence light's own colour and heavier than the lit skin 1 unit inside it, so a secondary target's skin reads lit all round (checkride PR 5's src/doctor.ts); chrome.ts, outside step 40's seam
+- [ ] D54 wants a docs/inspiration.md row per outside source: cite the retake's five repos there once step 34's verdicts are in, since adding them now would leak through the diff (D62)
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -2076,3 +2077,44 @@ folder, so it rides the branch into the PR.)*
   **3.** The source no longer prints git's missing-file error on repos that don't use pnpm
 
   The old `memberDirs` called `git show <sha>:pnpm-workspace.yaml` without checking first. On every repo without the file, git wrote `fatal: path 'pnpm-workspace.yaml' does not exist` to stderr, twice per run. The new helper checks the `ls-tree` file set first, so that output is gone. It is a side effect of the fix, not a separate change.
+
+- 2026-09-28 — step 42 checkpointed · 80953c612 — fix(svg): draw a secondary notice's ring in chrome grey, clear of the lit skin (969m)
+
+  **Summary**: A secondary notice's ring is now drawn in the leaders' grey instead of the chrome's ink, whether it circles a file or re-traces a cell. The chrome's ink is the same `#e6edf3` as the evidence light, so a ring round a skin can no longer be mistaken for a gap lit all the way round.
+
+  1. The secondary ring takes `LEADER_INK`, round a file or along a cell
+  2. The clearance is pinned from the tokens, which stay as they were
+  3. On checkride PR 5's `src/doctor.ts` the lit arc now reads apart from the ring
+  4. This step recommended sonnet; it ran on Opus
+
+  **Readout**: Step 42 - fix(svg): draw a secondary notice's ring in chrome grey, clear of the lit skin
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    2 of 2 honored
+  constraints  11 of 11 honored
+  seam         held: 4 of 4 declared, no strays
+  diff         +61 -10 across 4 files
+  spent        16h 9m · 1 turn · 15s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Approve and land step 42. The ring now keeps its tier meaning and the lit gap keeps its evidence meaning, per D72. If the fixture pass at step 33 still sees the ring and gap run together at native scale, raising `EMPHASIS_PAD` from 5 to 6 would double the band, as a follow-up.
+
+  **1.** The secondary ring takes `LEADER_INK`, round a file or along a cell
+
+  `drawEmphasis` builds one set of attributes for both of its shapes, the circle round a placed file and the path that re-traces a skinned group's contour, so changing that one stroke from `CHROME_INK` to `LEADER_INK` covers both. The primary ring still takes the category hue. The header comment in `chrome.ts` and the function's own doc comment now say why the ring avoids the chrome's ink (D72, C11 (one-meaning-per-channel)). The secondary's numbered box keeps its `CHROME_INK` frame. It sits off the ring's lower right, not on the skin, and the done-when only covers the ring.
+
+  **2.** The clearance is pinned from the tokens, which stay as they were
+
+  The new chrome test works out the dark band from the tokens alone: the ring's inner edge (`EMPHASIS_PAD` 5 less half of `SECONDARY_RING_WIDTH` 3, so 3.5) against the lit gap's outer edge (`INTEGRITY_PAD` 1.25 plus half of `INTEGRITY_GAP_WIDTH` 2.5, so 2.5). It asserts the band is positive, then measures the ring drawn round `src/b.ts` from its own `r` and `stroke-width`. It also pins `CHROME_INK === EVIDENCE_LIGHT` and `LEADER_INK !== EVIDENCE_LIGHT`, so if either colour drifts the test says why, and it checks that a secondary on `folder:src`, given a contour, draws its path in `LEADER_INK`. The tier-emphasis test's expected secondary stroke moved from `CHROME_INK` to `LEADER_INK`. `weather.test.ts` already had the same inequality from step 40. The band is still 1 unit, because D72's cause was the shared colour and the done-when compares the tokens without asking to widen them. The token comment above `EMPHASIS_PAD` and the three `docs/design.md` rows now say where the ring's colour comes from and how the band is measured.
+
+  **3.** On checkride PR 5's `src/doctor.ts` the lit arc now reads apart from the ring
+
+  I rendered `fixtures/checkride-pr5/map.json` from the rebuilt `dist` and cropped round `src/doctor.ts` at about 3x. The 6/19 lit arc, from the top clockwise, is clearly white. The ring outside it is a distinct mid-grey, with a thin darker band between them. The organelle sits inside a reach-lit cell, so the "dark field" there is lit tissue in a middle tone, not black. At native scale the band is one pixel. The committed fixture SVGs were not regenerated. No golden changed, because the demo map draws no secondary ring.
+
+  **4.** This step recommended sonnet; it ran on Opus
+
+  The plan's `- model:` line for this step is sonnet. The session ran on Opus 5.5, and the diff is small either way.

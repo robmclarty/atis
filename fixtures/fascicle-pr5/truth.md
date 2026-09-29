@@ -1,5 +1,7 @@
 # Ground truth · fascicle PR 5
 
+**Round one:** ground truth **hold**, read as hold; [round one's record](../../docs/glance-test.md#ground-truth-from-the-history) settled that verdict and supersedes this draft, which stays frozen as that round's input (D61).
+
 Drafted per D44 from the next thirty commits on `main` after the merge (`c7407b5`) that touch
 a file PR 5 changed. Reasons are the builder's reading; unconfirmed lines are **needs Rob**.
 

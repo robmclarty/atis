@@ -1,5 +1,7 @@
 # Ground truth · checkride PR 4
 
+**Round one:** ground truth **hold**, read as merge; [round one's record](../../docs/glance-test.md#ground-truth-from-the-history) settled that verdict and supersedes this draft, which stays frozen as that round's input (D61).
+
 Drafted per D44 from what broke after: every later commit in the next thirty on `main`
 after the merge (`07d95bb`) that touches a file PR 4 changed, with subject and stat. The
 reasons are the builder's cautious reading of the subjects and diffs, not Rob's; every line

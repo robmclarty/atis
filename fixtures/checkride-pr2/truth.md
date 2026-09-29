@@ -1,5 +1,7 @@
 # Ground truth · checkride PR 2
 
+**Round one:** ground truth **merge**, read as hold; [round one's record](../../docs/glance-test.md#ground-truth-from-the-history) settled that verdict and supersedes this draft, which stays frozen as that round's input (D61).
+
 Drafted per D44 from the next thirty commits on `main` after the merge (`937bb1d`) that touch
 a file PR 2 changed, and revised after the D58 regeneration, which gave this fixture evidence
 it did not have before. Reasons are the builder's reading, not Rob's; every unconfirmed line
