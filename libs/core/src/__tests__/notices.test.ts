@@ -227,12 +227,15 @@ const ONE_OF_EACH: Readonly<Record<NoticeKind, Scenario>> = {
   'other-group': { files: ['odd.qqq'] },
 };
 
-/** Everything at once: more candidates than the map has room for. */
+/**
+ * Everything at once: more candidates than the map has room for. The red on
+ * the change is `lint`, so weight alone orders it; a red `test` would lead (D74).
+ */
 const CROWDED: Scenario = {
   files: ['odd.qqq'],
   changed: [change('src/pm/tools.ts'), change('src/pm/index.ts'), change('src/pm/util.ts', 200, 10)],
   bands: { [PM]: 5 },
-  checks: verdict([red('types'), red('test', ['src/doctor.ts', 'src/pm/tools.ts'], ['src/pm/tools.ts'])]),
+  checks: verdict([red('types'), red('lint', ['src/doctor.ts', 'src/pm/tools.ts'], ['src/pm/tools.ts'])]),
   check: ran({
     coverage: [{ path: 'src/pm/tools.ts', statements: [{ line: 10, hits: 0 }] }],
     mutation: [{ path: 'src/pm/index.ts', mutants: [{ line: 10, status: 'Survived' }] }],
@@ -439,6 +442,92 @@ test('a health red whose finding no hunk meets is standing, and no threshold-bre
   expect(deleted[0]?.why).toBe(`cyclomatic over threshold in a function this change touched; ${HEAD_ONLY}`);
   // Where the change's hunk falls inside the function, the red is the change's: one row, which speaks for the threshold.
   expect(kindsOf(noticesFor({ check: health(UTIL_BREACH, false) }))).toEqual(['red-check-slot']);
+});
+
+/** The failing test apollo-client #12633 edited itself: a test file, so in no cell and reaching none (D4). */
+const FAILING = 'src/__tests__/tools.test.ts';
+
+/**
+ * apollo-client #12633's shape (Q29): the PR's own failing test beside a red
+ * `health` on a file that reaches three cells, an interface change in band 5,
+ * and a large change to a hot file. The test carries apollo's history, so it
+ * weighs what apollo's did, 10 × 1 × 1 × 4.56, and every other row outweighs it.
+ */
+const APOLLO: Scenario = {
+  changed: [change(FAILING), change('src/pm/tools.ts'), change('src/pm/index.ts'), change('src/pm/util.ts', 90, 20)],
+  bands: { [PM]: 5 },
+  checks: verdict([red('health', ['src/pm/tools.ts'], ['src/pm/tools.ts']), red('test', [FAILING], [FAILING])]),
+  history: [
+    { path: FAILING, churn_ratio: 3.06, bugfix_rate: 0.5 },
+    { path: 'src/pm/tools.ts', churn_ratio: 1 },
+    { path: 'src/pm/index.ts', churn_ratio: 1.5 },
+    { path: 'src/pm/util.ts', churn_ratio: 6 },
+  ],
+};
+
+/** Each notice as its kind and target, the two things a reader of the ranking sees first. */
+function rowsOf(notices: readonly Notice[]): readonly (readonly [string, string])[] {
+  return notices.map((notice) => [notice.kind, notice.target] as const);
+}
+
+test("apollo-client #12633's failing test takes the primary slot over every heavier row (D74)", () => {
+  const notices = noticesFor(APOLLO);
+
+  expect(notices[0]).toMatchObject({ kind: 'red-check-slot', target: FAILING, tier: 'primary', weight: 45.6 });
+  expect(notices[0]?.why).toBe('the `test` check is red on this changed file');
+  // Every row behind it outweighs it, and behind it the weight order is the one §5.4 gives.
+  const behind = notices.slice(1);
+  expect(rowsOf(behind)).toEqual([
+    ['interface-change', 'src/pm/index.ts'],
+    ['red-check-slot', 'src/pm/tools.ts'],
+    ['large-hot-change', 'src/pm/util.ts'],
+  ]);
+  expect(behind.every((notice) => notice.weight > 45.6)).toBe(true);
+  const weights = behind.map((notice) => notice.weight);
+  expect(weights).toEqual(weights.toSorted((a, b) => b - a));
+});
+
+test('a second failing test on the change keeps the place its weight gives it (D74)', () => {
+  // Its path sorts ahead of apollo's test and it carries no history, so it weighs the bare severity.
+  const second = 'src/__tests__/probe.test.ts';
+  const notices = noticesFor({
+    ...APOLLO,
+    files: [second],
+    changed: [...(APOLLO.changed ?? []), change(second)],
+    checks: verdict([
+      red('health', ['src/pm/tools.ts'], ['src/pm/tools.ts']),
+      red('test', [second, FAILING], [second, FAILING]),
+    ]),
+  });
+
+  // The heavier failing test leads; the lighter one falls to last, behind every row that outweighs it.
+  expect(notices.map((notice) => notice.target)).toEqual([
+    FAILING,
+    ...rowsOf(noticesFor(APOLLO).slice(1)).map(([, target]) => target),
+    second,
+  ]);
+  expect(notices.at(-1)).toMatchObject({ kind: 'red-check-slot', weight: 10 });
+});
+
+/** `CROWDED`'s red row: the gate on `tools.ts`, whichever slot is red there. */
+function isGate([kind, target]: readonly [string, string]): boolean {
+  return kind === 'red-check-slot' && target === 'src/pm/tools.ts';
+}
+
+test('with no red test the ranking is weight order, and a red test lifts its own row alone (D74)', () => {
+  const asLint = noticesFor(CROWDED);
+  const asTest = noticesFor({
+    ...CROWDED,
+    checks: verdict([red('types'), red('test', ['src/doctor.ts', 'src/pm/tools.ts'], ['src/pm/tools.ts'])]),
+  });
+
+  // With `lint` red the red row sits where its weight puts it, behind the cycle that history lifted.
+  const weights = asLint.map((notice) => notice.weight);
+  expect(weights).toEqual(weights.toSorted((a, b) => b - a));
+  expect(rowsOf(asLint).findIndex(isGate)).toBeGreaterThan(0);
+  // With `test` red, that one row moves to the front and the rest keep their order around the gap it left.
+  expect(isGate(rowsOf(asTest)[0] ?? ['', ''])).toBe(true);
+  expect(rowsOf(asTest).slice(1)).toEqual(rowsOf(asLint).filter((row) => !isGate(row)));
 });
 
 test('a consumer that has already dropped the name is not a live consumer', () => {

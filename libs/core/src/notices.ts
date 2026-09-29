@@ -53,6 +53,9 @@ const STAR = '*';
 /** npm audit's roll-up key, which would count every vulnerability a second time. */
 const TOTAL = 'total';
 
+/** The slot whose red on the change takes the first notice, whatever it weighs (D74). */
+const TEST_SLOT = 'test';
+
 /** An import edge with the names it took out of `to`; the deleted-export candidate reads them (D39). */
 export type NamedEdge = ImportEdge & { readonly names: readonly string[] };
 
@@ -126,7 +129,11 @@ function round(value: number): number {
  * §5.4's rank: the kind's severity, scaled by how far the change lands, how
  * much of it the tests never saw, and how troubled the file's past is. Each
  * factor is `1 + x`, so a candidate with nothing measured keeps its severity
- * whole and still outranks every milder kind.
+ * whole. The factors multiply the severity rather than add to it, so a milder
+ * kind that reaches far or sits in a troubled file outweighs a severer one
+ * that does neither: severity decides between two candidates only where their
+ * factors match. A test file reaches no cells (D4), which is why a failing
+ * test is lifted by `failingTestFirst` rather than by any severity (D74).
  */
 function score(severity: number, factors: Factors): number {
   const { cells_reached, uncovered_fraction, history_weight } = factors;
@@ -553,10 +560,23 @@ function candidatesFor(inputs: NoticeInputs, ghosts: readonly Ghost[], red: RedS
 }
 
 /**
+ * D74: the heaviest failing test on the change goes first, ahead of weight
+ * order. A test file sits in no cell (D4), so the reach that multiplies every
+ * other red row cannot lift it, and a failing test is the gate saying the code
+ * does the wrong thing. Only that one moves: a further failing test keeps the
+ * place its weight gives it, so one bad suite cannot fill the budget.
+ */
+function failingTestFirst(ranked: readonly Ranked[], failing: ReadonlySet<string>): readonly Ranked[] {
+  const lead = ranked.find((notice) => notice.kind === 'red-check-slot' && failing.has(notice.target));
+  return lead === undefined ? ranked : [lead, ...ranked.filter((notice) => notice !== lead)];
+}
+
+/**
  * Rank every candidate of §5.4 and keep the six the map has room for (C7).
  * Ties break by path and then by kind, as the step asks, and finally by `why`,
  * so two kinds on one file land in a fixed order and two runs over one input
- * produce one map (C3).
+ * produce one map (C3). The one exception to weight order is a failing test on
+ * the change, which leads (D74).
  */
 export function rankNotices(inputs: NoticeInputs): readonly Notice[] {
   const evidence = new Map(inputs.files.map((file) => [file.path, file] as const));
@@ -566,7 +586,7 @@ export function rankNotices(inputs: NoticeInputs): readonly Notice[] {
   const spokenFor = redTargets(red);
   const { severity } = inputs.config.notices;
 
-  return candidatesFor(inputs, ghosts, red)
+  const ranked = candidatesFor(inputs, ghosts, red)
     .filter((candidate) => candidate.slot === undefined || spokenFor.get(candidate.slot)?.has(candidate.target) !== true)
     .map((candidate): Ranked => {
       const severityOf = severity[candidate.kind];
@@ -589,7 +609,9 @@ export function rankNotices(inputs: NoticeInputs): readonly Notice[] {
     })
     .toSorted(
       (a, b) => b.weight - a.weight || byPath(a.target, b.target) || byPath(a.kind, b.kind) || byPath(a.why, b.why),
-    )
+    );
+
+  return failingTestFirst(ranked, spokenFor.get(TEST_SLOT) ?? new Set())
     .flatMap((notice, index): Notice[] => {
       const tier = TIERS[index];
       return tier === undefined ? [] : [{ ...notice, tier }];

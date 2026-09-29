@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 44 — fix(core): count a health or dupes red as the change's only where its lines meet a hunk
+**Current step:** 45 — fix(core): rank a failing test on the change ahead of every weighed notice
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -66,7 +66,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 41. fix(cli): read npm, yarn and bun packages for the dependency delta
 - ☑ 42. fix(svg): draw a secondary notice's ring in chrome grey, clear of the lit skin
 - ☑ 43. fix(cli): run the reviewed repo's fallow directly and record a failed entry-point lookup
-- ☐ 44. fix(core): count a health or dupes red as the change's only where its lines meet a hunk
+- ☑ 44. fix(core): count a health or dupes red as the change's only where its lines meet a hunk
 - ☐ 45. fix(core): rank a failing test on the change ahead of every weighed notice
 - ☐ 46. feat(cli): fingerprint the shape of each exported declaration
 - ☐ 47. fix(core): raise interface-change only when an exported name or shape moved
@@ -2394,3 +2394,53 @@ folder, so it rides the branch into the PR.)*
   **5.** Three core fixtures changed outside the seam, and the first gate went red on a race I parked
 
   `libs/core/fixtures/demo/inputs.json` and `rename/inputs.json` build `Scan`s from JSON, so they gained `entry_points`: the demo stands in for checkride PR 4 and reads `fallow`, while the rename repo has none and reads `manifests`. The demo golden `map.json` gained `"entry_points": "fallow"`, and the SVG golden is unchanged. The first full gate failed in `cli.test.ts` (built command exited 2). The `types` slot rebuilt core's `dist` before the app's, so the new `buildMap` briefly received scans without `entry_points`. Both reruns were green. The race was already there before this step and is parked in the build log.
+
+- 2026-09-29 — step 44 checkpointed · 4adb64438 — fix(core): count a health or dupes red as the change's only where its lines meet a hunk (1 drift, 19m)
+
+  **Summary**: A red `health` or `dupes` slot now counts as the change's red only where one of its findings covers lines the change wrote, or holds the spot of a pure deletion. The category makes that split once and writes it into `map.json` as a `change` list on each red slot. The notices and both parts of the SVG now read that list instead of working the split out again. On hono #5266's shape, `add` stays on the change and `node.ts`'s untouched functions become standing. On apollo-client #12633's shape, the `health` red becomes standing entirely. The demo map's notices and both SVG goldens did not change.
+
+  1. Findings now carry their lines, and the split checks them against the hunks
+  2. `map.json` records the split, and the notices and the SVG read it back
+  3. `assertMap` requires the field, so eight of the ten committed fixture maps now fail it
+  4. Four files changed outside the seam, one of them so the deletion rule can work on real diffs
+
+  **Readout**: Step 44 - fix(core): count a health or dupes red as the change's only where its lines meet a hunk
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored
+               - D73 (touched-file-breach)
+               - D67 (standing-state-notices)
+               - D41 (artifact-trust)
+               - D30 (pure-parsers)
+               - D23 (head-only-check)
+  constraints  11 of 11 honored
+  seam         strayed: 4 paths outside the seam
+               - apps/atis/src/__tests__/git.test.ts
+               - apps/atis/src/sources/git.ts
+               - libs/core/fixtures/demo/inputs.json
+               - libs/core/fixtures/demo/map.json
+  diff         +589 -147 across 17 files
+  spent        19 min · 1 turn · 15s gate · green first run
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Recommendation**: Approve and land step 44. The done-when is met in full with each of its four tests, the gate is green, and the render output is byte-identical on the demo. Before landing, decide whether the old maps failing `assertMap` is acceptable; I recommend keeping the field required.
+
+  **1.** Findings now carry their lines, and the split checks them against the hunks
+
+  `parseHealth` keeps each finding's `line` and `line_count`. A row that lacks either is dropped as malformed, the same way a row with no `exceeded` already was. `dupes` instances are read by key from `clone_families[].groups[].instances[]` (`file`, `start_line`, `end_line`), and I confirmed that shape by running the pinned fallow 3.22 on a throwaway repo. `splitRedSlots` now takes the changed files' hunks and each finding's lines. A hunk that wrote lines counts when it overlaps a finding. A pure deletion counts when it falls strictly between two of the finding's lines. The other four file-scoped slots (`test`, `dead`, `lint`, `struct`) and the torn-stitch rule are unchanged. The hono and apollo tests use the pinned fallow's real findings at each PR's review commit: `add` at line 67 over 60 lines against the router's hunks, and QueryManager's five functions, none of which the lines at 1646 and 1691 fall inside.
+
+  **2.** `map.json` records the split, and the notices and the SVG read it back
+
+  A red slot that names files now carries `change`: the changed files it is on the change through, empty when all of its red is standing. `computeCategory` writes it, and a new `readRedSplit(slots)` reads it back. `rankNotices`, `gateBlocks` and `stormsOf` all use `readRedSplit`, so none of them works out the split from paths any more. `NoticeInputs` no longer needs `stitches`, so I removed it. Each slot in the split used to carry a `standing` file list, and the map cannot rebuild that list for a torn test. I replaced it with `named`, the slot's full scope. The grey storms are now drawn over the places of the files a slot names, minus the places where it is on the change. For every case the demo covers, that produces the same storms as before. `thresholdCandidates` uses the same line check, so a finding that no longer counts as the change's does not come back as a `threshold-breached` row, and its `why` now reads "in a function this change touched". A notices test shows this four ways: red and untouched, green and untouched, green with a deletion inside the function, and red with an edit inside it.
+
+  **3.** `assertMap` requires the field, so eight of the ten committed fixture maps now fail it
+
+  `assertMap` rejects three things: a red slot that names files but has no `change`, a `change` on any other kind of slot, and a `change` path that is not in `weather.changed`. I made it required because, on a map without it, `readRedSplit` would treat every red as standing and show "Gate pass", which would be a pass the map never earned (C2 (never-fake)). The catch is that the frozen round-one maps and the five retake maps were written before this field. `checkride-pr4` and `checkride-pr5` still pass; the other eight fail. Nothing in the suite or the CLI reads those maps (the CLI always builds before it renders), and step 52 regenerates the retake five. The round-one five stay frozen under D61 (round-one-fixtures-frozen). They were already out of date, since they predate D67. Making the field optional would take one line, if you'd rather keep old maps passing.
+
+  **4.** Four files changed outside the seam, one of them so the deletion rule can work on real diffs
+
+  `git.ts` used to throw away every hunk with a head count of 0, so no real map could ever contain a pure deletion. That left D73's deletion clause working in the tests but never on a real change. The parser now keeps such a hunk as `{ start, count: 0 }`, where `start` is the head line the deleted lines came after, and a new `git.test.ts` case covers it. The only other code that reads hunks, patch coverage and mutants, takes 0 lines from such a hunk, so neither changes. `changed[].hunks` in newly built maps will now include these 0-line entries. The demo's `inputs.json` gained the lines of its one `health` finding, and its golden `map.json` gained exactly the two recorded `change` lists and nothing else.
