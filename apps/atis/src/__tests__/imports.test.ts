@@ -6,7 +6,13 @@ import { buildMap, identifyModules } from 'core';
 import type { MapJson } from 'core';
 import { afterAll, beforeAll, expect, test, vi } from 'vitest';
 
-import { parseFallowEntryPoints, parseManifestWorkspaces, parseWorkspaceGlobs, scanImports } from '../sources/index.js';
+import {
+  parseExportShapes,
+  parseFallowEntryPoints,
+  parseManifestWorkspaces,
+  parseWorkspaceGlobs,
+  scanImports,
+} from '../sources/index.js';
 import type { Scan, ScannedFile } from '../sources/index.js';
 
 /**
@@ -262,7 +268,7 @@ test('every tracked file is listed, classified and sorted, whether it is parsed 
     ['pnpm-workspace.yaml', 'other'],
   ]);
   expect(fileIn(scan, 'libs/shared/src/greet.ts').loc).toBe(4);
-  expect(fileIn(scan, 'README.md')).toEqual({ path: 'README.md', loc: 0, kind: 'other', exports: [] });
+  expect(fileIn(scan, 'README.md')).toEqual({ path: 'README.md', loc: 0, kind: 'other', exports: [], shapes: {} });
 });
 
 test('exports are the names a file declares, with `export * from` passing the target on', () => {
@@ -270,6 +276,136 @@ test('exports are the names a file declares, with `export * from` passing the ta
   expect(fileIn(scan, 'apps/cli/src/index.ts').exports).toEqual(['DEFAULTS', 'Options', 'load', 'run']);
   expect(fileIn(scan, 'libs/shared/src/index.ts').exports).toEqual(['greet', 'view']);
   expect(fileIn(scan, 'libs/shared/src/view.tsx').exports).toEqual(['View']);
+});
+
+test('every exported name has a shape beside it, and a name a star passes on takes the star as its shape (D76)', () => {
+  for (const file of scan.files) expect(Object.keys(file.shapes).toSorted()).toEqual(file.exports);
+  expect(fileIn(scan, 'apps/cli/src/index.ts').shapes).toEqual({
+    DEFAULTS: '* from "./types.js"',
+    Options: '* from "./types.js"',
+    load: 'function load(): Promise<unknown>;',
+    run: 'function run(options: Options): string;',
+  });
+  expect(fileIn(scan, 'libs/shared/src/index.ts').shapes).toEqual({
+    greet: 'greet from "./greet.js"',
+    view: '* from "./view.js"',
+  });
+  expect(fileIn(scan, 'libs/shared/src/greet.ts').shapes).toEqual({
+    HELLO: 'const HELLO = "hello";',
+    greet: 'function greet(value: unknown): string;',
+  });
+  expect(fileIn(scan, 'libs/shared/src/view.tsx').shapes).toEqual({ View: 'function View(): unknown;' });
+});
+
+test("a body-only edit leaves a function's shape alone, and so does a doc comment (D76)", () => {
+  const before = parseExportShapes(
+    'area.ts',
+    `export function area(width: number, height: number): number {
+  return width * height;
+}
+`,
+  );
+  const after = parseExportShapes(
+    'area.ts',
+    `/** The area of a rectangle. */
+export function area(width: number, height: number): number {
+  const product = width * height;
+  return product;
+}
+`,
+  );
+  expect(before).toEqual({ area: 'function area(width: number, height: number): number;' });
+  expect(after).toEqual(before);
+});
+
+test("a tuple type gaining a leading element moves its shape, as trpc's query keys did (D76)", () => {
+  const before = parseExportShapes(
+    'types.ts',
+    `export type TRPCQueryKey = [path: readonly string[], opts?: { input?: unknown }];\n`,
+  );
+  const after = parseExportShapes(
+    'types.ts',
+    `export type TRPCQueryKey = [prefix: readonly string[], path: readonly string[], opts?: { input?: unknown }];\n`,
+  );
+  expect(after['TRPCQueryKey']).not.toBe(before['TRPCQueryKey']);
+  expect(after['TRPCQueryKey']).toMatch(/^type TRPCQueryKey = \[\s*prefix: readonly string\[\],/);
+});
+
+test('an interface gaining a member moves its shape (D76)', () => {
+  const before = parseExportShapes('options.ts', `export interface Options {\n  readonly verbose: boolean;\n}\n`);
+  const after = parseExportShapes(
+    'options.ts',
+    `export interface Options {\n  readonly verbose: boolean;\n  readonly queryKeyPrefix?: string;\n}\n`,
+  );
+  expect(after['Options']).not.toBe(before['Options']);
+});
+
+test('an export whose type is inferred reads as not compared, never as unchanged (C2)', () => {
+  const shapes = parseExportShapes(
+    'values.ts',
+    `import { f } from './f.js';
+
+export const x = f();
+export const typed: number = f(), loose = f();
+export function echo(value: string) {
+  return value;
+}
+export default f();
+`,
+  );
+  expect(shapes).toEqual({ default: null, echo: null, loose: null, typed: 'const typed: number;', x: null });
+});
+
+test('overloads and merged declarations fold into one shape, the implementation dropped (D76)', () => {
+  const shapes = parseExportShapes(
+    'merged.ts',
+    `export function parse(text: string): number;
+export function parse(text: string, radix: number): number;
+export function parse(text: string, radix = 10): number {
+  return Number.parseInt(text, radix);
+}
+
+export interface Box { width: number }
+export interface Box { height: number }
+
+export function Tool(): void {}
+export namespace Tool {
+  export const version: string = '1';
+}
+`,
+  );
+  expect(shapes).toEqual({
+    Box: 'interface Box {\n    width: number;\n}\ninterface Box {\n    height: number;\n}',
+    Tool: 'function Tool(): void;\nnamespace Tool {\n    const version: string;\n}',
+    parse: 'function parse(text: string): number;\nfunction parse(text: string, radix: number): number;',
+  });
+});
+
+test("a re-exported name's shape is its binding, and a local exported by name is its declaration (D76)", () => {
+  const shapes = parseExportShapes(
+    'index.ts',
+    `import { helper } from './helper.js';
+import type { Options } from './options.js';
+
+function run(options: Options): string {
+  return helper(options);
+}
+
+export { run as start, helper, type Options };
+export { greet as hello } from './greet.js';
+export type { View } from './view.js';
+export * as util from './util.js';
+export * from './everything.js';
+`,
+  );
+  expect(shapes).toEqual({
+    Options: 'type Options from "./options.js"',
+    View: 'type View from "./view.js"',
+    hello: 'greet from "./greet.js"',
+    helper: 'helper from "./helper.js"',
+    start: 'function run(options: Options): string;',
+    util: '* from "./util.js"',
+  });
 });
 
 test('every specifier resolves the way NodeNext would, and npm packages are dropped', () => {

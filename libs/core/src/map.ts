@@ -38,13 +38,27 @@ export type ScanMember = { readonly name: string; readonly dir: string; readonly
 export type EntryPointLookup = { readonly source: 'fallow' } | { readonly source: 'manifests'; readonly reason: string };
 
 /**
+ * Each exported name of a file, with its declared shape as the compiler
+ * prints it, bodies and initializers dropped and overloads and merged
+ * declarations folded in (D76). `null` marks a name whose type is inferred: it
+ * cannot be compared, and never reads as unchanged (C2).
+ */
+export type ExportShapes = Readonly<Record<string, string | null>>;
+
+/**
+ * A scanned file with the shape beside each exported name (D76). `shapes` is
+ * absent where a scan did not read them, which compares like `null` (C2).
+ */
+export type ScanFile = ScannedFile & { readonly shapes?: ExportShapes };
+
+/**
  * One extracted commit, as the CLI's import scan read it (D21). The shape is
  * declared here rather than beside the scanner because core cannot import the
  * CLI (C1): core owns the contract and the reader conforms to it, the way
  * `history.ts` owns `Commit` and `evidence.ts` owns `CheckArtifacts`.
  */
 export type Scan = {
-  readonly files: readonly ScannedFile[];
+  readonly files: readonly ScanFile[];
   readonly edges: readonly NamedEdge[];
   readonly members: readonly ScanMember[];
   readonly entry_points: EntryPointLookup;

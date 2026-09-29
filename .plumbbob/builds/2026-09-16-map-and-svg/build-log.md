@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 45 — fix(core): rank a failing test on the change ahead of every weighed notice
+**Current step:** 46 — feat(cli): fingerprint the shape of each exported declaration
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -67,7 +67,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 42. fix(svg): draw a secondary notice's ring in chrome grey, clear of the lit skin
 - ☑ 43. fix(cli): run the reviewed repo's fallow directly and record a failed entry-point lookup
 - ☑ 44. fix(core): count a health or dupes red as the change's only where its lines meet a hunk
-- ☐ 45. fix(core): rank a failing test on the change ahead of every weighed notice
+- ☑ 45. fix(core): rank a failing test on the change ahead of every weighed notice
 - ☐ 46. feat(cli): fingerprint the shape of each exported declaration
 - ☐ 47. fix(core): raise interface-change only when an exported name or shape moved
 - ☐ 48. feat(cli): read a published package's exported names as wide
@@ -128,7 +128,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] glance retake (D38): interface-change reads a cell as wide only by in-repo fan-in (>= p95) or depth, so a published package's exported types read as narrow: trpc #6976's breaking change to TRPCQueryKey and TRPCMutationKey in internals/types.ts (cell fan-in 1, band 1) drew no notice; a library's readers are outside its repo (package.json exports, not private)
 - [x] glance protocol for round two: one read of the D66 legend does not teach the marks; Rob after the retake: 'i just need to better learn what the graphics actually mean. i'm just guessing and intuiting', and read copy A as 'moved or renamed' on a change that renamed nothing; candidates: a practice map before the scored five, or a legend inset on the map
 - [x] the shore rules were written against checkride and fascicle: on the retake's outside repos the Other block reads 43 to 106 files (apollo-client, TanStack form, hono, trpc), so common tooling files fall through; group them by kind rather than widen the residual
-- [ ] cli.test.ts runs the built dist/cli.js while checkride's types slot rebuilds dist in parallel, so the first gate after a change to a cross-package contract can go red on a half-rebuilt dist (step 43: core's new buildMap met the old scanner's scans, exit 2) and green on the rerun; make the test wait on, or own, the build it runs
+- [x] cli.test.ts runs the built dist/cli.js while checkride's types slot rebuilds dist in parallel, so the first gate after a change to a cross-package contract can go red on a half-rebuilt dist (step 43: core's new buildMap met the old scanner's scans, exit 2) and green on the rerun; make the test wait on, or own, the build it runs
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -206,6 +206,10 @@ Harvest results this boundary:
   - **tangent**, defer past this build · one read of the [D66 (legend-briefing)](intent.md#d66) legend does not teach the marks; seed for round two's protocol in the next build's frame, candidates a practice map before the scored five or a legend inset on the map, with Rob's "i'm just guessing and intuiting"
   - carried to this boundary, action confirmed · the `docs/inspiration.md` rows for the five outside repos, as [D54 (glance-prs)](intent.md#d54) asks, become a docs step now that the verdicts are in and [D62 (retake-reader-blind)](intent.md#d62) no longer holds them back
   - carried to this boundary, action confirmed · `fallowEntryPoints` running `pnpm exec fallow list` on any manager becomes a fix step ordered ahead of Q30's: entry points already feed the depth bands, a public-surface signal would plausibly read the same lookup, and it fails silently on npm, yarn and bun repos ([C2 (never-fake)](intent.md#c2))
+
+- 2026-09-28, boundary after step 45 (e149bbe), 1 item; Rob confirmed the proposed class:
+  - build order unchanged: 46 to 52; see [build-order.md](build-order.md)
+  - **tangent**, defer past this build · `cli.test.ts` runs the built `dist/cli.js` while checkride's `types` slot rebuilds `dist` in parallel, so the first gate after a cross-package contract change can go red on a half-rebuilt `dist` and green on the rerun (step 43). Steps 46 and 48 change the `Scan` contract across `apps/atis` and `libs/core` and may hit it; the workaround is a rerun when the red names `cli.test.ts` and `dist`. The fix, a test that waits on or owns its build, sits outside every remaining seam; seed for the next build's frame
 
 ## Log
 
@@ -2444,3 +2448,47 @@ folder, so it rides the branch into the PR.)*
   **4.** Four files changed outside the seam, one of them so the deletion rule can work on real diffs
 
   `git.ts` used to throw away every hunk with a head count of 0, so no real map could ever contain a pure deletion. That left D73's deletion clause working in the tests but never on a real change. The parser now keeps such a hunk as `{ start, count: 0 }`, where `start` is the head line the deleted lines came after, and a new `git.test.ts` case covers it. The only other code that reads hunks, patch coverage and mutants, takes 0 lines from such a hunk, so neither changes. `changed[].hunks` in newly built maps will now include these 0-line entries. The demo's `inputs.json` gained the lines of its one `health` finding, and its golden `map.json` gained exactly the two recorded `change` lists and nothing else.
+
+- 2026-09-29 — step 45 checkpointed · e149bbe1a — fix(core): rank a failing test on the change ahead of every weighed notice (5m)
+
+  **Summary**: A failing test on the change now takes the primary slot even when it weighs less than every other notice. The rest of the notices, other failing tests included, still sort by weight, and the score's docstring now describes what the formula actually does.
+
+  1. The heaviest failing test on the change is moved to the front after the weight sort
+  2. The score docstring no longer claims severity alone decides the order
+  3. Three tests cover apollo's shape, a second failing test, and a map with no red test
+  4. CROWDED's red slot changed from `test` to `lint`
+
+  **Readout**: Step 45 - fix(core): rank a failing test on the change ahead of every weighed notice
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored:
+               - D74 (failing-test-rank)
+               - D4 (tests-not-terrain)
+               - D67 (standing-state-notices)
+  constraints  11 of 11 honored
+  seam         held: 2 of 2 declared, no strays
+  diff         +117 -6 across 2 files
+  spent        5 min · 1 turn · 16s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Approve and checkpoint. The rule is the narrowest reading of D74: one row moves, the weights and their tiebreaks are untouched, and the only fixture edit keeps the older tests honest instead of loosening them.
+
+  **1.** The heaviest failing test on the change is moved to the front after the weight sort
+
+  `rankNotices` still sorts every candidate by weight with the same tiebreaks. A new `failingTestFirst` then takes the first `red-check-slot` row whose target is on the `test` slot's change and moves it to the front, before the six tiers are handed out. Because it picks from the already sorted list, "heaviest" and its tiebreaks are the same comparator's, so C3 (deterministic) holds without a second ordering rule. Only that one row moves. A second failing test stays where its weight puts it, so one bad suite cannot fill the budget. Standing red `test` slots produce no candidate (D67 (standing-state-notices)), so they never lead. I considered a comparator term, but the lead depends on which failing test is heaviest, so the sort would need a pre-pass anyway. Sorting first and then moving one row is simpler to read.
+
+  **2.** The score docstring no longer claims severity alone decides the order
+
+  It used to say a candidate with nothing measured "still outranks every milder kind", which the formula never did. It now says the factors multiply the severity, so a milder kind that reaches far or sits in a troubled file outweighs a severer one that does neither. Severity only decides between candidates whose factors match. It also says a test file reaches no cells (D4 (tests-not-terrain)), which is why a failing test is lifted by `failingTestFirst` rather than by a severity number.
+
+  **3.** Three tests cover apollo's shape, a second failing test, and a map with no red test
+
+  `APOLLO` is a red `test` on a changed test file with no cell, carrying apollo's history so it weighs 45.6 (10 × 1 × 1 × 4.56), as Q29 measured. Beside it are a red `health` on `tools.ts`, an `interface-change` on the band-5 barrel and a `large-hot-change` on `util.ts`. The failing test leads and the three heavier rows follow in weight order. The second test adds `probe.test.ts`, which sorts ahead alphabetically and weighs a bare 10: the heavier test still leads and the lighter one falls to last. The third test compares `CROWDED` with `lint` red, where the order is pure weight and the gate row is not first, against the same map with `test` red, where that one row moves to the front and the other five keep their order.
+
+  **4.** CROWDED's red slot changed from `test` to `lint`
+
+  The shared `CROWDED` fixture had a red `test` on `tools.ts`. The budget test's point is that history lifts a cycle over the red gate, and under D74 that is no longer true when the red is `test`. With `lint` the existing budget, determinism, head-only and echo tests keep their meaning unchanged, and the new third test uses the `test` variant to show the lift. The side effect is that the determinism test no longer runs over a red `test`. The lead is picked from the fully tiebroken sort, so it stays deterministic by construction.

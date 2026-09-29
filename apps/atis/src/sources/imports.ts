@@ -11,6 +11,11 @@
  * manifests; bare npm packages are dropped. Nothing resolves through
  * `node_modules`, which an extracted commit does not have anyway.
  *
+ * Beside each exported name the scan records the shape the compiler declares
+ * for it (D76): the file's emitted declarations, printed, so a body-only edit
+ * moves nothing and a tuple gaining an element does. A name whose type the
+ * compiler would have to infer is recorded as not compared (C2).
+ *
  * One process reads the whole tree, so the graph that feeds depth, layout,
  * reach and stitches is scanned once, not once per file.
  */
@@ -20,7 +25,7 @@ import { existsSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 import { classifyFile, memberOf } from 'core';
-import type { EntryPointLookup, FileKind } from 'core';
+import type { EntryPointLookup, ExportShapes, FileKind } from 'core';
 import ts from 'typescript';
 
 /** A tracked file of the scanned commit. `loc` counts the non-blank lines the scan parsed. */
@@ -29,6 +34,8 @@ export type ScannedFile = {
   readonly loc: number;
   readonly kind: FileKind;
   readonly exports: readonly string[];
+  /** Beside each exported name, its declared shape, or `null` where it cannot be compared (D76). */
+  readonly shapes: ExportShapes;
 };
 
 /** One resolved dependency: `from` takes `names` out of `to`, at `line` of `from`. */
@@ -158,12 +165,17 @@ function resolutionHost(root: string, tree: Tree, paths: ReadonlySet<string>): t
 
 type Reference = { readonly specifier: string; readonly names: readonly string[]; readonly line: number };
 
+/** An `export * from …`, and the shape it gives every name it passes on. */
+type Star = { readonly specifier: string; readonly shape: string };
+
 type Parsed = {
   readonly loc: number;
   readonly exports: readonly string[];
+  /** The shape of each name in `exports`; a name a star passes on is the scan's to add. */
+  readonly shapes: ExportShapes;
   readonly references: readonly Reference[];
-  /** The specifiers of `export * from …`, whose names this file passes on. */
-  readonly stars: readonly string[];
+  /** The file's `export * from …`, whose names it passes on. */
+  readonly stars: readonly Star[];
 };
 
 function lineOf(source: ts.SourceFile, node: ts.Node): number {
@@ -236,12 +248,218 @@ function dynamicImports(source: ts.SourceFile): readonly Reference[] {
   return found;
 }
 
+/** Comments are no part of a shape, so an edit to a doc comment moves nothing (D76). */
+const PRINTER = ts.createPrinter({ removeComments: true });
+
+/** How a declaration is exported, which is no part of its shape. */
+const EXPORT_MODIFIERS: ReadonlySet<ts.SyntaxKind> = new Set([
+  ts.SyntaxKind.ExportKeyword,
+  ts.SyntaxKind.DefaultKeyword,
+  ts.SyntaxKind.DeclareKeyword,
+]);
+
+/** A name bound from another module: `name` as that module exports it, `*` for the whole of it. */
+type Bound = { readonly name: string; readonly specifier: string; readonly typeOnly: boolean };
+
+/**
+ * What an exported name stands for: declarations of its own file, or a
+ * binding another module owns. A binding's shape is the binding itself, since
+ * the declaration it names is read in its own file, where a move shows (D76).
+ */
+type Target =
+  | { readonly bound: Bound }
+  | { readonly nodes: readonly ts.Node[]; readonly typeOnly: boolean };
+
+/** A local name the file exports: `export { a as b }` exports `a` as `b`. */
+type LocalExport = { readonly local: string; readonly typeOnly: boolean };
+
+function boundShape({ name, specifier, typeOnly }: Bound): string {
+  return `${typeOnly ? 'type ' : ''}${name} from ${JSON.stringify(specifier)}`;
+}
+
+function push<T>(map: Map<string, T[]>, key: string, value: T): void {
+  const list = map.get(key);
+  if (list === undefined) map.set(key, [value]);
+  else list.push(value);
+}
+
+/** The top-level names a statement declares, exported or not; a variable's node is its own declaration. */
+function localDeclarations(statement: ts.Statement): readonly (readonly [string, ts.Node])[] {
+  if (ts.isVariableStatement(statement)) {
+    return statement.declarationList.declarations.flatMap((declaration) =>
+      bindingNames(declaration.name).map((name) => [name, declaration] as const),
+    );
+  }
+  if (
+    ts.isFunctionDeclaration(statement) ||
+    ts.isClassDeclaration(statement) ||
+    ts.isInterfaceDeclaration(statement) ||
+    ts.isTypeAliasDeclaration(statement) ||
+    ts.isEnumDeclaration(statement)
+  ) {
+    return statement.name === undefined ? [] : [[statement.name.text, statement]];
+  }
+  if (ts.isModuleDeclaration(statement) && ts.isIdentifier(statement.name)) return [[statement.name.text, statement]];
+  return [];
+}
+
+/** The names an import binds in its file. */
+function importBindings(statement: ts.ImportDeclaration): readonly (readonly [string, Bound])[] {
+  const specifier = specifierOf(statement.moduleSpecifier);
+  const clause = statement.importClause;
+  if (specifier === undefined || clause === undefined) return [];
+  const typeOnly = clause.phaseModifier === ts.SyntaxKind.TypeKeyword;
+  const bound: (readonly [string, Bound])[] = [];
+  if (clause.name !== undefined) bound.push([clause.name.text, { name: 'default', specifier, typeOnly }]);
+  const bindings = clause.namedBindings;
+  if (bindings === undefined) return bound;
+  if (ts.isNamespaceImport(bindings)) return [...bound, [bindings.name.text, { name: STAR, specifier, typeOnly }]];
+  for (const element of bindings.elements) {
+    const name = (element.propertyName ?? element.name).text;
+    bound.push([element.name.text, { name, specifier, typeOnly: typeOnly || element.isTypeOnly }]);
+  }
+  return bound;
+}
+
+/**
+ * What each name a file exports itself stands for. It is read the same way
+ * from the source, where the compiler's diagnostics sit, and from the
+ * declarations the compiler emits for it, which are printed, so the two line
+ * up by name. A bare `export *` adds no name here: the scan adds its names once
+ * the star resolves.
+ */
+function exportTargets(file: ts.SourceFile): ReadonlyMap<string, Target> {
+  const declared = new Map<string, ts.Node[]>();
+  const imported = new Map<string, Bound>();
+  const locals = new Map<string, LocalExport>();
+  const defaults: ts.Node[] = [];
+  const targets = new Map<string, Target>();
+  for (const statement of file.statements) {
+    if (ts.isImportDeclaration(statement)) {
+      for (const [name, bound] of importBindings(statement)) imported.set(name, bound);
+    } else if (ts.isExportDeclaration(statement)) {
+      const specifier = specifierOf(statement.moduleSpecifier);
+      const clause = statement.exportClause;
+      if (clause === undefined) continue;
+      if (ts.isNamespaceExport(clause)) {
+        if (specifier === undefined) continue;
+        targets.set(clause.name.text, { bound: { name: STAR, specifier, typeOnly: statement.isTypeOnly } });
+        continue;
+      }
+      for (const element of clause.elements) {
+        const name = (element.propertyName ?? element.name).text;
+        const typeOnly = statement.isTypeOnly || element.isTypeOnly;
+        if (specifier === undefined) locals.set(element.name.text, { local: name, typeOnly });
+        else targets.set(element.name.text, { bound: { name, specifier, typeOnly } });
+      }
+    } else if (ts.isExportAssignment(statement)) {
+      // `export default v` names a local; any other expression is its own declaration.
+      if (ts.isIdentifier(statement.expression)) locals.set('default', { local: statement.expression.text, typeOnly: false });
+      else defaults.push(statement);
+    } else {
+      for (const [name, node] of localDeclarations(statement)) push(declared, name, node);
+      if (!hasModifier(statement, ts.SyntaxKind.ExportKeyword)) continue;
+      if (hasModifier(statement, ts.SyntaxKind.DefaultKeyword)) defaults.push(statement);
+      else for (const name of declaredNames(statement)) locals.set(name, { local: name, typeOnly: false });
+    }
+  }
+  // A local may be declared after the line that exports it, so locals resolve once the file is read.
+  for (const [name, { local, typeOnly }] of locals) {
+    const bound = imported.get(local);
+    targets.set(name, bound === undefined ? { nodes: declared.get(local) ?? [], typeOnly } : { bound: { ...bound, typeOnly: bound.typeOnly || typeOnly } });
+  }
+  if (defaults.length > 0) targets.set('default', { nodes: defaults, typeOnly: false });
+  return targets;
+}
+
+/** The declarations the compiler emits for a file, and what it said while emitting them. */
+type Emitted = { readonly file: ts.SourceFile; readonly diagnostics: readonly ts.Diagnostic[] };
+
+/**
+ * The compiler's own declaration emit, one file at a time. It reports, under
+ * `isolatedDeclarations`, every declaration whose type it had to infer, and
+ * any that would not parse. A declaration file already is its emit. An emit
+ * the compiler fails outright leaves nothing to compare (C2).
+ */
+function emitDeclarations(source: ts.SourceFile): Emitted | undefined {
+  if (source.isDeclarationFile) return { file: source, diagnostics: [] };
+  let output: ts.TranspileOutput;
+  try {
+    output = ts.transpileDeclaration(source.text, {
+      fileName: source.fileName,
+      reportDiagnostics: true,
+      compilerOptions: { removeComments: true },
+    });
+  } catch {
+    return undefined;
+  }
+  return {
+    file: ts.createSourceFile(source.fileName, output.outputText, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS),
+    diagnostics: output.diagnostics ?? [],
+  };
+}
+
+/** Whether a diagnostic sits inside the declarations a name stands for: an inferred type, or one that would not parse. */
+function flagged(target: Target, diagnostics: readonly ts.Diagnostic[], source: ts.SourceFile): boolean {
+  if ('bound' in target) return false;
+  return target.nodes.some((node) =>
+    diagnostics.some(({ start }) => start !== undefined && start >= node.getStart(source) && start <= node.end),
+  );
+}
+
+/** A variable in a statement of its own, so `export const a = 1, b = 2` gives each name its own print. */
+function alone(declaration: ts.VariableDeclaration): ts.Node {
+  const list = declaration.parent;
+  if (!ts.isVariableDeclarationList(list) || !ts.isVariableStatement(list.parent)) return declaration;
+  return ts.factory.updateVariableStatement(
+    list.parent,
+    list.parent.modifiers,
+    ts.factory.updateVariableDeclarationList(list, [declaration]),
+  );
+}
+
+/** A declaration as it reads whatever exports it: `export`, `default` and `declare` dropped. */
+function bare(node: ts.Node): ts.Node {
+  const statement = ts.isVariableDeclaration(node) ? alone(node) : node;
+  if (!ts.canHaveModifiers(statement)) return statement;
+  const kept = (ts.getModifiers(statement) ?? []).filter((modifier) => !EXPORT_MODIFIERS.has(modifier.kind));
+  return ts.factory.replaceModifiers(statement, kept);
+}
+
+function printed(target: Target, file: ts.SourceFile): string | null {
+  if ('bound' in target) return boundShape(target.bound);
+  if (target.nodes.length === 0) return null;
+  const prints = target.nodes.map((node) => PRINTER.printNode(ts.EmitHint.Unspecified, bare(node), file));
+  return `${target.typeOnly ? 'type ' : ''}${prints.join('\n')}`;
+}
+
+/**
+ * The shape of each of `names` (D76): the declarations the compiler emits for
+ * the file, printed, so bodies and initializers are gone and every overload
+ * and merged declaration is in. A name the compiler flagged while emitting,
+ * or one it emitted nothing for, is `null`: not compared, never unchanged (C2).
+ */
+function shapesOf(source: ts.SourceFile, names: readonly string[]): ExportShapes {
+  if (names.length === 0) return {};
+  const emitted = emitDeclarations(source);
+  const own = exportTargets(source);
+  const out = emitted === undefined ? new Map<string, Target>() : exportTargets(emitted.file);
+  return Object.fromEntries(
+    names.map((name) => {
+      const declared = own.get(name);
+      const target = out.get(name);
+      if (emitted === undefined || declared === undefined || target === undefined) return [name, null];
+      return [name, flagged(declared, emitted.diagnostics, source) ? null : printed(target, emitted.file)];
+    }),
+  );
+}
+
 function parseSource(path: string, content: string): Parsed {
   const kind = path.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
-  const source = ts.createSourceFile(path, content, ts.ScriptTarget.Latest, false, kind);
+  const source = ts.createSourceFile(path, content, ts.ScriptTarget.Latest, true, kind);
   const exports: string[] = [];
   const references: Reference[] = [];
-  const stars: string[] = [];
+  const stars: Star[] = [];
   for (const statement of source.statements) {
     if (ts.isImportDeclaration(statement)) {
       const specifier = specifierOf(statement.moduleSpecifier);
@@ -252,19 +470,32 @@ function parseSource(path: string, content: string): Parsed {
       const specifier = specifierOf(statement.moduleSpecifier);
       if (specifier === undefined) continue;
       references.push({ specifier, names: takenNames(statement.exportClause), line: lineOf(source, statement) });
-      if (statement.exportClause === undefined) stars.push(specifier);
+      if (statement.exportClause === undefined) {
+        stars.push({ specifier, shape: boundShape({ name: STAR, specifier, typeOnly: statement.isTypeOnly }) });
+      }
     } else if (ts.isExportAssignment(statement)) {
       exports.push('default');
     } else if (hasModifier(statement, ts.SyntaxKind.ExportKeyword)) {
       exports.push(...declaredNames(statement));
     }
   }
+  const names = sorted(exports);
   return {
     loc: content.split('\n').filter((line) => line.trim() !== '').length,
-    exports: sorted(exports),
+    exports: names,
+    shapes: shapesOf(source, names),
     references: [...references, ...dynamicImports(source)],
     stars,
   };
+}
+
+/**
+ * The shape beside each name a TypeScript file exports itself (D76), read
+ * from its source alone, so it is tested from strings (D30). A name a bare
+ * `export *` passes on is absent: the scan adds it once the star resolves.
+ */
+export function parseExportShapes(path: string, content: string): ExportShapes {
+  return parseSource(path, content).shapes;
 }
 
 /**
@@ -494,6 +725,9 @@ function resolveSpecifier(specifier: string, from: string, context: Context): st
   return resolveWorkspace(specifier, context);
 }
 
+/** A resolved `export * from …`: the file it passes names on from, and the shape it gives them. */
+type Passed = { readonly to: string; readonly shape: string };
+
 /**
  * `export * from './x.js'` gives a barrel every name `x` exports, and `x` may
  * be a barrel too. The union is taken to a fixed point, so a cycle of stars
@@ -502,14 +736,14 @@ function resolveSpecifier(specifier: string, from: string, context: Context): st
  */
 function expandStars(
   own: ReadonlyMap<string, readonly string[]>,
-  stars: ReadonlyMap<string, readonly string[]>,
+  stars: ReadonlyMap<string, readonly Passed[]>,
 ): ReadonlyMap<string, readonly string[]> {
   const names = new Map([...own].map(([path, list]) => [path, new Set(list)]));
   for (let changed = true; changed; ) {
     changed = false;
     for (const [path, targets] of stars) {
       const here = names.get(path) ?? new Set<string>();
-      for (const target of targets) {
+      for (const { to: target } of targets) {
         for (const name of names.get(target) ?? []) {
           if (here.has(name)) continue;
           here.add(name);
@@ -520,6 +754,26 @@ function expandStars(
     }
   }
   return new Map([...names].map(([path, list]) => [path, sorted(list)]));
+}
+
+/**
+ * The file's own shapes, and for each name a star passed on, the shape of the
+ * first star that passes it: the binding the barrel declares, not the
+ * target's declaration, whose moves show in the target's own file (D76).
+ */
+function withStars(
+  names: readonly string[],
+  own: ExportShapes,
+  stars: readonly Passed[],
+  exports: ReadonlyMap<string, readonly string[]>,
+): ExportShapes {
+  return Object.fromEntries(
+    names.map((name) => {
+      if (Object.hasOwn(own, name)) return [name, own[name] ?? null];
+      const star = stars.find(({ to }) => exports.get(to)?.includes(name) === true);
+      return [name, star?.shape ?? null];
+    }),
+  );
 }
 
 /**
@@ -648,7 +902,7 @@ export function scanImports(dir: string, options: ScanOptions = {}): Scan {
 
   const parsed = new Map<string, Parsed>();
   const edges: ScannedEdge[] = [];
-  const stars = new Map<string, readonly string[]>();
+  const stars = new Map<string, readonly Passed[]>();
   for (const path of tree.files) {
     if (!TYPESCRIPT.test(path)) continue;
     const file = parseSource(path, readFileSync(join(root, path), 'utf8'));
@@ -659,9 +913,9 @@ export function scanImports(dir: string, options: ScanOptions = {}): Scan {
     }
     stars.set(
       path,
-      file.stars.flatMap((specifier) => {
-        const to = resolveSpecifier(specifier, path, context);
-        return to === undefined ? [] : [to];
+      file.stars.flatMap((star) => {
+        const to = resolveSpecifier(star.specifier, path, context);
+        return to === undefined ? [] : [{ to, shape: star.shape }];
       }),
     );
   }
@@ -670,12 +924,16 @@ export function scanImports(dir: string, options: ScanOptions = {}): Scan {
     new Map([...parsed].map(([path, file]) => [path, file.exports])),
     stars,
   );
-  const files = tree.files.map((path) => ({
-    path,
-    loc: parsed.get(path)?.loc ?? 0,
-    kind: classifyFile(path),
-    exports: exports.get(path) ?? [],
-  }));
+  const files = tree.files.map((path): ScannedFile => {
+    const names = exports.get(path) ?? [];
+    return {
+      path,
+      loc: parsed.get(path)?.loc ?? 0,
+      kind: classifyFile(path),
+      exports: names,
+      shapes: withStars(names, parsed.get(path)?.shapes ?? {}, stars.get(path) ?? [], exports),
+    };
+  });
   const fallow = fallowEntryPoints(root, options.repo ?? dir);
   const entries = entryPoints(context, fallow.paths);
   return {
