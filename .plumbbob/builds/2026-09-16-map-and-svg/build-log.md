@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 33 — chore(fixtures): generate map.json and the SVG for the five outside PRs
+**Current step:** 34 — chore(glance): retake glance-test round one on the outside fixtures
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -55,7 +55,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 30. chore(fixtures): refresh the five maps after the render and shore fixes
 - ☑ 31. feat(cli): read npm, yarn and bun workspaces as scan roots
 - ☑ 32. chore(fixtures): select five reviewed outside PRs and record their ground truth
-- ☐ 33. chore(fixtures): generate map.json and the SVG for the five outside PRs
+- ☑ 33. chore(fixtures): generate map.json and the SVG for the five outside PRs
 - ☐ 34. chore(glance): retake glance-test round one on the outside fixtures
 - ☑ 35. feat(cli): name the files a red lint or struct slot reports
 - ☑ 36. fix(core): set the flight category from the change's red slots
@@ -112,7 +112,12 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] security-finding counts the repo's vulnerabilities at head, which is standing state by D67's reading; now that a global red security slot no longer suppresses it, should it spend the budget only when the change's dependency delta touches it?
 - [x] a secondary notice's tier ring (CHROME_INK, SECONDARY_RING_WIDTH 3, EMPHASIS_PAD 5) is the evidence light's own colour and heavier than the lit skin 1 unit inside it, so a secondary target's skin reads lit all round (checkride PR 5's src/doctor.ts); chrome.ts, outside step 40's seam
 - [x] D54 wants a docs/inspiration.md row per outside source: cite the retake's five repos there once step 34's verdicts are in, since adding them now would leak through the diff (D62)
-- [ ] fallowEntryPoints in imports.ts runs `pnpm exec fallow list` whatever the repo's manager: on an npm, yarn or bun tree pnpm re-lays node_modules and narrates on stdout, the JSON parse throws, and the catch silently returns [] (manifest-only entry points, no trace in meta.instruments); run node_modules/.bin/fallow directly, or pass --config.verify-deps-before-run=false, and record a failed lookup rather than swallow it (C2)
+- [x] fallowEntryPoints in imports.ts runs `pnpm exec fallow list` whatever the repo's manager: on an npm, yarn or bun tree pnpm re-lays node_modules and narrates on stdout, the JSON parse throws, and the catch silently returns [] (manifest-only entry points, no trace in meta.instruments); run node_modules/.bin/fallow directly, or pass --config.verify-deps-before-run=false, and record a failed lookup rather than swallow it (C2)
+- [ ] glance retake (D38): a health or dupes red on a touched file counts as the change's red (D67), though those slots name a file for what it already is; touching an already-complex or already-duplicated file makes the category IFR and takes the primary notice: 4 of 5 retake primaries, and the whole of hono #5266's IFR on an approved merge. Candidates: count such a finding as the change's only where its lines meet a head-side hunk, or hold it standing until phase 3's base-side delta
+- [ ] glance retake (D38): every red-check-slot notice carries severity 10 whatever the slot, and a test file reaches 0 cells, so a failing test on the change ranks below any red on a file with reach: apollo-client #12633's failing useLazyQuery tests, the reviewer's own finding, were notice 6 behind two health rows
+- [ ] glance retake (D38): interface-change reads a cell as wide only by in-repo fan-in (>= p95) or depth, so a published package's exported types read as narrow: trpc #6976's breaking change to TRPCQueryKey and TRPCMutationKey in internals/types.ts (cell fan-in 1, band 1) drew no notice; a library's readers are outside its repo (package.json exports, not private)
+- [ ] glance protocol for round two: one read of the D66 legend does not teach the marks; Rob after the retake: 'i just need to better learn what the graphics actually mean. i'm just guessing and intuiting', and read copy A as 'moved or renamed' on a change that renamed nothing; candidates: a practice map before the scored five, or a legend inset on the map
+- [ ] the shore rules were written against checkride and fascicle: on the retake's outside repos the Other block reads 43 to 106 files (apollo-client, TanStack form, hono, trpc), so common tooling files fall through; group them by kind rather than widen the residual
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -175,6 +180,10 @@ Harvest results this boundary:
 - 2026-09-28, boundary after step 32 (220115a), 1 item; Rob confirmed the proposed class:
   - build order unchanged: 33, 34; see [build-order.md](build-order.md)
   - **tangent**, defer until after step 34 · a `docs/inspiration.md` row for each of the retake's outside repos, as [D54 (glance-prs)](intent.md#d54) asks: neither step 33 nor step 34 needs it, and it cannot land before the verdicts without breaking [D62 (retake-reader-blind)](intent.md#d62); pick it up at the boundary after step 34
+
+- 2026-09-29, boundary after step 33 (33369ce), 1 item; Rob confirmed the proposed class:
+  - build order unchanged: 34; see [build-order.md](build-order.md)
+  - **tangent**, defer until after step 34 · `fallowEntryPoints` in `apps/atis/src/sources/imports.ts` runs `pnpm exec fallow list` whatever the repo's manager, so on an npm, yarn or bun tree the JSON parse throws and the scan silently falls back to manifest-only entry points, a [C2 (never-fake)](intent.md#c2) gap in shipped code: step 33 generated the five retake maps with `pnpm_config_verify_deps_before_run=false`, so step 34 reads correct terrain and nothing else in this build calls the lookup on a non-pnpm repo; pick it up at the boundary after step 34 as a fix step or a seed for the next build's frame, and the retake fixtures need no regeneration either way
 
 ## Log
 
@@ -2186,3 +2195,75 @@ folder, so it rides the branch into the PR.)*
   **5.** Round one's `truth.md` files point at its record, and one follow-up is parked
 
   Under each round-one title there is now one line giving the ground truth that round one settled, what the reader called, and a link to `docs/glance-test.md#ground-truth-from-the-history`. The line also says that the record supersedes the draft and that the draft stays frozen (D61). D54 asks for a `docs/inspiration.md` row for each outside source. Adding those rows now would leak through the diff (D62), so I parked them for after step 34's verdicts.
+
+- 2026-09-29 — step 33 checkpointed · 33369cefd — chore(fixtures): generate map.json and the SVG for the five outside PRs (102m)
+
+  **Summary**: All five `fixtures/retake-<n>/` folders now hold a `map.json` and an `atis.svg`, and each `README.md` records its toolchain, its commands, every harness change and its skipped slots. Five of five fixtures were generated, five of five maps pass `assertMap`, and coverage is present in all five, so none ran git-only. Mutation completed and was kept in four fixtures, and was dropped in one where stryker could not load the test setup. One reply from the hidden agent said more about a fixture than counts, and highlight 5 is the question that raises.
+
+  1. Every fixture ran the current harness with coverage and passes `assertMap`
+  2. I chose which slots the harness switches on, and it is a call you may want to overrule
+  3. The foreign runners fought back in predictable ways, and every workaround is written into its README
+  4. atis's entry-point lookup fails silently on npm, yarn and bun repos, and I parked the fix
+  5. A follow-up I asked the agent may have leaked one fixture's weather to your screen
+
+  **Readout**: Step 33 - chore(fixtures): generate map.json and the SVG for the five outside PRs
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    bent: D62 (retake-reader-blind)
+               → an agent reply described one fixture's red test slot
+  constraints  11 of 11 honored
+  seam         held: 1 of 1 declared, no strays
+  diff         +430906 -0 across 15 files
+  spent        102 min · 4 turns · 14s gate · green first run
+  ```
+
+  **Verdict**: ○ Out of plumb (decisions bent)
+
+  **Recommendation**: Approve and land step 33, unless highlight 5's reply reached your screen. All five maps pass, every one has coverage, and the gate is green. If you did see the reply, say so and I'll swap that fixture for a same-verdict spare from step 32's rejected pool before step 34, which keeps the three-and-two split.
+
+  **1.** Every fixture ran the current harness with coverage and passes `assertMap`
+
+  A hidden agent on sonnet (the plan's model for this step) worked through the five fixtures one at a time, so nothing it ran showed up in your terminal. For each one it did the following:
+
+  - made a worktree at the fixture commit and installed with the repo's own package manager;
+  - added checkride 0.13.0 and fallow 3.30.0;
+  - redirected the test runner's istanbul JSON to `.check/coverage/` (D64);
+  - ran `checkride --all --skip security` through the installed binary (D56, D58);
+  - ran the built atis CLI against the resolved worktree path.
+
+  I re-checked the output myself, printing counts only: 5 of 5 maps pass `assertMap`, 5 of 5 SVGs begin with `<svg`, all 5 maps are in `check` mode with `patch_coverage` present, and `mutants` is present in 4. `git status` shows three files per folder: `README.md` modified, and `map.json` and `atis.svg` new. No `truth.md` changed, and nothing outside `fixtures/retake-*/` moved. No README carries a category letter (grep count 0). The worktrees are removed. The scratch clones stay in `/tmp/atis-retake/`.
+
+  **2.** I chose which slots the harness switches on, and it is a call you may want to overrule
+
+  The foreign repos don't use checkride, and checkride runs a slot only when that slot's detect file exists. So I set a policy before the runs:
+
+  - **Added `fallow.toml`**, so `dead`, `health` and `dupes` run. atis's notices read their output: thresholds, cycles, clone families and the fan-in p95.
+  - **Added coverage and a scoped stryker config**, because the done-when asks for both.
+  - **Added nothing that only turns on a style slot** the project never adopted: no oxlint, ast-grep, markdownlint, cspell, prettier or vale config. Those would judge a PR by rules its reviewers never held it to.
+
+  Where a repo already had one of those files, its slot ran as it was. `--all` also opts in `snippets`, which is red on all five because none has tagged fences. The publish slots are red or skipped at private roots in most fixtures. All of that is global or standing red, so under D69 it moves no category and sits in the HUD's Standing block. If you'd rather the retake see checkride's full lint opinion too, say so and I'll rerun with those configs added.
+
+  **3.** The foreign runners fought back in predictable ways, and every workaround is written into its README
+
+  Across the five fixtures:
+
+  - the blobless scratch clones were refetched in full, because `git log --numstat` needs the blobs;
+  - two suites ran under a scratch Node that matches the repo's engines or CI era, because the machine's Node 24 failed them for environmental reasons;
+  - two workspace-root `eslint .` runs had their heap raised;
+  - one runner config clears the `NO_COLOR` that checkride sets, which had broken that repo's colour tests;
+  - one runner config keeps coverage when a test fails;
+  - one run sets `CI=true` so the repo's own test retries apply;
+  - one lockfile needed `npm install` rather than `npm ci`, and no locked version moved;
+  - harness files that tripped the repo's own format and dead-dependency slots were ignored.
+
+  Every change is a bullet with its reason under "Harness changes in the worktree". Tests were only ever retried, never deleted or skipped.
+
+  **4.** atis's entry-point lookup fails silently on npm, yarn and bun repos, and I parked the fix
+
+  `fallowEntryPoints` in `apps/atis/src/sources/imports.ts` runs `pnpm exec fallow list` whatever the repo's package manager. On a non-pnpm tree, pnpm re-lays `node_modules` and prints its narration on stdout ahead of fallow's JSON. The JSON parse then throws, and the `catch` returns `[]`, so the scan quietly falls back to manifest-only entry points and `meta.instruments` records nothing. The agent's first map on such a repo came out materially different in reachability and layout. It regenerated with `pnpm_config_verify_deps_before_run=false`, which is the same workaround checkride's `tools.md` documents. Fixing the lookup is atis code outside this seam, so it is parked, not edited. It is also a C2 (never-fake) gap: the fallback should be recorded, not swallowed.
+
+  **5.** A follow-up I asked the agent may have leaked one fixture's weather to your screen
+
+  One map had a red `test` slot. I needed to know whether it was a flake, which would be spurious weather in the sense D56 rules out. The probe that found it printed aggregate counts about red test slots and stitches. My follow-up then asked the agent whether the red was environmental and whether it lands on the change. The agent answered in more than counts: it said where that red comes from and where it lands, and it described the failing assertion in one line. It named no fixture number, repo or PR. The red is left as it ran, which is the right call for real weather. But if that reply reached your screen, you now know something about one fixture's weather before you read it. The first report also tied the dropped mutation to a fixture number. That is not a verdict, and step 34's shuffled copies renumber the fixtures anyway.

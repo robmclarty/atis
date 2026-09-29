@@ -9,6 +9,8 @@ The fixtures live in `fixtures/<repo>-pr<n>/`, each with its `map.json`, `atis.s
 `README.md`, and a `truth.md` whose ground-truth lines are drafted from history and marked
 **needs Rob**. Round one settled each PR's verdict from the follow-up commits instead, and
 those verdicts supersede the drafts where they differ (see [Round one](#round-one-fail-2026-09-24)).
+Round one's retake reads five outside fixtures in `fixtures/retake-<n>/` instead, blind and
+after a fixed legend (see [Round one retake](#round-one-retake-fail-2026-09-29)).
 
 All five are generated under [D58](../.plumbbob/builds/2026-09-16-map-and-svg/intent.md): the
 *tree* is historical, the *harness* is current (checkride 0.13.0, fallow 3.28.0, `--skip
@@ -204,3 +206,217 @@ The administration procedure stands for round two:
 4. **Ten seconds**, then hide it.
 5. **Record the reader's own words**, not a paraphrase.
 6. Ask nothing and explain nothing until all five are done for that reader.
+
+## Round one retake: fail (2026-09-29)
+
+The retake of round one (D63), on five outside fixtures in `fixtures/retake-<n>/` (D59,
+D60, D61), read blind (D62) after a fixed legend (D66). It failed again, for a narrower
+reason. The standing state no longer reaches the map through untouched files. It now
+reaches the map through the touched ones: a changed file's complexity or duplication
+breach reads as the change's red, and it set the category and the primary notice on four
+of the five maps.
+
+### The legend (D66)
+
+Every reader gets this, word for word, before the first map. It says what each mark
+measures and never how to weigh it.
+
+Each map is one pull request. The grey field is the repository at the PR's base; everything
+lit is the change.
+
+**The category**, the coloured block at the top left, is set by the change alone:
+
+- **VFR**, green, "glance-mergeable": nothing below applies.
+- **MVFR**, blue, "mergeable with a look": a changed line no test ran, or a changed module
+  interface that is used from outside its module; nothing red.
+- **IFR**, red, "needs instrument review": a failing check names a changed file, or a file
+  with changed lines no test ran reaches three or more modules.
+- **LIFR**, magenta, "do not approach": the checks ran nothing, or a cycle or a boundary
+  violation touches a changed file.
+- **NOINST**, grey: there were no check results to read.
+
+**The HUD blocks**, left to right after the category:
+
+- **Patch cov**: the share of the change's executable lines that the tests ran.
+- **Mutants**: mutants that survived on the changed lines.
+- **Reach**: how many modules the changed files and the files importing them span.
+- **Size**: lines added and removed, and files changed.
+- **Gate**: failing checks that name a changed file, or `pass` when none do.
+- **Standing**: failing checks that name only files the change did not touch, with the
+  repo-wide ones listed after `global`; absent when there are none.
+- **Health Δ**: not measured in this build.
+- **Notices**: how many notices sit in each tier, primary · secondary · tertiary.
+- **Other**, when shown: files the map could not sort onto the shore.
+
+A dash where a number would be means the input is missing, never zero.
+
+**The field**, the repository at the base, drawn in grey:
+
+- The bands, top to bottom, are import depth: entry points at the top, leaves at the bottom.
+  The strip above them is the shore, the non-code files grouped by kind.
+- A soft outlined region is a module; a thicker outline is a bigger interface. Each dot
+  inside it is a file, sized by its code.
+- A file drawn with points instead of round breaks a complexity or size rule, one point per
+  rule.
+- A small glyph beside a file marks duplicated code; the same glyph on several files is one
+  clone family.
+- Hatching is churn; stipple is how often the file's commits were bug fixes.
+- A small grey bolt is a failing check that names files in that module the change did not
+  touch.
+
+**The weather**, the change, drawn in light:
+
+- Cyan fill: a file this change added or modified. A cyan outline is a deleted file; a
+  dashed one is a renamed file, with its old path beside it.
+- Warm glow: the change's reach through the files that import it, dimmer at each module
+  boundary it crosses, with a lit disc where it crosses a module's interface.
+- The skin round a changed file: a bright arc is its changed lines no test ran, a dim
+  hairline is its changed lines the tests ran, and a bright notch is a mutant that survived.
+- Short strokes across the bottom of that skin are test files that import it: bright passed,
+  grey not run, red and broken failed.
+- A red bolt with a check's name: that check fails and names a changed file there.
+- A dashed grey outline: a file that usually changes with these and did not.
+- The only lines drawn between files: cyan, an import across modules this change added;
+  magenta, a cycle or a boundary violation.
+
+**The notices**, the column on the right: up to six, ranked. Box 1 is the primary: a solid
+box, a thin ring in the category's colour round its target, and its kind written under the
+mark. Boxes 2 and 3 are secondary, with a thick grey ring. Boxes 4 to 6 are tertiary, the
+numbered box alone. A dotted leader joins each row to its target, and each row gives the
+target, the kind, why, and the thresholds that fired.
+
+Then, for each map: "Merge or hold? And one reason." Ten seconds, then the map goes.
+
+### How it ran
+
+- **One reader, blind.** Rob read alone (D62). He had not written, reviewed or seen any of
+  the five PRs, and he opened no fixture folder, `truth.md` or PR page until the verdicts
+  were in. Steps 32 and 33 named no repo, PR or verdict at their pauses. One caveat: step
+  33's pause flagged that one agent reply might have reached the screen, and that reply
+  described a fixture's failing test and where it lands. Rob landed step 33 without asking
+  for a swap. Only `retake-1` (copy D) has a red `test` slot, so if that reply was read,
+  copy D was not read blind.
+- **The legend first.** Rob read the legend above on screen, word for word, before the
+  first map (D66).
+- **Shuffled copies, keyed by the builder.** The builder put the five `atis.svg` files into
+  one local page under the letters A to E, in a fresh random order, and kept the key in a
+  separate folder until the verdicts were in. The order was A `retake-4`, B `retake-2`,
+  C `retake-5`, D `retake-1`, E `retake-3`.
+- **Ten seconds, enforced.** The page scaled each map to fill the screen whole, removed it
+  after ten seconds, then asked "Merge or hold? And one reason." Rob typed each answer, and
+  the page never showed a map twice.
+
+### The five, unsealed
+
+| copy | fixture | pull request, at the fixture commit | truth | what the reviewer found |
+| --- | --- | --- | --- | --- |
+| A | `retake-4` | [remeda/remeda#793](https://github.com/remeda/remeda/pull/793), add `randomInt`, at `77ac065` | **hold** | the `bigint` branch draws from `Math.random`, so a wide range comes out biased; and it throws on input that should work, such as `randomInt(2, 2)` |
+| B | `retake-2` | [TanStack/form#2259](https://github.com/TanStack/form/pull/2259), an SSR-safe default `formId` in vue-form, at `f3474c7` | **merge** | approved with no change asked |
+| C | `retake-5` | [honojs/hono#5266](https://github.com/honojs/hono/pull/5266), wildcard middleware in the RegExpRouter, at `0a21573` | **merge** | approved with no change asked |
+| D | `retake-1` | [apollographql/apollo-client#12633](https://github.com/apollographql/apollo-client/pull/12633), cancel a running `ObservableQuery` link on unsubscribe, at `ea36754` | **hold** | an aborted in-flight query's `reobserve` promise resolves with `data: undefined`, and the `useLazyQuery` tests fail because of it |
+| E | `retake-3` | [trpc/trpc#6976](https://github.com/trpc/trpc/pull/6976), a query and mutation key prefix option, at `e11a7d2` | **hold** | a breaking change: the public `TRPCQueryKey` and `TRPCMutationKey` types gain a leading prefix element even when no prefix is set |
+
+Three holds and two merges (D60). Each fixture's `truth.md` quotes the review with its
+link.
+
+### Retake verdicts (criteria 3 and 4)
+
+| copy | fixture | reader | verdict, and the reason in Rob's words | matches truth? |
+| --- | --- | --- | --- | --- |
+| A | `retake-4` | Rob | merge: "looks like it just moved or renamed some files?" | no |
+| B | `retake-2` | Rob | hold: "looks like there is uncertainty and failing checks" | no |
+| C | `retake-5` | Rob | merge: "i'm not sure, i think it looks ok, but might need a second look" | yes |
+| D | `retake-1` | Rob | hold: "looks like something needs fixing" | verdict yes; reason no |
+| E | `retake-3` | Rob | hold: "less than 100%" | verdict yes; reason no |
+
+Rob, on the whole read: "i don't think i got it perfect, but i really like how it's looking.
+i think i just need to better learn what the graphics actually mean. i'm just guessing and
+intuiting."
+
+### What the maps showed
+
+| copy | category | HUD after the category | primary notice |
+| --- | --- | --- | --- |
+| A | MVFR | Patch cov 100%, Mutants 3 survived, Reach 7 cells, Gate pass, Standing 6 red | `survived-mutants` on `src/randomInt.ts` |
+| B | IFR | Patch cov 83%, Mutants 3 survived, Reach 4 cells, Gate 1 red, Standing 8 red | `red-check-slot`, `dupes` on `packages/vue-form/src/useForm.tsx` |
+| C | IFR | Patch cov 100%, Mutants 5 survived, Reach 23 cells, Gate 1 red, Standing 5 red | `red-check-slot`, `health` on `src/router/reg-exp-router/router.ts` |
+| D | IFR | Patch cov 100%, Mutants —, Reach 20 cells, Gate 3 red, Standing 10 red | `red-check-slot`, `health` on `src/core/QueryManager.ts` |
+| E | IFR | Patch cov 94%, Mutants 37 survived, Reach 7 cells, Gate 1 red, Standing 8 red | `red-check-slot`, `dupes` on `packages/tanstack-react-query/src/internals/utils.ts` |
+
+- **The category ran backwards on three of five.** Both merges read IFR and one of the
+  holds read MVFR. A reader who followed the category alone would have scored 2 of 5. Rob
+  scored 3 by merging C against its IFR.
+- **Four of five primaries are a `health` or `dupes` slot on a touched file.** D67 counts
+  a red slot as the change's when it names a changed file. But `health` and `dupes` name a
+  file for what it is, a function over a complexity threshold or a member of a clone
+  family, not for what the change did to it. This build has no base-side metrics (phase 3),
+  so atis cannot tell a breach the change made from one it only touched. On C the `health`
+  slot is the whole of the IFR. On B, one uncovered changed line in a file reaching 4 cells
+  would make it IFR anyway. Both reviewers approved without asking for a change.
+- **The map found A's bug and said so quietly.** A's primary notice sits on the bug: all
+  three surviving mutants are on line 23 of `src/randomInt.ts`, the first line of the
+  `bigint` branch the reviewer called biased. But mutants do not move the category, and
+  every block around them read calm: MVFR, Patch cov 100%, Gate pass. The change moved and
+  renamed nothing. It adds one function with its tests and docs. The only dashed outline on
+  the map is the missing co-change ghost round `mapping.md`, at notice 2.
+- **D's failing tests ranked last.** The reviewer's "the `useLazyQuery` tests fail" is on
+  the map. The `test` slot is red on `useLazyQuery.test.tsx`, and that red alone would make
+  D IFR. But its notice ranks sixth, tertiary, behind two `health` rows and an interface
+  change. A `red-check-slot` notice carries one severity (10) whatever the slot, and a test
+  file reaches no cells, so a failing test ranks below any red slot on a file with reach.
+- **E's break never reached the map.** The reviewer blocked a breaking change to the
+  exported key types in `internals/types.ts`, and no notice names that file. An
+  `interface-change` notice needs the changed cell to be wide (fan-in at or above the
+  repository's 95th percentile) or deep, and the `internals` cell has an in-repo fan-in of
+  1 in band 1. A library's readers are outside its repository, so in-repo fan-in reads its
+  public types as narrow. Rob held on "less than 100%", which was Patch cov 94%.
+- **The shore's residual is large on outside repositories.** The Other block read 43, 53,
+  72 and 106 on B to E. The shore rules were written against checkride and fascicle, so
+  other projects' tooling files fall through them. Nothing in the reasons points at it.
+
+### Notice precision (criterion 5, read per D65)
+
+| copy | the thing ground truth flags | in the top three? |
+| --- | --- | --- |
+| A | the `bigint` branch (lines 23 to 27) and the throws in `src/randomInt.ts` | **yes**: notice 1 is `survived-mutants` on `src/randomInt.ts`, and all three mutants live on line 23, in the `bigint` branch |
+| B | nothing (merge) | n/a |
+| C | nothing (merge) | n/a |
+| D | the `reobserve` promise in `src/core/ObservableQuery.ts`, `execute` in `src/react/hooks/useLazyQuery.ts`, and the failing `useLazyQuery` tests | **no**: notice 2 is on `useLazyQuery.ts` but for a `health` red, which D65 rules out; notice 3 is an interface change on `src/core`, not the behaviour the reviewer objected to; the failing tests are notice 6 |
+| E | the key types in `internals/types.ts` and the key builders in `internals/utils.ts` | **no**: notice 1 is on `utils.ts` but for a `dupes` red, which D65 rules out; notice 2 is an uncovered line in `createOptionsProxy.ts`, unrelated to the break; no notice names `types.ts` |
+
+1 of 3.
+
+### Retake result
+
+One reader, Rob, blind per D62 (with copy D's caveat above) and briefed per D66.
+
+- **Criterion 4, verdicts:** 3 of 5 agree with ground truth. The pass line is 4.
+- **Criterion 4, hold reasons:** neither correct hold (D, E) gives the reviewer's finding
+  as its reason, and the third hold (B) was a merge.
+- **Criterion 5, notice precision:** 1 of 3, read per D65.
+
+**Fail line.** Round one's split took the standing state off the untouched files, and it
+came back through the touched ones. A changed file's own complexity and duplication breaches
+set the category and took the primary notice. Meanwhile the change's own signals that
+matched the reviews stayed quiet or ranked low: A's live mutants on the buggy line, and D's
+failing tests. E's break never reached the map. The encodings to change, each parked for
+`/plumbbob:refine` (D38):
+
+1. **A `health` or `dupes` red on a touched file counts as the change's red.** These slots
+   name a file for what it already is. Touching an already-complex or already-duplicated
+   file therefore makes the category IFR and takes the primary notice. That was four of
+   five primaries, and the whole of C's IFR.
+2. **A failing test on the change ranks like a threshold breach.** Every red slot carries
+   the same severity, and a test file reaches no cells, so D's failing tests were notice 6.
+3. **A published package's public types read as narrow.** The interface notice measures
+   fan-in inside the repository, but a library's readers are outside it, so E's breaking
+   change to exported types drew no notice.
+
+### For round two, from the retake
+
+Parked beside the encodings, since it changes the test rather than the map:
+
+- **One read of the legend does not teach it.** In Rob's words, "i think i just need to
+  better learn what the graphics actually mean. i'm just guessing and intuiting." A read
+  the map does not bear out on A ("moved or renamed", on a change that renamed nothing)
+  points the same way.
