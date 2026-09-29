@@ -115,13 +115,16 @@ export const DEFAULT_CONFIG: Config = {
   // The agent-era dotfolders sort by what they steer: `.claude-plugin/` packages prompts
   // and skills, while `.mcp.json`, `.ridgeline/` and `.codegraph/` configure a tool the
   // way `fallow.toml` does. A schema and a benchmark corpus are data wherever they sit.
+  // The rows below `.codegraph/**` and their like in the later groups come from the retake's
+  // census of five outside repos; code the scan cannot read (`.svelte`, `.vue`, loose
+  // JavaScript) is left to `other` on purpose, so the residual stays loud about it.
   groups: [
     {
       id: 'prompts',
       patterns: ['AGENTS.md', 'CLAUDE.md', '.claude/**', '.claude-plugin/**', '.cursor/**', 'skills/**', 'prompts/**'],
       except: ['hooks/**'],
     },
-    { id: 'docs', patterns: ['*.md', 'docs/**', 'research/**', '.plumbbob/**', 'LICENSE'] },
+    { id: 'docs', patterns: ['*.md', '*.mdx', 'docs/**', 'research/**', '.plumbbob/**', 'LICENSE'] },
     {
       id: 'config',
       patterns: [
@@ -137,17 +140,83 @@ export const DEFAULT_CONFIG: Config = {
         '.mcp.json',
         '.ridgeline/**',
         '.codegraph/**',
+        '.eslintrc*',
+        '.prettierrc*',
+        '.prettierignore',
+        '.semgrepignore',
+        '.ts-prunerc',
+        'knip.json',
+        'api-extractor.json',
+        'tsdoc.json',
+        '.attw.json',
+        '.size-limit*',
+        'turbo.json',
+        'nx.json',
+        '.nx/**',
+        'lerna.json',
+        'bunfig.toml',
+        'angular.json',
+        'ng-package.json',
+        'wrangler.json*',
+        'vercel.json',
+        '.changeset/**',
+        '/config/**',
       ],
+      // A root `config/` holds a tool's settings beside the build code that reads them, and
+      // this row is also what makes a `.ts` file tool config rather than terrain (D57). So the
+      // row is anchored, leaving a `src/config/` module or a package named `config` alone, and
+      // its TypeScript stays terrain, as it does under `scripts/**`.
+      except: ['/config/**/*.ts', '/config/**/*.tsx', '/config/**/*.mts', '/config/**/*.cts'],
     },
     {
       id: 'settings',
-      patterns: ['.npmrc', '.editorconfig', '.gitignore', '.gitattributes', '.vscode/**', '.env.example'],
+      patterns: [
+        '.npmrc',
+        '.editorconfig',
+        '.gitignore',
+        '.gitattributes',
+        '.vscode/**',
+        '.env.example',
+        '.nvmrc',
+        '.node-version',
+        '.tool-versions',
+        '.env',
+        '.git-blame-ignore-revs',
+        '.gitkeep',
+      ],
     },
-    { id: 'deps', patterns: ['package.json', 'pnpm-workspace.yaml', ...LOCKFILES] },
-    { id: 'ci', patterns: ['.github/**', 'Dockerfile', 'compose*.yaml', 'compose*.yml'] },
-    { id: 'scripts', patterns: ['scripts/**', 'bin/**', 'hooks/**', '*.sh', '*.mjs'] },
+    {
+      id: 'deps',
+      patterns: [
+        'package.json',
+        'pnpm-workspace.yaml',
+        ...LOCKFILES,
+        'patches/**',
+        'renovate.json',
+        '.npmignore',
+        'jsr.json',
+        'deno.json',
+        'deno.lock',
+      ],
+    },
+    {
+      id: 'ci',
+      patterns: [
+        '.github/**',
+        'Dockerfile',
+        'compose*.yaml',
+        'compose*.yml',
+        '.circleci/**',
+        '.codesandbox/**',
+        'codecov.yml',
+        '.kodiak.toml',
+        '.octocov*',
+        '.dockerignore',
+      ],
+    },
+    { id: 'scripts', patterns: ['scripts/**', 'bin/**', 'hooks/**', '.husky/**', '*.sh', '*.mjs'] },
     { id: 'examples', patterns: ['examples/**', 'templates/**'], outside_members: true },
-    { id: 'assets', patterns: ['site/**', ...IMAGES, ...FONTS, '*.css', '*.html', '*.svg'] },
+    { id: 'assets', patterns: ['site/**', 'www/**', ...IMAGES, ...FONTS, '*.css', '*.html', '*.svg'] },
     // Only non-test files reach the table, so `test/**` holds just the fixtures and data beside the tests.
     // A JSON Schema is the `schema/**` row's kind of file, so it lands in `data` even when
     // it sits beside the source it describes (fascicle's `packages/core/src/flow-schema.json`).
@@ -160,8 +229,14 @@ export const DEFAULT_CONFIG: Config = {
         '*.schema.json',
         '*-schema.json',
         'bench/**',
+        'benchmarks/**',
         '*.csv',
         'test/**',
+        '__snapshots__/**',
+        '*.snap',
+        '*.har',
+        '*.sql',
+        '*.prisma',
       ],
     },
   ],

@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 0 and 1: the map.json spike and the static SVG
 
-**Current step:** 49 — fix(cli): scan .mts and .cts files as TypeScript
+**Current step:** 50 — fix(core): sort the outside repos' tooling files into shore groups by kind
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -71,7 +71,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 46. feat(cli): fingerprint the shape of each exported declaration
 - ☑ 47. fix(core): raise interface-change only when an exported name or shape moved
 - ☑ 48. feat(cli): read a published package's exported names as wide
-- ☐ 49. fix(cli): scan .mts and .cts files as TypeScript
+- ☑ 49. fix(cli): scan .mts and .cts files as TypeScript
 - ☐ 50. fix(core): sort the outside repos' tooling files into shore groups by kind
 - ☐ 51. docs(inspiration): cite the five outside repos the retake read
 - ☐ 52. chore(fixtures): refresh the five retake maps after the fifth pass
@@ -131,6 +131,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] cli.test.ts runs the built dist/cli.js while checkride's types slot rebuilds dist in parallel, so the first gate after a change to a cross-package contract can go red on a half-rebuilt dist (step 43: core's new buildMap met the old scanner's scans, exit 2) and green on the rerun; make the test wait on, or own, the build it runs
 - [ ] follow a name a barrel imports and then exports with a bare export { a } in the public-name walk; D75 follows only export … from, export * and export type *
 - [ ] an index.mts or index.cts founds no barrel, and a dist/ .mjs or .cjs target maps to no src/ .mts or .cts, since core's barrelOf and the scan's candidates still name only .ts and .tsx (found at step 49, D77)
+- [ ] shore residual after step 50: the retake still leaves kinds no row names in other (trpc: docker-compose.yaml, prisma migration_lock.toml and migrations/meta/*.json, serverless.yml, vitest.workspace.json, robots.txt, ATTRIBUTION.txt; hono: deno.*.json variants, package.cjs.json, runtime-tests static fixtures); candidates docker-compose*.y*ml to ci, migrations/** to data, vitest.workspace.* to config
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -2660,3 +2661,47 @@ folder, so it rides the branch into the PR.)*
   The demo golden is unchanged, because its members don't carry the new fields.
 
   I parked one gap: a barrel that imports a name and re-exports it with a bare `export { a }`. D75 names only the three `from` forms.
+
+- 2026-09-29 — step 49 checkpointed · a3480f003 — fix(cli): scan .mts and .cts files as TypeScript (5m)
+
+  **Summary**: The scan and `classifyFile` now treat `.mts` and `.cts` files, and their `.d.mts` and `.d.cts` declarations, as TypeScript. A `.mts` source becomes an organelle, a `.test.mts` a test, a `vite.config.mts` config, and `./x.mjs` resolves to `x.mts`. No new code was needed for the resolution or the script kind.
+
+  1. One pattern in core and one in the scan now also match .mts and .cts
+  2. The script kind they need is the one they already got, and a comment now says why
+  3. NodeNext resolved `./x.mjs` to `x.mts` once the scan parsed the importing file
+  4. Barrels and published entries still recognise only .ts and .tsx, so I parked that
+
+  **Readout**: Step 49 - fix(cli): scan .mts and .cts files as TypeScript
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored:
+               - D77 (mts-cts)
+               - D57 (ts-config-is-shore)
+               - D4 (tests-not-terrain)
+  constraints  11 of 11 honored
+  seam         held: 4 of 4 declared, no strays
+  diff         +106 -17 across 4 files
+  spent        5 min · 1 turn · 17s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Approve and checkpoint. The done-when's four cases are pinned by tests on both sides of the seam, the gate is green, and the only loose end is parked rather than folded in.
+
+  **1.** One pattern in core and one in the scan now also match .mts and .cts
+
+  `/\.tsx?$/` became `/\.(?:[cm]?ts|tsx)$/` in `libs/core/src/modules.ts` and in `apps/atis/src/sources/imports.ts`. The test-name pattern in core widened the same way, so `.test.mts` and `.spec.cts` read as tests. Tool config needed nothing new, because the `config` row's `*.config.*` already matches `vite.config.mts` once `classifyFile` stops sending it to the shore as a non-TypeScript file. I kept the two patterns separate rather than having the scan call `classifyFile`, because the plan named two patterns and the scan's check means "parse this" rather than "sort this".
+
+  **2.** The script kind they need is the one they already got, and a comment now says why
+
+  TypeScript 6.0.3 has no `ScriptKind` for `.mts` or `.cts`. I probed the compiler's own `getScriptKindFromFileName` (internal, not in the public `.d.ts`): it returns `TS` for all four extensions. `createSourceFile` also marks a `.d.mts` or `.d.cts` as a declaration file from its name alone. The existing `.tsx ? TSX : TS` line therefore already parses them the way the compiler does. I left the line as it was and added a comment explaining this. The CLI test pins the declaration-file behaviour: the shape of `types.d.mts` is its interface as written.
+
+  **3.** NodeNext resolved `./x.mjs` to `x.mts` once the scan parsed the importing file
+
+  The resolution host already offers every tracked path, and `ts.resolveModuleName` under NodeNext already maps `.mjs` to `.mts`, then `.d.mts`, and `.cjs` to `.cts`. The only thing missing was that the importing `.mts` file was never parsed. The new CLI test covers all three edges from one `src/index.mts`: `./handle.mjs` to `.mts`, `./types.mjs` to `.d.mts`, and `./legacy.cjs` to `.cts`. It then builds a map, which puts the four modules on the terrain, keeps the test off it, and places `vite.config.mts` in the `config` group.
+
+  **4.** Barrels and published entries still recognise only .ts and .tsx, so I parked that
+
+  Two other places name `.ts` and `.tsx` by hand. Core's `barrelOf` looks only for `index.ts` and `index.tsx`. The scan's `candidates` maps a `dist/*.mjs` target back to `src/*.ts` or `.tsx`, never to `.mts`. Neither is in this step's done-when or seam: one is cell placement and the other is D75's entry mapping. I parked them in one line rather than widening the step.
