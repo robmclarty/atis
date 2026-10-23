@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 13 — fix(core): keep a neighbour's centre out of another cell's membrane
+**Current step:** 14 — feat(svg): tell an added file from a modified one
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -35,7 +35,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 10. fix(core): sort the retake's leftover shore files by kind
 - ☑ 11. fix(svg): size HUD blocks for the widest fallback monospace face
 - ☑ 12. feat(svg): draw a cell's own dents and clone family on its membrane
-- ☐ 13. fix(core): keep a neighbour's centre out of another cell's membrane
+- ☑ 13. fix(core): keep a neighbour's centre out of another cell's membrane
 - ☐ 14. feat(svg): tell an added file from a modified one
 - ☐ 15. feat(svg): draw a legend inset and an annotated practice map
 - ☐ 16. chore(fixtures): select the tuning half of the precision corpus
@@ -259,3 +259,4 @@ folder, so it rides the branch into the PR.)*
   TypeScript exposes no public handle on its error type, but the error and unresolved types are distinct objects from `checker.getAnyType()`. So a checked type that reaches any `any` other than the written one stays uncompared, and an npm return type swapped for another reads `interface-uncompared` rather than unchanged. Ordinary inferred code (generics, async, `as const`, `JSON.parse`'s declared `any`) compares without a false null. This repo annotates its exports, so `shapes base` and `shapes head` report 0 ms; the real cost waits for the corpus, as D118 says.
 
 - 2026-10-23 — step 12 checkpointed · 0e304ce14 — feat(svg): draw a cell's own dents and clone family on its membrane (1 drift, 8m)
+- 2026-10-23 — step 13 checkpointed · 9e6232882 — fix(core): keep a neighbour's centre out of another cell's membrane (27m)

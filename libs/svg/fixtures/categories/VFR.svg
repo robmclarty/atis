@@ -275,7 +275,7 @@
           <rect x="490" y="385.5" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
           <text x="495" y="392.95" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">6</text>
         </g>
-        <text x="505" y="393.5" font-size="8" font-weight="bold" fill="#e6edf3">libs/core/src/pm/tools.ts</text>
+        <text x="505" y="393.5" font-size="8" font-weight="bold" fill="#e6edf3">+libs/core/src/pm/tools.ts</text>
         <text x="505" y="402.9" font-size="7" font-variant="small-caps" fill="#e6edf3">red-check-slot</text>
         <text x="505" y="413" font-size="8" fill="#e6edf3">the `test` check is red on this changed file</text>
         <text x="505" y="422.4" font-size="7" fill="#6b7480">severity 10</text>

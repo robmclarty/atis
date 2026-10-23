@@ -104,6 +104,13 @@ export const HUD_ORDER: readonly string[] = [
 /** The unit the chrome writes tallies in: `−` is the minus sign, `·` the tier separator. */
 const MINUS = '−';
 const DOT = '·';
+/**
+ * What an added file's path is written with, wherever the map writes it
+ * (D120). Added and modified files wear the one change hue, since every free
+ * hue already means something (C11), so the text is what tells a new file
+ * from an edited one.
+ */
+const ADDED = '+';
 
 /**
  * One grade block: a label, a bold value, and a tail after it. A muted
@@ -127,10 +134,11 @@ type Anchor =
   | { readonly kind: 'point'; readonly at: Position }
   | { readonly kind: 'contour'; readonly contour: Contour; readonly foot: readonly [number, number] };
 
-/** A notice with its rank and, when the field has it, its target's anchor and the origin its marks hang from. */
+/** A notice with its rank, whether the change added its target, and, when the field has it, its target's anchor and the origin its marks hang from. */
 type Ranked = {
   readonly rank: number;
   readonly notice: Notice;
+  readonly added: boolean;
   readonly anchor?: Anchor;
 };
 
@@ -367,9 +375,10 @@ function anchorOf(target: string, layout: Layout): Anchor | undefined {
 
 /** The six the list has room for, in the map's rank order (C7), each with its anchor when the field has one. */
 function noticesInBudget(map: MapJson, layout: Layout): readonly Ranked[] {
+  const added = new Set(map.weather.changed.filter((file) => file.kind === 'added').map((file) => file.path));
   return map.notices.slice(0, NOTICE_BUDGET).map((notice, index): Ranked => {
     const anchor = anchorOf(notice.target, layout);
-    return { rank: index + 1, notice, ...(anchor === undefined ? {} : { anchor }) };
+    return { rank: index + 1, notice, added: added.has(notice.target), ...(anchor === undefined ? {} : { anchor }) };
   });
 }
 
@@ -408,11 +417,12 @@ function thresholdsOf(notice: Notice): string {
     .join(` ${DOT} `);
 }
 
-/** A row's lines: the target in bold, the kind in small caps, the why, and the thresholds in the muted grey. */
-function linesOf(notice: Notice): readonly Line[] {
+/** A row's lines: the target in bold, `+` first when the change added it, the kind in small caps, the why, and the thresholds in the muted grey. */
+function linesOf({ notice, added }: Ranked): readonly Line[] {
   const thresholds = thresholdsOf(notice);
+  const target = added ? `${ADDED}${notice.target}` : notice.target;
   return [
-    ...wrap(notice.target, budgetFor(NOTICE_TEXT_SIZE)).map((text): Line => ({ text, size: NOTICE_TEXT_SIZE, fill: CHROME_INK, bold: true })),
+    ...wrap(target, budgetFor(NOTICE_TEXT_SIZE)).map((text): Line => ({ text, size: NOTICE_TEXT_SIZE, fill: CHROME_INK, bold: true })),
     { text: notice.kind, size: NOTICE_SMALL_SIZE, fill: CHROME_INK, smallCaps: true },
     ...wrap(notice.why, budgetFor(NOTICE_TEXT_SIZE)).map((text): Line => ({ text, size: NOTICE_TEXT_SIZE, fill: CHROME_INK })),
     ...(thresholds === ''
@@ -425,7 +435,7 @@ function linesOf(notice: Notice): readonly Line[] {
 function layOutRows(ranked: readonly Ranked[], top: number): readonly Row[] {
   let y = top;
   return ranked.map((entry): Row => {
-    const lines = linesOf(entry.notice);
+    const lines = linesOf(entry);
     const height = lines.reduce((total, line) => total + line.size * NOTICE_LEADING, 0);
     const row = { ranked: entry, y, lines, height };
     y += height + NOTICE_ROW_GAP;

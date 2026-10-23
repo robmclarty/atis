@@ -71,6 +71,85 @@ Run at the end of phases 1 and 2:
 
 Fail means the encodings change, not the test.
 
+## The legend (D66, D87)
+
+Every reader in every reading from the second retake on hears this, word for word, before
+the practice map and the first map. It says what each mark measures and never how to weigh
+it. It is [the retake's legend](#the-legend-d66), which stays below as it was read then, with
+each mark added since:
+
+- **The `+` on an added file's path** (D120): added and modified files share the one change
+  colour, so the text tells them apart.
+
+Each map is one pull request. The grey field is the repository at the PR's base; everything
+lit is the change.
+
+**The category**, the coloured block at the top left, is set by the change alone:
+
+- **VFR**, green, "glance-mergeable": nothing below applies.
+- **MVFR**, blue, "mergeable with a look": a changed line no test ran, or a changed module
+  interface that is used from outside its module; nothing red.
+- **IFR**, red, "needs instrument review": a failing check names a changed file, or a file
+  with changed lines no test ran reaches three or more modules.
+- **LIFR**, magenta, "do not approach": the checks ran nothing, or a cycle or a boundary
+  violation touches a changed file.
+- **NOINST**, grey: there were no check results to read.
+
+**The HUD blocks**, left to right after the category:
+
+- **Patch cov**: the share of the change's executable lines that the tests ran.
+- **Mutants**: mutants that survived on the changed lines.
+- **Reach**: how many modules the changed files and the files importing them span.
+- **Size**: lines added and removed, and files changed.
+- **Gate**: failing checks that name a changed file, or `pass` when none do.
+- **Standing**: failing checks that name only files the change did not touch, with the
+  repo-wide ones listed after `global`; absent when there are none.
+- **Health Δ**: not measured in this build.
+- **Notices**: how many notices sit in each tier, primary · secondary · tertiary.
+- **Other**, when shown: files the map could not sort onto the shore.
+
+A dash where a number would be means the input is missing, never zero.
+
+**The field**, the repository at the base, drawn in grey:
+
+- The bands, top to bottom, are import depth: entry points at the top, leaves at the bottom.
+  The strip above them is the shore, the non-code files grouped by kind.
+- A soft outlined region is a module; a thicker outline is a bigger interface. Each dot
+  inside it is a file, sized by its code.
+- A file drawn with points instead of round breaks a complexity or size rule, one point per
+  rule.
+- A small glyph beside a file marks duplicated code; the same glyph on several files is one
+  clone family.
+- Hatching is churn; stipple is how often the file's commits were bug fixes.
+- A small grey bolt is a failing check that names files in that module the change did not
+  touch.
+
+**The weather**, the change, drawn in light:
+
+- Cyan fill: a file this change added or modified, one colour for both. Wherever the map
+  writes an added file's path, it begins with `+`; a path with no `+` is a file the change
+  modified. A cyan outline is a deleted file; a dashed one is a renamed file, with its old
+  path beside it.
+- Warm glow: the change's reach through the files that import it, dimmer at each module
+  boundary it crosses, with a lit disc where it crosses a module's interface.
+- The skin round a changed file: a bright arc is its changed lines no test ran, a dim
+  hairline is its changed lines the tests ran, and a bright notch is a mutant that survived.
+- Short strokes across the bottom of that skin are test files that import it: bright passed,
+  grey not run, red and broken failed.
+- A red bolt with a check's name: that check fails and names a changed file there.
+- A dashed grey outline: a file that usually changes with these and did not.
+- The only lines drawn between files: cyan, an import across modules this change added;
+  magenta, a cycle or a boundary violation.
+
+**The notices**, the column on the right: up to six, ranked. Box 1 is the primary: a solid
+box, a thin ring in the category's colour round its target, and its kind written under the
+mark. Boxes 2 and 3 are secondary, with a thick grey ring. Boxes 4 to 6 are tertiary, the
+numbered box alone. A dotted leader joins each row to its target, and each row gives the
+target (with a leading `+` when the change added it), the kind, why, and the thresholds that
+fired.
+
+Then, for each map: "Merge or hold? And one reason." Ten seconds, then the map goes.
+
 ## Round one: fail (2026-09-24)
 
 The map did not separate merge from hold at a glance. Where it did separate the five, it

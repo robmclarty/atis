@@ -9,6 +9,7 @@ import { expect, test } from 'vitest';
 import { CATEGORY_HUES, HUD_ORDER, NOTICE_BUDGET, wrap } from '../chrome.js';
 import { renderSvg } from '../render.js';
 import {
+  CHANGE_HUE,
   CHROME_INK,
   CHROME_MUTED,
   EMPHASIS_PAD,
@@ -431,6 +432,37 @@ test('the notice list draws at most six rows in rank order, each with its why an
   expect(textOf(blockOf(calm, 'notices') ?? '')).toBe('Notices 0·0·0');
   expect(group(calm, 'leaders')).toBeUndefined();
   expect(group(calm, 'marks')).toBeUndefined();
+});
+
+test('a row writes an added target with a leading +, a modified one without, and both keep the one change hue (D120)', () => {
+  const map = demo();
+  const kinds = new Map(map.weather.changed.map((file) => [file.path, file.kind] as const));
+  const svg = renderSvg(map);
+  const rows = [...drawn(chromeOf(svg), 'notices').matchAll(/<g data-notice="\d" [^>]*data-target="([^"]+)">\n\s*<g data-mark[\s\S]*?<\/g>\n\s*<text [^>]*font-weight="bold"[^>]*>([^<]*)<\/text>/g)].map(
+    ([, target, first]) => ({ target: target ?? '', first: first ?? '' }),
+  );
+  // The demo's sixth notice is on the file the change added; the others are on files it modified.
+  const added = rows.filter((row) => kinds.get(row.target) === 'added');
+  const modified = rows.filter((row) => kinds.get(row.target) === 'modified');
+  expect(added.map((row) => row.target)).toEqual(['libs/core/src/pm/tools.ts']);
+  expect(modified.length).toBeGreaterThan(0);
+  for (const row of added) expect(row.first).toBe(`+${row.target}`);
+  for (const row of modified) expect(row.first).toBe(row.target);
+  // The mark is text alone: the row keeps its target as the map keys it, and the stain on the field is the one hue.
+  expect(svg).toContain('data-target="libs/core/src/pm/tools.ts"');
+  expect(svg).not.toContain('data-target="+');
+  const changed = drawn(svg, 'changed');
+  expect(changed.trimStart().startsWith(`<g id="changed" fill="${CHANGE_HUE}"`)).toBe(true);
+  const stains = [...changed.matchAll(/<circle data-id="[^"]+" data-kind="(added|modified)"([^>]*)\/>/g)];
+  expect(stains.map(([, kind]) => kind)).toContain('added');
+  for (const [, , attrs] of stains) expect(attrs).not.toContain('fill=');
+
+  // The same file, modified instead, loses its mark.
+  const edited = renderSvg({
+    ...map,
+    weather: { ...map.weather, changed: map.weather.changed.map((file) => (file.kind === 'added' ? { ...file, kind: 'modified' } : file)) },
+  });
+  expect(textOf(drawn(chromeOf(edited), 'notices'))).not.toContain('+libs/');
 });
 
 test('one dotted leader per placed notice, from the centre of its row box to the centre of its mark on the map', () => {
