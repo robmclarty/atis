@@ -567,14 +567,11 @@ function readersOf(path: string, names: readonly string[], edges: readonly Named
     if (seen.has(key)) continue;
     seen.add(key);
     for (const edge of into.get(file) ?? []) {
-      if (edge.reexports !== undefined) {
-        for (const pass of edge.reexports) {
-          const as = passedAs(pass, name);
-          if (as !== undefined) pending.push([edge.from, as]);
-        }
-      } else if (edge.from !== path && classifyFile(edge.from) !== 'test' && (edge.names.includes(name) || edge.names.includes(STAR))) {
-        readers.add(edge.from);
-      }
+      const passes = (edge.reexports ?? []).flatMap((pass) => passedAs(pass, name) ?? []);
+      for (const as of passes) pending.push([edge.from, as]);
+      // An import that also passes the name on is followed for it; one that only takes it reads it (D82).
+      const takes = edge.names.includes(name) || edge.names.includes(STAR);
+      if (takes && passes.length === 0 && edge.from !== path && classifyFile(edge.from) !== 'test') readers.add(edge.from);
     }
   }
   return readers;

@@ -797,6 +797,35 @@ test('two reshaped files at one severity and reach rank by who reads the names t
   expect(box?.weight).toBe(28.426);
 });
 
+test('an import that passes one name on and keeps another reads the one it keeps, and is followed for the other (D82)', () => {
+  const make = 'src/kit/make.ts';
+  const scenario: Scenario = {
+    files: [KIT, make, ...APP],
+    changed: [change(make)],
+    bands: { 'folder:src/kit': 5 },
+    edges: [`src/app/one.ts > ${make}`, `${KIT} > ${make}`, `src/app/two.ts > ${KIT}`],
+    // The barrel imports both names, exports `make` bare and uses `pack` itself.
+    reexports: { [`${KIT} > ${make}`]: [{ name: 'make', as: 'make' }] },
+    names: { [`src/app/one.ts > ${make}`]: ['make'], [`${KIT} > ${make}`]: ['make', 'pack'], [`src/app/two.ts > ${KIT}`]: ['make'] },
+    exports: { [make]: ['make', 'pack'], [KIT]: ['make'] },
+  };
+  const reshape = (names: readonly string[]): Scenario => ({
+    ...scenario,
+    baseShapes: { [make]: Object.fromEntries(names.map((name) => [name, `function ${name}(): string;`])) },
+    shapes: { [make]: Object.fromEntries(names.map((name) => [name, `function ${name}(): number;`])) },
+  });
+
+  // Both moved: `one` takes `make` straight and `two` through the barrel, which only passes `make` on but reads `pack` itself.
+  expect(noticesFor(reshape(['make', 'pack']))[0]?.inputs['readers']).toBe(3);
+  // With `pack` the same on both sides, only `make` moved, and the barrel reads nothing that did.
+  const onlyMake = noticesFor({
+    ...scenario,
+    baseShapes: { [make]: { make: 'function make(): string;', pack: 'function pack(): string;' } },
+    shapes: { [make]: { make: 'function make(): number;', pack: 'function pack(): string;' } },
+  });
+  expect(onlyMake[0]?.inputs['readers']).toBe(2);
+});
+
 test("readers follow a moved name through re-exports by name, and neither the re-exporter nor a test counts as one (D82, D75)", () => {
   const make = 'src/kit/make.ts';
   const notices = noticesFor({

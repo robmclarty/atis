@@ -761,6 +761,64 @@ test("trpc #6976's reshaped key raises interface-change on the internals file it
   expect(unpublished.notices).toEqual([]);
 });
 
+/**
+ * A published package whose barrel imports names and then exports them bare,
+ * by name, whole as a namespace, and as its default, beside one name it
+ * imports and keeps; and whose `exports` reach `.mts` and `.cts` barrels only
+ * through `dist/` (D75, D77).
+ */
+const BARE: Readonly<Record<string, string>> = {
+  'package.json': `{
+  "name": "bare",
+  "type": "module",
+  "exports": {
+    ".": { "import": { "types": "./dist/index.d.mts", "default": "./dist/index.mjs" } },
+    "./legacy": { "require": { "types": "./dist/legacy.d.cts", "default": "./dist/legacy.cjs" } }
+  }
+}
+`,
+  'src/index.mts': `import { make, unmake } from './make.mjs';
+import * as tools from './tools.mjs';
+import kept from './kept.mjs';
+import { quiet } from './quiet.mjs';
+
+export { make as build, tools };
+export default kept;
+
+quiet(unmake);
+`,
+  'src/make.mts': `export function make(): number {\n  return 1;\n}\nexport function unmake(): number {\n  return 0;\n}\n`,
+  'src/tools.mts': `export const hammer: number = 1;\nexport const saw: number = 2;\n`,
+  'src/kept.mts': `const kept: number = 3;\nexport default kept;\n`,
+  'src/quiet.mts': `export function quiet(value: unknown): void {\n  void value;\n}\n`,
+  'src/legacy.cts': `export const legacy: string = 'legacy';\n`,
+};
+
+test('a name imported and then exported bare passes through the public-name walk as `export … from` does (D75)', () => {
+  const bare = scanTree(BARE);
+
+  expect(bare.edges.filter((edge) => edge.from === 'src/index.mts').map((edge) => [edge.to, edge.names, edge.reexports])).toEqual([
+    ['src/make.mts', ['make', 'unmake'], [{ name: 'make', as: 'build' }]],
+    ['src/tools.mts', ['*'], [{ name: '*', as: 'tools' }]],
+    ['src/kept.mts', ['default'], [{ name: 'default', as: 'default' }]],
+    // A name the barrel imports for its own use and never exports passes nothing on.
+    ['src/quiet.mts', ['quiet'], undefined],
+  ]);
+  expect(Object.fromEntries(findPublicNames([bare]))).toEqual({
+    'src/index.mts': { names: ['build', 'default', 'tools'], members: ['bare'] },
+    'src/make.mts': { names: ['make'], members: ['bare'] },
+    'src/tools.mts': { names: ['hammer', 'saw'], members: ['bare'] },
+    'src/kept.mts': { names: ['default'], members: ['bare'] },
+    'src/legacy.cts': { names: ['legacy'], members: ['bare'] },
+  });
+});
+
+test('exports that reach an index.mts or a .cts barrel through dist/ map back to the source as .ts targets do (D75, D77)', () => {
+  expect(scanTree(BARE).members).toEqual([
+    { name: 'bare', dir: '.', entry: ['src/index.mts', 'src/legacy.cts'], published: true, surface: ['src/index.mts', 'src/legacy.cts'] },
+  ]);
+});
+
 test('main, module and types map through format folders, and private publishes only with publishConfig (D75)', () => {
   const formats = scanTree(FORMATS);
   const surfaces = formats.members.map((member) => [member.name, member.published, member.surface]);

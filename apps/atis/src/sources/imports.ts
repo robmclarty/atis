@@ -556,6 +556,34 @@ export function declaredShapes(declarations: ts.SourceFile, names: readonly stri
   );
 }
 
+/**
+ * The local names a file exports with no `from` of its own, each with the
+ * names it exports it as: `export { a as b }` and `export default a`. One
+ * that an import bound is a re-export by another road (D75).
+ */
+function bareExports(source: ts.SourceFile): ReadonlyMap<string, readonly string[]> {
+  const exported = new Map<string, string[]>();
+  for (const statement of source.statements) {
+    if (ts.isExportDeclaration(statement) && statement.moduleSpecifier === undefined && statement.exportClause !== undefined) {
+      if (!ts.isNamedExports(statement.exportClause)) continue;
+      for (const element of statement.exportClause.elements) push(exported, (element.propertyName ?? element.name).text, element.name.text);
+    } else if (ts.isExportAssignment(statement) && !statement.isExportEquals && ts.isIdentifier(statement.expression)) {
+      push(exported, statement.expression.text, 'default');
+    }
+  }
+  return exported;
+}
+
+/**
+ * What an import passes on when the file exports a name it bound: `import {
+ * a } from './a.js'` and then `export { a }` passes `a` on as `a`, exactly as
+ * `export { a } from './a.js'` would, so the public-name walk follows it
+ * through (D75). A namespace import exported whole passes `*` under its name.
+ */
+function passedThrough(statement: ts.ImportDeclaration, exported: ReadonlyMap<string, readonly string[]>): readonly PassedName[] {
+  return importBindings(statement).flatMap(([local, bound]) => (exported.get(local) ?? []).map((as) => ({ name: bound.name, as })));
+}
+
 function parseSource(path: string, content: string): Parsed {
   // The compiler gives `.mts` and `.cts` no kind of their own: they parse as
   // `.ts` does, and a `.d.mts` or `.d.cts` is a declaration file by its name (D77).
@@ -564,11 +592,18 @@ function parseSource(path: string, content: string): Parsed {
   const exports: string[] = [];
   const references: Reference[] = [];
   const stars: Star[] = [];
+  const exported = bareExports(source);
   for (const statement of source.statements) {
     if (ts.isImportDeclaration(statement)) {
       const specifier = specifierOf(statement.moduleSpecifier);
       if (specifier === undefined) continue;
-      references.push({ specifier, names: importedNames(statement.importClause), line: lineOf(source, statement) });
+      const passes = passedThrough(statement, exported);
+      references.push({
+        specifier,
+        names: importedNames(statement.importClause),
+        line: lineOf(source, statement),
+        ...(passes.length === 0 ? {} : { reexports: passes }),
+      });
     } else if (ts.isExportDeclaration(statement)) {
       exports.push(...givenNames(statement.exportClause));
       const specifier = specifierOf(statement.moduleSpecifier);
@@ -762,13 +797,18 @@ function exportsEntry(value: unknown, subpath: string): unknown {
  * each module format and its declarations (D75), and may write the formats
  * side by side in a folder each, which the source tree does not have.
  */
+/** The sources a built stem may come from: an `.mjs` or `.d.mts` from a NodeNext `.mts` as well as from a bundled `.ts`, and a `.cjs` from a `.cts` (D77). */
+function sourcesOf(stem: string): readonly string[] {
+  return [`${stem}.ts`, `${stem}.tsx`, `${stem}.mts`, `${stem}.cts`, `${stem}/index.ts`, `${stem}/index.mts`, `${stem}/index.cts`];
+}
+
 function candidates(target: string): readonly string[] {
   const clean = normalizePath(target);
   const stem = clean.replace(/^dist\//, 'src/').replace(EMITTED, '');
   if (stem === clean) return [clean];
   const flat = clean.startsWith('dist/') ? stem.replace(FORMAT_FOLDER, 'src/') : stem;
   const stems = flat === stem ? [stem] : [stem, flat];
-  return [...stems.flatMap((path) => [`${path}.ts`, `${path}.tsx`, `${path}/index.ts`]), clean];
+  return [...stems.flatMap(sourcesOf), clean];
 }
 
 /** The scanned TypeScript file a manifest target names, tests and other paths dropped. */
