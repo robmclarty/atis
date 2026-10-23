@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 16 — chore(fixtures): select the tuning half of the precision corpus
+**Current step:** 17 — chore(fixtures): generate maps for the corpus's tuning half
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -38,7 +38,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 13. fix(core): keep a neighbour's centre out of another cell's membrane
 - ☑ 14. feat(svg): tell an added file from a modified one
 - ☑ 15. feat(svg): draw a legend inset and an annotated practice map
-- ☐ 16. chore(fixtures): select the tuning half of the precision corpus
+- ☑ 16. chore(fixtures): select the tuning half of the precision corpus
 - ☐ 17. chore(fixtures): generate maps for the corpus's tuning half
 - ☐ 18. chore(glance): score notice precision on the tuning half
 - ☐ 19. chore(fixtures): select and generate the corpus's held-out half
@@ -322,3 +322,5 @@ folder, so it rides the branch into the PR.)*
   **5.** Cell glyphs are many, and nested packages wear their folders' teeth too
 
   A cell's teeth are every rule broken anywhere inside it, so a package and the folder it holds both wear the folder's rules. Where the two skins run together, the teeth sit side by side (P2). Clone families are common in real repos: on retake-2, 131 module outlines carry a glyph. That is the data, drawn as specified, but it is worth a look in the practice map and on the retake maps before the reading leans on either mark.
+
+- 2026-10-23 — step 16 checkpointed · a18fd39b5 — chore(fixtures): select the tuning half of the precision corpus (152m)

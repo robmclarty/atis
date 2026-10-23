@@ -1,0 +1,1009 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 1273" width="780" height="1273" font-family="ui-monospace, Menlo, Consolas, monospace">
+  <rect id="ground" x="0" y="0" width="780" height="1273" fill="#1a1f27"/>
+  <g id="world" transform="translate(0 59)">
+    <rect id="field" x="0" y="0" width="480" height="1214" fill="#0a0c0f"/>
+    <g id="terraces">
+      <g data-band="0">
+        <rect x="0" y="524" width="480" height="96" fill="#10141a"/>
+        <line x1="0" y1="524" x2="480" y2="524" stroke="#222831" stroke-width="1"/>
+      </g>
+      <g data-band="1">
+        <rect x="0" y="620" width="480" height="96" fill="#10141a"/>
+        <line x1="0" y1="620" x2="480" y2="620" stroke="#222831" stroke-width="1"/>
+      </g>
+      <g data-band="2">
+        <rect x="0" y="716" width="480" height="114" fill="#10141a"/>
+        <line x1="0" y1="716" x2="480" y2="716" stroke="#222831" stroke-width="1"/>
+      </g>
+      <g data-band="3">
+        <rect x="0" y="830" width="480" height="96" fill="#10141a"/>
+        <line x1="0" y1="830" x2="480" y2="830" stroke="#222831" stroke-width="1"/>
+      </g>
+      <g data-band="4">
+        <rect x="0" y="926" width="480" height="96" fill="#10141a"/>
+        <line x1="0" y1="926" x2="480" y2="926" stroke="#222831" stroke-width="1"/>
+      </g>
+      <g data-band="5">
+        <rect x="0" y="1022" width="480" height="96" fill="#10141a"/>
+        <line x1="0" y1="1022" x2="480" y2="1022" stroke="#222831" stroke-width="1"/>
+      </g>
+      <g data-band="6">
+        <rect x="0" y="1118" width="480" height="96" fill="#10141a"/>
+        <line x1="0" y1="1118" x2="480" y2="1118" stroke="#222831" stroke-width="1"/>
+      </g>
+    </g>
+    <g id="shore">
+      <rect x="0" y="0" width="480" height="524" fill="#161b21"/>
+      <g data-group="docs">
+        <path d="M42.67 290.67L45.53 292.2L49.36 293.36L54 294L59.22 294L64.44 293.33L69 292L72.4 290.05L74.83 287.73L76.67 285.33L78.81 283.11L84.3 281.11L96.67 279.33L117.74 277.72L142.37 275.95L163.67 273.67L176.41 269.22L182.04 255.89L183.67 225.67L183.88 174.69L183.12 115.64L181.33 65.33L177.79 36.41L169.21 24.81L151.67 22.33L123.36 22.12L90.98 22.88L63.33 24.67L47.07 28.96L40.15 42.81L38.33 74.67L38.06 128.58L38.38 191.09L39 244.33L39.73 274.94L40.83 287.4L42.67 290.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id=".changeset/README.md" cx="49" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/afraid-radios-fetch.md" cx="67" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/bright-points-think.md" cx="85" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/busy-points-guess.md" cx="103" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/chatty-kings-bake.md" cx="121" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/chilly-insects-attack.md" cx="139" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/clean-cameras-fix.md" cx="157" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/clever-frogs-kick.md" cx="175" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/cool-places-hug.md" cx="49" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/curly-kids-thank.md" cx="67" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/deep-coins-attend.md" cx="85" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/few-badgers-sing.md" cx="103" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/fix-version-no-changesets-exit-code.md" cx="121" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/free-results-love-2.md" cx="139" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/free-results-love.md" cx="157" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/gentle-windows-enter.md" cx="175" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/green-bottles-leave.md" cx="49" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/green-forks-carry.md" cx="67" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/green-pianos-sneeze.md" cx="85" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/happy-news-wave.md" cx="103" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/late-animals-drive.md" cx="121" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/legal-islands-heal.md" cx="139" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/long-badgers-relax.md" cx="157" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/loose-towns-care.md" cx="175" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/old-paths-bake.md" cx="49" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/orange-cups-ask.md" cx="67" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/petite-buttons-shake.md" cx="85" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/plain-planes-arrive.md" cx="103" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/plenty-forks-sip.md" cx="121" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/public-zebras-hope.md" cx="139" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/rare-carrots-read.md" cx="157" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/rare-toys-march.md" cx="175" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/red-emus-wave.md" cx="49" cy="105" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/silly-bushes-hang.md" cx="67" cy="105" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/small-tips-unpack.md" cx="85" cy="105" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/social-snails-battle.md" cx="103" cy="105" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/soft-sloths-burn.md" cx="121" cy="105" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/some-papayas-bet.md" cx="139" cy="105" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/some-papayas-gamble.md" cx="157" cy="105" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/spicy-nights-change.md" cx="175" cy="105" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/spotty-chairs-call.md" cx="49" cy="123" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/tangy-buses-smoke.md" cx="67" cy="123" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/thick-emus-refuse.md" cx="85" cy="123" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/thin-chicken-smell.md" cx="103" cy="123" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/tough-balloons-buy.md" cx="121" cy="123" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/tricky-spies-hunt.md" cx="139" cy="123" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/two-hoops-fix.md" cx="157" cy="123" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/wet-loops-watch.md" cx="175" cy="123" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/whole-aliens-notice.md" cx="49" cy="141" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/wise-mirrors-fry.md" cx="67" cy="141" r="4" fill="#2d343c"/>
+        <circle data-id=".github/ISSUE_TEMPLATE.md" cx="85" cy="141" r="4" fill="#2d343c"/>
+        <circle data-id="LICENSE" cx="103" cy="141" r="4" fill="#2d343c"/>
+        <circle data-id="README.md" cx="121" cy="141" r="4" fill="#2d343c"/>
+        <circle data-id="SECURITY.md" cx="139" cy="141" r="4" fill="#2d343c"/>
+        <circle data-id="assets/README.md" cx="157" cy="141" r="4" fill="#2d343c"/>
+        <circle data-id="assets/images/README.md" cx="175" cy="141" r="4" fill="#2d343c"/>
+        <circle data-id="docs/adding-a-changeset.md" cx="49" cy="159" r="4" fill="#2d343c"/>
+        <circle data-id="docs/automating-changesets.md" cx="67" cy="159" r="4" fill="#2d343c"/>
+        <circle data-id="docs/checking-for-changesets.md" cx="85" cy="159" r="4" fill="#2d343c"/>
+        <circle data-id="docs/command-line-options.md" cx="103" cy="159" r="4" fill="#2d343c"/>
+        <circle data-id="docs/common-questions.md" cx="121" cy="159" r="4" fill="#2d343c"/>
+        <circle data-id="docs/config-file-options.md" cx="139" cy="159" r="4" fill="#2d343c"/>
+        <circle data-id="docs/decisions.md" cx="157" cy="159" r="4" fill="#2d343c"/>
+        <circle data-id="docs/detailed-explanation.md" cx="175" cy="159" r="4" fill="#2d343c"/>
+        <circle data-id="docs/dictionary.md" cx="49" cy="177" r="4" fill="#2d343c"/>
+        <circle data-id="docs/experimental-options.md" cx="67" cy="177" r="4" fill="#2d343c"/>
+        <circle data-id="docs/fixed-packages.md" cx="85" cy="177" r="4" fill="#2d343c"/>
+        <circle data-id="docs/intro-to-using-changesets.md" cx="103" cy="177" r="4" fill="#2d343c"/>
+        <circle data-id="docs/linked-packages.md" cx="121" cy="177" r="4" fill="#2d343c"/>
+        <circle data-id="docs/modifying-changelog-format.md" cx="139" cy="177" r="4" fill="#2d343c"/>
+        <circle data-id="docs/prereleases.md" cx="157" cy="177" r="4" fill="#2d343c"/>
+        <circle data-id="docs/problems-publishing-in-monorepos.md" cx="175" cy="177" r="4" fill="#2d343c"/>
+        <circle data-id="docs/snapshot-releases.md" cx="49" cy="195" r="4" fill="#2d343c"/>
+        <circle data-id="docs/versioning-apps.md" cx="67" cy="195" r="4" fill="#2d343c"/>
+        <circle data-id="packages/apply-release-plan/CHANGELOG.md" cx="85" cy="195" r="4" fill="#2d343c"/>
+        <circle data-id="packages/apply-release-plan/README.md" cx="103" cy="195" r="4" fill="#2d343c"/>
+        <circle data-id="packages/assemble-release-plan/CHANGELOG.md" cx="121" cy="195" r="4" fill="#2d343c"/>
+        <circle data-id="packages/assemble-release-plan/README.md" cx="139" cy="195" r="4" fill="#2d343c"/>
+        <circle data-id="packages/assemble-release-plan/src/README.md" cx="157" cy="195" r="4" fill="#2d343c"/>
+        <circle data-id="packages/changelog-git/CHANGELOG.md" cx="175" cy="195" r="4" fill="#2d343c"/>
+        <circle data-id="packages/changelog-github/CHANGELOG.md" cx="49" cy="213" r="4" fill="#2d343c"/>
+        <circle data-id="packages/cli/CHANGELOG.md" cx="67" cy="213" r="4" fill="#2d343c"/>
+        <circle data-id="packages/cli/LICENSE" cx="85" cy="213" r="4" fill="#2d343c"/>
+        <circle data-id="packages/cli/README.md" cx="103" cy="213" r="4" fill="#2d343c"/>
+        <circle data-id="packages/cli/default-files/README.md" cx="121" cy="213" r="4" fill="#2d343c"/>
+        <circle data-id="packages/config/CHANGELOG.md" cx="139" cy="213" r="4" fill="#2d343c"/>
+        <circle data-id="packages/config/README.md" cx="157" cy="213" r="4" fill="#2d343c"/>
+        <circle data-id="packages/errors/CHANGELOG.md" cx="175" cy="213" r="4" fill="#2d343c"/>
+        <circle data-id="packages/errors/README.md" cx="49" cy="231" r="4" fill="#2d343c"/>
+        <circle data-id="packages/get-dependents-graph/CHANGELOG.md" cx="67" cy="231" r="4" fill="#2d343c"/>
+        <circle data-id="packages/get-dependents-graph/README.md" cx="85" cy="231" r="4" fill="#2d343c"/>
+        <circle data-id="packages/get-github-info/CHANGELOG.md" cx="103" cy="231" r="4" fill="#2d343c"/>
+        <circle data-id="packages/get-github-info/README.md" cx="121" cy="231" r="4" fill="#2d343c"/>
+        <circle data-id="packages/get-release-plan/CHANGELOG.md" cx="139" cy="231" r="4" fill="#2d343c"/>
+        <circle data-id="packages/get-release-plan/README.md" cx="157" cy="231" r="4" fill="#2d343c"/>
+        <circle data-id="packages/get-version-range-type/CHANGELOG.md" cx="175" cy="231" r="4" fill="#2d343c"/>
+        <circle data-id="packages/get-version-range-type/README.md" cx="49" cy="249" r="4" fill="#2d343c"/>
+        <circle data-id="packages/git/CHANGELOG.md" cx="67" cy="249" r="4" fill="#2d343c"/>
+        <circle data-id="packages/git/README.md" cx="85" cy="249" r="4" fill="#2d343c"/>
+        <circle data-id="packages/logger/CHANGELOG.md" cx="103" cy="249" r="4" fill="#2d343c"/>
+        <circle data-id="packages/logger/README.md" cx="121" cy="249" r="4" fill="#2d343c"/>
+        <circle data-id="packages/parse/CHANGELOG.md" cx="139" cy="249" r="4" fill="#2d343c"/>
+        <circle data-id="packages/parse/README.md" cx="157" cy="249" r="4" fill="#2d343c"/>
+        <circle data-id="packages/pre/CHANGELOG.md" cx="175" cy="249" r="4" fill="#2d343c"/>
+        <circle data-id="packages/pre/README.md" cx="49" cy="267" r="4" fill="#2d343c"/>
+        <circle data-id="packages/read/CHANGELOG.md" cx="67" cy="267" r="4" fill="#2d343c"/>
+        <circle data-id="packages/read/README.md" cx="85" cy="267" r="4" fill="#2d343c"/>
+        <circle data-id="packages/release-utils/CHANGELOG.md" cx="103" cy="267" r="4" fill="#2d343c"/>
+        <circle data-id="packages/should-skip-package/CHANGELOG.md" cx="121" cy="267" r="4" fill="#2d343c"/>
+        <circle data-id="packages/types/CHANGELOG.md" cx="139" cy="267" r="4" fill="#2d343c"/>
+        <circle data-id="packages/types/README.md" cx="157" cy="267" r="4" fill="#2d343c"/>
+        <circle data-id="packages/write/CHANGELOG.md" cx="175" cy="267" r="4" fill="#2d343c"/>
+        <circle data-id="packages/write/README.md" cx="49" cy="285" r="4" fill="#2d343c"/>
+        <circle data-id="scripts/test-utils/README.md" cx="67" cy="285" r="4" fill="#2d343c"/>
+        <text x="38.06" y="19.12" font-size="8" font-variant="small-caps" fill="#5d6670">docs</text>
+      </g>
+      <g data-group="config">
+        <path d="M226.67 110.67L229.53 112.2L233.36 113.36L238 114L243.22 114L248.44 113.33L253 112L256.4 110.05L258.83 107.73L260.67 105.33L262.59 103.11L266.52 101.11L274.67 99.33L288.19 97.72L303.93 95.95L317.67 93.67L326.19 90.33L330.26 84.78L331.67 75.67L331.88 62.47L331.12 47.86L329.33 35.33L326.01 27.52L318.99 23.7L305.67 22.33L284.91 22.12L261.42 22.88L241.33 24.67L229.3 27.85L223.93 33.93L222.33 44.67L222.06 60.8L222.38 78.86L223 94.33L223.73 103.83L224.83 108.51L226.67 110.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id=".changeset/config.json" cx="233" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".changeset/pre.json" cx="251" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="eslint.config.mjs" cx="269" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="packages/apply-release-plan/tsdown.config.ts" cx="287" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="packages/assemble-release-plan/tsdown.config.ts" cx="305" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="packages/changelog-git/tsdown.config.ts" cx="323" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="packages/changelog-github/tsdown.config.ts" cx="233" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="packages/cli/tsdown.config.ts" cx="251" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="packages/config/tsdown.config.ts" cx="269" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="packages/errors/tsdown.config.ts" cx="287" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="packages/get-dependents-graph/tsdown.config.ts" cx="305" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="packages/get-github-info/tsdown.config.ts" cx="323" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="packages/get-release-plan/tsdown.config.ts" cx="233" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="packages/get-version-range-type/tsdown.config.ts" cx="251" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="packages/git/tsdown.config.ts" cx="269" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="packages/logger/tsdown.config.ts" cx="287" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="packages/parse/tsdown.config.ts" cx="305" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="packages/pre/tsdown.config.ts" cx="323" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="packages/read/tsdown.config.ts" cx="233" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id="packages/release-utils/tsdown.config.ts" cx="251" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id="packages/should-skip-package/tsdown.config.ts" cx="269" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id="packages/types/tsdown.config.ts" cx="287" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id="packages/write/tsdown.config.ts" cx="305" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id="tsconfig.json" cx="323" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id="tsdown.config.ts" cx="233" cy="105" r="4" fill="#2d343c"/>
+        <circle data-id="vitest.config.mts" cx="251" cy="105" r="4" fill="#2d343c"/>
+        <text x="222.06" y="19.12" font-size="8" font-variant="small-caps" fill="#5d6670">config</text>
+      </g>
+      <g data-group="settings">
+        <path d="M374.67 56.67L377.53 58.2L381.36 59.36L386 60L391.22 60L396.44 59.33L401 58L404.4 56.05L406.83 53.73L408.67 51.33L410.27 49.1L411.95 47.01L414 45L416.57 42.95L419.21 40.6L421.33 37.67L422.43 34L422.35 30.11L421 26.67L418.26 24.2L413.74 22.69L407 22L398 22.02L388.33 22.86L380 24.67L374.53 27.52L371.58 31.26L370.33 35.67L370.06 40.47L370.38 45.2L371 49.33L371.73 52.49L372.83 54.84L374.67 56.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id=".git-blame-ignore-revs" cx="381" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".gitignore" cx="399" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".node-version" cx="417" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".vscode/launch.json" cx="381" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id=".vscode/settings.json" cx="399" cy="51" r="4" fill="#2d343c"/>
+        <text x="370.06" y="19" font-size="8" font-variant="small-caps" fill="#5d6670">settings</text>
+      </g>
+      <g data-group="deps">
+        <path d="M42.67 420.67L45.86 422.2L52.02 423.36L63 424L79.56 423.98L98.11 423.14L114 421.33L123.69 418.12L128.2 411.88L129.67 400.67L129.88 383.69L129.12 364.64L127.33 348.33L124.12 338.41L117.88 333.81L106.67 332.33L89.69 332.12L70.64 332.88L54.33 334.67L44.41 337.85L39.81 343.93L38.33 354.67L38.06 370.8L38.38 388.86L39 404.33L39.73 413.83L40.83 418.51L42.67 420.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id="package.json" cx="49" cy="343" r="4" fill="#2d343c"/>
+        <circle data-id="packages/apply-release-plan/package.json" cx="67" cy="343" r="4" fill="#2d343c"/>
+        <circle data-id="packages/assemble-release-plan/package.json" cx="85" cy="343" r="4" fill="#2d343c"/>
+        <circle data-id="packages/changelog-git/package.json" cx="103" cy="343" r="4" fill="#2d343c"/>
+        <circle data-id="packages/changelog-github/package.json" cx="121" cy="343" r="4" fill="#2d343c"/>
+        <circle data-id="packages/cli/package.json" cx="49" cy="361" r="4" fill="#2d343c"/>
+        <circle data-id="packages/color/package.json" cx="67" cy="361" r="4" fill="#2d343c"/>
+        <circle data-id="packages/config/package.json" cx="85" cy="361" r="4" fill="#2d343c"/>
+        <circle data-id="packages/errors/package.json" cx="103" cy="361" r="4" fill="#2d343c"/>
+        <circle data-id="packages/get-dependents-graph/package.json" cx="121" cy="361" r="4" fill="#2d343c"/>
+        <circle data-id="packages/get-github-info/package.json" cx="49" cy="379" r="4" fill="#2d343c"/>
+        <circle data-id="packages/get-release-plan/package.json" cx="67" cy="379" r="4" fill="#2d343c"/>
+        <circle data-id="packages/get-version-range-type/package.json" cx="85" cy="379" r="4" fill="#2d343c"/>
+        <circle data-id="packages/git/package.json" cx="103" cy="379" r="4" fill="#2d343c"/>
+        <circle data-id="packages/logger/package.json" cx="121" cy="379" r="4" fill="#2d343c"/>
+        <circle data-id="packages/parse/package.json" cx="49" cy="397" r="4" fill="#2d343c"/>
+        <circle data-id="packages/pre/package.json" cx="67" cy="397" r="4" fill="#2d343c"/>
+        <circle data-id="packages/read/package.json" cx="85" cy="397" r="4" fill="#2d343c"/>
+        <circle data-id="packages/release-utils/package.json" cx="103" cy="397" r="4" fill="#2d343c"/>
+        <circle data-id="packages/should-skip-package/package.json" cx="121" cy="397" r="4" fill="#2d343c"/>
+        <circle data-id="packages/types/package.json" cx="49" cy="415" r="4" fill="#2d343c"/>
+        <circle data-id="packages/write/package.json" cx="67" cy="415" r="4" fill="#2d343c"/>
+        <circle data-id="pnpm-lock.yaml" cx="85" cy="415" r="4" fill="#2d343c"/>
+        <circle data-id="pnpm-workspace.yaml" cx="103" cy="415" r="4" fill="#2d343c"/>
+        <circle data-id="scripts/test-utils/package.json" cx="121" cy="415" r="4" fill="#2d343c"/>
+        <text x="38.06" y="329.12" font-size="8" font-variant="small-caps" fill="#5d6670">deps</text>
+      </g>
+      <g data-group="ci">
+        <path d="M172.67 366.67L175.64 368.2L180.25 369.36L187 370L196 369.98L205.67 369.14L214 367.33L219.47 364.46L222.42 360.54L223.67 355.67L223.88 350.02L223.12 344.31L221.33 339.33L218.35 335.74L213.65 333.48L206.67 332.33L197.25 332.12L187.09 332.88L178.33 334.67L172.63 337.52L169.59 341.26L168.33 345.67L168.06 350.47L168.38 355.2L169 359.33L169.73 362.49L170.83 364.84L172.67 366.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id=".github/actions/ci-setup/action.yml" cx="179" cy="343" r="4" fill="#2d343c"/>
+        <circle data-id=".github/dependabot.yml" cx="197" cy="343" r="4" fill="#2d343c"/>
+        <circle data-id=".github/workflows/ci.yml" cx="215" cy="343" r="4" fill="#2d343c"/>
+        <circle data-id=".github/workflows/pkg-pr-new.yml" cx="179" cy="361" r="4" fill="#2d343c"/>
+        <circle data-id=".github/workflows/publish.yml" cx="197" cy="361" r="4" fill="#2d343c"/>
+        <circle data-id=".github/workflows/zizmor.yml" cx="215" cy="361" r="4" fill="#2d343c"/>
+        <text x="168.06" y="329.12" font-size="8" font-variant="small-caps" fill="#5d6670">ci</text>
+      </g>
+      <g data-group="assets">
+        <path d="M266.67 402.67L269.53 404.2L273.36 405.36L278 406L283.22 406L288.44 405.33L293 404L296.4 402.05L298.83 399.73L300.67 397.33L302.48 395.11L305.63 393.11L311.67 391.33L321.41 389.72L332.7 387.95L342.67 385.67L349.07 382.44L352.37 377.67L353.67 370.67L353.88 361.25L353.12 351.09L351.33 342.33L348.12 336.63L341.88 333.59L330.67 332.33L313.69 332.12L294.64 332.88L278.33 334.67L268.41 337.74L263.81 343.04L262.33 351.67L262.06 364.02L262.38 377.64L263 389.33L263.73 396.72L264.83 400.62L266.67 402.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id="assets/images/changesets-avatar-dark.png" cx="273" cy="343" r="4" fill="#2d343c"/>
+        <circle data-id="assets/images/changesets-avatar-dark.svg" cx="291" cy="343" r="4" fill="#2d343c"/>
+        <circle data-id="assets/images/changesets-avatar-light.png" cx="309" cy="343" r="4" fill="#2d343c"/>
+        <circle data-id="assets/images/changesets-avatar-light.svg" cx="327" cy="343" r="4" fill="#2d343c"/>
+        <circle data-id="assets/images/changesets-banner-dark.png" cx="345" cy="343" r="4" fill="#2d343c"/>
+        <circle data-id="assets/images/changesets-banner-dark.svg" cx="273" cy="361" r="4" fill="#2d343c"/>
+        <circle data-id="assets/images/changesets-banner-light.png" cx="291" cy="361" r="4" fill="#2d343c"/>
+        <circle data-id="assets/images/changesets-banner-light.svg" cx="309" cy="361" r="4" fill="#2d343c"/>
+        <circle data-id="assets/images/changesets-icon-dark.png" cx="327" cy="361" r="4" fill="#2d343c"/>
+        <circle data-id="assets/images/changesets-icon-dark.svg" cx="345" cy="361" r="4" fill="#2d343c"/>
+        <circle data-id="assets/images/changesets-icon-light.png" cx="273" cy="379" r="4" fill="#2d343c"/>
+        <circle data-id="assets/images/changesets-icon-light.svg" cx="291" cy="379" r="4" fill="#2d343c"/>
+        <circle data-id="assets/images/changesets-logo-dark.png" cx="309" cy="379" r="4" fill="#2d343c"/>
+        <circle data-id="assets/images/changesets-logo-dark.svg" cx="327" cy="379" r="4" fill="#2d343c"/>
+        <circle data-id="assets/images/changesets-logo-light.png" cx="345" cy="379" r="4" fill="#2d343c"/>
+        <circle data-id="assets/images/changesets-logo-light.svg" cx="273" cy="397" r="4" fill="#2d343c"/>
+        <circle data-id="assets/images/key.png" cx="291" cy="397" r="4" fill="#2d343c"/>
+        <text x="262.06" y="329.12" font-size="8" font-variant="small-caps" fill="#5d6670">assets</text>
+      </g>
+      <g data-group="data">
+        <path d="M400 350L402.57 349.96L405.21 349.04L407.33 347L408.42 343.83L408.25 340.28L406.67 337.33L403.73 335.77L400.27 335.68L397.33 337L395.72 339.54L395.28 342.68L395.67 345.67L396.57 347.9L397.99 349.32L400 350Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id="packages/release-utils/src/__snapshots__/utils.test.ts.snap" cx="403" cy="343" r="4" fill="#2d343c"/>
+        <text x="395.28" y="332.68" font-size="8" font-variant="small-caps" fill="#5d6670">data</text>
+      </g>
+      <g data-group="other">
+        <path d="M43 496L46.22 496.63L50.11 496.37L54 495L57.38 492.44L60.4 489.22L63.33 486L66.37 483.25L69.19 480.64L71.33 477.67L72.43 474L72.35 470.11L71 466.67L68.37 464.2L64.63 462.69L60 462L54.78 462.02L49.56 462.86L45 464.67L41.64 467.52L39.47 471.26L38.33 475.67L38.06 480.47L38.38 485.2L39 489.33L39.74 492.47L40.93 494.64L43 496Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id=".oxfmtrc.json" cx="49" cy="473" r="4" fill="#2d343c"/>
+        <circle data-id="packages/cli/bin.js" cx="67" cy="473" r="4" fill="#2d343c"/>
+        <circle data-id="packages/config/schema.json" cx="49" cy="491" r="4" fill="#2d343c"/>
+        <text x="38.06" y="459" font-size="8" font-variant="small-caps" fill="#5d6670">other</text>
+      </g>
+    </g>
+    <g id="membranes" fill="#7a838e" fill-opacity="0.08" stroke="#4b535e" stroke-linejoin="round">
+      <path data-id="package:packages/apply-release-plan" data-kind="package" data-dents="cognitive" stroke-width="2.21" d="M277.33 760.33L275.01 760.78L272.99 762.11L270.67 764.33L267.68 767.79L264.54 774.21L262 785.67L260.57 803.05L259.88 822.51L259.33 839L258.49 848.93L257.51 854.41L256.67 859L256.17 865.37L255.83 872.63L255.33 879L254.49 883.27L253.51 886.51L252.67 890.33L252.17 895.86L251.83 902.14L251.33 907.67L250.49 911.37L249.51 913.74L248.67 915.67L248.17 917.84L247.83 920.16L247.33 922.33L246.49 924.16L245.51 925.84L244.67 927.67L244.17 929.84L243.83 932.16L243.33 934.33L242.49 936.16L241.51 937.84L240.67 939.67L240.17 941.84L239.83 944.16L239.33 946.33L238.49 948.16L237.51 949.84L236.67 951.67L236.17 953.84L235.83 956.16L235.33 958.33L234.49 960.21L233.51 962.23L232.67 965L232.17 968.85L231.83 973.15L231.33 977L230.49 979.79L229.51 981.99L228.67 984.33L228.17 987.35L227.83 990.65L227.33 993.67L226.49 995.96L225.51 997.81L224.67 999.67L224.17 1001.84L223.83 1004.16L223.33 1006.33L222.49 1008.19L221.51 1010.04L220.67 1012.33L220.17 1015.35L219.83 1018.65L219.33 1021.67L218.49 1024.01L217.51 1026.21L216.67 1029L216.17 1032.85L215.83 1037.15L215.33 1041L214.49 1043.81L213.51 1046.19L212.67 1049L212.17 1052.85L211.83 1057.15L211.33 1061L210.49 1063.77L209.51 1065.79L208.67 1067.67L208.17 1069.84L207.83 1072.16L207.33 1074.33L206.47 1076.21L205.31 1078.23L204 1081L202.69 1084.88L201.53 1089.35L200.67 1093.67L200.17 1097.25L199.83 1100.09L199.33 1102.33L198.49 1104.23L197.51 1106.43L196.67 1109.67L196.17 1114.36L195.83 1119.64L195.33 1124.33L194.49 1127.57L193.51 1129.77L192.67 1131.67L192.12 1133.86L191.43 1136.36L190 1139L187.41 1141.59L183.93 1143.74L180 1145L176 1145L172 1143.67L168 1141L164.05 1137.07L160.4 1132.26L157.33 1127L155.06 1121.74L153.38 1116.93L152 1113L150.69 1109.89L149.53 1105.44L148.67 1097L148.17 1083.07L147.83 1066.93L147.33 1053L146.49 1044.53L145.51 1039.91L144.67 1036.33L144.22 1031.64L144.22 1026.36L144.67 1021.67L145.51 1018.04L146.49 1013.07L147.33 1003.67L147.83 988.06L148.17 969.94L148.67 954.33L149.51 944.95L150.49 940.16L151.33 937L151.83 933.15L152.17 928.85L152.67 925L153.51 922.19L154.49 919.81L155.33 917L155.78 913.15L155.78 908.85L155.33 905L154.47 902.21L153.31 900.01L152 897.67L150.67 894.65L149.33 891.35L148 888.33L146.69 886.04L145.53 884.19L144.67 882.33L144.17 880.16L143.83 877.84L143.33 875.67L142.49 873.81L141.51 871.96L140.67 869.67L140.17 866.65L139.83 863.35L139.33 860.33L138.52 857.99L137.7 855.79L137.33 853L137.78 849.12L139.11 844.65L141.33 840.33L144.4 836.7L148.05 833.52L152 830.33L155.93 826.78L159.41 822.78L162 818.33L163.31 813.57L163.14 809.1L161.33 805.67L157.9 803.89L153.43 803.89L148.67 805.67L144.17 809.15L139.83 813.96L135.33 819.67L130.57 825.79L126.1 831.77L122.67 837L120.84 841.07L120.49 844.26L121.33 847L123.01 849.69L124.99 852.53L126.67 855.67L127.63 859.15L128.15 862.63L128.67 865.67L129.51 868.21L130.49 871.79L131.33 878.33L131.55 883.08L123.84 889.37L132 895.07L132.17 901.1L132.67 911.67L133.53 918.23L134.69 921.99L136 925L137.31 928.93L138.47 933.74L139.33 939L139.78 944.26L139.78 949.07L139.33 953L138.49 956.16L137.51 960.95L136.67 970.33L136.17 985.94L135.83 1004.06L135.33 1019.67L134.49 1029.12L133.51 1034.43L132.67 1039L132.17 1045.37L131.83 1052.63L131.33 1059L130.49 1063.27L129.51 1066.51L128.67 1070.33L128.17 1075.86L127.83 1082.14L127.33 1087.67L126.49 1091.37L125.51 1093.74L124.67 1095.67L124.17 1097.84L123.83 1100.16L123.33 1102.33L122.47 1104.19L121.31 1106.04L120 1108.33L118.67 1111.35L117.33 1114.65L116 1117.67L114.69 1120.14L113.53 1123.2L112.67 1128.33L112.17 1136.38L111.83 1145.62L111.33 1153.67L110.49 1158.8L109.51 1161.86L108.67 1164.33L108.17 1167.35L107.83 1170.65L107.33 1173.67L106.49 1176.04L105.51 1178.41L104.67 1181.67L104.22 1186.33L104.22 1191.44L104.67 1195.67L105.51 1198.06L106.49 1199.27L107.33 1200.33L107.88 1202.04L108.57 1204.19L110 1206.33L112.54 1208.14L115.68 1209.64L118.67 1211L121.04 1212.31L123.41 1213.47L126.67 1214.33L131.46 1214.65L137.43 1213.79L144 1211L150.62 1205.89L156.94 1199.44L162.67 1193L167.56 1187.69L171.56 1183.86L174.67 1181.67L177.01 1181.1L179.21 1181.57L182 1182.33L185.88 1182.73L190.35 1182.38L194.67 1181L198.25 1178.41L201.09 1174.93L203.33 1171L205.09 1167.05L206.25 1163.4L206.67 1160.33L206.3 1157.94L205.48 1155.4L204.67 1151.67L204.22 1146.14L204.22 1139.86L204.67 1134.33L205.51 1130.63L206.49 1128.26L207.33 1126.33L207.83 1124.16L208.17 1121.84L208.67 1119.67L209.51 1117.84L210.49 1116.16L211.33 1114.33L211.83 1112.16L212.17 1109.84L212.67 1107.67L213.51 1105.84L214.49 1104.16L215.33 1102.33L215.83 1100.16L216.17 1097.84L216.67 1095.67L217.51 1093.79L218.49 1091.77L219.33 1089L219.83 1085.15L220.17 1080.85L220.67 1077L221.51 1074.19L222.49 1071.81L223.33 1069L223.83 1065.15L224.17 1060.85L224.67 1057L225.51 1054.23L226.49 1052.21L227.33 1050.33L227.83 1048.16L228.17 1045.84L228.67 1043.67L229.51 1041.84L230.49 1040.16L231.33 1038.33L231.83 1036.16L232.17 1033.84L232.67 1031.67L233.51 1029.81L234.49 1027.96L235.33 1025.67L235.83 1022.65L236.17 1019.35L236.67 1016.33L237.51 1014.01L238.49 1011.99L239.33 1009.67L239.83 1006.65L240.17 1003.35L240.67 1000.33L241.51 998.01L242.49 995.99L243.33 993.67L243.83 990.65L244.17 987.35L244.67 984.33L245.51 982.01L246.49 979.99L247.33 977.67L247.83 974.65L248.17 971.35L248.67 968.33L249.51 965.99L250.49 963.79L251.33 961L251.83 957.15L252.17 952.85L252.67 949L253.51 946.14L254.49 943.42L255.33 939.67L255.83 934.14L256.17 927.86L256.67 922.33L257.51 918.63L258.49 916.26L259.33 914.33L259.83 912.16L260.17 909.84L260.67 907.67L261.51 905.84L262.49 904.16L263.33 902.33L263.83 900.16L264.17 897.84L264.67 895.67L265.51 893.84L266.49 892.16L267.33 890.33L267.83 888.16L268.17 885.84L268.67 883.67L269.51 881.84L270.49 880.16L271.33 878.33L271.83 876.16L272.17 873.84L272.67 871.67L273.51 869.84L274.49 868.16L275.33 866.33L275.83 864.16L276.17 861.84L276.67 859.67L277.53 857.81L278.69 855.96L280 853.67L281.43 850.56L283.46 846.56L286.67 841.67L291.33 836.01L296.44 830.21L300.67 825L303.04 820.95L304.07 817.94L304.67 815.67L305.51 813.77L306.49 811.57L307.33 808.33L307.78 803.64L307.78 798.36L307.33 793.67L306.49 790.43L305.51 788.23L304.67 786.33L304.17 784.16L303.83 781.84L303.33 779.67L302.42 777.81L300.91 775.96L298.67 773.67L295.6 770.65L291.95 767.35L288 764.33L284.05 762.11L280.4 760.78Z"/>
+      <path data-id="package:packages/assemble-release-plan" data-kind="package" data-dents="cognitive crap" stroke-width="2.21" d="M195.67 804.67L191.27 805.38L187.62 808.17L185 812L183.67 816L183.67 820L185 824L187.57 828L190.88 832L194.33 836L197.44 840.02L200.11 844.2L202.33 848.67L204.11 853.48L205.44 858.3L206.33 862.67L206.7 866.32L206.19 869.68L204.33 873.33L200.9 877.7L196.43 882.52L191.67 887.33L187.2 891.75L183.02 895.58L179 898.67L175.07 901.04L171.59 903.41L169 906.67L167.64 911.38L167.47 916.84L168.33 922L170.01 926.12L171.99 929.65L172.92 931.68L181.05 932.56L185.03 933.81L188.24 936.49L190.17 940.19L190.54 944.35L189.29 948.33L186.61 951.54L182.91 953.47L178.75 953.84L170.07 952.9L169 954L165.1 957.9L160.46 962.54L155.67 967.33L155.56 967.45L145.51 966.23L147.33 976.17L145 979.33L143.62 982.42L143.27 984.91L143.67 986.67L144.6 987.7L146.28 988.74L149 990.67L152.85 994.05L157.15 998.17L161 1002L163.77 1004.79L165.79 1006.99L167.67 1009.33L169.81 1012.37L171.96 1015.85L173.67 1019.33L174.63 1022.44L175.15 1025.11L175.67 1027.33L176.51 1029.28L177.49 1031.83L178.33 1036L178.83 1042.37L179.17 1049.63L179.67 1056L180.53 1060.2L181.69 1062.91L183 1065.33L184.36 1068.37L185.86 1071.85L187.67 1075.33L189.86 1078.49L192.36 1081.51L195 1084.67L197.64 1088.22L200.14 1092.22L202.33 1096.67L204.14 1101.46L205.64 1106.1L207 1110L208.31 1112.81L209.47 1115.19L210.33 1118L210.83 1121.85L211.17 1126.15L211.67 1130L212.51 1132.86L213.49 1135.58L214.33 1139.33L214.83 1144.86L215.17 1151.14L215.67 1156.67L216.58 1160.4L218.09 1162.94L220.33 1165.33L223.42 1168.32L227.25 1171.46L231.67 1174L236.51 1175.31L241.49 1175.14L246.33 1173.33L250.73 1169.88L254.38 1165.23L257 1160L258.38 1154.74L258.73 1149.93L258.33 1146L257.35 1143.11L255.32 1140.22L251.67 1136L246.14 1129.58L239.86 1121.98L234.33 1114.67L230.65 1108.84L228.46 1104.49L227 1101.33L225.69 1099.04L224.53 1097.19L223.67 1095.33L223.17 1093.16L222.83 1090.84L222.33 1088.67L221.49 1086.67L220.51 1083.78L219.67 1078.67L219.17 1070.62L218.83 1061.38L218.33 1053.33L217.35 1048.1L215.32 1044.35L211.67 1040L206.14 1033.58L199.86 1025.98L194.33 1018.67L190.65 1012.84L188.46 1008.49L187 1005.33L185.69 1002.99L184.53 1000.79L183.67 998L183.3 994.1L183.81 989.46L185.03 986.31L194.41 986.45L192.63 977.23L193.57 976.42L198.33 973.33L202.75 971.06L206.58 969.38L209.67 968L212.19 966.42L215.59 963.36L221.67 957.33L231.4 947.53L242.6 935.8L252.33 924.67L258.33 916.1L261.22 909.9L262.33 905.33L262.78 901.75L262.78 898.91L262.33 896.67L261.44 894.81L260.11 892.96L258.33 890.67L256.16 887.65L253.84 884.35L251.67 881.33L249.81 879.04L247.96 877.19L245.67 875.33L242.63 873.14L239.15 870.64L235.67 868L232.53 865.31L229.69 862.47L227 859.33L224.36 855.78L221.86 851.78L219.67 847.33L217.86 842.47L216.36 837.31L215 832L213.59 826.67L211.74 821.33L209 816L205.1 810.84L200.46 806.72Z"/>
+      <path data-id="package:packages/changelog-git" data-kind="package" stroke-width="2" d="M81 623.67L83.64 624.58L86.14 624.75L88.33 624.33L90.14 623.47L91.64 622.31L93 621L94.31 619.57L95.47 617.54L96.33 614.33L96.73 609.64L96.38 604.36L95 599.67L92.46 596.46L89.32 594.43L86.33 593L84.06 591.72L82.38 590.73L81 590.33L79.67 590.73L78.33 591.72L77 593L75.67 594.41L74.33 596.26L73 599L71.72 602.85L70.73 607.15L70.33 611L70.75 613.77L71.91 615.79L73.67 617.67L75.86 619.81L78.36 621.96L81 623.67Z"/>
+      <path data-id="package:packages/changelog-github" data-kind="package" stroke-width="2" d="M112.33 631.67L114.04 632.63L116.19 633.15L118.33 633.67L120.16 634.43L121.84 634.9L123.67 634.33L125.81 632.16L127.96 628.51L129.67 623.67L130.56 618.01L130.56 612.21L129.67 607L127.99 602.93L126.01 599.74L124.33 597L123.3 594.38L122.26 592.06L120.33 590.33L116.98 589.62L113.02 590.83L109.67 595L107.81 602.56L107.3 611.44L107.67 619L108.51 623.27L109.49 625.17L110.33 626.33L110.85 628.01L111.37 629.99L112.33 631.67Z"/>
+      <path data-id="package:packages/cli" data-kind="package" data-dents="cognitive crap cycle cyclomatic" stroke-width="1.5" d="M198.79 553.37L196.67 554.33L194.86 557.25L193.36 561.2L192 565L190.69 567.77L189.53 569.79L188.67 571.67L188.12 573.86L187.43 576.36L186 579L183.41 581.62L179.93 583.94L176 585.67L171.95 586.48L167.6 585.96L162.67 583.67L156.96 579.47L150.81 574.53L144.67 570.33L138.94 568.09L133.95 567.91L130 569.67L127.31 573.05L125.8 577.17L125.33 581L125.73 583.79L126.72 585.99L128 588.33L129.33 591.35L130.67 594.65L132 597.67L133.31 599.99L134.47 602.01L134.68 602.57L128.08 609.9L136.91 614.31L137.53 615.99L138.69 618.01L140 620.33L141.33 623.35L142.67 626.65L144 629.67L145.31 631.96L146.47 633.81L147.33 635.67L147.83 637.84L148.17 640.16L148.67 642.33L149.51 644.16L150.49 645.84L151.33 647.67L151.73 649.84L151.38 652.16L150 654.33L147.46 656.14L144.32 657.64L141.33 659L139.04 660.31L137.19 661.47L135.33 662.33L133.16 662.83L130.84 663.17L128.67 663.67L126.62 664.51L123.38 665.49L117.33 666.33L107.6 666.83L96.4 667.17L86.67 667.67L80.59 668.51L77.19 669.49L74.67 670.33L71.65 670.83L68.35 671.17L65.33 671.67L62.99 672.6L60.79 674.28L58 677L54.17 680.88L50.05 685.35L46.67 689.67L44.77 693.25L43.9 696.09L43.33 698.33L42.52 700.14L41.7 701.64L41.33 703L41.7 704.36L42.52 705.86L43.33 707.67L43.83 709.84L44.17 712.16L44.67 714.33L45.53 716.19L46.69 718.04L48 720.33L49.33 723.35L50.67 726.65L52 729.67L53.31 732.01L54.47 734.21L55.33 737L55.78 740.85L55.78 745.15L55.33 749L54.49 751.77L53.51 753.79L52.67 755.67L52.17 757.84L51.83 760.16L51.33 762.33L50.47 764.19L49.31 766.04L48 768.33L46.62 771.4L44.94 775.05L42.67 779L39.65 783L39.57 783.1L29.39 782.94L32.37 792.67L31.06 794.95L29.38 798.6L28 801.67L26.69 803.96L25.53 805.81L24.67 807.67L24.17 809.84L23.83 812.16L23.33 814.33L22.52 816.11L21.7 817.44L21.33 818.33L21.7 818.88L22.52 819.57L23.33 821L23.9 823.59L24.77 827.07L26.67 831L30.12 834.95L34.77 838.6L40 841.67L45.33 843.94L50.67 845.62L56 847L61.26 848.33L66.07 849.67L70 851L72.81 852.33L75.19 853.67L78 855L81.93 856.31L86.74 857.47L92 858.33L97.26 858.78L102.07 858.78L106 858.33L108.77 857.44L110.79 856.11L112.67 854.33L114.84 852.11L117.16 849.44L119.33 846.33L121.14 842.85L122.64 839.37L124 836.33L125.33 834.01L126.67 831.99L128 829.67L129.33 826.65L130.67 823.35L132 820.33L133.36 818.04L134.86 816.19L136.67 814.33L138.94 812.09L141.95 809.25L146 805.67L151.16 801.35L156.62 796.88L161.33 793L164.54 790.21L166.57 788.01L168 785.67L169.33 782.65L170.67 779.35L172 776.33L173.31 774.04L174.47 772.19L175.33 770.33L175.83 768.16L176.17 765.84L176.67 763.67L177.51 761.77L178.49 759.57L179.33 756.33L179.52 754.73L188.13 750.08L181.47 742.92L182 741L184.62 736.95L188.27 733.94L192.67 731.67L197.46 729.86L202.1 728.36L206 727L208.77 725.69L210.79 724.53L212.67 723.67L214.84 723.17L217.16 722.83L219.33 722.33L221.19 721.42L223.04 719.91L225.33 717.67L228.32 714.56L231.46 710.56L234 705.67L235.43 700.04L236.12 694.41L236.67 689.67L237.51 686.38L238.49 683.84L239.33 681L239.83 677.15L240.17 672.85L240.67 669L241.53 666.19L242.69 663.81L244 661L245.33 657.15L246.67 652.85L248 649L249.28 646.21L250.27 644.01L250.67 641.67L250.15 638.68L248.3 635.54L244.67 633L239.14 631.62L232.86 631.27L227.33 631.67L223.6 632.53L221.06 633.69L218.67 635L215.65 636.38L212.35 638.06L209.33 640.33L207.01 643.35L204.99 646.65L202.67 649.67L200.75 651.12L210.64 676L211.41 680.19L210.52 684.35L208.1 687.85L204.53 690.17L200.34 690.94L196.18 690.05L192.68 687.63L190.36 684.06L189.79 682.64L195.01 674.11L185.36 671.49L176.5 649.19L175.73 645.01L176.62 640.84L179.04 637.34L181.82 635.54L182 635L184.54 630.98L187.68 626.8L190.67 622.33L192.94 617.54L194.62 612.9L196 609L197.28 606.26L198.27 604.41L198.67 603L198.3 601.52L197.48 599.15L196.67 595L196.22 588.63L196.22 581.37L196.67 575L197.53 570.8L198.69 568.09L200 565.67L201.26 562.65L202.07 559.35L202 556.33L200.77 554.19Z"/>
+      <path data-id="package:packages/color" data-kind="package" stroke-width="2" d="M120 955.67L122.64 956.58L125.14 956.75L127.33 956.33L129.14 955.47L130.64 954.31L132 953L133.31 951.64L134.47 950.14L135.33 948.33L135.83 946.16L136.17 943.84L136.67 941.67L137.46 939.84L138.1 938.16L138 936.33L136.77 934.16L134.79 931.84L132.67 929.67L130.81 927.89L128.96 926.56L126.67 925.67L123.65 925.22L120.35 925.22L117.33 925.67L115.06 926.53L113.38 927.69L112 929L110.69 930.41L109.53 932.26L108.67 935L108.22 938.83L108.22 942.95L108.67 946.33L109.56 948.26L110.89 949.3L112.67 950.33L114.86 952.01L117.36 953.99L120 955.67Z"/>
+      <path data-id="package:packages/config" data-kind="package" data-dents="cognitive crap cyclomatic" stroke-width="2.5" d="M236.84 805.22L234.67 805.67L232.84 806.56L231.16 807.89L229.33 809.67L227.69 811.35L216.88 812.31L222.27 821.68L222.25 821.94L222.67 823.67L223.51 824.65L224.49 825.35L225.33 826.33L225.88 828.04L226.57 830.19L228 832.33L230.54 834.14L233.68 835.64L236.67 837L236.88 837.12L243.09 847.55L246.95 836.04L248.81 834.11L250.96 831.44L252.67 828.33L253.63 824.85L254.15 821.37L254.67 818.33L255.43 816.06L255.52 815.75L257.77 805.23L247.23 808.94L245.04 807.69L243.19 806.53L241.33 805.67L239.16 805.22Z"/>
+      <path data-id="package:packages/errors" data-kind="package" stroke-width="2.72" d="M149.67 1047.67L153.15 1048.58L156.63 1048.75L159.67 1048.33L161.94 1047.47L163.62 1046.31L165 1045L166.33 1043.59L167.67 1041.74L169 1039L170.23 1035.12L170.88 1030.65L170.33 1026.33L168.16 1022.78L164.51 1020.11L159.67 1018.33L154.04 1017.49L148.41 1017.84L143.67 1019.67L140.48 1023.07L138.63 1027.37L137.67 1031.67L137.22 1035.22L137.22 1037.89L137.67 1039.67L138.56 1040.65L139.89 1041.35L141.67 1042.33L143.89 1044.01L146.56 1045.99L149.67 1047.67Z"/>
+      <path data-id="package:packages/get-dependents-graph" data-kind="package" data-dents="cognitive" stroke-width="2" d="M183.65 880.93L179.33 881L175.8 882.21L173.31 884.01L172 885.67L171.95 886.68L172.94 887.54L174.67 889L176.84 891.62L179.16 895.27L181.33 899.67L183.09 904.46L184.25 909.1L184.67 913L184.27 915.81L183.28 918.19L182 921L180.72 924.85L179.73 929.15L179.33 933L179.75 935.72L180.91 937.4L182.67 938.33L184.84 938.88L187.16 939.57L189.33 941L191.09 943.54L192.25 946.68L192.67 949.67L192.3 951.96L191.48 953.81L190.67 955.67L190.17 957.84L189.83 960.16L189.33 962.33L188.49 964.19L187.51 966.04L186.67 968.33L186.17 971.35L185.83 974.65L185.33 977.67L184.49 980.01L183.51 982.21L182.67 985L182.3 988.9L182.81 993.54L184.67 998.33L188.12 1002.73L192.77 1006.38L198 1009L198.56 1009.14L204.03 1018.32L210.32 1009.71L212.67 1009L216.25 1006.43L219.09 1003.12L221.33 999.67L223.09 996.56L224.25 993.89L224.67 991.67L224.2 989.77L222.69 987.57L220 984.33L216.15 979.59L211.85 973.96L208 968.33L205.26 963.44L203.41 959.44L202 956.33L200.69 953.96L199.53 951.59L198.67 948.33L198.22 943.64L198.22 938.36L198.67 933.67L199.51 930.43L200.49 928.23L201.33 926.33L201.75 924.14L201.58 921.64L200.67 919L198.99 916.33L197.01 913.67L195.33 911L194.42 908.36L194.25 905.86L194.67 903.67L195.53 901.84L196.69 900.16L198 898.33L199.28 896.16L200.27 893.84L200.67 891.67L200.27 889.86L199.28 888.36L198 887L196.59 885.67L194.74 884.33L192 883L188.12 881.74Z"/>
+      <path data-id="package:packages/get-github-info" data-kind="package" stroke-width="2.21" d="M152 573L154.57 575.62L157.88 577.94L161.33 579.67L164.44 580.53L167.11 580.36L169.33 579L171.14 576.46L172.64 573.32L174 570.33L175.31 568.01L176.47 565.99L177.33 563.67L177.73 560.63L177.38 557.15L176 553.67L173.43 550.58L170.12 548.09L166.67 546.33L163.56 545.37L160.89 544.85L158.67 544.33L156.86 543.52L155.36 542.7L154 542.33L152.67 542.73L151.33 543.72L150 545L148.69 546.41L147.53 548.26L146.67 551L146.22 554.83L146.22 558.95L146.67 562.33L147.51 564.26L148.49 565.3L149.33 566.33L149.88 568.06L150.57 570.38L152 573Z"/>
+      <path data-id="package:packages/get-release-plan" data-kind="package" stroke-width="2.21" d="M212.67 793.33L214.81 793.75L216.96 793.58L218.67 792.67L219.63 790.96L220.15 788.81L220.67 786.67L221.46 784.84L222.1 783.16L222 781.33L220.72 779.19L218.4 777.04L215.33 775.33L211.88 774.49L208.57 774.84L206 776.67L204.62 780.02L204.27 783.98L204.67 787.33L205.53 789.23L206.69 790.1L208 790.67L209.36 791.51L210.86 792.49L212.67 793.33Z"/>
+      <path data-id="package:packages/get-version-range-type" data-kind="package" stroke-width="2.21" d="M171.33 544L174.44 545.43L177.11 546.12L179.33 546.67L181.14 547.48L182.64 548.3L184 548.67L185.38 548.22L187.06 546.89L189.33 544.67L192.35 541.58L195.65 537.75L198.67 533.33L200.84 528.49L201.83 523.51L201.33 518.67L199.16 514.27L195.51 510.62L190.67 508L185.04 506.62L179.41 506.27L174.67 506.67L171.41 507.58L169.04 509.09L166.67 511.33L163.68 514.4L160.54 518.05L158 522L156.62 525.93L156.27 529.41L156.67 532L157.58 533.48L159.09 534.52L161.33 536L164.37 538.52L167.85 541.48L171.33 544Z"/>
+      <path data-id="package:packages/git" data-kind="package" data-dents="cognitive" stroke-width="3.37" d="M145.67 848.33L141.25 848.78L137.42 850.11L134.33 852.33L132.06 855.35L130.38 858.65L129 861.67L127.69 863.96L126.53 865.81L125.67 867.67L125.22 869.81L125.22 871.96L125.67 873.67L126.53 874.63L127.69 875.15L129 875.67L130.41 876.51L132.26 877.49L132.79 877.65L138.44 886.7L144.59 877.98L147.67 877L151.25 874.38L154.09 870.73L156.33 866.33L158.01 861.54L158.65 856.9L157.67 853L154.7 850.31L150.41 848.8Z"/>
+      <path data-id="package:packages/logger" data-kind="package" stroke-width="2.72" d="M205 589.67L206.33 589.27L207.67 588.28L209 587L210.31 585.64L211.47 584.14L212.33 582.33L212.73 580.16L212.38 577.84L211 575.67L208.46 573.99L205.32 573.35L202.33 574.33L200.11 577.22L198.78 581L198.33 584.33L198.73 586.23L199.72 587.1L201 587.67L202.33 588.48L203.67 589.3L205 589.67Z"/>
+      <path data-id="package:packages/parse" data-kind="package" stroke-width="2.21" d="M196.67 864L198.94 865.28L200.62 866.27L202 866.67L203.36 866.25L204.86 865.09L206.67 863.33L208.74 861.11L210.37 858.44L210.67 855.33L209.01 851.88L205.88 848.57L202 846L198.02 844.67L194.2 844.67L190.67 846L187.6 848.54L185.28 851.68L184 854.67L183.98 856.94L185.14 858.62L187.33 860L190.35 861.33L193.65 862.67L196.67 864Z"/>
+      <path data-id="package:packages/pre" data-kind="package" stroke-width="2.37" d="M191.33 777L193.01 774.36L193.65 771.86L192.67 769.67L189.78 768.01L186 767.54L182.67 769L180.81 772.73L180.3 777.49L180.67 781.67L181.56 783.96L182.89 784.48L184.67 783.67L186.84 781.94L189.16 779.62L191.33 777Z"/>
+      <path data-id="package:packages/read" data-kind="package" stroke-width="2.21" d="M240 774L243.93 772.84L247.41 770.05L250 766.67L251.43 763.56L252.12 760.89L252.67 758.67L253.48 756.86L254.3 755.36L254.67 754L254.27 752.67L253.28 751.33L252 750L250.59 748.69L248.74 747.53L246 746.67L242.15 746.3L237.85 746.81L234 748.67L231.26 752.05L229.41 756.17L228 760L226.72 762.72L225.73 764.4L225.33 765.33L225.78 765.88L227.11 766.57L229.33 768L232.4 770.44L236.05 772.89L240 774Z"/>
+      <path data-id="package:packages/release-utils" data-kind="package" data-dents="cognitive" stroke-width="2.72" d="M231.53 532.47L228.69 532.64L226 534L223.38 536.74L221.06 541.26L219.33 548L218.37 556.99L217.85 566.57L217.33 574.67L216.47 579.8L215.31 582.86L214 585.33L212.67 588.35L211.33 591.65L210 594.67L208.69 597.01L207.53 599.21L206.67 602L206.17 605.85L205.83 610.15L205.33 614L204.49 616.84L203.51 619.38L202.67 622.67L202.17 627.36L201.83 632.64L201.33 637.33L200.49 640.59L199.51 642.96L198.67 645.33L198.17 648.35L197.83 651.65L197.33 654.67L196.49 657.06L195.51 659.6L194.67 663.33L194.22 668.84L194.22 674.94L194.67 680L195.56 682.77L196.89 683.46L198.67 682.67L200.81 680.91L202.96 678.42L204.67 675.33L205.63 671.85L206.15 668.37L206.67 665.33L207.51 663.04L208.49 661.19L209.33 659.33L209.83 657.16L210.17 654.84L210.67 652.67L211.51 650.84L212.49 649.16L213.33 647.33L213.83 645.16L214.17 642.84L214.67 640.67L215.56 638.84L216.89 637.16L218.67 635.33L220.94 633.31L223.95 632.02L228 632.67L233.14 636L238.42 641.11L242.67 646.67L245.04 651.56L246.07 655.56L246.67 658.67L247.48 661.01L248.3 663.21L248.67 666L248.27 669.93L247.28 674.74L246.64 677.36L237.43 681.35L243.88 689.04L243.53 690.67L242.67 696L242.27 701.28L242.62 706.27L244 710.67L246.62 714.22L250.27 716.89L254.67 718.67L259.48 719.53L264.3 719.36L268.67 718L272.25 715.41L275.09 711.93L277.33 708L279.14 704.05L280.64 700.4L282 697.33L283.31 695.01L284.47 692.99L285.33 690.67L285.83 687.65L286.17 684.35L286.67 681.33L287.51 678.96L288.49 676.59L289.33 673.33L289.78 668.64L289.78 663.36L289.33 658.67L288.44 655.43L287.11 653.23L285.33 651.33L283.14 649.19L280.64 647.04L278 645.33L275.36 644.37L272.86 643.85L270.67 643.33L268.84 642.49L267.16 641.51L265.33 640.67L263.09 640.07L260.25 639.04L256.67 636.67L252.32 632.4L247.68 626.94L243.33 621.33L239.78 616.4L237.11 612.05L235.33 608L234.37 604.05L233.85 600.4L233.33 597.33L232.49 595.04L231.51 593.19L230.67 591.33L230.22 589.16L230.22 586.84L230.67 584.67L231.51 582.84L232.49 581.16L233.33 579.33L233.83 577.16L234.17 574.84L234.67 572.67L235.53 570.81L236.69 568.96L238 566.67L239.33 563.65L240.67 560.35L242 557.33L243.31 555.01L244.47 552.99L245.33 550.67L245.73 547.63L245.38 544.15L244 540.67L241.43 537.58L238.12 535.09L234.67 533.33Z"/>
+      <path data-id="package:packages/should-skip-package" data-kind="package" stroke-width="2" d="M180.33 947.67L182.01 945.96L182.65 943.81L181.67 941.67L178.78 939.96L175 939.15L171.67 939.67L169.81 941.72L169.3 944.51L169.67 947L170.56 948.41L171.89 948.93L173.67 949L175.84 948.95L178.16 948.6L180.33 947.67Z"/>
+      <path data-id="package:packages/types" data-kind="package" stroke-width="4.1" d="M172 1143.67L174.64 1144.58L177.14 1144.75L179.33 1144.33L181.16 1143.44L182.84 1142.11L184.67 1140.33L186.84 1138.09L189.16 1135.25L191.33 1131.67L193.09 1127.35L194.25 1122.88L194.67 1119L194.27 1116.26L193.28 1114.41L192 1113L190.59 1111.67L188.74 1110.33L186 1109L182.1 1107.79L177.46 1107.32L172.67 1108.33L168.27 1111.32L164.62 1115.79L162 1121L160.62 1126.23L160.27 1130.88L160.67 1134.33L161.56 1136.26L162.89 1137.3L164.67 1138.33L166.86 1140.01L169.36 1141.99L172 1143.67Z"/>
+      <path data-id="package:packages/write" data-kind="package" stroke-width="2.21" d="M205.67 761.67L209.15 762.53L212.63 762.36L215.67 761L217.94 758.46L219.62 755.32L221 752.33L222.23 750.01L222.88 747.99L222.33 745.67L220.21 742.68L216.9 739.54L213 737L209.02 735.67L205.2 735.67L201.67 737L198.58 739.57L196.09 742.88L194.33 746.33L193.42 749.42L193.25 751.91L193.67 753.67L194.56 754.65L195.89 755.35L197.67 756.33L199.89 758.01L202.56 759.99L205.67 761.67Z"/>
+      <path data-id="package:scripts/test-utils" data-kind="package" stroke-width="2.82" d="M247.67 605.33L251.1 607.11L255.57 608.44L260.33 609.33L264.75 609.7L268.58 609.19L271.67 607.33L273.91 603.9L275.42 599.43L276.33 594.67L276.73 590.22L276.38 586.22L275 582.67L272.41 579.58L268.93 577.09L265 575.33L261.02 574.47L257.2 574.64L253.67 576L250.56 578.59L247.89 582.07L245.67 586L243.91 589.93L242.75 593.41L242.33 596L242.7 597.46L243.52 598.32L244.33 599.33L244.9 601.04L245.77 603.19L247.67 605.33Z"/>
+      <path data-id="directory:packages/apply-release-plan/src/test-utils" data-kind="directory" stroke-width="1.5" d="M110 1205L112.62 1207.64L116.27 1210.14L120.67 1212.33L125.51 1214.09L130.49 1215.25L135.33 1215.67L139.78 1215.22L143.78 1213.89L147.33 1211.67L150.44 1208.58L153.11 1204.75L155.33 1200.33L157.09 1195.47L158.25 1190.31L158.67 1185L158.27 1179.67L157.28 1174.33L156 1169L154.69 1163.57L153.53 1157.54L152.67 1150.33L152.17 1141.72L151.83 1132.95L151.33 1125.67L150.44 1121.02L149.11 1118.31L147.33 1116.33L145.11 1114.16L142.44 1111.84L139.33 1109.67L135.85 1107.91L132.37 1106.75L129.33 1106.33L127.04 1106.75L125.19 1107.91L123.33 1109.67L121.16 1111.91L118.84 1114.75L116.67 1118.33L114.89 1122.8L113.56 1128.31L112.67 1135L112.17 1142.78L111.83 1150.56L111.33 1157L110.49 1161.17L109.51 1163.72L108.67 1165.67L108.17 1167.84L107.83 1170.16L107.33 1172.33L106.49 1174.23L105.51 1176.43L104.67 1179.67L104.22 1184.33L104.22 1189.44L104.67 1193.67L105.51 1196.06L106.49 1197.27L107.33 1198.33L107.88 1200.06L108.57 1202.38L110 1205Z"/>
+      <path data-id="directory:packages/cli/src/commands" data-kind="directory" stroke-width="2" d="M133 770.33L134.31 766.98L134.14 763.02L132.33 759.67L128.98 757.89L125.02 757.89L121.67 759.67L119.81 763.02L119.3 766.98L119.67 770.33L120.58 772.21L122.09 772.9L124.33 773L127.32 772.9L130.46 772.21L133 770.33Z"/>
+      <path data-id="directory:packages/cli/src/commands/add" data-kind="directory" data-dents="cognitive cyclomatic" stroke-width="2" d="M96 686L92.05 687.21L88.4 690.35L85.33 694.67L83.06 699.46L81.38 704.1L80 708L78.64 710.79L77.14 712.99L75.33 715.33L73.09 718.42L70.25 722.25L66.67 726.67L62.32 731.48L57.68 736.3L53.33 740.67L49.78 744.4L47.11 748.27L45.33 753.33L44.37 760.17L44.09 764.2L35.68 769.39L42.89 776.13L42.47 778.2L41.31 780.91L40 783.33L38.62 786.4L36.94 790.05L34.67 794L31.68 797.98L28.54 801.8L26 805.33L24.57 808.44L23.88 811.11L23.33 813.33L22.52 815.11L21.7 816.44L21.33 817.33L21.7 817.88L22.52 818.57L23.33 820L23.9 822.59L24.77 826.07L26.67 830L30.12 833.95L34.77 837.6L40 840.67L45.28 842.91L50.27 844.42L54.67 845.33L58.37 845.63L62.07 844.59L66.67 841.33L72.64 835.38L78.91 827.95L84 820.67L86.74 814.81L87.26 810.3L86 806.67L83.43 803.58L80.12 801.09L76.67 799.33L73.53 798.32L70.69 797.46L68 796L65.38 793.33L63.06 789.33L61.33 784L60.42 777.53L60.33 773.85L68.44 768.61L61.44 761.95L61.51 761.63L62.49 759.26L63.33 757.33L63.83 755.16L64.17 752.84L64.67 750.67L65.7 748.69L68.07 745.98L72.67 741.33L79.88 734.12L88.12 725.88L95.33 718.67L99.95 713.98L102.49 710.91L104 708L105.23 704.1L105.88 699.46L105.33 694.67L103.21 690.35L99.9 687.21Z"/>
+      <path data-id="directory:packages/cli/src/commands/init" data-kind="directory" stroke-width="2" d="M157 677.33L159.54 679.14L162.68 680.64L165.67 682L167.99 683.23L170.01 683.88L172.33 683.33L175.32 681.16L178.46 677.51L181 672.67L182.31 667.04L182.14 661.41L180.33 656.67L176.9 653.48L172.43 651.63L167.67 650.67L163.25 650.3L159.42 650.81L156.33 652.67L154.11 656.05L152.78 660.17L152.33 664L152.7 666.77L153.52 668.79L154.33 670.67L154.88 672.84L155.57 675.16L157 677.33Z"/>
+      <path data-id="directory:packages/cli/src/commands/pre" data-kind="directory" stroke-width="2" d="M56 718.67L58.67 719.53L61.33 719.36L64 718L66.62 715.43L68.94 712.12L70.67 708.67L71.63 705.56L72.15 702.89L72.67 700.67L73.41 698.81L73.7 696.96L72.67 694.67L69.73 691.68L65.6 688.54L61.33 686L57.73 684.67L54.72 684.67L52 686L49.38 688.62L47.06 692.27L45.33 696.67L44.42 701.43L44.25 705.9L44.67 709.33L45.56 711.26L46.89 712.3L48.67 713.33L50.86 715.01L53.36 716.99L56 718.67Z"/>
+      <path data-id="directory:packages/cli/src/commands/publish" data-kind="directory" data-dents="cognitive crap cycle cyclomatic" stroke-width="2" d="M127.05 682.49L123.4 682.84L120.33 684.67L118.06 688.05L116.38 692.17L115 696L113.69 698.77L112.53 700.79L111.67 702.67L111.17 704.84L110.83 707.16L110.33 709.33L109.47 711.14L108.31 712.64L107 714L105.64 715.36L104.14 716.86L102.33 718.67L101.48 719.55L90.79 720.15L95.53 729.73L95.48 729.92L105.56 744.18L107.51 748.55L107.63 753.32L105.92 757.79L102.63 761.25L98.26 763.2L93.49 763.32L89.02 761.61L85.56 758.32L81.98 753.26L80.33 754L77.96 755.31L75.59 756.47L72.33 757.33L67.64 757.9L62.36 758.77L57.67 760.67L54.51 764.02L53.32 766.83L44.82 774.52L55.88 777.61L56.38 778.54L58.06 781.68L60.33 784.67L63.35 786.94L66.65 788.62L69.67 790L72.11 791.48L75 793.85L79.67 798L86.95 804.37L95.72 811.63L104.33 818L111.47 822.02L116.98 823.53L121 822.67L123.57 819.63L124.21 814.81L122.81 810.25L126.67 800.74L116.4 800.2L111.81 794.94L106.33 789.33L102.65 785.63L100.46 783.26L99 781.33L97.79 779.16L97.32 776.84L98.33 774.67L101.22 772.79L105 770.77L108.33 768L110.19 764.15L110.7 759.85L110.33 756L109.49 753.19L108.51 750.81L107.67 748L107.25 744.12L107.42 739.65L108.33 735.33L110.04 731.75L112.19 728.91L114.33 726.67L116.19 724.86L118.04 723.36L118.99 722.8L128.19 727.13L129.49 717.05L131 716L134.93 712.1L138.41 707.46L141 702.67L142.33 698.22L142.33 694.22L141 690.67L138.41 687.58L134.93 685.09L131 683.33Z"/>
+      <path data-id="directory:packages/cli/src/commands/status" data-kind="directory" stroke-width="2" d="M160 710.33L162.52 709.52L164.15 707.37L164 704.33L161.56 700.95L157.78 698.16L154 697L151.31 698.11L149.8 700.56L149.33 703L149.75 704.46L150.91 705.32L152.67 706.33L154.86 707.96L157.36 709.59L160 710.33Z"/>
+      <path data-id="directory:packages/cli/src/commands/tag" data-kind="directory" stroke-width="2" d="M190.67 719.67L194.1 718.01L197.23 714.88L199.33 711L199.78 707.07L198.44 703.59L195.33 701L190.67 699.69L185.56 699.86L181.33 701.67L179.01 705.02L178.32 708.98L178.67 712.33L179.56 714.26L180.89 715.3L182.67 716.33L184.89 717.94L187.56 719.4L190.67 719.67Z"/>
+      <path data-id="directory:packages/cli/src/commands/version" data-kind="directory" data-dents="cognitive" stroke-width="2" d="M230 692.33L228.64 692.7L227.14 693.52L225.33 694.33L223.14 694.88L220.64 695.57L218 697L215.38 699.57L213.06 702.88L211.33 706.33L210.42 709.42L210.25 711.91L210.67 713.67L211.53 714.63L212.69 715.15L214 715.67L214.24 715.81L217.75 726L225.65 718.67L227.95 718.58L231.33 717.67L233.23 715.96L234.1 713.81L234.67 711.67L235.51 709.84L236.49 708.16L237.33 706.33L237.78 704.16L237.78 701.84L237.33 699.67L236.47 697.86L235.31 696.36L234 695L232.67 693.72L231.33 692.73Z"/>
+      <path data-id="directory:packages/cli/src/ponyfills" data-kind="directory" stroke-width="2" d="M96.67 857.33L98.84 857.7L101.16 857.19L103.33 855.33L105.11 851.93L106.44 847.63L107.33 843.33L107.7 839.78L107.19 837.11L105.33 835.33L101.98 834.44L98.02 834.44L94.67 835.33L92.77 837.04L91.9 839.19L91.33 841.33L90.49 843.16L89.51 844.84L88.67 846.67L88.22 848.81L88.22 850.96L88.67 852.67L89.53 853.63L90.69 854.15L92 854.67L93.36 855.51L94.86 856.49L96.67 857.33Z"/>
+      <path data-id="directory:packages/cli/src/utils" data-kind="directory" stroke-width="3.23" d="M134.34 793.66L136.36 793.38L139 792L141.72 789.38L144.73 785.73L148.33 781.33L152.7 776.49L157.52 771.51L162.33 766.67L166.73 762.2L170.38 758.02L173 754L174.31 750L174.14 746L172.33 742L168.9 738.05L164.43 734.4L159.67 731.33L155.25 729.06L151.42 727.38L148.33 726L145.99 724.69L143.79 723.53L141 722.67L137.15 722.22L132.85 722.22L129 722.67L126.16 723.51L123.62 724.49L120.33 725.33L115.64 725.83L110.36 726.17L105.67 726.67L102.43 727.51L100.23 728.49L98.33 729.33L96.16 729.83L93.84 730.17L91.67 730.67L89.84 731.56L88.16 732.89L86.33 734.67L84.16 736.86L81.84 739.36L79.67 742L77.91 744.62L76.75 746.94L76.33 748.67L76.7 749.65L77.52 750.35L78.33 751.33L78.9 753.11L79.77 755.78L81.67 759.33L85.1 763.7L89.57 768.52L94.33 773.33L98.78 777.73L102.78 781.38L106.33 784L109.44 785.43L112.11 786.12L114 786.59L118.8 765.28L120.5 761.46L123.52 758.59L127.42 757.09L131.59 757.19L135.41 758.89L138.28 761.91L139.78 765.81L139.68 769.98L134.34 793.66Z"/>
+      <path data-id="folder:packages/cli/src/commit" data-kind="folder" stroke-width="2" d="M126.67 592L127.51 594.79L128.49 596.99L129.33 599.33L129.78 602.35L129.78 605.65L129.33 608.67L128.47 611.01L127.31 613.21L126 616L124.72 619.93L123.73 624.74L123.33 630L123.73 635.26L124.72 640.07L126 644L127.31 646.77L128.47 648.79L129.33 650.67L129.85 652.86L130.37 655.36L131.33 658L133.01 660.69L134.99 663.53L136.67 666.67L137.63 670.15L138.15 673.63L138.67 676.67L139.51 679.06L140.49 681.6L141.33 685.33L141.75 690.89L141.58 697.33L140.67 703.33L138.99 707.9L137.01 711.43L135.33 714.67L134.49 718.15L134.84 721.63L136.67 724.67L140.02 726.96L143.98 728.81L147.33 730.67L149.23 732.84L150.1 735.16L150.67 737.33L151.51 739.26L152.49 741.63L153.33 745.33L153.78 750.86L153.78 757.14L153.33 762.67L152.49 766.42L151.51 769.14L150.67 772L150.3 775.85L150.81 780.15L152.67 784L156.05 786.62L160.17 787.6L164 786.67L166.69 783.7L168.2 779.41L168.67 774.67L168.27 770.25L167.28 766.42L166 763.33L164.69 761.04L163.53 759.19L162.67 757.33L162.17 755.16L161.83 752.84L161.33 750.67L160.49 748.84L159.51 747.16L158.67 745.33L158.22 743.16L158.22 740.84L158.67 738.67L159.51 736.79L160.49 734.77L161.33 732L161.73 728.12L161.38 723.65L160 719.33L157.46 715.75L154.32 712.91L151.33 710.67L149.09 708.84L147.58 707.16L146.67 705.33L146.22 703.16L146.22 700.84L146.67 698.67L147.56 696.81L148.89 694.96L150.67 692.67L152.81 689.6L154.96 685.95L156.67 682L157.58 678.05L157.75 674.4L157.33 671.33L156.49 669.01L155.51 666.99L154.67 664.67L154.17 661.65L153.83 658.35L153.33 655.33L152.49 653.04L151.51 651.19L150.67 649.33L150.17 647.16L149.83 644.84L149.33 642.67L148.49 640.81L147.51 638.96L146.67 636.67L146.17 633.65L145.83 630.35L145.33 627.33L144.49 624.94L143.51 622.4L142.67 618.67L142.22 613.14L142.22 606.86L142.67 601.33L143.53 597.58L144.69 594.86L146 592L147.31 588.12L148.47 583.65L149.33 579.33L149.73 575.73L149.38 572.72L148 570L145.41 567.38L141.93 565.06L138 563.33L134.07 562.44L130.59 562.44L128 563.33L126.57 565.04L125.88 567.19L125.33 569.33L124.52 571.14L123.7 572.64L123.33 574L123.7 575.41L124.52 577.26L125.33 580L125.83 583.85L126.17 588.15L126.67 592Z"/>
+      <path data-id="single:packages/apply-release-plan/src/get-changelog-entry.ts" data-kind="single" stroke-width="2" d="M284.33 836L286.19 836.02L288.04 834.86L290.33 832.67L293.3 829.6L296.26 825.95L298.33 822L298.85 818.07L298.04 814.59L296.33 812L294.16 810.57L291.84 809.88L289.67 809.33L287.81 808.59L285.96 808.3L283.67 809.33L280.68 812.27L277.54 816.4L275 820.67L273.62 824.22L273.27 826.89L273.67 828.67L274.56 829.65L275.89 830.35L277.67 831.33L279.84 832.99L282.16 834.79L284.33 836Z"/>
+      <path data-id="single:packages/apply-release-plan/src/types.ts" data-kind="single" stroke-width="2" d="M190.33 1182L192.14 1182.07L193.64 1181.26L195 1180L196.33 1178.62L197.67 1176.94L199 1174.67L200.23 1171.63L200.88 1168.15L200.33 1164.67L198.23 1161.58L195.1 1159.09L191.67 1157.33L188.58 1156.44L186.09 1156.44L184.33 1157.33L183.37 1159.04L182.85 1161.19L182.33 1163.33L181.49 1165.16L180.51 1166.84L179.67 1168.67L179.22 1170.81L179.22 1172.96L179.67 1174.67L180.56 1175.65L181.89 1176.35L183.67 1177.33L185.84 1178.99L188.16 1180.79L190.33 1182Z"/>
+      <path data-id="single:packages/apply-release-plan/src/utils.ts" data-kind="single" stroke-width="2.21" d="M135.67 919.33L139.15 921.01L142.63 921.65L145.67 920.67L147.91 917.73L149.42 913.6L150.33 909.33L150.7 905.75L150.19 902.91L148.33 900.67L144.93 898.89L140.63 897.56L136.33 896.67L132.75 896.3L129.91 896.81L127.67 898.67L125.91 902.02L124.75 905.98L124.33 909.33L124.75 911.26L125.91 912.3L127.67 913.33L129.89 915.04L132.56 917.19L135.67 919.33Z"/>
+      <path data-id="single:packages/apply-release-plan/src/version-package.ts" data-kind="single" data-dents="cognitive" stroke-width="2" d="M278.98 757.35L275 758.33L271.07 761.27L267.59 765.4L265 769.67L263.62 773.22L263.27 775.89L263.67 777.67L264.58 778.68L266.09 779.54L268.33 781L271.37 783.52L274.85 786.48L277.35 788.29L282.17 798.53L288.49 789.2L289.64 788.31L291 787L292.33 785.62L293.67 783.94L295 781.67L296.28 778.65L297.27 775.35L297.67 772.33L297.25 770.04L296.09 768.19L294.33 766.33L292.11 764.16L289.44 761.84L286.33 759.67L282.8 757.99Z"/>
+      <path data-id="single:packages/assemble-release-plan/src/apply-links.ts" data-kind="single" stroke-width="2" d="M206.33 922.67L208.06 919.78L209.05 916L209 912.67L207.74 910.86L205.59 910.69L203 912L200.41 914.52L198.26 917.48L197 920L196.95 921.43L197.94 922.12L199.67 922.67L201.84 923.41L204.16 923.7L206.33 922.67Z"/>
+      <path data-id="single:packages/assemble-release-plan/src/determine-dependents.ts" data-kind="single" data-dents="cognitive crap" stroke-width="2" d="M245.05 887.49L241.4 887.84L238.33 889.67L236.06 893.12L234.38 897.77L233 903L232.68 904.32L223.47 908.66L230.42 916.09L230.33 917L230.75 919.77L231.91 921.79L233.67 923.67L235.89 925.81L238.56 927.96L241.67 929.67L245.15 930.53L248.63 930.36L251.67 929L253.94 926.46L255.62 923.32L257 920.33L258.31 917.96L259.47 915.59L259.84 914.17L268.67 908.61L260.39 902.26L260.38 902.16L259 897L256.41 892.98L252.93 890.14L249 888.33Z"/>
+      <path data-id="single:packages/assemble-release-plan/src/flatten-releases.ts" data-kind="single" stroke-width="2" d="M166.67 923.67L170.05 924.51L174.17 924.16L178 922.33L180.69 918.95L182.2 914.83L182.67 911L182.22 908.26L180.89 906.41L178.67 905L175.63 903.77L172.15 903.12L168.67 903.67L165.6 905.74L163.28 908.7L162 911.67L161.9 913.96L162.54 915.81L163.33 917.67L163.9 919.81L164.77 921.96L166.67 923.67Z"/>
+      <path data-id="single:packages/assemble-release-plan/src/increment.ts" data-kind="single" stroke-width="2" d="M216 959L217.36 956.48L217.53 953.52L216.67 951L214.96 949.57L212.81 948.88L210.67 948.33L208.86 947.59L207.36 947.3L206 948.33L204.72 951.22L203.73 955L203.33 958.33L203.78 960.21L205.11 960.9L207.33 961L210.32 960.93L213.46 960.41L216 959Z"/>
+      <path data-id="single:packages/assemble-release-plan/src/match-fixed-constraint.ts" data-kind="single" data-dents="cognitive" stroke-width="2" d="M214.36 871.47L211.86 871.64L209.67 873L207.91 875.52L206.75 878.48L206.33 881L206.7 882.46L207.52 883.32L208.33 884.33L208.88 886.01L209.57 887.99L209.73 888.18L214.76 898.56L220.11 888.34L220.43 887.96L221.12 885.81L221.67 883.67L222.46 881.84L223.1 880.16L223 878.33L221.74 876.19L219.59 874.04L217 872.33Z"/>
+      <path data-id="single:packages/assemble-release-plan/src/test-utils.ts" data-kind="single" stroke-width="2" d="M222 1170.33L224.54 1172.14L227.68 1173.64L230.67 1175L232.96 1176.31L234.81 1177.47L236.67 1178.33L238.89 1178.7L241.56 1178.19L244.67 1176.33L248.15 1172.88L251.63 1168.23L254.67 1163L256.89 1157.74L258.22 1152.93L258.67 1149L258.27 1146.21L257.28 1144.01L256 1141.67L254.64 1138.68L253.14 1135.54L251.33 1133L249.16 1131.57L246.84 1130.88L244.67 1130.33L242.79 1129.49L240.77 1128.51L238 1127.67L234.15 1127.27L229.85 1127.62L226 1129L223.26 1131.54L221.41 1134.68L220 1137.67L218.69 1140.04L217.53 1142.41L216.67 1145.67L216.22 1150.33L216.22 1155.44L216.67 1159.67L217.51 1162.06L218.49 1163.27L219.33 1164.33L219.88 1166.04L220.57 1168.19L222 1170.33Z"/>
+      <path data-id="single:packages/assemble-release-plan/src/types.ts" data-kind="single" stroke-width="2.21" d="M186.67 1065.33L190.07 1067.11L194.37 1068.44L198.67 1069.33L202.27 1069.73L205.28 1069.38L208 1068L210.62 1065.36L212.94 1061.53L214.67 1056.67L215.56 1051.06L215.56 1045.6L214.67 1041.33L212.96 1038.96L210.81 1037.93L208.67 1037.33L206.81 1036.49L204.96 1035.51L202.67 1034.67L199.63 1034.27L196.15 1034.62L192.67 1036L189.56 1038.59L186.89 1042.07L184.67 1046L182.91 1049.93L181.75 1053.41L181.33 1056L181.7 1057.46L182.52 1058.32L183.33 1059.33L183.9 1061.04L184.77 1063.19L186.67 1065.33Z"/>
+      <path data-id="single:packages/assemble-release-plan/src/utils.ts" data-kind="single" stroke-width="2.5" d="M153 992L156.85 993.21L161.15 993.68L165 992.67L167.69 989.75L169.2 985.8L169.67 982L169.27 979.26L168.28 977.41L167 976L165.62 974.69L163.94 973.53L161.67 972.67L158.63 972.27L155.15 972.62L151.67 974L148.6 976.54L146.28 979.68L145 982.67L144.93 984.94L145.74 986.62L147 988L148.41 989.33L150.26 990.67L153 992Z"/>
+      <path data-id="single:packages/cli/src/changelog.ts" data-kind="single" stroke-width="2" d="M198.67 562.33L200.81 562.7L202.96 562.19L204.67 560.33L205.53 556.98L205.36 553.02L204 549.67L201.46 547.86L198.32 547.69L195.33 549L193.11 551.52L191.78 554.48L191.33 557L191.73 558.43L192.72 559.12L194 559.67L195.36 560.51L196.86 561.49L198.67 562.33Z"/>
+      <path data-id="single:packages/cli/src/help.ts" data-kind="single" stroke-width="2" d="M226 671L227.31 668.46L227.14 665.32L225.33 662.33L221.98 660.19L218.02 659.37L214.67 660.33L212.81 663.22L212.3 667L212.67 670.33L213.58 672.21L215.09 672.9L217.33 673L220.32 672.93L223.46 672.41L226 671Z"/>
+      <path data-id="single:packages/cli/src/run.ts" data-kind="single" stroke-width="2" d="M189.67 631L193.22 628.38L195.89 624.73L197.67 620.33L198.51 615.54L198.16 610.9L196.33 607L192.93 604.28L188.63 602.6L184.33 601.67L180.75 601.3L177.91 601.81L175.67 603.67L173.89 607.12L172.56 611.77L171.67 617L171.22 622.23L171.22 626.88L171.67 630.33L172.6 632.21L174.28 632.9L177 633L180.88 632.93L185.35 632.41L189.67 631Z"/>
+      <path data-id="single:packages/cli/src/types.ts" data-kind="single" stroke-width="2.21" d="M236.67 649.33L238.84 649.73L241.16 649.38L243.33 648L245.01 645.46L245.65 642.32L244.67 639.33L241.75 637.11L237.8 635.78L234 635.33L231.28 635.75L229.6 636.91L228.67 638.67L228.22 640.81L228.22 642.96L228.67 644.67L229.53 645.63L230.69 646.15L232 646.67L233.36 647.51L234.86 648.49L236.67 649.33Z"/>
+      <path data-id="single:packages/get-dependents-graph/src/get-dependency-graph.ts" data-kind="single" data-dents="cognitive" stroke-width="2" d="M203.67 979.33L201.81 979.78L199.96 981.11L197.67 983.33L194.7 986.35L191.74 989.65L189.67 992.67L189.15 994.96L189.96 996.81L191.67 998.67L193.91 1000.81L196.75 1002.96L198.53 1003.81L203.66 1013.41L210.13 1004.68L213 1003.33L215.67 999.93L217 995.63L217 991.33L215.74 987.75L213.59 984.91L211 982.67L208.36 980.91L205.86 979.75Z"/>
+      <path data-id="single:packages/release-utils/src/gitUtils.ts" data-kind="single" stroke-width="2.82" d="M270.67 673.67L274.15 674.53L277.63 674.36L280.67 673L282.94 670.46L284.62 667.32L286 664.33L287.28 662.01L288.27 659.99L288.67 657.67L288.25 654.68L287.09 651.54L285.33 649L283.16 647.57L280.84 646.88L278.67 646.33L276.81 645.52L274.96 644.7L272.67 644.33L269.65 644.8L266.35 646.31L263.33 649L261.11 652.85L259.78 657.15L259.33 661L259.75 663.77L260.91 665.79L262.67 667.67L264.89 669.81L267.56 671.96L270.67 673.67Z"/>
+      <path data-id="single:packages/release-utils/src/readChangesetState.ts" data-kind="single" stroke-width="2.21" d="M198.67 684.33L200.81 684.68L202.96 683.99L204.67 681.67L205.51 677.44L205.16 672.33L203.33 667.67L199.98 664.6L196.02 663.62L192.67 665L190.81 668.73L190.3 673.49L190.67 677.67L191.53 680.04L192.69 681.07L194 681.67L195.36 682.51L196.86 683.49L198.67 684.33Z"/>
+      <path data-id="single:packages/release-utils/src/run.ts" data-kind="single" data-dents="cognitive" stroke-width="2.21" d="M221.96 593.1L219.67 593.67L216.65 595.74L213.35 598.7L210.33 601.67L208.09 603.99L206.58 606.01L205.67 608.33L205.22 611.32L205.22 614.46L205.67 617L206.53 618.43L207.69 619.12L209 619.67L210.38 620.51L211.25 621.02L216.54 630.66L222.78 621.61L224.33 621L227.42 618.38L229.91 614.73L231.67 610.33L232.56 605.57L232.56 601.1L231.67 597.67L229.96 595.77L227.81 594.9L225.67 594.33L223.81 593.57Z"/>
+      <path data-id="single:packages/release-utils/src/utils.ts" data-kind="single" stroke-width="2.62" d="M257 720.67L259.64 721.58L262.14 721.75L264.33 721.33L266.14 720.47L267.64 719.31L269 718L270.31 716.59L271.47 714.74L272.33 712L272.7 708.15L272.19 703.85L270.33 700L266.9 697.36L262.43 696.2L257.67 696.67L253.27 698.77L249.62 701.9L247 705.33L245.62 708.42L245.27 710.91L245.67 712.67L246.56 713.65L247.89 714.35L249.67 715.33L251.86 717.01L254.36 718.99L257 720.67Z"/>
+      <path data-id="package:packages/apply-release-plan" data-family="family-1" d="M-3 -2H3M-3 2H3" fill="none" stroke="#7b848f" transform="translate(302.28 770.06)"/>
+      <path data-id="package:packages/changelog-github" data-family="family-3" d="M-2.5 -2.5H2.5V2.5H-2.5Z" fill="none" stroke="#7b848f" transform="translate(125.8 588.52)"/>
+      <path data-id="package:packages/cli" data-family="family-4" d="M0 -3L3 0L0 3L-3 0Z" fill="none" stroke="#7b848f" transform="translate(204.13 550.83)"/>
+      <path data-id="package:packages/config" data-family="family-4" d="M0 -3L3 0L0 3L-3 0Z" fill="none" stroke="#7b848f" transform="translate(261.49 801.52)"/>
+      <path data-id="package:packages/get-github-info" data-family="family-3" d="M-2.5 -2.5H2.5V2.5H-2.5Z" fill="none" stroke="#7b848f" transform="translate(177.04 546.97)"/>
+      <path data-id="package:packages/get-version-range-type" data-family="family-2" d="M0 -3L3 2H-3Z" fill="none" stroke="#7b848f" transform="translate(202.77 510.66)"/>
+      <path data-id="package:packages/git" data-family="family-5" d="M-3 -3L3 3M-3 3L3 -3" fill="none" stroke="#7b848f" transform="translate(161.69 848.98)"/>
+      <path data-id="package:packages/write" data-family="family-1" d="M-3 -2H3M-3 2H3" fill="none" stroke="#7b848f" transform="translate(223.82 739.07)"/>
+      <path data-id="directory:packages/cli/src/commands/version" data-family="family-4" d="M0 -3L3 0L0 3L-3 0Z" fill="none" stroke="#7b848f" transform="translate(237.54 691.46)"/>
+      <path data-id="single:packages/apply-release-plan/src/version-package.ts" data-family="family-2" d="M0 -3L3 2H-3Z" fill="none" stroke="#7b848f" transform="translate(297.87 762.79)"/>
+    </g>
+    <g id="organelles" fill="#333a43" stroke="#5f6873" stroke-width="1">
+      <circle data-id="packages/apply-release-plan/src/get-changelog-entry.ts" cx="279.79" cy="816.41" r="10.59"/>
+      <circle data-id="packages/apply-release-plan/src/index.ts" cx="156.72" cy="812.14" r="14.86"/>
+      <path data-id="packages/apply-release-plan/src/index.ts" data-family="family-1" d="M-3 -2H3M-3 2H3" fill="none" stroke="#7b848f" transform="translate(170.06 798.8)"/>
+      <circle data-id="packages/apply-release-plan/src/test-utils/failing-functions.ts" data-reachable="false" cx="137.44" cy="1177.02" r="6.06"/>
+      <circle data-id="packages/apply-release-plan/src/test-utils/get-changelog-dep-updated.ts" data-reachable="false" cx="131.94" cy="1196.31" r="4"/>
+      <circle data-id="packages/apply-release-plan/src/test-utils/get-changelog-entry-with-git-hash.ts" data-reachable="false" cx="138.49" cy="1129.84" r="8.84"/>
+      <circle data-id="packages/apply-release-plan/src/types.ts" data-reachable="false" cx="192.99" cy="1165.65" r="5.52"/>
+      <circle data-id="packages/apply-release-plan/src/utils.ts" cx="148.17" cy="913.49" r="9.51"/>
+      <polygon data-id="packages/apply-release-plan/src/version-package.ts" data-dents="cognitive" points="273.87,770.35 279.3,776.14 283.27,780.12 284.72,785.54 283.27,790.96 279.3,794.94 273.87,796.39 268.45,794.94 264.47,790.96 263.02,785.54 264.47,780.12 268.45,776.14"/>
+      <path data-id="packages/apply-release-plan/src/version-package.ts" data-family="family-2" d="M0 -3L3 2H-3Z" fill="none" stroke="#7b848f" transform="translate(284.37 775.04)"/>
+      <circle data-id="packages/assemble-release-plan/src/apply-links.ts" cx="203.48" cy="914.7" r="8.3"/>
+      <polygon data-id="packages/assemble-release-plan/src/determine-dependents.ts" data-dents="cognitive crap" points="235.25,889.45 242.24,896.91 247.36,902.03 249.23,909.02 247.36,916.01 242.24,921.13 235.25,928.59 228.26,921.13 223.14,916.01 221.27,909.02 223.14,902.03 228.26,896.91"/>
+      <circle data-id="packages/assemble-release-plan/src/flatten-releases.ts" cx="176.43" cy="914.24" r="8.76"/>
+      <circle data-id="packages/assemble-release-plan/src/increment.ts" cx="204.86" cy="955.6" r="6.97"/>
+      <polygon data-id="packages/assemble-release-plan/src/index.ts" data-dents="crap" points="197.01,789.92 204.74,798.17 210.39,803.83 212.46,811.55 210.39,819.28 204.74,824.93 197.01,827 189.29,824.93 183.63,819.28 181.56,811.55 183.63,803.83 189.29,798.17"/>
+      <polygon data-id="packages/assemble-release-plan/src/match-fixed-constraint.ts" data-dents="cognitive" points="209.74,875.54 214.24,880.35 217.53,883.64 218.74,888.14 217.53,892.64 214.24,895.93 209.74,897.14 205.24,895.93 201.95,892.64 200.74,888.14 201.95,883.64 205.24,880.35"/>
+      <circle data-id="packages/assemble-release-plan/src/test-utils.ts" data-reachable="false" cx="234.76" cy="1154.63" r="11.18"/>
+      <circle data-id="packages/assemble-release-plan/src/types.ts" cx="198.27" cy="1052.16" r="6.06"/>
+      <circle data-id="packages/assemble-release-plan/src/utils.ts" cx="168.24" cy="985.66" r="9.22"/>
+      <circle data-id="packages/changelog-git/src/index.ts" cx="93.12" cy="608.89" r="8.11"/>
+      <circle data-id="packages/changelog-github/src/index.ts" cx="122.82" cy="605.18" r="11.82"/>
+      <path data-id="packages/changelog-github/src/index.ts" data-family="family-3" d="M-2.5 -2.5H2.5V2.5H-2.5Z" fill="none" stroke="#7b848f" transform="translate(134.01 593.99)"/>
+      <circle data-id="packages/cli/src/changelog.ts" cx="199.3" cy="560.35" r="4.88"/>
+      <polygon data-id="packages/cli/src/commands/add/createChangeset.ts" data-dents="cognitive" points="78.08,796.47 84.44,803.26 89.1,807.92 90.8,814.28 89.1,820.64 84.44,825.3 78.08,827 71.72,825.3 67.06,820.64 65.36,814.28 67.06,807.92 71.72,803.26"/>
+      <polygon data-id="packages/cli/src/commands/add/index.ts" data-dents="cognitive cyclomatic" points="98.25,685.66 103.95,691.75 108.11,695.92 109.64,701.61 108.11,707.31 103.95,711.47 98.25,717.56 92.56,711.47 88.39,707.31 86.86,701.61 88.39,695.92 92.56,691.75"/>
+      <circle data-id="packages/cli/src/commands/add/messages.ts" cx="47.87" cy="819.13" r="7.87"/>
+      <circle data-id="packages/cli/src/commands/init/index.ts" cx="175.32" cy="678.14" r="8.34"/>
+      <circle data-id="packages/cli/src/commands/pre/index.ts" cx="68.27" cy="704.28" r="8.72"/>
+      <polygon data-id="packages/cli/src/commands/publish/index.ts" data-dents="cognitive cyclomatic" points="130.93,685.86 136.59,691.9 140.72,696.04 142.24,701.69 140.72,707.35 136.59,711.48 130.93,717.52 125.28,711.48 121.14,707.35 119.62,701.69 121.14,696.04 125.28,691.9"/>
+      <polygon data-id="packages/cli/src/commands/publish/npm-utils.ts" data-dents="cognitive crap cycle cyclomatic" points="116.29,789.56 124.09,797.89 129.8,803.6 138.13,811.4 129.8,819.2 124.09,824.91 116.29,833.24 108.49,824.91 102.78,819.2 94.45,811.4 102.78,803.6 108.49,797.89"/>
+      <polygon data-id="packages/cli/src/commands/publish/publishPackages.ts" data-dents="cycle" points="80.25,760.27 86.79,767.25 91.57,772.04 93.32,778.57 91.57,785.11 86.79,789.89 80.25,791.64 73.72,789.89 68.93,785.11 67.18,778.57 68.93,772.04 73.71,767.25"/>
+      <circle data-id="packages/cli/src/commands/shared.ts" cx="129.24" cy="767.63" r="6.7"/>
+      <circle data-id="packages/cli/src/commands/status/index.ts" cx="162.11" cy="703.09" r="9.91"/>
+      <circle data-id="packages/cli/src/commands/tag/index.ts" cx="190.96" cy="704.04" r="8.96"/>
+      <polygon data-id="packages/cli/src/commands/version/index.ts" data-dents="cognitive" points="222.61,681.94 229.08,688.85 233.82,693.59 235.55,700.06 233.82,706.53 229.08,711.27 222.61,713 216.14,711.27 211.4,706.53 209.67,700.06 211.4,693.59 216.14,688.85"/>
+      <path data-id="packages/cli/src/commands/version/index.ts" data-family="family-4" d="M0 -3L3 0L0 3L-3 0Z" fill="none" stroke="#7b848f" transform="translate(234.59 688.08)"/>
+      <circle data-id="packages/cli/src/commit/getCommitFunctions.ts" cx="161.79" cy="779.68" r="8.02"/>
+      <circle data-id="packages/cli/src/commit/index.ts" cx="141.47" cy="582.24" r="7.77"/>
+      <circle data-id="packages/cli/src/help.ts" cx="221.59" cy="671.21" r="5.96"/>
+      <circle data-id="packages/cli/src/index.ts" cx="154.8" cy="606.8" r="10.2"/>
+      <circle data-id="packages/cli/src/ponyfills/promise-try.ts" cx="101.88" cy="839.6" r="5.75"/>
+      <circle data-id="packages/cli/src/run.ts" cx="186.83" cy="605.13" r="11.87"/>
+      <circle data-id="packages/cli/src/types.ts" cx="238.57" cy="644.97" r="6.56"/>
+      <circle data-id="packages/cli/src/utils/askWithEditor.ts" cx="121.14" cy="750.81" r="7.34"/>
+      <circle data-id="packages/cli/src/utils/cli-utilities.ts" cx="112.82" cy="776.41" r="9.58"/>
+      <circle data-id="packages/cli/src/utils/createPromiseQueue.ts" cx="95.56" cy="751.25" r="8.25"/>
+      <circle data-id="packages/cli/src/utils/getLastJsonObjectFromString.ts" cx="165.67" cy="755.73" r="6.24"/>
+      <circle data-id="packages/cli/src/utils/getUntaggedPackages.ts" cx="142.98" cy="762.53" r="7.45"/>
+      <circle data-id="packages/cli/src/utils/types.ts" cx="141.01" cy="739.78" r="5.39"/>
+      <circle data-id="packages/cli/src/utils/versionablePackages.ts" cx="137.57" cy="786.53" r="7.16"/>
+      <circle data-id="packages/color/src/index.ts" cx="134.38" cy="935.15" r="6.15"/>
+      <polygon data-id="packages/config/src/index.ts" data-dents="cognitive crap cyclomatic" points="241.21,781.69 250.65,791.77 257.56,798.68 260.09,808.12 264.1,821.34 250.65,824.47 241.21,827 231.77,824.47 218.32,821.34 222.33,808.12 224.86,798.68 231.77,791.77"/>
+      <path data-id="packages/config/src/index.ts" data-family="family-4" d="M0 -3L3 0L0 3L-3 0Z" fill="none" stroke="#7b848f" transform="translate(257.39 791.94)"/>
+      <circle data-id="packages/errors/src/index.ts" cx="160.22" cy="1032.4" r="7.4"/>
+      <polygon data-id="packages/get-dependents-graph/src/get-dependency-graph.ts" data-dents="cognitive" points="198.42,973.31 203.98,979.25 208.05,983.32 209.54,988.88 208.05,994.44 203.98,998.51 198.42,1000 192.86,998.51 188.79,994.44 187.3,988.88 188.79,983.32 192.86,979.25"/>
+      <circle data-id="packages/get-dependents-graph/src/index.ts" cx="182.28" cy="887.67" r="8.47"/>
+      <circle data-id="packages/get-github-info/src/index.ts" cx="172.12" cy="571.78" r="14.61"/>
+      <path data-id="packages/get-github-info/src/index.ts" data-family="family-3" d="M-2.5 -2.5H2.5V2.5H-2.5Z" fill="none" stroke="#7b848f" transform="translate(185.28 558.62)"/>
+      <circle data-id="packages/get-release-plan/src/index.ts" cx="214.49" cy="784.44" r="6.84"/>
+      <circle data-id="packages/get-version-range-type/src/index.ts" cx="185.79" cy="544.13" r="6.24"/>
+      <path data-id="packages/get-version-range-type/src/index.ts" data-family="family-2" d="M0 -3L3 2H-3Z" fill="none" stroke="#7b848f" transform="translate(193.03 536.89)"/>
+      <polygon data-id="packages/git/src/index.ts" data-dents="cognitive" points="156.3,845.03 163.89,853.13 169.45,858.69 171.48,866.28 169.45,873.87 163.89,879.43 156.3,881.46 148.71,879.43 143.15,873.87 141.12,866.28 143.15,858.69 148.71,853.13"/>
+      <path data-id="packages/git/src/index.ts" data-family="family-5" d="M-3 -3L3 3M-3 3L3 -3" fill="none" stroke="#7b848f" transform="translate(169.86 852.72)"/>
+      <circle data-id="packages/logger/src/index.ts" cx="204.4" cy="581.91" r="7.28"/>
+      <circle data-id="packages/parse/src/index.ts" cx="195.89" cy="862.47" r="10.17"/>
+      <circle data-id="packages/pre/src/index.ts" cx="188.79" cy="778.1" r="9.04"/>
+      <circle data-id="packages/read/src/index.ts" cx="236.1" cy="771.01" r="8.6"/>
+      <circle data-id="packages/release-utils/src/gitUtils.ts" cx="266.92" cy="663.6" r="8.88"/>
+      <circle data-id="packages/release-utils/src/index.ts" cx="230.52" cy="554" r="5.64"/>
+      <circle data-id="packages/release-utils/src/readChangesetState.ts" cx="200.5" cy="680.03" r="6.91"/>
+      <polygon data-id="packages/release-utils/src/run.ts" data-dents="cognitive" points="219.89,590.12 225.49,596.1 229.59,600.2 231.09,605.8 229.59,611.4 225.49,615.5 219.89,617 214.29,615.5 210.19,611.4 208.69,605.8 210.19,600.2 214.29,596.1"/>
+      <circle data-id="packages/release-utils/src/utils.ts" cx="255.07" cy="703.32" r="9.68"/>
+      <circle data-id="packages/should-skip-package/src/index.ts" cx="179.9" cy="943.2" r="6.7"/>
+      <circle data-id="packages/types/src/index.ts" cx="175.51" cy="1132.89" r="11.89"/>
+      <circle data-id="packages/write/src/index.ts" cx="209.3" cy="759.45" r="8.68"/>
+      <path data-id="packages/write/src/index.ts" data-family="family-1" d="M-3 -2H3M-3 2H3" fill="none" stroke="#7b848f" transform="translate(218.27 750.48)"/>
+      <circle data-id="scripts/test-utils/src/index.ts" cx="255.33" cy="596.5" r="10.65"/>
+    </g>
+    <g id="weather">
+      <defs>
+        <pattern id="hatch" patternUnits="userSpaceOnUse" width="4" height="4">
+          <path d="M0 4L4 0" stroke="#cfd6de" stroke-width="1"/>
+        </pattern>
+        <pattern id="stipple" patternUnits="userSpaceOnUse" width="4" height="4">
+          <circle cx="2" cy="2" r="0.7" fill="#cfd6de"/>
+        </pattern>
+        <filter id="glow" x="-25%" y="-25%" width="150%" height="150%">
+          <feGaussianBlur stdDeviation="6"/>
+        </filter>
+        <marker id="arrow-boundary" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto" fill="#e35ce0">
+          <path d="M0 0L6 3L0 6Z"/>
+        </marker>
+        <marker id="arrow-cycle" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto" fill="#e35ce0">
+          <path d="M0 0L6 3L0 6Z"/>
+        </marker>
+        <marker id="arrow-new-cross-module" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto" fill="#5fd8ea">
+          <path d="M0 0L6 3L0 6Z"/>
+        </marker>
+      </defs>
+      <g id="standing-storms" fill="#58616b">
+        <path data-slot="dead" data-over="directory:packages/cli/src/commands/publish" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(127.05 658.49) scale(0.6)"/>
+        <path data-slot="dupes" data-over="directory:packages/cli/src/commands/version" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(230 668.33) scale(0.6)"/>
+        <path data-slot="dupes" data-over="package:packages/apply-release-plan" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(277.33 750.33) scale(0.6)"/>
+        <path data-slot="dupes" data-over="package:packages/changelog-github" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(116.98 579.62) scale(0.6)"/>
+        <path data-slot="dupes" data-over="package:packages/config" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(236.84 795.22) scale(0.6)"/>
+        <path data-slot="dupes" data-over="package:packages/get-github-info" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(154 532.33) scale(0.6)"/>
+        <path data-slot="dupes" data-over="package:packages/get-version-range-type" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(179.41 496.27) scale(0.6)"/>
+        <path data-slot="dupes" data-over="package:packages/git" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(145.67 838.33) scale(0.6)"/>
+        <path data-slot="dupes" data-over="package:packages/write" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(205.2 725.67) scale(0.6)"/>
+        <path data-slot="dupes" data-over="single:packages/apply-release-plan/src/version-package.ts" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(278.98 747.35) scale(0.6)"/>
+        <path data-slot="health" data-over="package:packages/assemble-release-plan" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(195.67 794.67) scale(0.6)"/>
+        <path data-slot="health" data-over="package:packages/config" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(236.84 781.22) scale(0.6)"/>
+        <path data-slot="health" data-over="package:packages/git" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(145.67 824.33) scale(0.6)"/>
+        <path data-slot="health" data-over="single:packages/apply-release-plan/src/version-package.ts" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(278.98 733.35) scale(0.6)"/>
+        <path data-slot="health" data-over="single:packages/assemble-release-plan/src/determine-dependents.ts" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(245.05 877.49) scale(0.6)"/>
+        <path data-slot="health" data-over="single:packages/assemble-release-plan/src/match-fixed-constraint.ts" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(214.36 861.47) scale(0.6)"/>
+        <path data-slot="health" data-over="single:packages/get-dependents-graph/src/get-dependency-graph.ts" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(203.67 969.33) scale(0.6)"/>
+        <path data-slot="health" data-over="single:packages/release-utils/src/run.ts" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(221.96 583.1) scale(0.6)"/>
+      </g>
+      <g id="reach" fill="#f6e7c9" filter="url(#glow)">
+        <path data-id="directory:packages/cli/src/commands" data-hops="0" d="M133 770.33L134.31 766.98L134.14 763.02L132.33 759.67L128.98 757.89L125.02 757.89L121.67 759.67L119.81 763.02L119.3 766.98L119.67 770.33L120.58 772.21L122.09 772.9L124.33 773L127.32 772.9L130.46 772.21L133 770.33Z" opacity="0.45"/>
+        <path data-id="directory:packages/cli/src/commands/add" data-hops="0" d="M26.67 830L30.12 833.95L34.77 837.6L40 840.67L45.28 842.91L50.27 844.42L54.67 845.33L58.37 845.63L62.07 844.59L66.67 841.33L72.64 835.38L78.91 827.95L84 820.67L86.74 814.81L87.26 810.3L86 806.67L83.43 803.58L80.12 801.09L76.67 799.33L73.53 798.32L70.69 797.46L68 796L65.38 793.33L63.06 789.33L61.33 784L60.42 777.53L60.25 770.91L60.67 765.33L61.51 761.63L62.49 759.26L63.33 757.33L63.83 755.16L64.17 752.84L64.67 750.67L65.7 748.69L68.07 745.98L72.67 741.33L79.88 734.12L88.12 725.88L95.33 718.67L99.95 713.98L102.49 710.91L104 708L105.23 704.1L105.88 699.46L105.33 694.67L103.21 690.35L99.9 687.21L96 686L92.05 687.21L88.4 690.35L85.33 694.67L83.06 699.46L81.38 704.1L80 708L78.64 710.79L77.14 712.99L75.33 715.33L73.09 718.42L70.25 722.25L66.67 726.67L62.32 731.48L57.68 736.3L53.33 740.67L49.78 744.4L47.11 748.27L45.33 753.33L44.37 760.17L43.85 767.6L43.33 774L42.47 778.2L41.31 780.91L40 783.33L38.62 786.4L36.94 790.05L34.67 794L31.68 797.98L28.54 801.8L26 805.33L24.57 808.44L23.88 811.11L23.33 813.33L22.52 815.11L21.7 816.44L21.33 817.33L21.7 817.88L22.52 818.57L23.33 820L23.9 822.59L24.77 826.07L26.67 830Z" opacity="0.45"/>
+        <path data-id="directory:packages/cli/src/commands/init" data-hops="0" d="M157 677.33L159.54 679.14L162.68 680.64L165.67 682L167.99 683.23L170.01 683.88L172.33 683.33L175.32 681.16L178.46 677.51L181 672.67L182.31 667.04L182.14 661.41L180.33 656.67L176.9 653.48L172.43 651.63L167.67 650.67L163.25 650.3L159.42 650.81L156.33 652.67L154.11 656.05L152.78 660.17L152.33 664L152.7 666.77L153.52 668.79L154.33 670.67L154.88 672.84L155.57 675.16L157 677.33Z" opacity="0.45"/>
+        <path data-id="directory:packages/cli/src/commands/pre" data-hops="0" d="M56 718.67L58.67 719.53L61.33 719.36L64 718L66.62 715.43L68.94 712.12L70.67 708.67L71.63 705.56L72.15 702.89L72.67 700.67L73.41 698.81L73.7 696.96L72.67 694.67L69.73 691.68L65.6 688.54L61.33 686L57.73 684.67L54.72 684.67L52 686L49.38 688.62L47.06 692.27L45.33 696.67L44.42 701.43L44.25 705.9L44.67 709.33L45.56 711.26L46.89 712.3L48.67 713.33L50.86 715.01L53.36 716.99L56 718.67Z" opacity="0.45"/>
+        <path data-id="directory:packages/cli/src/commands/publish" data-hops="0" d="M81.98 753.26L80.33 754L77.96 755.31L75.59 756.47L72.33 757.33L67.64 757.9L62.36 758.77L57.67 760.67L54.51 764.02L52.83 767.98L52.33 771.33L52.73 773.28L53.72 774.49L55 776L56.38 778.54L58.06 781.68L60.33 784.67L63.35 786.94L66.65 788.62L69.67 790L72.11 791.48L75 793.85L79.67 798L86.95 804.37L95.72 811.63L104.33 818L111.47 822.02L116.98 823.53L121 822.67L123.57 819.63L124.21 814.81L122.33 808.67L117.74 801.73L111.81 794.94L106.33 789.33L102.65 785.63L100.46 783.26L99 781.33L97.79 779.16L97.32 776.84L98.33 774.67L101.22 772.79L105 770.77L108.33 768L110.19 764.15L110.7 759.85L110.33 756L109.49 753.19L108.51 750.81L107.67 748L107.25 744.12L107.42 739.65L108.33 735.33L110.04 731.75L112.19 728.91L114.33 726.67L116.19 724.86L118.04 723.36L120.33 722L123.4 720.59L127.05 718.74L131 716L134.93 712.1L138.41 707.46L141 702.67L142.33 698.22L142.33 694.22L141 690.67L138.41 687.58L134.93 685.09L131 683.33L127.05 682.49L123.4 682.84L120.33 684.67L118.06 688.05L116.38 692.17L115 696L113.69 698.77L112.53 700.79L111.67 702.67L111.17 704.84L110.83 707.16L110.33 709.33L109.47 711.14L108.31 712.64L107 714L105.64 715.36L104.14 716.86L102.33 718.67L100.19 720.89L98.04 723.56L96.33 726.67L95.48 729.92L105.56 744.18L107.51 748.55L107.63 753.32L105.92 757.79L102.63 761.25L98.26 763.2L93.49 763.32L89.02 761.61L85.56 758.32L81.98 753.26Z" opacity="0.45"/>
+        <path data-id="directory:packages/cli/src/commands/status" data-hops="0" d="M160 710.33L162.52 709.52L164.15 707.37L164 704.33L161.56 700.95L157.78 698.16L154 697L151.31 698.11L149.8 700.56L149.33 703L149.75 704.46L150.91 705.32L152.67 706.33L154.86 707.96L157.36 709.59L160 710.33Z" opacity="0.45"/>
+        <path data-id="directory:packages/cli/src/commands/tag" data-hops="0" d="M190.67 719.67L194.1 718.01L197.23 714.88L199.33 711L199.78 707.07L198.44 703.59L195.33 701L190.67 699.69L185.56 699.86L181.33 701.67L179.01 705.02L178.32 708.98L178.67 712.33L179.56 714.26L180.89 715.3L182.67 716.33L184.89 717.94L187.56 719.4L190.67 719.67Z" opacity="0.45"/>
+        <path data-id="directory:packages/cli/src/commands/version" data-hops="0" d="M220 718.33L223.83 718.75L227.95 718.58L231.33 717.67L233.23 715.96L234.1 713.81L234.67 711.67L235.51 709.84L236.49 708.16L237.33 706.33L237.78 704.16L237.78 701.84L237.33 699.67L236.47 697.86L235.31 696.36L234 695L232.67 693.72L231.33 692.73L230 692.33L228.64 692.7L227.14 693.52L225.33 694.33L223.14 694.88L220.64 695.57L218 697L215.38 699.57L213.06 702.88L211.33 706.33L210.42 709.42L210.25 711.91L210.67 713.67L211.53 714.63L212.69 715.15L214 715.67L215.41 716.51L217.26 717.49L220 718.33Z" opacity="0.45"/>
+        <path data-id="package:packages/cli" data-hops="0" d="M181.82 635.54L182 635L184.54 630.98L187.68 626.8L190.67 622.33L192.94 617.54L194.62 612.9L196 609L197.28 606.26L198.27 604.41L198.67 603L198.3 601.52L197.48 599.15L196.67 595L196.22 588.63L196.22 581.37L196.67 575L197.53 570.8L198.69 568.09L200 565.67L201.26 562.65L202.07 559.35L202 556.33L200.77 554.19L198.79 553.37L196.67 554.33L194.86 557.25L193.36 561.2L192 565L190.69 567.77L189.53 569.79L188.67 571.67L188.12 573.86L187.43 576.36L186 579L183.41 581.62L179.93 583.94L176 585.67L171.95 586.48L167.6 585.96L162.67 583.67L156.96 579.47L150.81 574.53L144.67 570.33L138.94 568.09L133.95 567.91L130 569.67L127.31 573.05L125.8 577.17L125.33 581L125.73 583.79L126.72 585.99L128 588.33L129.33 591.35L130.67 594.65L132 597.67L133.31 599.99L134.47 602.01L135.33 604.33L135.83 607.35L136.17 610.65L136.67 613.67L137.53 615.99L138.69 618.01L140 620.33L141.33 623.35L142.67 626.65L144 629.67L145.31 631.96L146.47 633.81L147.33 635.67L147.83 637.84L148.17 640.16L148.67 642.33L149.51 644.16L150.49 645.84L151.33 647.67L151.73 649.84L151.38 652.16L150 654.33L147.46 656.14L144.32 657.64L141.33 659L139.04 660.31L137.19 661.47L135.33 662.33L133.16 662.83L130.84 663.17L128.67 663.67L126.62 664.51L123.38 665.49L117.33 666.33L107.6 666.83L96.4 667.17L86.67 667.67L80.59 668.51L77.19 669.49L74.67 670.33L71.65 670.83L68.35 671.17L65.33 671.67L62.99 672.6L60.79 674.28L58 677L54.17 680.88L50.05 685.35L46.67 689.67L44.77 693.25L43.9 696.09L43.33 698.33L42.52 700.14L41.7 701.64L41.33 703L41.7 704.36L42.52 705.86L43.33 707.67L43.83 709.84L44.17 712.16L44.67 714.33L45.53 716.19L46.69 718.04L48 720.33L49.33 723.35L50.67 726.65L52 729.67L53.31 732.01L54.47 734.21L55.33 737L55.78 740.85L55.78 745.15L55.33 749L54.49 751.77L53.51 753.79L52.67 755.67L52.17 757.84L51.83 760.16L51.33 762.33L50.47 764.19L49.31 766.04L48 768.33L46.62 771.4L44.94 775.05L42.67 779L39.65 783L36.35 787L33.33 791L31.06 794.95L29.38 798.6L28 801.67L26.69 803.96L25.53 805.81L24.67 807.67L24.17 809.84L23.83 812.16L23.33 814.33L22.52 816.11L21.7 817.44L21.33 818.33L21.7 818.88L22.52 819.57L23.33 821L23.9 823.59L24.77 827.07L26.67 831L30.12 834.95L34.77 838.6L40 841.67L45.33 843.94L50.67 845.62L56 847L61.26 848.33L66.07 849.67L70 851L72.81 852.33L75.19 853.67L78 855L81.93 856.31L86.74 857.47L92 858.33L97.26 858.78L102.07 858.78L106 858.33L108.77 857.44L110.79 856.11L112.67 854.33L114.84 852.11L117.16 849.44L119.33 846.33L121.14 842.85L122.64 839.37L124 836.33L125.33 834.01L126.67 831.99L128 829.67L129.33 826.65L130.67 823.35L132 820.33L133.36 818.04L134.86 816.19L136.67 814.33L138.94 812.09L141.95 809.25L146 805.67L151.16 801.35L156.62 796.88L161.33 793L164.54 790.21L166.57 788.01L168 785.67L169.33 782.65L170.67 779.35L172 776.33L173.31 774.04L174.47 772.19L175.33 770.33L175.83 768.16L176.17 765.84L176.67 763.67L177.51 761.77L178.49 759.57L179.33 756.33L179.88 751.62L180.57 746.16L182 741L184.62 736.95L188.27 733.94L192.67 731.67L197.46 729.86L202.1 728.36L206 727L208.77 725.69L210.79 724.53L212.67 723.67L214.84 723.17L217.16 722.83L219.33 722.33L221.19 721.42L223.04 719.91L225.33 717.67L228.32 714.56L231.46 710.56L234 705.67L235.43 700.04L236.12 694.41L236.67 689.67L237.51 686.38L238.49 683.84L239.33 681L239.83 677.15L240.17 672.85L240.67 669L241.53 666.19L242.69 663.81L244 661L245.33 657.15L246.67 652.85L248 649L249.28 646.21L250.27 644.01L250.67 641.67L250.15 638.68L248.3 635.54L244.67 633L239.14 631.62L232.86 631.27L227.33 631.67L223.6 632.53L221.06 633.69L218.67 635L215.65 636.38L212.35 638.06L209.33 640.33L207.01 643.35L204.99 646.65L202.67 649.67L200.75 651.12L210.64 676L211.41 680.19L210.52 684.35L208.1 687.85L204.53 690.17L200.34 690.94L196.18 690.05L192.68 687.63L190.36 684.06L176.5 649.19L175.73 645.01L176.62 640.84L179.04 637.34L181.82 635.54ZM133 770.33L134.31 766.98L134.14 763.02L132.33 759.67L128.98 757.89L125.02 757.89L121.67 759.67L119.81 763.02L119.3 766.98L119.67 770.33L120.58 772.21L122.09 772.9L124.33 773L127.32 772.9L130.46 772.21L133 770.33ZM26.67 830L30.12 833.95L34.77 837.6L40 840.67L45.28 842.91L50.27 844.42L54.67 845.33L58.37 845.63L62.07 844.59L66.67 841.33L72.64 835.38L78.91 827.95L84 820.67L86.74 814.81L87.26 810.3L86 806.67L83.43 803.58L80.12 801.09L76.67 799.33L73.53 798.32L70.69 797.46L68 796L65.38 793.33L63.06 789.33L61.33 784L60.42 777.53L60.25 770.91L60.67 765.33L61.51 761.63L62.49 759.26L63.33 757.33L63.83 755.16L64.17 752.84L64.67 750.67L65.7 748.69L68.07 745.98L72.67 741.33L79.88 734.12L88.12 725.88L95.33 718.67L99.95 713.98L102.49 710.91L104 708L105.23 704.1L105.88 699.46L105.33 694.67L103.21 690.35L99.9 687.21L96 686L92.05 687.21L88.4 690.35L85.33 694.67L83.06 699.46L81.38 704.1L80 708L78.64 710.79L77.14 712.99L75.33 715.33L73.09 718.42L70.25 722.25L66.67 726.67L62.32 731.48L57.68 736.3L53.33 740.67L49.78 744.4L47.11 748.27L45.33 753.33L44.37 760.17L43.85 767.6L43.33 774L42.47 778.2L41.31 780.91L40 783.33L38.62 786.4L36.94 790.05L34.67 794L31.68 797.98L28.54 801.8L26 805.33L24.57 808.44L23.88 811.11L23.33 813.33L22.52 815.11L21.7 816.44L21.33 817.33L21.7 817.88L22.52 818.57L23.33 820L23.9 822.59L24.77 826.07L26.67 830ZM157 677.33L159.54 679.14L162.68 680.64L165.67 682L167.99 683.23L170.01 683.88L172.33 683.33L175.32 681.16L178.46 677.51L181 672.67L182.31 667.04L182.14 661.41L180.33 656.67L176.9 653.48L172.43 651.63L167.67 650.67L163.25 650.3L159.42 650.81L156.33 652.67L154.11 656.05L152.78 660.17L152.33 664L152.7 666.77L153.52 668.79L154.33 670.67L154.88 672.84L155.57 675.16L157 677.33ZM56 718.67L58.67 719.53L61.33 719.36L64 718L66.62 715.43L68.94 712.12L70.67 708.67L71.63 705.56L72.15 702.89L72.67 700.67L73.41 698.81L73.7 696.96L72.67 694.67L69.73 691.68L65.6 688.54L61.33 686L57.73 684.67L54.72 684.67L52 686L49.38 688.62L47.06 692.27L45.33 696.67L44.42 701.43L44.25 705.9L44.67 709.33L45.56 711.26L46.89 712.3L48.67 713.33L50.86 715.01L53.36 716.99L56 718.67ZM81.98 753.26L80.33 754L77.96 755.31L75.59 756.47L72.33 757.33L67.64 757.9L62.36 758.77L57.67 760.67L54.51 764.02L52.83 767.98L52.33 771.33L52.73 773.28L53.72 774.49L55 776L56.38 778.54L58.06 781.68L60.33 784.67L63.35 786.94L66.65 788.62L69.67 790L72.11 791.48L75 793.85L79.67 798L86.95 804.37L95.72 811.63L104.33 818L111.47 822.02L116.98 823.53L121 822.67L123.57 819.63L124.21 814.81L122.33 808.67L117.74 801.73L111.81 794.94L106.33 789.33L102.65 785.63L100.46 783.26L99 781.33L97.79 779.16L97.32 776.84L98.33 774.67L101.22 772.79L105 770.77L108.33 768L110.19 764.15L110.7 759.85L110.33 756L109.49 753.19L108.51 750.81L107.67 748L107.25 744.12L107.42 739.65L108.33 735.33L110.04 731.75L112.19 728.91L114.33 726.67L116.19 724.86L118.04 723.36L120.33 722L123.4 720.59L127.05 718.74L131 716L134.93 712.1L138.41 707.46L141 702.67L142.33 698.22L142.33 694.22L141 690.67L138.41 687.58L134.93 685.09L131 683.33L127.05 682.49L123.4 682.84L120.33 684.67L118.06 688.05L116.38 692.17L115 696L113.69 698.77L112.53 700.79L111.67 702.67L111.17 704.84L110.83 707.16L110.33 709.33L109.47 711.14L108.31 712.64L107 714L105.64 715.36L104.14 716.86L102.33 718.67L100.19 720.89L98.04 723.56L96.33 726.67L95.48 729.92L105.56 744.18L107.51 748.55L107.63 753.32L105.92 757.79L102.63 761.25L98.26 763.2L93.49 763.32L89.02 761.61L85.56 758.32L81.98 753.26ZM160 710.33L162.52 709.52L164.15 707.37L164 704.33L161.56 700.95L157.78 698.16L154 697L151.31 698.11L149.8 700.56L149.33 703L149.75 704.46L150.91 705.32L152.67 706.33L154.86 707.96L157.36 709.59L160 710.33ZM190.67 719.67L194.1 718.01L197.23 714.88L199.33 711L199.78 707.07L198.44 703.59L195.33 701L190.67 699.69L185.56 699.86L181.33 701.67L179.01 705.02L178.32 708.98L178.67 712.33L179.56 714.26L180.89 715.3L182.67 716.33L184.89 717.94L187.56 719.4L190.67 719.67ZM220 718.33L223.83 718.75L227.95 718.58L231.33 717.67L233.23 715.96L234.1 713.81L234.67 711.67L235.51 709.84L236.49 708.16L237.33 706.33L237.78 704.16L237.78 701.84L237.33 699.67L236.47 697.86L235.31 696.36L234 695L232.67 693.72L231.33 692.73L230 692.33L228.64 692.7L227.14 693.52L225.33 694.33L223.14 694.88L220.64 695.57L218 697L215.38 699.57L213.06 702.88L211.33 706.33L210.42 709.42L210.25 711.91L210.67 713.67L211.53 714.63L212.69 715.15L214 715.67L215.41 716.51L217.26 717.49L220 718.33ZM96.67 857.33L98.84 857.7L101.16 857.19L103.33 855.33L105.11 851.93L106.44 847.63L107.33 843.33L107.7 839.78L107.19 837.11L105.33 835.33L101.98 834.44L98.02 834.44L94.67 835.33L92.77 837.04L91.9 839.19L91.33 841.33L90.49 843.16L89.51 844.84L88.67 846.67L88.22 848.81L88.22 850.96L88.67 852.67L89.53 853.63L90.69 854.15L92 854.67L93.36 855.51L94.86 856.49L96.67 857.33ZM134.34 793.66L136.36 793.38L139 792L141.72 789.38L144.73 785.73L148.33 781.33L152.7 776.49L157.52 771.51L162.33 766.67L166.73 762.2L170.38 758.02L173 754L174.31 750L174.14 746L172.33 742L168.9 738.05L164.43 734.4L159.67 731.33L155.25 729.06L151.42 727.38L148.33 726L145.99 724.69L143.79 723.53L141 722.67L137.15 722.22L132.85 722.22L129 722.67L126.16 723.51L123.62 724.49L120.33 725.33L115.64 725.83L110.36 726.17L105.67 726.67L102.43 727.51L100.23 728.49L98.33 729.33L96.16 729.83L93.84 730.17L91.67 730.67L89.84 731.56L88.16 732.89L86.33 734.67L84.16 736.86L81.84 739.36L79.67 742L77.91 744.62L76.75 746.94L76.33 748.67L76.7 749.65L77.52 750.35L78.33 751.33L78.9 753.11L79.77 755.78L81.67 759.33L85.1 763.7L89.57 768.52L94.33 773.33L98.78 777.73L102.78 781.38L106.33 784L109.44 785.43L112.11 786.12L114 786.59L118.8 765.28L120.5 761.46L123.52 758.59L127.42 757.09L131.59 757.19L135.41 758.89L138.28 761.91L139.78 765.81L139.68 769.98L134.34 793.66ZM126.67 592L127.51 594.79L128.49 596.99L129.33 599.33L129.78 602.35L129.78 605.65L129.33 608.67L128.47 611.01L127.31 613.21L126 616L124.72 619.93L123.73 624.74L123.33 630L123.73 635.26L124.72 640.07L126 644L127.31 646.77L128.47 648.79L129.33 650.67L129.85 652.86L130.37 655.36L131.33 658L133.01 660.69L134.99 663.53L136.67 666.67L137.63 670.15L138.15 673.63L138.67 676.67L139.51 679.06L140.49 681.6L141.33 685.33L141.75 690.89L141.58 697.33L140.67 703.33L138.99 707.9L137.01 711.43L135.33 714.67L134.49 718.15L134.84 721.63L136.67 724.67L140.02 726.96L143.98 728.81L147.33 730.67L149.23 732.84L150.1 735.16L150.67 737.33L151.51 739.26L152.49 741.63L153.33 745.33L153.78 750.86L153.78 757.14L153.33 762.67L152.49 766.42L151.51 769.14L150.67 772L150.3 775.85L150.81 780.15L152.67 784L156.05 786.62L160.17 787.6L164 786.67L166.69 783.7L168.2 779.41L168.67 774.67L168.27 770.25L167.28 766.42L166 763.33L164.69 761.04L163.53 759.19L162.67 757.33L162.17 755.16L161.83 752.84L161.33 750.67L160.49 748.84L159.51 747.16L158.67 745.33L158.22 743.16L158.22 740.84L158.67 738.67L159.51 736.79L160.49 734.77L161.33 732L161.73 728.12L161.38 723.65L160 719.33L157.46 715.75L154.32 712.91L151.33 710.67L149.09 708.84L147.58 707.16L146.67 705.33L146.22 703.16L146.22 700.84L146.67 698.67L147.56 696.81L148.89 694.96L150.67 692.67L152.81 689.6L154.96 685.95L156.67 682L157.58 678.05L157.75 674.4L157.33 671.33L156.49 669.01L155.51 666.99L154.67 664.67L154.17 661.65L153.83 658.35L153.33 655.33L152.49 653.04L151.51 651.19L150.67 649.33L150.17 647.16L149.83 644.84L149.33 642.67L148.49 640.81L147.51 638.96L146.67 636.67L146.17 633.65L145.83 630.35L145.33 627.33L144.49 624.94L143.51 622.4L142.67 618.67L142.22 613.14L142.22 606.86L142.67 601.33L143.53 597.58L144.69 594.86L146 592L147.31 588.12L148.47 583.65L149.33 579.33L149.73 575.73L149.38 572.72L148 570L145.41 567.38L141.93 565.06L138 563.33L134.07 562.44L130.59 562.44L128 563.33L126.57 565.04L125.88 567.19L125.33 569.33L124.52 571.14L123.7 572.64L123.33 574L123.7 575.41L124.52 577.26L125.33 580L125.83 583.85L126.17 588.15L126.67 592ZM198.67 562.33L200.81 562.7L202.96 562.19L204.67 560.33L205.53 556.98L205.36 553.02L204 549.67L201.46 547.86L198.32 547.69L195.33 549L193.11 551.52L191.78 554.48L191.33 557L191.73 558.43L192.72 559.12L194 559.67L195.36 560.51L196.86 561.49L198.67 562.33ZM226 671L227.31 668.46L227.14 665.32L225.33 662.33L221.98 660.19L218.02 659.37L214.67 660.33L212.81 663.22L212.3 667L212.67 670.33L213.58 672.21L215.09 672.9L217.33 673L220.32 672.93L223.46 672.41L226 671ZM189.67 631L193.22 628.38L195.89 624.73L197.67 620.33L198.51 615.54L198.16 610.9L196.33 607L192.93 604.28L188.63 602.6L184.33 601.67L180.75 601.3L177.91 601.81L175.67 603.67L173.89 607.12L172.56 611.77L171.67 617L171.22 622.23L171.22 626.88L171.67 630.33L172.6 632.21L174.28 632.9L177 633L180.88 632.93L185.35 632.41L189.67 631ZM236.67 649.33L238.84 649.73L241.16 649.38L243.33 648L245.01 645.46L245.65 642.32L244.67 639.33L241.75 637.11L237.8 635.78L234 635.33L231.28 635.75L229.6 636.91L228.67 638.67L228.22 640.81L228.22 642.96L228.67 644.67L229.53 645.63L230.69 646.15L232 646.67L233.36 647.51L234.86 648.49L236.67 649.33Z" fill-rule="evenodd" opacity="0.45"/>
+        <path data-id="single:packages/cli/src/help.ts" data-hops="0" d="M226 671L227.31 668.46L227.14 665.32L225.33 662.33L221.98 660.19L218.02 659.37L214.67 660.33L212.81 663.22L212.3 667L212.67 670.33L213.58 672.21L215.09 672.9L217.33 673L220.32 672.93L223.46 672.41L226 671Z" opacity="0.45"/>
+        <path data-id="single:packages/cli/src/run.ts" data-hops="0" d="M189.67 631L193.22 628.38L195.89 624.73L197.67 620.33L198.51 615.54L198.16 610.9L196.33 607L192.93 604.28L188.63 602.6L184.33 601.67L180.75 601.3L177.91 601.81L175.67 603.67L173.89 607.12L172.56 611.77L171.67 617L171.22 622.23L171.22 626.88L171.67 630.33L172.6 632.21L174.28 632.9L177 633L180.88 632.93L185.35 632.41L189.67 631Z" opacity="0.45"/>
+        <path data-id="single:packages/cli/src/types.ts" data-hops="0" d="M236.67 649.33L238.84 649.73L241.16 649.38L243.33 648L245.01 645.46L245.65 642.32L244.67 639.33L241.75 637.11L237.8 635.78L234 635.33L231.28 635.75L229.6 636.91L228.67 638.67L228.22 640.81L228.22 642.96L228.67 644.67L229.53 645.63L230.69 646.15L232 646.67L233.36 647.51L234.86 648.49L236.67 649.33Z" opacity="0.45"/>
+      </g>
+      <g id="changed" fill="#5fd8ea" stroke="#5fd8ea" stroke-width="1.5">
+        <circle data-id=".changeset/loose-towns-care.md" data-kind="added" cx="175" cy="69" r="4" stroke="none"/>
+        <circle data-id="packages/cli/package.json" data-kind="modified" cx="49" cy="361" r="4" stroke="none"/>
+        <circle data-id="packages/cli/src/commands/add/index.ts" data-kind="modified" cx="98.25" cy="701.61" r="11.39" stroke="none"/>
+        <circle data-id="packages/cli/src/commands/init/index.ts" data-kind="modified" cx="175.32" cy="678.14" r="8.34" stroke="none"/>
+        <circle data-id="packages/cli/src/commands/pre/index.ts" data-kind="modified" cx="68.27" cy="704.28" r="8.72" stroke="none"/>
+        <circle data-id="packages/cli/src/commands/publish/index.ts" data-kind="modified" cx="130.93" cy="701.69" r="11.31" stroke="none"/>
+        <circle data-id="packages/cli/src/commands/shared.ts" data-kind="added" cx="129.24" cy="767.63" r="6.7" stroke="none"/>
+        <circle data-id="packages/cli/src/commands/status/index.ts" data-kind="modified" cx="162.11" cy="703.09" r="9.91" stroke="none"/>
+        <circle data-id="packages/cli/src/commands/tag/index.ts" data-kind="modified" cx="190.96" cy="704.04" r="8.96" stroke="none"/>
+        <circle data-id="packages/cli/src/commands/version/index.ts" data-kind="modified" cx="222.61" cy="700.06" r="12.94" stroke="none"/>
+        <circle data-id="packages/cli/src/help.ts" data-kind="deleted" cx="221.59" cy="671.21" r="5.96" fill="none"/>
+        <circle data-id="packages/cli/src/index.ts" data-kind="modified" cx="154.8" cy="606.8" r="10.2" stroke="none"/>
+        <circle data-id="packages/cli/src/run.ts" data-kind="deleted" cx="186.83" cy="605.13" r="11.87" fill="none"/>
+        <circle data-id="packages/cli/src/types.ts" data-kind="deleted" cx="238.57" cy="644.97" r="6.56" fill="none"/>
+        <circle data-id="pnpm-lock.yaml" data-kind="modified" cx="85" cy="415" r="4" stroke="none"/>
+      </g>
+      <g id="history">
+        <circle data-id="packages/cli/src/commands/add/index.ts" data-churn="4.38" cx="98.25" cy="701.61" r="11.39" fill="url(#hatch)" fill-opacity="0.7"/>
+        <circle data-id="packages/cli/src/commands/add/index.ts" data-bugfix="0.07" cx="98.25" cy="701.61" r="11.39" fill="url(#stipple)" fill-opacity="0.1"/>
+        <circle data-id="packages/cli/src/commands/init/index.ts" data-churn="4.75" cx="175.32" cy="678.14" r="8.34" fill="url(#hatch)" fill-opacity="0.7"/>
+        <circle data-id="packages/cli/src/commands/init/index.ts" data-bugfix="0.05" cx="175.32" cy="678.14" r="8.34" fill="url(#stipple)" fill-opacity="0.07"/>
+        <circle data-id="packages/cli/src/commands/pre/index.ts" data-churn="2.39" cx="68.27" cy="704.28" r="8.72" fill="url(#hatch)" fill-opacity="0.56"/>
+        <circle data-id="packages/cli/src/commands/publish/index.ts" data-churn="2.94" cx="130.93" cy="701.69" r="11.31" fill="url(#hatch)" fill-opacity="0.69"/>
+        <circle data-id="packages/cli/src/commands/publish/index.ts" data-bugfix="0.04" cx="130.93" cy="701.69" r="11.31" fill="url(#stipple)" fill-opacity="0.06"/>
+        <circle data-id="packages/cli/src/commands/shared.ts" data-churn="1.05" cx="129.24" cy="767.63" r="6.7" fill="url(#hatch)" fill-opacity="0.25"/>
+        <circle data-id="packages/cli/src/commands/status/index.ts" data-churn="3.83" cx="162.11" cy="703.09" r="9.91" fill="url(#hatch)" fill-opacity="0.7"/>
+        <circle data-id="packages/cli/src/commands/status/index.ts" data-bugfix="0.05" cx="162.11" cy="703.09" r="9.91" fill="url(#stipple)" fill-opacity="0.07"/>
+        <circle data-id="packages/cli/src/commands/tag/index.ts" data-churn="2.39" cx="190.96" cy="704.04" r="8.96" fill="url(#hatch)" fill-opacity="0.56"/>
+        <circle data-id="packages/cli/src/commands/tag/index.ts" data-bugfix="0.1" cx="190.96" cy="704.04" r="8.96" fill="url(#stipple)" fill-opacity="0.14"/>
+        <circle data-id="packages/cli/src/commands/version/index.ts" data-churn="3.45" cx="222.61" cy="700.06" r="12.94" fill="url(#hatch)" fill-opacity="0.7"/>
+        <circle data-id="packages/cli/src/commands/version/index.ts" data-bugfix="0.08" cx="222.61" cy="700.06" r="12.94" fill="url(#stipple)" fill-opacity="0.11"/>
+        <circle data-id="packages/cli/src/index.ts" data-churn="9.93" cx="154.8" cy="606.8" r="10.2" fill="url(#hatch)" fill-opacity="0.7"/>
+        <circle data-id="packages/cli/src/index.ts" data-bugfix="0.08" cx="154.8" cy="606.8" r="10.2" fill="url(#stipple)" fill-opacity="0.11"/>
+        <circle data-id="packages/cli/src/run.ts" data-bugfix="0.1" cx="186.83" cy="605.13" r="11.87" fill="url(#stipple)" fill-opacity="0.14"/>
+      </g>
+      <g id="evidence" stroke-width="2">
+        <g data-id="packages/cli/src/commands/add/index.ts" data-covered="9" data-changed="9">
+          <circle cx="98.25" cy="701.61" r="12.64" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+        </g>
+        <g data-id="packages/cli/src/commands/init/index.ts" data-covered="3" data-changed="3">
+          <circle cx="175.32" cy="678.14" r="9.59" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+        </g>
+        <g data-id="packages/cli/src/commands/pre/index.ts" data-covered="5" data-changed="5">
+          <circle cx="68.27" cy="704.28" r="9.97" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+        </g>
+        <g data-id="packages/cli/src/commands/publish/index.ts" data-covered="5" data-changed="11">
+          <circle cx="130.93" cy="701.69" r="12.56" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+          <circle cx="130.93" cy="701.69" r="12.56" fill="none" stroke="#e6edf3" stroke-width="2.5" pathLength="1" stroke-dasharray="0.55 1" transform="rotate(-90 130.93 701.69)"/>
+        </g>
+        <g data-id="packages/cli/src/commands/shared.ts" data-covered="4" data-changed="4">
+          <circle cx="129.24" cy="767.63" r="7.95" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+        </g>
+        <g data-id="packages/cli/src/commands/status/index.ts" data-covered="6" data-changed="6">
+          <circle cx="162.11" cy="703.09" r="11.16" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+        </g>
+        <g data-id="packages/cli/src/commands/tag/index.ts" data-covered="12" data-changed="12">
+          <circle cx="190.96" cy="704.04" r="10.21" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+        </g>
+        <g data-id="packages/cli/src/commands/version/index.ts" data-covered="4" data-changed="4">
+          <circle cx="222.61" cy="700.06" r="14.19" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+        </g>
+        <g data-id="packages/cli/src/index.ts" data-unmeasured="true">
+          <circle cx="154.8" cy="606.8" r="11.45" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+          <circle cx="154.8" cy="606.8" r="11.45" fill="none" stroke="#e6edf3" stroke-width="2.5"/>
+        </g>
+        <path data-id="packages/cli/src/commands/add/index.ts" data-line="29" data-status="Survived" d="M106.66 690.37L104.89 694.97L109.49 693.2Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/add/index.ts" data-line="61" data-status="Survived" d="M111.15 696.08L107.32 699.18L112.18 699.95Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/add/index.ts" data-line="64" data-status="Survived" d="M112.18 703.27L107.32 704.04L111.15 707.14Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/add/index.ts" data-line="68" data-status="Survived" d="M109.49 710.02L104.89 708.25L106.66 712.85Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/add/index.ts" data-line="76" data-status="Survived" d="M103.78 714.51L100.68 710.68L99.91 715.54Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/add/index.ts" data-line="84" data-status="NoCoverage" d="M96.59 715.54L95.82 710.68L92.72 714.51Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/add/index.ts" data-line="84" data-status="Survived" d="M89.84 712.85L91.61 708.25L87.01 710.02Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/add/index.ts" data-line="84" data-status="Survived" d="M85.35 707.14L89.18 704.04L84.32 703.27Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/add/index.ts" data-line="93" data-status="Survived" d="M84.32 699.95L89.18 699.18L85.35 696.08Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/add/index.ts" data-line="121" data-status="Survived" d="M87.01 693.2L91.61 694.97L89.84 690.37Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/add/index.ts" data-line="130" data-status="NoCoverage" d="M92.72 688.71L95.82 692.54L96.59 687.68Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/add/index.ts" data-line="130" data-status="Survived" d="M99.91 687.68L100.68 692.54L103.78 688.71Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/add/index.ts" data-line="130" data-status="Survived" d="M106.66 690.37L104.89 694.97L109.49 693.2Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/add/index.ts" data-line="130" data-status="Survived" d="M111.15 696.08L107.32 699.18L112.18 699.95Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/add/index.ts" data-line="136" data-status="Survived" d="M112.18 703.27L107.32 704.04L111.15 707.14Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/add/index.ts" data-line="136" data-status="Survived" d="M109.49 710.02L104.89 708.25L106.66 712.85Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/add/index.ts" data-line="136" data-status="Survived" d="M103.78 714.51L100.68 710.68L99.91 715.54Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/add/index.ts" data-line="136" data-status="Survived" d="M96.59 715.54L95.82 710.68L92.72 714.51Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/add/index.ts" data-line="170" data-status="NoCoverage" d="M89.84 712.85L91.61 708.25L87.01 710.02Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/add/index.ts" data-line="170" data-status="Survived" d="M85.35 707.14L89.18 704.04L84.32 703.27Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/add/index.ts" data-line="170" data-status="Survived" d="M84.32 699.95L89.18 699.18L85.35 696.08Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/add/index.ts" data-line="170" data-status="Survived" d="M87.01 693.2L91.61 694.97L89.84 690.37Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/init/index.ts" data-line="21" data-status="Survived" d="M173.32 667.3L175.32 671.8L177.32 667.3Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/publish/index.ts" data-line="45" data-status="Survived" d="M142.11 710.04L137.51 708.27L139.28 712.87Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/publish/index.ts" data-line="45" data-status="Survived" d="M136.44 714.51L133.34 710.68L132.57 715.55Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/publish/index.ts" data-line="51" data-status="Survived" d="M129.29 715.55L128.52 710.68L125.42 714.51Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/publish/index.ts" data-line="51" data-status="Survived" d="M122.58 712.87L124.35 708.27L119.75 710.04Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/publish/index.ts" data-line="51" data-status="Survived" d="M118.11 707.2L121.94 704.1L117.07 703.33Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/publish/index.ts" data-line="51" data-status="Survived" d="M117.07 700.05L121.94 699.28L118.11 696.18Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/publish/index.ts" data-line="51" data-status="Survived" d="M119.75 693.34L124.35 695.11L122.58 690.51Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/publish/index.ts" data-line="51" data-status="Survived" d="M125.42 688.87L128.52 692.7L129.29 687.83Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/publish/index.ts" data-line="51" data-status="Survived" d="M132.57 687.83L133.34 692.7L136.44 688.87Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/publish/index.ts" data-line="65" data-status="NoCoverage" d="M139.28 690.51L137.51 695.11L142.11 693.34Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/publish/index.ts" data-line="76" data-status="NoCoverage" d="M143.75 696.18L139.92 699.28L144.79 700.05Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/publish/index.ts" data-line="81" data-status="NoCoverage" d="M144.79 703.33L139.92 704.1L143.75 707.2Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/publish/index.ts" data-line="117" data-status="NoCoverage" d="M142.11 710.04L137.51 708.27L139.28 712.87Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/publish/index.ts" data-line="117" data-status="NoCoverage" d="M136.44 714.51L133.34 710.68L132.57 715.55Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/publish/index.ts" data-line="117" data-status="NoCoverage" d="M129.29 715.55L128.52 710.68L125.42 714.51Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/publish/index.ts" data-line="117" data-status="NoCoverage" d="M122.58 712.87L124.35 708.27L119.75 710.04Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/shared.ts" data-line="12" data-status="Survived" d="M121.32 762.54L125.92 764.31L124.15 759.71Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/shared.ts" data-line="14" data-status="Survived" d="M124.93 759.26L128.02 763.09L128.79 758.23Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/shared.ts" data-line="14" data-status="Survived" d="M129.69 758.23L130.46 763.09L133.55 759.26Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/shared.ts" data-line="18" data-status="Survived" d="M134.33 759.71L132.56 764.31L137.16 762.54Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/status/index.ts" data-line="34" data-status="Survived" d="M154.17 693.34L158.16 696.24L157.64 691.34Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/status/index.ts" data-line="47" data-status="Survived" d="M160.11 690.68L162.11 695.18L164.11 690.68Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/status/index.ts" data-line="57" data-status="Survived" d="M166.58 691.34L166.07 696.24L170.05 693.34Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/tag/index.ts" data-line="30" data-status="Survived" d="M180.04 700.04L184.93 700.56L182.04 696.58Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/tag/index.ts" data-line="67" data-status="Survived" d="M183.5 695.12L187.48 698.01L186.96 693.12Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/tag/index.ts" data-line="73" data-status="Survived" d="M188.96 692.58L190.96 697.08L192.96 692.58Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/tag/index.ts" data-line="73" data-status="Survived" d="M194.96 693.12L194.44 698.01L198.42 695.12Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/commands/tag/index.ts" data-line="79" data-status="Survived" d="M199.88 696.58L196.99 700.56L201.88 700.04Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="9" data-status="NoCoverage" d="M165.19 614.37L160.6 612.6L162.37 617.19Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="11" data-status="NoCoverage" d="M160.02 618.55L156.92 614.72L156.16 619.58Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="12" data-status="NoCoverage" d="M153.44 619.58L152.68 614.72L149.58 618.55Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="14" data-status="NoCoverage" d="M147.23 617.19L149 612.6L144.41 614.37Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="14" data-status="NoCoverage" d="M143.05 612.02L146.88 608.92L142.02 608.16Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="18" data-status="NoCoverage" d="M142.02 605.44L146.88 604.68L143.05 601.58Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="21" data-status="NoCoverage" d="M144.41 599.23L149 601L147.23 596.41Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="21" data-status="NoCoverage" d="M149.58 595.05L152.68 598.88L153.44 594.02Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="22" data-status="NoCoverage" d="M156.16 594.02L156.92 598.88L160.02 595.05Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="28" data-status="NoCoverage" d="M162.37 596.41L160.6 601L165.19 599.23Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="28" data-status="NoCoverage" d="M166.55 601.58L162.72 604.68L167.58 605.44Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="29" data-status="NoCoverage" d="M167.58 608.16L162.72 608.92L166.55 612.02Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="30" data-status="NoCoverage" d="M165.19 614.37L160.6 612.6L162.37 617.19Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="31" data-status="NoCoverage" d="M160.02 618.55L156.92 614.72L156.16 619.58Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="32" data-status="NoCoverage" d="M153.44 619.58L152.68 614.72L149.58 618.55Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="33" data-status="NoCoverage" d="M147.23 617.19L149 612.6L144.41 614.37Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="33" data-status="NoCoverage" d="M143.05 612.02L146.88 608.92L142.02 608.16Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="34" data-status="NoCoverage" d="M142.02 605.44L146.88 604.68L143.05 601.58Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="34" data-status="NoCoverage" d="M144.41 599.23L149 601L147.23 596.41Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="36" data-status="NoCoverage" d="M149.58 595.05L152.68 598.88L153.44 594.02Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="37" data-status="NoCoverage" d="M156.16 594.02L156.92 598.88L160.02 595.05Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="39" data-status="NoCoverage" d="M162.37 596.41L160.6 601L165.19 599.23Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="39" data-status="NoCoverage" d="M166.55 601.58L162.72 604.68L167.58 605.44Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="40" data-status="NoCoverage" d="M167.58 608.16L162.72 608.92L166.55 612.02Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="46" data-status="NoCoverage" d="M165.19 614.37L160.6 612.6L162.37 617.19Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="46" data-status="NoCoverage" d="M160.02 618.55L156.92 614.72L156.16 619.58Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="47" data-status="NoCoverage" d="M153.44 619.58L152.68 614.72L149.58 618.55Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="48" data-status="NoCoverage" d="M147.23 617.19L149 612.6L144.41 614.37Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="49" data-status="NoCoverage" d="M143.05 612.02L146.88 608.92L142.02 608.16Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="49" data-status="NoCoverage" d="M142.02 605.44L146.88 604.68L143.05 601.58Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="49" data-status="NoCoverage" d="M144.41 599.23L149 601L147.23 596.41Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="49" data-status="NoCoverage" d="M149.58 595.05L152.68 598.88L153.44 594.02Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="50" data-status="NoCoverage" d="M156.16 594.02L156.92 598.88L160.02 595.05Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="50" data-status="NoCoverage" d="M162.37 596.41L160.6 601L165.19 599.23Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="52" data-status="NoCoverage" d="M166.55 601.58L162.72 604.68L167.58 605.44Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="53" data-status="NoCoverage" d="M167.58 608.16L162.72 608.92L166.55 612.02Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="55" data-status="NoCoverage" d="M165.19 614.37L160.6 612.6L162.37 617.19Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="61" data-status="NoCoverage" d="M160.02 618.55L156.92 614.72L156.16 619.58Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="61" data-status="NoCoverage" d="M153.44 619.58L152.68 614.72L149.58 618.55Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="62" data-status="NoCoverage" d="M147.23 617.19L149 612.6L144.41 614.37Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="63" data-status="NoCoverage" d="M143.05 612.02L146.88 608.92L142.02 608.16Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="64" data-status="NoCoverage" d="M142.02 605.44L146.88 604.68L143.05 601.58Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="64" data-status="NoCoverage" d="M144.41 599.23L149 601L147.23 596.41Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="65" data-status="NoCoverage" d="M149.58 595.05L152.68 598.88L153.44 594.02Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="65" data-status="NoCoverage" d="M156.16 594.02L156.92 598.88L160.02 595.05Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="66" data-status="NoCoverage" d="M162.37 596.41L160.6 601L165.19 599.23Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="66" data-status="NoCoverage" d="M166.55 601.58L162.72 604.68L167.58 605.44Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="67" data-status="NoCoverage" d="M167.58 608.16L162.72 608.92L166.55 612.02Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="73" data-status="NoCoverage" d="M165.19 614.37L160.6 612.6L162.37 617.19Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="73" data-status="NoCoverage" d="M160.02 618.55L156.92 614.72L156.16 619.58Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="74" data-status="NoCoverage" d="M153.44 619.58L152.68 614.72L149.58 618.55Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="75" data-status="NoCoverage" d="M147.23 617.19L149 612.6L144.41 614.37Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="75" data-status="NoCoverage" d="M143.05 612.02L146.88 608.92L142.02 608.16Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="76" data-status="NoCoverage" d="M142.02 605.44L146.88 604.68L143.05 601.58Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="76" data-status="NoCoverage" d="M144.41 599.23L149 601L147.23 596.41Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="77" data-status="NoCoverage" d="M149.58 595.05L152.68 598.88L153.44 594.02Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="77" data-status="NoCoverage" d="M156.16 594.02L156.92 598.88L160.02 595.05Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="78" data-status="NoCoverage" d="M162.37 596.41L160.6 601L165.19 599.23Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="84" data-status="NoCoverage" d="M166.55 601.58L162.72 604.68L167.58 605.44Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="84" data-status="NoCoverage" d="M167.58 608.16L162.72 608.92L166.55 612.02Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="85" data-status="NoCoverage" d="M165.19 614.37L160.6 612.6L162.37 617.19Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="90" data-status="NoCoverage" d="M160.02 618.55L156.92 614.72L156.16 619.58Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="91" data-status="NoCoverage" d="M153.44 619.58L152.68 614.72L149.58 618.55Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="91" data-status="NoCoverage" d="M147.23 617.19L149 612.6L144.41 614.37Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="92" data-status="NoCoverage" d="M143.05 612.02L146.88 608.92L142.02 608.16Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="94" data-status="NoCoverage" d="M142.02 605.44L146.88 604.68L143.05 601.58Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="94" data-status="NoCoverage" d="M144.41 599.23L149 601L147.23 596.41Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="97" data-status="NoCoverage" d="M149.58 595.05L152.68 598.88L153.44 594.02Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="97" data-status="NoCoverage" d="M156.16 594.02L156.92 598.88L160.02 595.05Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="97" data-status="NoCoverage" d="M162.37 596.41L160.6 601L165.19 599.23Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="99" data-status="NoCoverage" d="M166.55 601.58L162.72 604.68L167.58 605.44Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="99" data-status="NoCoverage" d="M167.58 608.16L162.72 608.92L166.55 612.02Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="102" data-status="NoCoverage" d="M165.19 614.37L160.6 612.6L162.37 617.19Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="103" data-status="NoCoverage" d="M160.02 618.55L156.92 614.72L156.16 619.58Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="103" data-status="NoCoverage" d="M153.44 619.58L152.68 614.72L149.58 618.55Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="106" data-status="NoCoverage" d="M147.23 617.19L149 612.6L144.41 614.37Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="106" data-status="NoCoverage" d="M143.05 612.02L146.88 608.92L142.02 608.16Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="106" data-status="NoCoverage" d="M142.02 605.44L146.88 604.68L143.05 601.58Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="106" data-status="NoCoverage" d="M144.41 599.23L149 601L147.23 596.41Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="107" data-status="NoCoverage" d="M149.58 595.05L152.68 598.88L153.44 594.02Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="111" data-status="NoCoverage" d="M156.16 594.02L156.92 598.88L160.02 595.05Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="117" data-status="NoCoverage" d="M162.37 596.41L160.6 601L165.19 599.23Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="117" data-status="NoCoverage" d="M166.55 601.58L162.72 604.68L167.58 605.44Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="117" data-status="NoCoverage" d="M167.58 608.16L162.72 608.92L166.55 612.02Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="117" data-status="NoCoverage" d="M165.19 614.37L160.6 612.6L162.37 617.19Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="117" data-status="NoCoverage" d="M160.02 618.55L156.92 614.72L156.16 619.58Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="117" data-status="NoCoverage" d="M153.44 619.58L152.68 614.72L149.58 618.55Z" fill="#e6edf3"/>
+        <path data-id="packages/cli/src/index.ts" data-line="138" data-status="NoCoverage" d="M147.23 617.19L149 612.6L144.41 614.37Z" fill="#e6edf3"/>
+        <line data-id="packages/cli/src/commands/add/index.ts" data-test="packages/cli/src/commands/add/__tests__/add.test.ts" data-status="passed" stroke="#e6edf3" x1="98.25" y1="709" x2="98.25" y2="717"/>
+        <line data-id="packages/cli/src/commands/init/index.ts" data-test="packages/cli/src/commands/init/__tests__/command.test.ts" data-status="passed" stroke="#e6edf3" x1="175.32" y1="682.48" x2="175.32" y2="690.48"/>
+        <line data-id="packages/cli/src/commands/pre/index.ts" data-test="packages/cli/src/commands/pre/index.test.ts" data-status="passed" stroke="#e6edf3" x1="69.49" y1="708.84" x2="71.56" y2="716.57"/>
+        <line data-id="packages/cli/src/commands/pre/index.ts" data-test="packages/cli/src/commands/version/version.test.ts" data-status="passed" stroke="#e6edf3" x1="67.05" y1="708.84" x2="64.98" y2="716.57"/>
+        <line data-id="packages/cli/src/commands/publish/index.ts" data-test="packages/cli/src/commands/publish/__tests__/index.test.ts" data-status="passed" stroke="#e6edf3" x1="130.93" y1="709" x2="130.93" y2="717"/>
+        <line data-id="packages/cli/src/commands/status/index.ts" data-test="packages/cli/src/commands/status/__tests__/status.test.ts" data-status="passed" stroke="#e6edf3" x1="162.11" y1="709" x2="162.11" y2="717"/>
+        <line data-id="packages/cli/src/commands/tag/index.ts" data-test="packages/cli/src/commands/tag/__tests__/index.test.ts" data-status="passed" stroke="#e6edf3" x1="190.96" y1="709" x2="190.96" y2="717"/>
+        <line data-id="packages/cli/src/commands/version/index.ts" data-test="packages/cli/src/commands/version/version.test.ts" data-status="passed" stroke="#e6edf3" x1="222.61" y1="709" x2="222.61" y2="717"/>
+        <line data-id="packages/cli/src/run.ts" data-test="packages/cli/src/run.test.ts" data-status="unknown" stroke="#6b7480" x1="186.83" y1="613" x2="186.83" y2="621"/>
+      </g>
+      <g id="edges" fill="none" stroke-width="1">
+        <path data-from="packages/cli/src/commands/add/index.ts" data-to="packages/cli/src/commands/shared.ts" data-kind="new-cross-module" d="M99.92 712.88Q103.84 739.27 124.77 762.64" stroke="#5fd8ea" marker-end="url(#arrow-new-cross-module)"/>
+        <path data-from="packages/cli/src/commands/add/index.ts" data-to="packages/config/src/index.ts" data-kind="new-cross-module" d="M105.04 710.75Q153.75 776.31 223.47 801.67" stroke="#5fd8ea" marker-end="url(#arrow-new-cross-module)"/>
+        <path data-from="packages/cli/src/commands/pre/index.ts" data-to="packages/cli/src/commands/shared.ts" data-kind="new-cross-module" d="M72.26 712.04Q89.25 745.1 123.4 764.34" stroke="#5fd8ea" marker-end="url(#arrow-new-cross-module)"/>
+        <path data-from="packages/cli/src/commands/publish/index.ts" data-to="packages/cli/src/commands/shared.ts" data-kind="new-cross-module" d="M127.4 712.44Q120.19 734.41 127.48 761.17" stroke="#5fd8ea" marker-end="url(#arrow-new-cross-module)"/>
+        <path data-from="packages/cli/src/commands/publish/index.ts" data-to="packages/config/src/index.ts" data-kind="new-cross-module" d="M136.47 711.55Q170.11 771.45 224.43 799.47" stroke="#5fd8ea" marker-end="url(#arrow-new-cross-module)"/>
+        <path data-from="packages/cli/src/commands/publish/npm-utils.ts" data-to="packages/cli/src/commands/publish/publishPackages.ts" data-kind="cycle" d="M108.26 798.02Q103.19 789.58 92.03 784.22" stroke="#e35ce0" marker-end="url(#arrow-cycle)"/>
+        <path data-from="packages/cli/src/commands/publish/publishPackages.ts" data-to="packages/cli/src/commands/publish/npm-utils.ts" data-kind="cycle" d="M86.98 789.78Q93.35 800.39 102.23 804.65" stroke="#e35ce0" marker-end="url(#arrow-cycle)"/>
+        <path data-from="packages/cli/src/commands/shared.ts" data-to="packages/color/src/index.ts" data-kind="new-cross-module" d="M127.51 774.1Q106.68 852.16 132.43 929.32" stroke="#5fd8ea" marker-end="url(#arrow-new-cross-module)"/>
+        <path data-from="packages/cli/src/commands/shared.ts" data-to="packages/errors/src/index.ts" data-kind="new-cross-module" d="M128.07 774.23Q105.01 904.66 157.28 1025.61" stroke="#5fd8ea" marker-end="url(#arrow-new-cross-module)"/>
+        <path data-from="packages/cli/src/commands/status/index.ts" data-to="packages/cli/src/commands/shared.ts" data-kind="new-cross-module" d="M155.26 710.26Q135.99 730.43 130.44 761.04" stroke="#5fd8ea" marker-end="url(#arrow-new-cross-module)"/>
+        <path data-from="packages/cli/src/commands/status/index.ts" data-to="packages/config/src/index.ts" data-kind="new-cross-module" d="M165.55 712.39Q185.91 767.47 226 796.94" stroke="#5fd8ea" marker-end="url(#arrow-new-cross-module)"/>
+        <path data-from="packages/cli/src/commands/tag/index.ts" data-to="packages/cli/src/commands/shared.ts" data-kind="new-cross-module" d="M183.14 708.41Q150.56 726.58 132.33 761.68" stroke="#5fd8ea" marker-end="url(#arrow-new-cross-module)"/>
+        <path data-from="packages/cli/src/commands/tag/index.ts" data-to="packages/config/src/index.ts" data-kind="new-cross-module" d="M192.37 712.89Q200.47 763.62 228.46 794.19" stroke="#5fd8ea" marker-end="url(#arrow-new-cross-module)"/>
+        <path data-from="packages/cli/src/commands/version/index.ts" data-to="packages/cli/src/commands/shared.ts" data-kind="new-cross-module" d="M210.39 704.31Q165.79 719.84 133.31 762.31" stroke="#5fd8ea" marker-end="url(#arrow-new-cross-module)"/>
+        <path data-from="packages/cli/src/commands/version/index.ts" data-to="packages/config/src/index.ts" data-kind="new-cross-module" d="M221.05 712.91Q215.7 756.88 232.8 791.22" stroke="#5fd8ea" marker-end="url(#arrow-new-cross-module)"/>
+        <path data-from="packages/cli/src/index.ts" data-to="packages/cli/src/commands/add/index.ts" data-kind="new-cross-module" d="M147.28 613.69Q112.3 645.72 101.03 690.56" stroke="#5fd8ea" marker-end="url(#arrow-new-cross-module)"/>
+        <path data-from="packages/cli/src/index.ts" data-to="packages/cli/src/commands/init/index.ts" data-kind="new-cross-module" d="M154.68 617Q154.36 645.55 170.81 671.13" stroke="#5fd8ea" marker-end="url(#arrow-new-cross-module)"/>
+        <path data-from="packages/cli/src/index.ts" data-to="packages/cli/src/commands/pre/index.ts" data-kind="new-cross-module" d="M146.12 612.16Q96.91 642.56 71.94 696.37" stroke="#5fd8ea" marker-end="url(#arrow-new-cross-module)"/>
+        <path data-from="packages/cli/src/index.ts" data-to="packages/cli/src/commands/publish/index.ts" data-kind="new-cross-module" d="M149.57 615.56Q128.63 650.66 130.42 690.39" stroke="#5fd8ea" marker-end="url(#arrow-new-cross-module)"/>
+        <path data-from="packages/cli/src/index.ts" data-to="packages/cli/src/commands/status/index.ts" data-kind="new-cross-module" d="M152.62 616.76Q144.01 656.04 158.55 693.84" stroke="#5fd8ea" marker-end="url(#arrow-new-cross-module)"/>
+        <path data-from="packages/cli/src/index.ts" data-to="packages/cli/src/commands/tag/index.ts" data-kind="new-cross-module" d="M155.46 616.98Q158.29 660.84 185.56 696.89" stroke="#5fd8ea" marker-end="url(#arrow-new-cross-module)"/>
+        <path data-from="packages/cli/src/index.ts" data-to="packages/cli/src/commands/version/index.ts" data-kind="new-cross-module" d="M158.17 616.43Q174.72 663.6 212.31 692.22" stroke="#5fd8ea" marker-end="url(#arrow-new-cross-module)"/>
+      </g>
+      <g id="ghosts" fill="none" stroke="#7c8590" stroke-dasharray="2 2">
+        <circle data-id="package.json" data-with="packages/cli/src/commands/pre/index.test.ts packages/cli/src/commands/publish/__tests__/releaseCommand.test.ts" data-rate="0.57" cx="49" cy="343" r="7"/>
+        <circle data-id="packages/apply-release-plan/package.json" data-with="packages/cli/src/commands/tag/__tests__/index.test.ts" data-rate="0.5" cx="67" cy="343" r="7"/>
+        <circle data-id="packages/apply-release-plan/src/index.ts" data-with="packages/cli/src/commands/init/__tests__/command.test.ts packages/cli/src/commands/pre/index.test.ts packages/cli/src/commands/pre/index.ts packages/cli/src/commands/publish/__tests__/index.test.ts packages/cli/src/commands/status/__tests__/status.test.ts packages/cli/src/commands/tag/__tests__/index.test.ts packages/cli/src/commands/tag/index.ts packages/cli/src/commands/version/index.ts" data-rate="0.6" cx="156.72" cy="812.14" r="17.86"/>
+        <circle data-id="packages/cli/CHANGELOG.md" data-with="packages/cli/package.json" data-rate="0.56" cx="67" cy="213" r="7"/>
+        <circle data-id="packages/cli/src/commands/add/createChangeset.ts" data-with="packages/cli/src/commands/pre/index.test.ts packages/cli/src/commands/pre/index.ts packages/cli/src/commands/publish/__tests__/releaseCommand.test.ts packages/cli/src/commands/status/__tests__/status.test.ts packages/cli/src/commands/status/index.ts packages/cli/src/commands/tag/index.ts" data-rate="0.64" cx="78.08" cy="814.28" r="15.72"/>
+        <circle data-id="packages/cli/src/commands/add/messages.ts" data-with="packages/cli/src/commands/pre/index.ts packages/cli/src/commands/tag/index.ts" data-rate="0.64" cx="47.87" cy="819.13" r="10.87"/>
+        <circle data-id="packages/cli/src/commands/publish/npm-utils.ts" data-with="packages/cli/src/commands/pre/index.ts" data-rate="0.55" cx="116.29" cy="811.4" r="18.6"/>
+        <circle data-id="packages/cli/src/commands/publish/publishPackages.ts" data-with="packages/cli/src/commands/pre/index.test.ts packages/cli/src/commands/pre/index.ts packages/cli/src/commands/publish/__tests__/releaseCommand.test.ts packages/cli/src/commands/publish/index.ts packages/cli/src/commands/status/__tests__/status.test.ts packages/cli/src/commands/tag/__tests__/index.test.ts packages/cli/src/commands/tag/index.ts" data-rate="0.82" cx="80.25" cy="778.57" r="16.07"/>
+        <circle data-id="packages/config/src/index.ts" data-with="packages/cli/src/commands/status/__tests__/status.test.ts packages/cli/src/commands/tag/__tests__/index.test.ts packages/cli/src/run.test.ts packages/cli/src/run.ts" data-rate="0.6" cx="241.21" cy="808.12" r="21.88"/>
+        <circle data-id="packages/get-dependents-graph/src/get-dependency-graph.ts" data-with="packages/cli/src/commands/init/__tests__/command.test.ts packages/cli/src/commands/pre/index.test.ts packages/cli/src/commands/pre/index.ts packages/cli/src/commands/status/__tests__/status.test.ts packages/cli/src/commands/tag/__tests__/index.test.ts packages/cli/src/commands/tag/index.ts" data-rate="0.64" cx="198.42" cy="988.88" r="14.12"/>
+        <circle data-id="packages/get-release-plan/src/index.ts" data-with="packages/cli/src/commands/init/__tests__/command.test.ts packages/cli/src/commands/status/__tests__/status.test.ts" data-rate="0.57" cx="214.49" cy="784.44" r="9.84"/>
+        <circle data-id="packages/pre/src/index.ts" data-with="packages/cli/src/commands/pre/index.test.ts" data-rate="0.56" cx="188.79" cy="778.1" r="12.04"/>
+        <circle data-id="packages/release-utils/src/run.ts" data-with="packages/cli/src/commands/status/__tests__/status.test.ts" data-rate="0.6" cx="219.89" cy="605.8" r="14.2"/>
+        <circle data-id="packages/types/src/index.ts" data-with="packages/cli/src/types.ts" data-rate="0.5" cx="175.51" cy="1132.89" r="14.89"/>
+        <circle data-id="packages/write/src/index.ts" data-with="packages/cli/src/commands/init/__tests__/command.test.ts packages/cli/src/commands/pre/index.test.ts packages/cli/src/commands/tag/__tests__/index.test.ts" data-rate="0.57" cx="209.3" cy="759.45" r="11.68"/>
+        <circle data-id="scripts/test-utils/src/index.ts" data-with="packages/cli/src/commands/init/__tests__/command.test.ts packages/cli/src/commands/status/__tests__/status.test.ts" data-rate="0.57" cx="255.33" cy="596.5" r="13.65"/>
+      </g>
+      <g id="storms" fill="#f0546a">
+        <g data-slot="health" data-over="directory:packages/cli/src/commands/add">
+          <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(96 676)"/>
+          <text x="102" y="678.8" font-size="8" font-variant="small-caps">health</text>
+        </g>
+        <g data-slot="health" data-over="directory:packages/cli/src/commands/publish">
+          <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(127.05 672.49)"/>
+          <text x="133.05" y="675.29" font-size="8" font-variant="small-caps">health</text>
+        </g>
+        <g data-slot="health" data-over="directory:packages/cli/src/commands/version">
+          <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(230 682.33)"/>
+          <text x="236" y="685.13" font-size="8" font-variant="small-caps">health</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="chrome">
+    <g id="hud">
+      <g data-block="category" data-category="IFR">
+        <rect x="10" y="8" width="36.18" height="20" fill="#f0546a"/>
+        <text x="16" y="22.55" font-size="13" fill="#0a0c0f"><tspan font-weight="bold">IFR</tspan></text>
+      </g>
+      <g data-block="patch-cov">
+        <rect x="49.18" y="8" width="162.66" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="55.18" y="21.15" font-size="9" fill="#e6edf3"><tspan>Patch cov </tspan><tspan font-weight="bold">89%</tspan><tspan>, 1 unmeasured</tspan></text>
+      </g>
+      <g data-block="mutants">
+        <rect x="214.84" y="8" width="123.6" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="220.84" y="21.15" font-size="9" fill="#e6edf3"><tspan>Mutants </tspan><tspan font-weight="bold">139</tspan><tspan> survived</tspan></text>
+      </g>
+      <g data-block="reach">
+        <rect x="341.44" y="8" width="90.12" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="347.44" y="21.15" font-size="9" fill="#e6edf3"><tspan>Reach </tspan><tspan font-weight="bold">12</tspan><tspan> cells</tspan></text>
+      </g>
+      <g data-block="size">
+        <rect x="434.56" y="8" width="151.5" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="440.56" y="21.15" font-size="9" fill="#e6edf3"><tspan>Size </tspan><tspan font-weight="bold">+894 −1204</tspan><tspan>, 24 files</tspan></text>
+      </g>
+      <g data-block="gate">
+        <rect x="589.06" y="8" width="67.8" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="595.06" y="21.15" font-size="9" fill="#e6edf3"><tspan>Gate </tspan><tspan font-weight="bold">1</tspan><tspan> red</tspan></text>
+      </g>
+      <g data-block="standing">
+        <rect x="10" y="31" width="263.1" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="16" y="44.15" font-size="9" fill="#e6edf3"><tspan>Standing </tspan><tspan font-weight="bold">5</tspan><tspan> red, global: pack, smoke, snippets</tspan></text>
+      </g>
+      <g data-block="health" data-muted="true" data-reason="head-only">
+        <rect x="276.1" y="31" width="67.8" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="282.1" y="44.15" font-size="9" fill="#6b7480"><tspan>Health Δ </tspan><tspan font-weight="bold">—</tspan></text>
+      </g>
+      <g data-block="notices">
+        <rect x="346.9" y="31" width="84.54" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="352.9" y="44.15" font-size="9" fill="#e6edf3"><tspan>Notices </tspan><tspan font-weight="bold">1·2·3</tspan></text>
+      </g>
+      <g data-block="other">
+        <rect x="434.44" y="31" width="51.06" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="440.44" y="44.15" font-size="9" fill="#e6edf3"><tspan>Other </tspan><tspan font-weight="bold">3</tspan></text>
+      </g>
+    </g>
+    <g id="rules" stroke="#2b333d" stroke-width="1">
+      <line x1="0" y1="59" x2="780" y2="59"/>
+      <line x1="480" y1="59" x2="480" y2="1273"/>
+    </g>
+    <g id="leaders" stroke="#9aa5b1" stroke-width="1" stroke-dasharray="0.1 3" stroke-linecap="round" fill="none">
+      <line data-notice="1" x1="495" y1="74" x2="172.67" y2="683.67"/>
+      <line data-notice="2" x1="495" y1="123" x2="185.67" y2="683.67"/>
+      <line data-notice="3" x1="495" y1="191.5" x2="149.58" y2="779.34"/>
+      <line data-notice="4" x1="495" y1="240.5" x2="116.96" y2="779.32"/>
+      <line data-notice="5" x1="495" y1="289.5" x2="242.42" y2="778.87"/>
+      <line data-notice="6" x1="495" y1="338.5" x2="162.58" y2="779.34"/>
+    </g>
+    <g id="notices">
+      <g data-notice="1" data-tier="primary" data-kind="survived-mutants" data-target="packages/cli/src/index.ts">
+        <g data-mark="1" data-tier="primary">
+          <rect x="490" y="69" width="10" height="10" fill="#f0546a"/>
+          <text x="495" y="76.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#0a0c0f">1</text>
+        </g>
+        <text x="505" y="77" font-size="8" font-weight="bold" fill="#e6edf3">packages/cli/src/index.ts</text>
+        <text x="505" y="86.4" font-size="7" font-variant="small-caps" fill="#e6edf3">survived-mutants</text>
+        <text x="505" y="96.5" font-size="8" fill="#e6edf3">88 mutants survived on the changed lines</text>
+        <text x="505" y="105.9" font-size="7" fill="#6b7480">severity 6</text>
+      </g>
+      <g data-notice="2" data-tier="secondary" data-kind="large-hot-change" data-target="packages/cli/src/index.ts">
+        <g data-mark="2" data-tier="secondary">
+          <rect x="490" y="118" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
+          <text x="495" y="125.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">2</text>
+        </g>
+        <text x="505" y="126" font-size="8" font-weight="bold" fill="#e6edf3">packages/cli/src/index.ts</text>
+        <text x="505" y="135.4" font-size="7" font-variant="small-caps" fill="#e6edf3">large-hot-change</text>
+        <text x="505" y="145.5" font-size="8" fill="#e6edf3">176 lines changed in a file with churn 9.935 and a</text>
+        <text x="505" y="155.9" font-size="8" fill="#e6edf3">bug-fix rate of 0.077</text>
+        <text x="505" y="165.3" font-size="7" fill="#6b7480">severity 4 · large_lines 100 · hot_churn_ratio 2 ·</text>
+        <text x="505" y="174.4" font-size="7" fill="#6b7480">hot_bugfix_rate 0.3</text>
+      </g>
+      <g data-notice="3" data-tier="secondary" data-kind="red-check-slot" data-target="packages/cli/src/commands/publish/index.ts">
+        <g data-mark="3" data-tier="secondary">
+          <rect x="490" y="186.5" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
+          <text x="495" y="193.95" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">3</text>
+        </g>
+        <text x="505" y="194.5" font-size="8" font-weight="bold" fill="#e6edf3">packages/cli/src/commands/publish/index.ts</text>
+        <text x="505" y="203.9" font-size="7" font-variant="small-caps" fill="#e6edf3">red-check-slot</text>
+        <text x="505" y="214" font-size="8" fill="#e6edf3">the `health` check is red on this changed file</text>
+        <text x="505" y="223.4" font-size="7" fill="#6b7480">severity 10</text>
+      </g>
+      <g data-notice="4" data-tier="tertiary" data-kind="red-check-slot" data-target="packages/cli/src/commands/add/index.ts">
+        <g data-mark="4" data-tier="tertiary">
+          <rect x="490" y="235.5" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="495" y="242.95" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">4</text>
+        </g>
+        <text x="505" y="243.5" font-size="8" font-weight="bold" fill="#e6edf3">packages/cli/src/commands/add/index.ts</text>
+        <text x="505" y="252.9" font-size="7" font-variant="small-caps" fill="#e6edf3">red-check-slot</text>
+        <text x="505" y="263" font-size="8" fill="#e6edf3">the `health` check is red on this changed file</text>
+        <text x="505" y="272.4" font-size="7" fill="#6b7480">severity 10</text>
+      </g>
+      <g data-notice="5" data-tier="tertiary" data-kind="red-check-slot" data-target="packages/cli/src/commands/version/index.ts">
+        <g data-mark="5" data-tier="tertiary">
+          <rect x="490" y="284.5" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="495" y="291.95" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">5</text>
+        </g>
+        <text x="505" y="292.5" font-size="8" font-weight="bold" fill="#e6edf3">packages/cli/src/commands/version/index.ts</text>
+        <text x="505" y="301.9" font-size="7" font-variant="small-caps" fill="#e6edf3">red-check-slot</text>
+        <text x="505" y="312" font-size="8" fill="#e6edf3">the `health` check is red on this changed file</text>
+        <text x="505" y="321.4" font-size="7" fill="#6b7480">severity 10</text>
+      </g>
+      <g data-notice="6" data-tier="tertiary" data-kind="survived-mutants" data-target="packages/cli/src/commands/publish/index.ts">
+        <g data-mark="6" data-tier="tertiary">
+          <rect x="490" y="333.5" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="495" y="340.95" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">6</text>
+        </g>
+        <text x="505" y="341.5" font-size="8" font-weight="bold" fill="#e6edf3">packages/cli/src/commands/publish/index.ts</text>
+        <text x="505" y="350.9" font-size="7" font-variant="small-caps" fill="#e6edf3">survived-mutants</text>
+        <text x="505" y="361" font-size="8" fill="#e6edf3">16 mutants survived on the changed lines</text>
+        <text x="505" y="370.4" font-size="7" fill="#6b7480">severity 6</text>
+      </g>
+    </g>
+    <g id="legend">
+      <rect x="490" y="1064" width="280" height="199" fill="none" stroke="#6b7480" stroke-width="1"/>
+      <text x="496" y="1077" font-size="7" font-variant="small-caps" fill="#6b7480">legend</text>
+      <g data-mark="category">
+        <g data-balloon="1">
+          <circle cx="503" cy="1086" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="1088.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">1</text>
+        </g>
+        <g>
+          <rect x="516" y="1079" width="19.02" height="14" fill="#4fd37a"/>
+          <text x="519" y="1088.45" font-size="7" font-weight="bold" fill="#0a0c0f">VFR</text>
+        </g>
+        <g>
+          <rect x="536.02" y="1079" width="23.36" height="14" fill="#5b8def"/>
+          <text x="539.02" y="1088.45" font-size="7" font-weight="bold" fill="#0a0c0f">MVFR</text>
+        </g>
+        <g>
+          <rect x="560.38" y="1079" width="19.02" height="14" fill="#f0546a"/>
+          <text x="563.38" y="1088.45" font-size="7" font-weight="bold" fill="#0a0c0f">IFR</text>
+        </g>
+        <g>
+          <rect x="580.4" y="1079" width="23.36" height="14" fill="#e35ce0"/>
+          <text x="583.4" y="1088.45" font-size="7" font-weight="bold" fill="#0a0c0f">LIFR</text>
+        </g>
+        <text x="610.76" y="1088.45" font-size="7" fill="#e6edf3">category: set by the change alone</text>
+      </g>
+      <g data-mark="lit-arc">
+        <g data-balloon="2">
+          <circle cx="503" cy="1104" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="1106.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">2</text>
+        </g>
+        <circle cx="528" cy="1104" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="528" cy="1104" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
+        <circle cx="528" cy="1104" r="6.25" fill="none" stroke="#e6edf3" stroke-width="2.5" pathLength="1" stroke-dasharray="0.4 1" transform="rotate(-90 528 1104)"/>
+        <text x="546" y="1106.45" font-size="7" fill="#e6edf3">lit arc: changed lines no test ran</text>
+      </g>
+      <g data-mark="hairline">
+        <g data-balloon="3">
+          <circle cx="503" cy="1122" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="1124.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">3</text>
+        </g>
+        <circle cx="528" cy="1122" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="528" cy="1122" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
+        <text x="546" y="1124.45" font-size="7" fill="#e6edf3">hairline: changed lines the tests ran</text>
+      </g>
+      <g data-mark="notch">
+        <g data-balloon="4">
+          <circle cx="503" cy="1140" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="1142.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">4</text>
+        </g>
+        <circle cx="528" cy="1140" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="528" cy="1140" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
+        <path d="M526 1132.5L528 1137L530 1132.5Z" fill="#e6edf3"/>
+        <text x="546" y="1142.45" font-size="7" fill="#e6edf3">notch: a mutant that survived</text>
+      </g>
+      <g data-mark="stitches">
+        <g data-balloon="5">
+          <circle cx="503" cy="1158" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="1160.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">5</text>
+        </g>
+        <circle cx="528" cy="1158" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <line x1="528.5" y1="1158.87" x2="532.5" y2="1165.79" stroke="#e6edf3" stroke-width="2"/>
+        <line x1="528" y1="1159" x2="528" y2="1167" stroke="#6b7480" stroke-width="2"/>
+        <line x1="527.5" y1="1158.87" x2="526" y2="1161.46" stroke="#f0546a" stroke-width="2"/>
+        <line x1="525" y1="1163.2" x2="523.5" y2="1165.79" stroke="#f0546a" stroke-width="2"/>
+        <text x="546" y="1160.45" font-size="7" fill="#e6edf3">stitches: its tests passed, not run, failed</text>
+      </g>
+      <g data-mark="red-bolt">
+        <g data-balloon="6">
+          <circle cx="503" cy="1176" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="1178.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">6</text>
+        </g>
+        <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" fill="#f0546a" transform="translate(528 1176) scale(1)"/>
+        <text x="546" y="1178.45" font-size="7" fill="#e6edf3">red bolt: a failing check names a changed file</text>
+      </g>
+      <g data-mark="grey-bolt">
+        <g data-balloon="7">
+          <circle cx="503" cy="1194" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="1196.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">7</text>
+        </g>
+        <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" fill="#58616b" transform="translate(528 1194) scale(0.6)"/>
+        <text x="546" y="1196.45" font-size="7" fill="#e6edf3">grey bolt: fails on files the change left alone</text>
+      </g>
+      <g data-mark="ghost">
+        <g data-balloon="8">
+          <circle cx="503" cy="1212" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="1214.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">8</text>
+        </g>
+        <circle cx="528" cy="1212" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="528" cy="1212" r="8" fill="none" stroke="#7c8590" stroke-dasharray="2 2"/>
+        <text x="546" y="1214.45" font-size="7" fill="#e6edf3">ghost: usually changes with these, and did not</text>
+      </g>
+      <g data-mark="stain">
+        <g data-balloon="9">
+          <circle cx="503" cy="1230" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="1232.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">9</text>
+        </g>
+        <circle cx="528" cy="1230" r="5" fill="#5fd8ea" stroke="#5f6873" stroke-width="1"/>
+        <text x="546" y="1232.45" font-size="7" fill="#e6edf3">cyan: a changed file; +path in a row: added</text>
+      </g>
+      <g data-mark="unmeasured">
+        <g data-balloon="10">
+          <circle cx="503" cy="1248" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="1250.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">10</text>
+        </g>
+        <circle cx="528" cy="1248" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="528" cy="1248" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
+        <circle cx="528" cy="1248" r="6.25" fill="none" stroke="#e6edf3" stroke-width="2.5"/>
+        <text x="546" y="1250.45" font-size="7" fill="#e6edf3">skin lit whole: no coverage report names it</text>
+      </g>
+    </g>
+    <g id="marks">
+      <g data-target="packages/cli/src/index.ts">
+        <circle data-target="packages/cli/src/index.ts" data-tier="primary" fill="none" stroke="#f0546a" stroke-width="1.5" cx="154.8" cy="665.8" r="15.2"/>
+        <g data-mark="1" data-tier="primary">
+          <rect x="167.67" y="678.67" width="10" height="10" fill="#f0546a"/>
+          <text x="172.67" y="686.12" font-size="7" font-weight="bold" text-anchor="middle" fill="#0a0c0f">1</text>
+        </g>
+        <g data-mark="2" data-tier="secondary">
+          <rect x="180.67" y="678.67" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
+          <text x="185.67" y="686.12" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">2</text>
+        </g>
+        <text data-target="packages/cli/src/index.ts" x="167.67" y="698.67" font-size="7" font-variant="small-caps" fill="#f0546a">survived-mutants</text>
+      </g>
+      <g data-target="packages/cli/src/commands/publish/index.ts">
+        <circle data-target="packages/cli/src/commands/publish/index.ts" data-tier="secondary" fill="none" stroke="#9aa5b1" stroke-width="3" cx="130.93" cy="760.69" r="16.31"/>
+        <g data-mark="3" data-tier="secondary">
+          <rect x="144.58" y="774.34" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
+          <text x="149.58" y="781.79" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">3</text>
+        </g>
+        <g data-mark="6" data-tier="tertiary">
+          <rect x="157.58" y="774.34" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="162.58" y="781.79" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">6</text>
+        </g>
+      </g>
+      <g data-target="packages/cli/src/commands/add/index.ts">
+        <g data-mark="4" data-tier="tertiary">
+          <rect x="111.96" y="774.32" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="116.96" y="781.77" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">4</text>
+        </g>
+      </g>
+      <g data-target="packages/cli/src/commands/version/index.ts">
+        <g data-mark="5" data-tier="tertiary">
+          <rect x="237.42" y="773.87" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="242.42" y="781.32" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">5</text>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>
