@@ -91,8 +91,8 @@ import {
   TEXTURE_MAX_OPACITY,
 } from './tokens.js';
 
-/** The storm glyph: a bolt, drawn about its own origin. */
-const STORM_GLYPH = 'M1 -6L-3 1H0L-1 6L3 -1H0Z';
+/** The storm glyph: a bolt, drawn about its own origin. The legend draws its sample from the same path. */
+export const STORM_GLYPH = 'M1 -6L-3 1H0L-1 6L3 -1H0Z';
 const PASSED = 'passed';
 const FAILED = 'failed';
 const TOP = -Math.PI / 2;
@@ -321,20 +321,24 @@ function mutantsByPath(mutants: readonly Mutant[]): ReadonlyMap<string, readonly
  * a dark bite took it away.
  */
 function drawDents(path: string, mutants: readonly Mutant[], at: Position): readonly Markup[] {
-  const outer = at.r + INTEGRITY_PAD + INTEGRITY_GAP_WIDTH / 2;
-  const half = MUTANT_NOTCH_WIDTH / 2;
-  return mutants.map((mutant, index) => {
-    const angle = spread(TOP, index, mutants.length, MUTANT_NOTCH_SPACING);
-    const [bx, by] = onRing(at, angle, outer);
-    const [tx, ty] = [-Math.sin(angle) * half, Math.cos(angle) * half];
-    return el('path', {
+  return mutants.map((mutant, index) =>
+    el('path', {
       'data-id': path,
       'data-line': mutant.line,
       'data-status': mutant.status,
-      d: pathOf([[bx - tx, by - ty], onRing(at, angle, at.r - MUTANT_NOTCH_DEPTH), [bx + tx, by + ty]]),
+      d: pathOf(notchOf(at, spread(TOP, index, mutants.length, MUTANT_NOTCH_SPACING))),
       fill: EVIDENCE_LIGHT,
-    });
-  });
+    }),
+  );
+}
+
+/** One notch's wedge on a file's ring at `angle`: its base across the skin's outer edge, its point inside the file's. The legend draws its sample from it too. */
+export function notchOf(at: Position, angle: number): Contour {
+  const outer = at.r + INTEGRITY_PAD + INTEGRITY_GAP_WIDTH / 2;
+  const half = MUTANT_NOTCH_WIDTH / 2;
+  const [bx, by] = onRing(at, angle, outer);
+  const [tx, ty] = [-Math.sin(angle) * half, Math.cos(angle) * half];
+  return [[bx - tx, by - ty], onRing(at, angle, at.r - MUTANT_NOTCH_DEPTH), [bx + tx, by + ty]];
 }
 
 type StitchOn = { readonly test: string; readonly status: string };
@@ -353,7 +357,7 @@ function stitchesByTarget(stitches: readonly Stitch[]): ReadonlyMap<string, read
 }
 
 /** A stitch that passed is lit; one that failed is torn and IFR; any other status was not run, and not run is not a pass (C2). */
-function stitchStroke(status: string): string {
+export function stitchStroke(status: string): string {
   if (status === FAILED) return IFR_HUE;
   return status === PASSED ? EVIDENCE_LIGHT : STITCH_UNLIT;
 }
@@ -361,13 +365,17 @@ function stitchStroke(status: string): string {
 /** One stitch: a short stroke across the edge on its spoke; torn, it breaks either side of the edge. */
 function drawStitch(target: string, stitch: StitchOn, at: Position, angle: number): readonly Markup[] {
   const mark = { 'data-id': target, 'data-test': stitch.test, 'data-status': stitch.status, stroke: stitchStroke(stitch.status) };
-  const segment = (from: number, to: number): Markup => {
-    const [x1, y1] = onRing(at, angle, at.r + from);
-    const [x2, y2] = onRing(at, angle, at.r + to);
-    return el('line', { ...mark, x1, y1, x2, y2 });
-  };
+  return stitchOf(at, angle, stitch.status).map(([[x1, y1], [x2, y2]]) => el('line', { ...mark, x1, y1, x2, y2 }));
+}
+
+/** One stitch's strokes across a file's edge at `angle`: one stroke, or two either side of the tear when it failed. The legend draws its samples from it too. */
+export function stitchOf(at: Position, angle: number, status: string): readonly (readonly [readonly [number, number], readonly [number, number]])[] {
+  const segment = (from: number, to: number): readonly [readonly [number, number], readonly [number, number]] => [
+    onRing(at, angle, at.r + from),
+    onRing(at, angle, at.r + to),
+  ];
   const half = STITCH_LENGTH / 2;
-  if (stitch.status !== FAILED) return [segment(-half, half)];
+  if (status !== FAILED) return [segment(-half, half)];
   return [segment(-half, -STITCH_TEAR / 2), segment(STITCH_TEAR / 2, half)];
 }
 
@@ -504,7 +512,7 @@ function topOf(contour: Contour): readonly [number, number] | undefined {
 type Storm = { readonly slot: string; readonly place: string; readonly change: boolean };
 
 /** A storm with the point its bolt hangs at. */
-type Hung = Storm & { readonly x: number; readonly y: number };
+export type HungStorm = Storm & { readonly x: number; readonly y: number };
 
 /**
  * The storms, from core's split of the red slots as the map records it (D67,
@@ -537,7 +545,7 @@ function stormsOf(weather: Weather, terrain: Terrain): readonly Storm[] {
  * nearest the cell and the grey stacks above it. A place with no contour
  * hangs nothing.
  */
-function hang(storms: readonly Storm[], layout: Layout): readonly Hung[] {
+function hang(storms: readonly Storm[], layout: Layout): readonly HungStorm[] {
   const contours = layout.contours ?? {};
   const rows = new Map<string, number>();
   return storms.flatMap((storm) => {
@@ -549,12 +557,17 @@ function hang(storms: readonly Storm[], layout: Layout): readonly Hung[] {
   });
 }
 
+/** Every storm the map hangs, the change's first, each at the point its bolt is drawn: where the practice map points its callouts. */
+export function stormsHung(map: MapJson, layout: Layout): readonly HungStorm[] {
+  return hang(stormsOf(map.weather, map.terrain), layout);
+}
+
 /**
  * The change's storms (§5.2, D68): the bolt in the IFR hue with the slot's
  * name to its right, over each cell or shore group where a red slot names a
  * changed file. A skipped slot is not red, and a green one is no storm.
  */
-function drawStorms(storms: readonly Hung[]): Markup | undefined {
+function drawStorms(storms: readonly HungStorm[]): Markup | undefined {
   const bolts = storms
     .filter((storm) => storm.change)
     .map((storm) =>
@@ -580,7 +593,7 @@ function drawStorms(storms: readonly Hung[]): Markup | undefined {
  * touch is terrain, not weather, so its bolt is smaller, graphite, and
  * carries no label, the way §5.3 keeps unchanged terrain greyscale.
  */
-function drawStandingStorms(storms: readonly Hung[]): Markup | undefined {
+function drawStandingStorms(storms: readonly HungStorm[]): Markup | undefined {
   const bolts = storms
     .filter((storm) => !storm.change)
     .map((storm) =>
@@ -604,7 +617,7 @@ function drawStandingStorms(storms: readonly Hung[]): Markup | undefined {
  * layer with nothing to draw is left out rather than emptied (C2).
  */
 export function drawWeather(map: MapJson, layout: Layout): Markup {
-  const storms = hang(stormsOf(map.weather, map.terrain), layout);
+  const storms = stormsHung(map, layout);
   const layers = [
     drawStandingStorms(storms),
     drawReach(map.weather, map.terrain, layout),

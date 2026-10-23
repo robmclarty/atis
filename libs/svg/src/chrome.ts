@@ -28,6 +28,7 @@ import type { Contour, FlightCategory, Layout, MapJson, Notice, NoticeTier, Posi
 
 import { el, num } from './el.js';
 import type { Attrs, Markup } from './el.js';
+import { drawLegend, legendHeight } from './legend.js';
 import { pathOf } from './terrain.js';
 import {
   CATEGORY_FONT_SIZE,
@@ -68,12 +69,28 @@ import {
   VFR_HUE,
 } from './tokens.js';
 
-/** The chrome as drawn, and the canvas it needs: the world is set `worldY` down, so the HUD strip never covers it. */
+/** A box the chrome drew, in the canvas's coordinates. */
+export type Box = { readonly x: number; readonly y: number; readonly width: number; readonly height: number };
+
+/** A notice row as drawn: its rank, its target, whether the change added it, and the left end of its target line's baseline. */
+export type RowAt = { readonly rank: number; readonly target: string; readonly added: boolean; readonly x: number; readonly y: number };
+
+/**
+ * The chrome as drawn, and the canvas it needs: the world is set `worldY`
+ * down, so the HUD strip never covers it. It also says where it put the
+ * category block, each notice row and the legend inset, which is what the
+ * practice map hangs its callouts from (D125).
+ */
 export type Chrome = {
   readonly markup: Markup;
   readonly width: number;
   readonly height: number;
   readonly worldY: number;
+  readonly category: Box | undefined;
+  readonly rows: readonly RowAt[];
+  readonly legend: Box;
+  /** Each target's run of numbered boxes on the map, with the primary's kind under it. */
+  readonly marks: readonly Box[];
 };
 
 /** C7's budget: the list draws at most this many rows, whatever it is handed. */
@@ -566,6 +583,19 @@ function drawEmphasis(marks: Marks, tier: NoticeTier, hue: string, worldY: numbe
   return el('path', { ...shared, d: pathOf(marks.anchor.contour), transform: `translate(0 ${num(worldY)})` });
 }
 
+/** The box a run of marks covers on the sheet: its numbered boxes, and the primary's kind under them where it has one. */
+function runBox(run: Marks, ranked: readonly Ranked[]): Box {
+  const width = run.ranks.length * NOTICE_BOX + (run.ranks.length - 1) * NOTICE_BOX_GAP;
+  const primary = ranked.find((entry) => run.ranks.includes(entry.rank) && entry.notice.tier === 'primary');
+  if (primary === undefined) return { x: run.x, y: run.y, width, height: NOTICE_BOX };
+  return {
+    x: run.x,
+    y: run.y,
+    width: Math.max(width, textWidth(primary.notice.kind, NOTICE_SMALL_SIZE)),
+    height: NOTICE_BOX + NOTICE_BOX_GAP + NOTICE_SMALL_SIZE,
+  };
+}
+
 /** The primary's kind, written in the hue under its run of marks (§5.4: saturated hue and label). */
 function drawPrimaryLabel(marks: Marks, kind: string, hue: string): Markup {
   return el(
@@ -640,10 +670,12 @@ export function drawGround(chrome: Chrome): Markup {
 
 /**
  * The chrome over the world: the HUD strip, the hard rules, the leaders,
- * the notice column and the marks, in that order, so the rows and the boxes
- * lie over the leaders that join them. The canvas is the world plus the
- * strip above it and the column beside it, and as tall as the taller of the
- * world and the list.
+ * the notice column, the legend inset and the marks, in that order, so the
+ * rows and the boxes lie over the leaders that join them. The canvas is the
+ * world plus the strip above it and the column beside it, as tall as the
+ * taller of the world and the list with the inset under it. The inset sits
+ * at the foot of the column, below the last row, so it covers neither the
+ * world nor a notice (D87).
  */
 export function drawChrome(map: MapJson, layout: Layout): Chrome {
   const width = layout.width + NOTICE_COLUMN;
@@ -653,8 +685,14 @@ export function drawChrome(map: MapJson, layout: Layout): Chrome {
   const columnX = layout.width + CHROME_PAD;
   const rows = layOutRows(ranked, worldY + CHROME_PAD);
   const last = rows.at(-1);
-  const listBottom = last === undefined ? worldY : last.y + last.height + CHROME_PAD;
-  const height = Math.max(worldY + layout.height, Math.ceil(listBottom));
+  const listBottom = last === undefined ? worldY + CHROME_PAD : last.y + last.height + CHROME_PAD;
+  const legend = {
+    x: columnX,
+    y: Math.max(listBottom, worldY + layout.height - CHROME_PAD - legendHeight()),
+    width: NOTICE_COLUMN - 2 * CHROME_PAD,
+    height: legendHeight(),
+  };
+  const height = Math.max(worldY + layout.height, Math.ceil(legend.y + legend.height + CHROME_PAD));
   const { category } = map.weather.checks;
   const hue = CATEGORY_HUES[category] ?? CHROME_INK;
   const marks = marksOf(ranked, layout, worldY);
@@ -668,7 +706,24 @@ export function drawChrome(map: MapJson, layout: Layout): Chrome {
     ]),
     ...(leaders === undefined ? [] : [leaders]),
     el('g', { id: 'notices' }, rows.map((row) => drawRow(row, columnX, hue))),
+    drawLegend(legend.x, legend.y, legend.width),
     ...(drawnMarks === undefined ? [] : [drawnMarks]),
   ]);
-  return { markup, width, height, worldY };
+  const placed = hud.placed.find((entry) => isCategory(entry.block));
+  return {
+    markup,
+    width,
+    height,
+    worldY,
+    category: placed === undefined ? undefined : { x: placed.x, y: placed.y, width: placed.width, height: HUD_BLOCK_HEIGHT },
+    rows: rows.map(({ ranked: { rank, notice, added }, y }) => ({
+      rank,
+      target: notice.target,
+      added,
+      x: columnX + NOTICE_BOX + NOTICE_TEXT_GAP,
+      y: y + NOTICE_TEXT_SIZE,
+    })),
+    legend,
+    marks: marks.map((run) => runBox(run, ranked)),
+  };
 }

@@ -12,27 +12,37 @@
  * map (C3), and it animates nothing (C10).
  */
 
-import type { MapJson } from 'core';
+import type { Layout, MapJson } from 'core';
 
 import { drawChrome, drawGround } from './chrome.js';
+import type { Chrome } from './chrome.js';
 import { el, num, serialize } from './el.js';
+import type { Markup } from './el.js';
 import { drawField, drawMembranes, drawOrganelles, drawShore, drawTerraces } from './terrain.js';
 import { FONT_FAMILY } from './tokens.js';
 import { drawWeather } from './weather.js';
 
 const XMLNS = 'http://www.w3.org/2000/svg';
 
+/** A map's layout and the chrome drawn round it: everything the sheet is cut to, before anything is laid over it. */
+export type Frame = { readonly layout: Layout; readonly chrome: Chrome };
+
 /**
- * Render a map as SVG. A map without `terrain.layout` is refused rather than
- * laid out here: positions belong to core, so that every renderer draws the
- * same terrain (D24), and a map built without them has nothing to draw on.
+ * The frame a map is drawn in. A map without `terrain.layout` is refused
+ * rather than laid out here: positions belong to core, so that every
+ * renderer draws the same terrain (D24), and a map built without them has
+ * nothing to draw on.
  */
-export function renderSvg(map: MapJson): string {
+export function frameOf(map: MapJson): Frame {
   const layout = map.terrain.layout;
   if (layout === undefined) {
     throw new Error('renderSvg: the map has no terrain.layout; the renderer draws a laid-out map and lays out nothing itself (D24)');
   }
-  const chrome = drawChrome(map, layout);
+  return { layout, chrome: drawChrome(map, layout) };
+}
+
+/** The sheet: the ground, the world under the HUD strip, the chrome, and over all of them whatever `over` lays on top (the practice map's callouts). */
+export function drawSheet(map: MapJson, { layout, chrome }: Frame, over: readonly Markup[] = []): string {
   const world = el('g', { id: 'world', transform: `translate(0 ${num(chrome.worldY)})` }, [
     drawField(layout),
     drawTerraces(layout),
@@ -51,7 +61,12 @@ export function renderSvg(map: MapJson): string {
         height: chrome.height,
         'font-family': FONT_FAMILY,
       },
-      [drawGround(chrome), world, chrome.markup],
+      [drawGround(chrome), world, chrome.markup, ...over],
     ),
   );
+}
+
+/** Render a map as SVG. */
+export function renderSvg(map: MapJson): string {
+  return drawSheet(map, frameOf(map));
 }

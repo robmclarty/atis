@@ -24,7 +24,8 @@ over and the chrome that frames it. Each mark lands in a named group under the
 root `<svg>`: `#world` holds `#field`, `#terraces`, `#shore`, `#membranes`,
 `#organelles` and `#weather` (itself `#standing-storms`, `#reach`, `#changed`,
 `#history`, `#evidence`, `#edges`, `#ghosts`, `#storms`, bottom up); `#chrome`
-holds `#ground`, `#hud`, `#rules`, `#leaders`, `#notices` and `#marks`.
+holds `#ground`, `#hud`, `#rules`, `#leaders`, `#notices`, `#legend` and `#marks`.
+The practice map alone adds `#callouts` over both.
 
 Every value here is read by the renderer from `libs/svg/src/tokens.ts`, which is
 the single source; the value shown beside each token is a copy for reading, and
@@ -206,6 +207,36 @@ emphasis rings.
 | `LEADER_WIDTH` | `1` | a leader's width |
 | `LEADER_DASH` | `0.1 3` | a leader's round-dotted dash |
 
+## The legend inset and the practice map's balloons
+
+Every map carries a compact key in its chrome (D87), `#legend` at the foot of the
+notice column, below the last row and clear of the world: a hairline frame in
+`CHROME_MUTED`, a small-caps title, and one row per mark in `LEGEND`'s order
+(`libs/svg/src/legend.ts`), each a numbered balloon, a sample of the mark and a few
+words. The samples are the world's own shapes and inks drawn flat (D12): no
+opacity, no blur, no pattern. The one ink the world draws at a share is the
+hairline, and the inset draws it in `EVIDENCE_LIGHT` already laid at
+`INTEGRITY_CLOSED_OPACITY` over `CHROME_GROUND`. When the world is shorter than the
+list and the inset together, the canvas grows to hold them.
+
+The practice map (`docs/glance-practice.svg`, `pnpm practice-map`) hangs the same
+numbered balloons over a real fixture, `#callouts` over everything else, each
+joined to the first instance of its mark by a solid line in `CHROME_INK`. A
+balloon is a ring, never a notice's square box, and its line is solid, never a
+leader's dots.
+
+| Token | Value | Where it appears |
+| --- | --- | --- |
+| `LEGEND_ROW` | `18` | each inset row's height |
+| `LEGEND_SAMPLE_R` | `5` | the radius of the file each sample is drawn on |
+| `LEGEND_SLOT` | `24` | the width of a row's sample slot |
+| `LEGEND_FONT_SIZE` | `7` | the inset's words, its title and the category scale's letters |
+| `LEGEND_PAD` | `6` | the inset's inner padding and the gaps inside a row |
+| `CALLOUT_R` | `7` | a balloon's radius, in the inset and on the practice map |
+| `CALLOUT_REACH` | `22` | how far a practice balloon stands off its mark |
+| `CALLOUT_FONT_SIZE` | `7` | the number inside a balloon |
+| `CALLOUT_CLEARANCE` | `2` | the clear ground a practice balloon keeps off a notice's marks, the column, the HUD strip and the other balloons |
+
 ## Fixed geometry that carries no token
 
 Some marks are shapes rather than scalar design values, and stay in the renderer
@@ -221,4 +252,10 @@ purpose, not by omission:
 - the reach glow's filter region (the `-25%`/`150%` bounds in `patterns.ts`):
   SVG plumbing that gives `REACH_BLUR` room, not a look to tune;
 - the number precision and indentation of `el.ts` (`PRECISION`, `INDENT`): how
-  the file serialises, not how it reads.
+  the file serialises, not how it reads;
+- the inset's samples (`legend.ts`): the category scale (`CATEGORIES`), the lit
+  arc's share of its sample skin (`ARC_SHARE`) and the three stitch statuses
+  (`STITCHES`), which pick one instance of a mark to show rather than set a
+  look;
+- the turns a practice balloon tries round its mark (`TURNS` in `practice.ts`),
+  an eighth of a turn apart: placement, not a look.

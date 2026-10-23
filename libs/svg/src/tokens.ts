@@ -227,3 +227,27 @@ export const SECONDARY_BOX_WIDTH = 2;
 export const LEADER_INK = '#9aa5b1';
 export const LEADER_WIDTH = 1;
 export const LEADER_DASH = '0.1 3';
+
+/**
+ * The legend inset (D87): a key in the chrome's own flat material at the
+ * foot of the notice column, one numbered row per mark, each a small sample
+ * of the mark beside a few words. A row is this tall, its sample drawn on a
+ * file this big, its words set this size this far past the sample's slot.
+ */
+export const LEGEND_ROW = 18;
+export const LEGEND_SAMPLE_R = 5;
+export const LEGEND_SLOT = 24;
+export const LEGEND_FONT_SIZE = 7;
+export const LEGEND_PAD = 6;
+
+/**
+ * The practice map's callouts (D87, D125): a numbered balloon, the
+ * technical drawing's own mark, ringed in the chrome's ink on its ground
+ * and joined to its mark by a solid line, so it reads as neither a notice's
+ * square box nor its dotted leader. It sits this far from the mark, this big.
+ */
+export const CALLOUT_R = 7;
+export const CALLOUT_REACH = 22;
+export const CALLOUT_FONT_SIZE = 7;
+/** The clear ground a balloon keeps round it: off a notice's marks, the column, the HUD strip and every other balloon. */
+export const CALLOUT_CLEARANCE = 2;

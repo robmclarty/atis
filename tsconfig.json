@@ -3,6 +3,7 @@
   "references": [
     { "path": "./libs/core" },
     { "path": "./libs/svg" },
-    { "path": "./apps/atis" }
+    { "path": "./apps/atis" },
+    { "path": "./scripts" }
   ]
 }

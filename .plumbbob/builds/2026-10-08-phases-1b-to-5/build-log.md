@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 14 — feat(svg): tell an added file from a modified one
+**Current step:** 15 — feat(svg): draw a legend inset and an annotated practice map
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -36,7 +36,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 11. fix(svg): size HUD blocks for the widest fallback monospace face
 - ☑ 12. feat(svg): draw a cell's own dents and clone family on its membrane
 - ☑ 13. fix(core): keep a neighbour's centre out of another cell's membrane
-- ☐ 14. feat(svg): tell an added file from a modified one
+- ☑ 14. feat(svg): tell an added file from a modified one
 - ☐ 15. feat(svg): draw a legend inset and an annotated practice map
 - ☐ 16. chore(fixtures): select the tuning half of the precision corpus
 - ☐ 17. chore(fixtures): generate maps for the corpus's tuning half
@@ -260,3 +260,4 @@ folder, so it rides the branch into the PR.)*
 
 - 2026-10-23 — step 12 checkpointed · 0e304ce14 — feat(svg): draw a cell's own dents and clone family on its membrane (1 drift, 8m)
 - 2026-10-23 — step 13 checkpointed · 9e6232882 — fix(core): keep a neighbour's centre out of another cell's membrane (27m)
+- 2026-10-23 — step 14 checkpointed · bd79f6006 — feat(svg): tell an added file from a modified one (1 drift, 3m)

@@ -6,7 +6,9 @@
 
 export * from './chrome.js';
 export * from './el.js';
+export * from './legend.js';
 export * from './patterns.js';
+export * from './practice.js';
 export * from './render.js';
 export * from './terrain.js';
 export * from './tokens.js';

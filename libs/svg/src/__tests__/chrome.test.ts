@@ -7,6 +7,7 @@ import type { CheckSlot, FlightCategory, MapJson, Notice, NoticeTier, Organelle 
 import { expect, test } from 'vitest';
 
 import { CATEGORY_HUES, HUD_ORDER, NOTICE_BUDGET, wrap } from '../chrome.js';
+import { LEGEND } from '../legend.js';
 import { renderSvg } from '../render.js';
 import {
   CHANGE_HUE,
@@ -616,6 +617,39 @@ test('the chrome frames the world and never covers it', () => {
   expect(drawn(chrome, 'rules')).toContain(`<line x1="${String(layout.width)}" y1="${String(worldY)}"`);
   // The ground is the first thing drawn, and it is flat.
   expect(svg).toMatch(/^<svg [^>]+>\n {2}<rect id="ground" x="0" y="0" width="[\d.]+" height="[\d.]+" fill="#[0-9a-f]{6}"\/>\n {2}<g id="world"/);
+});
+
+test('every map carries the legend inset at the foot of the notice column, clear of the world and of every notice row (D87)', () => {
+  for (const map of [demo(), variant('NOINST'), tiered(), { ...demo(), notices: [] }]) {
+    const svg = renderSvg(map);
+    const layout = map.terrain.layout;
+    expect(layout).toBeDefined();
+    if (layout === undefined) return;
+    const [canvasWidth, canvasHeight] = (/viewBox="0 0 ([\d.]+) ([\d.]+)"/.exec(svg) ?? []).slice(1).map(Number);
+    const chrome = chromeOf(svg);
+    const legend = drawn(chrome, 'legend');
+    const frame = /<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="([\d.]+)"/.exec(legend);
+    const [x = 0, y = 0, width = 0, height = 0] = (frame ?? []).slice(1).map(Number);
+
+    // Clear of the world, inside the canvas, and below the last line of the last notice row.
+    expect(x).toBeGreaterThanOrEqual(layout.width);
+    expect(x + width).toBeLessThanOrEqual(canvasWidth ?? 0);
+    expect(y + height).toBeLessThanOrEqual(canvasHeight ?? 0);
+    const notices = chrome.includes('<g id="notices"/>') ? '' : drawn(chrome, 'notices');
+    const baselines = [...notices.matchAll(/<text x="[\d.]+" y="([\d.]+)"/g)].map(([, at]) => Number(at));
+    expect(y).toBeGreaterThan(Math.max(0, ...baselines));
+
+    // One row per mark in the legend's order, each with its balloon numbered as its place, its words inside the frame.
+    expect([...legend.matchAll(/<g data-mark="([^"]+)">/g)].map(([, id]) => id)).toEqual(LEGEND.map((mark) => mark.id));
+    expect([...legend.matchAll(/<g data-balloon="(\d+)">/g)].map(([, number]) => Number(number))).toEqual(LEGEND.map((_, index) => index + 1));
+    for (const mark of LEGEND) {
+      const escaped = mark.words.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const words = new RegExp(`<text x="([\\d.]+)"[^>]*font-size="([\\d.]+)" fill="#[0-9a-f]{6}">${escaped}</text>`).exec(legend);
+      expect(words, `${mark.id} has its words`).not.toBeNull();
+      const [left = 0, size = 0] = (words ?? []).slice(1).map(Number);
+      expect(left + mark.words.length * size * WIDEST_FACE, `${mark.id}'s words fit the inset`).toBeLessThanOrEqual(x + width);
+    }
+  }
 });
 
 test('wrap breaks at a character budget and cuts a word longer than the budget', () => {

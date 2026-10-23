@@ -22,7 +22,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "build": "tsc --build",
-    "types": "tsc --build"
+    "types": "tsc --build",
+    "practice-map": "tsc --build && node scripts/practice-map.ts"
   },
   "devDependencies": {
     "@ast-grep/cli": "0.45.3",

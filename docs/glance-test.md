@@ -76,10 +76,47 @@ Fail means the encodings change, not the test.
 Every reader in every reading from the second retake on hears this, word for word, before
 the practice map and the first map. It says what each mark measures and never how to weigh
 it. It is [the retake's legend](#the-legend-d66), which stays below as it was read then, with
-each mark added since:
+each mark wave 0 added since:
 
+- **The legend inset** (D87): every map now carries this key in its chrome, at the foot of
+  the notice column, ten marks by number.
 - **The `+` on an added file's path** (D120): added and modified files share the one change
   colour, so the text tells them apart.
+- **A skin lit all round** (D80): a changed file no coverage report names. The Patch cov
+  block counts those files beside its share.
+- **A module's own points and glyph**: a module's outline now carries the points of the
+  rules its files break and the glyph of the clone family it belongs to, as a file does.
+- **Build output on the shore** (D84): committed `dist/`, `build/` and `out/` folders are
+  shore, never modules.
+- **Security on the change** (D83): an advisory counts on the Gate only when the change
+  added or moved the package that brings it.
+
+**The practice map** comes first: [`glance-practice.svg`](./glance-practice.svg), a real map
+that is never scored, with a numbered balloon on one instance of each mark the inset keys.
+`pnpm practice-map` renders it from `fixtures/retake-5` (or `pnpm practice-map <fixture>`
+from another), with that fixture's module outlines cut again by today's core over its own
+positions. retake-5 has no lit arc and no skin lit all round, so balloons 2 and 10 are not
+on it; the inset still keys both.
+
+**The inset**, numbered as the practice map's balloons:
+
+1. **category: set by the change alone**. The coloured block at the top left, below.
+2. **lit arc: changed lines no test ran**. A bright arc on a changed file's skin, clockwise
+   from the top, as long as the share no test ran.
+3. **hairline: changed lines the tests ran**. The dim rest of that skin.
+4. **notch: a mutant that survived**. A bright notch cut into the top of the skin, one per
+   mutant.
+5. **stitches: its tests passed, not run, failed**. Short strokes across the bottom of the
+   skin, one per test file that imports it: bright, grey, or red and broken.
+6. **red bolt: a failing check names a changed file**. With the check's name beside it,
+   over the module that file sits in.
+7. **grey bolt: fails on files the change left alone**. Smaller, with no name, over a
+   module the change did not touch.
+8. **ghost: usually changes with these, and did not**. A dashed grey outline round a file.
+9. **cyan: a changed file; +path in a row: added**. The fill of every file the change added
+   or modified.
+10. **skin lit whole: no coverage report names it**. A changed file's skin lit all the way
+    round: no test is known to have run it.
 
 Each map is one pull request. The grey field is the repository at the PR's base; everything
 lit is the change.
@@ -97,11 +134,13 @@ lit is the change.
 
 **The HUD blocks**, left to right after the category:
 
-- **Patch cov**: the share of the change's executable lines that the tests ran.
+- **Patch cov**: the share of the change's executable lines that the tests ran, and how many
+  changed files no coverage report names.
 - **Mutants**: mutants that survived on the changed lines.
 - **Reach**: how many modules the changed files and the files importing them span.
 - **Size**: lines added and removed, and files changed.
-- **Gate**: failing checks that name a changed file, or `pass` when none do.
+- **Gate**: failing checks that name a changed file, or `pass` when none do. A security
+  advisory counts here only when the change added or moved the package that brings it.
 - **Standing**: failing checks that name only files the change did not touch, with the
   repo-wide ones listed after `global`; absent when there are none.
 - **Health Δ**: not measured in this build.
@@ -113,13 +152,16 @@ A dash where a number would be means the input is missing, never zero.
 **The field**, the repository at the base, drawn in grey:
 
 - The bands, top to bottom, are import depth: entry points at the top, leaves at the bottom.
-  The strip above them is the shore, the non-code files grouped by kind.
+  The strip above them is the shore, the non-code files grouped by kind, committed build
+  output among them.
 - A soft outlined region is a module; a thicker outline is a bigger interface. Each dot
   inside it is a file, sized by its code.
 - A file drawn with points instead of round breaks a complexity or size rule, one point per
-  rule.
+  rule. A module's outline with points holds files that break those rules, one point for
+  each rule broken anywhere inside it.
 - A small glyph beside a file marks duplicated code; the same glyph on several files is one
-  clone family.
+  clone family. The same glyph beside a module's outline marks the module as holding a member
+  of that family.
 - Hatching is churn; stipple is how often the file's commits were bug fixes.
 - A small grey bolt is a failing check that names files in that module the change did not
   touch.
@@ -134,6 +176,8 @@ A dash where a number would be means the input is missing, never zero.
   boundary it crosses, with a lit disc where it crosses a module's interface.
 - The skin round a changed file: a bright arc is its changed lines no test ran, a dim
   hairline is its changed lines the tests ran, and a bright notch is a mutant that survived.
+  A skin lit all the way round is a changed file no coverage report names, so no test is
+  known to have run it.
 - Short strokes across the bottom of that skin are test files that import it: bright passed,
   grey not run, red and broken failed.
 - A red bolt with a check's name: that check fails and names a changed file there.
@@ -147,6 +191,9 @@ mark. Boxes 2 and 3 are secondary, with a thick grey ring. Boxes 4 to 6 are tert
 numbered box alone. A dotted leader joins each row to its target, and each row gives the
 target (with a leading `+` when the change added it), the kind, why, and the thresholds that
 fired.
+
+**The legend inset**, at the foot of the notice column, keys ten of these marks by number, as
+listed above.
 
 Then, for each map: "Merge or hold? And one reason." Ten seconds, then the map goes.
 
