@@ -73,8 +73,8 @@ type Scenario = {
   readonly bands?: Readonly<Record<string, number>>;
   readonly fanIn?: Readonly<Record<string, number>>;
   readonly check?: CheckArtifacts;
-  /** The head files the scan marked as emitting code; none unless the scenario is about an unmeasured file (D80). */
-  readonly emitting?: readonly string[];
+  /** The head files the scan read code throughout; none unless the scenario is about an unmeasured file (D80, D141). */
+  readonly withCode?: readonly string[];
   /** A verdict built by hand, each red slot that names files carrying its split; else the category's own, made from `check`. */
   readonly checks?: Checks;
   readonly history?: readonly FileHistory[];
@@ -187,8 +187,8 @@ function inputsFor(scenario: Scenario): NoticeInputs {
   const groups = identifyGroups(scanned, DEFAULT_CONFIG.groups, []);
   const check = scenario.check ?? NO_CHECK;
   const placed = computeReach({ changed, modules, groups, headEdges, baseEdges });
-  const emitting = new Set(scenario.emitting ?? []);
-  const { evidence, files } = computeEvidence({ changed: placed.changed, modules, groups, headEdges, baseEdges, check, emitting });
+  const code = new Map((scenario.withCode ?? []).map((path) => [path, [{ start: 1, end: 40 }]] as const));
+  const { evidence, files } = computeEvidence({ changed: placed.changed, modules, groups, headEdges, baseEdges, check, code });
   const deps = { deps_added: scenario.deps_added ?? [], deps_moved: scenario.deps_moved ?? [] };
   const checks =
     scenario.checks ??
@@ -491,7 +491,7 @@ test('the rank is the severity scaled by reach, by the evidence gap and by the h
 test('a high-reach file the coverage report never names is uncovered-high-reach, its why saying no test run measured it (D80, D122)', () => {
   const notice = noticesFor({
     changed: [change('src/pm/tools.ts')],
-    emitting: ['src/pm/tools.ts'],
+    withCode: ['src/pm/tools.ts'],
     check: ran({ coverage: [{ path: 'src/pm/util.ts', statements: [{ line: 10, hits: 1 }] }] }),
   })[0];
 
@@ -505,7 +505,7 @@ test('a high-reach file the coverage report never names is uncovered-high-reach,
 
   // On a file whose reach stays in its own cell it is a gap the category counts, and no notice.
   const quiet = noticesFor({
-    emitting: ['src/pm/util.ts'],
+    withCode: ['src/pm/util.ts'],
     check: ran({ coverage: [{ path: 'src/pm/tools.ts', statements: [{ line: 10, hits: 1 }] }] }),
   });
   expect(quiet.map((entry) => entry.kind)).not.toContain('uncovered-high-reach');

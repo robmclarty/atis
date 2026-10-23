@@ -32,7 +32,7 @@ import { existsSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 import { classifyFile, memberOf } from 'core';
-import type { EntryPointLookup, ExportShapes, FileKind, PassedName } from 'core';
+import type { CodeSpan, EntryPointLookup, ExportShapes, FileKind, PassedName } from 'core';
 import ts from 'typescript';
 
 /** A tracked file of the scanned commit. `loc` counts the non-blank lines the scan parsed. */
@@ -45,8 +45,8 @@ export type ScannedFile = {
   readonly shapes: ExportShapes;
   /** The exported names whose type `isolatedDeclarations` flagged as inferred: the ones only the checker can print (D118). */
   readonly inferred: readonly string[];
-  /** Whether the file leaves JavaScript behind once its types are stripped, which is what a coverage report measures (D80). */
-  readonly emits: boolean;
+  /** The lines of each statement that leaves JavaScript behind once its types are stripped, which is what a coverage report measures (D80, D141). */
+  readonly code: readonly CodeSpan[];
 };
 
 /**
@@ -212,8 +212,8 @@ type Star = { readonly specifier: string; readonly shape: string };
 
 type Parsed = {
   readonly loc: number;
-  /** Whether any statement survives type stripping (D80). */
-  readonly emits: boolean;
+  /** The lines of each statement that survives type stripping (D80, D141). */
+  readonly code: readonly CodeSpan[];
   readonly exports: readonly string[];
   /** The shape of each name in `exports`; a name a star passes on is the scan's to add. */
   readonly shapes: ExportShapes;
@@ -226,6 +226,11 @@ type Parsed = {
 
 function lineOf(source: ts.SourceFile, node: ts.Node): number {
   return source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
+}
+
+/** A statement's lines, from its first token to its last, leading comments left out. */
+function spanOf(source: ts.SourceFile, node: ts.Node): CodeSpan {
+  return { start: lineOf(source, node), end: source.getLineAndCharacterOfPosition(node.getEnd()).line + 1 };
 }
 
 function specifierOf(node: ts.Expression | undefined): string | undefined {
@@ -624,7 +629,7 @@ function parseSource(path: string, content: string): Parsed {
   return {
     loc: content.split('\n').filter((line) => line.trim() !== '').length,
     // A declaration file is all types by its name, whatever it holds (D77).
-    emits: !source.isDeclarationFile && source.statements.some(leavesCode),
+    code: source.isDeclarationFile ? [] : source.statements.filter(leavesCode).map((statement) => spanOf(source, statement)),
     exports: names,
     shapes,
     inferred,
@@ -643,12 +648,13 @@ export function parseExportShapes(path: string, content: string): ExportShapes {
 }
 
 /**
- * Whether a TypeScript file emits code a coverage report could measure, read
- * from its source alone (D30, D80): a file of types, re-exports and ambient
- * declarations emits none, so a report that never names it leaves no gap.
+ * The lines of each statement in a TypeScript file that leaves code a
+ * coverage report could measure, read from its source alone (D30, D80,
+ * D141): types, imports, `export … from` and ambient declarations leave none,
+ * so a change among them leaves no gap where a report never names the file.
  */
-export function parseEmitsCode(path: string, content: string): boolean {
-  return parseSource(path, content).emits;
+export function parseCodeSpans(path: string, content: string): readonly CodeSpan[] {
+  return parseSource(path, content).code;
 }
 
 /**
@@ -1159,7 +1165,7 @@ export function scanImports(dir: string, options: ScanOptions = {}): Scan {
       exports: names,
       shapes: withStars(names, parsed.get(path)?.shapes ?? {}, stars.get(path) ?? [], exports),
       inferred: parsed.get(path)?.inferred ?? [],
-      emits: parsed.get(path)?.emits ?? false,
+      code: parsed.get(path)?.code ?? [],
     };
   });
   const fallow = fallowEntryPoints(root, options.repo ?? dir);

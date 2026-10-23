@@ -500,8 +500,8 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
   const check = trusted.check;
   const graphs = { modules, groups, headEdges: head.edges, baseEdges: base.edges } as const;
   const reach = computeReach({ ...graphs, changed: inputs.diff });
-  const emitting = new Set(head.files.filter((file) => file.emits === true).map((file) => file.path));
-  const evidence = computeEvidence({ ...graphs, changed: reach.changed, check, emitting });
+  const code = new Map(head.files.flatMap((file) => (file.code === undefined ? [] : [[file.path, file.code] as const])));
+  const evidence = computeEvidence({ ...graphs, changed: reach.changed, check, code });
   const deps_added = [...inputs.deps_added].toSorted((a, b) => byPath(a.manifest, b.manifest) || byPath(a.name, b.name));
   const deps_moved = [...(inputs.deps_moved ?? [])].toSorted((a, b) => byPath(a.manifest, b.manifest) || byPath(a.name, b.name));
   const checks = computeCategory({

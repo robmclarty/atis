@@ -7,7 +7,7 @@ import type { MapJson } from 'core';
 import { afterAll, beforeAll, expect, test, vi } from 'vitest';
 
 import {
-  parseEmitsCode,
+  parseCodeSpans,
   parseExportShapes,
   parseFallowEntryPoints,
   parseManifestWorkspaces,
@@ -371,17 +371,22 @@ test('every tracked file is listed, classified and sorted, whether it is parsed 
     ['pnpm-workspace.yaml', 'other'],
   ]);
   expect(fileIn(scan, 'libs/shared/src/greet.ts').loc).toBe(4);
-  expect(fileIn(scan, 'README.md')).toEqual({ path: 'README.md', loc: 0, kind: 'other', exports: [], shapes: {}, inferred: [], emits: false });
+  expect(fileIn(scan, 'README.md')).toEqual({ path: 'README.md', loc: 0, kind: 'other', exports: [], shapes: {}, inferred: [], code: [] });
 });
 
-test('a file emits code only when a statement survives type stripping, so a barrel of re-exports emits none (D80)', () => {
-  expect(fileIn(scan, 'apps/cli/src/types.ts').emits).toBe(true);
-  expect(fileIn(scan, 'apps/cli/src/cli.ts').emits).toBe(true);
-  expect(fileIn(scan, 'libs/shared/src/index.ts').emits).toBe(false);
+test('a file holds code only where a statement survives type stripping, so a barrel of re-exports holds none (D80, D141)', () => {
+  // Each span runs from a statement's first line to its last: a type above a constant leaves the constant's line alone.
+  expect(fileIn(scan, 'apps/cli/src/types.ts').code).toEqual([{ start: 3, end: 3 }]);
+  expect(fileIn(scan, 'apps/cli/src/cli.ts').code).toEqual([{ start: 3, end: 3 }]);
+  expect(fileIn(scan, 'libs/shared/src/greet.ts').code).toEqual([
+    { start: 1, end: 3 },
+    { start: 5, end: 5 },
+  ]);
+  expect(fileIn(scan, 'libs/shared/src/index.ts').code).toEqual([]);
 
   // Types, interfaces, imports, re-exports, ambient declarations and overload signatures leave nothing.
   expect(
-    parseEmitsCode(
+    parseCodeSpans(
       'types.ts',
       `import type { A } from './a.js';
 import { B } from './b.js';
@@ -397,24 +402,68 @@ export namespace Shapes { export type Point = { x: number } }
 import type Alias = Shapes.Point;
 `,
     ),
-  ).toBe(false);
+  ).toEqual([]);
   // A declaration file is all types, whatever it holds.
-  expect(parseEmitsCode('ambient.d.ts', `export const VERSION: string;
-`)).toBe(false);
+  expect(parseCodeSpans('ambient.d.ts', `export const VERSION: string;
+`)).toEqual([]);
 
-  // Anything a test could run emits: a value, a body, an enum, a default, a namespace holding a value.
-  expect(parseEmitsCode('value.ts', `export const ONE = 1;
-`)).toBe(true);
-  expect(parseEmitsCode('fn.ts', `export function f(a: string): string;
-export function f(a: unknown) { return a; }
-`)).toBe(true);
-  expect(parseEmitsCode('enum.ts', `export enum Mode { A, B }
-`)).toBe(true);
-  expect(parseEmitsCode('default.ts', `import { B } from './b.js';
+  // Anything a test could run holds code: a value, a body, an enum, a default, a namespace holding a value.
+  expect(parseCodeSpans('value.ts', `export const ONE = 1;
+`)).toEqual([{ start: 1, end: 1 }]);
+  // The overload signature on line 1 leaves nothing; the body on lines 2 to 4 does.
+  expect(parseCodeSpans('fn.ts', `export function f(a: string): string;
+export function f(a: unknown) {
+  return a;
+}
+`)).toEqual([{ start: 2, end: 4 }]);
+  expect(parseCodeSpans('enum.ts', `export enum Mode { A, B }
+`)).toEqual([{ start: 1, end: 1 }]);
+  expect(parseCodeSpans('default.ts', `import { B } from './b.js';
 export default B;
-`)).toBe(true);
-  expect(parseEmitsCode('ns.ts', `export namespace Outer.Inner { export const deep = 1; }
-`)).toBe(true);
+`)).toEqual([{ start: 2, end: 2 }]);
+  expect(parseCodeSpans('ns.ts', `export namespace Outer.Inner { export const deep = 1; }
+`)).toEqual([{ start: 1, end: 1 }]);
+});
+
+test("a barrel's re-exports hold no code beside its constant, and a function's lines start below its doc comment (D141)", () => {
+  // The two sources core's evidence tests read their spans from.
+  expect(
+    parseCodeSpans(
+      'index.ts',
+      `export { resolveTool } from './tools.js';
+export { listSlots } from './slots.js';
+export type { Slot } from './slots.js';
+
+export const VERSION = '1.13.1';
+`,
+    ),
+  ).toEqual([{ start: 5, end: 5 }]);
+  expect(
+    parseCodeSpans(
+      'util.ts',
+      `import { listSlots } from './slots.js';
+
+export function pick(name: string): string {
+  const slot = listSlots().find((entry) => entry === name);
+  return slot ?? name;
+}
+`,
+    ),
+  ).toEqual([{ start: 3, end: 6 }]);
+
+  // A doc comment is no part of the statement it documents, so an edit to it alone touches no code.
+  expect(
+    parseCodeSpans(
+      'doc.ts',
+      `/**
+ * Picks a slot.
+ */
+export function pick(name: string): string {
+  return name;
+}
+`,
+    ),
+  ).toEqual([{ start: 4, end: 6 }]);
 });
 
 test('exports are the names a file declares, with `export * from` passing the target on', () => {

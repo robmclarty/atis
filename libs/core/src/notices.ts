@@ -18,7 +18,7 @@
 
 import type { Config, NoticeConfig, NoticeKind } from './config.js';
 import { broughtAdvisories, healthSpan, placeOnChange, readRedSplit, spanOnChange, structuralPlaces, unusedExportPlaces } from './evidence.js';
-import type { Advisory, BroughtPackage, CheckArtifacts, FileEvidence, RedSplit } from './evidence.js';
+import type { Advisory, BroughtPackage, CheckArtifacts, CodeSpan, FileEvidence, RedSplit } from './evidence.js';
 import { OTHER_GROUP } from './groups.js';
 import type { FileHistory } from './history.js';
 import { classifyFile } from './modules.js';
@@ -95,11 +95,12 @@ export type ExportShapes = Readonly<Record<string, string | null>>;
  * A scanned file with the shape beside each exported name, which the
  * interface-change candidate compares across the two scans (D76). `shapes` is
  * absent where a scan did not read them, which compares like `null` (C2).
- * `emits` says whether the file leaves JavaScript behind once its types are
- * stripped, which is what a coverage report measures (D80); absent where a
- * scan did not read it, a file is never called unmeasured on a guess.
+ * `code` holds the lines of each statement that leaves JavaScript behind once
+ * its types are stripped, which is what a coverage report measures (D80,
+ * D141); absent where a scan did not read it, a file is never called
+ * unmeasured on a guess.
  */
-export type ScanFile = ScannedFile & { readonly shapes?: ExportShapes; readonly emits?: boolean };
+export type ScanFile = ScannedFile & { readonly shapes?: ExportShapes; readonly code?: readonly CodeSpan[] };
 
 /**
  * A workspace member as the public-name walk reads it (D75). Both fields are

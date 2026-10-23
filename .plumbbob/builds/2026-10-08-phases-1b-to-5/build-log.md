@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 90 — fix(core): rank a health or dead red by the finding behind it
+**Current step:** 91 — fix(core): read only changed code lines as unmeasured
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -42,7 +42,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 17. chore(fixtures): generate maps for the corpus's tuning half
 - ☑ 18. chore(glance): score notice precision on the tuning half
 - ☑ 89. fix(core): hold a dead finding to the lines the change touched
-- ☐ 90. fix(core): rank a health or dead red by the finding behind it
+- ☑ 90. fix(core): rank a health or dead red by the finding behind it
 - ☐ 91. fix(core): read only changed code lines as unmeasured
 - ☐ 92. fix(core): tell a mutant no test reached from one that survived
 - ☐ 19. chore(fixtures): select and generate the corpus's held-out half
@@ -434,3 +434,4 @@ folder, so it rides the branch into the PR.)*
   Nine of the 18 top-three rows are a `health` or `dead` red on a changed file, and none bears on any of the six findings. They pushed `corpus-1`'s hit down to notice 3. Together with an unmeasured barrel, they kept `corpus-4`'s mutants out of all six notices. This is the retake's first encoding coming back, after D73 narrowed it to findings on the changed lines. It is where the refine should start.
 
 - 2026-10-23 — step 89 checkpointed · 82ef67dbd — fix(core): hold a dead finding to the lines the change touched (15m)
+- 2026-10-23 — step 90 checkpointed · 7c7f63f4f — fix(core): rank a health or dead red by the finding behind it (1 drift, 5m)

@@ -242,8 +242,13 @@ export type EvidenceInputs = Omit<ReachInputs, 'changed'> & {
   /** The placed changed set `computeReach` returned: keyed by head path, each on one cell or one group (D40, D48). */
   readonly changed: readonly ChangedFile[];
   readonly check: CheckArtifacts;
-  /** The head files the scan marked as emitting code: the only ones a coverage report can leave unmeasured (D80). */
-  readonly emitting: ReadonlySet<string>;
+  /**
+   * Each head file's code spans, as the scan read them: a changed file a
+   * report omits is unmeasured only where one of its hunks meets one (D80,
+   * D141). A file the scan did not read is absent, and never unmeasured on a
+   * guess (C2).
+   */
+  readonly code: ReadonlyMap<string, readonly CodeSpan[]>;
 };
 
 /** What the evidence knows about one changed file; §5.3 reads it for the category and §5.4 for the notices. */
@@ -252,9 +257,10 @@ export type FileEvidence = {
   /** Absent when the coverage report never names the file: unmeasured is not covered (C2). */
   readonly coverage?: PatchCoverage;
   /**
-   * A changed source file that emits code, which the coverage report, though
-   * it exists, never names: no test run is known to have measured it, so it
-   * is a gap of unknown size rather than a closed skin (D80, D122).
+   * A changed source file whose changed lines touch code, which the coverage
+   * report, though it exists, never names: no test run is known to have
+   * measured it, so it is a gap of unknown size rather than a closed skin
+   * (D80, D122, D141).
    */
   readonly unmeasured: boolean;
   /** Survived and no-coverage mutants on this file's changed lines; empty when the channel is muted. */
@@ -406,17 +412,21 @@ export function trustCoverage(check: CheckArtifacts, sources: ReadonlySet<string
 
 /**
  * Whether a report that exists leaves this changed file unmeasured (D80): a
- * terrain file that still stands at head and emits code, and that the report
- * never names. A deleted file has nothing left to measure, a test or a shore
- * file is not terrain, and a file of types emits nothing a test could run.
+ * terrain file that still stands at head, one of whose hunks meets a
+ * statement that leaves code, and that the report never names. A deleted file
+ * has nothing left to measure, and a test or a shore file is not terrain. A
+ * change whose lines are imports, `export … from`, types or declarations
+ * wrote nothing a test could run, so it leaves no gap, as a file of types
+ * never does (D141).
  */
 function isUnmeasured(
   file: ChangedFile,
   report: ReadonlyMap<string, CoverageFile> | undefined,
-  emitting: ReadonlySet<string>,
+  code: ReadonlyMap<string, readonly CodeSpan[]>,
 ): boolean {
   if (report === undefined || report.has(file.path)) return false;
-  return file.kind !== 'deleted' && file.cell !== undefined && emitting.has(file.path);
+  if (file.kind === 'deleted' || file.cell === undefined) return false;
+  return (code.get(file.path) ?? []).some((span) => file.hunks.some((hunk) => meets(span, hunk)));
 }
 
 /**
@@ -441,7 +451,7 @@ export function computeEvidence(inputs: EvidenceInputs): EvidenceResult {
       return {
         path: file.path,
         ...(coverage === undefined ? {} : { coverage: patchCoverage(file.path, changedLines, coverage) }),
-        unmeasured: isUnmeasured(file, coverageOf, inputs.emitting),
+        unmeasured: isUnmeasured(file, coverageOf, inputs.code),
         mutants: mutation === undefined ? [] : liveMutants(file.path, changedLines, mutation),
         cells_reached: cellsReached(file, inputs),
         escaped_interface: escapedInterface(file, cells, inputs.headEdges),
@@ -500,8 +510,11 @@ export type RedSplit = {
   readonly standing: readonly RedSlot[];
 };
 
+/** The head lines, first to last, of one statement that leaves JavaScript behind once its types are stripped, as the scan reads them (D141). */
+export type CodeSpan = { readonly start: number; readonly end: number };
+
 /** A finding's lines at head, first to last: a `health` function, one `dupes` clone instance (D73), or a `dead` finding's one line (D140). */
-export type Span = { readonly path: string; readonly start: number; readonly end: number };
+export type Span = CodeSpan & { readonly path: string };
 
 /**
  * Where one finding sits for the line rule: the spans of the lines it stands
@@ -700,12 +713,12 @@ function findingPlaces(check: RanCheck): ReadonlyMap<string, readonly FindingPla
 }
 
 /**
- * Whether one head-side hunk meets a finding's lines. A hunk that wrote
- * lines meets the span it overlaps. A pure deletion wrote none and sits
- * between head lines `start` and `start + 1`, so it meets the span that holds
- * both of them: a deletion inside the function or the clone (D73).
+ * Whether one head-side hunk meets a finding's or a statement's lines. A hunk
+ * that wrote lines meets the span it overlaps. A pure deletion wrote none and
+ * sits between head lines `start` and `start + 1`, so it meets the span that
+ * holds both of them: a deletion inside the function or the clone (D73, D141).
  */
-function meets(span: Span, hunk: Hunk): boolean {
+function meets(span: CodeSpan, hunk: Hunk): boolean {
   if (hunk.count === 0) return span.start <= hunk.start && hunk.start < span.end;
   return hunk.start <= span.end && span.start < hunk.start + hunk.count;
 }
