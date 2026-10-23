@@ -2,26 +2,60 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { assertMap } from 'core';
 import type { MapJson } from 'core';
-import { afterAll, beforeAll, expect, test } from 'vitest';
+import { afterAll, expect, test } from 'vitest';
 
 import { run } from '../run.js';
 
 /**
- * The command end to end, run the way a user runs it: the built `bin` in a
- * child process, against this repository and against temp copies of it made
- * with `git clone`, so each one carries the history the CLI reads and none of
- * the ignored files (a clone has no `.check/`, which is what makes NOINST the
+ * The command end to end, run the way a user runs it: the `bin` in a child
+ * process, against this repository and against temp copies of it made with
+ * `git clone`, so each one carries the history the CLI reads and none of the
+ * ignored files (a clone has no `.check/`, which is what makes NOINST the
  * honest verdict there).
+ *
+ * The child runs the bin's TypeScript source, never a build. The gate's
+ * `types` slot runs `tsc --build` beside this suite, rewriting `dist/` under
+ * `apps/atis`, `libs/core` and `libs/svg` while the tests run, so a child
+ * that executed the built `bin`, or a built `core` or `svg` it imports, could
+ * load a half-written file and fail for no reason of its own. Node strips the
+ * types itself; `--conditions=source` resolves the workspace packages to
+ * their `src/index.ts` (D20), and the hook below maps the `.js` specifiers
+ * the sources import by to the `.ts` files beside them, and refuses any file
+ * under a workspace `dist/`, so the race cannot creep back in.
  */
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PACKAGE = join(HERE, '..', '..');
 const REPO = join(PACKAGE, '..', '..');
-const CLI = join(PACKAGE, 'dist', 'cli.js');
+const CLI = join(PACKAGE, 'src', 'cli.ts');
 const MINUTE = 60_000;
+
+const HOOK = `
+import { registerHooks } from 'node:module';
+const workspace = ${JSON.stringify(pathToFileURL(REPO).href)} + '/';
+registerHooks({
+  resolve(specifier, context, nextResolve) {
+    const fromSource = context.parentURL?.endsWith('.ts') === true;
+    const relativeJs = specifier.startsWith('.') && specifier.endsWith('.js');
+    const resolved = nextResolve(fromSource && relativeJs ? specifier.slice(0, -3) + '.ts' : specifier, context);
+    const inside = resolved.url.startsWith(workspace) ? resolved.url.slice(workspace.length) : '';
+    if (/(^|\\/)dist\\//.test(inside) && !inside.includes('node_modules/')) {
+      throw new Error('the CLI test loaded a build: ' + resolved.url);
+    }
+    return resolved;
+  },
+});
+`;
+
+const NODE_FLAGS = [
+  '--conditions=source',
+  '--disable-warning=ExperimentalWarning',
+  '--import',
+  `data:text/javascript,${encodeURIComponent(HOOK)}`,
+];
 
 const workspaces: string[] = [];
 
@@ -35,24 +69,14 @@ afterAll(() => {
   for (const dir of workspaces) rmSync(dir, { recursive: true, force: true });
 });
 
-// The gate builds the `bin` in its `types` slot; a bare `vitest run` on a tree
-// that has never been built builds it here instead. The build is allowed to
-// fail: the `types` slot may be building the same graph in parallel, and what
-// this needs is only that the `bin` is there by the time the tests run.
-beforeAll(() => {
-  if (existsSync(CLI)) return;
-  try {
-    execFileSync('pnpm', ['exec', 'tsc', '--build'], { cwd: REPO, stdio: 'ignore' });
-  } catch {
-    /* the check below is the one that matters */
-  }
-  if (!existsSync(CLI)) throw new Error(`the bin is not built: ${CLI}`);
-}, 2 * MINUTE);
-
 type Run = { readonly status: number; readonly stdout: string; readonly stderr: string };
 
 function atis(args: readonly string[]): Run {
-  const result = spawnSync(process.execPath, [CLI, ...args], { cwd: REPO, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  const result = spawnSync(process.execPath, [...NODE_FLAGS, CLI, ...args], {
+    cwd: REPO,
+    encoding: 'utf8',
+    maxBuffer: 64 * 1024 * 1024,
+  });
   return { status: result.status ?? -1, stdout: result.stdout, stderr: result.stderr };
 }
 
@@ -67,7 +91,7 @@ function copyOfThisRepo(prefix: string): string {
   return copy;
 }
 
-test('the built command writes a map of this repository that passes assertMap', () => {
+test('the command writes a map of this repository that passes assertMap', () => {
   const out = join(temp('here'), 'map.json');
   const result = atis(['--repo', REPO, '--base', 'HEAD~1', '--out', out, '--verbose']);
   expect(result.status).toBe(0);
