@@ -376,15 +376,26 @@ test('two runs over one input produce one ranking, and the input order cannot ch
 });
 
 /**
- * Two cycles of a fallow 3.35 run, captured and trimmed as `evidence.test.ts`'s
- * are: `a.ts` and `b.ts` import each other on lines 3 and 4, and a barrel and
- * `one.ts` re-export each other, whose imports fallow writes at 1:0.
+ * Findings of a fallow 3.35 run, captured and trimmed as `evidence.test.ts`'s
+ * are: `a.ts` and `b.ts` import each other on lines 3 and 4, a barrel and
+ * `one.ts` re-export each other, whose imports fallow writes at 1:0, and
+ * `unused.ts` exports `neverRead` on line 7.
  */
-const [PAIR_CYCLE, BARREL_CYCLE] = JSON.parse(`[
-  {"files": ["libs/core/src/a.ts", "libs/core/src/b.ts"], "length": 2, "line": 3, "col": 9, "edges": [{"path": "libs/core/src/a.ts", "line": 3, "col": 9}, {"path": "libs/core/src/b.ts", "line": 4, "col": 9}], "effective_severity": "error"},
-  {"files": ["libs/core/src/barrel/index.ts", "libs/core/src/barrel/one.ts"], "length": 2, "line": 1, "col": 0, "edges": [{"path": "libs/core/src/barrel/index.ts", "line": 1, "col": 0}, {"path": "libs/core/src/barrel/one.ts", "line": 1, "col": 0}], "effective_severity": "error"}
-]`) as readonly unknown[];
+const CAPTURED = JSON.parse(`{
+  "circular_dependencies": [
+    {"files": ["libs/core/src/a.ts", "libs/core/src/b.ts"], "length": 2, "line": 3, "col": 9, "edges": [{"path": "libs/core/src/a.ts", "line": 3, "col": 9}, {"path": "libs/core/src/b.ts", "line": 4, "col": 9}], "effective_severity": "error"},
+    {"files": ["libs/core/src/barrel/index.ts", "libs/core/src/barrel/one.ts"], "length": 2, "line": 1, "col": 0, "edges": [{"path": "libs/core/src/barrel/index.ts", "line": 1, "col": 0}, {"path": "libs/core/src/barrel/one.ts", "line": 1, "col": 0}], "effective_severity": "error"}
+  ],
+  "re_export_cycles": [],
+  "boundary_violations": [],
+  "unused_exports": [
+    {"path": "libs/core/src/unused.ts", "export_name": "neverRead", "is_type_only": false, "line": 7, "col": 13, "span_start": 91, "is_re_export": false, "effective_severity": "error"}
+  ]
+}`) as Dead;
+const [PAIR_CYCLE, BARREL_CYCLE] = CAPTURED.circular_dependencies;
+const [NEVER_READ] = CAPTURED.unused_exports;
 
+const UNUSED_FILE = 'libs/core/src/unused.ts';
 const CYCLE_A = 'libs/core/src/a.ts';
 const CYCLE_B = 'libs/core/src/b.ts';
 const CYCLE_BARREL = 'libs/core/src/barrel/index.ts';
@@ -500,14 +511,72 @@ test('a high-reach file the coverage report never names is uncovered-high-reach,
   expect(quiet.map((entry) => entry.kind)).not.toContain('uncovered-high-reach');
 });
 
-test('a red slot names its findings itself, so the same slot does not spend a second notice on them', () => {
-  const findings = { ...NO_HEALTH, findings: [UTIL_BREACH] };
-  const quiet = noticesFor({ check: ran({ health: findings }) });
-  const loud = noticesFor({ check: ran({ health: findings }), checks: verdict([red('health', ['src/pm/util.ts'], ['src/pm/util.ts'])]) });
+/** A red slot as the summary records it, beside the green `test`. */
+function redSlots(...names: readonly string[]): readonly CheckSummarySlot[] {
+  return [...GREEN, ...names.map((name) => ({ name, ok: false, skipped: false }))];
+}
 
-  expect(kindsOf(quiet)).toEqual(['threshold-breached']);
-  // The red slot says it louder and points at the same file; the threshold notice does not repeat it.
-  expect(kindsOf(loud)).toEqual(['red-check-slot']);
+test('a health red on the change ranks as the threshold notice it would repeat, never as a row at the gate\'s 10 (D140)', () => {
+  const findings = { ...NO_HEALTH, findings: [UTIL_BREACH] };
+  const green = noticesFor({ check: ran({ health: findings }) });
+  const redHealth = noticesFor({ check: ran({ health: findings }, redSlots('health')) });
+
+  expect(rowsOf(green)).toEqual([['threshold-breached', 'src/pm/util.ts']]);
+  // Red, the slot is on the change through `util.ts`, and the threshold notice speaks for it at the severity §5.4 gives it.
+  expect(redHealth).toEqual(green);
+  expect(redHealth[0]?.thresholds['severity']).toBe(5);
+});
+
+test('a file red in health and lint keeps one row, naming lint alone, beside its threshold notice (D140)', () => {
+  const notices = noticesFor({
+    check: ran(
+      { health: { ...NO_HEALTH, findings: [UTIL_BREACH] }, lint: { diagnostics: [{ path: 'src/pm/util.ts', severity: 'error' }] } },
+      redSlots('health', 'lint'),
+    ),
+  });
+
+  expect(rowsOf(notices)).toEqual([
+    ['red-check-slot', 'src/pm/util.ts'],
+    ['threshold-breached', 'src/pm/util.ts'],
+  ]);
+  expect(notices[0]?.why).toBe('the `lint` check is red on this changed file');
+  expect(notices[0]?.inputs['slots']).toBe(1);
+});
+
+test('a dead red through a cycle ranks as cycle-or-boundary, and one through an unused export keeps its row at 10 (D140)', () => {
+  // `b.ts`'s import of `a.ts`, on line 4, is the line the change wrote.
+  const cycle = noticesFor({
+    ...CYCLES,
+    changed: [change(CYCLE_B, 1, 1, [{ start: 4, count: 1 }])],
+    check: ran({ dead: { ...NO_DEAD, circular_dependencies: [PAIR_CYCLE] } }, redSlots('dead')),
+  });
+  expect(rowsOf(cycle)).toEqual([['cycle-or-boundary', CYCLE_B]]);
+  expect(cycle[0]?.thresholds['severity']).toBe(9);
+
+  // `neverRead`, on line 7, is the line the change wrote; §5.4 gives an unused export no kind of its own.
+  const unused = noticesFor({
+    files: [UNUSED_FILE],
+    changed: [change(UNUSED_FILE, 1, 1, [{ start: 7, count: 1 }])],
+    check: ran({ dead: { ...NO_DEAD, unused_exports: [NEVER_READ] } }, redSlots('dead')),
+  });
+  expect(rowsOf(unused)).toEqual([['red-check-slot', UNUSED_FILE]]);
+  expect(unused[0]?.why).toBe('the `dead` check is red on this changed file');
+  expect(unused[0]?.thresholds['severity']).toBe(10);
+
+  // An unused export on the change beside the cycle on one file: the cycle's notice cannot speak for it, so the row stays too.
+  const both = noticesFor({
+    ...CYCLES,
+    changed: [change(CYCLE_B, 1, 1, [{ start: 4, count: 3 }])],
+    check: ran(
+      { dead: { ...NO_DEAD, circular_dependencies: [PAIR_CYCLE], unused_exports: [{ path: CYCLE_B, export_name: 'beta', line: 6, col: 16 }] } },
+      redSlots('dead'),
+    ),
+  });
+  // At one file's factors, the gate's 10 weighs above the cycle's 9.
+  expect(rowsOf(both)).toEqual([
+    ['red-check-slot', CYCLE_B],
+    ['cycle-or-boundary', CYCLE_B],
+  ]);
 });
 
 test('a global red slot yields no notice, and no longer speaks for the finding its slot would repeat (D67)', () => {
@@ -662,8 +731,8 @@ test('a health red whose finding no hunk meets is standing, and no threshold-bre
   const deleted = noticesFor({ changed: [change('src/pm/util.ts', 0, 2, [{ start: 35, count: 0 }])], check: health(untouched, true) });
   expect(kindsOf(deleted)).toEqual(['threshold-breached']);
   expect(deleted[0]?.why).toBe(`cyclomatic over threshold in a function this change touched; ${HEAD_ONLY}`);
-  // Where the change's hunk falls inside the function, the red is the change's: one row, which speaks for the threshold.
-  expect(kindsOf(noticesFor({ check: health(UTIL_BREACH, false) }))).toEqual(['red-check-slot']);
+  // Where the change's hunk falls inside the function, the red is the change's, and the threshold notice speaks for it (D140).
+  expect(kindsOf(noticesFor({ check: health(UTIL_BREACH, false) }))).toEqual(['threshold-breached']);
 });
 
 /** The failing test apollo-client #12633 edited itself: a test file, so in no cell and reaching none (D4). */
@@ -710,6 +779,18 @@ test("apollo-client #12633's failing test takes the primary slot over every heav
   expect(behind.every((notice) => notice.weight > 45.6)).toBe(true);
   const weights = behind.map((notice) => notice.weight);
   expect(weights).toEqual(weights.toSorted((a, b) => b - a));
+});
+
+test("apollo's failing test still leads once its health red ranks as the threshold notice behind it (D74, D140)", () => {
+  // The function over the threshold in `tools.ts` spans the change's hunk at lines 10 to 13.
+  const notices = noticesFor({
+    ...APOLLO,
+    check: ran({ health: { ...NO_HEALTH, findings: [{ path: 'src/pm/tools.ts', exceeded: 'crap', line: 8, line_count: 20 }] } }),
+  });
+
+  expect(notices[0]).toMatchObject({ kind: 'red-check-slot', target: FAILING, tier: 'primary' });
+  expect(rowsOf(notices)).toContainEqual(['threshold-breached', 'src/pm/tools.ts']);
+  expect(rowsOf(notices)).not.toContainEqual(['red-check-slot', 'src/pm/tools.ts']);
 });
 
 test('a second failing test on the change keeps the place its weight gives it (D74)', () => {

@@ -17,7 +17,7 @@
  */
 
 import type { Config, NoticeConfig, NoticeKind } from './config.js';
-import { broughtAdvisories, healthSpan, placeOnChange, readRedSplit, spanOnChange, structuralPlaces } from './evidence.js';
+import { broughtAdvisories, healthSpan, placeOnChange, readRedSplit, spanOnChange, structuralPlaces, unusedExportPlaces } from './evidence.js';
 import type { Advisory, BroughtPackage, CheckArtifacts, FileEvidence, RedSplit } from './evidence.js';
 import { OTHER_GROUP } from './groups.js';
 import type { FileHistory } from './history.js';
@@ -32,6 +32,7 @@ import type {
   DepMoved,
   Ghost,
   Group,
+  Hunk,
   Notice,
   NoticeTier,
 } from './schema.js';
@@ -60,6 +61,9 @@ const SEVERITIES = ['critical', 'high', 'moderate', 'low', 'info'];
 
 /** The slot whose red on the change takes the first notice, whatever it weighs (D74). */
 const TEST_SLOT = 'test';
+
+/** The slot whose cycles and boundary violations rank as their own kind, and whose unused exports keep a red row (D140). */
+const DEAD_SLOT = 'dead';
 
 /** How many names of each move an interface-change `why` spells out before it counts the rest. */
 const NAMED = 3;
@@ -164,9 +168,10 @@ type Candidate = {
   readonly inputs: Readonly<Record<string, number>>;
   readonly thresholds: Readonly<Record<string, number>>;
   /**
-   * The check slot whose own artifact produced this candidate. A red slot on
-   * the change already names its findings there, so a candidate that slot
-   * would only repeat is dropped rather than spending a second of the six (C7).
+   * The check slot whose own artifact produced this candidate. The candidate
+   * names what that slot's red on its file would only repeat at a severity
+   * §5.4 never gave it, so the slot spends no red row there, and neither of
+   * them takes a second of the six (C7, D140).
    */
   readonly slot?: string;
 };
@@ -255,9 +260,25 @@ function factorsFor(
   };
 }
 
-/** The changed files each slot on the change already names on the map, keyed by slot (D67). */
-function redTargets(red: RedSplit): ReadonlyMap<string, ReadonlySet<string>> {
-  return new Map(red.change.map((slot) => [slot.name, new Set(slot.change)] as const));
+/**
+ * The changed files where a candidate of a red slot's own kind speaks for all
+ * of it, by slot (D140). `health` is spoken for wherever a threshold notice
+ * stands, since the two read one line rule. `dead` is spoken for wherever a
+ * cycle or boundary notice stands and no unused export is on the change
+ * there, since §5.4 gives an unused export no kind of its own.
+ */
+function spokenFor(
+  own: readonly Candidate[],
+  check: RanCheck | undefined,
+  hunks: ReadonlyMap<string, readonly Hunk[]>,
+): ReadonlyMap<string, ReadonlySet<string>> {
+  const unused = new Set(unusedExportPlaces(check?.dead).flatMap((place) => placeOnChange(place, hunks)));
+  const spoken = new Map<string, Set<string>>();
+  for (const { slot, target } of own) {
+    if (slot === undefined || (slot === DEAD_SLOT && unused.has(target))) continue;
+    spoken.set(slot, (spoken.get(slot) ?? new Set<string>()).add(target));
+  }
+  return spoken;
 }
 
 /** `a`, `a and b`, `a, b and c`: clauses run together the way a sentence lists them. */
@@ -275,16 +296,21 @@ function listed(names: readonly string[]): string {
  * The gate saying no to this change: one candidate per changed file the
  * change's red names, however many slots name it, its `why` listing them all.
  * Standing red, on untouched files or the whole repository, is drawn and
- * counted but never spends the budget (D67). A red `security` is the one slot
- * that spends no row of its own: the manifest it is red on already carries a
- * notice per package the change brought, which names what the row would not
- * (D83).
+ * counted but never spends the budget (D67). A slot spends no row on a file
+ * where a candidate of its own kind speaks for it: `health` ranks there as
+ * `threshold-breached`, and `dead`'s cycles and boundary violations as
+ * `cycle-or-boundary`, each at the severity §5.4 gives it rather than the
+ * gate's 10 (D140). A red `security` spends no row at all: the manifest it is
+ * red on already carries a notice per package the change brought, which
+ * names what the row would not (D83).
  */
-function redSlotCandidates(red: RedSplit): readonly Candidate[] {
+function redSlotCandidates(red: RedSplit, spoken: ReadonlyMap<string, ReadonlySet<string>>): readonly Candidate[] {
   const slotsOn = new Map<string, string[]>();
   for (const slot of red.change) {
     if (slot.name === SECURITY_SLOT) continue;
-    for (const path of slot.change) slotsOn.set(path, [...(slotsOn.get(path) ?? []), slot.name]);
+    for (const path of slot.change) {
+      if (spoken.get(slot.name)?.has(path) !== true) slotsOn.set(path, [...(slotsOn.get(path) ?? []), slot.name]);
+    }
   }
   return [...slotsOn].map(([path, names]) => ({
     kind: 'red-check-slot',
@@ -314,8 +340,7 @@ function structuralWhy({ lined, unlined }: StructuralCount): string {
  * change never touched is standing state, though it runs through a changed
  * file (D140).
  */
-function structuralCandidates(check: RanCheck, changed: ReadonlyMap<string, ChangedFile>): readonly Candidate[] {
-  const hunks = new Map([...changed].map(([path, file]) => [path, file.hunks] as const));
+function structuralCandidates(check: RanCheck, hunks: ReadonlyMap<string, readonly Hunk[]>): readonly Candidate[] {
   const counts = new Map<string, StructuralCount>();
   for (const place of structuralPlaces(check.dead)) {
     for (const path of placeOnChange(place, hunks)) {
@@ -329,7 +354,7 @@ function structuralCandidates(check: RanCheck, changed: ReadonlyMap<string, Chan
     why: `${structuralWhy(count)}; ${HEAD_ONLY}`,
     inputs: { findings: count.lined + count.unlined },
     thresholds: {},
-    slot: 'dead',
+    slot: DEAD_SLOT,
   }));
 }
 
@@ -339,8 +364,7 @@ function structuralCandidates(check: RanCheck, changed: ReadonlyMap<string, Chan
  * D23, D73): a finding the change never touched is standing state, and a
  * green slot does not bring it back as a row of its own.
  */
-function thresholdCandidates(check: RanCheck, changed: ReadonlyMap<string, ChangedFile>): readonly Candidate[] {
-  const hunks = new Map([...changed].map(([path, file]) => [path, file.hunks] as const));
+function thresholdCandidates(check: RanCheck, hunks: ReadonlyMap<string, readonly Hunk[]>): readonly Candidate[] {
   const breached = new Map<string, string[]>();
   for (const finding of check.health?.findings ?? []) {
     if (!spanOnChange(healthSpan(finding), hunks)) continue;
@@ -931,11 +955,12 @@ function candidatesFor(inputs: NoticeInputs, ghosts: readonly Ghost[], red: RedS
   const home = cellOf(inputs.cells);
   const check = ran(inputs.check);
   const broken = liveConsumers(inputs, changed);
+  const hunks = new Map(inputs.changed.map((file) => [file.path, file.hunks] as const));
+  const own = check === undefined ? [] : [...structuralCandidates(check, hunks), ...thresholdCandidates(check, hunks)];
 
   return [
-    ...redSlotCandidates(red),
-    ...(check === undefined ? [] : structuralCandidates(check, changed)),
-    ...(check === undefined ? [] : thresholdCandidates(check, changed)),
+    ...redSlotCandidates(red, spokenFor(own, check, hunks)),
+    ...own,
     ...(check === undefined ? [] : securityCandidates(inputs, check)),
     ...deletedExportCandidates(broken),
     ...interfaceCandidates(inputs, home, broken),
@@ -973,11 +998,9 @@ export function rankNotices(inputs: NoticeInputs): readonly Notice[] {
   const history = new Map(inputs.history.map((file) => [file.path, file] as const));
   const ghosts = findGhosts(inputs.cochange, inputs.changed.map((file) => file.path), inputs.config.notices);
   const red = readRedSplit(inputs.checks.slots);
-  const spokenFor = redTargets(red);
   const { severity } = inputs.config.notices;
 
   const ranked = candidatesFor(inputs, ghosts, red)
-    .filter((candidate) => candidate.slot === undefined || spokenFor.get(candidate.slot)?.has(candidate.target) !== true)
     .map((candidate): Ranked => {
       const severityOf = severity[candidate.kind];
       // D55: a ghost is the file that did *not* change, so §5.4's reach, coverage
@@ -1002,7 +1025,7 @@ export function rankNotices(inputs: NoticeInputs): readonly Notice[] {
       (a, b) => b.weight - a.weight || byPath(a.target, b.target) || byPath(a.kind, b.kind) || byPath(a.why, b.why),
     );
 
-  return failingTestFirst(ranked, spokenFor.get(TEST_SLOT) ?? new Set())
+  return failingTestFirst(ranked, new Set(red.change.find((slot) => slot.name === TEST_SLOT)?.change))
     .flatMap((notice, index): Notice[] => {
       const tier = TIERS[index];
       return tier === undefined ? [] : [{ ...notice, tier }];

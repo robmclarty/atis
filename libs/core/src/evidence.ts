@@ -609,9 +609,14 @@ export function structuralPlaces(dead: Dead | undefined): readonly FindingPlace[
   ];
 }
 
+/** The unused exports, each with its place: the one `dead` finding §5.4 gives no kind of its own (D140). */
+export function unusedExportPlaces(dead: Dead | undefined): readonly FindingPlace[] {
+  return (dead?.unused_exports ?? []).map((unused) => linePlace(unused, 'path', lineOf));
+}
+
 /** Every `dead` finding's place: the structural ones and the unused exports. */
 function deadPlaces(dead: Dead | undefined): readonly FindingPlace[] {
-  return [...structuralPlaces(dead), ...(dead?.unused_exports ?? []).map((unused) => linePlace(unused, 'path', lineOf))];
+  return [...structuralPlaces(dead), ...unusedExportPlaces(dead)];
 }
 
 /**
