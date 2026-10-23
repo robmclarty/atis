@@ -41,7 +41,7 @@ estimate.
 | Token | Value | Where it appears |
 | --- | --- | --- |
 | `FONT_FAMILY` | `ui-monospace, Menlo, Consolas, monospace` | `font-family` on the root `<svg>`; the whole image inherits it |
-| `MONO_ADVANCE` | `0.6` | the glyph advance as a share of font size, from which the HUD sizes its blocks and the column wraps its text |
+| `MONO_ADVANCE` | `0.62` | the glyph advance as a share of font size, from which the HUD sizes its blocks and the column wraps its text: the widest among `FONT_FAMILY`'s faces and a viewer's fallback, rounded up (SF Mono, `ui-monospace` on macOS, 1266/2048 ≈ 0.618; Menlo 0.602; Courier New, DejaVu Sans Mono and Liberation Mono 0.600; Consolas 0.550) |
 | `LABEL_BASELINE` | `0.35` | how far a label's baseline drops to sit centred on a mark, as a share of its font size: HUD values, notice numerals, the storm and rename labels |
 
 ## Base tissue (the dim ground)

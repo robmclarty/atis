@@ -166,11 +166,16 @@ export const CHROME_PAD = 10;
 /** A muted block's value: the dash that stands where a number would be faked (C2, D41). */
 export const MUTED_DASH = '—';
 /**
- * The advance of one monospace glyph as a share of the font size. The SVG
- * loads no font (C5), so the chrome sizes its blocks and wraps its text from
- * this estimate; the local face lands within the padding either way.
+ * The advance of one monospace glyph as a share of the font size: the widest
+ * among `FONT_FAMILY`'s faces and a viewer's fallback. The SVG loads no font
+ * (C5), so the chrome sizes its blocks and wraps its text from this estimate,
+ * and an estimate narrower than the face a viewer draws with runs the text out
+ * of its box. SF Mono, which `ui-monospace` is on macOS, advances 1266/2048,
+ * about 0.618, the widest measured (Menlo 0.602; Courier New, DejaVu Sans Mono
+ * and Liberation Mono 0.600; Consolas 0.550); rounded up, so every narrower
+ * face lands inside the padding.
  */
-export const MONO_ADVANCE = 0.6;
+export const MONO_ADVANCE = 0.62;
 /** Where a label's baseline sits to centre it on a mark, as a share of its font size, so a number rides level with the shape it names. */
 export const LABEL_BASELINE = 0.35;
 

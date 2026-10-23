@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -13,11 +13,13 @@ import {
   CHROME_MUTED,
   EMPHASIS_PAD,
   EVIDENCE_LIGHT,
+  HUD_BLOCK_PAD,
   IFR_HUE,
   INTEGRITY_GAP_WIDTH,
   INTEGRITY_PAD,
   LEADER_DASH,
   LEADER_INK,
+  MONO_ADVANCE,
   MUTED_DASH,
   NOTICE_BOX,
   PRIMARY_RING_WIDTH,
@@ -38,6 +40,11 @@ import {
 const HERE = dirname(fileURLToPath(import.meta.url));
 const SVG_FIXTURES = join(HERE, '..', '..', 'fixtures');
 const CORE_FIXTURES = join(HERE, '..', '..', '..', 'core', 'fixtures');
+/** The repository's committed fixtures: the outside PRs each reading drew, every one a real HUD to fit. */
+const REPO_FIXTURES = join(HERE, '..', '..', '..', '..', 'fixtures');
+
+/** SF Mono's advance, 1266 of its 2048 units: `ui-monospace` on macOS, and the widest face a viewer is likely to draw the SVG in. */
+const WIDEST_FACE = 1266 / 2048;
 
 const CATEGORIES: readonly FlightCategory[] = ['VFR', 'MVFR', 'IFR', 'LIFR', 'NOINST'];
 
@@ -291,6 +298,50 @@ test('a red security stands in the Standing block unless the change brought an a
   const brought = slotsSet(map, { security: { scope: ['package.json'], change: ['package.json'] } });
   expect(read(brought, 'gate')).toBe('Gate 2 red');
   expect(read(brought, 'standing')).toBe('Standing 1 red');
+});
+
+/** Each HUD block of a rendered map: its id, its box's width, its text and the size it is set in. */
+function hudBlocks(svg: string): readonly { readonly id: string; readonly width: number; readonly text: string; readonly size: number }[] {
+  const found = svg.matchAll(/<g data-block="([^"]+)"[^>]*>\s*<rect [^>]* width="([\d.]+)"[^>]*\/>\s*<text [^>]*font-size="([\d.]+)"[^>]*>([\s\S]*?)<\/text>/g);
+  return [...found].map(([, id = '', width, size, inner = '']) => ({
+    id,
+    width: Number(width),
+    size: Number(size),
+    text: inner.replace(/<[^>]+>/g, ''),
+  }));
+}
+
+/**
+ * Every committed fixture map that reads under the current contract. A map a
+ * finished reading was judged on stays as it was read, under an older shape
+ * (D61, D85), and has no HUD to measure here.
+ */
+function committedMaps(): readonly MapJson[] {
+  return readdirSync(REPO_FIXTURES)
+    .map((name) => join(REPO_FIXTURES, name, 'map.json'))
+    .filter((path) => existsSync(path))
+    .flatMap((path) => {
+      try {
+        return [assertMap(JSON.parse(readFileSync(path, 'utf8')))];
+      } catch {
+        return [];
+      }
+    });
+}
+
+test('every HUD block fits its text at the widest fallback face, on the longest Standing tail the fixtures carry', () => {
+  const maps = committedMaps();
+  expect(maps.length).toBeGreaterThanOrEqual(5);
+  const blocks = [demo(), ...maps].flatMap((map) => hudBlocks(renderSvg(map)));
+  const [longest] = blocks.filter((block) => block.id === 'standing').toSorted((a, b) => b.text.length - a.text.length);
+
+  // The retake's Standing tail names nine global slots: the block a narrow estimate ran out of its box.
+  expect(longest?.text.length ?? 0).toBeGreaterThan(80);
+  for (const block of blocks) {
+    expect(block.text.length * block.size * WIDEST_FACE + 2 * HUD_BLOCK_PAD, `${block.id}: ${block.text}`).toBeLessThanOrEqual(block.width);
+  }
+  // The estimate the chrome sizes and wraps by is no narrower than that face.
+  expect(MONO_ADVANCE).toBeGreaterThanOrEqual(WIDEST_FACE);
 });
 
 test('a block whose input is absent or stale is muted with a dash, and the category letters are always present', () => {

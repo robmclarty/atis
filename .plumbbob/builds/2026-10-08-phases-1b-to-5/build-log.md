@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 10 — fix(core): sort the retake's leftover shore files by kind
+**Current step:** 11 — fix(svg): size HUD blocks for the widest fallback monospace face
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -32,7 +32,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 7. fix(core): rank a security advisory only when the change brings it
 - ☑ 8. fix(cli): read bare re-exports and .mts barrels as public surface
 - ☑ 9. fix(core): keep committed build output off the terrain
-- ☐ 10. fix(core): sort the retake's leftover shore files by kind
+- ☑ 10. fix(core): sort the retake's leftover shore files by kind
 - ☐ 11. fix(svg): size HUD blocks for the widest fallback monospace face
 - ☐ 12. feat(svg): draw a cell's own dents and clone family on its membrane
 - ☐ 13. fix(core): keep a neighbour's centre out of another cell's membrane
@@ -173,3 +173,4 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-23 — step 7 checkpointed · b335055fa — fix(core): rank a security advisory only when the change brings it (1 drift, 11m)
 - 2026-10-23 — step 8 checkpointed · c118a6353 — fix(cli): read bare re-exports and .mts barrels as public surface (3m)
 - 2026-10-23 — step 9 checkpointed · b3237672c — fix(core): keep committed build output off the terrain (1 red, 1 drift, 7m)
+- 2026-10-23 — step 10 checkpointed · 79726214a — fix(core): sort the retake's leftover shore files by kind (1m)

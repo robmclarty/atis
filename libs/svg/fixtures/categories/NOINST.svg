@@ -143,40 +143,40 @@
   <g id="chrome">
     <g id="hud">
       <g data-block="category" data-category="NOINST">
-        <rect x="10" y="8" width="58.8" height="20" fill="#6b7480"/>
+        <rect x="10" y="8" width="60.36" height="20" fill="#6b7480"/>
         <text x="16" y="22.55" font-size="13" fill="#0a0c0f"><tspan font-weight="bold">NOINST</tspan></text>
       </g>
       <g data-block="patch-cov" data-muted="true" data-reason="absent">
-        <rect x="71.8" y="8" width="71.4" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
-        <text x="77.8" y="21.15" font-size="9" fill="#6b7480"><tspan>Patch cov </tspan><tspan font-weight="bold">—</tspan></text>
+        <rect x="73.36" y="8" width="73.38" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="79.36" y="21.15" font-size="9" fill="#6b7480"><tspan>Patch cov </tspan><tspan font-weight="bold">—</tspan></text>
       </g>
       <g data-block="mutants" data-muted="true" data-reason="absent">
-        <rect x="146.2" y="8" width="60.6" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
-        <text x="152.2" y="21.15" font-size="9" fill="#6b7480"><tspan>Mutants </tspan><tspan font-weight="bold">—</tspan></text>
+        <rect x="149.74" y="8" width="62.22" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="155.74" y="21.15" font-size="9" fill="#6b7480"><tspan>Mutants </tspan><tspan font-weight="bold">—</tspan></text>
       </g>
       <g data-block="reach">
-        <rect x="209.8" y="8" width="82.2" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="215.8" y="21.15" font-size="9" fill="#e6edf3"><tspan>Reach </tspan><tspan font-weight="bold">4</tspan><tspan> cells</tspan></text>
+        <rect x="214.96" y="8" width="84.54" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="220.96" y="21.15" font-size="9" fill="#e6edf3"><tspan>Reach </tspan><tspan font-weight="bold">4</tspan><tspan> cells</tspan></text>
       </g>
       <g data-block="size">
-        <rect x="295" y="8" width="136.2" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="301" y="21.15" font-size="9" fill="#e6edf3"><tspan>Size </tspan><tspan font-weight="bold">+243 −102</tspan><tspan>, 8 files</tspan></text>
+        <rect x="302.5" y="8" width="140.34" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="308.5" y="21.15" font-size="9" fill="#e6edf3"><tspan>Size </tspan><tspan font-weight="bold">+243 −102</tspan><tspan>, 8 files</tspan></text>
       </g>
       <g data-block="gate" data-muted="true" data-reason="absent">
-        <rect x="434.2" y="8" width="44.4" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
-        <text x="440.2" y="21.15" font-size="9" fill="#6b7480"><tspan>Gate </tspan><tspan font-weight="bold">—</tspan></text>
+        <rect x="445.84" y="8" width="45.48" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="451.84" y="21.15" font-size="9" fill="#6b7480"><tspan>Gate </tspan><tspan font-weight="bold">—</tspan></text>
       </g>
       <g data-block="health" data-muted="true" data-reason="head-only">
-        <rect x="481.6" y="8" width="66" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
-        <text x="487.6" y="21.15" font-size="9" fill="#6b7480"><tspan>Health Δ </tspan><tspan font-weight="bold">—</tspan></text>
+        <rect x="494.32" y="8" width="67.8" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="500.32" y="21.15" font-size="9" fill="#6b7480"><tspan>Health Δ </tspan><tspan font-weight="bold">—</tspan></text>
       </g>
       <g data-block="notices">
-        <rect x="550.6" y="8" width="82.2" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="556.6" y="21.15" font-size="9" fill="#e6edf3"><tspan>Notices </tspan><tspan font-weight="bold">1·2·3</tspan></text>
+        <rect x="565.12" y="8" width="84.54" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="571.12" y="21.15" font-size="9" fill="#e6edf3"><tspan>Notices </tspan><tspan font-weight="bold">1·2·3</tspan></text>
       </g>
       <g data-block="other">
-        <rect x="635.8" y="8" width="49.8" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="641.8" y="21.15" font-size="9" fill="#e6edf3"><tspan>Other </tspan><tspan font-weight="bold">1</tspan></text>
+        <rect x="652.66" y="8" width="51.06" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="658.66" y="21.15" font-size="9" fill="#e6edf3"><tspan>Other </tspan><tspan font-weight="bold">1</tspan></text>
       </g>
     </g>
     <g id="rules" stroke="#2b333d" stroke-width="1">
@@ -188,8 +188,8 @@
       <line data-notice="2" x1="495" y1="100" x2="150.58" y2="490.6"/>
       <line data-notice="3" x1="495" y1="159.4" x2="163.58" y2="490.6"/>
       <line data-notice="4" x1="495" y1="218.8" x2="176.58" y2="490.6"/>
-      <line data-notice="5" x1="495" y1="288.6" x2="171.28" y2="315.84"/>
-      <line data-notice="6" x1="495" y1="357.1" x2="128.66" y2="598.79"/>
+      <line data-notice="5" x1="495" y1="299" x2="171.28" y2="315.84"/>
+      <line data-notice="6" x1="495" y1="367.5" x2="128.66" y2="598.79"/>
     </g>
     <g id="notices">
       <g data-notice="1" data-tier="primary" data-kind="red-check-slot" data-target="libs/core/src/pm/index.ts">
@@ -220,8 +220,8 @@
         </g>
         <text x="505" y="162.4" font-size="8" font-weight="bold" fill="#e6edf3">libs/core/src/pm/index.ts</text>
         <text x="505" y="171.8" font-size="7" font-variant="small-caps" fill="#e6edf3">uncovered-high-reach</text>
-        <text x="505" y="181.9" font-size="8" fill="#e6edf3">5 changed lines are uncovered and the change reaches 4</text>
-        <text x="505" y="192.3" font-size="8" fill="#e6edf3">cells</text>
+        <text x="505" y="181.9" font-size="8" fill="#e6edf3">5 changed lines are uncovered and the change reaches</text>
+        <text x="505" y="192.3" font-size="8" fill="#e6edf3">4 cells</text>
         <text x="505" y="201.7" font-size="7" fill="#6b7480">severity 7 · high_reach_cells 3</text>
       </g>
       <g data-notice="4" data-tier="tertiary" data-kind="interface-added" data-target="libs/core/src/pm/index.ts">
@@ -231,32 +231,33 @@
         </g>
         <text x="505" y="221.8" font-size="8" font-weight="bold" fill="#e6edf3">libs/core/src/pm/index.ts</text>
         <text x="505" y="231.2" font-size="7" font-variant="small-caps" fill="#e6edf3">interface-added</text>
-        <text x="505" y="241.3" font-size="8" fill="#e6edf3">the interface of `libs/core/src/pm` grew (`resolveTool`</text>
-        <text x="505" y="251.7" font-size="8" fill="#e6edf3">added) and 2 files read it; the shape of `listSlots`</text>
-        <text x="505" y="262.1" font-size="8" fill="#e6edf3">and `resolveSlot` could not be compared</text>
-        <text x="505" y="271.5" font-size="7" fill="#6b7480">severity 3 · fan_in_high 2 · deep_band 4</text>
+        <text x="505" y="241.3" font-size="8" fill="#e6edf3">the interface of `libs/core/src/pm` grew</text>
+        <text x="505" y="251.7" font-size="8" fill="#e6edf3">(`resolveTool` added) and 2 files read it; the shape</text>
+        <text x="505" y="262.1" font-size="8" fill="#e6edf3">of `listSlots` and `resolveSlot` could not be</text>
+        <text x="505" y="272.5" font-size="8" fill="#e6edf3">compared</text>
+        <text x="505" y="281.9" font-size="7" fill="#6b7480">severity 3 · fan_in_high 2 · deep_band 4</text>
       </g>
       <g data-notice="5" data-tier="tertiary" data-kind="large-hot-change" data-target="apps/cli/src/doctor.ts">
         <g data-mark="5" data-tier="tertiary">
-          <rect x="490" y="283.6" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
-          <text x="495" y="291.05" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">5</text>
+          <rect x="490" y="294" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="495" y="301.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">5</text>
         </g>
-        <text x="505" y="291.6" font-size="8" font-weight="bold" fill="#e6edf3">apps/cli/src/doctor.ts</text>
-        <text x="505" y="301" font-size="7" font-variant="small-caps" fill="#e6edf3">large-hot-change</text>
-        <text x="505" y="311.1" font-size="8" fill="#e6edf3">136 lines changed in a file with churn 3.366 and a</text>
-        <text x="505" y="321.5" font-size="8" fill="#e6edf3">bug-fix rate of 0.5</text>
-        <text x="505" y="330.9" font-size="7" fill="#6b7480">severity 4 · large_lines 100 · hot_churn_ratio 2 ·</text>
-        <text x="505" y="340" font-size="7" fill="#6b7480">hot_bugfix_rate 0.3</text>
+        <text x="505" y="302" font-size="8" font-weight="bold" fill="#e6edf3">apps/cli/src/doctor.ts</text>
+        <text x="505" y="311.4" font-size="7" font-variant="small-caps" fill="#e6edf3">large-hot-change</text>
+        <text x="505" y="321.5" font-size="8" fill="#e6edf3">136 lines changed in a file with churn 3.366 and a</text>
+        <text x="505" y="331.9" font-size="8" fill="#e6edf3">bug-fix rate of 0.5</text>
+        <text x="505" y="341.3" font-size="7" fill="#6b7480">severity 4 · large_lines 100 · hot_churn_ratio 2 ·</text>
+        <text x="505" y="350.4" font-size="7" fill="#6b7480">hot_bugfix_rate 0.3</text>
       </g>
       <g data-notice="6" data-tier="tertiary" data-kind="red-check-slot" data-target="libs/core/src/pm/tools.ts">
         <g data-mark="6" data-tier="tertiary">
-          <rect x="490" y="352.1" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
-          <text x="495" y="359.55" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">6</text>
+          <rect x="490" y="362.5" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="495" y="369.95" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">6</text>
         </g>
-        <text x="505" y="360.1" font-size="8" font-weight="bold" fill="#e6edf3">libs/core/src/pm/tools.ts</text>
-        <text x="505" y="369.5" font-size="7" font-variant="small-caps" fill="#e6edf3">red-check-slot</text>
-        <text x="505" y="379.6" font-size="8" fill="#e6edf3">the `test` check is red on this changed file</text>
-        <text x="505" y="389" font-size="7" fill="#6b7480">severity 10</text>
+        <text x="505" y="370.5" font-size="8" font-weight="bold" fill="#e6edf3">libs/core/src/pm/tools.ts</text>
+        <text x="505" y="379.9" font-size="7" font-variant="small-caps" fill="#e6edf3">red-check-slot</text>
+        <text x="505" y="390" font-size="8" fill="#e6edf3">the `test` check is red on this changed file</text>
+        <text x="505" y="399.4" font-size="7" fill="#6b7480">severity 10</text>
       </g>
     </g>
     <g id="marks">
