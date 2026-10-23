@@ -669,6 +669,76 @@ test('the deleted-export why pluralises its consumer count', () => {
   expect(three[0]?.kind).toBe('deleted-export');
   expect(three[0]?.inputs['consumers']).toBe(3);
   expect(three[0]?.why).toContain('3 files still import it');
+  // Its readers are those live consumers, and they scale its weight (D82, D124).
+  expect(three[0]?.inputs['readers']).toBe(3);
+  expect(one[0]?.inputs['readers']).toBe(1);
+});
+
+/** Two deep barrels outside the chain, each read only from the loose files of `src/app`, so both reach the same two cells. */
+const KIT = 'src/kit/index.ts';
+const BOX = 'src/box/index.ts';
+const APP = ['src/app/one.ts', 'src/app/two.ts', 'src/app/three.ts'];
+
+/** Both barrels reshape their one export; `kit` is read by all three app files and `box` by one. */
+const TWO_BARRELS: Scenario = {
+  files: [KIT, BOX, ...APP],
+  changed: [change(KIT), change(BOX)],
+  bands: { 'folder:src/kit': 5, 'folder:src/box': 5 },
+  edges: [...APP.map((path) => `${path} > ${KIT}`), `src/app/one.ts > ${BOX}`],
+  names: { ...Object.fromEntries(APP.map((path) => [`${path} > ${KIT}`, ['make']])), [`src/app/one.ts > ${BOX}`]: ['pack'] },
+  exports: { [KIT]: ['make'], [BOX]: ['pack'] },
+  baseShapes: { [KIT]: { make: 'function make(): string;' }, [BOX]: { pack: 'function pack(): string;' } },
+  shapes: { [KIT]: { make: 'function make(): number;' }, [BOX]: { pack: 'function pack(): number;' } },
+};
+
+test('two reshaped files at one severity and reach rank by who reads the names that moved (D82)', () => {
+  const notices = noticesFor(TWO_BARRELS);
+  const kit = notices.find((notice) => notice.target === KIT);
+  const box = notices.find((notice) => notice.target === BOX);
+
+  expect(kindsOf(notices)).toEqual(['interface-change', 'interface-change']);
+  // Everything else is equal: the severity, and the two cells each reaches, its own and `src/app`'s.
+  expect(kit?.thresholds['severity']).toBe(box?.thresholds['severity']);
+  expect(kit?.inputs['cells_reached']).toBe(2);
+  expect(box?.inputs['cells_reached']).toBe(2);
+  expect(kit?.inputs['readers']).toBe(3);
+  expect(box?.inputs['readers']).toBe(1);
+  expect(rankOf(notices, KIT)).toBeLessThan(rankOf(notices, BOX));
+  // 8 × (1 + ln 3) × (1 + ln 4) and 8 × (1 + ln 3) × (1 + ln 2), to three decimals.
+  expect(kit?.weight).toBe(40.063);
+  expect(box?.weight).toBe(28.426);
+});
+
+test("readers follow a moved name through re-exports by name, and neither the re-exporter nor a test counts as one (D82, D75)", () => {
+  const make = 'src/kit/make.ts';
+  const notices = noticesFor({
+    files: [KIT, make, ...APP, 'src/__tests__/kit.test.ts'],
+    changed: [change(make)],
+    bands: { 'folder:src/kit': 5 },
+    edges: [
+      // `one` takes `make` straight from its file, which makes the file an entrance to its cell.
+      `src/app/one.ts > ${make}`,
+      // The barrel passes it on, `two` takes it from there, and `three` takes the whole barrel.
+      `${KIT} > ${make}`,
+      `src/app/two.ts > ${KIT}`,
+      `src/app/three.ts > ${KIT}`,
+      `src/__tests__/kit.test.ts > ${make}`,
+    ],
+    reexports: { [`${KIT} > ${make}`]: [{ name: 'make', as: 'make' }] },
+    names: {
+      [`src/app/one.ts > ${make}`]: ['make'],
+      [`${KIT} > ${make}`]: ['make'],
+      [`src/app/two.ts > ${KIT}`]: ['make'],
+      [`src/app/three.ts > ${KIT}`]: ['*'],
+      [`src/__tests__/kit.test.ts > ${make}`]: ['make'],
+    },
+    exports: { [make]: ['make'], [KIT]: ['make'] },
+    baseShapes: { [make]: { make: 'function make(): string;' } },
+    shapes: { [make]: { make: 'function make(): number;' } },
+  });
+
+  expect(rowsOf(notices)).toEqual([['interface-change', make]]);
+  expect(notices[0]?.inputs['readers']).toBe(3);
 });
 
 /** `pm`'s barrel, in band 5 and read from `doctor.ts`: the interface file every D76 case below edits. */

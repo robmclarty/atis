@@ -197,10 +197,14 @@ function round(value: number): number {
  * that does neither: severity decides between two candidates only where their
  * factors match. A test file reaches no cells (D4), which is why a failing
  * test is lifted by `failingTestFirst` rather than by any severity (D74).
+ * A candidate about names that moved is scaled once more by who reads them
+ * (D82): reach counts the cells a file reaches, not the files that took the
+ * name, and two files at one severity and reach rank by their readers.
  */
-function score(severity: number, factors: Factors): number {
+function score(severity: number, factors: Factors, readers: number | undefined): number {
   const { cells_reached, uncovered_fraction, history_weight } = factors;
-  return severity * (1 + Math.log(1 + cells_reached)) * (1 + uncovered_fraction) * (1 + history_weight);
+  const read = readers === undefined ? 1 : 1 + Math.log(1 + readers);
+  return severity * (1 + Math.log(1 + cells_reached)) * (1 + uncovered_fraction) * (1 + history_weight) * read;
 }
 
 /**
@@ -511,6 +515,50 @@ function movesOf({ added, removed, reshaped }: SurfaceMoves): string {
   ].join(', ');
 }
 
+/**
+ * Where one name a re-export edge passes on goes, and under what name: `export
+ * { a as b }` hands `a` on as `b`, `export *` every name as itself, and
+ * `export * as ns` every name inside `ns`, which is the name its readers take.
+ */
+function passedAs(pass: PassedName, name: string): string | undefined {
+  if (pass.name !== name && pass.name !== STAR) return undefined;
+  return pass.as === STAR ? name : pass.as;
+}
+
+/**
+ * The in-repo files that read any of `names` out of `path` (D82): each file
+ * whose import of it takes the name or the whole module, and, through every
+ * re-export that passes a name on, the files that read it from the
+ * re-exporter, followed by name as D75 walks a public name. A re-exporter
+ * only passes the name along, so it is followed rather than counted, and a
+ * test is evidence rather than a reader (D4). The walk is on the head graph,
+ * where who the change reaches lives (D124).
+ */
+function readersOf(path: string, names: readonly string[], edges: readonly NamedEdge[]): ReadonlySet<string> {
+  const into = new Map<string, NamedEdge[]>();
+  for (const edge of edges) into.set(edge.to, [...(into.get(edge.to) ?? []), edge]);
+  const readers = new Set<string>();
+  const seen = new Set<string>();
+  const pending = names.map((name) => [path, name] as const);
+  for (let next = pending.pop(); next !== undefined; next = pending.pop()) {
+    const [file, name] = next;
+    const key = `${file}\n${name}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    for (const edge of into.get(file) ?? []) {
+      if (edge.reexports !== undefined) {
+        for (const pass of edge.reexports) {
+          const as = passedAs(pass, name);
+          if (as !== undefined) pending.push([edge.from, as]);
+        }
+      } else if (edge.from !== path && classifyFile(edge.from) !== 'test' && (edge.names.includes(name) || edge.names.includes(STAR))) {
+        readers.add(edge.from);
+      }
+    }
+  }
+  return readers;
+}
+
 /** `` `@scope/pkg` publishes `a` and `b` ``: who exposes a file's public names, and which (D75). */
 function publishes({ names, members }: PublicFile): string {
   return `${listed(members)} ${members.length === 1 ? 'publishes' : 'publish'} ${sampled(names)}`;
@@ -578,6 +626,8 @@ function interfaceCandidates(
     );
     const kind = interfaceKind(moves);
     if (kind === undefined) return [];
+    // A removed name no live importer takes has no reader by definition; the ones one does are deleted-export's (D124).
+    const readers = readersOf(file.path, [...moves.added, ...moves.reshaped, ...moves.uncompared], inputs.headEdges);
     const reasons = joined([
       ...(readInRepo ? [`${String(cell.fan_in ?? 0)} files read it`] : []),
       ...(published === undefined ? [] : [publishes(published)]),
@@ -596,6 +646,7 @@ function interfaceCandidates(
           names_removed: moves.removed.length,
           names_reshaped: moves.reshaped.length,
           names_uncompared: moves.uncompared.length,
+          readers: readers.size,
         },
         thresholds: { fan_in_high: highFanIn, deep_band },
       },
@@ -792,7 +843,8 @@ function deletedExportCandidates(consumers: LiveConsumers): readonly Candidate[]
       kind: 'deleted-export' as const,
       target: path,
       why: `${names.map((name) => `\`${name}\``).join(', ')} no longer exported, and ${stillImports(importers.size)}`,
-      inputs: { names: names.length, consumers: importers.size },
+      // Its readers are the live consumers themselves: base importers the head still holds to the name (D124).
+      inputs: { names: names.length, consumers: importers.size, readers: importers.size },
       thresholds: {},
     };
   });
@@ -898,7 +950,7 @@ export function rankNotices(inputs: NoticeInputs): readonly Notice[] {
       // zeroed factors dragged in. Every other kind keeps the changed-file factors.
       const factors = candidate.kind === 'missing-cochange' ? undefined : factorsFor(candidate.target, evidence, history);
       const weight = factors
-        ? score(severityOf, factors)
+        ? score(severityOf, factors, candidate.inputs['readers'])
         : cochangeWeight(severityOf, candidate.inputs['rate'] ?? 0, candidate.inputs['support'] ?? 0);
       const unmeasured = factors !== undefined && evidence.get(candidate.target)?.unmeasured === true;
       return {
