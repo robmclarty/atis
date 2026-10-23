@@ -162,6 +162,24 @@ test('parseDead passes circular_dependencies, re_export_cycles, boundary_violati
   });
 });
 
+test("parseDead keeps each finding of a captured fallow 3.35 report whole, the lines a dead red is held to included (D140)", () => {
+  const parsed = parseDead(readFileSync(join(FIXTURE_REPO, 'dead-findings.json'), 'utf8'));
+
+  expect(parsed?.schema_version).toBe(10);
+  // A cycle's edges are the imports that close it, each on its own file's line; a re-export's import reads 1:0.
+  expect(parsed?.value.circular_dependencies).toEqual([
+    expect.objectContaining({ edges: [{ path: 'libs/core/src/a.ts', line: 3, col: 9 }, { path: 'libs/core/src/b.ts', line: 4, col: 9 }] }),
+    expect.objectContaining({ edges: [{ path: 'libs/core/src/barrel/index.ts', line: 1, col: 0 }, { path: 'libs/core/src/barrel/one.ts', line: 1, col: 0 }] }),
+    expect.objectContaining({ edges: [{ path: 'libs/core/src/e.ts', line: 2, col: 9 }, { path: 'libs/core/src/f.ts', line: 1, col: 0 }] }),
+  ]);
+  expect(parsed?.value.re_export_cycles).toEqual([expect.objectContaining({ files: ['libs/core/src/barrel/index.ts', 'libs/core/src/barrel/one.ts'] })]);
+  expect(parsed?.value.boundary_violations).toEqual([
+    expect.objectContaining({ from_path: 'libs/core/src/c.ts', to_path: 'apps/app/src/x.ts', line: 5, col: 9 }),
+    expect.objectContaining({ from_path: 'libs/core/src/d.ts', to_path: 'apps/app/src/x.ts', line: 1, col: 0 }),
+  ]);
+  expect(parsed?.value.unused_exports).toEqual([expect.objectContaining({ path: 'libs/core/src/unused.ts', export_name: 'neverRead', line: 7 })]);
+});
+
 test('parseDupes passes clone_families through and records a fallow schema_version without rejecting it', () => {
   expect(parseDupes(JSON.stringify({ schema_version: 42, clone_families: [{ files: ['a.ts', 'b.ts'] }] }))).toEqual({
     value: { clone_families: [{ files: ['a.ts', 'b.ts'] }] },

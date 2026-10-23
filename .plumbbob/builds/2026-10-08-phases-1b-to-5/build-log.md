@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 18 — chore(glance): score notice precision on the tuning half
+**Current step:** 89 — fix(core): hold a dead finding to the lines the change touched
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -40,7 +40,11 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 15. feat(svg): draw a legend inset and an annotated practice map
 - ☑ 16. chore(fixtures): select the tuning half of the precision corpus
 - ☑ 17. chore(fixtures): generate maps for the corpus's tuning half
-- ☐ 18. chore(glance): score notice precision on the tuning half
+- ☑ 18. chore(glance): score notice precision on the tuning half
+- ☐ 89. fix(core): hold a dead finding to the lines the change touched
+- ☐ 90. fix(core): rank a health or dead red by the finding behind it
+- ☐ 91. fix(core): read only changed code lines as unmeasured
+- ☐ 92. fix(core): tell a mutant no test reached from one that survived
 - ☐ 19. chore(fixtures): select and generate the corpus's held-out half
 - ☐ 20. chore(glance): read five held-out maps blind on the SVG
 - ☐ 21. docs(inspiration): cite the corpus repos
@@ -121,11 +125,12 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] new-dependency's why reads '1 new dependencies' for a single package; it never singularises (libs/core/src/notices.ts dependencyCandidates)
 - [x] a package cell's dents are the union of its nested folders' (core's assembleCells), so where a package's skin runs along its folder's the two sets of teeth sit side by side; weigh drawing a package's own-file rules only
 - [x] a member's own centre can fall outside its skin once the cut is simplified and smoothed (13 to 20 per retake map, re-skinned at step 13; one on 3 of 8 crowded synthetic fields); the ladder's members-in check holds only the raw marching ring
-- [ ] corpus-4 missed criterion 5 (tuning half, D127): survived mutants on the flagged checkbox builders' length checks reach none of its six notices, outranked by dead reds and an unmeasured barrel
-- [ ] corpus-5 missed criterion 5 (tuning half, D127): the flagged loop is fully covered and mutation did not finish, so no notice bears on it; its top three are dead and health reds and an interface change the truth does not name
-- [ ] health and dead reds on changed files hold 9 of the tuning six's 18 top-three rows and bear on none of the six findings (docs/glance-test.md, tuning half)
-- [ ] a package barrel no test imports reads as an unmeasured gap with high reach (corpus-4's notice 2), though its added lines are exports
-- [ ] a NoCoverage mutant is counted and worded as survived (all 88 of corpus-6's, 12 of corpus-1's 14), so the notice overstates what the tests did
+- [x] corpus-4 missed criterion 5 (tuning half, D127): survived mutants on the flagged checkbox builders' length checks reach none of its six notices, outranked by dead reds and an unmeasured barrel
+- [x] corpus-5 missed criterion 5 (tuning half, D127): the flagged loop is fully covered and mutation did not finish, so no notice bears on it; its top three are dead and health reds and an interface change the truth does not name
+- [x] health and dead reds on changed files hold 9 of the tuning six's 18 top-three rows and bear on none of the six findings (docs/glance-test.md, tuning half)
+- [x] a package barrel no test imports reads as an unmeasured gap with high reach (corpus-4's notice 2), though its added lines are exports
+- [x] a NoCoverage mutant is counted and worded as survived (all 88 of corpus-6's, 12 of corpus-1's 14), so the notice overstates what the tests did
+- [ ] fallow 3.35 writes every re-export's import (cycle edges, boundary violations) at line 1, col 0, so D140 keeps the file rule there; corpus-4's 14 barrel cycles stay on the change through packages/builders/src/index.ts until the scan supplies a re-export's real line or D98's base side lands
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -148,6 +153,12 @@ Harvest results this boundary:
 - 2026-10-23, at range 2 of 24's stop: 2 parked ideas, classified.
 - **tangent**: park 2 · a package cell's dents are the union of its nested folders' (core's assembleCells), so where a package's skin runs along its folder's the two sets of teeth sit side by side; weigh drawing a package's own-file rules only → the teeth still count the rules inside each skin, and own-file-only teeth are a legibility call for the tuning refine, not a fault the precision scoring touches
 - **tangent**: park 3 · a member's own centre can fall outside its skin once the cut is simplified and smoothed (13 to 20 per retake map, re-skinned at step 13; one on 3 of 8 crowded synthetic fields); the ladder's members-in check holds only the raw marching ring → it predates this range and no notice reads a skin, so it can be weighed at the tuning refine before the blind reading
+- 2026-10-23, at range 3 of 24's stop: 5 parked ideas, classified.
+- **blocker**: park 4 · corpus-4 missed criterion 5 (tuning half, D127): survived mutants on the flagged checkbox builders' length checks reach none of its six notices, outranked by dead reds and an unmeasured barrel → D127 sends every miss to the one refine pass, as an open question beside P6 and P7, which caused it
+- **blocker**: park 5 · corpus-5 missed criterion 5 (tuning half, D127): the flagged loop is fully covered and mutation did not finish, so no notice bears on it; its top three are dead and health reds and an interface change the truth does not name → D127 sends every miss to the refine pass, which may judge that no map holds evidence on the flagged loop
+- **blocker**: park 6 · health and dead reds on changed files hold 9 of the tuning six's 18 top-three rows and bear on none of the six findings (docs/glance-test.md, tuning half) → it displaced corpus-4's hit and demoted corpus-1's, so the refine should settle it first
+- **blocker**: park 7 · a package barrel no test imports reads as an unmeasured gap with high reach (corpus-4's notice 2), though its added lines are exports → it took corpus-4's notice 2, so it rides with P6 into the refine
+- **tangent**: park 8 · a NoCoverage mutant is counted and worded as survived (all 88 of corpus-6's, 12 of corpus-1's 14), so the notice overstates what the tests did → every hit stands either way, so it is a wording fix the refine can fold in or leave
 
 ## Log
 
@@ -330,3 +341,94 @@ folder, so it rides the branch into the PR.)*
 
 - 2026-10-23 — step 16 checkpointed · a18fd39b5 — chore(fixtures): select the tuning half of the precision corpus (152m)
 - 2026-10-23 — step 17 checkpointed · 0da883268 — chore(fixtures): generate maps for the corpus's tuning half (137m)
+- 2026-10-23 — step 18 checkpointed · 3e6109e6d — chore(glance): score notice precision on the tuning half (5m)
+- 2026-10-23 — range 3 of 24's stop recorded — read the tuning half's precision by fixture number alone ([D62 (retake-reader-blind)](#d62)) and its parked misses, then run the one refine pass [D127 (tuning-loop)](#d127) allows; the fix steps it adds join range 4, ahead of step 19
+
+  **Summary**: Range 3 chose, generated and scored the tuning half of the precision corpus. Six outside holds from six repos sit in `fixtures/corpus-1` to `fixtures/corpus-6`, each with a README, a quoted truth, a map that passes `assertMap` and an SVG. `docs/glance-test.md` scores them 4 of 6 on criterion 5, read per D65 by fixture number. Both misses, and three encodings the reading turned up, are parked for the one refine pass D127 allows.
+
+  1. The precision section names fixtures by number, but some notice paths name their projects
+  2. Six holds from six repos, chosen and re-checked by hidden agents
+  3. All six maps have coverage, none is git-only, and mutation completed on three
+  4. The tuning half scores 4 of 6, and three of the hits came from test evidence on the flagged lines
+  5. Health and dead reds on changed files hold half the top three, and they bear on no finding
+
+  **Readout**:
+
+  ```text
+  steps        3 of 3 landed
+               - 16 a18fd39 · 17 0da8832 · 18 3e6109e
+  check        green: 1 of 1 checks, 3 landings
+  done-when    met
+  decisions    honored:
+               - D38 (glance-is-a-step), D56 (fixtures-skip-audit)
+               - D58 (fixtures-current-toolchain), D59 (outside-fixtures)
+               - D62 (retake-reader-blind), D64 (fixture-eligibility)
+               - D65 (notice-precision-reading), D88 (precision-corpus)
+               - D126 (typescript-corpus), D127 (tuning-loop)
+               - D128 (held-out-chosen-late), D129 (precision-on-holds)
+  constraints  14 of 14 honored
+  seam         held: 3 of 3 steps, no strays
+  diff         +852212 -0 across 26 files
+  spent        4h 54m · green first run at every landing
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Harvested**: 5 of 8 parked ideas open
+
+  - P4 · corpus-4 missed criterion 5 (tuning half, D127): survived mutants on the flagged checkbox builders' length checks reach none of its six notices, outranked by dead reds and an unmeasured barrel → lean: blocker, D127 sends every miss to the one refine pass, as an open question beside P6 and P7, which caused it
+  - P5 · corpus-5 missed criterion 5 (tuning half, D127): the flagged loop is fully covered and mutation did not finish, so no notice bears on it; its top three are dead and health reds and an interface change the truth does not name → lean: blocker, D127 sends every miss to the refine pass, which may judge that no map holds evidence on the flagged loop
+  - P6 · health and dead reds on changed files hold 9 of the tuning six's 18 top-three rows and bear on none of the six findings (docs/glance-test.md, tuning half) → lean: blocker, it displaced corpus-4's hit and demoted corpus-1's, so the refine should settle it first
+  - P7 · a package barrel no test imports reads as an unmeasured gap with high reach (corpus-4's notice 2), though its added lines are exports → lean: blocker, it took corpus-4's notice 2, so it rides with P6 into the refine
+  - P8 · a NoCoverage mutant is counted and worded as survived (all 88 of corpus-6's, 12 of corpus-1's 14), so the notice overstates what the tests did → lean: tangent, every hit stands either way, so it is a wording fix the refine can fold in or leave
+
+  **Recommendation**: Confirm the leans, then run `/plumbbob:refine` once on P4 to P7, settling P6 first. Its fix steps join range 4 ahead of step 19, and D127 judges them only on the held-out half at step 20, so the tuning six stay at 4 of 6.
+
+  **1.** The precision section names fixtures by number, but some notice paths name their projects
+
+  The done-when asks for each hold's top three notices, and a notice is a kind plus a target path. In at least three of the six fixtures, those paths carry a package or project name a reader could recognise. While I checked one red test slot at step 17, a command of mine also printed a few lines of that fixture's README to the terminal, dependency names included. None of this touches the held-out half. Step 19 must draw it from repos the tuning half did not use, and you never read the tuning six blind. No pause or commit body named a repo or PR (D62). If you'd rather the section carry file names only, say so and I'll trim the paths before step 19.
+
+  **2.** Six holds from six repos, chosen and re-checked by hidden agents
+
+  Three scout agents walked review timelines on 21 repos with `gh api` and wrote up 15 candidates from 10 of them. A selector agent chose six, one per repo, each a concrete defect a human reviewer stated in their own words, and confirmed each in a clone. An independent verifier then re-derived every claim from the public record: the merge, the review and its commit, the verbatim quotes, the merge base and diff counts, the ecosystem, and whether the flagged code is really there. All six passed, with high confidence on substance.
+
+  The six change 3 to 14 TypeScript source files by `classifyFile`'s rule. Four test with vitest and two with jest. Every agent reported counts only. I deleted the scouts' notes on the nine unchosen candidates without reading them, so no held-out finding is known before the fixes (D128).
+
+  `fixtures/corpus.md` records the rules step 19 reuses. It adds two rules of mine: at most two PRs per repo in a half, and the flagged problem must live in the PR's own TypeScript, since a finding outside the terrain could never be a notice.
+
+  **3.** All six maps have coverage, none is git-only, and mutation completed on three
+
+  Two agents on sonnet ran D58's procedure on three fixtures each:
+
+  - full clones and each repo's own install;
+  - checkride 0.17.0 and fallow 3.35.0, run through the installed binaries;
+  - `security` skipped (D56);
+  - coverage written to `.check/coverage/coverage-final.json` (D64).
+
+  All six maps pass `assertMap` and read in check mode, using fallow's entry points. Mutation completed on three and was dropped on the other three after about twenty minutes each.
+
+  Running two suites at once pushed the load average above 100, and the tests that timed out got raised timeouts or a serial run. No test was edited, skipped or deleted. The reds left as run are all global:
+
+  - one tree's own typecheck errors against a dependency version its lockfile pins;
+  - one build that needs a platform toolchain this machine lacks;
+  - the usual `snippets`, `pack` and `smoke` reds at private roots.
+
+  The atis gate itself went red once at step 17, on two test timeouts under the same load, and passed with no change on the rerun.
+
+  **4.** The tuning half scores 4 of 6, and three of the hits came from test evidence on the flagged lines
+
+  The four hits:
+
+  - **`corpus-1`, notice 3:** mutants on the merge where a parameter shadows the state.
+  - **`corpus-2`, notice 3:** the file's one uncovered changed line is the flagged `|| true`. This is the closest call: it says where to look, not that the line is wrong.
+  - **`corpus-3`, notice 1:** the interface reshape is the new method that drops the inviter.
+  - **`corpus-6`, notice 1:** 88 untested mutants, including the flagged option declaration.
+
+  The two misses:
+
+  - **`corpus-4`:** the checkbox builders hold survived mutants on the flagged checks, but no notice of the six reaches them.
+  - **`corpus-5`:** no evidence touches the flagged loop. Its top three are `dead` and `health` reds and an interface change the truth does not name.
+
+  **5.** Health and dead reds on changed files hold half the top three, and they bear on no finding
+
+  Nine of the 18 top-three rows are a `health` or `dead` red on a changed file, and none bears on any of the six findings. They pushed `corpus-1`'s hit down to notice 3. Together with an unmeasured barrel, they kept `corpus-4`'s mutants out of all six notices. This is the retake's first encoding coming back, after D73 narrowed it to findings on the changed lines. It is where the refine should start.

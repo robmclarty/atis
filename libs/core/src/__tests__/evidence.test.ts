@@ -518,12 +518,12 @@ test('the split keeps each red slot in one list and puts it on the change only t
       // A stitch that held is no tear, even under a red `test`.
       { test: 'src/__tests__/other.test.ts', targets: ['src/pm/util.ts'], status: 'passed' },
     ],
-    spans: new Map([
+    places: new Map([
       [
         'health',
         [
-          { path: 'src/doctor.ts', start: 1, end: 40 },
-          { path: 'src/pm/tools.ts', start: 8, end: 20 },
+          { spans: [{ path: 'src/doctor.ts', start: 1, end: 40 }], files: [] },
+          { spans: [{ path: 'src/pm/tools.ts', start: 8, end: 20 }], files: [] },
         ],
       ],
     ]),
@@ -628,7 +628,7 @@ test('a pure deletion meets the span that holds its position, and one just outsi
       slots: [{ name: 'health', ok: false, skipped: false, scope: [ROUTER] }],
       changed: [change(ROUTER, [{ start, count: 0 }])],
       stitches: [],
-      spans: new Map([['health', [{ path: ROUTER, start: 67, end: 126 }]]]),
+      places: new Map([['health', [{ spans: [{ path: ROUTER, start: 67, end: 126 }], files: [] }]]]),
     });
   const onChange = (start: number): readonly string[] => at(start).change.map((red) => red.name);
 
@@ -712,27 +712,138 @@ test('a summary that claimed schema 1 and then failed its shape is a broken harn
   expect(checks).toEqual({ category: 'LIFR', checks_run: 0, reason: HARNESS_BROKEN, slots: [] });
 });
 
-test('a cycle or a boundary violation touching a changed file is LIFR; one that misses the change is not', () => {
-  const cycle = {
-    files: ['src/pm/tools.ts', 'src/doctor.ts'],
-    length: 2,
-    edges: [{ path: 'src/pm/tools.ts', line: 1, col: 9 }],
-  };
-  const violation = { from_path: 'src/doctor.ts', to_path: 'src/pm/util.ts', from_zone: 'app', to_zone: 'lib', line: 5 };
+/**
+ * fallow 3.35's `dead.json` for a small two-zone repository, captured from a
+ * run and trimmed to the four arrays atis reads, each finding's `actions` and
+ * `finding_id` dropped (the whole report is `apps/atis/fixtures/check/dead-findings.json`).
+ * `a.ts` and `b.ts` import each other on lines 3 and 4; `e.ts` imports `f.ts`
+ * on line 2, and `f.ts` re-exports from `e.ts`; the barrel and `one.ts`
+ * re-export each other; `c.ts` imports the app on line 5, and `d.ts`
+ * re-exports from it on line 4; `unused.ts` exports `neverRead` on line 7.
+ * fallow writes every re-export's import at line 1, column 0.
+ */
+const FALLOW_DEAD = `{
+  "circular_dependencies": [
+    {"files": ["libs/core/src/a.ts", "libs/core/src/b.ts"], "length": 2, "line": 3, "col": 9, "edges": [{"path": "libs/core/src/a.ts", "line": 3, "col": 9}, {"path": "libs/core/src/b.ts", "line": 4, "col": 9}], "effective_severity": "error"},
+    {"files": ["libs/core/src/barrel/index.ts", "libs/core/src/barrel/one.ts"], "length": 2, "line": 1, "col": 0, "edges": [{"path": "libs/core/src/barrel/index.ts", "line": 1, "col": 0}, {"path": "libs/core/src/barrel/one.ts", "line": 1, "col": 0}], "effective_severity": "error"},
+    {"files": ["libs/core/src/e.ts", "libs/core/src/f.ts"], "length": 2, "line": 2, "col": 9, "edges": [{"path": "libs/core/src/e.ts", "line": 2, "col": 9}, {"path": "libs/core/src/f.ts", "line": 1, "col": 0}], "effective_severity": "error"}
+  ],
+  "re_export_cycles": [
+    {"files": ["libs/core/src/barrel/index.ts", "libs/core/src/barrel/one.ts"], "kind": "multi-node", "effective_severity": "warn"}
+  ],
+  "boundary_violations": [
+    {"from_path": "libs/core/src/c.ts", "to_path": "apps/app/src/x.ts", "from_zone": "libs", "to_zone": "apps", "import_specifier": "apps/app/src/x.ts", "line": 5, "col": 9, "effective_severity": "error"},
+    {"from_path": "libs/core/src/d.ts", "to_path": "apps/app/src/x.ts", "from_zone": "libs", "to_zone": "apps", "import_specifier": "apps/app/src/x.ts", "line": 1, "col": 0, "effective_severity": "error"}
+  ],
+  "unused_exports": [
+    {"path": "libs/core/src/unused.ts", "export_name": "neverRead", "is_type_only": false, "line": 7, "col": 13, "span_start": 91, "is_re_export": false, "effective_severity": "error"}
+  ]
+}`;
 
-  const touched = categoryFor(
-    CHAIN,
-    [change('src/pm/tools.ts')],
-    ran({ dead: { ...NO_DEAD, circular_dependencies: [cycle] }, ...TOOLS_CLOSED }),
-  );
-  expect(touched.category).toBe('LIFR');
+const CAPTURED = JSON.parse(FALLOW_DEAD) as Dead;
+const [PAIR_CYCLE, BARREL_CYCLE, MIXED_CYCLE] = CAPTURED.circular_dependencies;
+const [BARREL_REEXPORT_CYCLE] = CAPTURED.re_export_cycles;
+const [LINED_VIOLATION, REEXPORT_VIOLATION] = CAPTURED.boundary_violations;
+const [NEVER_READ] = CAPTURED.unused_exports;
 
-  const crossed = categoryFor(CHAIN, [change('src/pm/util.ts')], ran({ dead: { ...NO_DEAD, boundary_violations: [violation] }, ...TOOLS_CLOSED }));
-  expect(crossed.category).toBe('LIFR');
+const APP = 'apps/app/src/index.ts';
+const APP_HELPER = 'apps/app/src/x.ts';
+const A = 'libs/core/src/a.ts';
+const B = 'libs/core/src/b.ts';
+const C = 'libs/core/src/c.ts';
+const D = 'libs/core/src/d.ts';
+const E = 'libs/core/src/e.ts';
+const F = 'libs/core/src/f.ts';
+const UNUSED = 'libs/core/src/unused.ts';
+const BARREL = 'libs/core/src/barrel/index.ts';
+const ONE = 'libs/core/src/barrel/one.ts';
 
-  // The same cycle, on a change that touches neither end of it.
-  const missed = categoryFor(CHAIN, [change('src/pm/util.ts')], ran({ dead: { ...NO_DEAD, circular_dependencies: [cycle] }, ...TOOLS_CLOSED }));
-  expect(missed.category).toBe('VFR');
+/** The captured repository's own files and imports. */
+const CAPTURE: World = {
+  files: [APP, APP_HELPER, A, B, C, D, E, F, UNUSED, BARREL, ONE, 'libs/core/src/barrel/two.ts'],
+  head: imports(
+    ...[A, C, D, E, UNUSED, BARREL].map((to) => `${APP} > ${to}`),
+    `${A} > ${B}`,
+    `${B} > ${A}`,
+    `${C} > ${APP_HELPER}`,
+    `${D} > ${APP_HELPER}`,
+    `${E} > ${F}`,
+    `${F} > ${E}`,
+    `${BARREL} > ${ONE}`,
+    `${BARREL} > libs/core/src/barrel/two.ts`,
+    `${ONE} > ${BARREL}`,
+  ),
+};
+
+/** The captured findings a test is about, under a red `dead`, and nothing else measured. */
+function deadRed(findings: Partial<Dead>): CheckArtifacts {
+  return ran({ dead: { ...NO_DEAD, ...findings } }, [slot('dead', false)]);
+}
+
+function lines(path: string, start: number, count = 1): DiffFile {
+  return change(path, [{ start, count }]);
+}
+
+test('a standing cycle through two changed files is standing state, since no hunk meets either import line (D140)', () => {
+  // `a.ts` changed inside `alpha`, and `b.ts` inside `beta`; their imports, on lines 3 and 4, were there before.
+  const checks = categoryFor(CAPTURE, [lines(A, 6), lines(B, 7)], deadRed({ circular_dependencies: [PAIR_CYCLE] }));
+
+  expect(checks.category).toBe('VFR');
+  expect(checks.slots).toEqual([{ name: 'dead', ok: false, skipped: false, scope: [A, B], change: [] }]);
+});
+
+test('a cycle whose import line the change wrote is LIFR, on the change through the file that imports alone (D140)', () => {
+  // `b.ts`'s import of `a.ts` is line 4; `a.ts` changed only inside `alpha`.
+  const checks = categoryFor(CAPTURE, [lines(A, 6), lines(B, 4)], deadRed({ circular_dependencies: [PAIR_CYCLE] }));
+
+  expect(checks.category).toBe('LIFR');
+  expect(checks.slots).toEqual([{ name: 'dead', ok: false, skipped: false, scope: [A, B], change: [B] }]);
+});
+
+test('a boundary violation is on the change only where the change touched its import, never through the file it reaches (D140)', () => {
+  const at = (changed: readonly DiffFile[]): Checks => categoryFor(CAPTURE, changed, deadRed({ boundary_violations: [LINED_VIOLATION] }));
+
+  expect(at([lines(C, 5)]).category).toBe('LIFR');
+  // Inside `gamma`, below the import.
+  expect(at([lines(C, 8)]).category).toBe('VFR');
+  // The app file the violation reaches holds none of its lines.
+  expect(at([lines(APP_HELPER, 4)]).slots).toEqual([{ name: 'dead', ok: false, skipped: false, scope: [APP_HELPER, C], change: [] }]);
+});
+
+test('an unused export is the change\'s on its own line and standing off it, and as no cycle it is never LIFR (D140)', () => {
+  const at = (start: number): Checks => categoryFor(CAPTURE, [lines(UNUSED, start)], deadRed({ unused_exports: [NEVER_READ] }));
+
+  // On `neverRead`'s line 7 the red is the change's, which is IFR.
+  expect(at(7).category).toBe('IFR');
+  expect(at(7).slots[0]?.change).toEqual([UNUSED]);
+  // Inside `used`, lines 3 to 5, it was there before.
+  expect(at(4).category).toBe('VFR');
+  expect(at(4).slots[0]?.change).toEqual([]);
+});
+
+test('a finding with no line atis can read keeps the file rule: a re-export cycle, and every import fallow writes at line 1, column 0 (D140, C2)', () => {
+  // The barrel changed on line 3, its re-export of `two.ts`: not the cycle's import, but fallow gives no line to hold either to.
+  const barrel = (findings: Partial<Dead>): Checks => categoryFor(CAPTURE, [lines(BARREL, 3)], deadRed(findings));
+  expect(barrel({ re_export_cycles: [BARREL_REEXPORT_CYCLE] }).category).toBe('LIFR');
+  expect(barrel({ circular_dependencies: [BARREL_CYCLE] }).slots[0]?.change).toEqual([BARREL]);
+
+  // `d.ts`'s re-export across the boundary sits on line 4 and reads as 1:0, so both files it names keep the file rule.
+  expect(categoryFor(CAPTURE, [lines(APP_HELPER, 4)], deadRed({ boundary_violations: [REEXPORT_VIOLATION] })).category).toBe('LIFR');
+
+  // A finding of a shape with no line at all.
+  const bare = categoryFor(CAPTURE, [lines(C, 8)], deadRed({ boundary_violations: [{ from_path: C, to_path: APP_HELPER }] }));
+  expect(bare.slots[0]?.change).toEqual([C]);
+});
+
+test('a cycle holds each file to its own edge, so a file whose edge has no line keeps the file rule beside one that does (D140)', () => {
+  const at = (changed: readonly DiffFile[]): readonly string[] =>
+    categoryFor(CAPTURE, changed, deadRed({ circular_dependencies: [MIXED_CYCLE] })).slots[0]?.change ?? [];
+
+  // `e.ts` imports `f.ts` on line 2, and the change wrote line 3.
+  expect(at([lines(E, 3)])).toEqual([]);
+  expect(at([lines(E, 2)])).toEqual([E]);
+  // `f.ts`'s re-export of `e.ts` reads as 1:0, so any change to `f.ts` is a change to the cycle.
+  expect(at([lines(E, 3), lines(F, 2)])).toEqual([F]);
 });
 
 test('no .check/ is NOINST with the reason it was not read, never green and never a red', () => {

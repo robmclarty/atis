@@ -10,13 +10,14 @@
  *
  * Two kinds are approximations this build owns up to. `.check/` is read at
  * head only (D23), so "newly breached" and "newly introduced" cannot be
- * measured; the structural candidate fires on a finding present at head that
- * names a changed file, the threshold candidate on one whose lines the change
- * touched (D73), and both say so in their `why`.
+ * measured; the structural candidate fires on a finding present at head whose
+ * import lines the change touched, or whose file it touched where fallow
+ * gives no line (D140), the threshold candidate on one whose function's lines
+ * it touched (D73), and both say so in their `why`.
  */
 
 import type { Config, NoticeConfig, NoticeKind } from './config.js';
-import { broughtAdvisories, healthSpan, pathsOf, readRedSplit, spanOnChange, structuralFindings } from './evidence.js';
+import { broughtAdvisories, healthSpan, placeOnChange, readRedSplit, spanOnChange, structuralPlaces } from './evidence.js';
 import type { Advisory, BroughtPackage, CheckArtifacts, FileEvidence, RedSplit } from './evidence.js';
 import { OTHER_GROUP } from './groups.js';
 import type { FileHistory } from './history.js';
@@ -297,19 +298,36 @@ function redSlotCandidates(red: RedSplit): readonly Candidate[] {
   }));
 }
 
-/** A cycle or a boundary violation on a file this change touched: §5.3 calls it LIFR and §5.4 wants it labelled. */
+/** Where the findings on one file came onto the change: through an import line the change touched, or through the file alone. */
+type StructuralCount = { readonly lined: number; readonly unlined: number };
+
+/** What a structural candidate says: the import lines it touched, and any finding the file rule kept for want of a line (D140). */
+function structuralWhy({ lined, unlined }: StructuralCount): string {
+  if (unlined === 0) return 'a cycle or boundary violation imports on a line this change touched';
+  if (lined === 0) return 'a cycle or boundary violation names this changed file at no line fallow gives, so the whole file holds it';
+  return `cycles or boundary violations name this changed file: ${lined} at import lines this change touched, ${unlined} at no line fallow gives`;
+}
+
+/**
+ * A cycle or a boundary violation on this change, by the split's line rule:
+ * §5.3 calls it LIFR and §5.4 wants it labelled. One whose import lines the
+ * change never touched is standing state, though it runs through a changed
+ * file (D140).
+ */
 function structuralCandidates(check: RanCheck, changed: ReadonlyMap<string, ChangedFile>): readonly Candidate[] {
-  const findings = new Map<string, number>();
-  for (const finding of structuralFindings(check.dead)) {
-    for (const path of new Set(pathsOf(finding))) {
-      if (changed.has(path)) findings.set(path, (findings.get(path) ?? 0) + 1);
+  const hunks = new Map([...changed].map(([path, file]) => [path, file.hunks] as const));
+  const counts = new Map<string, StructuralCount>();
+  for (const place of structuralPlaces(check.dead)) {
+    for (const path of placeOnChange(place, hunks)) {
+      const { lined, unlined } = counts.get(path) ?? { lined: 0, unlined: 0 };
+      counts.set(path, place.files.includes(path) ? { lined, unlined: unlined + 1 } : { lined: lined + 1, unlined });
     }
   }
-  return [...findings].map(([path, count]) => ({
+  return [...counts].map(([path, count]) => ({
     kind: 'cycle-or-boundary',
     target: path,
-    why: `a cycle or boundary violation names this changed file; ${HEAD_ONLY}`,
-    inputs: { findings: count },
+    why: `${structuralWhy(count)}; ${HEAD_ONLY}`,
+    inputs: { findings: count.lined + count.unlined },
     thresholds: {},
     slot: 'dead',
   }));

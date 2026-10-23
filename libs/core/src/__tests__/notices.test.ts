@@ -375,6 +375,60 @@ test('two runs over one input produce one ranking, and the input order cannot ch
   expect(JSON.stringify(shuffled)).toBe(JSON.stringify(first));
 });
 
+/**
+ * Two cycles of a fallow 3.35 run, captured and trimmed as `evidence.test.ts`'s
+ * are: `a.ts` and `b.ts` import each other on lines 3 and 4, and a barrel and
+ * `one.ts` re-export each other, whose imports fallow writes at 1:0.
+ */
+const [PAIR_CYCLE, BARREL_CYCLE] = JSON.parse(`[
+  {"files": ["libs/core/src/a.ts", "libs/core/src/b.ts"], "length": 2, "line": 3, "col": 9, "edges": [{"path": "libs/core/src/a.ts", "line": 3, "col": 9}, {"path": "libs/core/src/b.ts", "line": 4, "col": 9}], "effective_severity": "error"},
+  {"files": ["libs/core/src/barrel/index.ts", "libs/core/src/barrel/one.ts"], "length": 2, "line": 1, "col": 0, "edges": [{"path": "libs/core/src/barrel/index.ts", "line": 1, "col": 0}, {"path": "libs/core/src/barrel/one.ts", "line": 1, "col": 0}], "effective_severity": "error"}
+]`) as readonly unknown[];
+
+const CYCLE_A = 'libs/core/src/a.ts';
+const CYCLE_B = 'libs/core/src/b.ts';
+const CYCLE_BARREL = 'libs/core/src/barrel/index.ts';
+
+/** The captured cycles' files and imports beside the quiet world, `dead` green so the candidate speaks for itself. */
+const CYCLES: Scenario = {
+  files: [CYCLE_A, CYCLE_B, CYCLE_BARREL, 'libs/core/src/barrel/one.ts'],
+  edges: [`${CYCLE_A} > ${CYCLE_B}`, `${CYCLE_B} > ${CYCLE_A}`, `${CYCLE_BARREL} > libs/core/src/barrel/one.ts`, `libs/core/src/barrel/one.ts > ${CYCLE_BARREL}`],
+  check: ran({ dead: { ...NO_DEAD, circular_dependencies: [PAIR_CYCLE, BARREL_CYCLE] } }),
+};
+
+function structuralOf(scenario: Scenario): readonly Notice[] {
+  return noticesFor(scenario).filter((notice) => notice.kind === 'cycle-or-boundary');
+}
+
+test('a standing cycle through changed files raises no structural notice, and one whose import line the change wrote does, on that file (D140)', () => {
+  // `a.ts` changed inside `alpha` and `b.ts` inside `beta`: the cycle's imports, on lines 3 and 4, were there before.
+  expect(structuralOf({ ...CYCLES, changed: [change(CYCLE_A, 1, 1, [{ start: 6, count: 1 }]), change(CYCLE_B, 1, 1, [{ start: 7, count: 1 }])] })).toEqual([]);
+
+  const wrote = structuralOf({ ...CYCLES, changed: [change(CYCLE_A, 1, 1, [{ start: 6, count: 1 }]), change(CYCLE_B, 1, 1, [{ start: 4, count: 1 }])] });
+  expect(wrote.map((notice) => notice.target)).toEqual([CYCLE_B]);
+  expect(wrote[0]?.why).toBe(`a cycle or boundary violation imports on a line this change touched; ${HEAD_ONLY}`);
+  expect(wrote[0]?.inputs['findings']).toBe(1);
+});
+
+test('a structural notice the file rule kept says fallow gave it no line, and counts both ways a file came on (D140)', () => {
+  // The barrel's change on line 3 is not its re-export of `one.ts`, but fallow writes that import at 1:0.
+  const unlined = structuralOf({ ...CYCLES, changed: [change(CYCLE_BARREL, 1, 0, [{ start: 3, count: 1 }])] });
+  expect(unlined.map((notice) => notice.target)).toEqual([CYCLE_BARREL]);
+  expect(unlined[0]?.why).toBe(`a cycle or boundary violation names this changed file at no line fallow gives, so the whole file holds it; ${HEAD_ONLY}`);
+
+  // Beside it, a boundary violation whose import is the line the change wrote.
+  const violation = { from_path: CYCLE_BARREL, to_path: 'src/doctor.ts', from_zone: 'libs', to_zone: 'apps', line: 3, col: 9 };
+  const both = structuralOf({
+    ...CYCLES,
+    changed: [change(CYCLE_BARREL, 1, 0, [{ start: 3, count: 1 }])],
+    check: ran({ dead: { ...NO_DEAD, circular_dependencies: [BARREL_CYCLE], boundary_violations: [violation] } }),
+  });
+  expect(both[0]?.why).toBe(
+    `cycles or boundary violations name this changed file: 1 at import lines this change touched, 1 at no line fallow gives; ${HEAD_ONLY}`,
+  );
+  expect(both[0]?.inputs['findings']).toBe(2);
+});
+
 test('the two head-only kinds say in their why that they are not measured as introduced', () => {
   const structural = noticesFor(ONE_OF_EACH['cycle-or-boundary'])[0];
   const threshold = noticesFor(ONE_OF_EACH['threshold-breached'])[0];

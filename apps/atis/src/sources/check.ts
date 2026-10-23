@@ -176,7 +176,11 @@ export function parseHealth(text: string): FallowParse<Health> | undefined {
   };
 }
 
-/** `dead.json` (fallow): `circular_dependencies`, `re_export_cycles`, `boundary_violations`, `unused_exports`. */
+/**
+ * `dead.json` (fallow): `circular_dependencies`, `re_export_cycles`,
+ * `boundary_violations`, `unused_exports`, each finding kept whole, so core
+ * reads the paths it names and the lines it stands on by key (D140).
+ */
 export function parseDead(text: string): FallowParse<Dead> | undefined {
   const value = parseJson(text);
   if (!isRecord(value)) return undefined;

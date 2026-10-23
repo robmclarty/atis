@@ -69,7 +69,7 @@ export type Health = {
   readonly fan_in_p95?: number;
 };
 
-/** fallow's `dead.json` findings, kept as they were read: atis takes the paths they name and nothing else. */
+/** fallow's `dead.json` findings, kept as they were read: atis takes the paths they name and the lines they stand on, by key, and nothing else (D140). */
 export type Dead = {
   readonly circular_dependencies: readonly unknown[];
   readonly re_export_cycles: readonly unknown[];
@@ -210,8 +210,12 @@ const PATH_LIST_KEYS = ['files', 'paths', 'cycle', 'shared_files'];
 /** And under these as nested records: a cycle's `edges`, a clone family's `groups` and their `instances`. */
 const NESTED_KEYS = ['edges', 'groups', 'instances'];
 
-/** The two slots whose findings name a region of a file rather than the file: a function over a threshold, a clone (D73). */
-const LINE_SLOTS: ReadonlySet<string> = new Set(['health', 'dupes']);
+/**
+ * The slots whose findings name lines of a file rather than the file: a
+ * function over a threshold, a clone (D73), and a cycle's or a boundary
+ * violation's import or an unused export (D140).
+ */
+const LINE_SLOTS: ReadonlySet<string> = new Set(['health', 'dupes', 'dead']);
 
 /** The slot whose findings name packages, on the change only through a manifest whose own edit brought one (D83). */
 const SECURITY = 'security';
@@ -496,17 +500,24 @@ export type RedSplit = {
   readonly standing: readonly RedSlot[];
 };
 
-/** A finding's lines at head, first to last: a `health` function or one `dupes` clone instance (D73). */
+/** A finding's lines at head, first to last: a `health` function, one `dupes` clone instance (D73), or a `dead` finding's one line (D140). */
 export type Span = { readonly path: string; readonly start: number; readonly end: number };
 
-/** What the split reads: the scoped slots, the change's lines, the torn stitches, and the lines each finding covers. */
+/**
+ * Where one finding sits for the line rule: the spans of the lines it stands
+ * on, and the files it names where it has no line atis can read. The file
+ * rule holds it to those, so nothing is hidden on a guess (D140, C2).
+ */
+export type FindingPlace = { readonly spans: readonly Span[]; readonly files: readonly string[] };
+
+/** What the split reads: the scoped slots, the change's lines, the torn stitches, and where each finding sits. */
 export type RedSplitInputs = {
   readonly slots: readonly CheckSlot[];
-  /** The changed set with its head-side hunks, where a `health` or `dupes` finding has to land to be the change's (D73). */
+  /** The changed set with its head-side hunks, where a `health`, `dupes` or `dead` finding has to land to be the change's (D73, D140). */
   readonly changed: readonly Pick<ChangedFile, 'path' | 'hunks'>[];
   readonly stitches: readonly Stitch[];
-  /** The spans of the `health` and `dupes` findings, by slot name; a slot with none here puts no file on the change. */
-  readonly spans: ReadonlyMap<string, readonly Span[]>;
+  /** The places of the `health`, `dupes` and `dead` findings, by slot name; a slot with none here puts no file on the change. */
+  readonly places: ReadonlyMap<string, readonly FindingPlace[]>;
   /** The manifests whose added or moved packages brought an advisory: the only files a red `security` is on the change through (D83). */
   readonly brought?: ReadonlySet<string>;
 };
@@ -538,10 +549,69 @@ export function pathsOf(finding: unknown): readonly string[] {
   return paths;
 }
 
-/** The findings that are a cycle or a boundary violation, which is what §5.3 calls LIFR when one touches the change. */
-export function structuralFindings(dead: Dead | undefined): readonly unknown[] {
+/** A positive whole line number under `line`, read by key (D41); anything else is no line. */
+function lineOf(record: Record<string, unknown>): number | undefined {
+  const line = record['line'];
+  return typeof line === 'number' && Number.isInteger(line) && line >= 1 ? line : undefined;
+}
+
+/**
+ * An import's line, where fallow gives one atis can read. Fallow 3.35 writes
+ * an import that a re-export makes (`export … from`) at line 1, column 0,
+ * wherever the statement sits, so that position names no line. An import
+ * that truly sits at the file's first character keeps the file rule with it,
+ * which hides nothing (C2).
+ */
+function importLine(record: Record<string, unknown>): number | undefined {
+  const line = lineOf(record);
+  return line === 1 && record['col'] === 0 ? undefined : line;
+}
+
+function lineSpan(path: string, line: number): Span {
+  return { path, start: line, end: line };
+}
+
+/**
+ * A cycle's place. Each of its `edges` is the import in its own file that
+ * leads on round the cycle, so each file is held to its edges' lines, and a
+ * file with no edge line atis can read keeps the file rule. A re-export
+ * cycle carries no edges, so every file it names keeps it (D140).
+ */
+function cyclePlace(cycle: unknown): FindingPlace {
+  const edges = isRecord(cycle) && Array.isArray(cycle['edges']) ? cycle['edges'].filter(isRecord) : [];
+  const spans = edges.flatMap((edge): readonly Span[] => {
+    const path = edge['path'];
+    const line = importLine(edge);
+    return typeof path === 'string' && line !== undefined ? [lineSpan(path, line)] : [];
+  });
+  const lined = new Set(spans.map((span) => span.path));
+  return { spans, files: sortUnique(pathsOf(cycle).filter((path) => !lined.has(path))) };
+}
+
+/**
+ * A finding that stands on one line of one file: a boundary violation's
+ * import, on `line` in `from_path`, or an unused export's own `line` in
+ * `path`. One with no line atis can read keeps the file rule over every file
+ * it names (D140).
+ */
+function linePlace(finding: unknown, pathKey: string, line: (record: Record<string, unknown>) => number | undefined): FindingPlace {
+  const path = isRecord(finding) ? finding[pathKey] : undefined;
+  const at = isRecord(finding) ? line(finding) : undefined;
+  return typeof path === 'string' && at !== undefined ? { spans: [lineSpan(path, at)], files: [] } : { spans: [], files: sortUnique(pathsOf(finding)) };
+}
+
+/** The cycles and boundary violations, each with its place: what §5.3 calls LIFR when one is on the change (D140). */
+export function structuralPlaces(dead: Dead | undefined): readonly FindingPlace[] {
   if (dead === undefined) return [];
-  return [...dead.circular_dependencies, ...dead.re_export_cycles, ...dead.boundary_violations];
+  return [
+    ...[...dead.circular_dependencies, ...dead.re_export_cycles].map(cyclePlace),
+    ...dead.boundary_violations.map((violation) => linePlace(violation, 'from_path', importLine)),
+  ];
+}
+
+/** Every `dead` finding's place: the structural ones and the unused exports. */
+function deadPlaces(dead: Dead | undefined): readonly FindingPlace[] {
+  return [...structuralPlaces(dead), ...(dead?.unused_exports ?? []).map((unused) => linePlace(unused, 'path', lineOf))];
 }
 
 /**
@@ -562,7 +632,9 @@ function namedPaths(slot: string, check: RanCheck): readonly string[] {
   }
   if (slot === 'health') return sortUnique((check.health?.findings ?? []).map((finding) => finding.path));
   if (slot === 'dead') {
-    return sortUnique([...structuralFindings(check.dead), ...(check.dead?.unused_exports ?? [])].flatMap(pathsOf));
+    const { dead } = check;
+    if (dead === undefined) return [];
+    return sortUnique([...dead.circular_dependencies, ...dead.re_export_cycles, ...dead.boundary_violations, ...dead.unused_exports].flatMap(pathsOf));
   }
   if (slot === 'dupes') return sortUnique((check.dupes?.clone_families ?? []).flatMap(pathsOf));
   if (slot === 'lint') return failingPaths(check.lint?.diagnostics ?? []);
@@ -613,11 +685,12 @@ function cloneSpans(family: unknown): readonly Span[] {
   });
 }
 
-/** The spans of the two line-scoped slots' findings, by slot name (D73). */
-function findingSpans(check: RanCheck): ReadonlyMap<string, readonly Span[]> {
+/** The places of the three line-scoped slots' findings, by slot name (D73, D140). */
+function findingPlaces(check: RanCheck): ReadonlyMap<string, readonly FindingPlace[]> {
   return new Map([
-    ['health', (check.health?.findings ?? []).map(healthSpan)],
-    ['dupes', (check.dupes?.clone_families ?? []).flatMap(cloneSpans)],
+    ['health', (check.health?.findings ?? []).map((finding) => ({ spans: [healthSpan(finding)], files: [] }))],
+    ['dupes', (check.dupes?.clone_families ?? []).map((family) => ({ spans: cloneSpans(family), files: [] }))],
+    ['dead', deadPlaces(check.dead)],
   ]);
 }
 
@@ -641,6 +714,18 @@ export function spanOnChange(span: Span, hunks: ReadonlyMap<string, readonly Hun
   return (hunks.get(span.path) ?? []).some((hunk) => meets(span, hunk));
 }
 
+/**
+ * The changed files one finding is on the change through: each file where a
+ * hunk meets one of its lines, and each file it names with no line atis can
+ * read that the change touched at all (D73, D140).
+ */
+export function placeOnChange(place: FindingPlace, hunks: ReadonlyMap<string, readonly Hunk[]>): readonly string[] {
+  return sortUnique([
+    ...place.spans.filter((span) => spanOnChange(span, hunks)).map((span) => span.path),
+    ...place.files.filter((path) => hunks.has(path)),
+  ]);
+}
+
 /** Each red slot in exactly one list: the change's when some changed file is behind it, else the standing state's. */
 function partition(slots: readonly RedSlot[]): RedSplit {
   return {
@@ -654,9 +739,10 @@ function partition(slots: readonly RedSlot[]): RedSplit {
  * with D73's line rule. A slot is on the change through each changed file it
  * names, and `test` also through each failing test it names that imports a
  * changed file, which is a torn stitch (D4): the test is not the change, but
- * the files it tore on are. `health` and `dupes` name a region of a file
- * rather than the file, so either is on the change only through a changed
- * file where one of its findings meets a hunk. `security` names the
+ * the files it tore on are. `health`, `dupes` and `dead` name lines of a
+ * file rather than the file, so each is on the change only through a changed
+ * file where one of its findings meets a hunk, or one a finding with no line
+ * atis can read names (D140). `security` names the
  * manifests its advisories start from, and is on the change only through a
  * manifest whose own edit added or moved a package one of them runs through
  * (D83). Every other file a slot names,
@@ -677,9 +763,7 @@ export function splitRedSlots(inputs: RedSplitInputs): RedSplit {
     .toSorted((a, b) => byPath(a.name, b.name))
     .map((slot): RedSlot => {
       if (slot.scope === GLOBAL) return { name: slot.name, global: true, change: [], named: [] };
-      const met = new Set(
-        (inputs.spans.get(slot.name) ?? []).filter((span) => spanOnChange(span, hunks)).map((span) => span.path),
-      );
+      const met = new Set((inputs.places.get(slot.name) ?? []).flatMap((place) => placeOnChange(place, hunks)));
       const through = (path: string): readonly string[] => {
         if (LINE_SLOTS.has(slot.name)) return met.has(path) ? [path] : [];
         if (slot.name === SECURITY) return hunks.has(path) && inputs.brought?.has(path) === true ? [path] : [];
@@ -725,17 +809,20 @@ function hasGap(file: FileEvidence): boolean {
 
 /**
  * §5.3's ladder with D27's numbers, worst rung first. A vacuous green (no
- * check ran at all) and a cycle or boundary violation on a file this change
- * touched are the two things that make a green summary worse than no summary.
- * A red slot is IFR only when it is the change's red (D69): standing state
- * leaves the category to the change's own evidence.
+ * check ran at all) and a cycle or boundary violation on this change are the
+ * two things that make a green summary worse than no summary. A cycle or a
+ * violation is on the change by the split's line rule: one whose import
+ * lines the change never touched was there before it, so a standing cycle
+ * through a changed file is standing state (D140). A red slot is IFR only
+ * when it is the change's red (D69): standing state leaves the category to
+ * the change's own evidence.
  */
 function categoryOf(inputs: CategoryInputs, check: RanCheck, red: RedSplit): FlightCategory {
-  const changed = new Set(inputs.changed.map((file) => file.path));
+  const hunks = new Map(inputs.changed.map((file) => [file.path, file.hunks] as const));
   const highReach = inputs.config.category.high_reach_cells;
 
   if (check.summary.checks_run === 0) return 'LIFR';
-  if (structuralFindings(check.dead).some((finding) => pathsOf(finding).some((path) => changed.has(path)))) return 'LIFR';
+  if (structuralPlaces(check.dead).some((place) => placeOnChange(place, hunks).length > 0)) return 'LIFR';
   if (red.change.length > 0) return 'IFR';
   if (inputs.files.some((file) => hasGap(file) && file.cells_reached >= highReach)) return 'IFR';
   if (inputs.files.some((file) => hasGap(file) || file.escaped_interface)) return 'MVFR';
@@ -762,7 +849,7 @@ export function computeCategory(inputs: CategoryInputs): Checks {
 
   const slots = scopedSlots(check);
   const brought = new Set(broughtAdvisories(check.security, inputs.deps_added, inputs.deps_moved).map((entry) => entry.manifest));
-  const red = splitRedSlots({ slots, changed: inputs.changed, stitches: inputs.stitches, spans: findingSpans(check), brought });
+  const red = splitRedSlots({ slots, changed: inputs.changed, stitches: inputs.stitches, places: findingPlaces(check), brought });
   return {
     category: categoryOf(inputs, check, red),
     checks_run: check.summary.checks_run,
