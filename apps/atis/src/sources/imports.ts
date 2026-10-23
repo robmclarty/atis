@@ -43,6 +43,8 @@ export type ScannedFile = {
   readonly exports: readonly string[];
   /** Beside each exported name, its declared shape, or `null` where it cannot be compared (D76). */
   readonly shapes: ExportShapes;
+  /** The exported names whose type `isolatedDeclarations` flagged as inferred: the ones only the checker can print (D118). */
+  readonly inferred: readonly string[];
   /** Whether the file leaves JavaScript behind once its types are stripped, which is what a coverage report measures (D80). */
   readonly emits: boolean;
 };
@@ -215,6 +217,8 @@ type Parsed = {
   readonly exports: readonly string[];
   /** The shape of each name in `exports`; a name a star passes on is the scan's to add. */
   readonly shapes: ExportShapes;
+  /** The names in `exports` whose type the declaration emit flagged as inferred. */
+  readonly inferred: readonly string[];
   readonly references: readonly Reference[];
   /** The file's `export * from …`, whose names it passes on. */
   readonly stars: readonly Star[];
@@ -506,23 +510,48 @@ function printed(target: Target, file: ts.SourceFile): string | null {
   return `${target.typeOnly ? 'type ' : ''}${prints.join('\n')}`;
 }
 
+/** Each exported name's shape, and the names whose type the emit could only infer. */
+type Shapes = { readonly shapes: ExportShapes; readonly inferred: readonly string[] };
+
 /**
  * The shape of each of `names` (D76): the declarations the compiler emits for
  * the file, printed, so bodies and initializers are gone and every overload
  * and merged declaration is in. A name the compiler flagged while emitting,
  * or one it emitted nothing for, is `null`: not compared, never unchanged (C2).
+ * The flagged names are listed apart, since the checker can print some of
+ * them where a file read on its own cannot (D118).
  */
-function shapesOf(source: ts.SourceFile, names: readonly string[]): ExportShapes {
-  if (names.length === 0) return {};
+function shapesOf(source: ts.SourceFile, names: readonly string[]): Shapes {
+  if (names.length === 0) return { shapes: {}, inferred: [] };
   const emitted = emitDeclarations(source);
   const own = exportTargets(source);
   const out = emitted === undefined ? new Map<string, Target>() : exportTargets(emitted.file);
-  return Object.fromEntries(
+  const inferred: string[] = [];
+  const shapes = Object.fromEntries(
     names.map((name) => {
       const declared = own.get(name);
       const target = out.get(name);
       if (emitted === undefined || declared === undefined || target === undefined) return [name, null];
-      return [name, flagged(declared, emitted.diagnostics, source) ? null : printed(target, emitted.file)];
+      if (!flagged(declared, emitted.diagnostics, source)) return [name, printed(target, emitted.file)];
+      inferred.push(name);
+      return [name, null];
+    }),
+  );
+  return { shapes, inferred };
+}
+
+/**
+ * The shape of each of `names` as a declaration file declares it, printed the
+ * way `shapesOf` prints the emit of a file read on its own, so the checker's
+ * emit of an inferred name compares with a name written out by hand (D118).
+ * A name the file does not declare is `null` (C2).
+ */
+export function declaredShapes(declarations: ts.SourceFile, names: readonly string[]): ExportShapes {
+  const targets = exportTargets(declarations);
+  return Object.fromEntries(
+    names.map((name) => {
+      const target = targets.get(name);
+      return [name, target === undefined ? null : printed(target, declarations)];
     }),
   );
 }
@@ -556,12 +585,14 @@ function parseSource(path: string, content: string): Parsed {
     }
   }
   const names = sorted(exports);
+  const { shapes, inferred } = shapesOf(source, names);
   return {
     loc: content.split('\n').filter((line) => line.trim() !== '').length,
     // A declaration file is all types by its name, whatever it holds (D77).
     emits: !source.isDeclarationFile && source.statements.some(leavesCode),
     exports: names,
-    shapes: shapesOf(source, names),
+    shapes,
+    inferred,
     references: [...references, ...dynamicImports(source)],
     stars,
   };
@@ -841,6 +872,32 @@ function resolveSpecifier(specifier: string, from: string, context: Context): st
   return resolveWorkspace(specifier, context);
 }
 
+function contextOf(root: string, tree: Tree): Context {
+  const paths = new Set(tree.files);
+  return {
+    root,
+    paths,
+    members: readMembers(root, tree, paths),
+    host: resolutionHost(root, tree, paths),
+    cache: ts.createModuleResolutionCache(root, (name) => name, RESOLUTION),
+  };
+}
+
+/** Where a file of the tree, by its repo-relative path, takes an import specifier: a tree file the scan's own rules reach, or nothing. */
+export type TreeResolver = (specifier: string, from: string) => string | undefined;
+
+/**
+ * The scan's resolution as a function, for the checker's program (D118): a
+ * relative specifier the way NodeNext reads it, a workspace package by its
+ * manifest, and nothing outside the extraction, so the program holds the
+ * in-tree imports and an npm package stays unresolved.
+ */
+export function treeResolver(dir: string): TreeResolver {
+  const root = resolve(dir);
+  const context = contextOf(root, walk(root));
+  return (specifier, from) => resolveSpecifier(specifier, from, context);
+}
+
 /** A resolved `export * from …`: the file it passes names on from, and the shape it gives them. */
 type Passed = { readonly to: string; readonly shape: string };
 
@@ -1025,15 +1082,8 @@ function memberEntries(context: Context, fallow: readonly FallowEntry[]): Readon
 export function scanImports(dir: string, options: ScanOptions = {}): Scan {
   const root = resolve(dir);
   const tree = walk(root);
-  const paths = new Set(tree.files);
-  const members = readMembers(root, tree, paths);
-  const context: Context = {
-    root,
-    paths,
-    members,
-    host: resolutionHost(root, tree, paths),
-    cache: ts.createModuleResolutionCache(root, (name) => name, RESOLUTION),
-  };
+  const context = contextOf(root, tree);
+  const { members } = context;
 
   const parsed = new Map<string, Parsed>();
   const edges: ScannedEdge[] = [];
@@ -1068,6 +1118,7 @@ export function scanImports(dir: string, options: ScanOptions = {}): Scan {
       kind: classifyFile(path),
       exports: names,
       shapes: withStars(names, parsed.get(path)?.shapes ?? {}, stars.get(path) ?? [], exports),
+      inferred: parsed.get(path)?.inferred ?? [],
       emits: parsed.get(path)?.emits ?? false,
     };
   });

@@ -21,7 +21,8 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { buildMap } from 'core';
 import { renderSvg } from 'svg';
 
-import { readCheck, readDiff, readLog, readManifests, scanImports } from './sources/index.js';
+import { checkInferredShapes, readCheck, readDiff, readLog, readManifests, scanImports, shapePaths } from './sources/index.js';
+import type { Scan } from './sources/index.js';
 
 /** The flags, already parsed: `cli.ts` owns the parsing, `run` owns the work. */
 export type Options = {
@@ -75,6 +76,9 @@ function headOf(repo: string): { readonly sha: string; readonly time: number } {
 
 /** One extracted commit: `tree` is the extraction the scanner reads, `root` the temp directory holding it. */
 type Extraction = { readonly tree: string; readonly root: string };
+
+/** One side of the change: its extraction, which the checker reads again, and the scan of it. */
+type Side = { readonly tree: string; readonly scan: Scan };
 
 /** `git archive <sha> | tar -x` into a temp directory of its own (D32), the archive kept beside the tree, not in it. */
 function extract(repo: string, sha: string): Extraction {
@@ -146,18 +150,22 @@ export function run(options: Options): Outcome {
   const timings: Timing[] = [];
   const extractions: Extraction[] = [];
 
-  const scan = (source: string, sha: string): ReturnType<typeof scanImports> =>
+  const scan = (source: string, sha: string): Side =>
     timed(timings, source, () => {
       const extraction = extract(repo, sha);
       extractions.push(extraction);
-      return scanImports(extraction.tree, { repo });
+      return { tree: extraction.tree, scan: scanImports(extraction.tree, { repo }) };
     });
 
   try {
     const head = headOf(repo);
     const diff = timed(timings, 'diff', () => readDiff(repo, options.base));
-    const baseScan = scan('scan base', diff.merge_base);
-    const headScan = scan('scan head', head.sha);
+    const baseSide = scan('scan base', diff.merge_base);
+    const headSide = scan('scan head', head.sha);
+    // The names only the checker can print, in the changed interface files alone, each side timed (D118).
+    const paths = shapePaths(diff.changed, baseSide.scan, headSide.scan);
+    const baseScan = timed(timings, 'shapes base', () => checkInferredShapes(baseSide.tree, baseSide.scan, paths.base));
+    const headScan = timed(timings, 'shapes head', () => checkInferredShapes(headSide.tree, headSide.scan, paths.head));
     const deps_added = timed(timings, 'manifests', () => readManifests(repo, diff.merge_base));
     const commits = timed(timings, 'log', () => readLog(repo, HEAD));
     const check = timed(timings, 'check', () => readCheck(repo));

@@ -7,3 +7,4 @@
 export * from './check.js';
 export * from './git.js';
 export * from './imports.js';
+export * from './shapes.js';

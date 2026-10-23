@@ -371,7 +371,7 @@ test('every tracked file is listed, classified and sorted, whether it is parsed 
     ['pnpm-workspace.yaml', 'other'],
   ]);
   expect(fileIn(scan, 'libs/shared/src/greet.ts').loc).toBe(4);
-  expect(fileIn(scan, 'README.md')).toEqual({ path: 'README.md', loc: 0, kind: 'other', exports: [], shapes: {}, emits: false });
+  expect(fileIn(scan, 'README.md')).toEqual({ path: 'README.md', loc: 0, kind: 'other', exports: [], shapes: {}, inferred: [], emits: false });
 });
 
 test('a file emits code only when a statement survives type stripping, so a barrel of re-exports emits none (D80)', () => {

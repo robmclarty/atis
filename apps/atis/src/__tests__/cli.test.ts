@@ -115,6 +115,9 @@ test('the command writes a map of this repository that passes assertMap', () => 
   // --verbose measures every source, the history window included (D50).
   expect(result.stderr).toMatch(/scan base\s+\d+ ms/);
   expect(result.stderr).toMatch(/log\s+\d+ ms/);
+  // And the type checker's pass over the inferred shapes, one line per side (D118).
+  expect(result.stderr).toMatch(/shapes base\s+\d+ ms/);
+  expect(result.stderr).toMatch(/shapes head\s+\d+ ms/);
 }, MINUTE);
 
 test('--svg writes the still render beside the map in one run', () => {
