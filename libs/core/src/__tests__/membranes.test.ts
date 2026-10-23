@@ -5,11 +5,11 @@ import { fileURLToPath } from 'node:url';
 import { expect, test } from 'vitest';
 
 import { DEFAULT_CONFIG } from '../config.js';
-import { computeLayout, computeMembranes, membraneThickness, withinContour } from '../layout/index.js';
+import { computeLayout, computeMembranes, membraneThickness, seededRandom, withinContour } from '../layout/index.js';
 import type { LayoutInput, MembraneCell } from '../layout/index.js';
 import { buildMap } from '../map.js';
 import type { BuildInputs } from '../map.js';
-import type { Band, Group, Organelle, Position } from '../schema.js';
+import type { Band, Group, Layout, Organelle, Position } from '../schema.js';
 
 /**
  * The fixture is a small repository with every shape a membrane has to
@@ -167,6 +167,39 @@ test('a skin routes around another cell standing between two of its own files', 
   expect(withinContour(b, 100, 100)).toBe(false);
 });
 
+test('a skin drawn over a neighbour boxed in by its own files is carved back off it', () => {
+  // Four files stand close round a fifth that is not theirs, nearer than the field can bend between.
+  const members = {
+    'a/one.ts': { x: 100, y: 100, r: 10 },
+    'a/two.ts': { x: 124, y: 100, r: 10 },
+    'a/three.ts': { x: 100, y: 124, r: 10 },
+    'a/four.ts': { x: 124, y: 124, r: 10 },
+  };
+  const contours = computeMembranes({
+    cells: [
+      { id: 'directory:a', organelles: Object.keys(members) },
+      { id: 'directory:b', organelles: ['b/boxed.ts'] },
+    ],
+    groups: [],
+    positions: { ...members, 'b/boxed.ts': { x: 112, y: 112, r: 4 } },
+  });
+  const a = contours['directory:a'] ?? [];
+  for (const member of Object.values(members)) expect(withinContour(a, member.x, member.y)).toBe(true);
+  expect(withinContour(a, 112, 112)).toBe(false);
+  for (const member of Object.values(members)) expect(withinContour(contours['directory:b'] ?? [], member.x, member.y)).toBe(false);
+  // Still one closed ring at the layout's precision.
+  expect(a.at(-1)).toEqual(a[0]);
+  for (const [x, y] of a) for (const value of [x, y]) expect(Math.abs(value * 100 - Math.round(value * 100))).toBeLessThan(1e-6);
+});
+
+test('a point level with a peak of the ring, beside it, is outside it', () => {
+  // The library's own ray test counts one edge at a vertex the ring only touches, and reads this point as in.
+  const ring = [[10, 0], [20, 10], [0, 10], [10, 0]] as const;
+  expect(withinContour(ring, -5, 0)).toBe(false);
+  expect(withinContour(ring, 25, 10)).toBe(false);
+  expect(withinContour(ring, 10, 5)).toBe(true);
+});
+
 test('a file the layout did not place is neither held nor routed around', () => {
   const contours = computeMembranes({
     cells: [
@@ -218,4 +251,92 @@ test('buildMap cuts a skin per cell and per placed group, and a package holds it
   // A shore contour holds its own marks and no other group's.
   expect(inside('deps', 'package.json')).toBe(true);
   expect(inside('deps', 'README.md')).toBe(false);
+});
+
+/** Every placed centre against every skin it does not belong to: a cell's files and those of the cells beneath it, a group's own marks. */
+function strangersUnder(layout: Layout, cells: readonly MembraneCell[], groups: readonly Group[]): readonly string[] {
+  const parent = new Map(cells.map((cell) => [cell.id, cell.parent] as const));
+  const owners = new Map<string, ReadonlySet<string>>();
+  for (const cell of cells) {
+    for (const file of cell.organelles) {
+      const chain = new Set<string>();
+      for (let held: string | undefined = cell.id; held !== undefined && !chain.has(held); held = parent.get(held)) chain.add(held);
+      owners.set(file, chain);
+    }
+  }
+  for (const group of groups) for (const file of group.files) owners.set(file, new Set([group.id]));
+  return Object.entries(layout.contours ?? {}).flatMap(([skin, contour]) =>
+    Object.entries(layout.positions).flatMap(([file, placed]) =>
+      owners.get(file)?.has(skin) !== true && withinContour(contour, placed.x, placed.y) ? [`${file} under ${skin}`] : [],
+    ),
+  );
+}
+
+/**
+ * A field big and crowded enough for the Bubble Set to come to rest over
+ * neighbours: two packages of four folders each, the folders straddling two
+ * terraces, beside thirty-six loose directories that each spread over three,
+ * with imports mostly inside a cell and some across. Before the carve, the
+ * cut alone left 81 centres under skins that were not theirs here. It is
+ * drawn from a seeded source, so it is the same field every run (C3).
+ */
+function crowdedField(seed: number): LayoutInput {
+  const random = seededRandom(seed);
+  const pick = (count: number): number => Math.floor(random() * count);
+  const cells: MembraneCell[] = [];
+  const organelles: Organelle[] = [];
+  const place = (cell: string, path: string, band: number): void => {
+    organelles.push({ id: path, path, cell, band, reachable: true, loc: 10 + pick(400), dents: [] });
+  };
+  for (let p = 0; p < 2; p += 1) {
+    const root = `libs/p${String(p)}`;
+    place(`package:${root}`, `${root}/src/index.ts`, pick(2));
+    cells.push({ id: `package:${root}`, organelles: [`${root}/src/index.ts`] });
+    for (let f = 0; f < 4; f += 1) {
+      const id = `folder:${root}/src/f${String(f)}`;
+      const top = 1 + pick(4);
+      const files = Array.from({ length: 8 + pick(9) }, (_, k) => `${root}/src/f${String(f)}/m${String(k)}.ts`);
+      for (const path of files) place(id, path, top + pick(2));
+      cells.push({ id, parent: `package:${root}`, organelles: files });
+    }
+  }
+  for (let d = 0; d < 36; d += 1) {
+    const id = `directory:src/d${String(d)}`;
+    const top = pick(4);
+    const files = Array.from({ length: 8 + pick(9) }, (_, k) => `src/d${String(d)}/s${String(k)}.ts`);
+    for (const path of files) place(id, path, top + pick(3));
+    cells.push({ id, organelles: files });
+  }
+  const paths = organelles.map((organelle) => organelle.path);
+  const edges = organelles.flatMap((organelle) => {
+    const siblings = cells.find((cell) => cell.id === organelle.cell)?.organelles ?? [];
+    return Array.from({ length: 1 + pick(2) }, () => ({
+      from: organelle.path,
+      to: (random() < 0.7 ? siblings[pick(siblings.length)] : paths[pick(paths.length)]) ?? organelle.path,
+    })).filter((edge) => edge.to !== edge.from);
+  });
+  const bands: readonly Band[] = [0, 1, 2, 3, 4, 5].map((index) => ({ index, depth_min: index, depth_max: index }));
+  const groups: readonly Group[] = [
+    { id: 'docs', files: Array.from({ length: 9 }, (_, k) => `docs/n${String(k)}.md`) },
+    { id: 'deps', files: ['package.json', 'pnpm-lock.yaml'] },
+  ];
+  return { cells, organelles, edges, bands, groups, added: new Set() };
+}
+
+test('on a crowded field of 500 files, no centre lies under a skin it does not belong to, and the skins are the same twice', () => {
+  const input = crowdedField(1);
+  expect(input.organelles.length).toBeGreaterThanOrEqual(500);
+  const layout = computeLayout(input);
+  expect(strangersUnder(layout, input.cells, input.groups)).toEqual([]);
+  const again = computeMembranes({ cells: input.cells, groups: input.groups, positions: layout.positions });
+  expect(JSON.stringify(again)).toBe(JSON.stringify(layout.contours));
+}, 120_000);
+
+test('on the demo, no centre lies under a skin it does not belong to', () => {
+  const inputs = JSON.parse(readFileSync(join(FIXTURES, 'demo', 'inputs.json'), 'utf8')) as BuildInputs;
+  const map = buildMap(inputs, DEFAULT_CONFIG);
+  const layout = map.terrain.layout;
+  expect(layout).toBeDefined();
+  if (layout === undefined) return;
+  expect(strangersUnder(layout, map.terrain.cells, map.terrain.groups)).toEqual([]);
 });
