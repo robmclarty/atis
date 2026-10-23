@@ -11,7 +11,7 @@
 
 import { execFileSync } from 'node:child_process';
 
-import type { ChangeKind, Commit, DepAdded, Hunk } from 'core';
+import type { ChangeKind, Commit, DepAdded, DepMoved, Hunk } from 'core';
 
 import { globToRegExp, parseManifestWorkspaces, parseWorkspaceGlobs } from './imports.js';
 
@@ -230,18 +230,30 @@ function parseManifest(content: string): Manifest {
   }
 }
 
-/** The pure parser: two manifest texts (either may be absent, a package born or removed) to what `HEAD` added (D47). */
-export function diffManifests(manifest: string, before: string | undefined, after: string | undefined): readonly DepAdded[] {
+/** What `HEAD` did to the manifests: the dependencies it added (D47), and the ones whose range it moved (D83). */
+export type ManifestDelta = { readonly deps_added: readonly DepAdded[]; readonly deps_moved: readonly DepMoved[] };
+
+/**
+ * The pure parser: two manifest texts (either may be absent, a package born
+ * or removed) to what `HEAD` added (D47) and which ranges it moved, each with
+ * the range it moved `from` (D83). A dependency that only changed lists is
+ * new to the list it joined, and moved nowhere.
+ */
+export function diffManifests(manifest: string, before: string | undefined, after: string | undefined): ManifestDelta {
   const from = before === undefined ? EMPTY_MANIFEST : parseManifest(before);
   const to = after === undefined ? EMPTY_MANIFEST : parseManifest(after);
   const added: DepAdded[] = [];
-  for (const [name, range] of to.dependencies) {
-    if (!from.dependencies.has(name)) added.push({ manifest, name, range, dev: false });
-  }
-  for (const [name, range] of to.devDependencies) {
-    if (!from.devDependencies.has(name)) added.push({ manifest, name, range, dev: true });
-  }
-  return added.toSorted((a, b) => byPath(a.name, b.name));
+  const moved: DepMoved[] = [];
+  const compare = (was: ReadonlyMap<string, string>, now: ReadonlyMap<string, string>, dev: boolean): void => {
+    for (const [name, range] of now) {
+      const old = was.get(name);
+      if (old === undefined) added.push({ manifest, name, range, dev });
+      else if (old !== range) moved.push({ manifest, name, range, from: old, dev });
+    }
+  };
+  compare(from.dependencies, to.dependencies, false);
+  compare(from.devDependencies, to.devDependencies, true);
+  return { deps_added: added.toSorted((a, b) => byPath(a.name, b.name)), deps_moved: moved.toSorted((a, b) => byPath(a.name, b.name)) };
 }
 
 function directoriesOf(paths: Iterable<string>): ReadonlySet<string> {
@@ -289,10 +301,13 @@ function manifestPaths(repo: string, sha: string): readonly string[] {
   });
 }
 
-/** Every workspace manifest at `mergeBase` and at `HEAD` (D46), diffed into `deps_added[]` (D47). */
-export function readManifests(repo: string, mergeBase: string): readonly DepAdded[] {
+/** Every workspace manifest at `mergeBase` and at `HEAD` (D46), diffed into `deps_added[]` (D47) and `deps_moved[]` (D83). */
+export function readManifests(repo: string, mergeBase: string): ManifestDelta {
   const paths = new Set([...manifestPaths(repo, mergeBase), ...manifestPaths(repo, HEAD)]);
-  return [...paths]
-    .flatMap((path) => diffManifests(path, showFile(repo, mergeBase, path), showFile(repo, HEAD, path)))
-    .toSorted((a, b) => byPath(a.manifest, b.manifest) || byPath(a.name, b.name));
+  const deltas = [...paths].map((path) => diffManifests(path, showFile(repo, mergeBase, path), showFile(repo, HEAD, path)));
+  const order = (a: DepAdded, b: DepAdded): number => byPath(a.manifest, b.manifest) || byPath(a.name, b.name);
+  return {
+    deps_added: deltas.flatMap((delta) => delta.deps_added).toSorted(order),
+    deps_moved: deltas.flatMap((delta) => delta.deps_moved).toSorted(order),
+  };
 }

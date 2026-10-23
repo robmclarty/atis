@@ -174,7 +174,15 @@ function categoryFor(
 ): Checks {
   const inputs = inputsFor(world, changed, check, emitting);
   const { evidence, files } = computeEvidence(inputs);
-  return computeCategory({ check, changed: inputs.changed, files, stitches: evidence.stitches ?? [], config: DEFAULT_CONFIG });
+  return computeCategory({
+    check,
+    changed: inputs.changed,
+    files,
+    stitches: evidence.stitches ?? [],
+    deps_added: [],
+    deps_moved: [],
+    config: DEFAULT_CONFIG,
+  });
 }
 
 test('patch coverage measures the statements inside the head-side hunks, folded onto lines as istanbul folds them', () => {

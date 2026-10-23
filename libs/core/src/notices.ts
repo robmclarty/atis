@@ -16,8 +16,8 @@
  */
 
 import type { Config, NoticeConfig, NoticeKind } from './config.js';
-import { healthSpan, pathsOf, readRedSplit, spanOnChange, structuralFindings } from './evidence.js';
-import type { CheckArtifacts, FileEvidence, RedSplit } from './evidence.js';
+import { broughtAdvisories, healthSpan, pathsOf, readRedSplit, spanOnChange, structuralFindings } from './evidence.js';
+import type { Advisory, BroughtPackage, CheckArtifacts, FileEvidence, RedSplit } from './evidence.js';
 import { OTHER_GROUP } from './groups.js';
 import type { FileHistory } from './history.js';
 import { classifyFile } from './modules.js';
@@ -28,6 +28,7 @@ import type {
   Checks,
   Cochange,
   DepAdded,
+  DepMoved,
   Ghost,
   Group,
   Notice,
@@ -50,8 +51,11 @@ export const HEAD_ONLY = 'present at head, not measured as introduced by this ch
 /** A namespace import takes whatever the target has, so no name of its own can go missing (C2). */
 const STAR = '*';
 
-/** npm audit's roll-up key, which would count every vulnerability a second time. */
-const TOTAL = 'total';
+/** The slot whose findings its own per-package notices name, so it spends no row of its own (D83). */
+const SECURITY_SLOT = 'security';
+
+/** The audit's severities, worst first: the order a security notice lists its advisories in. */
+const SEVERITIES = ['critical', 'high', 'moderate', 'low', 'info'];
 
 /** The slot whose red on the change takes the first notice, whatever it weighs (D74). */
 const TEST_SLOT = 'test';
@@ -133,8 +137,9 @@ export type NoticeInputs = {
   readonly history: readonly FileHistory[];
   /** Every co-change pair the window found; the ghosts are the ones that did not come along. */
   readonly cochange: readonly Cochange[];
-  /** The manifest delta (D47). */
+  /** The manifest delta (D47), with the ranges it moved (D83). */
   readonly deps_added: readonly DepAdded[];
+  readonly deps_moved: readonly DepMoved[];
   /** The base scan's files under head paths (D40): the names and shapes each interface file had before (D76). */
   readonly baseFiles: readonly ScanFile[];
   /** The head scan's files: a name missing from one's `exports[]` is an export this change deleted (D39). */
@@ -269,11 +274,15 @@ function listed(names: readonly string[]): string {
  * The gate saying no to this change: one candidate per changed file the
  * change's red names, however many slots name it, its `why` listing them all.
  * Standing red, on untouched files or the whole repository, is drawn and
- * counted but never spends the budget (D67).
+ * counted but never spends the budget (D67). A red `security` is the one slot
+ * that spends no row of its own: the manifest it is red on already carries a
+ * notice per package the change brought, which names what the row would not
+ * (D83).
  */
 function redSlotCandidates(red: RedSplit): readonly Candidate[] {
   const slotsOn = new Map<string, string[]>();
   for (const slot of red.change) {
+    if (slot.name === SECURITY_SLOT) continue;
     for (const path of slot.change) slotsOn.set(path, [...(slotsOn.get(path) ?? []), slot.name]);
   }
   return [...slotsOn].map(([path, names]) => ({
@@ -331,27 +340,39 @@ function thresholdCandidates(check: RanCheck, changed: ReadonlyMap<string, Chang
   }));
 }
 
-/** Everything the security check counted, once, excluding its own roll-up. */
-function securityCandidates(check: RanCheck): readonly Candidate[] {
-  const counts = Object.entries(check.security?.vulnerabilities ?? {}).filter(
-    ([kind, count]) => kind !== TOTAL && count > 0,
-  );
-  if (counts.length === 0) return [];
-  const found = counts.reduce((total, [, count]) => total + count, 0);
-  const named = counts
-    .toSorted(([a], [b]) => byPath(a, b))
-    .map(([kind, count]) => `${String(count)} ${kind}`)
+function severityRank(severity: string): number {
+  const rank = SEVERITIES.indexOf(severity.toLowerCase());
+  return rank === -1 ? SEVERITIES.length : rank;
+}
+
+/** `` high on `qs`, moderate on `body-parser` ``: a package's advisories, worst first, then by module (C3). */
+function advisoriesOf(advisories: readonly Advisory[]): string {
+  return advisories
+    .toSorted((a, b) => severityRank(a.severity) - severityRank(b.severity) || byPath(a.module, b.module))
+    .map((advisory) => `${advisory.severity} on \`${advisory.module}\``)
     .join(', ');
-  return [
-    {
-      kind: 'security-finding',
-      target: 'security',
-      why: `the security check counts ${String(found)} vulnerabilities (${named})`,
-      inputs: { vulnerabilities: found },
-      thresholds: {},
-      slot: 'security',
-    },
-  ];
+}
+
+/** `added`, or `range moved from ^4.17.0`: what this change did to the package. */
+function broughtBy(brought: BroughtPackage): string {
+  return brought.from === undefined ? 'added' : `range moved from ${brought.from}`;
+}
+
+/**
+ * One notice per package this change added or moved the range of whose
+ * paths pull in an advisory, on the manifest it changed, naming the package
+ * (D83). Every other advisory in the lockfile was there before the change:
+ * it is standing state, counted with the `security` slot in the Standing
+ * block and never ranked, the calendar's weather rather than the PR's.
+ */
+function securityCandidates(inputs: NoticeInputs, check: RanCheck): readonly Candidate[] {
+  return broughtAdvisories(check.security, inputs.deps_added, inputs.deps_moved).map((brought) => ({
+    kind: 'security-finding',
+    target: brought.manifest,
+    why: `\`${brought.name}\` (${broughtBy(brought)}) pulls in ${brought.advisories.length === 1 ? '1 advisory' : `${String(brought.advisories.length)} advisories`}: ${advisoriesOf(brought.advisories)}`,
+    inputs: { advisories: brought.advisories.length },
+    thresholds: {},
+  }));
 }
 
 /** The innermost cell of every terrain file; a file appears in exactly one cell's `organelles` (D45). */
@@ -900,7 +921,7 @@ function candidatesFor(inputs: NoticeInputs, ghosts: readonly Ghost[], red: RedS
     ...redSlotCandidates(red),
     ...(check === undefined ? [] : structuralCandidates(check, changed)),
     ...(check === undefined ? [] : thresholdCandidates(check, changed)),
-    ...(check === undefined ? [] : securityCandidates(check)),
+    ...(check === undefined ? [] : securityCandidates(inputs, check)),
     ...deletedExportCandidates(broken),
     ...interfaceCandidates(inputs, home, broken),
     ...coverageCandidates(inputs),

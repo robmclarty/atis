@@ -82,31 +82,42 @@ test('parseDiff keeps a pure deletion as a hunk of no lines at the head line it 
   ]);
 });
 
-test('diffManifests reports a new dependency or devDependency, never a bumped range', () => {
+test('diffManifests reports a new dependency or devDependency as added, and a bumped range as moved with its from (D47, D83)', () => {
   const before = JSON.stringify({
     name: 'pkg',
     dependencies: { 'left-pad': '^1.0.0' },
-    devDependencies: { vitest: '^2.0.0' },
+    devDependencies: { vitest: '^2.0.0', typescript: '~5.9.0' },
   });
   const after = JSON.stringify({
     name: 'pkg',
     dependencies: { 'left-pad': '^1.0.1', chalk: '^5.0.0' },
-    devDependencies: { vitest: '^2.0.0', eslint: '^9.0.0' },
+    devDependencies: { vitest: '^2.0.0', eslint: '^9.0.0', typescript: '~6.0.0' },
   });
-  expect(diffManifests('apps/pkg/package.json', before, after)).toEqual([
-    { manifest: 'apps/pkg/package.json', name: 'chalk', range: '^5.0.0', dev: false },
-    { manifest: 'apps/pkg/package.json', name: 'eslint', range: '^9.0.0', dev: true },
-  ]);
+  expect(diffManifests('apps/pkg/package.json', before, after)).toEqual({
+    deps_added: [
+      { manifest: 'apps/pkg/package.json', name: 'chalk', range: '^5.0.0', dev: false },
+      { manifest: 'apps/pkg/package.json', name: 'eslint', range: '^9.0.0', dev: true },
+    ],
+    deps_moved: [
+      { manifest: 'apps/pkg/package.json', name: 'left-pad', range: '^1.0.1', from: '^1.0.0', dev: false },
+      { manifest: 'apps/pkg/package.json', name: 'typescript', range: '~6.0.0', from: '~5.9.0', dev: true },
+    ],
+  });
 });
 
 test('diffManifests treats a manifest born or removed at HEAD without faking a delta (C2)', () => {
-  expect(diffManifests('libs/new/package.json', undefined, JSON.stringify({ dependencies: { zod: '^3.0.0' } }))).toEqual([
-    { manifest: 'libs/new/package.json', name: 'zod', range: '^3.0.0', dev: false },
-  ]);
-  expect(diffManifests('libs/gone/package.json', JSON.stringify({ dependencies: { zod: '^3.0.0' } }), undefined)).toEqual([]);
-  expect(diffManifests('libs/broken/package.json', '{ not json', JSON.stringify({ dependencies: { zod: '^3.0.0' } }))).toEqual([
-    { manifest: 'libs/broken/package.json', name: 'zod', range: '^3.0.0', dev: false },
-  ]);
+  expect(diffManifests('libs/new/package.json', undefined, JSON.stringify({ dependencies: { zod: '^3.0.0' } }))).toEqual({
+    deps_added: [{ manifest: 'libs/new/package.json', name: 'zod', range: '^3.0.0', dev: false }],
+    deps_moved: [],
+  });
+  expect(diffManifests('libs/gone/package.json', JSON.stringify({ dependencies: { zod: '^3.0.0' } }), undefined)).toEqual({
+    deps_added: [],
+    deps_moved: [],
+  });
+  expect(diffManifests('libs/broken/package.json', '{ not json', JSON.stringify({ dependencies: { zod: '^3.0.0' } }))).toEqual({
+    deps_added: [{ manifest: 'libs/broken/package.json', name: 'zod', range: '^3.0.0', dev: false }],
+    deps_moved: [],
+  });
 });
 
 test('parseLog turns captured header and numstat lines into commits[], no blank line needed between a commit and the next header', () => {
@@ -166,9 +177,8 @@ test('readDiff against this repo with --base HEAD~1', () => {
     expect(change.deleted).toBeGreaterThanOrEqual(0);
   }
 
-  const depsAdded = readManifests(repo, diff.merge_base);
-  expect(Array.isArray(depsAdded)).toBe(true);
-  for (const dep of depsAdded) {
+  const delta = readManifests(repo, diff.merge_base);
+  for (const dep of [...delta.deps_added, ...delta.deps_moved]) {
     expect(typeof dep.manifest).toBe('string');
     expect(typeof dep.name).toBe('string');
   }
@@ -183,9 +193,12 @@ test('readManifests reads the members of a package.json workspaces repo, with no
   git(['commit', '--quiet', '--no-verify', '-m', 'base']);
   const base = git(['rev-parse', 'HEAD']).trim();
 
-  writeJson(dir, 'packages/a/package.json', { name: 'a', dependencies: { 'left-pad': '^1.0.0', zod: '^3.0.0' } });
+  writeJson(dir, 'packages/a/package.json', { name: 'a', dependencies: { 'left-pad': '^1.1.0', zod: '^3.0.0' } });
   writeJson(dir, 'examples/demo/package.json', { name: 'demo', dependencies: { chalk: '^5.0.0' } });
   git(['commit', '--quiet', '--no-verify', '--all', '-m', 'head']);
 
-  expect(readManifests(dir, base)).toEqual([{ manifest: 'packages/a/package.json', name: 'zod', range: '^3.0.0', dev: false }]);
+  expect(readManifests(dir, base)).toEqual({
+    deps_added: [{ manifest: 'packages/a/package.json', name: 'zod', range: '^3.0.0', dev: false }],
+    deps_moved: [{ manifest: 'packages/a/package.json', name: 'left-pad', range: '^1.1.0', from: '^1.0.0', dev: false }],
+  });
 });

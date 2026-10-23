@@ -15,6 +15,8 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, sep } from 'node:path';
 
 import type {
+  Advisory,
+  AdvisoryPath,
   CheckArtifacts,
   CheckSummary,
   CheckSummarySlot,
@@ -262,7 +264,40 @@ export function parseTest(text: string, repo: string): TestReport | undefined {
   return { results: results.toSorted((a, b) => byPath(a.path, b.path)) };
 }
 
-/** `security.json`: `metadata.vulnerabilities`. */
+/** The manifest at a workspace member's root, which is what an audit path's importer stands for. */
+const MANIFEST = 'package.json';
+
+/**
+ * One path as pnpm's audit writes it (`.>express>qs`): the importer first,
+ * `.` for the root and a member's directory with each `/` written `__`, then
+ * each package down to the vulnerable module. A path with no package after
+ * its importer names nothing (D83).
+ */
+function advisoryPath(text: string): AdvisoryPath | undefined {
+  const [importer = '', ...packages] = text.split('>');
+  if (importer === '' || packages.length === 0) return undefined;
+  return { manifest: importer === '.' ? MANIFEST : `${importer.replaceAll('__', '/')}/${MANIFEST}`, packages };
+}
+
+/** One advisory, read by key: its module, its severity, and every path its findings name; one missing a module or severity names nothing. */
+function advisoryOf(raw: unknown): readonly Advisory[] {
+  if (!isRecord(raw)) return [];
+  const module = raw['module_name'];
+  const severity = raw['severity'];
+  if (typeof module !== 'string' || typeof severity !== 'string') return [];
+  const texts = arrayField(raw, 'findings').flatMap((finding) => (isRecord(finding) ? arrayField(finding, 'paths') : []));
+  const paths = [...new Set(texts.filter((path): path is string => typeof path === 'string'))]
+    .toSorted(byPath)
+    .flatMap((path) => advisoryPath(path) ?? []);
+  return [{ module, severity, paths }];
+}
+
+/**
+ * `security.json`: the counts under `metadata.vulnerabilities`, and the
+ * advisories under `advisories` with the paths that pull each module in
+ * (D83). A report with no `advisories` record carries none, so nothing in it
+ * can be tied to the change (C2).
+ */
 export function parseSecurity(text: string): Security | undefined {
   const value = parseJson(text);
   if (!isRecord(value)) return undefined;
@@ -275,7 +310,12 @@ export function parseSecurity(text: string): Security | undefined {
   for (const [kind, count] of Object.entries(vulnerabilities)) {
     if (typeof count === 'number') result[kind] = count;
   }
-  return { vulnerabilities: result };
+  const raw = value['advisories'];
+  if (!isRecord(raw)) return { vulnerabilities: result };
+  const advisories = Object.values(raw)
+    .flatMap(advisoryOf)
+    .toSorted((a, b) => byPath(a.module, b.module) || byPath(a.severity, b.severity));
+  return { vulnerabilities: result, advisories };
 }
 
 /** Each finding's file (under `pathKey`) and severity; a finding missing either names nothing. */

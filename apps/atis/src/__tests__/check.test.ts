@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -406,9 +406,43 @@ test('dead.json and dupes.json: the four dead-code channels and clone_families, 
   expect(result.dupes).toEqual({ clone_families: [] });
 });
 
-test('security.json: metadata.vulnerabilities', () => {
+test('security.json: metadata.vulnerabilities, and an empty advisories record as no advisories', () => {
   const result = expectCheck(fixtureResult);
-  expect(result.security).toEqual({ vulnerabilities: { info: 0, low: 0, moderate: 0, high: 0, critical: 0 } });
+  expect(result.security).toEqual({ vulnerabilities: { info: 0, low: 0, moderate: 0, high: 0, critical: 0 }, advisories: [] });
+});
+
+test("security.json's advisories: each module, its severity and every path, the importer read as its manifest (D83)", () => {
+  const security = parseSecurity(readFileSync(join(FIXTURE_REPO, 'security-advisories.json'), 'utf8'));
+  expect(security?.vulnerabilities).toEqual({ info: 0, low: 0, moderate: 2, high: 1, critical: 0 });
+  expect(security?.advisories).toEqual([
+    {
+      module: 'esbuild',
+      severity: 'moderate',
+      paths: [{ manifest: 'package.json', packages: ['drizzle-kit', '@esbuild-kit/esm-loader', '@esbuild-kit/core-utils', 'esbuild'] }],
+    },
+    {
+      module: 'js-yaml',
+      severity: 'moderate',
+      // pnpm writes a member's importer with each `/` as `__`: `packages__docs` is `packages/docs`.
+      paths: [
+        { manifest: 'package.json', packages: ['markdownlint-cli2', 'js-yaml'] },
+        { manifest: 'packages/docs/package.json', packages: ['markdownlint-cli2', 'js-yaml'] },
+      ],
+    },
+    { module: 'undici', severity: 'high', paths: [{ manifest: 'package.json', packages: ['@robmclarty/volley', 'undici'] }] },
+  ]);
+});
+
+test('a report with no advisories record names none, so nothing in it can be tied to a change (C2, D83)', () => {
+  expect(parseSecurity(JSON.stringify({ metadata: { vulnerabilities: { high: 2 } } }))).toEqual({ vulnerabilities: { high: 2 } });
+  // An advisory missing its module or severity, and a path with no package after its importer, name nothing.
+  const sparse = parseSecurity(
+    JSON.stringify({
+      advisories: { 1: { severity: 'high', findings: [] }, 2: { module_name: 'qs', severity: 'low', findings: [{ paths: ['.', '.>express>qs'] }] } },
+      metadata: { vulnerabilities: { high: 1, low: 1 } },
+    }),
+  );
+  expect(sparse?.advisories).toEqual([{ module: 'qs', severity: 'low', paths: [{ manifest: 'package.json', packages: ['express', 'qs'] }] }]);
 });
 
 test('coverage/coverage-final.json and test.json: read because the test slot ran and was not skipped', () => {

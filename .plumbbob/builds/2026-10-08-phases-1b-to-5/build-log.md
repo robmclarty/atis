@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 6 — fix(core): weigh an interface notice by who reads the names that moved
+**Current step:** 7 — fix(core): rank a security advisory only when the change brings it
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -28,7 +28,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 3. fix(core): read a changed file no coverage report names as unmeasured
 - ☑ 4. fix(core): split interface notices by what moved
 - ☑ 5. feat(cli): compare inferred export shapes with the type checker
-- ☐ 6. fix(core): weigh an interface notice by who reads the names that moved
+- ☑ 6. fix(core): weigh an interface notice by who reads the names that moved
 - ☐ 7. fix(core): rank a security advisory only when the change brings it
 - ☐ 8. fix(cli): read bare re-exports and .mts barrels as public surface
 - ☐ 9. fix(core): keep committed build output off the terrain
@@ -118,6 +118,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 > go straight back to the step. Acting the instant an idea arrives is the disease.
 > Capture is one line (`/plumbbob:park` composes it). Harvest happens only at the boundary.
 
+- [ ] new-dependency's why reads '1 new dependencies' for a single package; it never singularises (libs/core/src/notices.ts dependencyCandidates)
+
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
 Classify each parked item as exactly ONE. Naming it before acting is what keeps you
@@ -167,3 +169,4 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-23 — step 3 checkpointed · bf4d97da2 — fix(core): read a changed file no coverage report names as unmeasured (1 drift, 10m)
 - 2026-10-23 — step 4 checkpointed · 1feb6c2c4 — fix(core): split interface notices by what moved (1 drift, 3m)
 - 2026-10-23 — step 5 checkpointed · d230d9585 — feat(cli): compare inferred export shapes with the type checker (1 drift, 8m)
+- 2026-10-23 — step 6 checkpointed · de8e50be2 — fix(core): weigh an interface notice by who reads the names that moved (1 drift, 2m)

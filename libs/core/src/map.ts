@@ -29,7 +29,7 @@ import type { NamedEdge, PublishingMember, ScanFile } from './notices.js';
 import { TESTS_GROUP, computeReach } from './reach.js';
 import type { DiffFile } from './reach.js';
 import { SCHEMA_VERSION } from './schema.js';
-import type { Cell, DepAdded, ExceptionalEdge, Group, Instruments, MapJson, Organelle } from './schema.js';
+import type { Cell, DepAdded, DepMoved, ExceptionalEdge, Group, Instruments, MapJson, Organelle } from './schema.js';
 
 /**
  * One workspace member of a scan: its package name, its directory and its
@@ -72,6 +72,8 @@ export type BuildInputs = {
   readonly diff: readonly DiffFile[];
   /** The manifest delta (D47). */
   readonly deps_added: readonly DepAdded[];
+  /** The ranges the manifest delta moved (D83); absent reads as none moved. */
+  readonly deps_moved?: readonly DepMoved[];
   /** The log window the history math measures (D8, D30). */
   readonly commits: readonly Commit[];
   /** `HEAD`'s commit time in unix seconds: the age every file is measured back from. */
@@ -500,11 +502,15 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
   const reach = computeReach({ ...graphs, changed: inputs.diff });
   const emitting = new Set(head.files.filter((file) => file.emits === true).map((file) => file.path));
   const evidence = computeEvidence({ ...graphs, changed: reach.changed, check, emitting });
+  const deps_added = [...inputs.deps_added].toSorted((a, b) => byPath(a.manifest, b.manifest) || byPath(a.name, b.name));
+  const deps_moved = [...(inputs.deps_moved ?? [])].toSorted((a, b) => byPath(a.manifest, b.manifest) || byPath(a.name, b.name));
   const checks = computeCategory({
     check,
     changed: reach.changed,
     files: evidence.files,
     stitches: evidence.evidence.stitches ?? [],
+    deps_added,
+    deps_moved,
     config,
   });
 
@@ -518,7 +524,6 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
   };
   const cells = assembleCells(modules, edges, signals);
   const organelles = assembleOrganelles(modules, signals);
-  const deps_added = [...inputs.deps_added].toSorted((a, b) => byPath(a.manifest, b.manifest) || byPath(a.name, b.name));
   const ghosts = findGhosts(history.cochange, inputs.diff.map((file) => file.path), config.notices);
   // Last, because the field is drawn over everything above it: the terrain
   // settles from the base alone and the added files find their place after
@@ -560,6 +565,7 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
       checks,
       ghosts,
       deps_added,
+      deps_moved,
       improvements: [],
     },
     notices: rankNotices({
@@ -571,6 +577,7 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
       history: history.files,
       cochange: history.cochange,
       deps_added,
+      deps_moved,
       baseFiles: base.files,
       headFiles: head.files,
       headEdges: head.edges,

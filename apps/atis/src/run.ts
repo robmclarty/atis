@@ -166,7 +166,7 @@ export function run(options: Options): Outcome {
     const paths = shapePaths(diff.changed, baseSide.scan, headSide.scan);
     const baseScan = timed(timings, 'shapes base', () => checkInferredShapes(baseSide.tree, baseSide.scan, paths.base));
     const headScan = timed(timings, 'shapes head', () => checkInferredShapes(headSide.tree, headSide.scan, paths.head));
-    const deps_added = timed(timings, 'manifests', () => readManifests(repo, diff.merge_base));
+    const { deps_added, deps_moved } = timed(timings, 'manifests', () => readManifests(repo, diff.merge_base));
     const commits = timed(timings, 'log', () => readLog(repo, HEAD));
     const check = timed(timings, 'check', () => readCheck(repo));
 
@@ -183,6 +183,7 @@ export function run(options: Options): Outcome {
         head: headScan,
         diff: diff.changed,
         deps_added,
+        deps_moved,
         commits,
         head_time: head.time,
         check,

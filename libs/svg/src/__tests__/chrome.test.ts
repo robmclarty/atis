@@ -278,6 +278,21 @@ test('the gate counts the change\'s red and never passes a ratio; the standing b
   expect(count('gate') + count('standing')).toBe(global.weather.checks.slots.filter((slot) => !slot.ok && !slot.skipped).length);
 });
 
+test('a red security stands in the Standing block unless the change brought an advisory, and the gate counts it then (D83, D70)', () => {
+  const map = demo();
+  const read = (source: MapJson, id: string): string => textOf(blockOf(chromeOf(renderSvg(source)), id) ?? '');
+
+  // Every advisory was in the lockfile before: the slot names the root manifest, the demo's changed `package.json`, and is standing.
+  const standing = slotsSet(map, { security: { scope: ['package.json'], change: [] } });
+  expect(read(standing, 'gate')).toBe('Gate 1 red');
+  expect(read(standing, 'standing')).toBe('Standing 2 red');
+
+  // A package this change added pulls one in: the same red is the change's, through the manifest that added it.
+  const brought = slotsSet(map, { security: { scope: ['package.json'], change: ['package.json'] } });
+  expect(read(brought, 'gate')).toBe('Gate 2 red');
+  expect(read(brought, 'standing')).toBe('Standing 1 red');
+});
+
 test('a block whose input is absent or stale is muted with a dash, and the category letters are always present', () => {
   const muted = (chrome: string, id: string): string | undefined =>
     /data-muted="true" data-reason="([\w-]+)"/.exec(blockOf(chrome, id) ?? '')?.[1];

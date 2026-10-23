@@ -167,6 +167,9 @@ export type Ghost = {
 
 export type DepAdded = { readonly manifest: string; readonly name: string; readonly range: string; readonly dev: boolean };
 
+/** A dependency both sides of a manifest name, at a range this change moved `from` another (D83). */
+export type DepMoved = DepAdded & { readonly from: string };
+
 export type Weather = {
   readonly changed: readonly ChangedFile[];
   readonly reach: readonly ReachEntry[];
@@ -174,6 +177,8 @@ export type Weather = {
   readonly checks: Checks;
   readonly ghosts: readonly Ghost[];
   readonly deps_added: readonly DepAdded[];
+  /** The ranges this change moved, beside the dependencies it added (D83); absent where no manifest delta was read (C2). */
+  readonly deps_moved?: readonly DepMoved[];
   // D23: base-side metrics need the terrain cache of phase 3, so this build never populates it.
   readonly improvements: readonly [];
 };

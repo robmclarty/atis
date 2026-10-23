@@ -2,7 +2,7 @@ import { expect, test } from 'vitest';
 
 import { DEFAULT_CONFIG } from '../config.js';
 import type { Config, NoticeKind } from '../config.js';
-import { computeCategory, computeEvidence } from '../evidence.js';
+import { computeCategory, computeEvidence, readRedSplit } from '../evidence.js';
 import type { CheckArtifacts, CheckSummarySlot, Dead, Health } from '../evidence.js';
 import { identifyGroups } from '../groups.js';
 import type { FileHistory } from '../history.js';
@@ -12,7 +12,7 @@ import { HEAD_ONLY, findGhosts, findPublicNames, rankNotices } from '../notices.
 import type { ExportShapes, NamedEdge, NoticeInputs, PassedName, PublishingMember, ScanFile } from '../notices.js';
 import { computeReach } from '../reach.js';
 import type { DiffFile } from '../reach.js';
-import type { Cell, CheckSlot, Checks, Cochange, DepAdded, Hunk, Notice } from '../schema.js';
+import type { Cell, CheckSlot, Checks, Cochange, DepAdded, DepMoved, Hunk, Notice } from '../schema.js';
 
 /**
  * One repository for every scenario: the chain of §5.2, where `pm` is entered
@@ -80,6 +80,7 @@ type Scenario = {
   readonly history?: readonly FileHistory[];
   readonly cochange?: readonly Cochange[];
   readonly deps_added?: readonly DepAdded[];
+  readonly deps_moved?: readonly DepMoved[];
 };
 
 const NO_CHECK: CheckArtifacts = { mode: 'git-only', reason: '.check/ is absent' };
@@ -188,10 +189,11 @@ function inputsFor(scenario: Scenario): NoticeInputs {
   const placed = computeReach({ changed, modules, groups, headEdges, baseEdges });
   const emitting = new Set(scenario.emitting ?? []);
   const { evidence, files } = computeEvidence({ changed: placed.changed, modules, groups, headEdges, baseEdges, check, emitting });
+  const deps = { deps_added: scenario.deps_added ?? [], deps_moved: scenario.deps_moved ?? [] };
   const checks =
     scenario.checks ??
     (check.mode === 'check'
-      ? computeCategory({ check, changed: placed.changed, files, stitches: evidence.stitches ?? [], config: DEFAULT_CONFIG })
+      ? computeCategory({ check, changed: placed.changed, files, stitches: evidence.stitches ?? [], ...deps, config: DEFAULT_CONFIG })
       : NOINST);
   const members = scenario.members ?? [];
 
@@ -203,7 +205,7 @@ function inputsFor(scenario: Scenario): NoticeInputs {
     groups,
     history: scenario.history ?? [],
     cochange: scenario.cochange ?? [],
-    deps_added: scenario.deps_added ?? [],
+    ...deps,
     baseFiles,
     headFiles,
     headEdges,
@@ -271,7 +273,17 @@ const ONE_OF_EACH: Readonly<Record<NoticeKind, Scenario>> = {
   'threshold-breached': {
     check: ran({ health: { ...NO_HEALTH, findings: [UTIL_BREACH] } }),
   },
-  'security-finding': { check: ran({ security: { vulnerabilities: { high: 2, total: 2 } } }) },
+  'security-finding': {
+    files: ['package.json'],
+    changed: [change('package.json')],
+    deps_added: [{ manifest: 'package.json', name: 'left-pad', range: '^1.3.0', dev: false }],
+    check: ran({
+      security: {
+        vulnerabilities: { high: 1 },
+        advisories: [{ module: 'left-pad', severity: 'high', paths: [{ manifest: 'package.json', packages: ['left-pad'] }] }],
+      },
+    }),
+  },
   'large-hot-change': {
     changed: [change('src/pm/util.ts', 90, 20)],
     history: [{ path: 'src/pm/util.ts', churn_ratio: 3 }],
@@ -297,7 +309,7 @@ const CROWDED: Scenario = {
     coverage: [{ path: 'src/pm/tools.ts', statements: [{ line: 10, hits: 0 }] }],
     mutation: [{ path: 'src/pm/index.ts', mutants: [{ line: 10, status: 'Survived' }] }],
     health: { ...NO_HEALTH, findings: [UTIL_BREACH] },
-    security: { vulnerabilities: { high: 1 } },
+    security: { vulnerabilities: { high: 1 }, advisories: [] },
     dead: { ...NO_DEAD, boundary_violations: [{ from_path: 'src/pm/util.ts', to_path: 'src/doctor.ts' }] },
   }),
   history: [{ path: 'src/pm/util.ts', churn_ratio: 4, bugfix_rate: 0.5, age_days: 900 }],
@@ -447,12 +459,88 @@ test('a red slot names its findings itself, so the same slot does not spend a se
 test('a global red slot yields no notice, and no longer speaks for the finding its slot would repeat (D67)', () => {
   expect(noticesFor({ checks: verdict([red('types')]) })).toEqual([]);
 
-  // A red `security` is global, so it is standing state: the vulnerabilities it counted take the row instead.
+  // A red `security` whose advisories this change did not bring is standing state too: counted, never ranked (D83).
   const security = noticesFor({
-    check: ran({ security: { vulnerabilities: { high: 2, total: 2 } } }),
-    checks: verdict([red('security')]),
+    check: ran(
+      { security: { vulnerabilities: { high: 2, total: 2 }, advisories: [STANDING_QS] } },
+      [...GREEN, { name: 'security', ok: false, skipped: false }],
+    ),
   });
-  expect(kindsOf(security)).toEqual(['security-finding']);
+  expect(security).toEqual([]);
+});
+
+/** An advisory the root reached long before this change: `express`, a dependency nobody touched here, pulls in `qs`. */
+const STANDING_QS = { module: 'qs', severity: 'moderate', paths: [{ manifest: 'package.json', packages: ['express', 'qs'] }] };
+
+const APP_MANIFEST = 'packages/app/package.json';
+
+/**
+ * A change that added `left-pad` to the root and moved `express` in the app,
+ * over an audit naming four advisories: two through the packages it touched,
+ * one through `express` at the root, where nothing moved, and one through a
+ * package nobody touched at all.
+ */
+const AUDITED: Scenario = {
+  files: ['package.json', APP_MANIFEST],
+  changed: [change('package.json'), change(APP_MANIFEST)],
+  deps_added: [{ manifest: 'package.json', name: 'left-pad', range: '^1.3.0', dev: false }],
+  deps_moved: [{ manifest: APP_MANIFEST, name: 'express', range: '^4.18.0', from: '^4.17.0', dev: false }],
+  check: ran(
+    {
+      security: {
+        vulnerabilities: { high: 2, moderate: 2, low: 1 },
+        advisories: [
+          { module: 'left-pad', severity: 'high', paths: [{ manifest: 'package.json', packages: ['left-pad'] }] },
+          {
+            module: 'qs',
+            severity: 'moderate',
+            paths: [
+              { manifest: APP_MANIFEST, packages: ['express', 'qs'] },
+              { manifest: 'package.json', packages: ['express', 'qs'] },
+            ],
+          },
+          { module: 'body-parser', severity: 'high', paths: [{ manifest: APP_MANIFEST, packages: ['express', 'body-parser'] }] },
+          { module: 'minimist', severity: 'low', paths: [{ manifest: 'package.json', packages: ['mkdirp', 'minimist'] }] },
+        ],
+      },
+    },
+    [...GREEN, { name: 'security', ok: false, skipped: false }],
+  ),
+};
+
+test('each package the change added or moved that pulls in an advisory raises one security-finding on its manifest, naming it (D83)', () => {
+  const notices = noticesFor(AUDITED);
+
+  // `left-pad` is also new surface, which is its own row (D47).
+  expect(rowsOf(notices)).toEqual([
+    ['security-finding', 'package.json'],
+    ['security-finding', APP_MANIFEST],
+    ['new-dependency', 'package.json'],
+  ]);
+  const why = Object.fromEntries(notices.filter((notice) => notice.kind === 'security-finding').map((notice) => [notice.target, notice.why]));
+  expect(why['package.json']).toBe('`left-pad` (added) pulls in 1 advisory: high on `left-pad`');
+  expect(why[APP_MANIFEST]).toBe('`express` (range moved from ^4.17.0) pulls in 2 advisories: high on `body-parser`, moderate on `qs`');
+  // The red `security` slot spends no row of its own: the manifests' notices already name what it found.
+  expect(kindsOf(notices)).not.toContain('red-check-slot');
+});
+
+test('a red security is the change\'s only through a manifest whose own edit brought an advisory, and stands otherwise (D83, D67)', () => {
+  const split = readRedSplit(inputsFor(AUDITED).checks.slots);
+  expect(split.change.map((slot) => [slot.name, slot.change])).toEqual([['security', ['package.json', APP_MANIFEST]]]);
+
+  // The same audit with neither package touched: every advisory was there before, and the slot is standing state.
+  const untouched = readRedSplit(inputsFor({ ...AUDITED, deps_added: [], deps_moved: [] }).checks.slots);
+  expect(split.standing).toEqual([]);
+  expect(untouched.change).toEqual([]);
+  expect(untouched.standing.map((slot) => [slot.name, slot.named])).toEqual([['security', ['package.json', APP_MANIFEST]]]);
+  expect(noticesFor({ ...AUDITED, deps_added: [], deps_moved: [] })).toEqual([]);
+
+  // An audit that names no advisories can tie none to the change, so its red is global standing state (C2).
+  const unnamed = readRedSplit(
+    inputsFor({ ...AUDITED, check: ran({ security: { vulnerabilities: { high: 1 } } }, [...GREEN, { name: 'security', ok: false, skipped: false }]) })
+      .checks.slots,
+  );
+  expect(unnamed.standing).toEqual([{ name: 'security', global: true, change: [], named: [] }]);
 });
 
 test('a file two red slots name takes one row, its why naming both, and their untouched files take none (D67)', () => {

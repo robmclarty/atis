@@ -23,6 +23,8 @@ import type {
   ChangedFile,
   CheckSlot,
   Checks,
+  DepAdded,
+  DepMoved,
   Evidence,
   FallowSchemas,
   FlightCategory,
@@ -89,7 +91,22 @@ export type Mutation = readonly MutationFile[];
 export type TestResult = { readonly path: string; readonly status: string };
 export type TestReport = { readonly results: readonly TestResult[] };
 
-export type Security = { readonly vulnerabilities: Readonly<Record<string, number>> };
+/**
+ * One way an advisory's module is pulled in: the manifest of the importer the
+ * audit starts from, then each package down to the module, the first being
+ * the importer's own dependency.
+ */
+export type AdvisoryPath = { readonly manifest: string; readonly packages: readonly string[] };
+
+/** One advisory as the audit reports it: the vulnerable module, its severity, and every path that pulls it in (D83). */
+export type Advisory = { readonly module: string; readonly severity: string; readonly paths: readonly AdvisoryPath[] };
+
+/**
+ * `security.json`: the audit's counts, and its advisories where the report
+ * names them. Without `advisories` no advisory can be tied to the change, so
+ * every one is standing state (C2, D83).
+ */
+export type Security = { readonly vulnerabilities: Readonly<Record<string, number>>; readonly advisories?: readonly Advisory[] };
 
 /** One finding a lint or struct tool reports, kept to the file it names and the severity the tool gave it. */
 export type ReportedFinding = { readonly path: string; readonly severity: string };
@@ -99,6 +116,44 @@ export type Lint = { readonly diagnostics: readonly ReportedFinding[] };
 
 /** ast-grep's `struct.json`: its matches. */
 export type Struct = { readonly matches: readonly ReportedFinding[] };
+
+/** A package this change added to a manifest or moved the range of, and the advisories whose paths run through it (D83). */
+export type BroughtPackage = {
+  readonly manifest: string;
+  readonly name: string;
+  readonly range: string;
+  /** The range it was moved from; absent on a package this change added. */
+  readonly from?: string;
+  readonly advisories: readonly Advisory[];
+};
+
+/**
+ * The advisories this change brought (D83): those with a path whose importer
+ * is a manifest this change edited and whose first package is one that edit
+ * added or moved the range of. A path into the same module through a package
+ * the change left alone was there before it, so its advisory is standing.
+ * One entry per package, by manifest and then name (C3).
+ */
+export function broughtAdvisories(
+  security: Security | undefined,
+  deps_added: readonly DepAdded[],
+  deps_moved: readonly DepMoved[],
+): readonly BroughtPackage[] {
+  const advisories = security?.advisories ?? [];
+  const deps: readonly (DepAdded | DepMoved)[] = [...deps_added, ...deps_moved];
+  return deps
+    .map((dep): BroughtPackage => ({
+      manifest: dep.manifest,
+      name: dep.name,
+      range: dep.range,
+      ...('from' in dep ? { from: dep.from } : {}),
+      advisories: advisories.filter((advisory) =>
+        advisory.paths.some((path) => path.manifest === dep.manifest && path.packages[0] === dep.name),
+      ),
+    }))
+    .filter((brought) => brought.advisories.length > 0)
+    .toSorted((a, b) => byPath(a.manifest, b.manifest) || byPath(a.name, b.name));
+}
 
 /** A channel muted for staleness: its slot ran, but the raw file predates the run window (D41). */
 export type StaleChannel = { readonly slot: string; readonly file: string; readonly age_ms: number };
@@ -157,6 +212,9 @@ const NESTED_KEYS = ['edges', 'groups', 'instances'];
 
 /** The two slots whose findings name a region of a file rather than the file: a function over a threshold, a clone (D73). */
 const LINE_SLOTS: ReadonlySet<string> = new Set(['health', 'dupes']);
+
+/** The slot whose findings name packages, on the change only through a manifest whose own edit brought one (D83). */
+const SECURITY = 'security';
 
 function byPath(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
@@ -409,6 +467,9 @@ export type CategoryInputs = {
   readonly files: readonly FileEvidence[];
   /** `computeEvidence`'s stitches, empty when the run had no test report: a torn one puts a red `test` on the change (D67). */
   readonly stitches: readonly Stitch[];
+  /** The manifest delta: a red `security` is on the change only through a manifest whose added or moved package brought an advisory (D83). */
+  readonly deps_added: readonly DepAdded[];
+  readonly deps_moved: readonly DepMoved[];
   readonly config: Config;
 };
 
@@ -446,6 +507,8 @@ export type RedSplitInputs = {
   readonly stitches: readonly Stitch[];
   /** The spans of the `health` and `dupes` findings, by slot name; a slot with none here puts no file on the change. */
   readonly spans: ReadonlyMap<string, readonly Span[]>;
+  /** The manifests whose added or moved packages brought an advisory: the only files a red `security` is on the change through (D83). */
+  readonly brought?: ReadonlySet<string>;
 };
 
 /**
@@ -492,7 +555,7 @@ function failingPaths(findings: readonly ReportedFinding[]): readonly string[] {
   return sortUnique((errors.length === 0 ? findings : errors).map((finding) => finding.path));
 }
 
-/** The paths a red slot's own raw output names, for the six slots whose output is about files (D27, D67). */
+/** The paths a red slot's own raw output names, for the seven slots whose output is about files, `security` by the manifests its advisories start from (D27, D67, D83). */
 function namedPaths(slot: string, check: RanCheck): readonly string[] {
   if (slot === 'test') {
     return sortUnique((check.test?.results ?? []).filter((result) => result.status === FAILED).map((result) => result.path));
@@ -504,6 +567,9 @@ function namedPaths(slot: string, check: RanCheck): readonly string[] {
   if (slot === 'dupes') return sortUnique((check.dupes?.clone_families ?? []).flatMap(pathsOf));
   if (slot === 'lint') return failingPaths(check.lint?.diagnostics ?? []);
   if (slot === 'struct') return failingPaths(check.struct?.matches ?? []);
+  if (slot === SECURITY) {
+    return sortUnique((check.security?.advisories ?? []).flatMap((advisory) => advisory.paths.map((path) => path.manifest)));
+  }
   return [];
 }
 
@@ -590,7 +656,10 @@ function partition(slots: readonly RedSlot[]): RedSplit {
  * changed file, which is a torn stitch (D4): the test is not the change, but
  * the files it tore on are. `health` and `dupes` name a region of a file
  * rather than the file, so either is on the change only through a changed
- * file where one of its findings meets a hunk. Every other file a slot names,
+ * file where one of its findings meets a hunk. `security` names the
+ * manifests its advisories start from, and is on the change only through a
+ * manifest whose own edit added or moved a package one of them runs through
+ * (D83). Every other file a slot names,
  * and every global slot, is standing state. `computeCategory` makes this
  * split once and records it on the map, where the notices and the render
  * read it back through `readRedSplit`.
@@ -613,6 +682,7 @@ export function splitRedSlots(inputs: RedSplitInputs): RedSplit {
       );
       const through = (path: string): readonly string[] => {
         if (LINE_SLOTS.has(slot.name)) return met.has(path) ? [path] : [];
+        if (slot.name === SECURITY) return hunks.has(path) && inputs.brought?.has(path) === true ? [path] : [];
         return [...(hunks.has(path) ? [path] : []), ...(slot.name === 'test' ? (torn.get(path) ?? []) : [])];
       };
       return { name: slot.name, global: false, change: sortUnique(slot.scope.flatMap(through)), named: sortUnique(slot.scope) };
@@ -691,7 +761,8 @@ export function computeCategory(inputs: CategoryInputs): Checks {
   }
 
   const slots = scopedSlots(check);
-  const red = splitRedSlots({ slots, changed: inputs.changed, stitches: inputs.stitches, spans: findingSpans(check) });
+  const brought = new Set(broughtAdvisories(check.security, inputs.deps_added, inputs.deps_moved).map((entry) => entry.manifest));
+  const red = splitRedSlots({ slots, changed: inputs.changed, stitches: inputs.stitches, spans: findingSpans(check), brought });
   return {
     category: categoryOf(inputs, check, red),
     checks_run: check.summary.checks_run,
