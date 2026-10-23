@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 15 — feat(svg): draw a legend inset and an annotated practice map
+**Current step:** 16 — chore(fixtures): select the tuning half of the precision corpus
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -37,7 +37,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 12. feat(svg): draw a cell's own dents and clone family on its membrane
 - ☑ 13. fix(core): keep a neighbour's centre out of another cell's membrane
 - ☑ 14. feat(svg): tell an added file from a modified one
-- ☐ 15. feat(svg): draw a legend inset and an annotated practice map
+- ☑ 15. feat(svg): draw a legend inset and an annotated practice map
 - ☐ 16. chore(fixtures): select the tuning half of the precision corpus
 - ☐ 17. chore(fixtures): generate maps for the corpus's tuning half
 - ☐ 18. chore(glance): score notice precision on the tuning half
@@ -119,8 +119,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 > Capture is one line (`/plumbbob:park` composes it). Harvest happens only at the boundary.
 
 - [x] new-dependency's why reads '1 new dependencies' for a single package; it never singularises (libs/core/src/notices.ts dependencyCandidates)
-- [ ] a package cell's dents are the union of its nested folders' (core's assembleCells), so where a package's skin runs along its folder's the two sets of teeth sit side by side; weigh drawing a package's own-file rules only
-- [ ] a member's own centre can fall outside its skin once the cut is simplified and smoothed (13 to 20 per retake map, re-skinned at step 13; one on 3 of 8 crowded synthetic fields); the ladder's members-in check holds only the raw marching ring
+- [x] a package cell's dents are the union of its nested folders' (core's assembleCells), so where a package's skin runs along its folder's the two sets of teeth sit side by side; weigh drawing a package's own-file rules only
+- [x] a member's own centre can fall outside its skin once the cut is simplified and smoothed (13 to 20 per retake map, re-skinned at step 13; one on 3 of 8 crowded synthetic fields); the ladder's members-in check holds only the raw marching ring
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -140,6 +140,9 @@ Harvest results this boundary:
 
 - 2026-10-23, at range 1 of 24's stop: 1 parked idea, classified.
 - **tangent**: park 1 · new-dependency's why reads '1 new dependencies' for a single package; it never singularises (libs/core/src/notices.ts dependencyCandidates) → a singular-plural slip in one notice's why, cosmetic, and no step depends on it
+- 2026-10-23, at range 2 of 24's stop: 2 parked ideas, classified.
+- **tangent**: park 2 · a package cell's dents are the union of its nested folders' (core's assembleCells), so where a package's skin runs along its folder's the two sets of teeth sit side by side; weigh drawing a package's own-file rules only → the teeth still count the rules inside each skin, and own-file-only teeth are a legibility call for the tuning refine, not a fault the precision scoring touches
+- **tangent**: park 3 · a member's own centre can fall outside its skin once the cut is simplified and smoothed (13 to 20 per retake map, re-skinned at step 13; one on 3 of 8 crowded synthetic fields); the ladder's members-in check holds only the raw marching ring → it predates this range and no notice reads a skin, so it can be weighed at the tuning refine before the blind reading
 
 ## Log
 
@@ -261,3 +264,61 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-23 — step 12 checkpointed · 0e304ce14 — feat(svg): draw a cell's own dents and clone family on its membrane (1 drift, 8m)
 - 2026-10-23 — step 13 checkpointed · 9e6232882 — fix(core): keep a neighbour's centre out of another cell's membrane (27m)
 - 2026-10-23 — step 14 checkpointed · bd79f6006 — feat(svg): tell an added file from a modified one (1 drift, 3m)
+- 2026-10-23 — step 15 checkpointed · 03915ecc7 — feat(svg): draw a legend inset and an annotated practice map (1 drift, 16m)
+- 2026-10-23 — range 2 of 24's stop recorded — review the SVG before the corpus is scored on it: cell dents and clone glyphs on membranes, no organelle inside a cell it does not belong to, the `+` on added paths, the legend inset, and `docs/glance-practice.svg` with its callouts
+
+  **Summary**: The still map now says four more things and keys them on itself. A cell wears its files' broken rules as teeth on its skin and its clone family's glyph beside it (step 12). No file sits under a skin it does not belong to: core carves the skin back off any neighbour the Bubble Set left under it (step 13). An added file's path is written with a leading `+` (step 14). Every map carries a legend inset, and `pnpm practice-map` renders `docs/glance-practice.svg` with numbered balloons drawn from the same list of marks (step 15).
+
+  1. Three of the four steps reached past their seams, the same way earlier steps did
+  2. No file now sits under another module's skin, on any map, and the check itself was wrong
+  3. The practice map is retake-5, which has no lit arc and no skin lit whole
+  4. The practice map's skins are today's, but its notices and evidence are the fifth pass's
+  5. Cell glyphs are many, and nested packages wear their folders' teeth too
+
+  **Readout**:
+
+  ```text
+  steps        4 of 4 landed
+               - 12 0e304ce · 13 9e62328 · 14 bd79f60 · 15 03915ec
+  check        green: 1 of 1 checks, 4 landings
+  done-when    met
+  decisions    honored:
+               - D87 (legend-inset), D120 (added-vs-modified)
+               - D125 (practice-map-current), D12 (materials)
+  constraints  14 of 14 honored
+  seam         strayed: 15 paths outside 3 steps' seams
+               - step 12: libs/svg/fixtures/categories/LIFR.svg and 3 others
+               - step 14: libs/svg/fixtures/categories/LIFR.svg and 3 others
+               - step 15: fallow.toml and 6 others
+  diff         +3382 -130 across 26 files
+  spent        55 min · green first run at every landing · 3 drift warnings
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Harvested**: 2 of 3 parked ideas open
+
+  - P2 · a package cell's dents are the union of its nested folders' (core's assembleCells), so where a package's skin runs along its folder's the two sets of teeth sit side by side; weigh drawing a package's own-file rules only → lean: tangent, the teeth still count the rules inside each skin, and own-file-only teeth are a legibility call for the tuning refine, not a fault the precision scoring touches
+  - P3 · a member's own centre can fall outside its skin once the cut is simplified and smoothed (13 to 20 per retake map, re-skinned at step 13; one on 3 of 8 crowded synthetic fields); the ladder's members-in check holds only the raw marching ring → lean: tangent, it predates this range and no notice reads a skin, so it can be weighed at the tuning refine before the blind reading
+
+  **Recommendation**: Open `docs/glance-practice.svg` and `libs/svg/fixtures/demo/atis.svg`, judge the teeth, glyphs, `+`, inset and balloons, and take both parks as tangents. Range 3 scores notice precision, which reads none of these marks, so anything you want changed in them can ride the one refine pass its stop allows, before the blind reading that does.
+
+  **1.** Three of the four steps reached past their seams, the same way earlier steps did
+
+  Steps 12, 14 and 15 regenerated the four category goldens in `libs/svg/fixtures/categories/` beside the demo golden their seams list. Those goldens are variants of the demo map, so they move whenever it does, as they did in range 1. Step 15 also added one line each to `tsconfig.json` (the script's project reference), `package.json` (the `practice-map` command) and `fallow.toml` (the script as an entry), because the script runs on the built libraries under a type-checked project of its own. None of it is scope drift, but the plan's seams still don't name the category goldens.
+
+  **2.** No file now sits under another module's skin, on any map, and the check itself was wrong
+
+  The Bubble Set loosens its field until every member is in, and never asks who else is. Step 13 keeps the cut that leaves out the fewest members, then the fewest others, and carves a bay out of it round each neighbour still under it. Each bay is the ring minus a capsule round the file, opened down the nearest way out that crosses the skin exactly twice and takes no member. The carve only removes area, so it cannot put anyone else under. The check was broken too. The library's point-in-ring test miscounts a point level with a vertex where the ring only touches that height. With contours and positions both at two decimals that happens often: it read a point 190px outside a ring's box as inside. `withinContour` now uses the even-odd rule. Re-skinned over their own positions, the ten committed outside-PR maps go from up to 522 foreign centres to none, at about the same speed. A seeded 525-file field (81 under the old cut) and the demo pin it. The demo's skins all hold on the first rung, so its golden did not move.
+
+  **3.** The practice map is retake-5, which has no lit arc and no skin lit whole
+
+  No retake map carries all ten marks, and none carries step 3's unmeasured skin, because all five were generated before it. retake-5 is the most legible of the five (347 files) and has the hairline, the notch, the stitches, both bolts, the ghost and the stain, so it gets eight balloons. retake-2 has the lit arc and a `+`, but no stitches and no red bolt, and runs to 1085 files. `pnpm practice-map retake-2` draws it from there instead. The inset keys all ten either way, and the doc names balloons 2 and 10 as missing from retake-5.
+
+  **4.** The practice map's skins are today's, but its notices and evidence are the fifth pass's
+
+  The retake fixtures are frozen records (D61), and the clones they came from are gone from `/tmp`, so the practice map cannot be regenerated from its tree. It renders the committed `map.json` through today's renderer, with the skins cut again in memory by today's core over the fixture's own positions. That way it shows step 13's fix, and the fixture file is untouched. Its notice kinds and evidence are as the fifth pass wrote them. That is why retake-5 shows no `+`: nothing in its notices was added. The corpus maps steps 17 and 19 generate will carry everything current.
+
+  **5.** Cell glyphs are many, and nested packages wear their folders' teeth too
+
+  A cell's teeth are every rule broken anywhere inside it, so a package and the folder it holds both wear the folder's rules. Where the two skins run together, the teeth sit side by side (P2). Clone families are common in real repos: on retake-2, 131 module outlines carry a glyph. That is the data, drawn as specified, but it is worth a look in the practice map and on the retake maps before the reading leans on either mark.
