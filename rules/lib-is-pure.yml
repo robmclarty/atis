@@ -1,0 +1,43 @@
+id: lib-is-pure
+message: |
+  A lib stays pure (C1, D121): no Node, compiler or renderer import, no DOM,
+  no Node global, and no unseeded clock or random source in `libs/*/src`.
+  Take the value as an input instead: the CLI reads the world, and a seed
+  and a clock are handed in (C3, D94). Tests under `__tests__/` are exempt.
+severity: error
+language: typescript
+files:
+  - 'libs/*/src/**/*.ts'
+  - 'libs/*/src/**/*.mts'
+  - 'libs/*/src/**/*.cts'
+ignores:
+  - 'libs/*/src/**/__tests__/**'
+utils:
+  impure-module:
+    kind: string
+    regex: "^['\"](node:[^'\"]*|fs|fs/[^'\"]*|child_process|typescript|typescript/[^'\"]*|three|three/[^'\"]*)['\"]$"
+rule:
+  any:
+    # Node, the compiler and the renderer, imported, re-exported or loaded late.
+    - kind: import_statement
+      has: { field: source, matches: impure-module }
+    - kind: export_statement
+      has: { field: source, matches: impure-module }
+    - kind: call_expression
+      all:
+        - has: { field: function, kind: import }
+        - has: { field: arguments, has: { matches: impure-module } }
+    # The DOM, and the globals Node defines and a browser does not.
+    - kind: identifier
+      regex: ^(document|window|process|Buffer|require|__dirname|__filename)$
+    - kind: shorthand_property_identifier
+      regex: ^(document|window|process|Buffer|require|__dirname|__filename)$
+    # The clock and the random source no seed controls.
+    - pattern: Math.random
+    - pattern: Date.now
+    - pattern: performance.now
+    - pattern: new Date()
+    - kind: new_expression
+      all:
+        - has: { field: constructor, regex: ^Date$ }
+        - not: { has: { field: arguments, kind: arguments } }
