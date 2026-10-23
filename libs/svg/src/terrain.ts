@@ -9,7 +9,10 @@
  * the contour core cut, its stroke as thick as the cell's interface: a deep
  * module is a big body with a thin skin. On top the organelles, a circle sized
  * by mass, or a polygon with one vertex pulled per breached rule when a file
- * has dents, and the same small glyph on every member of a clone family.
+ * has dents, and the same small glyph on every member of a clone family. A
+ * cell wears its own rules and family the same way, on its skin: one point
+ * pulled out of the membrane per rule its files break, and its family's glyph
+ * just outside it.
  *
  * Everything here is base tissue, greyscale and dim, drawn to be found rather
  * than seen (§5.6, D11). Nothing here draws an import edge (§5.1) and nothing
@@ -29,6 +32,8 @@ import {
   FIELD_FILL,
   GLYPH_OFFSET,
   GLYPH_STROKE,
+  MEMBRANE_DENT_PULL,
+  MEMBRANE_DENT_SPAN,
   MEMBRANE_FILL,
   MEMBRANE_FILL_OPACITY,
   MEMBRANE_STROKE,
@@ -63,6 +68,7 @@ const GLYPHS: readonly string[] = [
 ];
 
 type Mark = { readonly file: string; readonly at: Position };
+type Point = readonly [number, number];
 
 function byPath(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
@@ -165,18 +171,133 @@ function nestingOf(cells: readonly Cell[]): ReadonlyMap<string, number> {
   return new Map(cells.map((cell) => [cell.id, depthOf(cell.id)]));
 }
 
+/** The ring once round, without the point that closes it, so no vertex is counted twice. */
+function openRing(contour: Contour): readonly Point[] {
+  const first = contour[0];
+  const last = contour.at(-1);
+  const closed = contour.length > 1 && first !== undefined && last !== undefined && first[0] === last[0] && first[1] === last[1];
+  return closed ? contour.slice(0, -1) : contour;
+}
+
+/** Where a ring is read along its length: each vertex's distance from the first, the whole length, and which way round it runs. */
+type Walk = {
+  readonly ring: readonly Point[];
+  readonly at: readonly number[];
+  readonly length: number;
+  /** 1 when the shoelace area is positive, -1 when negative: which side of travel is outside. */
+  readonly turn: number;
+};
+
+function walkOf(ring: readonly Point[]): Walk {
+  const at: number[] = [];
+  let length = 0;
+  let area = 0;
+  ring.forEach(([x, y], index) => {
+    const [nx, ny] = ring[(index + 1) % ring.length] ?? [x, y];
+    at.push(length);
+    length += Math.hypot(nx - x, ny - y);
+    area += x * ny - nx * y;
+  });
+  return { ring, at, length, turn: area < 0 ? -1 : 1 };
+}
+
+/** The point a given distance along the ring, wrapping past its end. */
+function pointAlong(walk: Walk, distance: number): Point {
+  const along = ((distance % walk.length) + walk.length) % walk.length;
+  const { ring, at } = walk;
+  let index = at.length - 1;
+  while (index > 0 && (at[index] ?? 0) > along) index -= 1;
+  const [x, y] = ring[index] ?? [0, 0];
+  const [nx, ny] = ring[(index + 1) % ring.length] ?? [x, y];
+  const span = Math.hypot(nx - x, ny - y);
+  const share = span === 0 ? 0 : (along - (at[index] ?? 0)) / span;
+  return [x + (nx - x) * share, y + (ny - y) * share];
+}
+
+/** The ring's uppermost vertex, the leftmost of a tie: the same top the weather hangs a storm from. */
+function topIndex(ring: readonly Point[]): number {
+  let top = 0;
+  ring.forEach(([x, y], index) => {
+    const [tx, ty] = ring[top] ?? [x, y];
+    if (y < ty || (y === ty && x < tx)) top = index;
+  });
+  return top;
+}
+
+/**
+ * A cell's skin with one point pulled out per breached rule, the way an
+ * organelle pulls a vertex (§5.1). The points are spread evenly along the
+ * ring by its length and phased so the ring's top falls midway between two
+ * of them, because the top is where the weather hangs a storm. Each is a
+ * tooth: the ring is cut `MEMBRANE_DENT_SPAN` either side of the point,
+ * narrower when the teeth would crowd, and the point is drawn
+ * `MEMBRANE_DENT_PULL` out from the chord the cut leaves. Every other vertex
+ * stays where core put it, and the dented ring is written from its top.
+ */
+function dentedRing(contour: Contour, dents: number): readonly Point[] {
+  const walk = walkOf(openRing(contour));
+  if (dents === 0 || walk.ring.length < 3 || walk.length === 0) return contour;
+  const start = walk.at[topIndex(walk.ring)] ?? 0;
+  const spacing = walk.length / dents;
+  const span = Math.min(MEMBRANE_DENT_SPAN, spacing / 4);
+  const teeth = Array.from({ length: dents }, (_, k) => spacing / 2 + k * spacing);
+  const cut = (key: number): boolean => teeth.some((centre) => key >= centre - span && key <= centre + span);
+  const kept = walk.ring.flatMap((point, index) => {
+    const key = ((((walk.at[index] ?? 0) - start) % walk.length) + walk.length) % walk.length;
+    return cut(key) ? [] : [{ key, point }];
+  });
+  const pulled = teeth.flatMap((centre) => {
+    const [ax, ay] = pointAlong(walk, start + centre - span);
+    const [bx, by] = pointAlong(walk, start + centre + span);
+    const [cx, cy] = pointAlong(walk, start + centre);
+    const chord = Math.hypot(bx - ax, by - ay);
+    const [ox, oy] = chord === 0 ? [0, 0] : [(walk.turn * (by - ay)) / chord, (walk.turn * (ax - bx)) / chord];
+    return [
+      { key: centre - span, point: [ax, ay] as const },
+      { key: centre, point: [cx + ox * MEMBRANE_DENT_PULL, cy + oy * MEMBRANE_DENT_PULL] as const },
+      { key: centre + span, point: [bx, by] as const },
+    ];
+  });
+  return [...kept, ...pulled].toSorted((a, b) => a.key - b.key).map(({ point }) => point);
+}
+
+/** The ring's upper right, the point furthest along the diagonal up and right, where a cell's glyph hangs as an organelle's does. */
+function upperRightOf(ring: readonly Point[]): Point | undefined {
+  let corner: Point | undefined;
+  for (const point of ring) {
+    if (corner === undefined || point[0] - point[1] > corner[0] - corner[1]) corner = point;
+  }
+  return corner;
+}
+
 /**
  * One path per cell that has a contour, the outermost cells first so a
  * folder's skin is drawn over the package's that holds it (D45), and the
  * stroke as thick as the cell's interface (§5.1). The fill is translucent,
  * so where skins nest the body reads a shade fuller, which is the nesting.
+ * A cell whose files break rules is drawn dented, one tooth per rule, and a
+ * cell in a clone family carries the family's glyph past its upper right,
+ * the glyphs drawn after every skin so none is under a nested body.
  */
 export function drawMembranes(terrain: Terrain, layout: Layout): Markup {
   const contours = layout.contours ?? {};
   const nesting = nestingOf(terrain.cells);
+  const families = familiesOf(terrain);
   const cells = [...terrain.cells].toSorted(
     (a, b) => (nesting.get(a.id) ?? 0) - (nesting.get(b.id) ?? 0) || byPath(a.id, b.id),
   );
+  const skins = cells.flatMap((cell) => {
+    const contour = contours[cell.id];
+    if (contour === undefined) return [];
+    return [{ cell, ring: dentedRing(contour, cell.dents.length), thickness: membraneThickness(cell.interface_size) }];
+  });
+  const glyphs = skins.flatMap(({ cell, ring, thickness }) => {
+    const family = cell.clone_family;
+    const corner = upperRightOf(ring);
+    if (family === undefined || corner === undefined) return [];
+    const offset = (thickness / 2 + GLYPH_OFFSET) * Math.SQRT1_2;
+    return [drawGlyph(cell.id, family, families.get(family) ?? 0, [corner[0] + offset, corner[1] - offset])];
+  });
   return el(
     'g',
     {
@@ -186,18 +307,18 @@ export function drawMembranes(terrain: Terrain, layout: Layout): Markup {
       stroke: MEMBRANE_STROKE,
       'stroke-linejoin': 'round',
     },
-    cells.flatMap((cell) => {
-      const contour = contours[cell.id];
-      if (contour === undefined) return [];
-      return [
+    [
+      ...skins.map(({ cell, ring, thickness }) =>
         el('path', {
           'data-id': cell.id,
           'data-kind': cell.kind,
-          'stroke-width': membraneThickness(cell.interface_size),
-          d: pathOf(contour),
+          'data-dents': cell.dents.length === 0 ? undefined : cell.dents.join(' '),
+          'stroke-width': thickness,
+          d: pathOf(ring),
         }),
-      ];
-    }),
+      ),
+      ...glyphs,
+    ],
   );
 }
 
@@ -216,26 +337,31 @@ function dentedPoints(at: Position, dents: number): string {
   }).join(' ');
 }
 
-/** The families present, each with its glyph's index, in path order so the same map gives the same marks (C3). */
-function familiesOf(organelles: readonly Organelle[]): ReadonlyMap<string, number> {
-  const families = [...new Set(organelles.flatMap((organelle) => organelle.clone_family ?? []))].toSorted(byPath);
+/**
+ * The families present on organelles and cells alike, each with its glyph's
+ * index, in path order so the same map gives the same marks (C3), and a cell
+ * wears the very glyph its files do.
+ */
+function familiesOf(terrain: Terrain): ReadonlyMap<string, number> {
+  const families = [
+    ...new Set([...terrain.organelles, ...terrain.cells].flatMap((member) => member.clone_family ?? [])),
+  ].toSorted(byPath);
   return new Map(families.map((family, index) => [family, index % GLYPHS.length]));
 }
 
-/** The family's glyph, just outside the organelle's edge at its upper right. */
-function drawGlyph(organelle: Organelle, family: string, index: number, at: Position): Markup {
-  const offset = (at.r + GLYPH_OFFSET) * Math.SQRT1_2;
+/** The family's glyph, centred where it hangs. */
+function drawGlyph(id: string, family: string, index: number, [x, y]: Point): Markup {
   return el('path', {
-    'data-id': organelle.id,
+    'data-id': id,
     'data-family': family,
     d: GLYPHS[index] ?? '',
     fill: 'none',
     stroke: GLYPH_STROKE,
-    transform: `translate(${num(at.x + offset)} ${num(at.y - offset)})`,
+    transform: `translate(${num(x)} ${num(y)})`,
   });
 }
 
-/** One organelle: its shape, then its clone glyph when it has a family. */
+/** One organelle: its shape, then its clone glyph when it has a family, just outside its edge at its upper right. */
 function drawOrganelle(organelle: Organelle, at: Position, families: ReadonlyMap<string, number>): readonly Markup[] {
   const identity = { 'data-id': organelle.id, 'data-reachable': organelle.reachable ? undefined : 'false' };
   const shape =
@@ -248,7 +374,8 @@ function drawOrganelle(organelle: Organelle, at: Position, families: ReadonlyMap
         });
   const family = organelle.clone_family;
   if (family === undefined) return [shape];
-  return [shape, drawGlyph(organelle, family, families.get(family) ?? 0, at)];
+  const offset = (at.r + GLYPH_OFFSET) * Math.SQRT1_2;
+  return [shape, drawGlyph(organelle.id, family, families.get(family) ?? 0, [at.x + offset, at.y - offset])];
 }
 
 /**
@@ -259,7 +386,7 @@ function drawOrganelle(organelle: Organelle, at: Position, families: ReadonlyMap
  * field, and draws nothing.
  */
 export function drawOrganelles(terrain: Terrain, layout: Layout): Markup {
-  const families = familiesOf(terrain.organelles);
+  const families = familiesOf(terrain);
   return el(
     'g',
     { id: 'organelles', fill: ORGANELLE_FILL, stroke: ORGANELLE_STROKE, 'stroke-width': ORGANELLE_STROKE_WIDTH },

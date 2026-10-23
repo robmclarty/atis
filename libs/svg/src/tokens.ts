@@ -49,8 +49,15 @@ export const ORGANELLE_STROKE_WIDTH = 1;
  */
 export const DENT_VERTICES = 12;
 export const DENT_PULL = 1.4;
+/**
+ * A cell breaks a rule when one of its files does, and its membrane wears it
+ * the same way: one point per rule pulled this far out of the skin, the skin
+ * cut this far along either side of it so the point reads as a tooth.
+ */
+export const MEMBRANE_DENT_PULL = 8;
+export const MEMBRANE_DENT_SPAN = 6;
 
-/** Repetition means duplication (§5.1): the clone glyph, and how far outside the edge it sits. */
+/** Repetition means duplication (§5.1): the clone glyph, and how far outside the edge it sits, an organelle's or a cell's membrane's. */
 export const GLYPH_STROKE = '#7b848f';
 export const GLYPH_OFFSET = 4;
 

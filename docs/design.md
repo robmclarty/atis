@@ -70,8 +70,10 @@ D11). Nothing in this section is luminous; light is the weather's to draw.
 | `ORGANELLE_STROKE_WIDTH` | `1` | that outline's width |
 | `DENT_VERTICES` | `12` | shape is conformance (§5.1): a dented organelle is a polygon of this many vertices |
 | `DENT_PULL` | `1.4` | each breached rule pulls one vertex out to this multiple of the radius |
-| `GLYPH_STROKE` | `#7b848f` | repetition is duplication (§5.1): the clone-family glyph beside an organelle |
-| `GLYPH_OFFSET` | `4` | how far past the organelle's edge that glyph sits |
+| `MEMBRANE_DENT_PULL` | `8` | a cell wears its files' breached rules on its membrane: one point per rule pulled this far out of the skin, the teeth spread evenly along the ring with its top left clear for a storm |
+| `MEMBRANE_DENT_SPAN` | `6` | how far along the skin either side of that point the cut reaches, so the point reads as a tooth (narrower when the teeth would crowd) |
+| `GLYPH_STROKE` | `#7b848f` | repetition is duplication (§5.1): the clone-family glyph beside an organelle, and the same glyph beside the membrane of a cell in that family |
+| `GLYPH_OFFSET` | `4` | how far past the organelle's edge that glyph sits, or past the outer edge of a cell's membrane at its upper right |
 
 ## State (hue)
 

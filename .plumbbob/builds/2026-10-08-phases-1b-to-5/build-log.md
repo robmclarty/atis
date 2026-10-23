@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 11 — fix(svg): size HUD blocks for the widest fallback monospace face
+**Current step:** 12 — feat(svg): draw a cell's own dents and clone family on its membrane
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -33,7 +33,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 8. fix(cli): read bare re-exports and .mts barrels as public surface
 - ☑ 9. fix(core): keep committed build output off the terrain
 - ☑ 10. fix(core): sort the retake's leftover shore files by kind
-- ☐ 11. fix(svg): size HUD blocks for the widest fallback monospace face
+- ☑ 11. fix(svg): size HUD blocks for the widest fallback monospace face
 - ☐ 12. feat(svg): draw a cell's own dents and clone family on its membrane
 - ☐ 13. fix(core): keep a neighbour's centre out of another cell's membrane
 - ☐ 14. feat(svg): tell an added file from a modified one
@@ -118,7 +118,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 > go straight back to the step. Acting the instant an idea arrives is the disease.
 > Capture is one line (`/plumbbob:park` composes it). Harvest happens only at the boundary.
 
-- [ ] new-dependency's why reads '1 new dependencies' for a single package; it never singularises (libs/core/src/notices.ts dependencyCandidates)
+- [x] new-dependency's why reads '1 new dependencies' for a single package; it never singularises (libs/core/src/notices.ts dependencyCandidates)
+- [ ] a package cell's dents are the union of its nested folders' (core's assembleCells), so where a package's skin runs along its folder's the two sets of teeth sit side by side; weigh drawing a package's own-file rules only
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -136,7 +137,8 @@ from sprawling across branches.
 
 Harvest results this boundary:
 
-- (none yet)
+- 2026-10-23, at range 1 of 24's stop: 1 parked idea, classified.
+- **tangent**: park 1 · new-dependency's why reads '1 new dependencies' for a single package; it never singularises (libs/core/src/notices.ts dependencyCandidates) → a singular-plural slip in one notice's why, cosmetic, and no step depends on it
 
 ## Log
 
@@ -174,3 +176,83 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-23 — step 8 checkpointed · c118a6353 — fix(cli): read bare re-exports and .mts barrels as public surface (3m)
 - 2026-10-23 — step 9 checkpointed · b3237672c — fix(core): keep committed build output off the terrain (1 red, 1 drift, 7m)
 - 2026-10-23 — step 10 checkpointed · 79726214a — fix(core): sort the retake's leftover shore files by kind (1m)
+- 2026-10-23 — step 11 checkpointed · a15bdf927 — fix(svg): size HUD blocks for the widest fallback monospace face (1 drift, 5m)
+- 2026-10-23 — range 1 of 24's stop recorded — review what the map now says on the regenerated demo map before the SVG work draws it (unmeasured files lit whole, interface notices split by what moved and weighed by their readers, security only on the change, committed build output on the shore), and open `fixtures/retake-1/`'s re-rendered map in Quick Look to confirm no HUD block overruns its box (step 11's check)
+
+  **Summary**: Wave 0's content fixes are in: a changed file no coverage report names now reads as an unmeasured gap, lit whole, instead of a closed skin. Interface notices split by what moved, the checker prints inferred shapes, and moved names are weighed by their readers. A security advisory ranks only when the change brought it, committed `dist/` output sits on the shore, and the leftover retake files have shore rows. HUD blocks and notice rows are sized for SF Mono, and two gate fixes landed alongside: the CLI suite no longer races the `types` slot, and a struct rule keeps lib sources pure.
+
+  1. Seven of the eleven steps landed a hair off their seams, every stray a direct follow-on of a change inside the seam.
+  2. An unmeasured file is weighed as its skin is drawn, lit whole, which is a call D80 leaves open.
+  3. The demo fixture gained data so the stop's review can see three of its four marks; security is not among them.
+  4. A red `security` slot sits on the change only through the manifest that brought an advisory, and spends no row of its own.
+  5. The checker's pass over inferred shapes costs nothing here and guards against the any trap with public API only.
+
+  **Readout**:
+
+  ```text
+  steps        11 of 11 landed
+               - 1 d17b25c · 2 deb6a93 · 3 bf4d97d · 4 1feb6c2 · 5 d230d95
+               - 6 de8e50b · 7 b335055 · 8 c118a63 · 9 b323767 · 10 7972621
+               - 11 a15bdf9
+  check        green: 1 of 1 checks, 11 landings
+  done-when    met
+  decisions    honored
+               - D80 (unmeasured-not-closed), D122 (excluded-from-coverage)
+               - D81 (interface-move-kinds), D123 (mixed-interface-moves)
+               - D118 (inferred-shapes), D82 (moved-name-readers)
+               - D124 (readers-graph), D83 (security-on-change)
+               - D67 (standing-state-notices), D75 (public-surface-width)
+               - D84 (build-output-is-shore), D48 (shore-groups)
+               - D121 (lib-globals), D20 (workspace-exports)
+  constraints  14 of 14 honored
+  seam         strayed: 34 paths outside 7 steps' seams
+               - step 3: libs/core/src/__tests__/map.test.ts and 4 others
+               - step 4: libs/core/src/__tests__/map.test.ts and 5 others
+               - step 5: apps/atis/src/__tests__/cli.test.ts
+               - step 6: libs/svg/fixtures/categories/LIFR.svg and 4 others
+               - step 7: apps/atis/src/run.ts and 2 others
+               - step 9: apps/atis/src/__tests__/shapes.test.ts and 9 others
+               - step 11: libs/svg/fixtures/categories/LIFR.svg and 3 others
+  diff         +3574 -1470 across 40 files
+  spent        61 min · 1 red run · 7 drift warnings
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Harvested**: 1 of 1 parked idea open
+
+  - P1 · new-dependency's why reads '1 new dependencies' for a single package; it never singularises (libs/core/src/notices.ts dependencyCandidates) → lean: tangent, a singular-plural slip in one notice's why, cosmetic, and no step depends on it
+
+  **Recommendation**: Open `libs/svg/fixtures/demo/atis.svg` for the demo's marks and `/tmp/atis-review/retake-1.svg` for the re-rendered retake-1 map, then reply `looks good` to take the review and P1 as a tangent. Both maps show what the stop asks for, apart from security, which tests pin because the demo's skipped slot cannot show it. retake-1 stays frozen as the retake's record (D61), so its re-render is a scratch file rather than an edit to the fixture.
+
+  **1.** Seven of the eleven steps landed a hair off their seams, every stray a direct follow-on of a change inside the seam.
+
+  Steps 3, 4, 6, 9 and 11 regenerated the four category goldens in `libs/svg/fixtures/categories/` beside the demo golden their seams list. Those goldens are variants of the demo map, so they move whenever it does. Steps 3, 4 and 6 also touched tests outside their seams: `map.test.ts` in steps 3 and 4, where the old kinds and coverage were pinned on the demo, and `chrome.test.ts` in step 6. The rest:
+
+  - **Step 5:** asserts the new `--verbose` lines in `cli.test.ts`.
+  - **Step 7:** passes `deps_moved` through `run.ts`.
+  - **Step 9:** passes member roots to `shoreMatcher` in `map.ts`, and adds a `beforeAll` to step 5's `shapes.test.ts`. That `beforeAll` parses the default library once, because the first checker test timed out at 7 s under the full gate's load and refused the checkpoint once.
+
+  None is scope drift. Each is the same change reaching a file the plan did not list.
+
+  **2.** An unmeasured file is weighed as its skin is drawn, lit whole, which is a call D80 leaves open.
+
+  D80 says an unmeasured file's skin is lit whole and that it is a gap of unknown size. It says nothing about the rank. Counting its uncovered share as 0 (no measurement, no number) made the demo's `doctor.ts` rank calmer unmeasured than it had measured at 43% uncovered, and its large-hot-change notice fell out of the six. So an unmeasured file ranks with an uncovered share of 1, and every notice on it echoes `unmeasured: 1` beside the share, so the 1 reads as no measurement rather than as one. If you would rather it carry no factor at all, it is one branch in `factorsFor` (`libs/core/src/notices.ts`).
+
+  **3.** The demo fixture gained data so the stop's review can see three of its four marks; security is not among them.
+
+  So the demo map shows the new marks, its inputs now carry what the scan writes:
+
+  - **`emits`:** every scan file carries the new mark.
+  - **An unmeasured file:** its coverage report leaves out `apps/cli/src/doctor.ts`, the way this repo leaves out `cli.ts`, so the demo has one unmeasured file, lit whole.
+  - **Build output:** `libs/core` has a committed `dist/index.js` and `dist/index.d.ts`, which appear as a BUILD group on the shore and found no cell.
+
+  The demo's barrel now shows `interface-added` with `readers: 2`, fourth of six where `interface-change` used to sit second. Security cannot show there. The demo's `security` slot was skipped (D56), and a brought advisory weighs severity 4 on a shore manifest, below every notice the demo already ranks, so it would not make the six. Tests pin it instead (`notices.test.ts`, `check.test.ts`, `chrome.test.ts`).
+
+  **4.** A red `security` slot sits on the change only through the manifest that brought an advisory, and spends no row of its own.
+
+  D83 extends D67 to security. So the slot now names the manifests its advisories start from: it is the change's red, counted by the gate, only through a manifest whose edit added or moved a package the advisory's path runs through first, and otherwise it stands in the Standing block. The slot's own red-check-slot row is dropped, because the per-package `security-finding` notices on the same manifest already name the package and its advisories, which that row would not. That is the inverse of how `health` works, where the red row speaks for the threshold notice. pnpm writes a member's importer with `/` as `__`; the parser reads that back from pnpm's own encoder.
+
+  **5.** The checker's pass over inferred shapes costs nothing here and guards against the any trap with public API only.
+
+  TypeScript exposes no public handle on its error type, but the error and unresolved types are distinct objects from `checker.getAnyType()`. So a checked type that reaches any `any` other than the written one stays uncompared, and an npm return type swapped for another reads `interface-uncompared` rather than unchanged. Ordinary inferred code (generics, async, `as const`, `JSON.parse`'s declared `any`) compares without a false null. This repo annotates its exports, so `shapes base` and `shapes head` report 0 ms; the real cost waits for the corpus, as D118 says.
