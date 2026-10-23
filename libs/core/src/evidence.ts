@@ -180,6 +180,8 @@ export type EvidenceInputs = Omit<ReachInputs, 'changed'> & {
   /** The placed changed set `computeReach` returned: keyed by head path, each on one cell or one group (D40, D48). */
   readonly changed: readonly ChangedFile[];
   readonly check: CheckArtifacts;
+  /** The head files the scan marked as emitting code: the only ones a coverage report can leave unmeasured (D80). */
+  readonly emitting: ReadonlySet<string>;
 };
 
 /** What the evidence knows about one changed file; §5.3 reads it for the category and §5.4 for the notices. */
@@ -187,6 +189,12 @@ export type FileEvidence = {
   readonly path: string;
   /** Absent when the coverage report never names the file: unmeasured is not covered (C2). */
   readonly coverage?: PatchCoverage;
+  /**
+   * A changed source file that emits code, which the coverage report, though
+   * it exists, never names: no test run is known to have measured it, so it
+   * is a gap of unknown size rather than a closed skin (D80, D122).
+   */
+  readonly unmeasured: boolean;
   /** Survived and no-coverage mutants on this file's changed lines; empty when the channel is muted. */
   readonly mutants: readonly Mutant[];
   /** The cells this one file's reach touches, its own included: D27's *high reach* input. */
@@ -312,27 +320,66 @@ function stitchesFor(inputs: EvidenceInputs, report: TestReport): readonly Stitc
     .toSorted((a, b) => byPath(a.test, b.test));
 }
 
+/** Why coverage is muted when its report names none of the tree's source files (D122). */
+export const COVERAGE_UNNAMED = "coverage: the report names none of the tree's source files";
+
+/** A trusted `.check/` with its coverage set aside, and the reason it was, when one was (D122). */
+export type TrustedCoverage = { readonly check: CheckArtifacts; readonly muted?: string };
+
+/**
+ * D122's broken channel. The CLI makes a coverage report's keys relative to
+ * the repository it reads, so a report written in another checkout, or one
+ * that is empty, names none of this tree's source files; read as it stands,
+ * it would call every changed file unmeasured. Such a report is muted, with
+ * the reason recorded beside the map's other muted channels, as D41 mutes a
+ * stale file. One that names even one source file is this tree's, and every
+ * changed file it leaves out stays unmeasured (D80).
+ */
+export function trustCoverage(check: CheckArtifacts, sources: ReadonlySet<string>): TrustedCoverage {
+  if (check.mode !== 'check' || check.coverage === undefined) return { check };
+  if (check.coverage.some((file) => sources.has(file.path))) return { check };
+  const { coverage: _unnamed, ...rest } = check;
+  return { check: rest, muted: COVERAGE_UNNAMED };
+}
+
+/**
+ * Whether a report that exists leaves this changed file unmeasured (D80): a
+ * terrain file that still stands at head and emits code, and that the report
+ * never names. A deleted file has nothing left to measure, a test or a shore
+ * file is not terrain, and a file of types emits nothing a test could run.
+ */
+function isUnmeasured(
+  file: ChangedFile,
+  report: ReadonlyMap<string, CoverageFile> | undefined,
+  emitting: ReadonlySet<string>,
+): boolean {
+  if (report === undefined || report.has(file.path)) return false;
+  return file.kind !== 'deleted' && file.cell !== undefined && emitting.has(file.path);
+}
+
 /**
  * The evidence for the change: per file the coverage of its changed lines and
  * the mutants alive on them, and across the change the stitches that tie it to
  * the test run. `weather.evidence` carries a channel only when the run
  * produced it, so a map with no coverage says nothing about coverage rather
- * than saying zero (C2).
+ * than saying zero (C2). A changed file a report that exists never names is
+ * listed as unmeasured beside the coverage the report does give (D80).
  */
 export function computeEvidence(inputs: EvidenceInputs): EvidenceResult {
   const check = inputs.check.mode === 'check' ? inputs.check : undefined;
-  const coverageOf = new Map((check?.coverage ?? []).map((file) => [file.path, file]));
+  const coverageOf = check?.coverage === undefined ? undefined : new Map(check.coverage.map((file) => [file.path, file]));
   const mutationOf = new Map((check?.mutation ?? []).map((file) => [file.path, file]));
   const cells = indexCells(inputs.modules);
 
   const files = inputs.changed
     .map((file): FileEvidence => {
       const changedLines = hunkLines(file.hunks);
-      const coverage = coverageOf.get(file.path);
+      const coverage = coverageOf?.get(file.path);
       const mutation = mutationOf.get(file.path);
       return {
         path: file.path,
         ...(coverage === undefined ? {} : { coverage: patchCoverage(file.path, changedLines, coverage) }),
+        unmeasured: isUnmeasured(file, coverageOf, inputs.emitting),
         mutants: mutation === undefined ? [] : liveMutants(file.path, changedLines, mutation),
         cells_reached: cellsReached(file, inputs),
         escaped_interface: escapedInterface(file, cells, inputs.headEdges),
@@ -344,7 +391,10 @@ export function computeEvidence(inputs: EvidenceInputs): EvidenceResult {
     evidence: {
       ...(check?.coverage === undefined
         ? {}
-        : { patch_coverage: files.flatMap((file) => (file.coverage === undefined ? [] : [file.coverage])) }),
+        : {
+            patch_coverage: files.flatMap((file) => (file.coverage === undefined ? [] : [file.coverage])),
+            unmeasured: files.filter((file) => file.unmeasured).map((file) => file.path),
+          }),
       ...(check?.mutation === undefined ? {} : { mutants: files.flatMap((file) => file.mutants) }),
       ...(check?.test === undefined ? {} : { stitches: stitchesFor(inputs, check.test) }),
     },
@@ -598,9 +648,9 @@ function recordSplit(slots: readonly CheckSlot[], red: RedSplit): readonly Check
   return slots.map((slot) => (isRed(slot) && slot.scope !== GLOBAL ? { ...slot, change: change.get(slot.name) ?? [] } : slot));
 }
 
-/** A gap: a changed file with at least one uncovered changed executable line (D27). */
+/** A gap: a changed file with at least one uncovered changed executable line (D27), or one no report measured at all (D80). */
 function hasGap(file: FileEvidence): boolean {
-  return file.coverage !== undefined && file.coverage.uncovered_lines.length > 0;
+  return file.unmeasured || (file.coverage !== undefined && file.coverage.uncovered_lines.length > 0);
 }
 
 /**

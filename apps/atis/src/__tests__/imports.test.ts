@@ -7,6 +7,7 @@ import type { MapJson } from 'core';
 import { afterAll, beforeAll, expect, test, vi } from 'vitest';
 
 import {
+  parseEmitsCode,
   parseExportShapes,
   parseFallowEntryPoints,
   parseManifestWorkspaces,
@@ -370,7 +371,50 @@ test('every tracked file is listed, classified and sorted, whether it is parsed 
     ['pnpm-workspace.yaml', 'other'],
   ]);
   expect(fileIn(scan, 'libs/shared/src/greet.ts').loc).toBe(4);
-  expect(fileIn(scan, 'README.md')).toEqual({ path: 'README.md', loc: 0, kind: 'other', exports: [], shapes: {} });
+  expect(fileIn(scan, 'README.md')).toEqual({ path: 'README.md', loc: 0, kind: 'other', exports: [], shapes: {}, emits: false });
+});
+
+test('a file emits code only when a statement survives type stripping, so a barrel of re-exports emits none (D80)', () => {
+  expect(fileIn(scan, 'apps/cli/src/types.ts').emits).toBe(true);
+  expect(fileIn(scan, 'apps/cli/src/cli.ts').emits).toBe(true);
+  expect(fileIn(scan, 'libs/shared/src/index.ts').emits).toBe(false);
+
+  // Types, interfaces, imports, re-exports, ambient declarations and overload signatures leave nothing.
+  expect(
+    parseEmitsCode(
+      'types.ts',
+      `import type { A } from './a.js';
+import { B } from './b.js';
+export type { A };
+export { B };
+export * from './c.js';
+export interface Options { readonly verbose: boolean }
+export type Mode = 'a' | 'b';
+declare const injected: string;
+declare global { interface Window { atis: unknown } }
+export declare function overloaded(value: string): string;
+export namespace Shapes { export type Point = { x: number } }
+import type Alias = Shapes.Point;
+`,
+    ),
+  ).toBe(false);
+  // A declaration file is all types, whatever it holds.
+  expect(parseEmitsCode('ambient.d.ts', `export const VERSION: string;
+`)).toBe(false);
+
+  // Anything a test could run emits: a value, a body, an enum, a default, a namespace holding a value.
+  expect(parseEmitsCode('value.ts', `export const ONE = 1;
+`)).toBe(true);
+  expect(parseEmitsCode('fn.ts', `export function f(a: string): string;
+export function f(a: unknown) { return a; }
+`)).toBe(true);
+  expect(parseEmitsCode('enum.ts', `export enum Mode { A, B }
+`)).toBe(true);
+  expect(parseEmitsCode('default.ts', `import { B } from './b.js';
+export default B;
+`)).toBe(true);
+  expect(parseEmitsCode('ns.ts', `export namespace Outer.Inner { export const deep = 1; }
+`)).toBe(true);
 });
 
 test('exports are the names a file declares, with `export * from` passing the target on', () => {

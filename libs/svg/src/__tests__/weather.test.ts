@@ -290,10 +290,10 @@ test('a changed skin lights its uncovered share at full strength from the top cl
   expect(attr(closed?.rings[0], 'stroke-opacity')).toBe(INTEGRITY_CLOSED_OPACITY);
 });
 
-test("the demo's skins each light the share of their changed lines left uncovered", () => {
-  const skins = skinsIn(drawn(renderSvg(demo()), 'evidence'));
+test("the demo's skins each light the share of their changed lines left uncovered, and the file no report names is lit whole (D80)", () => {
+  const evidence = drawn(renderSvg(demo()), 'evidence');
+  const skins = skinsIn(evidence);
   expect(skins.map((skin) => [skin.id, skin.covered, skin.changed])).toEqual([
-    ['apps/cli/src/doctor.ts', 4, 7],
     ['libs/core/src/pm/index.ts', 4, 9],
     ['libs/core/src/pm/tools.ts', 7, 9],
   ]);
@@ -301,6 +301,22 @@ test("the demo's skins each light the share of their changed lines left uncovere
     const lit = /stroke-dasharray="([\d.]+) 1"/.exec(skin.rings[1] ?? '')?.[1];
     expect(Number(lit)).toBeCloseTo((skin.changed - skin.covered) / skin.changed, 2);
   }
+  expect([...evidence.matchAll(/<g data-id="([^"]+)" data-unmeasured="true">/g)].map(([, id]) => id)).toEqual(['apps/cli/src/doctor.ts']);
+});
+
+test('a changed file the coverage report never names is a skin lit whole over the hairline, never a closed one (D80)', () => {
+  const evidence = drawn(renderSvg(small({ weather: { changed: [MODIFIED_A], evidence: { patch_coverage: [], unmeasured: [A] } } })), 'evidence');
+  const skin = new RegExp(`<g data-id="${A}" data-unmeasured="true">([\\s\\S]*?)</g>`).exec(evidence)?.[1] ?? '';
+  const [hairline, lit, ...rest] = [...skin.matchAll(/<circle [^>]*\/>/g)].map(([ring]) => ring);
+  expect(rest).toEqual([]);
+  expect(attr(hairline, 'stroke-width')).toBe(INTEGRITY_CLOSED_WIDTH);
+  expect(attr(hairline, 'stroke-opacity')).toBe(INTEGRITY_CLOSED_OPACITY);
+  // The whole ring is lit at full strength: no dash, so no share of it is left dark.
+  expect(lit).toContain(`stroke="${EVIDENCE_LIGHT}"`);
+  expect(attr(lit, 'stroke-width')).toBe(INTEGRITY_GAP_WIDTH);
+  expect(attr(lit, 'r')).toBe(AT_A.r + INTEGRITY_PAD);
+  expect(lit).not.toContain('stroke-dasharray');
+  expect(lit).not.toContain('stroke-opacity');
 });
 
 test('a live mutant is a lit notch cut through the skin, round the top of the ring (D71)', () => {

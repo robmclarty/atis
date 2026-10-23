@@ -3471,16 +3471,6 @@
     "evidence": {
       "patch_coverage": [
         {
-          "path": "apps/cli/src/doctor.ts",
-          "changed_executable": 7,
-          "covered": 4,
-          "uncovered_lines": [
-            52,
-            190,
-            205
-          ]
-        },
-        {
           "path": "libs/core/src/pm/index.ts",
           "changed_executable": 9,
           "covered": 4,
@@ -3501,6 +3491,9 @@
             64
           ]
         }
+      ],
+      "unmeasured": [
+        "apps/cli/src/doctor.ts"
       ],
       "mutants": [
         {
@@ -3695,6 +3688,26 @@
       "tier": "tertiary"
     },
     {
+      "kind": "large-hot-change",
+      "target": "apps/cli/src/doctor.ts",
+      "why": "136 lines changed in a file with churn 3.366 and a bug-fix rate of 0.5",
+      "inputs": {
+        "cells_reached": 2,
+        "uncovered_fraction": 1,
+        "history_weight": 3.866,
+        "unmeasured": 1,
+        "lines": 136
+      },
+      "thresholds": {
+        "severity": 4,
+        "large_lines": 100,
+        "hot_churn_ratio": 2,
+        "hot_bugfix_rate": 0.3
+      },
+      "weight": 81.695,
+      "tier": "tertiary"
+    },
+    {
       "kind": "red-check-slot",
       "target": "libs/core/src/pm/tools.ts",
       "why": "the `test` check is red on this changed file",
@@ -3708,25 +3721,6 @@
         "severity": 10
       },
       "weight": 63.775,
-      "tier": "tertiary"
-    },
-    {
-      "kind": "large-hot-change",
-      "target": "apps/cli/src/doctor.ts",
-      "why": "136 lines changed in a file with churn 3.366 and a bug-fix rate of 0.5",
-      "inputs": {
-        "cells_reached": 2,
-        "uncovered_fraction": 0.429,
-        "history_weight": 3.866,
-        "lines": 136
-      },
-      "thresholds": {
-        "severity": 4,
-        "large_lines": 100,
-        "hot_churn_ratio": 2,
-        "hot_bugfix_rate": 0.3
-      },
-      "weight": 58.371,
       "tier": "tertiary"
     }
   ]

@@ -86,8 +86,11 @@ export type ExportShapes = Readonly<Record<string, string | null>>;
  * A scanned file with the shape beside each exported name, which the
  * interface-change candidate compares across the two scans (D76). `shapes` is
  * absent where a scan did not read them, which compares like `null` (C2).
+ * `emits` says whether the file leaves JavaScript behind once its types are
+ * stripped, which is what a coverage report measures (D80); absent where a
+ * scan did not read it, a file is never called unmeasured on a guess.
  */
-export type ScanFile = ScannedFile & { readonly shapes?: ExportShapes };
+export type ScanFile = ScannedFile & { readonly shapes?: ExportShapes; readonly emits?: boolean };
 
 /**
  * A workspace member as the public-name walk reads it (D75). Both fields are
@@ -215,21 +218,28 @@ function cochangeWeight(severity: number, rate: number, support: number): number
 /**
  * The measurements behind one candidate, looked up by its target. A target
  * that is not a changed file (a slot name, a shore group, a ghost that never
- * came along) has none, which leaves its severity unscaled.
+ * came along) has none, which leaves its severity unscaled. A file the
+ * coverage report never names is weighed as its skin is drawn, lit whole: no
+ * test is known to have run any of it, so it cannot rank calmer than a file
+ * the tests half covered (D80). Its notices echo `unmeasured` beside the
+ * share, so the 1 reads as no measurement rather than as one.
  */
 function factorsFor(
   target: string,
   evidence: ReadonlyMap<string, FileEvidence>,
   history: ReadonlyMap<string, FileHistory>,
 ): Factors {
-  const coverage = evidence.get(target)?.coverage;
+  const file = evidence.get(target);
+  const coverage = file?.coverage;
   const past = history.get(target);
   return {
-    cells_reached: evidence.get(target)?.cells_reached ?? 0,
+    cells_reached: file?.cells_reached ?? 0,
     uncovered_fraction:
-      coverage === undefined || coverage.changed_executable === 0
-        ? 0
-        : round((coverage.changed_executable - coverage.covered) / coverage.changed_executable),
+      file?.unmeasured === true
+        ? 1
+        : coverage === undefined || coverage.changed_executable === 0
+          ? 0
+          : round((coverage.changed_executable - coverage.covered) / coverage.changed_executable),
     // Churn and bug-fix rate are both dimensionless, and both absent when the window never saw the file (C2).
     history_weight: round((past?.churn_ratio ?? 0) + (past?.bugfix_rate ?? 0)),
   };
@@ -570,17 +580,35 @@ function interfaceCandidates(
   });
 }
 
-/** Changed lines no test ran, in a file whose reach touches enough cells that nobody can read them all (D27). */
+/**
+ * Changed lines no test ran, in a file whose reach touches enough cells that
+ * nobody can read them all (D27). A file the coverage report never names is
+ * the same gap at an unknown size, and says so rather than counting lines it
+ * cannot see (D80, D122).
+ */
 function coverageCandidates(inputs: NoticeInputs): readonly Candidate[] {
   const { high_reach_cells } = inputs.config.category;
   return inputs.files.flatMap((file): Candidate[] => {
+    if (file.cells_reached < high_reach_cells) return [];
+    const reaches = `the change reaches ${String(file.cells_reached)} cells`;
+    if (file.unmeasured) {
+      return [
+        {
+          kind: 'uncovered-high-reach',
+          target: file.path,
+          why: `the coverage report does not name this changed file, so no test run measured it, and ${reaches}`,
+          inputs: {},
+          thresholds: { high_reach_cells },
+        },
+      ];
+    }
     const uncovered = file.coverage?.uncovered_lines.length ?? 0;
-    if (uncovered === 0 || file.cells_reached < high_reach_cells) return [];
+    if (uncovered === 0) return [];
     return [
       {
         kind: 'uncovered-high-reach',
         target: file.path,
-        why: `${String(uncovered)} changed lines are uncovered and the change reaches ${String(file.cells_reached)} cells`,
+        why: `${String(uncovered)} changed lines are uncovered and ${reaches}`,
         inputs: { uncovered_lines: uncovered },
         thresholds: { high_reach_cells },
       },
@@ -849,11 +877,12 @@ export function rankNotices(inputs: NoticeInputs): readonly Notice[] {
       const weight = factors
         ? score(severityOf, factors)
         : cochangeWeight(severityOf, candidate.inputs['rate'] ?? 0, candidate.inputs['support'] ?? 0);
+      const unmeasured = factors !== undefined && evidence.get(candidate.target)?.unmeasured === true;
       return {
         kind: candidate.kind,
         target: candidate.target,
         why: candidate.why,
-        inputs: { ...factors, ...candidate.inputs },
+        inputs: { ...factors, ...(unmeasured ? { unmeasured: 1 } : {}), ...candidate.inputs },
         thresholds: { severity: severityOf, ...candidate.thresholds },
         weight: round(weight),
       };

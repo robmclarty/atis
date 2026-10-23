@@ -73,6 +73,8 @@ type Scenario = {
   readonly bands?: Readonly<Record<string, number>>;
   readonly fanIn?: Readonly<Record<string, number>>;
   readonly check?: CheckArtifacts;
+  /** The head files the scan marked as emitting code; none unless the scenario is about an unmeasured file (D80). */
+  readonly emitting?: readonly string[];
   /** A verdict built by hand, each red slot that names files carrying its split; else the category's own, made from `check`. */
   readonly checks?: Checks;
   readonly history?: readonly FileHistory[];
@@ -184,7 +186,8 @@ function inputsFor(scenario: Scenario): NoticeInputs {
   const groups = identifyGroups(scanned, DEFAULT_CONFIG.groups, []);
   const check = scenario.check ?? NO_CHECK;
   const placed = computeReach({ changed, modules, groups, headEdges, baseEdges });
-  const { evidence, files } = computeEvidence({ changed: placed.changed, modules, groups, headEdges, baseEdges, check });
+  const emitting = new Set(scenario.emitting ?? []);
+  const { evidence, files } = computeEvidence({ changed: placed.changed, modules, groups, headEdges, baseEdges, check, emitting });
   const checks =
     scenario.checks ??
     (check.mode === 'check'
@@ -395,6 +398,29 @@ test('the rank is the severity scaled by reach, by the evidence gap and by the h
   });
   // 7 × (1 + ln 4) × 1.5 × 2, to three decimals.
   expect(notice?.weight).toBe(50.112);
+});
+
+test('a high-reach file the coverage report never names is uncovered-high-reach, its why saying no test run measured it (D80, D122)', () => {
+  const notice = noticesFor({
+    changed: [change('src/pm/tools.ts')],
+    emitting: ['src/pm/tools.ts'],
+    check: ran({ coverage: [{ path: 'src/pm/util.ts', statements: [{ line: 10, hits: 1 }] }] }),
+  })[0];
+
+  expect(notice?.kind).toBe('uncovered-high-reach');
+  expect(notice?.target).toBe('src/pm/tools.ts');
+  expect(notice?.why).toBe('the coverage report does not name this changed file, so no test run measured it, and the change reaches 3 cells');
+  // A gap of unknown size counts no lines; it weighs as its skin is drawn, lit whole, and says it was never measured.
+  expect(notice?.inputs).toEqual({ cells_reached: 3, uncovered_fraction: 1, history_weight: 0, unmeasured: 1 });
+  // 7 × (1 + ln 4) × 2, to three decimals: the weight a wholly uncovered file at the same reach carries.
+  expect(notice?.weight).toBe(33.408);
+
+  // On a file whose reach stays in its own cell it is a gap the category counts, and no notice.
+  const quiet = noticesFor({
+    emitting: ['src/pm/util.ts'],
+    check: ran({ coverage: [{ path: 'src/pm/tools.ts', statements: [{ line: 10, hits: 1 }] }] }),
+  });
+  expect(quiet.map((entry) => entry.kind)).not.toContain('uncovered-high-reach');
 });
 
 test('a red slot names its findings itself, so the same slot does not spend a second notice on them', () => {

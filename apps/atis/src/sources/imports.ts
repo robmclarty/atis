@@ -43,6 +43,8 @@ export type ScannedFile = {
   readonly exports: readonly string[];
   /** Beside each exported name, its declared shape, or `null` where it cannot be compared (D76). */
   readonly shapes: ExportShapes;
+  /** Whether the file leaves JavaScript behind once its types are stripped, which is what a coverage report measures (D80). */
+  readonly emits: boolean;
 };
 
 /**
@@ -208,6 +210,8 @@ type Star = { readonly specifier: string; readonly shape: string };
 
 type Parsed = {
   readonly loc: number;
+  /** Whether any statement survives type stripping (D80). */
+  readonly emits: boolean;
   readonly exports: readonly string[];
   /** The shape of each name in `exports`; a name a star passes on is the scan's to add. */
   readonly shapes: ExportShapes;
@@ -289,6 +293,32 @@ function dynamicImports(source: ts.SourceFile): readonly Reference[] {
   };
   ts.forEachChild(source, visit);
   return found;
+}
+
+/**
+ * Whether a statement leaves JavaScript behind once the types are stripped.
+ * An import and an `export … from` carry no line a coverage report counts; a
+ * type, an interface, anything `declare`d and an overload signature carry
+ * nothing at all; and a namespace emits only when something inside it does.
+ * Everything else (a variable, a function with a body, a class, an enum, an
+ * expression, an `export default` or `export =`) is code a test can run (D80).
+ */
+function leavesCode(statement: ts.Statement): boolean {
+  if (ts.isImportDeclaration(statement) || ts.isExportDeclaration(statement) || ts.isEmptyStatement(statement)) return false;
+  if (ts.isInterfaceDeclaration(statement) || ts.isTypeAliasDeclaration(statement)) return false;
+  if (hasModifier(statement, ts.SyntaxKind.DeclareKeyword)) return false;
+  if (ts.isImportEqualsDeclaration(statement)) return !statement.isTypeOnly;
+  if (ts.isFunctionDeclaration(statement)) return statement.body !== undefined;
+  if (ts.isModuleDeclaration(statement)) return namespaceLeavesCode(statement);
+  return true;
+}
+
+/** A namespace is instantiated, and emits, only when a statement inside it does; `namespace a.b {}` nests one in another. */
+function namespaceLeavesCode(declaration: ts.ModuleDeclaration): boolean {
+  const { body } = declaration;
+  if (body === undefined) return false;
+  if (ts.isModuleBlock(body)) return body.statements.some(leavesCode);
+  return ts.isModuleDeclaration(body) && namespaceLeavesCode(body);
 }
 
 /** Comments are no part of a shape, so an edit to a doc comment moves nothing (D76). */
@@ -528,6 +558,8 @@ function parseSource(path: string, content: string): Parsed {
   const names = sorted(exports);
   return {
     loc: content.split('\n').filter((line) => line.trim() !== '').length,
+    // A declaration file is all types by its name, whatever it holds (D77).
+    emits: !source.isDeclarationFile && source.statements.some(leavesCode),
     exports: names,
     shapes: shapesOf(source, names),
     references: [...references, ...dynamicImports(source)],
@@ -542,6 +574,15 @@ function parseSource(path: string, content: string): Parsed {
  */
 export function parseExportShapes(path: string, content: string): ExportShapes {
   return parseSource(path, content).shapes;
+}
+
+/**
+ * Whether a TypeScript file emits code a coverage report could measure, read
+ * from its source alone (D30, D80): a file of types, re-exports and ambient
+ * declarations emits none, so a report that never names it leaves no gap.
+ */
+export function parseEmitsCode(path: string, content: string): boolean {
+  return parseSource(path, content).emits;
 }
 
 /**
@@ -1027,6 +1068,7 @@ export function scanImports(dir: string, options: ScanOptions = {}): Scan {
       kind: classifyFile(path),
       exports: names,
       shapes: withStars(names, parsed.get(path)?.shapes ?? {}, stars.get(path) ?? [], exports),
+      emits: parsed.get(path)?.emits ?? false,
     };
   });
   const fallow = fallowEntryPoints(root, options.repo ?? dir);

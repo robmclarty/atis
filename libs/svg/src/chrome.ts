@@ -205,15 +205,21 @@ function gateBlocks(map: MapJson): readonly Block[] {
   return [gate, block('standing', 'Standing', String(red.standing.length), tail)];
 }
 
-/** `Patch cov x%`: the covered share of every changed executable line, over the whole change. */
+/**
+ * `Patch cov x%`: the covered share of every changed executable line the
+ * report measured, over the whole change, with the changed files it never
+ * named counted beside it (`, 2 unmeasured`, D80). With nothing measured and
+ * something unmeasured, the share is the dash and the count still speaks.
+ */
 function coverageBlock(map: MapJson): Block {
   if (isStale(map, 'test')) return muted('patch-cov', 'Patch cov', 'stale');
-  const coverage = map.weather.evidence.patch_coverage;
+  const { patch_coverage: coverage, unmeasured = [] } = map.weather.evidence;
   if (coverage === undefined) return muted('patch-cov', 'Patch cov', 'absent');
+  const tail = unmeasured.length === 0 ? '' : `, ${String(unmeasured.length)} unmeasured`;
   const executable = coverage.reduce((total, file) => total + file.changed_executable, 0);
-  if (executable === 0) return muted('patch-cov', 'Patch cov', 'empty');
+  if (executable === 0) return tail === '' ? muted('patch-cov', 'Patch cov', 'empty') : block('patch-cov', 'Patch cov', MUTED_DASH, tail);
   const covered = coverage.reduce((total, file) => total + file.covered, 0);
-  return block('patch-cov', 'Patch cov', `${String(Math.round((covered / executable) * 100))}%`);
+  return block('patch-cov', 'Patch cov', `${String(Math.round((covered / executable) * 100))}%`, tail);
 }
 
 /** `Mutants k survived`: the mutants still alive on the changed lines, which is what core counted (§5.2). */

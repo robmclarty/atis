@@ -243,6 +243,22 @@ test('rejects a red slot that names files without its split, a split on any othe
   );
 });
 
+function withEvidence(evidence: Record<string, unknown>): unknown {
+  const map = minimalMap();
+  return { ...map, weather: { ...map.weather, evidence } };
+}
+
+test('accepts unmeasured files beside the coverage they sit outside, and rejects any without coverage or naming an unchanged file (D80)', () => {
+  const map = withEvidence({ patch_coverage: [], unmeasured: ['src/foo/index.ts'] });
+  expect(assertMap(map)).toEqual(map);
+  expect(() => assertMap(withEvidence({ unmeasured: ['src/foo/index.ts'] }))).toThrow(
+    /weather\.evidence\.unmeasured: only a map with patch_coverage/,
+  );
+  expect(() => assertMap(withEvidence({ patch_coverage: [], unmeasured: ['src/bar.ts'] }))).toThrow(
+    /weather\.evidence\.unmeasured\[0\]: not a changed file/,
+  );
+});
+
 test('rejects a changed entry naming an unknown group', () => {
   const map = minimalMap();
   const withUnknownGroup = {

@@ -1,7 +1,16 @@
 import { expect, test } from 'vitest';
 
 import { DEFAULT_CONFIG } from '../config.js';
-import { HARNESS_BROKEN, UNKNOWN_STATUS, computeCategory, computeEvidence, readRedSplit, splitRedSlots } from '../evidence.js';
+import {
+  COVERAGE_UNNAMED,
+  HARNESS_BROKEN,
+  UNKNOWN_STATUS,
+  computeCategory,
+  computeEvidence,
+  readRedSplit,
+  splitRedSlots,
+  trustCoverage,
+} from '../evidence.js';
 import type { CheckArtifacts, CheckSummarySlot, Dead, EvidenceInputs, FileEvidence, Health, RedSplit } from '../evidence.js';
 import { identifyGroups } from '../groups.js';
 import { identifyModules } from '../modules.js';
@@ -120,18 +129,34 @@ const TOOLS_CLOSED: Channels = {
   coverage: [{ path: 'src/pm/tools.ts', statements: [{ line: 10, hits: 1 }, { line: 12, hits: 4 }] }],
 };
 
+/** No file marked as emitting code: the tests that are not about D80 leave a file the report omits as they found it. */
+const NONE_EMIT: ReadonlySet<string> = new Set();
+
+/** Every file of the chain marked as emitting code, the way the scan marks a file with a statement left after type stripping (D80). */
+const ALL_EMIT: ReadonlySet<string> = new Set(CHAIN.files);
+
 /** The composition `buildMap` will use: place the changed set, then read the evidence off it. */
-function inputsFor(world: World, changed: readonly DiffFile[], check: CheckArtifacts): EvidenceInputs {
+function inputsFor(
+  world: World,
+  changed: readonly DiffFile[],
+  check: CheckArtifacts,
+  emitting: ReadonlySet<string> = NONE_EMIT,
+): EvidenceInputs {
   const scanned = world.files.map((path): ScannedFile => ({ path, loc: 10, exports: [] }));
   const modules = identifyModules(scanned, world.head, []);
   const groups = identifyGroups(scanned, DEFAULT_CONFIG.groups, []);
   const baseEdges = world.base ?? world.head;
   const placed = computeReach({ changed, modules, groups, headEdges: world.head, baseEdges });
-  return { changed: placed.changed, modules, groups, headEdges: world.head, baseEdges, check };
+  return { changed: placed.changed, modules, groups, headEdges: world.head, baseEdges, check, emitting };
 }
 
-function evidenceFor(world: World, changed: readonly DiffFile[], check: CheckArtifacts): ReturnType<typeof computeEvidence> {
-  return computeEvidence(inputsFor(world, changed, check));
+function evidenceFor(
+  world: World,
+  changed: readonly DiffFile[],
+  check: CheckArtifacts,
+  emitting: ReadonlySet<string> = NONE_EMIT,
+): ReturnType<typeof computeEvidence> {
+  return computeEvidence(inputsFor(world, changed, check, emitting));
 }
 
 function fileAt(files: readonly FileEvidence[], path: string): FileEvidence {
@@ -141,8 +166,13 @@ function fileAt(files: readonly FileEvidence[], path: string): FileEvidence {
 }
 
 /** Evidence into category, the way `buildMap` chains them, stitches and all. */
-function categoryFor(world: World, changed: readonly DiffFile[], check: CheckArtifacts): Checks {
-  const inputs = inputsFor(world, changed, check);
+function categoryFor(
+  world: World,
+  changed: readonly DiffFile[],
+  check: CheckArtifacts,
+  emitting: ReadonlySet<string> = NONE_EMIT,
+): Checks {
+  const inputs = inputsFor(world, changed, check, emitting);
   const { evidence, files } = computeEvidence(inputs);
   return computeCategory({ check, changed: inputs.changed, files, stitches: evidence.stitches ?? [], config: DEFAULT_CONFIG });
 }
@@ -174,6 +204,80 @@ test('a file the coverage report never names has no patch coverage, and a run wi
   const unmeasured = evidenceFor(CHAIN, [change('src/pm/tools.ts')], ran());
   expect(unmeasured.evidence.patch_coverage).toBeUndefined();
   expect(Object.keys(unmeasured.evidence)).toEqual([]);
+});
+
+test('a changed file that emits code and that an existing report never names is unmeasured, a gap of unknown size (D80)', () => {
+  const changed = [change('src/pm/tools.ts'), change('src/pm/util.ts')];
+  const { evidence, files } = evidenceFor(CHAIN, changed, ran(TOOLS_CLOSED), ALL_EMIT);
+
+  // The report measured `tools.ts` and never named `util.ts`: one closed skin, one unmeasured file.
+  expect(evidence.patch_coverage?.map((entry) => entry.path)).toEqual(['src/pm/tools.ts']);
+  expect(evidence.unmeasured).toEqual(['src/pm/util.ts']);
+  expect(fileAt(files, 'src/pm/util.ts').unmeasured).toBe(true);
+  expect(fileAt(files, 'src/pm/util.ts').coverage).toBeUndefined();
+  expect(fileAt(files, 'src/pm/tools.ts').unmeasured).toBe(false);
+
+  // An added or renamed file is measured, or not, at its head path like any other.
+  const added = evidenceFor(CHAIN, [change('src/pm/util.ts', undefined, 'added')], ran(TOOLS_CLOSED), ALL_EMIT);
+  expect(added.evidence.unmeasured).toEqual(['src/pm/util.ts']);
+  const renamed = evidenceFor(CHAIN, [change('src/pm/util.ts', undefined, 'renamed')], ran(TOOLS_CLOSED), ALL_EMIT);
+  expect(renamed.evidence.unmeasured).toEqual(['src/pm/util.ts']);
+});
+
+test('a file of types, a deleted file, a test and a map with no coverage channel are never unmeasured (D80)', () => {
+  const report = ran(TOOLS_CLOSED);
+
+  // `util.ts` holds only types here: the scan did not mark it as emitting, so the report owed it nothing.
+  const typesOnly = evidenceFor(CHAIN, [change('src/pm/util.ts')], report, new Set(['src/pm/tools.ts']));
+  expect(typesOnly.evidence.unmeasured).toEqual([]);
+
+  // A deleted file has nothing left at head to measure.
+  const deleted = evidenceFor(CHAIN, [change('src/pm/gone.ts', [], 'deleted')], report, ALL_EMIT);
+  expect(deleted.evidence.unmeasured).toEqual([]);
+
+  // A test is evidence, not terrain (D4): a report that leaves it out leaves no gap.
+  const testFile = evidenceFor(CHAIN, [change('src/__tests__/tools.test.ts')], report, ALL_EMIT);
+  expect(testFile.evidence.unmeasured).toEqual([]);
+
+  // No coverage channel at all: nothing is unmeasured, because nothing claimed to measure (C2).
+  const silent = evidenceFor(CHAIN, [change('src/pm/util.ts')], ran(), ALL_EMIT);
+  expect(silent.evidence.unmeasured).toBeUndefined();
+  expect(fileAt(silent.files, 'src/pm/util.ts').unmeasured).toBe(false);
+});
+
+test('an unmeasured file is a gap: never VFR, MVFR on its own, IFR at high reach (D80, D27)', () => {
+  // `util.ts` alone, unmeasured, in its own cell: the closed `tools.ts` beside it cannot make the change VFR.
+  expect(categoryFor(CHAIN, [change('src/pm/tools.ts'), change('src/pm/util.ts')], ran(TOOLS_CLOSED), ALL_EMIT).category).toBe('MVFR');
+
+  // The same file emitting nothing is no gap, and the change reads VFR on `tools.ts`'s closed skin.
+  expect(
+    categoryFor(CHAIN, [change('src/pm/tools.ts'), change('src/pm/util.ts')], ran(TOOLS_CLOSED), new Set(['src/pm/tools.ts'])).category,
+  ).toBe('VFR');
+
+  // `tools.ts` reaches three cells; unmeasured there, it is IFR, as an uncovered line would be.
+  const others = ran({ coverage: [{ path: 'src/pm/util.ts', statements: [{ line: 10, hits: 1 }] }] });
+  expect(categoryFor(CHAIN, [change('src/pm/tools.ts')], others, ALL_EMIT).category).toBe('IFR');
+});
+
+test("a report naming none of the tree's source files is muted with its reason; one naming any of them is trusted (D122)", () => {
+  const sources = new Set(['src/pm/tools.ts', 'src/pm/util.ts']);
+
+  // Keys relative to another checkout match nothing here, and neither does an empty report.
+  const elsewhere = ran({ coverage: [{ path: '../other/src/pm/tools.ts', statements: [{ line: 10, hits: 1 }] }] });
+  for (const report of [elsewhere, ran({ coverage: [] })]) {
+    const trusted = trustCoverage(report, sources);
+    expect(trusted.muted).toBe(COVERAGE_UNNAMED);
+    expect(trusted.check.mode === 'check' ? trusted.check.coverage : 'not read').toBeUndefined();
+  }
+
+  // One name is enough to make the report this tree's, and then every file it omits stays unmeasured (D80).
+  const ours = ran(TOOLS_CLOSED);
+  expect(trustCoverage(ours, sources)).toEqual({ check: ours });
+
+  // A run with no coverage, and no `.check/` at all, pass through untouched.
+  expect(trustCoverage(ran(), sources)).toEqual({ check: ran() });
+  const absent: CheckArtifacts = { mode: 'git-only', reason: '.check/ is absent' };
+  expect(trustCoverage(absent, sources)).toEqual({ check: absent });
 });
 
 test('only survived and no-coverage mutants on the changed lines count, and they do not need coverage to be read', () => {
@@ -232,7 +336,7 @@ test('a run with no test report has no stitches, rather than stitches with a mad
   const { evidence } = evidenceFor(CHAIN, [change('src/pm/tools.ts')], ran(TOOLS_COVERAGE));
 
   expect(evidence.stitches).toBeUndefined();
-  expect(Object.keys(evidence)).toEqual(['patch_coverage']);
+  expect(Object.keys(evidence)).toEqual(['patch_coverage', 'unmeasured']);
 });
 
 test('reach is counted per changed file, and a changed barrel read from another cell has escaped', () => {

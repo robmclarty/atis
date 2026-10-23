@@ -16,7 +16,7 @@ import { DEFAULT_CONFIG } from './config.js';
 import type { Config } from './config.js';
 import { computeDepth } from './depth.js';
 import type { FileDepth } from './depth.js';
-import { computeCategory, computeEvidence, pathsOf } from './evidence.js';
+import { computeCategory, computeEvidence, pathsOf, trustCoverage } from './evidence.js';
 import type { CheckArtifacts, Dupes, Health } from './evidence.js';
 import { OTHER_GROUP, configMatcher, identifyGroups } from './groups.js';
 import { computeHistory } from './history.js';
@@ -440,8 +440,8 @@ function entryPointsOf(base: EntryPointLookup, head: EntryPointLookup): EntryPoi
   return { entry_points: 'manifests', entry_points_reason: reasons.join('; ') };
 }
 
-/** What the map was measured with, and what it could not be: the muted channels say so by name (C2, D41). */
-function instrumentsOf(check: CheckArtifacts, entries: EntryPointsRead): Instruments {
+/** What the map was measured with, and what it could not be: the muted channels say so by name (C2, D41, D122). */
+function instrumentsOf(check: CheckArtifacts, entries: EntryPointsRead, muted: readonly string[]): Instruments {
   if (check.mode === 'git-only') return { mode: 'git-only', reason: check.reason, ...entries };
   const stale = check.stale
     .map((channel) => `${channel.slot}: ${channel.file}, ${String(channel.age_ms)} ms older than the run`)
@@ -451,6 +451,7 @@ function instrumentsOf(check: CheckArtifacts, entries: EntryPointsRead): Instrum
     ...entries,
     ...(Object.keys(check.fallow_schemas).length === 0 ? {} : { fallow_schemas: check.fallow_schemas }),
     ...(stale.length === 0 ? {} : { stale }),
+    ...(muted.length === 0 ? {} : { muted: [...muted].toSorted(byPath) }),
   };
 }
 
@@ -488,21 +489,29 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
     inputs.head_time,
   );
 
+  // A coverage report that names none of the head tree's source files is some
+  // other tree's, and is muted rather than read as every file unmeasured (D122).
+  const trusted = trustCoverage(
+    inputs.check,
+    new Set(head.files.filter((file) => classifyFile(file.path, isConfig) === 'source').map((file) => file.path)),
+  );
+  const check = trusted.check;
   const graphs = { modules, groups, headEdges: head.edges, baseEdges: base.edges } as const;
   const reach = computeReach({ ...graphs, changed: inputs.diff });
-  const evidence = computeEvidence({ ...graphs, changed: reach.changed, check: inputs.check });
+  const emitting = new Set(head.files.filter((file) => file.emits === true).map((file) => file.path));
+  const evidence = computeEvidence({ ...graphs, changed: reach.changed, check, emitting });
   const checks = computeCategory({
-    check: inputs.check,
+    check,
     changed: reach.changed,
     files: evidence.files,
     stitches: evidence.evidence.stitches ?? [],
     config,
   });
 
-  const ran = inputs.check.mode === 'check' ? inputs.check : undefined;
+  const ran = check.mode === 'check' ? check : undefined;
   const signals: Signals = {
     depth: new Map(depths.files.map((file) => [file.path, file] as const)),
-    dents: dentsOf(inputs.check),
+    dents: dentsOf(check),
     family: cloneFamilies(ran?.dupes),
     functions: functionCounts(ran?.health),
     history: new Map(history.files.map((file) => [file.path, file] as const)),
@@ -525,7 +534,11 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
       head: inputs.meta.head,
       merge_base: inputs.meta.merge_base,
       mode: 'change',
-      instruments: instrumentsOf(inputs.check, entryPointsOf(inputs.base.entry_points, head.entry_points)),
+      instruments: instrumentsOf(
+        check,
+        entryPointsOf(inputs.base.entry_points, head.entry_points),
+        trusted.muted === undefined ? [] : [trusted.muted],
+      ),
     },
     terrain: {
       cells,
@@ -534,7 +547,7 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
       groups,
       edges_exceptional: exceptionalEdges(
         reach.edges_exceptional,
-        inputs.check,
+        check,
         new Set(modules.organelles.map((organelle) => organelle.path)),
       ),
       history: { window_commits: history.window_commits, cochange: history.cochange },
@@ -563,7 +576,7 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
       headEdges: head.edges,
       baseEdges: base.edges,
       publicNames: findPublicNames([base, head]),
-      check: inputs.check,
+      check,
       config,
     }),
   };

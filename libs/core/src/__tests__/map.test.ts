@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { expect, test } from 'vitest';
 
 import { DEFAULT_CONFIG } from '../config.js';
+import { COVERAGE_UNNAMED } from '../evidence.js';
 import type { CheckArtifacts } from '../evidence.js';
 import { buildMap } from '../map.js';
 import type { BuildInputs, EntryPointLookup } from '../map.js';
@@ -150,6 +151,21 @@ test('the demo map carries the evidence the check run produced and nothing it di
     scope: 'global',
   });
   expect(map.weather.improvements).toEqual([]);
+});
+
+test("the demo's doctor.ts, which its coverage report leaves out, is unmeasured, and a report from another checkout is muted (D80, D122)", () => {
+  const inputs = inputsFor('demo');
+  const map = buildMap(inputs, DEFAULT_CONFIG);
+  expect(map.weather.evidence.unmeasured).toEqual(['apps/cli/src/doctor.ts']);
+  expect(map.meta.instruments.muted).toBeUndefined();
+
+  // The same report with its keys relative to some other checkout names none of this tree's files.
+  const check = inputs.check as Extract<CheckArtifacts, { mode: 'check' }>;
+  const elsewhere = (check.coverage ?? []).map((file) => ({ ...file, path: `../elsewhere/${file.path}` }));
+  const muted = buildMap({ ...inputs, check: { ...check, coverage: elsewhere } }, DEFAULT_CONFIG);
+  expect(muted.meta.instruments.muted).toEqual([COVERAGE_UNNAMED]);
+  expect(muted.weather.evidence.patch_coverage).toBeUndefined();
+  expect(muted.weather.evidence.unmeasured).toBeUndefined();
 });
 
 test('buildMap threads the stitches to the category, so a torn one makes the change IFR and a held one does not (D69)', () => {

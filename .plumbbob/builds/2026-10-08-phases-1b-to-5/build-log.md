@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 2 — chore(rules): keep Node, the compiler and the DOM out of lib sources
+**Current step:** 3 — fix(core): read a changed file no coverage report names as unmeasured
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -24,7 +24,7 @@ line above. Only ONE step is in flight; a step is done only after a checkpoint:
 check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 
 - ☑ 1. test(cli): stop the CLI suite racing the types slot's build
-- ☐ 2. chore(rules): keep Node, the compiler and the DOM out of lib sources
+- ☑ 2. chore(rules): keep Node, the compiler and the DOM out of lib sources
 - ☐ 3. fix(core): read a changed file no coverage report names as unmeasured
 - ☐ 4. fix(core): split interface notices by what moved
 - ☐ 5. feat(cli): compare inferred export shapes with the type checker
@@ -163,3 +163,4 @@ folder, so it rides the branch into the PR.)*
   Step 23 excludes `apps/web/src/world/` from the coverage thresholds, and steps 30, 32, 33, 37, 39 and 40 are verified by a screenshot judged at the pause. That suits the step that builds a render. But no gate check exists after it, so the 40-odd later steps that touch `apps/web/src/` can break the world while `pnpm check` stays green. A headless smoke test closes it: render a fixture, assert a non-blank frame and a clean console. That needs the browser driver [Q37 (png-browser)](intent.md#q37) chooses, so Q37 would settle at the wave-1 boundary instead of the wave-3 one, and the smoke test would join step 30.
 
 - 2026-10-23 — step 1 checkpointed · d17b25c05 — test(cli): stop the CLI suite racing the types slot's build (6m)
+- 2026-10-23 — step 2 checkpointed · deb6a931d — chore(rules): keep Node, the compiler and the DOM out of lib sources (2m)

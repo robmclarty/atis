@@ -225,8 +225,8 @@ test('every HUD number is read from the map', () => {
   // `test` tore a stitch on the change; `dead` names only files the change never touched (D67).
   expect(read('gate')).toBe('Gate 1 red');
   expect(read('standing')).toBe('Standing 1 red');
-  // 4 + 4 + 7 covered of 7 + 9 + 9 changed executable lines.
-  expect(read('patch-cov')).toBe('Patch cov 60%');
+  // 4 + 7 covered of 9 + 9 changed executable lines, and `doctor.ts`, which the report never names, counted beside them (D80).
+  expect(read('patch-cov')).toBe('Patch cov 61%, 1 unmeasured');
   expect(read('mutants')).toBe('Mutants 2 survived');
   expect(read('reach')).toBe('Reach 4 cells');
   expect(read('size')).toBe('Size +243 −102, 8 files');
@@ -310,16 +310,16 @@ test('a block whose input is absent or stale is muted with a dash, and the categ
   expect(muted(stale, 'patch-cov')).toBeUndefined();
 
   // Coverage that measured no changed executable line has no share to report.
+  const nothing = [{ path: 'README.md', changed_executable: 0, covered: 0, uncovered_lines: [] }];
   const empty = chromeOf(
-    renderSvg({
-      ...map,
-      weather: {
-        ...map.weather,
-        evidence: { ...map.weather.evidence, patch_coverage: [{ path: 'README.md', changed_executable: 0, covered: 0, uncovered_lines: [] }] },
-      },
-    }),
+    renderSvg({ ...map, weather: { ...map.weather, evidence: { ...map.weather.evidence, patch_coverage: nothing, unmeasured: [] } } }),
   );
   expect(muted(empty, 'patch-cov')).toBe('empty');
+
+  // With nothing measured and a file left unmeasured, the share is the dash and the count still speaks, unmuted (D80).
+  const unnamed = chromeOf(renderSvg({ ...map, weather: { ...map.weather, evidence: { ...map.weather.evidence, patch_coverage: nothing } } }));
+  expect(muted(unnamed, 'patch-cov')).toBeUndefined();
+  expect(textOf(blockOf(unnamed, 'patch-cov') ?? '')).toBe(`Patch cov ${MUTED_DASH}, 1 unmeasured`);
 
   // A run in which every slot was skipped put nothing through the gate, so it cannot pass (C2).
   const vacuous = { ...map, weather: { ...map.weather, checks: { ...map.weather.checks, checks_run: 0, slots: map.weather.checks.slots.map((slot) => greened(slot, true)) } } };
@@ -470,7 +470,7 @@ test('a target with several notices carries one ring, for its strongest tier, an
   const map = demo();
   const marks = drawn(chromeOf(renderSvg(map)), 'marks');
   const runs = [...marks.matchAll(/<g data-target="([^"]+)">/g)].map(([, target]) => target);
-  expect(runs).toEqual(['libs/core/src/pm/index.ts', 'libs/core/src/pm/tools.ts', 'apps/cli/src/doctor.ts']);
+  expect(runs).toEqual(['libs/core/src/pm/index.ts', 'apps/cli/src/doctor.ts', 'libs/core/src/pm/tools.ts']);
   expect([...marks.matchAll(/<circle data-target="([^"]+)" data-tier="(\w+)"/g)].map(([, target, tier]) => [target, tier])).toEqual([
     ['libs/core/src/pm/index.ts', 'primary'],
   ]);

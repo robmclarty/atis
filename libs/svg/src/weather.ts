@@ -289,6 +289,20 @@ function drawIntegrity(coverage: PatchCoverage, at: Position): Markup | undefine
   return el('g', { 'data-id': coverage.path, 'data-covered': coverage.covered, 'data-changed': coverage.changed_executable }, [hairline, ...gap]);
 }
 
+/**
+ * The skin of a changed file the coverage report never names (D80): lit
+ * whole, since no test is known to have run any of it. It is the gap at an
+ * unknown size, drawn the way a skin no changed line of which was covered is
+ * drawn, so a file nobody measured never reads calmer than one half covered.
+ */
+function drawUnmeasured(path: string, at: Position): Markup {
+  const ring = { cx: at.x, cy: at.y, r: at.r + INTEGRITY_PAD, fill: 'none', stroke: EVIDENCE_LIGHT };
+  return el('g', { 'data-id': path, 'data-unmeasured': 'true' }, [
+    el('circle', { ...ring, 'stroke-width': INTEGRITY_CLOSED_WIDTH, 'stroke-opacity': INTEGRITY_CLOSED_OPACITY }),
+    el('circle', { ...ring, 'stroke-width': INTEGRITY_GAP_WIDTH }),
+  ]);
+}
+
 /** The mutants on each file, by line. */
 function mutantsByPath(mutants: readonly Mutant[]): ReadonlyMap<string, readonly Mutant[]> {
   const byPathMap = new Map<string, Mutant[]>();
@@ -360,11 +374,14 @@ function drawStitch(target: string, stitch: StitchOn, at: Position, angle: numbe
 /** Evidence on the changed organelles (§5.2): skins, dents and stitches; absent when the map carries none. */
 function drawEvidence(evidence: Evidence, layout: Layout): Markup | undefined {
   const { positions } = layout;
-  const skins = [...(evidence.patch_coverage ?? [])]
-    .toSorted((a, b) => byPath(a.path, b.path))
-    .flatMap((coverage) => {
-      const at = positions[coverage.path];
-      const arc = at === undefined ? undefined : drawIntegrity(coverage, at);
+  const measured = (evidence.patch_coverage ?? []).map((coverage) => [coverage.path, coverage] as const);
+  const unmeasured = (evidence.unmeasured ?? []).map((path) => [path, undefined] as const);
+  const skins = [...measured, ...unmeasured]
+    .toSorted(([a], [b]) => byPath(a, b))
+    .flatMap(([path, coverage]) => {
+      const at = positions[path];
+      if (at === undefined) return [];
+      const arc = coverage === undefined ? drawUnmeasured(path, at) : drawIntegrity(coverage, at);
       return arc === undefined ? [] : [arc];
     });
   const dents = [...mutantsByPath(evidence.mutants ?? [])]

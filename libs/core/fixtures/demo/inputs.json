@@ -8,23 +8,23 @@
   },
   "base": {
     "files": [
-      { "path": ".gitignore", "loc": 0, "kind": "other", "exports": [] },
-      { "path": "README.md", "loc": 0, "kind": "other", "exports": [] },
-      { "path": "apps/cli/package.json", "loc": 0, "kind": "other", "exports": [] },
-      { "path": "apps/cli/src/doctor.ts", "loc": 212, "kind": "source", "exports": ["runDoctor"] },
-      { "path": "apps/cli/src/index.ts", "loc": 24, "kind": "source", "exports": ["main"] },
-      { "path": "libs/core/package.json", "loc": 0, "kind": "other", "exports": [] },
-      { "path": "libs/core/src/__tests__/pm.test.ts", "loc": 74, "kind": "test", "exports": [] },
-      { "path": "libs/core/src/index.ts", "loc": 14, "kind": "source", "exports": ["legacyResolve", "listSlots", "resolveSlot"] },
-      { "path": "libs/core/src/pm/index.ts", "loc": 31, "kind": "source", "exports": ["legacyResolve", "listSlots", "resolveSlot"] },
-      { "path": "libs/core/src/pm/legacy.ts", "loc": 45, "kind": "source", "exports": ["legacyResolve"] },
-      { "path": "libs/core/src/pm/slots.ts", "loc": 88, "kind": "source", "exports": ["listSlots"] },
-      { "path": "libs/core/src/util/format.ts", "loc": 52, "kind": "source", "exports": ["formatSlot"] },
-      { "path": "libs/core/src/util/text.ts", "loc": 37, "kind": "source", "exports": ["indent"] },
-      { "path": "notes.xyz", "loc": 0, "kind": "other", "exports": [] },
-      { "path": "package.json", "loc": 0, "kind": "other", "exports": [] },
-      { "path": "pnpm-workspace.yaml", "loc": 0, "kind": "other", "exports": [] },
-      { "path": "tsconfig.json", "loc": 0, "kind": "other", "exports": [] }
+      { "path": ".gitignore", "loc": 0, "kind": "other", "exports": [], "emits": false },
+      { "path": "README.md", "loc": 0, "kind": "other", "exports": [], "emits": false },
+      { "path": "apps/cli/package.json", "loc": 0, "kind": "other", "exports": [], "emits": false },
+      { "path": "apps/cli/src/doctor.ts", "loc": 212, "kind": "source", "exports": ["runDoctor"], "emits": true },
+      { "path": "apps/cli/src/index.ts", "loc": 24, "kind": "source", "exports": ["main"], "emits": true },
+      { "path": "libs/core/package.json", "loc": 0, "kind": "other", "exports": [], "emits": false },
+      { "path": "libs/core/src/__tests__/pm.test.ts", "loc": 74, "kind": "test", "exports": [], "emits": true },
+      { "path": "libs/core/src/index.ts", "loc": 14, "kind": "source", "exports": ["legacyResolve", "listSlots", "resolveSlot"], "emits": true },
+      { "path": "libs/core/src/pm/index.ts", "loc": 31, "kind": "source", "exports": ["legacyResolve", "listSlots", "resolveSlot"], "emits": true },
+      { "path": "libs/core/src/pm/legacy.ts", "loc": 45, "kind": "source", "exports": ["legacyResolve"], "emits": true },
+      { "path": "libs/core/src/pm/slots.ts", "loc": 88, "kind": "source", "exports": ["listSlots"], "emits": true },
+      { "path": "libs/core/src/util/format.ts", "loc": 52, "kind": "source", "exports": ["formatSlot"], "emits": true },
+      { "path": "libs/core/src/util/text.ts", "loc": 37, "kind": "source", "exports": ["indent"], "emits": true },
+      { "path": "notes.xyz", "loc": 0, "kind": "other", "exports": [], "emits": false },
+      { "path": "package.json", "loc": 0, "kind": "other", "exports": [], "emits": false },
+      { "path": "pnpm-workspace.yaml", "loc": 0, "kind": "other", "exports": [], "emits": false },
+      { "path": "tsconfig.json", "loc": 0, "kind": "other", "exports": [], "emits": false }
     ],
     "edges": [
       { "from": "apps/cli/src/doctor.ts", "to": "libs/core/src/index.ts", "names": ["listSlots"], "line": 4 },
@@ -48,23 +48,23 @@
   },
   "head": {
     "files": [
-      { "path": ".gitignore", "loc": 0, "kind": "other", "exports": [] },
-      { "path": "README.md", "loc": 0, "kind": "other", "exports": [] },
-      { "path": "apps/cli/package.json", "loc": 0, "kind": "other", "exports": [] },
-      { "path": "apps/cli/src/doctor.ts", "loc": 268, "kind": "source", "exports": ["runDoctor"] },
-      { "path": "apps/cli/src/index.ts", "loc": 24, "kind": "source", "exports": ["main"] },
-      { "path": "libs/core/package.json", "loc": 0, "kind": "other", "exports": [] },
-      { "path": "libs/core/src/__tests__/pm.test.ts", "loc": 91, "kind": "test", "exports": [] },
-      { "path": "libs/core/src/index.ts", "loc": 14, "kind": "source", "exports": ["legacyResolve", "listSlots", "resolveSlot"] },
-      { "path": "libs/core/src/pm/index.ts", "loc": 38, "kind": "source", "exports": ["listSlots", "resolveSlot", "resolveTool"] },
-      { "path": "libs/core/src/pm/slots.ts", "loc": 88, "kind": "source", "exports": ["listSlots"] },
-      { "path": "libs/core/src/pm/tools.ts", "loc": 96, "kind": "source", "exports": ["resolveTool"] },
-      { "path": "libs/core/src/util/format.ts", "loc": 52, "kind": "source", "exports": ["formatSlot"] },
-      { "path": "libs/core/src/util/text.ts", "loc": 37, "kind": "source", "exports": ["indent"] },
-      { "path": "notes.xyz", "loc": 0, "kind": "other", "exports": [] },
-      { "path": "package.json", "loc": 0, "kind": "other", "exports": [] },
-      { "path": "pnpm-workspace.yaml", "loc": 0, "kind": "other", "exports": [] },
-      { "path": "tsconfig.json", "loc": 0, "kind": "other", "exports": [] }
+      { "path": ".gitignore", "loc": 0, "kind": "other", "exports": [], "emits": false },
+      { "path": "README.md", "loc": 0, "kind": "other", "exports": [], "emits": false },
+      { "path": "apps/cli/package.json", "loc": 0, "kind": "other", "exports": [], "emits": false },
+      { "path": "apps/cli/src/doctor.ts", "loc": 268, "kind": "source", "exports": ["runDoctor"], "emits": true },
+      { "path": "apps/cli/src/index.ts", "loc": 24, "kind": "source", "exports": ["main"], "emits": true },
+      { "path": "libs/core/package.json", "loc": 0, "kind": "other", "exports": [], "emits": false },
+      { "path": "libs/core/src/__tests__/pm.test.ts", "loc": 91, "kind": "test", "exports": [], "emits": true },
+      { "path": "libs/core/src/index.ts", "loc": 14, "kind": "source", "exports": ["legacyResolve", "listSlots", "resolveSlot"], "emits": true },
+      { "path": "libs/core/src/pm/index.ts", "loc": 38, "kind": "source", "exports": ["listSlots", "resolveSlot", "resolveTool"], "emits": true },
+      { "path": "libs/core/src/pm/slots.ts", "loc": 88, "kind": "source", "exports": ["listSlots"], "emits": true },
+      { "path": "libs/core/src/pm/tools.ts", "loc": 96, "kind": "source", "exports": ["resolveTool"], "emits": true },
+      { "path": "libs/core/src/util/format.ts", "loc": 52, "kind": "source", "exports": ["formatSlot"], "emits": true },
+      { "path": "libs/core/src/util/text.ts", "loc": 37, "kind": "source", "exports": ["indent"], "emits": true },
+      { "path": "notes.xyz", "loc": 0, "kind": "other", "exports": [], "emits": false },
+      { "path": "package.json", "loc": 0, "kind": "other", "exports": [], "emits": false },
+      { "path": "pnpm-workspace.yaml", "loc": 0, "kind": "other", "exports": [], "emits": false },
+      { "path": "tsconfig.json", "loc": 0, "kind": "other", "exports": [], "emits": false }
     ],
     "edges": [
       { "from": "apps/cli/src/doctor.ts", "to": "libs/core/src/index.ts", "names": ["listSlots"], "line": 4 },
@@ -245,13 +245,6 @@
       ]
     },
     "coverage": [
-      {
-        "path": "apps/cli/src/doctor.ts",
-        "statements": [
-          { "line": 33, "hits": 5 }, { "line": 40, "hits": 5 }, { "line": 52, "hits": 0 },
-          { "line": 160, "hits": 2 }, { "line": 175, "hits": 2 }, { "line": 190, "hits": 0 }, { "line": 205, "hits": 0 }
-        ]
-      },
       {
         "path": "libs/core/src/pm/index.ts",
         "statements": [

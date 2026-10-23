@@ -126,6 +126,12 @@ export type Stitch = { readonly test: string; readonly targets: readonly string[
 
 export type Evidence = {
   readonly patch_coverage?: readonly PatchCoverage[];
+  /**
+   * The changed source files that emit code and that the coverage report
+   * never names: a gap of unknown size, never a closed skin (D80, D122).
+   * Present exactly when `patch_coverage` is, sorted (C3).
+   */
+  readonly unmeasured?: readonly string[];
   readonly mutants?: readonly Mutant[];
   readonly stitches?: readonly Stitch[];
 };
@@ -193,6 +199,8 @@ export type Instruments = {
   readonly entry_points_reason?: string;
   readonly fallow_schemas?: FallowSchemas;
   readonly stale?: readonly string[];
+  /** Channels muted for what they hold rather than their age, each as `channel: reason` (D122). */
+  readonly muted?: readonly string[];
 };
 
 export type Meta = {
@@ -352,6 +360,16 @@ function assertShape(value: unknown): asserts value is MapJson {
     }
     if (typeof entry['path'] === 'string') changedPaths.add(entry['path']);
   });
+
+  const evidence = expectRecord(weather['evidence'], 'weather.evidence');
+  const unmeasured = evidence['unmeasured'];
+  if (unmeasured !== undefined) {
+    if (evidence['patch_coverage'] === undefined) fail('weather.evidence.unmeasured', 'only a map with patch_coverage names unmeasured files');
+    expectArray(unmeasured, 'weather.evidence.unmeasured').forEach((path, index) => {
+      const at = `weather.evidence.unmeasured[${String(index)}]`;
+      if (!changedPaths.has(expectString(path, at))) fail(at, `not a changed file "${String(path)}"`);
+    });
+  }
 
   const checks = expectRecord(weather['checks'], 'weather.checks');
   const slots = expectArray(checks['slots'], 'weather.checks.slots');

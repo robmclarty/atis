@@ -182,8 +182,8 @@
       <line data-notice="2" x1="495" y1="100" x2="150.58" y2="490.6"/>
       <line data-notice="3" x1="495" y1="159.4" x2="163.58" y2="490.6"/>
       <line data-notice="4" x1="495" y1="218.8" x2="176.58" y2="490.6"/>
-      <line data-notice="5" x1="495" y1="278.2" x2="128.66" y2="598.79"/>
-      <line data-notice="6" x1="495" y1="327.2" x2="171.28" y2="315.84"/>
+      <line data-notice="5" x1="495" y1="278.2" x2="171.28" y2="315.84"/>
+      <line data-notice="6" x1="495" y1="346.7" x2="128.66" y2="598.79"/>
     </g>
     <g id="notices">
       <g data-notice="1" data-tier="primary" data-kind="red-check-slot" data-target="libs/core/src/pm/index.ts">
@@ -229,27 +229,27 @@
         <text x="505" y="251.7" font-size="8" fill="#e6edf3">cells</text>
         <text x="505" y="261.1" font-size="7" fill="#6b7480">severity 7 · high_reach_cells 3</text>
       </g>
-      <g data-notice="5" data-tier="tertiary" data-kind="red-check-slot" data-target="libs/core/src/pm/tools.ts">
+      <g data-notice="5" data-tier="tertiary" data-kind="large-hot-change" data-target="apps/cli/src/doctor.ts">
         <g data-mark="5" data-tier="tertiary">
           <rect x="490" y="273.2" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
           <text x="495" y="280.65" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">5</text>
         </g>
-        <text x="505" y="281.2" font-size="8" font-weight="bold" fill="#e6edf3">libs/core/src/pm/tools.ts</text>
-        <text x="505" y="290.6" font-size="7" font-variant="small-caps" fill="#e6edf3">red-check-slot</text>
-        <text x="505" y="300.7" font-size="8" fill="#e6edf3">the `test` check is red on this changed file</text>
-        <text x="505" y="310.1" font-size="7" fill="#6b7480">severity 10</text>
+        <text x="505" y="281.2" font-size="8" font-weight="bold" fill="#e6edf3">apps/cli/src/doctor.ts</text>
+        <text x="505" y="290.6" font-size="7" font-variant="small-caps" fill="#e6edf3">large-hot-change</text>
+        <text x="505" y="300.7" font-size="8" fill="#e6edf3">136 lines changed in a file with churn 3.366 and a</text>
+        <text x="505" y="311.1" font-size="8" fill="#e6edf3">bug-fix rate of 0.5</text>
+        <text x="505" y="320.5" font-size="7" fill="#6b7480">severity 4 · large_lines 100 · hot_churn_ratio 2 ·</text>
+        <text x="505" y="329.6" font-size="7" fill="#6b7480">hot_bugfix_rate 0.3</text>
       </g>
-      <g data-notice="6" data-tier="tertiary" data-kind="large-hot-change" data-target="apps/cli/src/doctor.ts">
+      <g data-notice="6" data-tier="tertiary" data-kind="red-check-slot" data-target="libs/core/src/pm/tools.ts">
         <g data-mark="6" data-tier="tertiary">
-          <rect x="490" y="322.2" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
-          <text x="495" y="329.65" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">6</text>
+          <rect x="490" y="341.7" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="495" y="349.15" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">6</text>
         </g>
-        <text x="505" y="330.2" font-size="8" font-weight="bold" fill="#e6edf3">apps/cli/src/doctor.ts</text>
-        <text x="505" y="339.6" font-size="7" font-variant="small-caps" fill="#e6edf3">large-hot-change</text>
-        <text x="505" y="349.7" font-size="8" fill="#e6edf3">136 lines changed in a file with churn 3.366 and a</text>
-        <text x="505" y="360.1" font-size="8" fill="#e6edf3">bug-fix rate of 0.5</text>
-        <text x="505" y="369.5" font-size="7" fill="#6b7480">severity 4 · large_lines 100 · hot_churn_ratio 2 ·</text>
-        <text x="505" y="378.6" font-size="7" fill="#6b7480">hot_bugfix_rate 0.3</text>
+        <text x="505" y="349.7" font-size="8" font-weight="bold" fill="#e6edf3">libs/core/src/pm/tools.ts</text>
+        <text x="505" y="359.1" font-size="7" font-variant="small-caps" fill="#e6edf3">red-check-slot</text>
+        <text x="505" y="369.2" font-size="8" fill="#e6edf3">the `test` check is red on this changed file</text>
+        <text x="505" y="378.6" font-size="7" fill="#6b7480">severity 10</text>
       </g>
     </g>
     <g id="marks">
@@ -273,16 +273,16 @@
         </g>
         <text data-target="libs/core/src/pm/index.ts" x="132.58" y="505.6" font-size="7" font-variant="small-caps" fill="#e6edf3">red-check-slot</text>
       </g>
-      <g data-target="libs/core/src/pm/tools.ts">
+      <g data-target="apps/cli/src/doctor.ts">
         <g data-mark="5" data-tier="tertiary">
-          <rect x="123.66" y="593.79" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
-          <text x="128.66" y="601.24" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">5</text>
+          <rect x="166.28" y="310.84" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="171.28" y="318.29" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">5</text>
         </g>
       </g>
-      <g data-target="apps/cli/src/doctor.ts">
+      <g data-target="libs/core/src/pm/tools.ts">
         <g data-mark="6" data-tier="tertiary">
-          <rect x="166.28" y="310.84" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
-          <text x="171.28" y="318.29" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">6</text>
+          <rect x="123.66" y="593.79" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="128.66" y="601.24" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">6</text>
         </g>
       </g>
     </g>
