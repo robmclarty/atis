@@ -23,7 +23,7 @@
  * list draws at most six rows, in the map's rank order, and pads nothing.
  */
 
-import { OTHER_GROUP, readRedSplit } from 'core';
+import { OTHER_GROUP, mutantOutcomes, readRedSplit } from 'core';
 import type { Contour, FlightCategory, Layout, MapJson, Notice, NoticeTier, Position } from 'core';
 
 import { el, num } from './el.js';
@@ -247,12 +247,19 @@ function coverageBlock(map: MapJson): Block {
   return block('patch-cov', 'Patch cov', `${String(Math.round((covered / executable) * 100))}%`, tail);
 }
 
-/** `Mutants k survived`: the mutants still alive on the changed lines, which is what core counted (§5.2). */
+/**
+ * `Mutants k survived`: the mutants still alive on the changed lines, which is
+ * what core counted (§5.2), with those no test reached counted apart
+ * (`, n untested`), and alone as `Mutants n untested` when none survived the
+ * tests (D143).
+ */
 function mutantBlock(map: MapJson): Block {
   if (isStale(map, 'mutation')) return muted('mutants', 'Mutants', 'stale');
   const mutants = map.weather.evidence.mutants;
   if (mutants === undefined) return muted('mutants', 'Mutants', 'absent');
-  return block('mutants', 'Mutants', String(mutants.length), ' survived');
+  const { survived, untested } = mutantOutcomes(mutants);
+  if (survived === 0 && untested > 0) return block('mutants', 'Mutants', String(untested), ' untested');
+  return block('mutants', 'Mutants', String(survived), untested === 0 ? ' survived' : ` survived, ${String(untested)} untested`);
 }
 
 /** The tally of each tier among the notices the list draws (C7). */

@@ -172,24 +172,24 @@
         <text x="55.18" y="21.15" font-size="9" fill="#e6edf3"><tspan>Patch cov </tspan><tspan font-weight="bold">61%</tspan><tspan>, 1 unmeasured</tspan></text>
       </g>
       <g data-block="mutants">
-        <rect x="214.84" y="8" width="112.44" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="220.84" y="21.15" font-size="9" fill="#e6edf3"><tspan>Mutants </tspan><tspan font-weight="bold">2</tspan><tspan> survived</tspan></text>
+        <rect x="214.84" y="8" width="179.4" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="220.84" y="21.15" font-size="9" fill="#e6edf3"><tspan>Mutants </tspan><tspan font-weight="bold">1</tspan><tspan> survived, 1 untested</tspan></text>
       </g>
       <g data-block="reach">
-        <rect x="330.28" y="8" width="84.54" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="336.28" y="21.15" font-size="9" fill="#e6edf3"><tspan>Reach </tspan><tspan font-weight="bold">4</tspan><tspan> cells</tspan></text>
+        <rect x="397.24" y="8" width="84.54" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="403.24" y="21.15" font-size="9" fill="#e6edf3"><tspan>Reach </tspan><tspan font-weight="bold">4</tspan><tspan> cells</tspan></text>
       </g>
       <g data-block="size">
-        <rect x="417.82" y="8" width="140.34" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="423.82" y="21.15" font-size="9" fill="#e6edf3"><tspan>Size </tspan><tspan font-weight="bold">+243 −102</tspan><tspan>, 8 files</tspan></text>
+        <rect x="484.78" y="8" width="140.34" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="490.78" y="21.15" font-size="9" fill="#e6edf3"><tspan>Size </tspan><tspan font-weight="bold">+243 −102</tspan><tspan>, 8 files</tspan></text>
       </g>
       <g data-block="gate">
-        <rect x="561.16" y="8" width="62.22" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="567.16" y="21.15" font-size="9" fill="#e6edf3"><tspan>Gate </tspan><tspan font-weight="bold">pass</tspan></text>
+        <rect x="628.12" y="8" width="62.22" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="634.12" y="21.15" font-size="9" fill="#e6edf3"><tspan>Gate </tspan><tspan font-weight="bold">pass</tspan></text>
       </g>
       <g data-block="health" data-muted="true" data-reason="head-only">
-        <rect x="626.38" y="8" width="67.8" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
-        <text x="632.38" y="21.15" font-size="9" fill="#6b7480"><tspan>Health Δ </tspan><tspan font-weight="bold">—</tspan></text>
+        <rect x="693.34" y="8" width="67.8" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="699.34" y="21.15" font-size="9" fill="#6b7480"><tspan>Health Δ </tspan><tspan font-weight="bold">—</tspan></text>
       </g>
       <g data-block="notices">
         <rect x="10" y="31" width="84.54" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
@@ -334,7 +334,7 @@
         <circle cx="528" cy="586" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
         <circle cx="528" cy="586" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
         <path d="M526 578.5L528 583L530 578.5Z" fill="#e6edf3"/>
-        <text x="546" y="588.45" font-size="7" fill="#e6edf3">notch: a mutant that survived</text>
+        <text x="546" y="588.45" font-size="7" fill="#e6edf3">notch: a mutant no test killed</text>
       </g>
       <g data-mark="stitches">
         <g data-balloon="5">

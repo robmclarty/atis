@@ -104,8 +104,8 @@ on it; the inset still keys both.
 2. **lit arc: changed lines no test ran**. A bright arc on a changed file's skin, clockwise
    from the top, as long as the share no test ran.
 3. **hairline: changed lines the tests ran**. The dim rest of that skin.
-4. **notch: a mutant that survived**. A bright notch cut into the top of the skin, one per
-   mutant.
+4. **notch: a mutant no test killed**. A bright notch cut into the top of the skin, one per
+   mutant: one that survived the tests, or one no test reached.
 5. **stitches: its tests passed, not run, failed**. Short strokes across the bottom of the
    skin, one per test file that imports it: bright, grey, or red and broken.
 6. **red bolt: a failing check names a changed file**. With the check's name beside it,
@@ -136,7 +136,8 @@ lit is the change.
 
 - **Patch cov**: the share of the change's executable lines that the tests ran, and how many
   changed files no coverage report names.
-- **Mutants**: mutants that survived on the changed lines.
+- **Mutants**: mutants that survived the tests on the changed lines, and, counted apart as
+  `untested`, those no test reached.
 - **Reach**: how many modules the changed files and the files importing them span.
 - **Size**: lines added and removed, and files changed.
 - **Gate**: failing checks that name a changed file, or `pass` when none do. A security
@@ -175,7 +176,7 @@ A dash where a number would be means the input is missing, never zero.
 - Warm glow: the change's reach through the files that import it, dimmer at each module
   boundary it crosses, with a lit disc where it crosses a module's interface.
 - The skin round a changed file: a bright arc is its changed lines no test ran, a dim
-  hairline is its changed lines the tests ran, and a bright notch is a mutant that survived.
+  hairline is its changed lines the tests ran, and a bright notch is a mutant no test killed.
   A skin lit all the way round is a changed file no coverage report names, so no test is
   known to have run it.
 - Short strokes across the bottom of that skin are test files that import it: bright passed,

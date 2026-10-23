@@ -33,6 +33,7 @@ import type {
   Ghost,
   Group,
   Hunk,
+  Mutant,
   Notice,
   NoticeTier,
 } from './schema.js';
@@ -751,17 +752,52 @@ function coverageCandidates(inputs: NoticeInputs): readonly Candidate[] {
   });
 }
 
-/** The tests ran over these lines and did not notice them change (§5.2). */
+/**
+ * A live mutant's two outcomes, counted apart (D143): one the tests ran and
+ * did not kill, and one no test reached at all, which Stryker reports as
+ * `NoCoverage`.
+ */
+export type MutantOutcomes = { readonly survived: number; readonly untested: number };
+
+const NO_COVERAGE = 'nocoverage';
+
+/** How many of these live mutants survived the tests, and how many no test reached (D143). */
+export function mutantOutcomes(mutants: readonly Mutant[]): MutantOutcomes {
+  const untested = mutants.filter((mutant) => mutant.status.toLowerCase() === NO_COVERAGE).length;
+  return { survived: mutants.length - untested, untested };
+}
+
+/** `1 mutant`, `2 mutants`. */
+function mutantsOf(count: number): string {
+  return `${String(count)} ${count === 1 ? 'mutant' : 'mutants'}`;
+}
+
+/** The outcomes in words, naming one alone when the other is zero (D143). */
+function outcomesWhy({ survived, untested }: MutantOutcomes): string {
+  const reached = `${mutantsOf(untested)} no test reached`;
+  if (untested === 0) return `${mutantsOf(survived)} survived`;
+  if (survived === 0) return reached;
+  return `${mutantsOf(survived)} survived and ${reached}`;
+}
+
+/**
+ * The tests ran over these lines and did not notice them change, or never ran
+ * them at all; the why tells the two apart, and the kind, its severity and
+ * its weight stay one (§5.2, D143).
+ */
 function mutantCandidates(inputs: NoticeInputs): readonly Candidate[] {
   return inputs.files
     .filter((file) => file.mutants.length > 0)
-    .map((file) => ({
-      kind: 'survived-mutants' as const,
-      target: file.path,
-      why: `${String(file.mutants.length)} mutants survived on the changed lines`,
-      inputs: { mutants: file.mutants.length },
-      thresholds: {},
-    }));
+    .map((file) => {
+      const outcomes = mutantOutcomes(file.mutants);
+      return {
+        kind: 'survived-mutants' as const,
+        target: file.path,
+        why: `${outcomesWhy(outcomes)} on the changed lines`,
+        inputs: { mutants: file.mutants.length, ...outcomes },
+        thresholds: {},
+      };
+    });
 }
 
 /** A big change where changes have gone wrong before (CHID's churn and bug-fix rate, D8). */

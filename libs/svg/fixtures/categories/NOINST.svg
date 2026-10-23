@@ -315,7 +315,7 @@
         <circle cx="528" cy="563" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
         <circle cx="528" cy="563" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
         <path d="M526 555.5L528 560L530 555.5Z" fill="#e6edf3"/>
-        <text x="546" y="565.45" font-size="7" fill="#e6edf3">notch: a mutant that survived</text>
+        <text x="546" y="565.45" font-size="7" fill="#e6edf3">notch: a mutant no test killed</text>
       </g>
       <g data-mark="stitches">
         <g data-balloon="5">

@@ -353,6 +353,29 @@ test('a lone candidate is one primary, and nothing is padded behind it', () => {
   expect(notices[0]?.kind).toBe('new-dependency');
 });
 
+test('a mutant notice counts the mutants that survived apart from those no test reached, naming one alone when the other is none (D143)', () => {
+  const on = (...statuses: readonly string[]): Notice | undefined =>
+    noticesFor({ check: ran({ mutation: [{ path: 'src/pm/util.ts', mutants: statuses.map((status) => ({ line: 10, status })) }] }) })[0];
+
+  const survived = on('Survived');
+  expect(survived?.why).toBe('1 mutant survived on the changed lines');
+  expect(survived?.inputs).toMatchObject({ mutants: 1, survived: 1, untested: 0 });
+
+  const untested = on('NoCoverage', 'NoCoverage');
+  expect(untested?.why).toBe('2 mutants no test reached on the changed lines');
+  expect(untested?.inputs).toMatchObject({ mutants: 2, survived: 0, untested: 2 });
+
+  const both = on('Survived', 'Survived', 'NoCoverage');
+  expect(both?.why).toBe('2 mutants survived and 1 mutant no test reached on the changed lines');
+  expect(both?.inputs).toMatchObject({ mutants: 3, survived: 2, untested: 1 });
+
+  // One kind, at one severity and one weight, whichever way the mutants lived.
+  const survivedTwo = on('Survived', 'Survived');
+  expect(untested?.kind).toBe('survived-mutants');
+  expect(untested?.thresholds['severity']).toBe(survivedTwo?.thresholds['severity']);
+  expect(untested?.weight).toBe(survivedTwo?.weight);
+});
+
 test('two runs over one input produce one ranking, and the input order cannot change it', () => {
   const inputs = inputsFor(CROWDED);
   const first = rankNotices(inputs);

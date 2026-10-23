@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 91 — fix(core): read only changed code lines as unmeasured
+**Current step:** 92 — fix(core): tell a mutant no test reached from one that survived
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -43,7 +43,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 18. chore(glance): score notice precision on the tuning half
 - ☑ 89. fix(core): hold a dead finding to the lines the change touched
 - ☑ 90. fix(core): rank a health or dead red by the finding behind it
-- ☐ 91. fix(core): read only changed code lines as unmeasured
+- ☑ 91. fix(core): read only changed code lines as unmeasured
 - ☐ 92. fix(core): tell a mutant no test reached from one that survived
 - ☐ 19. chore(fixtures): select and generate the corpus's held-out half
 - ☐ 20. chore(glance): read five held-out maps blind on the SVG
@@ -435,3 +435,4 @@ folder, so it rides the branch into the PR.)*
 
 - 2026-10-23 — step 89 checkpointed · 82ef67dbd — fix(core): hold a dead finding to the lines the change touched (15m)
 - 2026-10-23 — step 90 checkpointed · 7c7f63f4f — fix(core): rank a health or dead red by the finding behind it (1 drift, 5m)
+- 2026-10-23 — step 91 checkpointed · 5d6816f32 — fix(core): read only changed code lines as unmeasured (1 drift, 5m)

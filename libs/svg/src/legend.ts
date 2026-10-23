@@ -69,7 +69,7 @@ export const LEGEND: readonly LegendMark[] = [
   { id: 'category', words: 'category: set by the change alone' },
   { id: 'lit-arc', words: 'lit arc: changed lines no test ran' },
   { id: 'hairline', words: 'hairline: changed lines the tests ran' },
-  { id: 'notch', words: 'notch: a mutant that survived' },
+  { id: 'notch', words: 'notch: a mutant no test killed' },
   { id: 'stitches', words: 'stitches: its tests passed, not run, failed' },
   { id: 'red-bolt', words: 'red bolt: a failing check names a changed file' },
   { id: 'grey-bolt', words: 'grey bolt: fails on files the change left alone' },

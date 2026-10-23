@@ -236,7 +236,8 @@ test('every HUD number is read from the map', () => {
   expect(read('standing')).toBe('Standing 1 red');
   // 4 + 7 covered of 9 + 9 changed executable lines, and `doctor.ts`, which the report never names, counted beside them (D80).
   expect(read('patch-cov')).toBe('Patch cov 61%, 1 unmeasured');
-  expect(read('mutants')).toBe('Mutants 2 survived');
+  // One mutant survived the tests and one no test reached, counted apart (D143).
+  expect(read('mutants')).toBe('Mutants 1 survived, 1 untested');
   expect(read('reach')).toBe('Reach 4 cells');
   expect(read('size')).toBe('Size +243 −102, 8 files');
   expect(read('health')).toBe(`Health Δ ${MUTED_DASH}`);
@@ -244,6 +245,21 @@ test('every HUD number is read from the map', () => {
   expect(read('other')).toBe('Other 1');
   // The value is the big numeral: bold, after a plain label.
   expect(blockOf(chrome, 'gate')).toMatch(/<tspan>Gate <\/tspan><tspan font-weight="bold">1<\/tspan><tspan> red<\/tspan>/);
+});
+
+/** The demo with its live mutants on `tools.ts` given these statuses, one per changed line. */
+function mutantsSet(map: MapJson, statuses: readonly string[]): MapJson {
+  const mutants = statuses.map((status, index) => ({ path: 'libs/core/src/pm/tools.ts', line: 20 + index, status }));
+  return { ...map, weather: { ...map.weather, evidence: { ...map.weather.evidence, mutants } } };
+}
+
+test('the Mutants block counts the mutants that survived apart from those no test reached, and names one alone when the other is none (D143)', () => {
+  const read = (statuses: readonly string[]): string => textOf(blockOf(chromeOf(renderSvg(mutantsSet(demo(), statuses))), 'mutants') ?? '');
+
+  expect(read([])).toBe('Mutants 0 survived');
+  expect(read(['Survived', 'Survived'])).toBe('Mutants 2 survived');
+  expect(read(['NoCoverage', 'NoCoverage', 'NoCoverage'])).toBe('Mutants 3 untested');
+  expect(read(['Survived', 'NoCoverage', 'NoCoverage'])).toBe('Mutants 1 survived, 2 untested');
 });
 
 test('the gate counts the change\'s red and never passes a ratio; the standing block counts the rest and names the global slots (D70)', () => {

@@ -44,6 +44,10 @@ test('the doc a reader hears numbers the same marks, in the same words, as the i
   expect(docMarks()).toEqual(LEGEND.map((mark, index) => [index + 1, mark.words]));
 });
 
+test('the notch reads as a mutant no test killed, whether it survived the tests or none reached it (D143)', () => {
+  expect(LEGEND.find((mark) => mark.id === 'notch')?.words).toBe('notch: a mutant no test killed');
+});
+
 test('every mark the legend keys has a finder, so a balloon can be hung on it', () => {
   expect(Object.keys(FINDERS).toSorted()).toEqual(LEGEND.map((mark) => mark.id).toSorted());
 });

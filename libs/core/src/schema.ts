@@ -127,8 +127,9 @@ export type Stitch = { readonly test: string; readonly targets: readonly string[
 export type Evidence = {
   readonly patch_coverage?: readonly PatchCoverage[];
   /**
-   * The changed source files that emit code and that the coverage report
-   * never names: a gap of unknown size, never a closed skin (D80, D122).
+   * The changed source files whose changed lines touch code and that the
+   * coverage report never names: a gap of unknown size, never a closed skin
+   * (D80, D122, D141).
    * Present exactly when `patch_coverage` is, sorted (C3).
    */
   readonly unmeasured?: readonly string[];
