@@ -136,7 +136,7 @@ export const DEFAULT_CONFIG: Config = {
       patterns: ['AGENTS.md', 'CLAUDE.md', '.claude/**', '.claude-plugin/**', '.cursor/**', 'skills/**', 'prompts/**'],
       except: ['hooks/**'],
     },
-    { id: 'docs', patterns: ['*.md', '*.mdx', 'docs/**', 'research/**', '.plumbbob/**', 'LICENSE'] },
+    { id: 'docs', patterns: ['*.md', '*.mdx', 'docs/**', 'research/**', '.plumbbob/**', 'LICENSE', 'ATTRIBUTION*'] },
     {
       id: 'config',
       patterns: [
@@ -172,6 +172,7 @@ export const DEFAULT_CONFIG: Config = {
         'wrangler.json*',
         'vercel.json',
         '.changeset/**',
+        'vitest.workspace.*',
         '/config/**',
       ],
       // A root `config/` holds a tool's settings beside the build code that reads them, and
@@ -208,7 +209,9 @@ export const DEFAULT_CONFIG: Config = {
         '.npmignore',
         'jsr.json',
         'deno.json',
+        'deno.*.json',
         'deno.lock',
+        'package.cjs.json',
       ],
     },
     {
@@ -218,6 +221,9 @@ export const DEFAULT_CONFIG: Config = {
         'Dockerfile',
         'compose*.yaml',
         'compose*.yml',
+        'docker-compose*.yaml',
+        'docker-compose*.yml',
+        'serverless.yml',
         '.circleci/**',
         '.codesandbox/**',
         'codecov.yml',
@@ -228,7 +234,7 @@ export const DEFAULT_CONFIG: Config = {
     },
     { id: 'scripts', patterns: ['scripts/**', 'bin/**', 'hooks/**', '.husky/**', '*.sh', '*.mjs'] },
     { id: 'examples', patterns: ['examples/**', 'templates/**'], outside_members: true },
-    { id: 'assets', patterns: ['site/**', 'www/**', ...IMAGES, ...FONTS, '*.css', '*.html', '*.svg'] },
+    { id: 'assets', patterns: ['site/**', 'www/**', ...IMAGES, ...FONTS, '*.css', '*.html', '*.svg', 'robots.txt'] },
     // Only non-test files reach the table, so `test/**` holds just the fixtures and data beside the tests.
     // A JSON Schema is the `schema/**` row's kind of file, so it lands in `data` even when
     // it sits beside the source it describes (fascicle's `packages/core/src/flow-schema.json`).
@@ -249,6 +255,8 @@ export const DEFAULT_CONFIG: Config = {
         '*.har',
         '*.sql',
         '*.prisma',
+        'migrations/**',
+        'migration_lock.toml',
       ],
     },
   ],

@@ -126,6 +126,17 @@ const CENSUS: readonly [string, string, (readonly string[])?][] = [
   ['data', 'examples/next-sse-chat/src/server/db/migrations/0000_lyrical_khan.sql', ['examples/next-sse-chat']],
   ['data', 'examples/next-prisma-starter/prisma/schema.prisma', ['examples/next-prisma-starter']],
   ['data', 'benchmarks/utils/src/loop.js'],
+  // The rows parked at the map-and-svg build's step 50, one path per pattern from the retake's own `other`.
+  ['ci', 'examples/next-sse-chat/docker-compose.yaml', ['examples/next-sse-chat']],
+  ['ci', 'docker-compose.test.yml'],
+  ['ci', 'examples/lambda-url/serverless.yml', ['examples/lambda-url']],
+  ['data', 'examples/next-sse-chat/src/server/db/migrations/meta/_journal.json', ['examples/next-sse-chat']],
+  ['data', 'examples/next-prisma-starter/prisma/migrations/migration_lock.toml', ['examples/next-prisma-starter']],
+  ['config', 'vitest.workspace.json'],
+  ['deps', 'runtime-tests/deno-jsx/deno.precompile.json'],
+  ['deps', 'package.cjs.json'],
+  ['assets', 'examples/nuxt/public/robots.txt', ['examples/nuxt']],
+  ['docs', 'packages/server/src/vendor/unpromise/ATTRIBUTION.txt'],
 ];
 
 test.each(CENSUS)('the census puts a %s file there: %s', (id, path, roots = []) => {
@@ -150,6 +161,12 @@ test('code the scan cannot read stays loud in other', () => {
   expect(groupOf('packages/svelte-form/src/Field.svelte')).toBe(OTHER_GROUP);
   expect(groupOf('src/App.vue')).toBe(OTHER_GROUP);
   expect(groupOf('integration-tests/node/test-cjs.cjs')).toBe(OTHER_GROUP);
+});
+
+test("hono's runtime-test static files are a kind the census cannot name, so they stay loud in other", () => {
+  expect(groupOf('runtime-tests/bun/static/plain.txt')).toBe(OTHER_GROUP);
+  expect(groupOf('runtime-tests/deno/.static/plain.txt')).toBe(OTHER_GROUP);
+  expect(groupOf('runtime-tests/bun/static/download')).toBe(OTHER_GROUP);
 });
 
 test('other still fires for an extension no row claims, JSON included', () => {
