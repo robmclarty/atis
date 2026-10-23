@@ -607,3 +607,113 @@ What else the refresh turned up:
 - **The Other block** reads 0, 41, 12, 2 and 16 on A to E, down from 5, 72, 53, 43 and 106,
   which is what step 50 measured. All five maps now read their entry points from the
   repository's own fallow (step 43).
+
+## Precision corpus, tuning half: 4 of 6 (2026-10-23)
+
+Step 18 scores §11's criterion 5 on the six holds `fixtures/corpus-1` to `fixtures/corpus-6`,
+the tuning half of the precision corpus (D88, amended by D127 to D129; see
+[`fixtures/corpus.md`](../fixtures/corpus.md)). Each fixture is named by number alone (D62).
+Step 17 generated the maps by the D58 procedure on checkride 0.17.0 and fallow 3.35.0, with
+coverage on all six and mutation kept on three (`corpus-1`, `corpus-4` and `corpus-6`). A
+notice counts only when it targets the file or cell the review flags *and* its kind bears on
+the finding (D65). Criterion 5 needs no reader, so this section scores the maps, not a
+reading.
+
+**Scored once (D127).** The six are not re-scored after the fixes they prompt. Each miss is
+parked for one `/plumbbob:refine` pass (D38). That pass's fixes are judged only on the
+held-out half at step 20, and any miss it leaves is parked past step 20.
+
+| fixture | category | notice 1 | notice 2 | notice 3 | finding in the top three? |
+| --- | --- | --- | --- | --- | --- |
+| `corpus-1` | IFR | `red-check-slot`, `health` on `client/src/App.tsx` | `red-check-slot`, `health` on `client/src/components/ToolsTab.tsx` | `survived-mutants` on `client/src/App.tsx` | **yes**, notice 3 |
+| `corpus-2` | IFR | `interface-change` on `packages/mermaid/src/config.type.ts` | `red-check-slot`, `health` on `packages/mermaid/src/rendering-util/rendering-elements/shapes/classBox.ts` | `uncovered-high-reach` on `packages/mermaid/src/rendering-util/rendering-elements/shapes/classBox.ts` | **yes**, notice 3 |
+| `corpus-3` | LIFR | `interface-change` on `src/common-crypto/CryptoBackend.ts` | `red-check-slot`, `dead` and `health` on `src/client.ts` | `interface-uncompared` on `src/client.ts` | **yes**, notice 1 |
+| `corpus-4` | LIFR | `red-check-slot`, `dead` on `packages/builders/src/index.ts` | `uncovered-high-reach` on `packages/builders/src/index.ts` | `red-check-slot`, `dead` and `health` on `packages/builders/src/components/Components.ts` | **no** |
+| `corpus-5` | LIFR | `red-check-slot`, `dead` on `packages/loot-core/src/shared/schedules.ts` | `interface-change` on `packages/loot-core/src/types/api-handlers.ts` | `red-check-slot`, `health` on `packages/loot-core/src/server/schedules/occurrences.ts` | **no** |
+| `corpus-6` | IFR | `survived-mutants` on `packages/cli/src/index.ts` | `large-hot-change` on `packages/cli/src/index.ts` | `red-check-slot`, `health` on `packages/cli/src/commands/publish/index.ts` | **yes**, notice 1 |
+
+**4 of 6**, read per D65.
+
+### The calls and their reasons
+
+1. **`corpus-1`: yes.** The review reports that general metadata is no longer sent with a
+   tool call. `callTool`'s third parameter, `metadata`, shadows the component's `metadata`
+   state, so the merge at `App.tsx` lines 824 to 828 never reads the state. Notices 1 and 2
+   are `health` reds on the two flagged files. D65 rules them out, as the retake did, since a
+   complexity threshold does not bear on a shadowed name. Notice 3 counts. Its 14 mutants on
+   `App.tsx`'s changed lines sit on the merge itself (lines 824, 826 and 827) and on the
+   state and its handler (lines 206 to 223). Two survived the tests and twelve were never
+   reached by one, which is the gap the truth names: no test exercises `callTool`.
+2. **`corpus-2`: yes, the closest call of the six.** The review finds that `anything || true`
+   makes `htmlLabels: false` a dead setting at `shapeUtil.ts` line 107 and `classBox.ts`
+   line 17. It also finds that `erBox.ts` decides HTML layout from a value that disagrees with
+   the one its label is created with. Notice 1 is an interface change on `config.type.ts`,
+   which the truth does not name. Notice 2 is a `health` red on `classBox.ts`, which D65 rules
+   out. Notice 3 counts. `classBox.ts` has one changed executable line, line 17, the flagged
+   `|| true`, and no test runs it, so the notice sends a reviewer to the exact line for the
+   reason the bug went unseen: the PR's tests cover the config helper, not the renderers. It
+   is an uncovered line, not a failing test, so it says where to look rather than that the
+   line is wrong. `erBox.ts`, the review's blocking issue, has 16 uncovered changed lines with
+   every flagged one among them, and it draws no notice in the top three. Its `health` red is
+   notice 6.
+3. **`corpus-3`: yes.** The review finds that a room waiting for its key bundle keeps no
+   record of who invited us, so `rust-crypto.ts` passes the bundle's sender as the inviter
+   and trusts any user who sends one. Notice 1 counts. It targets
+   `src/common-crypto/CryptoBackend.ts`, which the truth names, and the one name it reshapes
+   is the `CryptoBackend` interface. The change grew that interface by
+   `markRoomAsPendingKeyBundle(roomId: string)`, the method without an inviter whose own doc
+   comment promises the inviter check, and the fix changed that signature. Notices 2 and 3 are
+   a `dead` and `health` red and an uncompared shape on `src/client.ts`. The truth names that
+   file for `joinRoom`, but neither kind bears on the dropped inviter. The flagged lines in
+   `rust-crypto.ts` are all covered and carry no mutants, since mutation did not finish there,
+   so no test evidence points at them.
+4. **`corpus-4`: no.** The review finds that the radio and checkbox group builders check the
+   option count on every `addOptions` and `spliceOptions` call, so adding a radio group's
+   options one at a time throws. The top three target the package barrel
+   `packages/builders/src/index.ts`, first with a `dead` red and then because no test run
+   measured it, and then `components/Components.ts`, with a `dead` and `health` red. None
+   targets the `checkbox` files. The map does hold evidence there: three mutants survived in
+   each of `RadioGroup.ts` and `CheckboxGroup.ts`, two of them on the flagged checks in
+   `spliceOptions` (lines 126 and 132) and two more inside the flagged methods (lines 76 and
+   116). No notice of the six reaches either file.
+5. **`corpus-5`: no.** The review finds that for a schedule that skips weekends,
+   `getScheduleDates` returns one moved date several times and counts the repeats toward
+   `count`, and that the method reimplements the app's `getNextDateAfter`. Notice 1 is a `dead`
+   red on `shared/schedules.ts`, the file holding the helper the reviewer wants reused. That
+   red is a dead or structural finding the change touched there, and it does not bear on
+   repeated dates. Notice 2 is an interface change on `types/api-handlers.ts`, which the truth
+   does not name. Notice 3 is a `health` red on `occurrences.ts`, the flagged file, which D65
+   rules out. The flagged loop is fully covered and mutation did not finish, so the map holds
+   no evidence on it. The new public `getScheduleDates` is notice 5, an interface addition,
+   which says where the new API is, not that it misbehaves.
+6. **`corpus-6`: yes.** The review finds that `changeset version --snapshot` parses as
+   `ignore: ["undefined"]`, because the `version` command declares `--ignore` with
+   `{ type: [String] }` at `packages/cli/src/index.ts` line 49, and the command then fails.
+   Notice 1 counts. It targets that file, and its 88 mutants on the changed lines include the
+   option declarations at lines 46 to 50. All 88 are `NoCoverage`: no test loads the CLI's
+   entry, which is why the truth says its parsing is never under test. Notices 2 and 3 do not
+   count, and need not.
+
+### What the six show
+
+- **Test evidence on the flagged lines carried three of the four hits.** Mutants
+  (`corpus-1` and `corpus-6`) and an uncovered line (`corpus-2`) sat on the lines the
+  reviewers flagged. The fourth hit was an interface whose new method was itself the flaw
+  (`corpus-3`).
+- **`health` and `dead` reds on changed files hold half the top three.** Nine of the 18
+  top-three rows are a `health` or `dead` red on a changed file, and none bears on any of the
+  six findings. They pushed `corpus-1`'s hit down to notice 3, and with the barrel's
+  unmeasured notice they kept `corpus-4`'s mutants out of all six. The retake parked the same
+  pattern as its first encoding, and D73 narrowed it to findings on the changed lines; on
+  these six it still leads.
+- **A barrel no test imports reads as a gap.** `corpus-4`'s notice 2 says no test run
+  measured `src/index.ts`, the package barrel, whose seven added lines are exports.
+- **A `NoCoverage` mutant reads as survived.** All 88 of `corpus-6`'s mutants and 12 of
+  `corpus-1`'s 14 were never reached by a test, and both notices say they "survived". The
+  hits stand either way, but the notice overstates what the tests did.
+
+### Parked for the one refine pass (D127)
+
+The two misses are parked by fixture number, and so are the three encodings above; the first
+two of those bear on `corpus-4`'s miss. The refine pass that answers them is the one D127
+allows. Its fixes are judged on the held-out half at step 20, never on these six.
