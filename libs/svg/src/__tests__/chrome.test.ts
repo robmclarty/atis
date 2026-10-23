@@ -474,12 +474,15 @@ test('a target with several notices carries one ring, for its strongest tier, an
   expect([...marks.matchAll(/<circle data-target="([^"]+)" data-tier="(\w+)"/g)].map(([, target, tier]) => [target, tier])).toEqual([
     ['libs/core/src/pm/index.ts', 'primary'],
   ]);
-  expect([...marks.matchAll(/data-mark="(\d)"/g)].map(([, rank]) => rank)).toEqual(['1', '2', '3', '4', '5', '6']);
-  const [one, two, three] = [1, 2, 3].map((rank) => boxCentre(marks, rank));
+  // The barrel's run holds its four marks, 1, 2, 3 and 6, side by side in rank order, before the other targets' runs.
+  expect([...marks.matchAll(/data-mark="(\d)"/g)].map(([, rank]) => rank)).toEqual(['1', '2', '3', '6', '4', '5']);
+  const [one, two, three, six] = [1, 2, 3, 6].map((rank) => boxCentre(marks, rank));
   expect(one?.[1]).toBe(two?.[1]);
   expect(two?.[1]).toBe(three?.[1]);
+  expect(three?.[1]).toBe(six?.[1]);
   expect(one?.[0] ?? 0).toBeLessThan(two?.[0] ?? 0);
   expect(two?.[0] ?? 0).toBeLessThan(three?.[0] ?? 0);
+  expect(three?.[0] ?? 0).toBeLessThan(six?.[0] ?? 0);
 });
 
 test('the chrome is flat, hard-edged and still: no gradient, filter, opacity or animation under #chrome (D12, C10)', () => {

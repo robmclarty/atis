@@ -19,13 +19,17 @@ export type CategoryConfig = {
 /**
  * The eleven candidate kinds of §5.4 plus the `other`-group notice of D48.
  * §5.4's last row is two instruments in one line, and they are two kinds here:
- * a notice says which one it is or it says nothing.
+ * a notice says which one it is or it says nothing. An interface that moved is
+ * split by what moved (D81): a name removed or reshaped, names only added, or
+ * names the scan could not compare.
  */
 export type NoticeKind =
   | 'red-check-slot'
   | 'cycle-or-boundary'
   | 'deleted-export'
   | 'interface-change'
+  | 'interface-added'
+  | 'interface-uncompared'
   | 'uncovered-high-reach'
   | 'survived-mutants'
   | 'threshold-breached'
@@ -73,11 +77,14 @@ const LOCKFILES = ['pnpm-lock.yaml', 'package-lock.json', 'npm-shrinkwrap.json',
 /**
  * The ladder of §5.4, worst first. The table's own order is the spine: the
  * gate saying no outranks a structural break, which outranks an interface
- * moving, which outranks a change the tests never saw. Two pairs share a rung
+ * moving, which outranks a change the tests never saw. Kinds share a rung
  * because they sit at the same altitude rather than because a number ran out:
  * a deleted export *is* an interface change, the destructive kind, and a
  * counted vulnerability weighs what a big change to a troubled file weighs.
- * The floor is 2, where a notice is worth drawing and nothing more.
+ * An interface that only grew is new surface to read with nothing broken, so
+ * it weighs what a new dependency does; one whose only movement the scan
+ * could not compare proves nothing and sits on the floor (D81). The floor is
+ * 2, where a notice is worth drawing and nothing more.
  */
 const SEVERITY: Readonly<Record<NoticeKind, number>> = {
   'red-check-slot': 10,
@@ -89,7 +96,9 @@ const SEVERITY: Readonly<Record<NoticeKind, number>> = {
   'threshold-breached': 5,
   'security-finding': 4,
   'large-hot-change': 4,
+  'interface-added': 3,
   'new-dependency': 3,
+  'interface-uncompared': 2,
   'missing-cochange': 2,
   'bedrock-change': 2,
   'other-group': 2,

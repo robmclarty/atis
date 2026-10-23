@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 3 — fix(core): read a changed file no coverage report names as unmeasured
+**Current step:** 4 — fix(core): split interface notices by what moved
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -25,7 +25,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 
 - ☑ 1. test(cli): stop the CLI suite racing the types slot's build
 - ☑ 2. chore(rules): keep Node, the compiler and the DOM out of lib sources
-- ☐ 3. fix(core): read a changed file no coverage report names as unmeasured
+- ☑ 3. fix(core): read a changed file no coverage report names as unmeasured
 - ☐ 4. fix(core): split interface notices by what moved
 - ☐ 5. feat(cli): compare inferred export shapes with the type checker
 - ☐ 6. fix(core): weigh an interface notice by who reads the names that moved
@@ -164,3 +164,4 @@ folder, so it rides the branch into the PR.)*
 
 - 2026-10-23 — step 1 checkpointed · d17b25c05 — test(cli): stop the CLI suite racing the types slot's build (6m)
 - 2026-10-23 — step 2 checkpointed · deb6a931d — chore(rules): keep Node, the compiler and the DOM out of lib sources (2m)
+- 2026-10-23 — step 3 checkpointed · bf4d97da2 — fix(core): read a changed file no coverage report names as unmeasured (1 drift, 10m)

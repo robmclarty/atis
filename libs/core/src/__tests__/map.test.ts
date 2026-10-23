@@ -237,13 +237,16 @@ test('the demo map ranks the six notices the budget holds', () => {
 
 const DEMO_BARREL = 'libs/core/src/pm/index.ts';
 
-test("the demo barrel's interface notice names the name it added, and leaves the one it broke to deleted-export (D76)", () => {
+test("the demo barrel's interface notice names the name it added, and leaves the one it broke to deleted-export (D76, D81)", () => {
   const { notices } = buildMap(inputsFor('demo'), DEFAULT_CONFIG);
 
-  // `legacyResolve` went while `libs/core/src/index.ts` still takes it: that is deleted-export's row alone.
+  // `legacyResolve` went while `libs/core/src/index.ts` still takes it: that is deleted-export's row alone,
+  // so all the interface itself shows is a name added, which is new surface and nothing broken.
   expect(notices.find((notice) => notice.kind === 'deleted-export')?.why).toContain('`legacyResolve`');
-  expect(notices.find((notice) => notice.kind === 'interface-change')?.why).toBe(
-    'the interface of `libs/core/src/pm` changed (`resolveTool` added) and 2 files read it',
+  expect(notices.map((notice) => notice.kind)).not.toContain('interface-change');
+  expect(notices.find((notice) => notice.kind === 'interface-added')?.why).toBe(
+    // The demo's scans print no shapes, so the two names the barrel kept are named as uncompared (D123).
+    'the interface of `libs/core/src/pm` grew (`resolveTool` added) and 2 files read it; the shape of `listSlots` and `resolveSlot` could not be compared',
   );
 });
 
@@ -283,10 +286,10 @@ test('buildMap reads the public names off both scans, so a name the base publish
       member.name === '@demo/core' ? { ...member, published: true, surface: [entry] } : member,
     ),
   };
-  const notice = buildMap({ ...inputs, base }, DEFAULT_CONFIG).notices.find((found) => found.kind === 'interface-change');
+  const notice = buildMap({ ...inputs, base }, DEFAULT_CONFIG).notices.find((found) => found.kind === 'interface-added');
 
   expect(notice?.why).toBe(
-    'the interface of `libs/core/src/pm` changed (`resolveTool` added) and 2 files read it and `@demo/core` publishes `legacyResolve`, `listSlots` and `resolveSlot`',
+    'the interface of `libs/core/src/pm` grew (`resolveTool` added) and 2 files read it and `@demo/core` publishes `legacyResolve`, `listSlots` and `resolveSlot`; the shape of `listSlots` and `resolveSlot` could not be compared',
   );
   expect(notice?.inputs['public_names']).toBe(3);
 });

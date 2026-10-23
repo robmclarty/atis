@@ -3648,29 +3648,6 @@
       "tier": "secondary"
     },
     {
-      "kind": "interface-change",
-      "target": "libs/core/src/pm/index.ts",
-      "why": "the interface of `libs/core/src/pm` changed (`resolveTool` added) and 2 files read it",
-      "inputs": {
-        "cells_reached": 4,
-        "uncovered_fraction": 0.556,
-        "history_weight": 3.163,
-        "band": 3,
-        "fan_in": 2,
-        "names_added": 1,
-        "names_removed": 0,
-        "names_reshaped": 0,
-        "names_uncompared": 2
-      },
-      "thresholds": {
-        "severity": 8,
-        "fan_in_high": 2,
-        "deep_band": 4
-      },
-      "weight": 135.224,
-      "tier": "secondary"
-    },
-    {
       "kind": "uncovered-high-reach",
       "target": "libs/core/src/pm/index.ts",
       "why": "5 changed lines are uncovered and the change reaches 4 cells",
@@ -3685,7 +3662,7 @@
         "high_reach_cells": 3
       },
       "weight": 118.321,
-      "tier": "tertiary"
+      "tier": "secondary"
     },
     {
       "kind": "large-hot-change",
@@ -3721,6 +3698,29 @@
         "severity": 10
       },
       "weight": 63.775,
+      "tier": "tertiary"
+    },
+    {
+      "kind": "interface-added",
+      "target": "libs/core/src/pm/index.ts",
+      "why": "the interface of `libs/core/src/pm` grew (`resolveTool` added) and 2 files read it; the shape of `listSlots` and `resolveSlot` could not be compared",
+      "inputs": {
+        "cells_reached": 4,
+        "uncovered_fraction": 0.556,
+        "history_weight": 3.163,
+        "band": 3,
+        "fan_in": 2,
+        "names_added": 1,
+        "names_removed": 0,
+        "names_reshaped": 0,
+        "names_uncompared": 2
+      },
+      "thresholds": {
+        "severity": 3,
+        "fan_in_high": 2,
+        "deep_band": 4
+      },
+      "weight": 50.709,
       "tier": "tertiary"
     }
   ]

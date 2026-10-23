@@ -517,14 +517,39 @@ function publishes({ names, members }: PublicFile): string {
 }
 
 /**
+ * Which kind an interface file's moves raise, the heaviest the scan can prove
+ * (D81, D123): a name removed or reshaped breaks a reader, so it is
+ * `interface-change`; names only added are new surface, `interface-added`,
+ * even beside names it could not compare, since an uncompared name proves
+ * nothing; and names it could not compare alone are `interface-uncompared`.
+ * A file that moved nothing raises nothing.
+ */
+function interfaceKind(moves: SurfaceMoves): NoticeKind | undefined {
+  if (moves.removed.length + moves.reshaped.length > 0) return 'interface-change';
+  if (moves.added.length > 0) return 'interface-added';
+  return moves.uncompared.length > 0 ? 'interface-uncompared' : undefined;
+}
+
+/** `; the shape of `a` could not be compared`: the clause every kind but a proven break carries for its uncompared names (C2). */
+function uncomparedClause(uncompared: readonly string[]): string {
+  return uncompared.length === 0 ? '' : `; the shape of ${sampled(uncompared)} could not be compared`;
+}
+
+/** What one interface kind says moved, before the reasons its file is worth a label. */
+function interfaceWhy(kind: NoticeKind, cell: string, moves: SurfaceMoves, reasons: string): string {
+  if (kind === 'interface-change') return `the interface of \`${cell}\` changed (${movesOf(moves)}) and ${reasons}`;
+  if (kind === 'interface-added') return `the interface of \`${cell}\` grew (${movesOf(moves)}) and ${reasons}${uncomparedClause(moves.uncompared)}`;
+  return `the interface of \`${cell}\` was touched and ${reasons}${uncomparedClause(moves.uncompared)}`;
+}
+
+/**
  * A changed interface file on a cell many read, one far down the abyss, or
  * one holding a name a published member exposes, whose exported surface
- * moved: a name added or removed, or a name's shape changed (D76). A public
- * name is read from outside the repository, so it makes its file an
- * interface and reads as wide whatever the cell's fan-in (D75). A body-only
- * edit moves nothing and raises nothing. A kept name whose shape could not be
- * compared keeps the notice, its `why` saying so, since silence would read as
- * unchanged (C2).
+ * moved (D76), raised as the kind of what moved (D81). A public name is read
+ * from outside the repository, so it makes its file an interface and reads as
+ * wide whatever the cell's fan-in (D75). A body-only edit moves nothing and
+ * raises nothing. A kept name whose shape could not be compared keeps a
+ * notice, its `why` saying so, since silence would read as unchanged (C2).
  */
 function interfaceCandidates(
   inputs: NoticeInputs,
@@ -551,8 +576,8 @@ function interfaceCandidates(
       headFiles.get(file.path),
       new Set(broken.get(file.path)?.keys()),
     );
-    const moved = moves.added.length + moves.removed.length + moves.reshaped.length > 0;
-    if (!moved && moves.uncompared.length === 0) return [];
+    const kind = interfaceKind(moves);
+    if (kind === undefined) return [];
     const reasons = joined([
       ...(readInRepo ? [`${String(cell.fan_in ?? 0)} files read it`] : []),
       ...(published === undefined ? [] : [publishes(published)]),
@@ -560,11 +585,9 @@ function interfaceCandidates(
     ]);
     return [
       {
-        kind: 'interface-change',
+        kind,
         target: file.path,
-        why: moved
-          ? `the interface of \`${cell.path}\` changed (${movesOf(moves)}) and ${reasons}`
-          : `the interface of \`${cell.path}\` was touched and ${reasons}; the shape of ${sampled(moves.uncompared)} could not be compared`,
+        why: interfaceWhy(kind, cell.path, moves, reasons),
         inputs: {
           band: cell.band,
           ...(cell.fan_in === undefined ? {} : { fan_in: cell.fan_in }),

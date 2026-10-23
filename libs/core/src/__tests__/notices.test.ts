@@ -247,8 +247,19 @@ const ONE_OF_EACH: Readonly<Record<NoticeKind, Scenario>> = {
   'interface-change': {
     changed: [change('src/pm/index.ts')],
     bands: { [PM]: 5 },
+    exports: { 'src/pm/index.ts': [] },
+    baseExports: { 'src/pm/index.ts': ['resolve'] },
+  },
+  'interface-added': {
+    changed: [change('src/pm/index.ts')],
+    bands: { [PM]: 5 },
     exports: { 'src/pm/index.ts': ['resolve'] },
     baseExports: { 'src/pm/index.ts': [] },
+  },
+  'interface-uncompared': {
+    changed: [change('src/pm/index.ts')],
+    bands: { [PM]: 5 },
+    exports: { 'src/pm/index.ts': ['resolve'] },
   },
   'uncovered-high-reach': {
     changed: [change('src/pm/tools.ts')],
@@ -279,8 +290,8 @@ const CROWDED: Scenario = {
   files: ['odd.qqq'],
   changed: [change('src/pm/tools.ts'), change('src/pm/index.ts'), change('src/pm/util.ts', 200, 10)],
   bands: { [PM]: 5 },
-  exports: { 'src/pm/index.ts': ['resolve'] },
-  baseExports: { 'src/pm/index.ts': [] },
+  exports: { 'src/pm/index.ts': [] },
+  baseExports: { 'src/pm/index.ts': ['resolve'] },
   checks: verdict([red('types'), red('lint', ['src/doctor.ts', 'src/pm/tools.ts'], ['src/pm/tools.ts'])]),
   check: ran({
     coverage: [{ path: 'src/pm/tools.ts', statements: [{ line: 10, hits: 0 }] }],
@@ -526,7 +537,8 @@ const APOLLO: Scenario = {
   changed: [change(FAILING), change('src/pm/tools.ts'), change('src/pm/index.ts'), change('src/pm/util.ts', 90, 20)],
   bands: { [PM]: 5 },
   exports: { 'src/pm/index.ts': ['resolve'] },
-  baseExports: { 'src/pm/index.ts': [] },
+  baseShapes: { 'src/pm/index.ts': { resolve: 'function resolve(slot: string): string;' } },
+  shapes: { 'src/pm/index.ts': { resolve: 'function resolve(slot: string, root: string): string;' } },
   checks: verdict([red('health', ['src/pm/tools.ts'], ['src/pm/tools.ts']), red('test', [FAILING], [FAILING])]),
   history: [
     { path: FAILING, churn_ratio: 3.06, bugfix_rate: 0.5 },
@@ -690,7 +702,7 @@ test('a moved fingerprint raises interface-change, its why naming the name that 
   expect(notices[0]?.inputs).toMatchObject({ names_added: 0, names_removed: 0, names_reshaped: 1, names_uncompared: 0 });
 });
 
-test('an added name raises interface-change whatever its shape, and a long list is counted (D76)', () => {
+test('names only added raise interface-added at severity 3, whatever their shape, and a long list is counted (D81)', () => {
   const one = noticesFor(
     barrelEdit({
       exports: { [BARREL]: ['resolve', 'resolveTool'] },
@@ -698,12 +710,43 @@ test('an added name raises interface-change whatever its shape, and a long list 
       shapes: { [BARREL]: { resolve: RESOLVE, resolveTool: null } },
     }),
   );
-  expect(rowsOf(one)).toEqual([['interface-change', BARREL]]);
-  expect(one[0]?.why).toBe('the interface of `src/pm` changed (`resolveTool` added) and it sits in band 5');
+  expect(rowsOf(one)).toEqual([['interface-added', BARREL]]);
+  expect(one[0]?.why).toBe('the interface of `src/pm` grew (`resolveTool` added) and it sits in band 5');
+  expect(one[0]?.thresholds['severity']).toBe(3);
 
   const five = noticesFor(barrelEdit({ exports: { [BARREL]: ['a', 'b', 'c', 'd', 'e'] }, baseExports: { [BARREL]: [] } }));
-  expect(five[0]?.why).toBe('the interface of `src/pm` changed (`a`, `b`, `c` and 2 more added) and it sits in band 5');
+  expect(five[0]?.why).toBe('the interface of `src/pm` grew (`a`, `b`, `c` and 2 more added) and it sits in band 5');
   expect(five[0]?.inputs['names_added']).toBe(5);
+});
+
+test('a name added beside one reshaped stays interface-change, the heaviest move the scan proved (D81)', () => {
+  const notices = noticesFor(
+    barrelEdit({
+      exports: { [BARREL]: ['resolve', 'resolveTool'] },
+      baseExports: { [BARREL]: ['resolve'] },
+      baseShapes: { [BARREL]: { resolve: RESOLVE } },
+      shapes: { [BARREL]: { resolve: 'function resolve(slot: string, root: string): string;', resolveTool: RESOLVE } },
+    }),
+  );
+  expect(rowsOf(notices)).toEqual([['interface-change', BARREL]]);
+  expect(notices[0]?.why).toBe('the interface of `src/pm` changed (`resolveTool` added, `resolve` reshaped) and it sits in band 5');
+  expect(notices[0]?.thresholds['severity']).toBe(8);
+});
+
+test('names added beside names it could not compare raise interface-added, naming the uncompared ones too (D123)', () => {
+  const notices = noticesFor(
+    barrelEdit({
+      exports: { [BARREL]: ['VERSION', 'resolve', 'resolveTool'] },
+      baseExports: { [BARREL]: ['VERSION', 'resolve'] },
+      shapes: { [BARREL]: { VERSION: null, resolve: RESOLVE, resolveTool: RESOLVE } },
+      baseShapes: { [BARREL]: { VERSION: null, resolve: RESOLVE } },
+    }),
+  );
+  expect(rowsOf(notices)).toEqual([['interface-added', BARREL]]);
+  expect(notices[0]?.why).toBe(
+    'the interface of `src/pm` grew (`resolveTool` added) and it sits in band 5; the shape of `VERSION` could not be compared',
+  );
+  expect(notices[0]?.inputs).toMatchObject({ names_added: 1, names_uncompared: 1 });
 });
 
 test('a removed name a live importer still takes raises deleted-export alone, the destructive kind (D76)', () => {
@@ -722,11 +765,12 @@ test('a removed name a live importer still takes raises deleted-export alone, th
   expect(mended[0]?.why).toBe('the interface of `src/pm` changed (`legacy` removed) and it sits in band 5');
 });
 
-test('an export whose shape could not be compared keeps the notice, and its why never reads as unchanged (C2, D76)', () => {
+test('an export whose shape could not be compared alone raises interface-uncompared at severity 2, never read as unchanged (C2, D81)', () => {
   const inferred = noticesFor(
     barrelEdit({ exports: { [BARREL]: ['VERSION', 'resolve'] }, shapes: { [BARREL]: { VERSION: null, resolve: RESOLVE } } }),
   );
-  expect(rowsOf(inferred)).toEqual([['interface-change', BARREL]]);
+  expect(rowsOf(inferred)).toEqual([['interface-uncompared', BARREL]]);
+  expect(inferred[0]?.thresholds['severity']).toBe(2);
   expect(inferred[0]?.why).toBe(
     'the interface of `src/pm` was touched and it sits in band 5; the shape of `VERSION` could not be compared',
   );
