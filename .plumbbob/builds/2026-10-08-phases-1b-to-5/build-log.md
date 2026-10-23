@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 8 — fix(cli): read bare re-exports and .mts barrels as public surface
+**Current step:** 9 — fix(core): keep committed build output off the terrain
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -30,7 +30,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 5. feat(cli): compare inferred export shapes with the type checker
 - ☑ 6. fix(core): weigh an interface notice by who reads the names that moved
 - ☑ 7. fix(core): rank a security advisory only when the change brings it
-- ☐ 8. fix(cli): read bare re-exports and .mts barrels as public surface
+- ☑ 8. fix(cli): read bare re-exports and .mts barrels as public surface
 - ☐ 9. fix(core): keep committed build output off the terrain
 - ☐ 10. fix(core): sort the retake's leftover shore files by kind
 - ☐ 11. fix(svg): size HUD blocks for the widest fallback monospace face
@@ -171,3 +171,4 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-23 — step 5 checkpointed · d230d9585 — feat(cli): compare inferred export shapes with the type checker (1 drift, 8m)
 - 2026-10-23 — step 6 checkpointed · de8e50be2 — fix(core): weigh an interface notice by who reads the names that moved (1 drift, 2m)
 - 2026-10-23 — step 7 checkpointed · b335055fa — fix(core): rank a security advisory only when the change brings it (1 drift, 11m)
+- 2026-10-23 — step 8 checkpointed · c118a6353 — fix(cli): read bare re-exports and .mts barrels as public surface (3m)

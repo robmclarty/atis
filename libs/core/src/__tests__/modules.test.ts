@@ -1,11 +1,12 @@
 import { expect, test } from 'vitest';
 
 import { DEFAULT_CONFIG } from '../config.js';
-import { configMatcher } from '../groups.js';
+import { shoreMatcher } from '../groups.js';
+import { buildMap } from '../map.js';
 import { classifyFile, identifyModules, memberOf } from '../modules.js';
 import type { ImportEdge, ModuleCell, Modules, ScannedFile } from '../modules.js';
 
-const isConfig = configMatcher(DEFAULT_CONFIG.groups);
+const isConfig = shoreMatcher(DEFAULT_CONFIG.groups);
 
 /** A scanned file with `loc` lines and `exports` exported names. */
 function file(path: string, loc = 10, exports = 0): ScannedFile {
@@ -237,6 +238,51 @@ test('a root config .ts beside workspace members is shore: no `directory:.` cell
   });
   expect(cellIn(modules, 'folder:libs/core/src/layout').parent).toBe('package:libs/core');
   expect(cellIn(modules, 'single:apps/atis/src/cli.ts').parent).toBe('package:apps/atis');
+});
+
+test('a committed dist/ founds no cell and enters no band, while a hand-written .d.ts and a lib/ tree stay terrain (D84)', () => {
+  const roots = ['.'];
+  const isShore = shoreMatcher(DEFAULT_CONFIG.groups, roots);
+  const files = [
+    file('dist/index.js', 40),
+    file('dist/index.d.ts', 12, 3),
+    file('src/index.ts', 10, 3),
+    file('src/types.d.ts', 20, 2),
+    file('lib/index.ts', 8, 2),
+    file('lib/util/format.ts', 30, 1),
+  ];
+  const modules = identifyModules(
+    files,
+    [edge('dist/index.d.ts', 'src/types.d.ts'), edge('src/index.ts', 'lib/index.ts'), edge('lib/index.ts', 'lib/util/format.ts')],
+    roots,
+    isShore,
+  );
+
+  expect(classifyFile('dist/index.d.ts', isShore)).toBe('other');
+  expect(classifyFile('src/types.d.ts', isShore)).toBe('source');
+  const organelles = modules.organelles.map((organelle) => organelle.path);
+  expect(organelles).toEqual(['lib/index.ts', 'lib/util/format.ts', 'src/index.ts', 'src/types.d.ts']);
+  expect(modules.cells.flatMap((cell) => cell.organelles)).not.toContain('dist/index.d.ts');
+
+  // The map draws it on the shore and hangs no terrace from it.
+  const scan = {
+    files: files.map((entry) => ({ ...entry })),
+    edges: [{ from: 'dist/index.d.ts', to: 'src/types.d.ts', names: ['Options'] }],
+    members: [{ name: 'lib', dir: '.', entry: ['src/index.ts'] }],
+    entry_points: { source: 'manifests', reason: 'no local fallow' } as const,
+  };
+  const map = buildMap({
+    meta: { repo: 'fixture', base: 'main', head: 'head', merge_base: 'base', generated_at: '' },
+    base: scan,
+    head: scan,
+    diff: [],
+    deps_added: [],
+    commits: [],
+    head_time: 0,
+    check: { mode: 'git-only', reason: '.check/ is absent' },
+  });
+  expect(map.terrain.groups.find((group) => group.id === 'build')?.files).toEqual(['dist/index.d.ts', 'dist/index.js']);
+  expect(map.terrain.organelles.map((organelle) => organelle.id)).not.toContain('dist/index.d.ts');
 });
 
 test('packages/*: .tsx barrels, loose package files, a barrel-less package and an empty member', () => {

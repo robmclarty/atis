@@ -14,20 +14,32 @@ export const OTHER_GROUP = 'other';
 /** The shore row whose `.ts`/`.tsx` members are tool config, not terrain (D48, D57). */
 export const CONFIG_GROUP_ID = 'config';
 
+/** The shore row of committed build output, whose `.d.ts` and every other file are never terrain (D84). */
+export const BUILD_GROUP_ID = 'build';
+
+/** The rows whose TypeScript is shore: a tool's config (D57) and a build's output (D84). */
+const NOT_TERRAIN: ReadonlySet<string> = new Set([CONFIG_GROUP_ID, BUILD_GROUP_ID]);
+
 /**
  * One row of the shore table. A pattern matches at any depth unless it opens
  * with `/`, which anchors it at the repo root: `*.md` tests the file name and
  * `docs/**` any `docs` folder. `*` and `?` stay inside one path segment, `**`
  * crosses them. `except` carves paths out of a row so a later row can take
  * them; `outside_members` skips files inside a workspace member, as D48 asks
- * of `examples` and `templates`.
+ * of `examples` and `templates`; `at_member_root` anchors the patterns at the
+ * innermost workspace member holding the file, or the repo root when none
+ * does, so `/dist/**` means a `dist/` directly beneath a package (D84).
  */
 export type GroupRule = {
   readonly id: string;
   readonly patterns: readonly string[];
   readonly except?: readonly string[];
   readonly outside_members?: boolean;
+  readonly at_member_root?: boolean;
 };
+
+/** A row with its patterns compiled. */
+type CompiledRule = { readonly rule: GroupRule; readonly patterns: readonly RegExp[]; readonly except: readonly RegExp[] };
 
 const GLOB_TOKEN = /\*\*\/|\*\*|\*|\?|[^*?]+/g;
 
@@ -47,18 +59,29 @@ function globToRegExp(pattern: string): RegExp {
   return new RegExp(`${anchored ? '^' : '(?:^|/)'}${source}$`);
 }
 
+function compile(rule: GroupRule): CompiledRule {
+  return { rule, patterns: rule.patterns.map(globToRegExp), except: (rule.except ?? []).map(globToRegExp) };
+}
+
+/** Whether a row's patterns take a path: the path itself, or for a row anchored at a member's root, the part beneath that member. */
+function matches({ rule, patterns, except }: CompiledRule, path: string, roots: readonly string[]): boolean {
+  const member = rule.at_member_root === true ? (memberOf(path, roots) ?? '') : '';
+  const tested = member === '' ? path : path.slice(member.length + 1);
+  return patterns.some((pattern) => pattern.test(tested)) && !except.some((pattern) => pattern.test(tested));
+}
+
 /**
- * Whether a path matches the shore's `config` row (D48): `classifyFile` reads a
- * `.ts`/`.tsx` that does as tool configuration and sends it to the shore rather
- * than the terrain (D57). Built from the same `rules` the shore is sorted by,
- * so overriding the `config` row in an `atis.config.json` moves that boundary
- * too; an absent row (a custom table with no `config`) matches nothing.
+ * Whether a path matches a shore row whose TypeScript is not terrain (D48):
+ * the `config` row, whose `.ts`/`.tsx` is tool configuration (D57), and the
+ * `build` row, whose `.d.ts` is a second copy of the code with no depth of its
+ * own (D84). `classifyFile` sends such a file to the shore. Built from the same
+ * `rules` the shore is sorted by, so overriding either row in an
+ * `atis.config.json` moves that boundary too; an absent row matches nothing.
+ * `roots` are the workspace members a `build` row is anchored at.
  */
-export function configMatcher(rules: readonly GroupRule[]): (path: string) => boolean {
-  const row = rules.find((rule) => rule.id === CONFIG_GROUP_ID);
-  const patterns = (row?.patterns ?? []).map(globToRegExp);
-  const except = (row?.except ?? []).map(globToRegExp);
-  return (path) => patterns.some((pattern) => pattern.test(path)) && !except.some((pattern) => pattern.test(path));
+export function shoreMatcher(rules: readonly GroupRule[], roots: readonly string[] = []): (path: string) => boolean {
+  const rows = rules.filter((rule) => NOT_TERRAIN.has(rule.id)).map(compile);
+  return (path) => rows.some((row) => matches(row, path, roots));
 }
 
 /**
@@ -72,21 +95,12 @@ export function identifyGroups(
   rules: readonly GroupRule[],
   roots: readonly string[] = [],
 ): readonly Group[] {
-  const table = rules.map((rule) => ({
-    rule,
-    patterns: rule.patterns.map(globToRegExp),
-    except: (rule.except ?? []).map(globToRegExp),
-  }));
-  const isConfig = configMatcher(rules);
-  const shore = [...new Set(files.map((file) => file.path))].filter((path) => classifyFile(path, isConfig) === 'other');
+  const table = rules.map(compile);
+  const isShore = shoreMatcher(rules, roots);
+  const shore = [...new Set(files.map((file) => file.path))].filter((path) => classifyFile(path, isShore) === 'other');
   const placed = shore.map((path) => {
     const claimed = (memberOf(path, roots) ?? '') !== '';
-    const row = table.find(
-      ({ rule, patterns, except }) =>
-        !(claimed && rule.outside_members === true) &&
-        patterns.some((pattern) => pattern.test(path)) &&
-        !except.some((pattern) => pattern.test(path)),
-    );
+    const row = table.find((compiled) => !(claimed && compiled.rule.outside_members === true) && matches(compiled, path, roots));
     return { path, id: row?.rule.id ?? OTHER_GROUP };
   });
   const order = new Set([...rules.map((rule) => rule.id).filter((id) => id !== OTHER_GROUP), OTHER_GROUP]);

@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 
 import { buildMap } from 'core';
 import type { DiffFile, Notice } from 'core';
-import { afterAll, expect, test } from 'vitest';
+import { afterAll, beforeAll, expect, test } from 'vitest';
 
 import { checkInferredShapes, scanImports, shapePaths } from '../sources/index.js';
 import type { Scan } from '../sources/index.js';
@@ -47,6 +47,16 @@ function checked(files: Tree, paths: readonly string[] = [INDEX]): Scan {
   const dir = writeTree(files);
   return checkInferredShapes(dir, scanImports(dir), new Set(paths));
 }
+
+/**
+ * The first program a process builds parses the whole default library, which
+ * takes seconds on a loaded machine; every later one reuses it. Paying that
+ * once here keeps each test's own time down to the tree it checks, rather
+ * than letting whichever test runs first time out under the gate's load.
+ */
+beforeAll(() => {
+  checked(library('export function warm() { return 1; }\n'));
+}, 60_000);
 
 function shapeOf(scan: Scan, path: string, name: string): string | null | undefined {
   return scan.files.find((file) => file.path === path)?.shapes[name];

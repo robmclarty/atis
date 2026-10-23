@@ -30,33 +30,39 @@
     </g>
     <g id="shore">
       <rect x="0" y="0" width="480" height="84" fill="#161b21"/>
+      <g data-group="build">
+        <path d="M48.67 40.33L54.62 40.75L61.38 40.58L67.33 39.67L71.21 37.94L73.23 35.62L74 33L73.98 30.36L73.14 27.86L71.33 25.67L68.47 23.9L64.64 22.65L60 22L54.79 22L49.65 22.67L45.33 24L42.4 25.95L40.72 28.27L40 30.67L39.98 32.89L40.47 34.89L41.33 36.67L42.57 38.21L44.77 39.46L48.67 40.33Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id="libs/core/dist/index.d.ts" cx="49" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="libs/core/dist/index.js" cx="67" cy="33" r="4" fill="#2d343c"/>
+        <text x="39.98" y="19" font-size="8" font-variant="small-caps" fill="#5d6670">build</text>
+      </g>
       <g data-group="docs">
-        <path d="M46 40L48.57 39.96L51.21 39.04L53.33 37L54.42 33.83L54.25 30.28L52.67 27.33L49.73 25.77L46.27 25.68L43.33 27L41.72 29.54L41.28 32.68L41.67 35.67L42.57 37.9L43.99 39.32L46 40Z" fill="none" stroke="#3b434d" stroke-width="1"/>
-        <circle data-id="README.md" cx="49" cy="33" r="4" fill="#2d343c"/>
-        <text x="41.28" y="22.68" font-size="8" font-variant="small-caps" fill="#5d6670">docs</text>
+        <path d="M122 40L124.57 39.96L127.21 39.04L129.33 37L130.42 33.83L130.25 30.28L128.67 27.33L125.73 25.77L122.27 25.68L119.33 27L117.72 29.54L117.28 32.68L117.67 35.67L118.57 37.9L119.99 39.32L122 40Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id="README.md" cx="125" cy="33" r="4" fill="#2d343c"/>
+        <text x="117.28" y="22.68" font-size="8" font-variant="small-caps" fill="#5d6670">docs</text>
       </g>
       <g data-group="config">
-        <path d="M104 40L106.57 39.96L109.21 39.04L111.33 37L112.42 33.83L112.25 30.28L110.67 27.33L107.73 25.77L104.27 25.68L101.33 27L99.72 29.54L99.28 32.68L99.67 35.67L100.57 37.9L101.99 39.32L104 40Z" fill="none" stroke="#3b434d" stroke-width="1"/>
-        <circle data-id="tsconfig.json" cx="107" cy="33" r="4" fill="#2d343c"/>
-        <text x="99.28" y="22.68" font-size="8" font-variant="small-caps" fill="#5d6670">config</text>
+        <path d="M180 40L182.57 39.96L185.21 39.04L187.33 37L188.42 33.83L188.25 30.28L186.67 27.33L183.73 25.77L180.27 25.68L177.33 27L175.72 29.54L175.28 32.68L175.67 35.67L176.57 37.9L177.99 39.32L180 40Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id="tsconfig.json" cx="183" cy="33" r="4" fill="#2d343c"/>
+        <text x="175.28" y="22.68" font-size="8" font-variant="small-caps" fill="#5d6670">config</text>
       </g>
       <g data-group="settings">
-        <path d="M162 40L164.57 39.96L167.21 39.04L169.33 37L170.42 33.83L170.25 30.28L168.67 27.33L165.73 25.77L162.27 25.68L159.33 27L157.72 29.54L157.28 32.68L157.67 35.67L158.57 37.9L159.99 39.32L162 40Z" fill="none" stroke="#3b434d" stroke-width="1"/>
-        <circle data-id=".gitignore" cx="165" cy="33" r="4" fill="#2d343c"/>
-        <text x="157.28" y="22.68" font-size="8" font-variant="small-caps" fill="#5d6670">settings</text>
+        <path d="M238 40L240.57 39.96L243.21 39.04L245.33 37L246.42 33.83L246.25 30.28L244.67 27.33L241.73 25.77L238.27 25.68L235.33 27L233.72 29.54L233.28 32.68L233.67 35.67L234.57 37.9L235.99 39.32L238 40Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id=".gitignore" cx="241" cy="33" r="4" fill="#2d343c"/>
+        <text x="233.28" y="22.68" font-size="8" font-variant="small-caps" fill="#5d6670">settings</text>
       </g>
       <g data-group="deps">
-        <path d="M216.67 56.67L219.53 58.2L223.36 59.36L228 60L233.22 59.98L238.44 59.14L243 57.33L246.36 54.46L248.53 50.54L249.67 45.67L249.88 40.02L249.12 34.31L247.33 29.33L244.46 25.74L240.54 23.48L235.67 22.33L230.02 22.12L224.31 22.88L219.33 24.67L215.74 27.52L213.48 31.26L212.33 35.67L212.06 40.47L212.38 45.2L213 49.33L213.73 52.49L214.83 54.84L216.67 56.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
-        <circle data-id="apps/cli/package.json" cx="223" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id="libs/core/package.json" cx="241" cy="33" r="4" fill="#2d343c"/>
-        <circle data-id="package.json" cx="223" cy="51" r="4" fill="#2d343c"/>
-        <circle data-id="pnpm-workspace.yaml" cx="241" cy="51" r="4" fill="#2d343c"/>
-        <text x="212.06" y="19.12" font-size="8" font-variant="small-caps" fill="#5d6670">deps</text>
+        <path d="M292.67 56.67L295.53 58.2L299.36 59.36L304 60L309.22 59.98L314.44 59.14L319 57.33L322.36 54.46L324.53 50.54L325.67 45.67L325.88 40.02L325.12 34.31L323.33 29.33L320.46 25.74L316.54 23.48L311.67 22.33L306.02 22.12L300.31 22.88L295.33 24.67L291.74 27.52L289.48 31.26L288.33 35.67L288.06 40.47L288.38 45.2L289 49.33L289.73 52.49L290.83 54.84L292.67 56.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id="apps/cli/package.json" cx="299" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="libs/core/package.json" cx="317" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="package.json" cx="299" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="pnpm-workspace.yaml" cx="317" cy="51" r="4" fill="#2d343c"/>
+        <text x="288.06" y="19.12" font-size="8" font-variant="small-caps" fill="#5d6670">deps</text>
       </g>
       <g data-group="other">
-        <path d="M296 40L298.57 39.96L301.21 39.04L303.33 37L304.42 33.83L304.25 30.28L302.67 27.33L299.73 25.77L296.27 25.68L293.33 27L291.72 29.54L291.28 32.68L291.67 35.67L292.57 37.9L293.99 39.32L296 40Z" fill="none" stroke="#3b434d" stroke-width="1"/>
-        <circle data-id="notes.xyz" cx="299" cy="33" r="4" fill="#2d343c"/>
-        <text x="291.28" y="22.68" font-size="8" font-variant="small-caps" fill="#5d6670">other</text>
+        <path d="M372 40L374.57 39.96L377.21 39.04L379.33 37L380.42 33.83L380.25 30.28L378.67 27.33L375.73 25.77L372.27 25.68L369.33 27L367.72 29.54L367.28 32.68L367.67 35.67L368.57 37.9L369.99 39.32L372 40Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id="notes.xyz" cx="375" cy="33" r="4" fill="#2d343c"/>
+        <text x="367.28" y="22.68" font-size="8" font-variant="small-caps" fill="#5d6670">other</text>
       </g>
     </g>
     <g id="membranes" fill="#7a838e" fill-opacity="0.08" stroke="#4b535e" stroke-linejoin="round">
@@ -109,13 +115,13 @@
         <circle data-via="libs/core/src/pm/index.ts" cx="121.66" cy="438.68" r="10.45" opacity="0.9"/>
       </g>
       <g id="changed" fill="#5fd8ea" stroke="#5fd8ea" stroke-width="1.5">
-        <circle data-id="README.md" data-kind="modified" cx="49" cy="33" r="4" stroke="none"/>
+        <circle data-id="README.md" data-kind="modified" cx="125" cy="33" r="4" stroke="none"/>
         <circle data-id="apps/cli/src/doctor.ts" data-kind="modified" cx="151.41" cy="259.97" r="13.03" stroke="none"/>
         <circle data-id="libs/core/src/pm/index.ts" data-kind="modified" cx="121.66" cy="438.68" r="7.45" stroke="none"/>
         <circle data-id="libs/core/src/pm/legacy.ts" data-kind="deleted" cx="112.15" cy="488.32" r="8.16" fill="none"/>
         <circle data-id="libs/core/src/pm/tools.ts" data-kind="added" cx="110.88" cy="545.01" r="10.07" stroke="none"/>
-        <circle data-id="notes.xyz" data-kind="modified" cx="299" cy="33" r="4" stroke="none"/>
-        <circle data-id="package.json" data-kind="modified" cx="223" cy="51" r="4" stroke="none"/>
+        <circle data-id="notes.xyz" data-kind="modified" cx="375" cy="33" r="4" stroke="none"/>
+        <circle data-id="package.json" data-kind="modified" cx="299" cy="51" r="4" stroke="none"/>
       </g>
       <g id="history">
         <circle data-id="apps/cli/src/doctor.ts" data-churn="3.37" cx="151.41" cy="259.97" r="13.03" fill="url(#hatch)" fill-opacity="0.7"/>

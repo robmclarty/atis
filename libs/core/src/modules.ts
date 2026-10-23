@@ -58,23 +58,24 @@ const TYPESCRIPT = /\.(?:[cm]?ts|tsx)$/;
 const TEST_NAME = /\.(?:test|spec)\.(?:[cm]?ts|tsx)$/;
 const TEST_DIR = /(?:^|\/)(?:__tests__|test)\//;
 
-/** No config table in hand: a name-only read, where nothing counts as tool config. */
-const NOT_CONFIG = (): boolean => false;
+/** No shore table in hand: a name-only read, where no TypeScript counts as shore. */
+const NOT_SHORE = (): boolean => false;
 
 /**
  * Classify a tracked path: TypeScript (`.mts` and `.cts` too, D77) is terrain
- * unless it is a test (D4), and one that configures a tool is shore too (D57),
- * so a `vitest.config.ts` or a `vite.config.mts` founds no cell. `isConfig` is
- * the shore's `config` row, compiled by `configMatcher`; `buildMap` threads the
- * reviewed repo's own table through, so an `atis.config.json` override moves
- * that boundary with it. The graph sources that read a scanned tree and have no
- * table (depth, reach, the import scan) fall back to the name, where a config
- * file founds no cell anyway.
+ * unless it is a test (D4), and one that configures a tool (D57) or that a
+ * build committed (D84) is shore too, so a `vitest.config.ts`, a
+ * `vite.config.mts` or a `dist/index.d.ts` founds no cell. `isShore` is the
+ * shore's `config` and `build` rows, compiled by `shoreMatcher`; `buildMap`
+ * threads the reviewed repo's own table through, so an `atis.config.json`
+ * override moves that boundary with it. The graph sources that read a scanned
+ * tree and have no table (depth, reach, the import scan) fall back to the
+ * name, where such a file founds no cell anyway.
  */
-export function classifyFile(path: string, isConfig: (path: string) => boolean = NOT_CONFIG): FileKind {
+export function classifyFile(path: string, isShore: (path: string) => boolean = NOT_SHORE): FileKind {
   if (!TYPESCRIPT.test(path)) return 'other';
   if (TEST_NAME.test(path) || TEST_DIR.test(path)) return 'test';
-  return isConfig(path) ? 'other' : 'source';
+  return isShore(path) ? 'other' : 'source';
 }
 
 function normalizeRoot(root: string): string {
@@ -182,21 +183,22 @@ function finish(draft: Draft, importers: ReadonlyMap<string, readonly string[]>)
 
 /**
  * Group the terrain into cells. `files` may hold every tracked file: tests,
- * non-TypeScript paths and the `config` shore (D57) are skipped here. `edges`
- * only decide the interface of a cell without a barrel, and only edges between
- * terrain files count. `roots` are the workspace members' directories,
- * repo-relative. `isConfig` is the shore's `config` row, so a `.ts` that
- * configures a tool founds no cell of its own.
+ * non-TypeScript paths and the `config` and `build` shore (D57, D84) are
+ * skipped here. `edges` only decide the interface of a cell without a barrel,
+ * and only edges between terrain files count. `roots` are the workspace
+ * members' directories, repo-relative. `isShore` is the shore's `config` and
+ * `build` rows, so a `.ts` that configures a tool, or a `.d.ts` a build
+ * committed, founds no cell of its own.
  */
 export function identifyModules(
   files: readonly ScannedFile[],
   edges: readonly ImportEdge[],
   roots: readonly string[],
-  isConfig: (path: string) => boolean = NOT_CONFIG,
+  isShore: (path: string) => boolean = NOT_SHORE,
 ): Modules {
   const byPath = new Map<string, ScannedFile>();
   for (const file of files) {
-    if (classifyFile(file.path, isConfig) === 'source' && !byPath.has(file.path)) byPath.set(file.path, file);
+    if (classifyFile(file.path, isShore) === 'source' && !byPath.has(file.path)) byPath.set(file.path, file);
   }
   const sorted = [...byPath.values()].toSorted((a, b) => (a.path < b.path ? -1 : 1));
   const terrain = new Set(byPath.keys());

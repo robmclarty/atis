@@ -118,8 +118,9 @@ export const DEFAULT_CONFIG: Config = {
     cochange_rate: 0.5,
     cochange_support: 3,
   },
-  // D48's groups in its order, except that `prompts` is tried before `docs`:
-  // first match wins, and `*.md` would otherwise swallow AGENTS.md and CLAUDE.md.
+  // D48's groups in its order, except that `build` is tried first and `prompts` before `docs`:
+  // first match wins, so a committed `dist/` keeps its `.md`, `.css` and `.mjs` together (D84),
+  // and `*.md` would otherwise swallow AGENTS.md and CLAUDE.md.
   // Hook folders inside `.claude/` or a skill are code, so they fall through to `scripts`.
   // The agent-era dotfolders sort by what they steer: `.claude-plugin/` packages prompts
   // and skills, while `.mcp.json`, `.ridgeline/` and `.codegraph/` configure a tool the
@@ -128,6 +129,8 @@ export const DEFAULT_CONFIG: Config = {
   // census of five outside repos; code the scan cannot read (`.svelte`, `.vue`, loose
   // JavaScript) is left to `other` on purpose, so the residual stays loud about it.
   groups: [
+    // Build output directly beneath a package or the repo root: a second copy of the code, never terrain (D84).
+    { id: 'build', patterns: ['/dist/**', '/build/**', '/out/**'], at_member_root: true },
     {
       id: 'prompts',
       patterns: ['AGENTS.md', 'CLAUDE.md', '.claude/**', '.claude-plugin/**', '.cursor/**', 'skills/**', 'prompts/**'],

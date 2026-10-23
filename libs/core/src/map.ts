@@ -18,7 +18,7 @@ import { computeDepth } from './depth.js';
 import type { FileDepth } from './depth.js';
 import { computeCategory, computeEvidence, pathsOf, trustCoverage } from './evidence.js';
 import type { CheckArtifacts, Dupes, Health } from './evidence.js';
-import { OTHER_GROUP, configMatcher, identifyGroups } from './groups.js';
+import { OTHER_GROUP, identifyGroups, shoreMatcher } from './groups.js';
 import { computeHistory } from './history.js';
 import type { Commit, CommitFile, FileHistory } from './history.js';
 import { computeLayout } from './layout/index.js';
@@ -472,17 +472,17 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
   const files = terrainFiles(base, head, added);
   const edges = terrainEdges(base, head, added);
   const roots = sortUnique([...base.members, ...head.members].map((member) => member.dir));
-  const isConfig = configMatcher(config.groups);
-  const modules = identifyModules(files, edges, roots, isConfig);
+  const isShore = shoreMatcher(config.groups, roots);
+  const modules = identifyModules(files, edges, roots, isShore);
   const groups = shoreGroups(files, roots, config);
 
-  // A `.ts`/`.tsx` that configures a tool is shore, not terrain (D57): it founds
-  // no cell above and never sits on a terrace or ties one below, so depth is
-  // handed neither the file nor an edge that touches it.
+  // A `.ts`/`.tsx` that configures a tool (D57), or that a build committed (D84),
+  // is shore, not terrain: it founds no cell above and never sits on a terrace
+  // or ties one below, so depth is handed neither the file nor an edge that touches it.
   const depths = computeDepth(
-    edges.filter((edge) => !isConfig(edge.from) && !isConfig(edge.to)),
+    edges.filter((edge) => !isShore(edge.from) && !isShore(edge.to)),
     entryPoints(base, head, added),
-    files.filter((file) => !isConfig(file.path)).map((file) => file.path),
+    files.filter((file) => !isShore(file.path)).map((file) => file.path),
   );
   const history = computeHistory(
     rekeyCommits(inputs.commits, renames),
@@ -495,7 +495,7 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
   // other tree's, and is muted rather than read as every file unmeasured (D122).
   const trusted = trustCoverage(
     inputs.check,
-    new Set(head.files.filter((file) => classifyFile(file.path, isConfig) === 'source').map((file) => file.path)),
+    new Set(head.files.filter((file) => classifyFile(file.path, isShore) === 'source').map((file) => file.path)),
   );
   const check = trusted.check;
   const graphs = { modules, groups, headEdges: head.edges, baseEdges: base.edges } as const;

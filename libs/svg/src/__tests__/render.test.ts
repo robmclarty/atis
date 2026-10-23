@@ -156,7 +156,7 @@ test('the shore draws one contour, one small-caps label and its marks per group 
   const map = demo();
   const shore = layer(renderSvg(map), 'shore');
   const drawn = map.terrain.groups.filter((group) => group.files.some((file) => map.terrain.layout?.positions[file] !== undefined));
-  expect(drawn.map((group) => group.id)).toEqual(['docs', 'config', 'settings', 'deps', 'other']);
+  expect(drawn.map((group) => group.id)).toEqual(['build', 'docs', 'config', 'settings', 'deps', 'other']);
   expect([...shore.matchAll(/data-group="([^"]+)"/g)].map(([, id]) => id)).toEqual(drawn.map((group) => group.id));
   expect(count(shore, /<path /g)).toBe(drawn.length);
   expect(count(shore, /font-variant="small-caps"/g)).toBe(drawn.length);

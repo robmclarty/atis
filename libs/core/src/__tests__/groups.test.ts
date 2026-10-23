@@ -13,6 +13,7 @@ function groupOf(path: string, roots: readonly string[] = []): string | undefine
 }
 
 const ONE_PATH_PER_GROUP: readonly [string, string][] = [
+  ['build', 'dist/index.js'],
   ['prompts', '.claude/settings.json'],
   ['docs', 'docs/prior-art.md'],
   ['config', 'fallow.toml'],
@@ -32,7 +33,7 @@ test.each(ONE_PATH_PER_GROUP)('the default table puts a %s path there', (id, pat
 
 test('the default table is D48, every group covered above, other left to the fallback', () => {
   const ids = DEFAULT_CONFIG.groups.map((rule) => rule.id);
-  expect(ids).toEqual(['prompts', 'docs', 'config', 'settings', 'deps', 'ci', 'scripts', 'examples', 'assets', 'data']);
+  expect(ids).toEqual(['build', 'prompts', 'docs', 'config', 'settings', 'deps', 'ci', 'scripts', 'examples', 'assets', 'data']);
   expect(ONE_PATH_PER_GROUP.map(([id]) => id)).toEqual([...ids, OTHER_GROUP]);
 });
 
@@ -163,6 +164,44 @@ test('patterns without a leading slash match at any depth', () => {
   expect(groupOf('packages/core/README.md')).toBe('docs');
   expect(groupOf('apps/atis/tsconfig.json')).toBe('config');
   expect(groupOf('apps/web/Dockerfile')).toBe('ci');
+});
+
+test('committed build output directly beneath a member or the root is the build shore, whatever its extension (D84)', () => {
+  const roots = ['.', 'packages/core', 'packages/ui'];
+  const groups = identifyGroups(
+    tracked(
+      'dist/index.js',
+      'dist/index.d.ts',
+      'dist/README.md',
+      'packages/core/dist/esm/index.mjs',
+      'packages/core/dist/index.d.cts',
+      'packages/ui/build/styles.css',
+      'packages/ui/out/main.js',
+      // Hand-written declarations and a source tree named `lib/` are terrain, and skipped here.
+      'src/types.d.ts',
+      'lib/index.ts',
+      'lib/util/format.ts',
+      // A `dist/` deeper than a package's root is not its build output, nor is one under a folder no member owns.
+      'packages/core/src/dist/helper.json',
+      'vendor/thing/dist/thing.min.js',
+    ),
+    DEFAULT_CONFIG.groups,
+    roots,
+  );
+
+  expect(groups.find((group) => group.id === 'build')?.files).toEqual([
+    'dist/README.md',
+    'dist/index.d.ts',
+    'dist/index.js',
+    'packages/core/dist/esm/index.mjs',
+    'packages/core/dist/index.d.cts',
+    'packages/ui/build/styles.css',
+    'packages/ui/out/main.js',
+  ]);
+  expect(groups.flatMap((group) => group.files)).not.toContain('src/types.d.ts');
+  expect(groups.flatMap((group) => group.files)).not.toContain('lib/index.ts');
+  expect(groupOf('packages/core/src/dist/helper.json', roots)).toBe(OTHER_GROUP);
+  expect(groupOf('vendor/thing/dist/thing.min.js', roots)).toBe(OTHER_GROUP);
 });
 
 test('examples and templates inside a workspace member fall through to the later rules', () => {
