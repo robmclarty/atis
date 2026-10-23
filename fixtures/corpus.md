@@ -32,8 +32,14 @@ Six holds, one from each of six repos:
 
 ## The held-out six
 
-Not chosen yet. Step 19 chooses them under the rules below once the tuning half's fixes have
-landed, from at least three repos the tuning half did not use.
+Three holds and three merges from six repos, numbered in a shuffled order:
+
+- [`corpus-7`](./corpus-7/README.md)
+- [`corpus-8`](./corpus-8/README.md)
+- [`corpus-9`](./corpus-9/README.md)
+- [`corpus-10`](./corpus-10/README.md)
+- [`corpus-11`](./corpus-11/README.md)
+- [`corpus-12`](./corpus-12/README.md)
 
 ## The rules for choosing
 

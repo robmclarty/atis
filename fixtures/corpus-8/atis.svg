@@ -1,0 +1,814 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 1141" width="780" height="1141" font-family="ui-monospace, Menlo, Consolas, monospace">
+  <rect id="ground" x="0" y="0" width="780" height="1141" fill="#1a1f27"/>
+  <g id="world" transform="translate(0 59)">
+    <rect id="field" x="0" y="0" width="480" height="1082" fill="#0a0c0f"/>
+    <g id="terraces">
+      <g data-band="0">
+        <rect x="0" y="452" width="480" height="96" fill="#10141a"/>
+        <line x1="0" y1="452" x2="480" y2="452" stroke="#222831" stroke-width="1"/>
+      </g>
+      <g data-band="1">
+        <rect x="0" y="548" width="480" height="96" fill="#10141a"/>
+        <line x1="0" y1="548" x2="480" y2="548" stroke="#222831" stroke-width="1"/>
+      </g>
+      <g data-band="2">
+        <rect x="0" y="644" width="480" height="96" fill="#10141a"/>
+        <line x1="0" y1="644" x2="480" y2="644" stroke="#222831" stroke-width="1"/>
+      </g>
+      <g data-band="3">
+        <rect x="0" y="740" width="480" height="150" fill="#10141a"/>
+        <line x1="0" y1="740" x2="480" y2="740" stroke="#222831" stroke-width="1"/>
+      </g>
+      <g data-band="4">
+        <rect x="0" y="890" width="480" height="96" fill="#10141a"/>
+        <line x1="0" y1="890" x2="480" y2="890" stroke="#222831" stroke-width="1"/>
+      </g>
+      <g data-band="5">
+        <rect x="0" y="986" width="480" height="96" fill="#10141a"/>
+        <line x1="0" y1="986" x2="480" y2="986" stroke="#222831" stroke-width="1"/>
+      </g>
+    </g>
+    <g id="shore">
+      <rect x="0" y="0" width="480" height="452" fill="#161b21"/>
+      <g data-group="docs">
+        <path d="M42.67 110.67L45.75 112.2L51.14 113.36L60 114L72.78 114L86.89 113.33L99 112L106.62 110.05L110.6 107.73L112.67 105.33L114.27 103.1L115.95 101.01L118 99L120.59 96.96L123.41 94.7L126 92L128 88.44L129.33 82.89L130 74L129.98 61.22L129.14 47.11L127.33 35L124.12 27.42L117.88 23.69L106.67 22.33L89.69 22.12L70.64 22.88L54.33 24.67L44.41 27.85L39.81 33.93L38.33 44.67L38.06 60.8L38.38 78.86L39 94.33L39.73 103.83L40.83 108.51L42.67 110.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id=".github/CODE_OF_CONDUCT.md" cx="49" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".github/CONTRIBUTING.md" cx="67" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".github/ISSUE_TEMPLATE/bug_report.md" cx="85" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".github/SECURITY.md" cx="103" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="LICENSE" cx="121" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="README.md" cx="49" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="examples/api-hooks/README.md" cx="67" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="examples/autocomplete-suggestions/README.md" cx="85" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="examples/basic-typescript/README.md" cx="103" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="examples/basic/README.md" cx="121" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="examples/focus-revalidate/README.md" cx="49" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="examples/global-fetcher/README.md" cx="67" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="examples/infinite-scroll/README.md" cx="85" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="examples/infinite/README.md" cx="103" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="examples/local-state-sharing/README.md" cx="121" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="examples/optimistic-ui-immer/README.md" cx="49" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id="examples/optimistic-ui/README.md" cx="67" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id="examples/prefetch-preload/README.md" cx="85" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id="examples/refetch-interval/README.md" cx="103" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id="examples/server-render/README.md" cx="121" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id="examples/storage-tab-sync/README.md" cx="49" cy="105" r="4" fill="#2d343c"/>
+        <circle data-id="examples/subscription/README.md" cx="67" cy="105" r="4" fill="#2d343c"/>
+        <circle data-id="examples/suspense-global/README.md" cx="85" cy="105" r="4" fill="#2d343c"/>
+        <circle data-id="examples/suspense/README.md" cx="103" cy="105" r="4" fill="#2d343c"/>
+        <text x="38.06" y="19.12" font-size="8" font-variant="small-caps" fill="#5d6670">docs</text>
+      </g>
+      <g data-group="config">
+        <path d="M172.67 92.67L175.64 94.2L180.25 95.36L187 96L196 96L205.67 95.33L214 94L219.51 92.05L222.72 89.73L224.67 87.33L226.27 85.1L227.95 83.01L230 81L232.59 78.96L235.41 76.7L238 74L240 70.56L241.33 65.78L242 59L241.98 50L241.14 40.33L239.33 32L236.23 26.53L230.77 23.58L221.67 22.33L208.47 22.12L193.86 22.88L181.33 24.67L173.52 27.74L169.7 33.04L168.33 41.67L168.06 54.02L168.38 67.64L169 79.33L169.73 86.72L170.83 90.62L172.67 92.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id=".oxlintrc.json" cx="179" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="examples/basic-typescript/tsconfig.json" cx="197" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="examples/suspense-global/tsconfig.json" cx="215" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="examples/suspense-retry/next.config.js" cx="233" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id="examples/suspense-retry/tsconfig.json" cx="179" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="jest.config.build.js" cx="197" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="jest.config.js" cx="215" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="test/e2e/site/next.config.js" cx="233" cy="51" r="4" fill="#2d343c"/>
+        <circle data-id="test/e2e/site/tsconfig.json" cx="179" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="test/e2e/tsconfig.json" cx="197" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="test/tsconfig.json" cx="215" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="test/type/suspense/tsconfig.json" cx="233" cy="69" r="4" fill="#2d343c"/>
+        <circle data-id="test/type/tsconfig.json" cx="179" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id="tsconfig.json" cx="197" cy="87" r="4" fill="#2d343c"/>
+        <circle data-id="vercel.json" cx="215" cy="87" r="4" fill="#2d343c"/>
+        <text x="168.06" y="19.12" font-size="8" font-variant="small-caps" fill="#5d6670">config</text>
+      </g>
+      <g data-group="settings">
+        <path d="M285 56L288.22 56.63L292.11 56.37L296 55L299.38 52.44L302.4 49.22L305.33 46L308.37 43.25L311.19 40.64L313.33 37.67L314.43 34L314.35 30.11L313 26.67L310.37 24.2L306.63 22.69L302 22L296.78 22.02L291.56 22.86L287 24.67L283.64 27.52L281.47 31.26L280.33 35.67L280.06 40.47L280.38 45.2L281 49.33L281.74 52.47L282.93 54.64L285 56Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id=".editorconfig" cx="291" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".gitignore" cx="309" cy="33" r="4" fill="#2d343c"/>
+        <circle data-id=".npmrc" cx="291" cy="51" r="4" fill="#2d343c"/>
+        <text x="280.06" y="19" font-size="8" font-variant="small-caps" fill="#5d6670">settings</text>
+      </g>
+      <g data-group="deps">
+        <path d="M42.67 240.67L45.75 242.2L51.14 243.36L60 244L72.78 244L86.89 243.33L99 242L106.62 240.05L110.6 237.73L112.67 235.33L114.37 233.11L116.74 231.11L120.67 229.33L126.63 227.72L133.48 225.95L139.67 223.67L143.96 220.33L146.48 214.78L147.67 205.67L147.88 192.47L147.12 177.86L145.33 165.33L142.01 157.52L134.99 153.7L121.67 152.33L100.91 152.12L77.42 152.88L57.33 154.67L45.3 157.85L39.93 163.93L38.33 174.67L38.06 190.8L38.38 208.86L39 224.33L39.73 233.83L40.83 238.51L42.67 240.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id="_internal/package.json" cx="49" cy="163" r="4" fill="#2d343c"/>
+        <circle data-id="examples/api-hooks/package.json" cx="67" cy="163" r="4" fill="#2d343c"/>
+        <circle data-id="examples/autocomplete-suggestions/package.json" cx="85" cy="163" r="4" fill="#2d343c"/>
+        <circle data-id="examples/basic-typescript/package.json" cx="103" cy="163" r="4" fill="#2d343c"/>
+        <circle data-id="examples/basic/package.json" cx="121" cy="163" r="4" fill="#2d343c"/>
+        <circle data-id="examples/focus-revalidate/package.json" cx="139" cy="163" r="4" fill="#2d343c"/>
+        <circle data-id="examples/global-fetcher/package.json" cx="49" cy="181" r="4" fill="#2d343c"/>
+        <circle data-id="examples/infinite-scroll/package.json" cx="67" cy="181" r="4" fill="#2d343c"/>
+        <circle data-id="examples/infinite/package.json" cx="85" cy="181" r="4" fill="#2d343c"/>
+        <circle data-id="examples/local-state-sharing/package.json" cx="103" cy="181" r="4" fill="#2d343c"/>
+        <circle data-id="examples/optimistic-ui-immer/package.json" cx="121" cy="181" r="4" fill="#2d343c"/>
+        <circle data-id="examples/optimistic-ui/package.json" cx="139" cy="181" r="4" fill="#2d343c"/>
+        <circle data-id="examples/prefetch-preload/package.json" cx="49" cy="199" r="4" fill="#2d343c"/>
+        <circle data-id="examples/refetch-interval/package.json" cx="67" cy="199" r="4" fill="#2d343c"/>
+        <circle data-id="examples/server-render/package.json" cx="85" cy="199" r="4" fill="#2d343c"/>
+        <circle data-id="examples/storage-tab-sync/package.json" cx="103" cy="199" r="4" fill="#2d343c"/>
+        <circle data-id="examples/subscription/package.json" cx="121" cy="199" r="4" fill="#2d343c"/>
+        <circle data-id="examples/suspense-global/package.json" cx="139" cy="199" r="4" fill="#2d343c"/>
+        <circle data-id="examples/suspense-retry/package.json" cx="49" cy="217" r="4" fill="#2d343c"/>
+        <circle data-id="examples/suspense/package.json" cx="67" cy="217" r="4" fill="#2d343c"/>
+        <circle data-id="immutable/package.json" cx="85" cy="217" r="4" fill="#2d343c"/>
+        <circle data-id="infinite/package.json" cx="103" cy="217" r="4" fill="#2d343c"/>
+        <circle data-id="mutation/package.json" cx="121" cy="217" r="4" fill="#2d343c"/>
+        <circle data-id="package.json" cx="139" cy="217" r="4" fill="#2d343c"/>
+        <circle data-id="pnpm-lock.yaml" cx="49" cy="235" r="4" fill="#2d343c"/>
+        <circle data-id="pnpm-workspace.yaml" cx="67" cy="235" r="4" fill="#2d343c"/>
+        <circle data-id="subscription/package.json" cx="85" cy="235" r="4" fill="#2d343c"/>
+        <circle data-id="test/e2e/site/package.json" cx="103" cy="235" r="4" fill="#2d343c"/>
+        <text x="38.06" y="149.12" font-size="8" font-variant="small-caps" fill="#5d6670">deps</text>
+      </g>
+      <g data-group="ci">
+        <path d="M190.67 204.67L193.53 206.2L197.36 207.36L202 208L207.22 208L212.44 207.33L217 206L220.4 204.05L222.83 201.73L224.67 199.33L226.27 197.1L227.95 195.01L230 193L232.59 190.96L235.41 188.7L238 186L240 182.67L241.33 178.67L242 174L241.98 168.78L241.14 163.56L239.33 159L236.35 155.64L231.65 153.47L224.67 152.33L215.25 152.12L205.09 152.88L196.33 154.67L190.63 157.63L187.59 162.15L186.33 168.67L186.06 177.25L186.38 186.42L187 194.33L187.73 199.6L188.83 202.73L190.67 204.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id=".codesandbox/ci.json" cx="197" cy="163" r="4" fill="#2d343c"/>
+        <circle data-id=".github/CODEOWNERS" cx="215" cy="163" r="4" fill="#2d343c"/>
+        <circle data-id=".github/ISSUE_TEMPLATE/config.yml" cx="233" cy="163" r="4" fill="#2d343c"/>
+        <circle data-id=".github/workflows/install/action.yml" cx="197" cy="181" r="4" fill="#2d343c"/>
+        <circle data-id=".github/workflows/test-canary.yml" cx="215" cy="181" r="4" fill="#2d343c"/>
+        <circle data-id=".github/workflows/test-legacy-react.yml" cx="233" cy="181" r="4" fill="#2d343c"/>
+        <circle data-id=".github/workflows/test.yml" cx="197" cy="199" r="4" fill="#2d343c"/>
+        <circle data-id=".github/workflows/trigger-release.yml" cx="215" cy="199" r="4" fill="#2d343c"/>
+        <text x="186.06" y="149.12" font-size="8" font-variant="small-caps" fill="#5d6670">ci</text>
+      </g>
+      <g data-group="scripts">
+        <path d="M284.67 186.67L287.53 188.2L291.36 189.36L296 190L301.22 190L306.44 189.33L311 188L314.4 186.05L316.83 183.73L318.67 181.33L320.27 179.1L321.95 177.01L324 175L326.57 172.95L329.21 170.6L331.33 167.67L332.43 164L332.35 160.11L331 156.67L328.26 154.2L323.74 152.69L317 152L308 152.02L298.33 152.86L290 154.67L284.53 157.52L281.58 161.26L280.33 165.67L280.06 170.47L280.38 175.2L281 179.33L281.73 182.49L282.83 184.84L284.67 186.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id=".husky/pre-commit" cx="291" cy="163" r="4" fill="#2d343c"/>
+        <circle data-id="examples/api-hooks/hooks/use-projects.js" cx="309" cy="163" r="4" fill="#2d343c"/>
+        <circle data-id="examples/api-hooks/hooks/use-repository.js" cx="327" cy="163" r="4" fill="#2d343c"/>
+        <circle data-id="examples/infinite-scroll/hooks/useOnScreen.js" cx="291" cy="181" r="4" fill="#2d343c"/>
+        <circle data-id="scripts/bump-next-version.js" cx="309" cy="181" r="4" fill="#2d343c"/>
+        <text x="280.06" y="149" font-size="8" font-variant="small-caps" fill="#5d6670">scripts</text>
+      </g>
+      <g data-group="examples">
+        <path d="M42.67 424.67L46.2 426.2L54.69 427.36L72 428L99.89 427.98L131.78 427.14L159 425.33L175.02 421.79L181.86 413.21L183.67 395.67L183.88 367.36L183.12 334.98L181.33 307.33L177.79 291.07L169.21 284.15L151.67 282.33L123.36 282.12L90.98 282.88L63.33 284.67L47.07 288.19L40.15 296.59L38.33 313.67L38.06 341.14L38.38 372.53L39 399.33L39.73 415.16L40.83 422.17L42.67 424.67Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id="examples/api-hooks/libs/fetch.js" cx="49" cy="293" r="4" fill="#2d343c"/>
+        <circle data-id="examples/api-hooks/pages/[user]/[repo].js" cx="67" cy="293" r="4" fill="#2d343c"/>
+        <circle data-id="examples/api-hooks/pages/api/data.js" cx="85" cy="293" r="4" fill="#2d343c"/>
+        <circle data-id="examples/api-hooks/pages/index.js" cx="103" cy="293" r="4" fill="#2d343c"/>
+        <circle data-id="examples/autocomplete-suggestions/libs/fetcher.js" cx="121" cy="293" r="4" fill="#2d343c"/>
+        <circle data-id="examples/autocomplete-suggestions/pages/api/suggestions.js" cx="139" cy="293" r="4" fill="#2d343c"/>
+        <circle data-id="examples/autocomplete-suggestions/pages/index.js" cx="157" cy="293" r="4" fill="#2d343c"/>
+        <circle data-id="examples/basic/libs/fetch.js" cx="175" cy="293" r="4" fill="#2d343c"/>
+        <circle data-id="examples/basic/pages/[user]/[repo].js" cx="49" cy="311" r="4" fill="#2d343c"/>
+        <circle data-id="examples/basic/pages/api/data.js" cx="67" cy="311" r="4" fill="#2d343c"/>
+        <circle data-id="examples/basic/pages/index.js" cx="85" cy="311" r="4" fill="#2d343c"/>
+        <circle data-id="examples/focus-revalidate/components/button.js" cx="103" cy="311" r="4" fill="#2d343c"/>
+        <circle data-id="examples/focus-revalidate/libs/auth.js" cx="121" cy="311" r="4" fill="#2d343c"/>
+        <circle data-id="examples/focus-revalidate/libs/fetch.js" cx="139" cy="311" r="4" fill="#2d343c"/>
+        <circle data-id="examples/focus-revalidate/pages/api/user.js" cx="157" cy="311" r="4" fill="#2d343c"/>
+        <circle data-id="examples/focus-revalidate/pages/index.js" cx="175" cy="311" r="4" fill="#2d343c"/>
+        <circle data-id="examples/global-fetcher/libs/fetch.js" cx="49" cy="329" r="4" fill="#2d343c"/>
+        <circle data-id="examples/global-fetcher/pages/[user]/[repo].js" cx="67" cy="329" r="4" fill="#2d343c"/>
+        <circle data-id="examples/global-fetcher/pages/_app.js" cx="85" cy="329" r="4" fill="#2d343c"/>
+        <circle data-id="examples/global-fetcher/pages/api/data.js" cx="103" cy="329" r="4" fill="#2d343c"/>
+        <circle data-id="examples/global-fetcher/pages/index.js" cx="121" cy="329" r="4" fill="#2d343c"/>
+        <circle data-id="examples/infinite-scroll/libs/fetch.js" cx="139" cy="329" r="4" fill="#2d343c"/>
+        <circle data-id="examples/infinite-scroll/pages/index.js" cx="157" cy="329" r="4" fill="#2d343c"/>
+        <circle data-id="examples/infinite/libs/fetch.js" cx="175" cy="329" r="4" fill="#2d343c"/>
+        <circle data-id="examples/infinite/pages/index.js" cx="49" cy="347" r="4" fill="#2d343c"/>
+        <circle data-id="examples/local-state-sharing/libs/store.js" cx="67" cy="347" r="4" fill="#2d343c"/>
+        <circle data-id="examples/local-state-sharing/pages/index.js" cx="85" cy="347" r="4" fill="#2d343c"/>
+        <circle data-id="examples/optimistic-ui-immer/libs/fetch.js" cx="103" cy="347" r="4" fill="#2d343c"/>
+        <circle data-id="examples/optimistic-ui-immer/pages/api/data.js" cx="121" cy="347" r="4" fill="#2d343c"/>
+        <circle data-id="examples/optimistic-ui-immer/pages/index.js" cx="139" cy="347" r="4" fill="#2d343c"/>
+        <circle data-id="examples/optimistic-ui/libs/fetch.js" cx="157" cy="347" r="4" fill="#2d343c"/>
+        <circle data-id="examples/optimistic-ui/pages/_app.js" cx="175" cy="347" r="4" fill="#2d343c"/>
+        <circle data-id="examples/optimistic-ui/pages/api/todos.js" cx="49" cy="365" r="4" fill="#2d343c"/>
+        <circle data-id="examples/optimistic-ui/pages/index.js" cx="67" cy="365" r="4" fill="#2d343c"/>
+        <circle data-id="examples/optimistic-ui/styles.css" cx="85" cy="365" r="4" fill="#2d343c"/>
+        <circle data-id="examples/prefetch-preload/libs/fetch.js" cx="103" cy="365" r="4" fill="#2d343c"/>
+        <circle data-id="examples/prefetch-preload/pages/[user]/[repo].js" cx="121" cy="365" r="4" fill="#2d343c"/>
+        <circle data-id="examples/prefetch-preload/pages/api/data.js" cx="139" cy="365" r="4" fill="#2d343c"/>
+        <circle data-id="examples/prefetch-preload/pages/index.js" cx="157" cy="365" r="4" fill="#2d343c"/>
+        <circle data-id="examples/refetch-interval/components/button.js" cx="175" cy="365" r="4" fill="#2d343c"/>
+        <circle data-id="examples/refetch-interval/libs/fetch.js" cx="49" cy="383" r="4" fill="#2d343c"/>
+        <circle data-id="examples/refetch-interval/pages/api/data.js" cx="67" cy="383" r="4" fill="#2d343c"/>
+        <circle data-id="examples/refetch-interval/pages/index.js" cx="85" cy="383" r="4" fill="#2d343c"/>
+        <circle data-id="examples/server-render/libs/fetcher.js" cx="103" cy="383" r="4" fill="#2d343c"/>
+        <circle data-id="examples/server-render/pages/[pokemon].js" cx="121" cy="383" r="4" fill="#2d343c"/>
+        <circle data-id="examples/server-render/pages/index.js" cx="139" cy="383" r="4" fill="#2d343c"/>
+        <circle data-id="examples/storage-tab-sync/libs/storage.js" cx="157" cy="383" r="4" fill="#2d343c"/>
+        <circle data-id="examples/storage-tab-sync/pages/index.js" cx="175" cy="383" r="4" fill="#2d343c"/>
+        <circle data-id="examples/subscription/pages/index.js" cx="49" cy="401" r="4" fill="#2d343c"/>
+        <circle data-id="examples/suspense-retry/app/favicon.ico" cx="67" cy="401" r="4" fill="#2d343c"/>
+        <circle data-id="examples/suspense/app/favicon.ico" cx="85" cy="401" r="4" fill="#2d343c"/>
+        <circle data-id="examples/suspense/app/layout.jsx" cx="103" cy="401" r="4" fill="#2d343c"/>
+        <circle data-id="examples/suspense/app/rsc/[user]/[repo]/error.jsx" cx="121" cy="401" r="4" fill="#2d343c"/>
+        <circle data-id="examples/suspense/app/rsc/[user]/[repo]/loading.jsx" cx="139" cy="401" r="4" fill="#2d343c"/>
+        <circle data-id="examples/suspense/app/rsc/[user]/[repo]/page.jsx" cx="157" cy="401" r="4" fill="#2d343c"/>
+        <circle data-id="examples/suspense/app/rsc/[user]/[repo]/repo.jsx" cx="175" cy="401" r="4" fill="#2d343c"/>
+        <circle data-id="examples/suspense/app/rsc/loading.jsx" cx="49" cy="419" r="4" fill="#2d343c"/>
+        <circle data-id="examples/suspense/app/rsc/page.jsx" cx="67" cy="419" r="4" fill="#2d343c"/>
+        <circle data-id="examples/suspense/app/rsc/repos.jsx" cx="85" cy="419" r="4" fill="#2d343c"/>
+        <circle data-id="examples/suspense/components/error-handling.js" cx="103" cy="419" r="4" fill="#2d343c"/>
+        <circle data-id="examples/suspense/libs/fetch.js" cx="121" cy="419" r="4" fill="#2d343c"/>
+        <circle data-id="examples/suspense/pages/[user]/[repo].js" cx="139" cy="419" r="4" fill="#2d343c"/>
+        <circle data-id="examples/suspense/pages/api/data.js" cx="157" cy="419" r="4" fill="#2d343c"/>
+        <circle data-id="examples/suspense/pages/index.js" cx="175" cy="419" r="4" fill="#2d343c"/>
+        <text x="38.06" y="279.12" font-size="8" font-variant="small-caps" fill="#5d6670">examples</text>
+      </g>
+      <g data-group="assets">
+        <path d="M230 300L232.57 299.96L235.21 299.04L237.33 297L238.42 293.83L238.25 290.28L236.67 287.33L233.73 285.77L230.27 285.68L227.33 287L225.72 289.54L225.28 292.68L225.67 295.67L226.57 297.9L227.99 299.32L230 300Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id="test/e2e/site/public/favicon.ico" cx="233" cy="293" r="4" fill="#2d343c"/>
+        <text x="225.28" y="282.68" font-size="8" font-variant="small-caps" fill="#5d6670">assets</text>
+      </g>
+      <g data-group="other">
+        <path d="M290.67 300.33L296.62 300.75L303.38 300.58L309.33 299.67L313.21 297.94L315.23 295.62L316 293L315.98 290.36L315.14 287.86L313.33 285.67L310.47 283.9L306.64 282.65L302 282L296.79 282L291.65 282.67L287.33 284L284.4 285.95L282.72 288.27L282 290.67L281.98 292.89L282.47 294.89L283.33 296.67L284.57 298.21L286.77 299.46L290.67 300.33Z" fill="none" stroke="#3b434d" stroke-width="1"/>
+        <circle data-id=".oxfmtrc.json" cx="291" cy="293" r="4" fill="#2d343c"/>
+        <circle data-id=".swcrc" cx="309" cy="293" r="4" fill="#2d343c"/>
+        <text x="281.98" y="279" font-size="8" font-variant="small-caps" fill="#5d6670">other</text>
+      </g>
+    </g>
+    <g id="membranes" fill="#7a838e" fill-opacity="0.08" stroke="#4b535e" stroke-linejoin="round">
+      <path data-id="package:." data-kind="package" data-dents="cognitive crap cyclomatic" stroke-width="1.5" d="M264.86 494.22L259.33 494.67L255.58 495.51L252.86 496.49L250 497.33L246.15 497.83L241.85 498.17L238 498.67L235.23 499.51L233.21 500.49L231.33 501.33L229.16 501.83L226.84 502.17L224.67 502.67L222.84 503.51L221.16 504.49L219.33 505.33L217.16 505.83L214.84 506.17L212.67 506.67L210.81 507.56L208.96 508.89L206.67 510.67L203.65 512.84L200.35 515.16L197.33 517.33L195.06 519.19L193.38 521.04L192 523.33L190.67 526.35L189.33 529.65L188 532.67L186.72 535.01L185.73 537.21L185.33 540L185.78 543.88L187.11 548.35L189.33 552.67L192.42 556.25L196.25 559.09L200.67 561.33L205.48 563.11L210.3 564.44L214.67 565.33L218.25 565.83L221.09 566.17L223.33 566.67L225.16 567.51L226.84 568.49L228.67 569.33L230.84 569.88L233.16 570.57L235.33 572L237.14 574.54L238.64 577.68L240 580.67L241.31 582.96L242.47 584.81L243.33 586.67L243.65 588.96L242.79 592.15L240 596.67L234.94 602.74L228.84 609.7L223.33 616.67L219.68 622.91L217.65 628.42L216.67 633.33L216.22 637.75L216.22 641.58L216.67 644.67L217.53 646.99L218.69 649.01L220 651.33L221.36 654.37L222.86 657.85L224.67 661.33L226.89 664.52L229.56 667.7L232.67 671.33L236.15 675.73L239.63 680.72L242.67 686L244.91 691.33L246.42 696.67L247.33 702L247.78 707.26L247.78 707.98L239.67 712.67L245.86 719.64L245.11 720.79L243.33 722.67L241.06 724.81L238.05 726.96L234 728.67L228.84 729.63L223.38 730.15L218.67 730.67L215.43 731.51L213.23 732.49L211.33 733.33L209.16 733.83L206.84 734.17L204.67 734.67L202.81 735.53L200.96 736.69L198.67 738L195.63 739.38L192.15 741.06L188.67 743.33L185.56 746.4L182.89 750.05L180.67 754L178.86 757.95L177.36 761.6L176 764.67L174.69 766.99L173.53 769.01L172.67 771.33L172.17 774.35L171.83 777.65L171.33 780.67L170.49 783.23L169.51 786.99L168.67 794L168.22 805.41L168.22 818.59L168.67 830L169.51 836.99L170.49 840.57L171.33 842.67L171.83 844.84L172.17 847.16L172.67 849.33L173.53 851.19L174.69 853.04L176 855.33L177.36 858.37L178.86 861.85L180.67 865.33L182.91 868.54L185.75 871.9L189.33 876L193.65 881.23L198.12 887.21L202 893.33L204.72 899.19L206.4 905.04L207.33 911.33L207.83 918.27L208.17 925.06L208.67 930.67L209.51 934.42L210.49 937.14L211.33 940L211.73 943.85L211.38 948.15L210 952L207.46 954.74L204.32 956.59L201.33 958L198.96 959.31L196.59 960.47L193.33 961.33L188.64 961.83L183.36 962.17L178.67 962.67L175.41 963.51L173.04 964.49L170.67 965.33L167.63 965.85L164.15 966.37L160.67 967.33L157.46 969.14L154.1 971.98L150 976L144.79 981.21L138.99 987.01L133.33 992.67L128.42 997.53L124.25 1001.36L120.67 1004L117.56 1005.43L114.89 1006.12L112.67 1006.67L110.74 1007.51L108.37 1008.49L104.67 1009.33L99.14 1009.83L92.86 1010.17L87.33 1010.67L83.53 1011.51L80.47 1012.49L76.67 1013.33L71.14 1013.78L64.86 1013.78L59.33 1013.33L55.58 1012.52L52.86 1011.7L50 1011.33L46.1 1011.8L41.46 1013.31L36.67 1016L32.25 1019.93L28.42 1024.74L25.33 1030L23.09 1035.36L21.58 1040.86L20.67 1046.67L20.22 1052.74L20.22 1058.37L20.67 1062.67L21.6 1065.11L23.28 1066.67L26 1068.67L29.9 1072.02L34.54 1075.98L39.33 1079.33L43.75 1081.23L47.58 1082.1L50.67 1082.67L53.01 1083.51L55.21 1084.49L58 1085.33L61.85 1085.83L66.15 1086.17L70 1086.67L72.86 1087.51L75.58 1088.49L79.33 1089.33L84.86 1089.78L91.14 1089.78L96.67 1089.33L100.4 1088.47L102.94 1087.31L105.33 1086L108.4 1084.62L112.05 1082.94L114.09 1081.77L123.75 1084.87L123.77 1074.72L124 1074.54L128 1072L131.95 1070.62L135.6 1070.27L138.67 1070.67L140.96 1071.51L142.81 1072.49L144.67 1073.33L146.84 1073.83L149.16 1074.17L151.33 1074.67L153.21 1075.53L155.23 1076.69L158 1078L162.02 1079.31L167.53 1080.47L174.67 1081.33L183.28 1081.83L192.05 1082.17L199.33 1082.67L204 1083.51L206.89 1084.49L209.33 1085.33L212.35 1085.83L215.65 1086.17L218.67 1086.67L221.01 1087.53L223.21 1088.69L226 1090L229.9 1091.33L234.54 1092.67L239.33 1094L243.75 1095.28L247.58 1096.27L250.67 1096.67L252.96 1096.3L254.81 1095.48L256.67 1094.67L258.84 1094.17L261.16 1093.83L263.33 1093.33L265.19 1092.42L267.04 1090.91L269.33 1088.67L272.35 1085.58L275.65 1081.75L278.67 1077.33L280.94 1072.54L282.62 1067.9L284 1064L285.36 1061.21L286.86 1059.01L288.67 1056.67L290.84 1053.65L293.16 1050.35L295.33 1047.33L297.21 1044.99L299.23 1042.79L302 1040L305.85 1036.07L310.15 1031.26L314 1026L316.74 1020.69L318.59 1015.53L320 1010.67L321.28 1006.25L322.27 1002.42L322.67 999.33L322.3 997.01L321.48 994.99L320.67 992.67L320.07 989.58L319.04 985.75L316.67 981.33L312.42 976.57L307.14 972.1L302 968.67L297.93 966.72L294.74 965.51L292 964L289.38 961.41L287.06 957.93L285.33 954L284.42 950.05L284.25 946.4L284.67 943.33L285.51 940.99L286.49 938.79L287.33 936L287.83 932.15L288.17 927.85L288.67 924L289.51 921.16L290.49 918.62L291.33 915.33L291.85 910.62L292.37 905.16L293.33 900L295.21 895.78L298.57 891.56L304 886L311.85 878.15L321.48 868.52L332 858L342.49 847.43L351.95 837.46L359.33 828.67L363.93 821.48L366.3 815.63L367.33 810.67L367.78 806.25L367.78 802.42L367.33 799.33L366.49 797.04L365.51 795.19L364.67 793.33L364.12 791.11L363.43 788.44L362 785.33L359.33 781.73L355.33 777.38L350 772L343.46 765.48L336.32 758.52L329.33 752L323.06 746.64L317.38 742.47L312 739.33L306.74 737.06L301.93 735.38L298 734L295.19 732.69L292.81 731.53L290 730.67L286.15 730.1L281.85 729.23L278 727.33L275.28 723.93L273.6 719.63L272.76 715.75L280.17 710.67L274.04 704.2L275.28 702.57L278 699.33L281.85 694.59L286.15 688.96L290 683.33L292.74 678.44L294.59 674.44L296 671.33L297.33 669.01L298.67 666.99L300 664.67L301.48 661.51L303.85 657.16L308 651.33L314.35 644L321.43 636.22L327.33 629.33L330.64 624.35L332.02 620.99L332.67 618.67L333.51 616.79L334.49 614.77L335.33 612L335.78 608.15L335.78 603.85L335.33 600L334.42 597.19L332.91 594.81L330.67 592L327.68 588.12L324.54 583.65L322 579.33L320.67 575.75L320.67 572.91L322 570.67L324.59 568.81L328.07 566.96L332 564.67L335.95 561.65L339.6 558.35L342.67 555.33L344.94 553.01L346.62 550.99L348 548.67L349.33 545.65L350.67 542.35L352 539.33L353.31 537.04L354.47 535.19L355.33 533.33L355.78 531.16L355.78 528.84L355.33 526.67L354.47 524.81L353.31 522.96L352 520.67L350.64 517.68L349.14 514.54L347.33 512L345.14 510.54L342.64 509.68L340 508.67L337.33 506.99L334.67 505.01L332 503.33L329.36 502.37L326.86 501.85L324.67 501.33L322.67 500.49L319.78 499.51L314.67 498.67L306.62 498.17L297.38 497.83L289.33 497.33L284.12 496.49L280.54 495.51L276.67 494.67L271.14 494.22Z"/>
+      <path data-id="directory:examples/basic-typescript" data-kind="directory" stroke-width="1.5" d="M26.67 1073.33L30.07 1075.06L34.37 1076.05L38.67 1076L42.22 1074.69L44.89 1072.2L46.67 1068.67L47.53 1064.32L47.36 1059.68L46 1055.33L43.43 1051.78L40.12 1049.11L36.67 1047.33L33.53 1046.47L30.69 1046.64L28 1048L25.38 1050.57L23.06 1053.88L21.33 1057.33L20.42 1060.42L20.25 1062.91L20.67 1064.67L21.51 1065.65L22.49 1066.35L23.33 1067.33L23.9 1069.04L24.77 1071.19L26.67 1073.33Z"/>
+      <path data-id="directory:examples/basic-typescript/libs" data-kind="directory" stroke-width="2" d="M76.67 1072.33L78.81 1070.23L80.96 1067.1L82.67 1063.67L83.51 1060.56L83.16 1057.89L81.33 1055.67L77.98 1054.01L74.02 1053.54L70.67 1055L68.81 1058.73L68.3 1063.49L68.67 1067.67L69.53 1070.04L70.69 1071.07L72 1071.67L73.36 1072.43L74.86 1072.9L76.67 1072.33Z"/>
+      <path data-id="directory:examples/basic-typescript/pages" data-kind="directory" stroke-width="1.5" d="M162.33 996.33L166.65 998.04L171.12 998.85L175 998.33L177.74 996.26L179.59 993.3L181 990.33L182.31 987.99L183.47 985.79L184.33 983L184.73 979.12L184.38 974.65L183 970.33L180.41 966.78L176.93 964.11L173 962.33L169 961.49L165 961.84L161 963.67L157.07 967.1L153.59 971.57L151 976.33L149.62 980.73L149.27 984.38L149.67 987L150.56 988.46L151.89 989.32L153.67 990.33L155.91 992.04L158.75 994.19L162.33 996.33Z"/>
+      <path data-id="directory:examples/basic-typescript/pages/[user]" data-kind="directory" stroke-width="1.5" d="M138.67 1018L143.46 1019.33L148.1 1019.33L152 1018L154.74 1015.46L156.59 1012.32L158 1009.33L159.28 1007.01L160.27 1004.99L160.67 1002.67L160.27 999.65L159.28 996.35L158 993.33L156.62 991.01L154.94 988.99L152.67 986.67L149.63 983.68L146.15 980.54L142.67 978L139.56 976.62L136.89 976.27L134.67 976.67L132.86 977.53L131.36 978.69L130 980L128.67 981.41L127.33 983.26L126 986L124.69 989.88L123.53 994.35L122.67 998.67L122.22 1002.22L122.22 1004.89L122.67 1006.67L123.58 1007.68L125.09 1008.54L127.33 1010L130.42 1012.52L134.25 1015.48L138.67 1018Z"/>
+      <path data-id="directory:examples/basic-typescript/pages/api" data-kind="directory" stroke-width="1.5" d="M96.33 1078L100.56 1079.31L105.67 1079.14L110.33 1077.33L113.49 1073.95L115.17 1069.83L115.67 1066L115.27 1063.26L114.28 1061.41L113 1060L111.62 1058.67L109.94 1057.33L107.67 1056L104.65 1054.77L101.35 1054.12L98.33 1054.67L96.06 1056.74L94.38 1059.7L93 1062.67L91.72 1064.91L90.73 1066.42L90.33 1067.33L90.7 1067.88L91.52 1068.57L92.33 1070L92.93 1072.52L93.96 1075.48L96.33 1078Z"/>
+      <path data-id="directory:examples/suspense" data-kind="directory" stroke-width="1.5" d="M43.33 1046.33L46.37 1046.73L49.85 1046.38L53.33 1045L56.42 1042.38L58.91 1038.73L60.67 1034.33L61.51 1029.54L61.16 1024.9L59.33 1021L55.9 1018.36L51.43 1017.2L46.67 1017.67L42.27 1019.81L38.62 1023.3L36 1027.67L34.62 1032.43L34.27 1036.9L34.67 1040.33L35.53 1042.23L36.69 1043.1L38 1043.67L39.38 1044.51L41.06 1045.49L43.33 1046.33Z"/>
+      <path data-id="directory:examples/suspense-global" data-kind="directory" stroke-width="1.5" d="M186.45 1032.25L186 1032.33L180.74 1032.83L175.93 1033.17L172 1033.67L169.26 1034.48L167.41 1035.3L166 1035.67L164.57 1035.3L162.54 1034.48L159.33 1033.67L154.67 1033.25L149.56 1033.42L145.33 1034.33L142.96 1036.04L141.93 1038.19L141.33 1040.33L140.52 1042.11L139.7 1043.44L139.33 1044.33L139.7 1044.85L140.52 1045.37L141.33 1046.33L141.9 1048.01L142.77 1049.99L144.67 1051.67L148.05 1052.58L152.17 1052.75L156 1052.33L158.74 1051.52L160.59 1050.7L162 1050.33L163.41 1050.73L165.26 1051.72L168 1053L171.98 1054.31L177.14 1055.47L183.33 1056.33L190.25 1056.63L196.86 1055.59L202 1052.33L204.84 1046.43L206.05 1039.35L206.67 1033L207.51 1028.83L208.49 1026.28L209.33 1024.33L209.7 1022.16L209.19 1019.84L207.33 1017.67L203.9 1015.86L199.43 1014.36L194.67 1013L190.27 1011.74L186.62 1010.93L184 1011L182.64 1012.21L182.47 1014.01L183.33 1015.67L185.04 1016.63L187.19 1017.15L189.33 1017.67L191.16 1018.56L192.84 1019.89L194.67 1021.67L196.72 1023.84L198.17 1026.16L198 1028.33L195.48 1030.11L194.68 1030.36L196.27 1039.6L196.22 1041.24L195.55 1042.75L194.36 1043.88L192.82 1044.47L191.18 1044.42L189.67 1043.75L188.54 1042.56L187.95 1041.02L186.45 1032.25Z"/>
+      <path data-id="directory:examples/suspense-global/components" data-kind="directory" stroke-width="2" d="M97.67 1034.33L101.05 1036.01L105.17 1036.65L109 1035.67L111.69 1032.7L113.2 1028.41L113.67 1023.67L113.2 1019.27L111.69 1015.62L109 1013L105.15 1011.69L100.85 1011.86L97 1013.67L94.31 1017.02L92.8 1020.98L92.33 1024.33L92.7 1026.26L93.52 1027.3L94.33 1028.33L94.9 1030.04L95.77 1032.19L97.67 1034.33Z"/>
+      <path data-id="directory:examples/suspense-global/libs" data-kind="directory" stroke-width="2" d="M210 1019.67L211.33 1019.25L212.67 1018.09L214 1016.33L215.23 1014.16L215.88 1011.84L215.33 1009.67L213.26 1007.96L210.3 1007.15L207.33 1007.67L205.11 1009.72L203.78 1012.51L203.33 1015L203.73 1016.43L204.72 1017.12L206 1017.67L207.33 1018.48L208.67 1019.3L210 1019.67Z"/>
+      <path data-id="directory:examples/suspense-global/pages" data-kind="directory" stroke-width="1.5" d="M168.27 1003.84L167.52 1005.94L166.7 1007.62L166.33 1009L166.68 1010.33L167.32 1011.67L167.67 1013L167.3 1014.36L166.48 1015.86L165.67 1017.67L165.17 1019.84L164.83 1022.16L164.33 1024.33L163.52 1026.11L162.7 1027.44L162.33 1028.33L162.73 1028.83L163.72 1029.17L165 1029.67L166.33 1030.48L167.67 1031.3L169 1031.67L170.33 1031.22L171.67 1029.89L173 1027.67L174.36 1024.68L175.86 1021.54L177.67 1019L179.84 1017.57L182.16 1016.88L184.33 1016.33L186.19 1015.44L188.04 1014.11L190.33 1012.33L193.42 1010.19L197.25 1008.04L201.67 1006.33L206.46 1005.37L211.1 1004.85L215 1004.33L217.77 1003.49L219.79 1002.51L221.67 1001.67L223.81 1001.15L225.96 1000.63L227.67 999.67L228.63 997.96L229.15 995.81L229.67 993.67L230.48 991.81L231.3 989.96L231.67 987.67L231.22 984.63L229.89 981.15L227.67 977.67L224.58 974.56L220.75 971.89L216.33 969.67L211.54 967.91L206.9 966.75L203 966.33L200.26 966.73L198.41 967.72L197 969L195.64 970.38L194.14 972.06L192.33 974.33L190.14 977.37L187.64 980.85L185 984.33L183.83 985.68L186.29 992.07L187.03 996.31L186.08 1000.52L183.6 1004.04L179.96 1006.34L175.72 1007.08L171.51 1006.13L168.27 1003.84Z"/>
+      <path data-id="directory:examples/suspense-global/pages/[user]" data-kind="directory" stroke-width="1.5" d="M173.33 1071.33L178.86 1071.78L185.14 1071.78L190.67 1071.33L194.4 1070.47L196.94 1069.31L199.33 1068L202.35 1066.62L205.65 1064.94L208.67 1062.67L210.81 1059.65L211.63 1056.35L210.67 1053.33L207.58 1051.09L202.42 1049.58L195.33 1048.67L186.72 1048.3L177.95 1048.81L170.67 1050.67L166.1 1054.05L163.9 1058.17L163.33 1062L163.73 1064.74L164.72 1066.59L166 1068L167.46 1069.31L169.65 1070.47L173.33 1071.33Z"/>
+      <path data-id="directory:examples/suspense-global/pages/api" data-kind="directory" stroke-width="2.37" d="M191.33 1049L193.04 1046.58L193.85 1042.98L193.33 1039.67L191.26 1037.84L188.3 1037.49L185.33 1038.33L183.11 1040.01L181.78 1041.99L181.33 1043.67L181.75 1044.65L182.91 1045.35L184.67 1046.33L186.84 1047.91L189.16 1049.2L191.33 1049Z"/>
+      <path data-id="directory:examples/suspense-retry" data-kind="directory" stroke-width="1.5" d="M218 1041.67L220.57 1040.04L222.54 1037.07L223.33 1033.67L222.54 1030.58L220.57 1028.09L218 1026.33L215.36 1025.47L212.86 1025.64L210.67 1027L208.91 1029.52L207.75 1032.48L207.33 1035L207.75 1036.46L208.91 1037.32L210.67 1038.33L212.86 1039.94L215.36 1041.4L218 1041.67Z"/>
+      <path data-id="directory:examples/suspense-retry/app" data-kind="directory" stroke-width="2" d="M233.33 1068.33L236.35 1068.78L239.65 1068.78L242.67 1068.33L245.01 1067.49L247.21 1066.51L250 1065.67L253.85 1065.17L258.15 1064.83L262 1064.33L264.74 1063.47L266.59 1062.31L268 1061L269.31 1059.59L270.47 1057.74L271.33 1055L271.7 1051.1L271.19 1046.46L269.33 1041.67L265.95 1037.25L261.83 1033.42L258 1030.33L255.26 1028.01L253.41 1025.99L252 1023.67L250.67 1020.65L249.33 1017.35L248 1014.33L246.67 1012.06L245.33 1010.38L244 1009L242.64 1007.69L241.14 1006.53L239.33 1005.67L237.19 1005.27L235.04 1005.62L233.33 1007L232.37 1009.54L231.85 1012.68L231.33 1015.67L230.49 1018.09L229.51 1020.8L228.67 1025L228.17 1031.37L227.83 1038.63L227.33 1045L226.49 1049.2L225.51 1051.91L224.67 1054.33L224.22 1057.32L224.22 1060.46L224.67 1063L225.53 1064.43L226.69 1065.12L228 1065.67L229.38 1066.51L231.06 1067.49L233.33 1068.33Z"/>
+      <path data-id="directory:examples/suspense-retry/app/api" data-kind="directory" stroke-width="1.5" d="M255.33 1097.67L257.16 1097.3L258.84 1096.48L260.67 1095.67L262.84 1095.1L265.16 1094.23L267.33 1092.33L269.06 1088.93L270.05 1084.63L270 1080.33L268.74 1076.75L266.59 1073.91L264 1071.67L261.36 1069.91L258.86 1068.75L256.67 1068.33L254.84 1068.75L253.16 1069.91L251.33 1071.67L249.19 1073.91L247.04 1076.75L245.33 1080.33L244.42 1084.63L244.25 1088.93L244.67 1092.33L245.56 1094.23L246.89 1095.1L248.67 1095.67L250.84 1096.48L253.16 1097.3L255.33 1097.67Z"/>
+      <path data-id="directory:examples/suspense-retry/pages" data-kind="directory" stroke-width="1.5" d="M255.33 1028.67L257.04 1029.51L259.19 1029.16L261.33 1027.33L263.04 1023.98L263.85 1020.02L263.33 1016.67L261.26 1014.84L258.3 1014.49L255.33 1015.33L253.11 1017.01L251.78 1018.99L251.33 1020.67L251.7 1021.65L252.52 1022.35L253.33 1023.33L253.85 1025.01L254.37 1026.99L255.33 1028.67Z"/>
+      <path data-id="folder:src/_internal" data-kind="folder" data-dents="cognitive crap" stroke-width="5.92" d="M230.83 529.77L227 530.33L224.28 533.47L222.6 538.98L221.67 547L221.22 557.3L221.22 568.04L221.67 577L222.51 582.63L223.49 586.04L224.33 589L224.78 592.85L224.78 597.15L224.33 601L223.49 603.91L222.51 606.98L221.67 611.67L221.22 618.88L221.22 627.12L221.67 634.33L222.53 639.02L223.69 642.09L225 645L226.33 648.85L227.67 653.15L229 657L230.28 659.74L231.27 661.59L231.67 663L231.32 664.33L230.68 665.67L230.33 667L230.7 668.41L231.52 670.26L232.33 673L232.83 676.85L233.17 681.15L233.67 685L234.51 687.89L235.49 690.78L236.33 695L236.78 701.37L236.78 708.63L236.33 715L235.44 719.17L234.11 721.72L232.33 723.67L230.11 725.81L227.44 727.96L224.33 729.67L220.85 730.63L217.37 731.15L214.33 731.67L212.04 732.51L210.19 733.49L208.33 734.33L206.16 734.83L203.84 735.17L201.67 735.67L199.77 736.63L197.57 738.48L194.33 741.67L189.64 746.43L184.36 752.23L179.84 758.11L169.68 759.9L174.7 768.91L174.43 769.64L173 775L171.69 780.36L170.53 785.86L169.67 791.67L169.17 797.77L168.83 803.57L168.33 808.33L167.52 811.52L166.7 813.37L166.33 814.33L166.7 814.95L167.52 816.16L168.33 819L168.83 824.06L169.17 830.16L169.67 835.67L170.51 839.37L171.49 841.74L172.33 843.67L172.83 845.84L173.17 848.16L173.67 850.33L174.56 852.19L175.89 854.04L177.67 856.33L179.89 859.42L182.56 863.25L185.67 867.67L189.17 872.51L192.83 877.49L196.33 882.33L199.42 886.78L201.91 890.78L203.67 894.33L204.63 897.44L205.15 900.11L205.67 902.33L206.51 904.33L207.49 907.22L208.33 912.33L208.85 920.41L209.37 929.81L210.33 938.33L212.14 944.38L214.98 948.95L219 953.67L224.14 959.69L229.42 966.31L233.67 972.33L236.04 976.85L237.07 980.04L237.67 982.33L238.53 984.19L239.69 986.04L241 988.33L242.38 991.35L244.06 994.65L246.33 997.67L249.37 999.84L252.85 1000.83L256.33 1000.33L259.4 998.26L261.72 995.3L263 992.33L263.1 990.01L262.46 987.99L261.67 985.67L261.22 982.65L261.22 979.35L261.67 976.33L262.51 974.04L263.49 972.19L264.33 970.33L264.93 968.06L265.96 965.05L268.33 961L272.56 955.77L277.67 949.79L282.33 943.67L285.52 937.86L287.37 932.36L288.33 927L288.83 921.74L289.17 916.93L289.67 913L290.51 910.23L291.49 908.21L292.33 906.33L292.83 904.16L293.17 901.84L293.67 899.67L294.6 897.77L296.28 895.57L299 892.33L302.85 887.59L307.15 881.96L311 876.33L313.74 871.44L315.59 867.44L317 864.33L318.31 862.01L319.47 859.99L320.33 857.67L320.78 854.65L320.78 851.35L320.33 848.33L319.49 846.04L318.51 844.19L317.67 842.33L317.17 840.16L316.83 837.84L316.33 835.67L315.47 833.81L314.31 831.96L313 829.67L311.67 826.65L310.33 823.35L309 820.33L307.69 818.04L306.53 816.19L305.67 814.33L305.17 812.16L304.83 809.84L304.33 807.67L303.44 805.81L302.11 803.96L300.33 801.67L298.19 798.58L297.27 796.94L293.18 797.57L288.56 797.35L284.36 795.39L281.24 791.97L279.66 787.61L279.88 782.99L281.84 778.79L285.26 775.67L289.62 774.09L294.17 773.4L304.54 774.21L300.93 764.2L302.11 761.32L303.44 756.68L304.33 752.33L304.78 748.75L304.78 745.91L304.33 743.67L303.47 741.86L302.31 740.36L301 739L299.59 737.67L297.74 736.33L295 735L291.07 733.67L286.26 732.33L281 731L275.74 729.67L270.93 728.33L267 727L264.26 725.59L262.41 723.74L261 721L259.67 717.15L258.33 712.85L257 709L255.69 706.23L254.53 704.21L253.67 702.33L253.17 700.16L252.83 697.84L252.33 695.67L251.49 693.72L250.51 691.17L249.67 687L249.17 680.63L248.83 673.37L248.33 667L247.49 662.58L246.51 658.31L245.67 651.67L245.17 641.1L244.83 628.9L244.33 618.33L243.49 611.4L242.51 605.05L241.67 595L241.1 578.56L240.23 559.44L238.33 543L234.95 533.35Z"/>
+      <path data-id="folder:src/immutable" data-kind="folder" stroke-width="2.21" d="M187.67 552.33L191.07 554.06L195.37 555.05L199.67 555L203.25 553.69L206.09 551.2L208.33 547.67L210.09 543.3L211.25 538.48L211.67 533.67L211.2 529.25L209.69 525.42L207 522.33L203.12 520.14L198.65 518.98L194.33 519L190.75 520.31L187.91 522.8L185.67 526.33L183.91 530.65L182.75 535.12L182.33 539L182.7 541.77L183.52 543.79L184.33 545.67L184.9 547.84L185.77 550.16L187.67 552.33Z"/>
+      <path data-id="folder:src/index" data-kind="folder" data-dents="cognitive crap cyclomatic" stroke-width="4.19" d="M317.35 757.22L314.33 757.67L312.01 758.53L309.99 759.69L307.67 761L304.63 762.36L301.15 763.86L297.67 765.67L294.53 767.86L291.69 770.36L289 773L286.38 775.67L284.06 778.33L282.33 781L281.59 783.81L282.63 787.52L286.33 793L293.05 800.9L300.95 810.88L307.67 822.33L311.4 834.51L311.77 838L304.41 844.44L312.48 849.95L312.33 855L311.49 860.58L310.51 863.64L309.67 865.67L309.17 867.84L308.83 870.16L308.33 872.33L307.49 874.16L306.51 875.84L305.67 877.67L305.17 879.84L304.83 882.16L304.33 884.33L303.47 886.21L302.31 888.23L301 891L299.67 894.85L298.33 899.15L297 903L295.69 905.77L294.53 907.79L293.67 909.67L293.17 911.84L292.83 914.16L292.33 916.33L291.49 918.21L290.51 920.23L289.67 923L289.17 926.85L288.83 931.15L288.33 935L287.49 937.77L286.51 939.79L285.67 941.67L285.17 943.84L284.83 946.16L284.33 948.33L283.47 950.19L282.31 952.04L281 954.33L279.67 957.35L278.33 960.65L277 963.67L275.67 965.99L274.33 968.01L273 970.33L271.67 973.35L270.33 976.65L269 979.67L267.69 982.04L266.53 984.41L265.67 987.67L265.22 992.33L265.22 997.44L265.67 1001.67L266.51 1004.06L267.49 1005.27L268.33 1006.33L268.83 1008.04L269.17 1010.19L269.67 1012.33L270.6 1014.21L272.28 1016.23L275 1019L278.93 1022.83L283.74 1026.95L289 1030.33L294.26 1032.14L299.07 1032.31L303 1031L305.74 1028.46L306.35 1027.43L316.21 1025.83L311.9 1016.82L312.33 1015.67L312.78 1012.65L312.78 1009.35L312.33 1006.33L311.42 1003.99L309.91 1001.79L307.67 999L306.66 997.69L302.23 1000.73L299.14 1002.05L295.77 1002.09L292.65 1000.85L290.24 998.5L288.92 995.41L288.88 992.04L290.12 988.92L292.47 986.51L297.51 983.06L296.09 979.72L294.58 974.73L293.67 970.33L293.22 966.75L293.22 963.91L293.67 961.67L294.51 959.79L295.49 957.77L296.33 955L296.83 951.15L297.17 946.85L297.67 943L298.51 940.23L299.49 938.21L300.33 936.33L300.83 934.16L301.17 931.84L301.67 929.67L302.51 927.84L303.49 926.16L304.33 924.33L304.83 922.16L305.17 919.84L305.67 917.67L306.51 915.84L307.49 914.16L308.33 912.33L308.83 910.16L309.17 907.84L309.67 905.67L310.51 903.81L311.49 901.96L312.33 899.67L312.83 896.65L313.17 893.35L313.67 890.33L314.51 887.99L315.49 885.79L316.33 883L316.83 879.15L317.17 874.85L317.67 871L318.53 868.21L319.69 866.01L321 863.67L322.41 860.6L324.26 856.95L327 853L330.9 849.07L335.54 845.59L340.33 843L344.8 841.49L345.47 841.3L354.81 846.34L355.93 835.79L356.93 834.93L360.41 830.63L363 826.33L364.43 822.75L365.12 819.91L365.67 817.67L366.51 815.81L367.49 813.96L368.33 811.67L368.78 808.65L368.78 805.35L368.33 802.33L367.49 800.04L366.51 798.19L365.67 796.33L365.17 794.16L364.83 791.84L364.33 789.67L363.35 787.74L361.32 785.37L357.67 781.67L352.11 776.16L345.67 770.06L339.67 765L335.15 762.16L331.96 760.95L329.67 760.33L327.81 759.49L325.96 758.51L323.67 757.67L320.65 757.22Z"/>
+      <path data-id="folder:src/infinite" data-kind="folder" data-dents="cognitive crap" stroke-width="3.16" d="M259.98 486.69L252.02 486.86L244.67 488.67L238.86 492.1L234.69 496.57L232 501.33L230.62 505.73L230.27 509.38L230.67 512L231.51 513.48L232.49 514.52L233.33 516L233.85 518.57L234.37 521.88L235.33 525.33L237.01 528.49L238.99 531.51L240.67 534.67L241.63 538.15L242.15 541.63L242.67 544.67L243.51 547.33L244.49 551.78L245.33 560.67L245.78 575.43L245.78 592.57L245.33 607.33L244.49 616.22L243.51 620.67L242.67 623.33L242.17 626.35L241.83 629.65L241.33 632.67L240.47 634.99L239.31 637.01L238 639.33L236.67 642.35L235.33 645.65L234 648.67L232.69 651.14L231.53 654.2L230.67 659.33L230.22 667.38L230.22 676.62L230.67 684.67L231.56 689.78L232.89 692.67L234.67 694.67L236.89 696.84L239.56 699.16L242.67 701.33L246.12 703.16L249.43 704.84L252 706.67L253.43 708.84L254.12 711.16L254.67 713.33L255.53 715.21L256.69 717.23L258 720L259.33 723.85L260.67 728.15L262 732L263.31 734.77L264.47 736.79L265.33 738.67L265.83 740.84L266.17 743.16L266.67 745.33L267.51 747.16L267.6 747.31L262.21 755.27L271.22 758.64L271.51 759.33L272.39 761.91L273.46 761.85L276.97 762.35L280.02 764.15L282.14 766.98L283.03 770.4L282.53 773.91L280.73 776.96L277.9 779.08L274.48 779.97L273.78 780L273.78 784.62L273.33 792.67L272.49 797.9L271.51 801.65L270.67 806L270.17 812.37L269.83 819.63L269.33 826L268.44 830.2L267.11 832.91L265.33 835.33L263.31 838.47L262.02 842.64L262.67 848L264.66 852.14L270.63 848.99L273.55 848.12L276.59 848.43L279.27 849.89L281.2 852.26L282.07 855.18L281.76 858.22L280.3 860.9L277.93 862.83L271.54 866.21L274.67 874.67L277.04 888.42L278.07 902.47L278.67 914L279.51 921.11L280.49 925.56L281.33 930L281.78 936.37L281.78 943.63L281.33 950L280.49 954.37L279.51 958.3L278.67 964L278.22 972.89L278.22 983.11L278.67 992L279.6 997.63L281.28 1001.04L284 1004L287.88 1007.85L292.35 1012.15L296.67 1016L300.25 1018.69L303.09 1020.2L305.33 1020.67L307.19 1020.27L309.04 1019.28L311.33 1018L314.32 1016.64L317.46 1015.14L320 1013.33L321.43 1011.16L322.12 1008.84L322.67 1006.67L323.51 1004.74L324.49 1002.37L325.33 998.67L325.78 993.14L325.78 986.86L325.33 981.33L324.42 977.58L322.91 974.86L320.67 972L317.65 968.07L314.35 963.26L311.33 958L309.06 952.67L307.38 947.33L306 942L304.69 936.62L303.53 930.94L302.67 924.67L302.17 917.73L301.83 910.94L301.33 905.33L300.49 901.6L299.51 899.06L298.67 896.67L298.17 893.65L297.83 890.35L297.33 887.33L296.49 884.94L295.51 882.4L294.67 878.67L294.12 873.14L293.43 866.86L292 861.33L289.43 857.6L286.12 855.06L282.67 852.67L279.58 849.53L277.09 845.36L275.33 840L274.44 833.51L274.44 826.72L275.33 820.67L277.04 816.07L279.19 812.37L281.33 808.67L283.11 804.25L284.44 799.09L285.33 793.33L285.78 787.23L285.78 781.43L285.33 776.67L284.49 773.41L283.51 771.04L282.67 768.67L282.22 765.65L282.22 763.2L291.15 759.03L284.75 751.52L285.33 747.33L285.83 737.6L286.17 726.4L286.67 716.67L287.58 710.57L289.09 706.99L291.33 704L294.35 700.07L297.65 695.26L300.67 690L302.91 684.72L304.42 679.73L305.33 675.33L305.78 671.75L305.78 668.91L305.33 666.67L304.32 664.69L302.12 661.98L298 657.33L291.65 650.1L284.57 641.68L278.67 634L275.36 628.54L273.98 625.01L273.33 622.67L272.49 620.79L271.51 618.77L270.67 616L270.17 612.15L269.83 607.85L269.33 604L268.52 601.19L267.7 598.81L267.33 596L267.7 592.12L268.52 587.65L269.33 583.33L269.83 579.75L270.17 576.91L270.67 574.67L271.51 572.81L272.49 570.96L273.33 568.67L273.83 565.65L274.17 562.35L274.67 559.33L275.53 556.99L276.69 554.79L278 552L279.31 548.12L280.47 543.65L281.33 539.33L281.83 535.75L282.17 532.91L282.67 530.67L283.51 528.74L284.49 526.37L285.33 522.67L285.78 517.14L285.78 510.86L285.33 505.33L284.42 501.6L282.91 499.06L280.67 496.67L277.51 493.68L273.16 490.54L267.33 488Z"/>
+      <path data-id="folder:src/mutation" data-kind="folder" stroke-width="2.91" d="M269 615.67L271.64 616.63L274.14 617.15L276.33 617.67L278.19 618.51L280.04 619.49L282.33 620.33L285.35 620.83L288.65 621.17L291.67 621.67L293.99 622.53L296.01 623.69L298.33 625L301.35 626.33L304.65 627.67L307.67 629L309.96 630.31L311.81 631.47L313.67 632.33L315.84 632.78L318.16 632.78L320.33 632.33L322.16 631.44L323.84 630.11L325.67 628.33L327.81 626.14L329.96 623.64L331.67 621L332.63 618.36L333.15 615.86L333.67 613.67L334.48 611.79L335.3 609.77L335.67 607L335.2 603.1L333.69 598.46L331 593.67L327.1 589.22L322.46 585.22L317.67 581.67L313.25 578.56L309.42 575.89L306.33 573.67L304.09 571.81L302.58 569.96L301.67 567.67L301.22 564.65L301.22 561.35L301.67 558.33L302.51 556.04L303.49 554.19L304.33 552.33L304.83 550.16L305.17 547.84L305.67 545.67L306.51 543.77L307.49 541.57L308.33 538.33L308.73 533.64L308.38 528.36L307 523.67L304.46 520.46L301.32 518.43L298.33 517L296.04 515.77L294.19 515.12L292.33 515.67L290.16 517.81L287.84 521.3L285.67 525.67L283.89 530.48L282.56 535.3L281.67 539.67L281.17 543.25L280.83 546.09L280.33 548.33L279.49 550.16L278.51 551.84L277.67 553.67L277.17 555.84L276.83 558.16L276.33 560.33L275.44 562.19L274.11 564.04L272.33 566.33L270.14 569.4L267.64 573.05L265 577L262.38 581.05L260.06 585.4L258.33 590.33L257.42 595.94L257.25 601.4L257.67 605.67L258.56 608.06L259.89 609.27L261.67 610.33L263.86 612.01L266.36 613.99L269 615.67Z"/>
+      <path data-id="folder:src/subscription" data-kind="folder" stroke-width="2.72" d="M287.33 636.33L289.09 632.88L290.25 628.23L290.67 623L290.32 617.74L289.68 612.93L289.33 609L289.7 606.23L290.52 604.21L291.33 602.33L291.85 600.14L292.37 597.64L293.33 595L295.04 592.31L297.19 589.47L299.33 586.33L301.19 582.83L303.04 579.17L305.33 575.67L308.4 572.53L312.05 569.69L316 567L320 564.36L324 561.86L328 559.67L331.95 557.86L335.6 556.36L338.67 555L340.96 553.64L342.81 552.14L344.67 550.33L346.81 548.14L348.96 545.64L350.67 543L351.63 540.36L352.15 537.86L352.67 535.67L353.48 533.81L354.3 531.96L354.67 529.67L354.22 526.63L352.89 523.15L350.67 519.67L347.6 516.58L343.95 514.09L340 512.33L336.05 511.42L332.4 511.25L329.33 511.67L327.06 512.53L325.38 513.69L324 515L322.67 516.38L321.33 518.06L320 520.33L318.67 523.35L317.33 526.65L316 529.67L314.69 531.96L313.53 533.81L312.67 535.67L312.17 537.84L311.83 540.16L311.33 542.33L310.47 544.19L309.31 546.04L308 548.33L306.64 551.37L305.14 554.85L303.33 558.33L301.11 561.52L298.44 564.7L295.33 568.33L291.88 572.8L288.57 578.31L286 585L284.57 592.78L283.88 600.56L283.33 607L282.47 611.22L281.31 614.11L280 617L278.69 620.88L277.53 625.35L276.67 629.67L276.22 633.22L276.22 635.89L276.67 637.67L277.56 638.6L278.89 638.95L280.67 639L282.84 638.9L285.16 638.21L287.33 636.33Z"/>
+      <path data-id="package:." data-family="family-1" d="M-3 -2H3M-3 2H3" fill="none" stroke="#7b848f" transform="translate(350.69 508.64)"/>
+      <path data-id="directory:examples/basic-typescript/pages/[user]" data-family="family-1" d="M-3 -2H3M-3 2H3" fill="none" stroke="#7b848f" transform="translate(156.03 983.31)"/>
+      <path data-id="directory:examples/basic-typescript/pages/api" data-family="family-3" d="M-3 -3L3 3M-3 3L3 -3" fill="none" stroke="#7b848f" transform="translate(116.36 1056.64)"/>
+      <path data-id="directory:examples/suspense-global/pages/api" data-family="family-10" d="M0 -3L3 2H-3Z" fill="none" stroke="#7b848f" transform="translate(197 1036)"/>
+      <path data-id="directory:examples/suspense-retry/app" data-family="family-11" d="M-2.5 -2.5H2.5V2.5H-2.5Z" fill="none" stroke="#7b848f" transform="translate(247.54 1005.46)"/>
+      <path data-id="folder:src/_internal" data-family="family-13" d="M0 -3L3 0L0 3L-3 0Z" fill="none" stroke="#7b848f" transform="translate(239.87 528.43)"/>
+    </g>
+    <g id="organelles" fill="#333a43" stroke="#5f6873" stroke-width="1">
+      <circle data-id="examples/basic-typescript/libs/fetch.ts" data-reachable="false" cx="77.8" cy="1060.67" r="5.64"/>
+      <circle data-id="examples/basic-typescript/next-env.d.ts" data-reachable="false" cx="45.39" cy="1059.63" r="5.39"/>
+      <circle data-id="examples/basic-typescript/pages/[user]/[repo].tsx" data-reachable="false" cx="157.02" cy="1011.33" r="7.34"/>
+      <path data-id="examples/basic-typescript/pages/[user]/[repo].tsx" data-family="family-1" d="M-3 -2H3M-3 2H3" fill="none" stroke="#7b848f" transform="translate(165.04 1003.31)"/>
+      <circle data-id="examples/basic-typescript/pages/api/data.ts" data-reachable="false" cx="100.3" cy="1062.97" r="6.97"/>
+      <path data-id="examples/basic-typescript/pages/api/data.ts" data-family="family-3" d="M-3 -3L3 3M-3 3L3 -3" fill="none" stroke="#7b848f" transform="translate(108.06 1055.21)"/>
+      <circle data-id="examples/basic-typescript/pages/index.tsx" data-reachable="false" cx="175.99" cy="996.04" r="7.04"/>
+      <circle data-id="examples/suspense-global/components/error-handling.ts" data-reachable="false" cx="105.52" cy="1033.48" r="6.48"/>
+      <circle data-id="examples/suspense-global/global-swr-config.tsx" data-reachable="false" cx="188.89" cy="1016.04" r="6.77"/>
+      <circle data-id="examples/suspense-global/libs/fetch.ts" data-reachable="false" cx="211.39" cy="1014.94" r="5.75"/>
+      <circle data-id="examples/suspense-global/next-env.d.ts" data-reachable="false" cx="155.07" cy="1043.77" r="5.24"/>
+      <circle data-id="examples/suspense-global/pages/[user]/[repo].tsx" data-reachable="false" cx="173.38" cy="1056.79" r="7.22"/>
+      <circle data-id="examples/suspense-global/pages/[user]/detail.tsx" data-reachable="false" cx="211.46" cy="1054.96" r="6.56"/>
+      <circle data-id="examples/suspense-global/pages/_app.tsx" data-reachable="false" cx="170.97" cy="1029.87" r="5.86"/>
+      <circle data-id="examples/suspense-global/pages/api/data.ts" data-reachable="false" cx="192.11" cy="1040.31" r="7.72"/>
+      <path data-id="examples/suspense-global/pages/api/data.ts" data-family="family-10" d="M0 -3L3 2H-3Z" fill="none" stroke="#7b848f" transform="translate(200.4 1032.02)"/>
+      <circle data-id="examples/suspense-global/pages/index.tsx" data-reachable="false" cx="199.43" cy="995.4" r="6.4"/>
+      <circle data-id="examples/suspense-global/pages/repos.tsx" data-reachable="false" cx="222.7" cy="995.63" r="6.63"/>
+      <circle data-id="examples/suspense-retry/app/api/route.ts" data-reachable="false" cx="254.26" cy="1072.91" r="5.96"/>
+      <circle data-id="examples/suspense-retry/app/layout.tsx" data-reachable="false" cx="258.88" cy="1051.38" r="6.06"/>
+      <circle data-id="examples/suspense-retry/app/manual-retry.tsx" data-reachable="false" cx="235.78" cy="1057.78" r="7.92"/>
+      <path data-id="examples/suspense-retry/app/manual-retry.tsx" data-family="family-11" d="M-2.5 -2.5H2.5V2.5H-2.5Z" fill="none" stroke="#7b848f" transform="translate(244.21 1049.35)"/>
+      <circle data-id="examples/suspense-retry/app/page.tsx" data-reachable="false" cx="240.92" cy="1034.27" r="6.15"/>
+      <circle data-id="examples/suspense-retry/app/use-remote-data.ts" data-reachable="false" cx="239.48" cy="1011.62" r="6.56"/>
+      <circle data-id="examples/suspense-retry/next-env.d.ts" data-reachable="false" cx="219.39" cy="1034.5" r="5.39"/>
+      <circle data-id="examples/suspense-retry/pages/retry.tsx" data-reachable="false" cx="260.65" cy="1023.88" r="6.15"/>
+      <circle data-id="examples/suspense/next-env.d.ts" data-reachable="false" cx="55.35" cy="1036.57" r="5.39"/>
+      <circle data-id="src/_internal/constants.ts" cx="241.29" cy="897.62" r="4.62"/>
+      <circle data-id="src/_internal/events.ts" cx="239.75" cy="923.03" r="5.39"/>
+      <circle data-id="src/_internal/index.react-server.ts" cx="232.48" cy="539.76" r="5.24"/>
+      <circle data-id="src/_internal/index.ts" cx="285.11" cy="832.13" r="7.1"/>
+      <circle data-id="src/_internal/types.ts" cx="215.54" cy="777.24" r="24.9"/>
+      <polygon data-id="src/_internal/utils/cache.ts" data-dents="cognitive crap" points="244.4,828.97 250.58,835.57 255.1,840.09 256.76,846.27 255.1,852.45 250.58,856.97 244.4,863.57 238.22,856.97 233.7,852.45 232.04,846.27 233.7,840.09 238.22,835.57"/>
+      <circle data-id="src/_internal/utils/config-context.ts" cx="274.28" cy="855.91" r="9.04"/>
+      <circle data-id="src/_internal/utils/config.ts" cx="226.4" cy="820.15" r="9.37"/>
+      <circle data-id="src/_internal/utils/devtools.ts" cx="292.67" cy="809.99" r="6.32"/>
+      <circle data-id="src/_internal/utils/env.ts" cx="294.18" cy="760.39" r="7.72"/>
+      <circle data-id="src/_internal/utils/global-state.ts" cx="249.84" cy="873.16" r="5.07"/>
+      <polygon data-id="src/_internal/utils/hash.ts" data-dents="cognitive" points="260.95,898.12 265.49,902.97 268.8,906.29 270.02,910.82 268.8,915.36 265.49,918.67 260.95,919.89 256.41,918.67 253.1,915.36 251.88,910.82 253.1,906.29 256.41,902.97"/>
+      <circle data-id="src/_internal/utils/helper.ts" cx="254.32" cy="758.43" r="8.21"/>
+      <circle data-id="src/_internal/utils/merge-config.ts" cx="227.81" cy="870.62" r="7.1"/>
+      <circle data-id="src/_internal/utils/middleware-preset.ts" cx="273.97" cy="770.91" r="5.07"/>
+      <polygon data-id="src/_internal/utils/mutate.ts" data-dents="cognitive crap" points="209.41,829.57 215.73,836.32 220.36,840.95 222.05,847.27 220.36,853.59 215.73,858.22 209.41,864.97 203.09,858.22 198.46,853.59 196.77,847.27 198.46,840.95 203.09,836.32"/>
+      <circle data-id="src/_internal/utils/normalize-args.ts" cx="269.74" cy="880.76" r="6.24"/>
+      <circle data-id="src/_internal/utils/preload.ts" cx="198.17" cy="817.73" r="8.96"/>
+      <path data-id="src/_internal/utils/preload.ts" data-family="family-13" d="M0 -3L3 0L0 3L-3 0Z" fill="none" stroke="#7b848f" transform="translate(207.33 808.57)"/>
+      <circle data-id="src/_internal/utils/resolve-args.ts" cx="247.53" cy="804.35" r="7.04"/>
+      <circle data-id="src/_internal/utils/serialize.ts" cx="271.31" cy="800.56" r="7.04"/>
+      <circle data-id="src/_internal/utils/server-preload.ts" cx="237.96" cy="634.03" r="6.97"/>
+      <path data-id="src/_internal/utils/server-preload.ts" data-family="family-13" d="M0 -3L3 0L0 3L-3 0Z" fill="none" stroke="#7b848f" transform="translate(245.72 626.27)"/>
+      <circle data-id="src/_internal/utils/shared.ts" cx="256.08" cy="995.56" r="6.56"/>
+      <circle data-id="src/_internal/utils/subscribe-key.ts" cx="242.35" cy="946.17" r="6.7"/>
+      <circle data-id="src/_internal/utils/timestamp.ts" cx="262.09" cy="936.99" r="5.07"/>
+      <circle data-id="src/_internal/utils/use-swr-config.ts" cx="256.29" cy="782.79" r="6.24"/>
+      <circle data-id="src/_internal/utils/web-preset.ts" cx="301.92" cy="851.94" r="8.88"/>
+      <circle data-id="src/_internal/utils/with-middleware.ts" cx="262.66" cy="823.15" r="7.1"/>
+      <circle data-id="src/immutable/index.ts" cx="211.04" cy="538.76" r="6.24"/>
+      <circle data-id="src/index/config.ts" data-reachable="false" cx="291.74" cy="1018.15" r="5.24"/>
+      <circle data-id="src/index/index.react-server.ts" data-reachable="false" cx="277.66" cy="994.07" r="5.07"/>
+      <circle data-id="src/index/index.ts" cx="291.4" cy="785.83" r="7.87"/>
+      <circle data-id="src/index/serialize.ts" cx="312.83" cy="777.65" r="5.07"/>
+      <polygon data-id="src/index/use-swr.ts" data-dents="cognitive crap cyclomatic" points="331.97,778.36 343.47,790.64 351.88,799.06 354.96,810.55 359.84,826.64 343.47,830.46 331.97,833.54 320.48,830.46 304.1,826.64 308.98,810.55 312.06,799.06 320.48,790.64"/>
+      <circle data-id="src/infinite/index.react-server.ts" data-reachable="false" cx="297.35" cy="993.62" r="4.62"/>
+      <polygon data-id="src/infinite/index.ts" data-dents="cognitive crap" points="261.28,508.38 268.91,516.52 274.5,522.11 276.54,529.74 274.5,537.37 268.91,542.96 261.28,551.1 253.65,542.96 248.06,537.37 246.02,529.74 248.06,522.11 253.65,516.52"/>
+      <circle data-id="src/infinite/serialize.ts" cx="260.77" cy="635.14" r="5.86"/>
+      <circle data-id="src/infinite/types.ts" cx="269.06" cy="673.29" r="11.64"/>
+      <circle data-id="src/mutation/index.ts" cx="298.17" cy="533.21" r="11.79"/>
+      <circle data-id="src/mutation/state.ts" cx="274.05" cy="606.85" r="9.55"/>
+      <circle data-id="src/mutation/types.ts" cx="307.91" cy="611.19" r="14.59"/>
+      <circle data-id="src/subscription/index.ts" cx="330.71" cy="534.24" r="10.76"/>
+      <circle data-id="src/subscription/types.ts" cx="283.68" cy="631.9" r="7.28"/>
+    </g>
+    <g id="weather">
+      <defs>
+        <pattern id="hatch" patternUnits="userSpaceOnUse" width="4" height="4">
+          <path d="M0 4L4 0" stroke="#cfd6de" stroke-width="1"/>
+        </pattern>
+        <pattern id="stipple" patternUnits="userSpaceOnUse" width="4" height="4">
+          <circle cx="2" cy="2" r="0.7" fill="#cfd6de"/>
+        </pattern>
+        <filter id="glow" x="-25%" y="-25%" width="150%" height="150%">
+          <feGaussianBlur stdDeviation="6"/>
+        </filter>
+        <marker id="arrow-boundary" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto" fill="#e35ce0">
+          <path d="M0 0L6 3L0 6Z"/>
+        </marker>
+        <marker id="arrow-cycle" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto" fill="#e35ce0">
+          <path d="M0 0L6 3L0 6Z"/>
+        </marker>
+        <marker id="arrow-new-cross-module" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto" fill="#5fd8ea">
+          <path d="M0 0L6 3L0 6Z"/>
+        </marker>
+      </defs>
+      <g id="standing-storms" fill="#58616b">
+        <path data-slot="dead" data-over="folder:src/index" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(317.35 733.22) scale(0.6)"/>
+        <path data-slot="dupes" data-over="directory:examples/basic-typescript/pages/[user]" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(136.89 966.27) scale(0.6)"/>
+        <path data-slot="dupes" data-over="directory:examples/basic-typescript/pages/api" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(101.35 1044.12) scale(0.6)"/>
+        <path data-slot="dupes" data-over="directory:examples/suspense-global/pages/api" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(188.3 1027.49) scale(0.6)"/>
+        <path data-slot="dupes" data-over="directory:examples/suspense-retry/app" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(237.19 995.27) scale(0.6)"/>
+        <path data-slot="dupes" data-over="examples" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(123.36 272.12) scale(0.6)"/>
+        <path data-slot="dupes" data-over="folder:src/_internal" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(230.83 505.77) scale(0.6)"/>
+        <path data-slot="dupes" data-over="folder:src/index" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(317.35 719.22) scale(0.6)"/>
+        <path data-slot="health" data-over="examples" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(123.36 258.12) scale(0.6)"/>
+        <path data-slot="health" data-over="folder:src/infinite" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(259.98 476.69) scale(0.6)"/>
+      </g>
+      <g id="reach" fill="#f6e7c9" filter="url(#glow)">
+        <path data-id="directory:examples/suspense-retry/pages" data-hops="2" d="M255.33 1028.67L257.04 1029.51L259.19 1029.16L261.33 1027.33L263.04 1023.98L263.85 1020.02L263.33 1016.67L261.26 1014.84L258.3 1014.49L255.33 1015.33L253.11 1017.01L251.78 1018.99L251.33 1020.67L251.7 1021.65L252.52 1022.35L253.33 1023.33L253.85 1025.01L254.37 1026.99L255.33 1028.67Z" opacity="0.16"/>
+        <path data-id="directory:examples/basic-typescript/pages" data-hops="1" d="M162.33 996.33L166.65 998.04L171.12 998.85L175 998.33L177.74 996.26L179.59 993.3L181 990.33L182.31 987.99L183.47 985.79L184.33 983L184.73 979.12L184.38 974.65L183 970.33L180.41 966.78L176.93 964.11L173 962.33L169 961.49L165 961.84L161 963.67L157.07 967.1L153.59 971.57L151 976.33L149.62 980.73L149.27 984.38L149.67 987L150.56 988.46L151.89 989.32L153.67 990.33L155.91 992.04L158.75 994.19L162.33 996.33Z" opacity="0.27"/>
+        <path data-id="directory:examples/basic-typescript/pages/[user]" data-hops="1" d="M138.67 1018L143.46 1019.33L148.1 1019.33L152 1018L154.74 1015.46L156.59 1012.32L158 1009.33L159.28 1007.01L160.27 1004.99L160.67 1002.67L160.27 999.65L159.28 996.35L158 993.33L156.62 991.01L154.94 988.99L152.67 986.67L149.63 983.68L146.15 980.54L142.67 978L139.56 976.62L136.89 976.27L134.67 976.67L132.86 977.53L131.36 978.69L130 980L128.67 981.41L127.33 983.26L126 986L124.69 989.88L123.53 994.35L122.67 998.67L122.22 1002.22L122.22 1004.89L122.67 1006.67L123.58 1007.68L125.09 1008.54L127.33 1010L130.42 1012.52L134.25 1015.48L138.67 1018Z" opacity="0.27"/>
+        <path data-id="directory:examples/suspense-global" data-hops="1" d="M186.45 1032.25L186 1032.33L180.74 1032.83L175.93 1033.17L172 1033.67L169.26 1034.48L167.41 1035.3L166 1035.67L164.57 1035.3L162.54 1034.48L159.33 1033.67L154.67 1033.25L149.56 1033.42L145.33 1034.33L142.96 1036.04L141.93 1038.19L141.33 1040.33L140.52 1042.11L139.7 1043.44L139.33 1044.33L139.7 1044.85L140.52 1045.37L141.33 1046.33L141.9 1048.01L142.77 1049.99L144.67 1051.67L148.05 1052.58L152.17 1052.75L156 1052.33L158.74 1051.52L160.59 1050.7L162 1050.33L163.41 1050.73L165.26 1051.72L168 1053L171.98 1054.31L177.14 1055.47L183.33 1056.33L190.25 1056.63L196.86 1055.59L202 1052.33L204.84 1046.43L206.05 1039.35L206.67 1033L207.51 1028.83L208.49 1026.28L209.33 1024.33L209.7 1022.16L209.19 1019.84L207.33 1017.67L203.9 1015.86L199.43 1014.36L194.67 1013L190.27 1011.74L186.62 1010.93L184 1011L182.64 1012.21L182.47 1014.01L183.33 1015.67L185.04 1016.63L187.19 1017.15L189.33 1017.67L191.16 1018.56L192.84 1019.89L194.67 1021.67L196.72 1023.84L198.17 1026.16L198 1028.33L195.48 1030.11L194.68 1030.36L196.27 1039.6L196.22 1041.24L195.55 1042.75L194.36 1043.88L192.82 1044.47L191.18 1044.42L189.67 1043.75L188.54 1042.56L187.95 1041.02L186.45 1032.25Z" opacity="0.27"/>
+        <path data-id="directory:examples/suspense-global/pages" data-hops="1" d="M168.27 1003.84L167.52 1005.94L166.7 1007.62L166.33 1009L166.68 1010.33L167.32 1011.67L167.67 1013L167.3 1014.36L166.48 1015.86L165.67 1017.67L165.17 1019.84L164.83 1022.16L164.33 1024.33L163.52 1026.11L162.7 1027.44L162.33 1028.33L162.73 1028.83L163.72 1029.17L165 1029.67L166.33 1030.48L167.67 1031.3L169 1031.67L170.33 1031.22L171.67 1029.89L173 1027.67L174.36 1024.68L175.86 1021.54L177.67 1019L179.84 1017.57L182.16 1016.88L184.33 1016.33L186.19 1015.44L188.04 1014.11L190.33 1012.33L193.42 1010.19L197.25 1008.04L201.67 1006.33L206.46 1005.37L211.1 1004.85L215 1004.33L217.77 1003.49L219.79 1002.51L221.67 1001.67L223.81 1001.15L225.96 1000.63L227.67 999.67L228.63 997.96L229.15 995.81L229.67 993.67L230.48 991.81L231.3 989.96L231.67 987.67L231.22 984.63L229.89 981.15L227.67 977.67L224.58 974.56L220.75 971.89L216.33 969.67L211.54 967.91L206.9 966.75L203 966.33L200.26 966.73L198.41 967.72L197 969L195.64 970.38L194.14 972.06L192.33 974.33L190.14 977.37L187.64 980.85L185 984.33L183.83 985.68L186.29 992.07L187.03 996.31L186.08 1000.52L183.6 1004.04L179.96 1006.34L175.72 1007.08L171.51 1006.13L168.27 1003.84Z" opacity="0.27"/>
+        <path data-id="directory:examples/suspense-global/pages/[user]" data-hops="1" d="M173.33 1071.33L178.86 1071.78L185.14 1071.78L190.67 1071.33L194.4 1070.47L196.94 1069.31L199.33 1068L202.35 1066.62L205.65 1064.94L208.67 1062.67L210.81 1059.65L211.63 1056.35L210.67 1053.33L207.58 1051.09L202.42 1049.58L195.33 1048.67L186.72 1048.3L177.95 1048.81L170.67 1050.67L166.1 1054.05L163.9 1058.17L163.33 1062L163.73 1064.74L164.72 1066.59L166 1068L167.46 1069.31L169.65 1070.47L173.33 1071.33Z" opacity="0.27"/>
+        <path data-id="directory:examples/suspense-retry/app" data-hops="1" d="M233.33 1068.33L236.35 1068.78L239.65 1068.78L242.67 1068.33L245.01 1067.49L247.21 1066.51L250 1065.67L253.85 1065.17L258.15 1064.83L262 1064.33L264.74 1063.47L266.59 1062.31L268 1061L269.31 1059.59L270.47 1057.74L271.33 1055L271.7 1051.1L271.19 1046.46L269.33 1041.67L265.95 1037.25L261.83 1033.42L258 1030.33L255.26 1028.01L253.41 1025.99L252 1023.67L250.67 1020.65L249.33 1017.35L248 1014.33L246.67 1012.06L245.33 1010.38L244 1009L242.64 1007.69L241.14 1006.53L239.33 1005.67L237.19 1005.27L235.04 1005.62L233.33 1007L232.37 1009.54L231.85 1012.68L231.33 1015.67L230.49 1018.09L229.51 1020.8L228.67 1025L228.17 1031.37L227.83 1038.63L227.33 1045L226.49 1049.2L225.51 1051.91L224.67 1054.33L224.22 1057.32L224.22 1060.46L224.67 1063L225.53 1064.43L226.69 1065.12L228 1065.67L229.38 1066.51L231.06 1067.49L233.33 1068.33Z" opacity="0.27"/>
+        <path data-id="folder:src/immutable" data-hops="1" d="M187.67 552.33L191.07 554.06L195.37 555.05L199.67 555L203.25 553.69L206.09 551.2L208.33 547.67L210.09 543.3L211.25 538.48L211.67 533.67L211.2 529.25L209.69 525.42L207 522.33L203.12 520.14L198.65 518.98L194.33 519L190.75 520.31L187.91 522.8L185.67 526.33L183.91 530.65L182.75 535.12L182.33 539L182.7 541.77L183.52 543.79L184.33 545.67L184.9 547.84L185.77 550.16L187.67 552.33Z" opacity="0.27"/>
+        <path data-id="folder:src/infinite" data-hops="1" d="M273.78 780L273.78 784.62L273.33 792.67L272.49 797.9L271.51 801.65L270.67 806L270.17 812.37L269.83 819.63L269.33 826L268.44 830.2L267.11 832.91L265.33 835.33L263.31 838.47L262.02 842.64L262.67 848L264.66 852.14L270.63 848.99L273.55 848.12L276.59 848.43L279.27 849.89L281.2 852.26L282.07 855.18L281.76 858.22L280.3 860.9L277.93 862.83L271.54 866.21L274.67 874.67L277.04 888.42L278.07 902.47L278.67 914L279.51 921.11L280.49 925.56L281.33 930L281.78 936.37L281.78 943.63L281.33 950L280.49 954.37L279.51 958.3L278.67 964L278.22 972.89L278.22 983.11L278.67 992L279.6 997.63L281.28 1001.04L284 1004L287.88 1007.85L292.35 1012.15L296.67 1016L300.25 1018.69L303.09 1020.2L305.33 1020.67L307.19 1020.27L309.04 1019.28L311.33 1018L314.32 1016.64L317.46 1015.14L320 1013.33L321.43 1011.16L322.12 1008.84L322.67 1006.67L323.51 1004.74L324.49 1002.37L325.33 998.67L325.78 993.14L325.78 986.86L325.33 981.33L324.42 977.58L322.91 974.86L320.67 972L317.65 968.07L314.35 963.26L311.33 958L309.06 952.67L307.38 947.33L306 942L304.69 936.62L303.53 930.94L302.67 924.67L302.17 917.73L301.83 910.94L301.33 905.33L300.49 901.6L299.51 899.06L298.67 896.67L298.17 893.65L297.83 890.35L297.33 887.33L296.49 884.94L295.51 882.4L294.67 878.67L294.12 873.14L293.43 866.86L292 861.33L289.43 857.6L286.12 855.06L282.67 852.67L279.58 849.53L277.09 845.36L275.33 840L274.44 833.51L274.44 826.72L275.33 820.67L277.04 816.07L279.19 812.37L281.33 808.67L283.11 804.25L284.44 799.09L285.33 793.33L285.78 787.23L285.78 781.43L285.33 776.67L284.49 773.41L283.51 771.04L282.67 768.67L282.22 765.65L282.22 762.35L282.67 759.33L283.51 756.81L284.49 753.41L285.33 747.33L285.83 737.6L286.17 726.4L286.67 716.67L287.58 710.57L289.09 706.99L291.33 704L294.35 700.07L297.65 695.26L300.67 690L302.91 684.72L304.42 679.73L305.33 675.33L305.78 671.75L305.78 668.91L305.33 666.67L304.32 664.69L302.12 661.98L298 657.33L291.65 650.1L284.57 641.68L278.67 634L275.36 628.54L273.98 625.01L273.33 622.67L272.49 620.79L271.51 618.77L270.67 616L270.17 612.15L269.83 607.85L269.33 604L268.52 601.19L267.7 598.81L267.33 596L267.7 592.12L268.52 587.65L269.33 583.33L269.83 579.75L270.17 576.91L270.67 574.67L271.51 572.81L272.49 570.96L273.33 568.67L273.83 565.65L274.17 562.35L274.67 559.33L275.53 556.99L276.69 554.79L278 552L279.31 548.12L280.47 543.65L281.33 539.33L281.83 535.75L282.17 532.91L282.67 530.67L283.51 528.74L284.49 526.37L285.33 522.67L285.78 517.14L285.78 510.86L285.33 505.33L284.42 501.6L282.91 499.06L280.67 496.67L277.51 493.68L273.16 490.54L267.33 488L259.98 486.69L252.02 486.86L244.67 488.67L238.86 492.1L234.69 496.57L232 501.33L230.62 505.73L230.27 509.38L230.67 512L231.51 513.48L232.49 514.52L233.33 516L233.85 518.57L234.37 521.88L235.33 525.33L237.01 528.49L238.99 531.51L240.67 534.67L241.63 538.15L242.15 541.63L242.67 544.67L243.51 547.33L244.49 551.78L245.33 560.67L245.78 575.43L245.78 592.57L245.33 607.33L244.49 616.22L243.51 620.67L242.67 623.33L242.17 626.35L241.83 629.65L241.33 632.67L240.47 634.99L239.31 637.01L238 639.33L236.67 642.35L235.33 645.65L234 648.67L232.69 651.14L231.53 654.2L230.67 659.33L230.22 667.38L230.22 676.62L230.67 684.67L231.56 689.78L232.89 692.67L234.67 694.67L236.89 696.84L239.56 699.16L242.67 701.33L246.12 703.16L249.43 704.84L252 706.67L253.43 708.84L254.12 711.16L254.67 713.33L255.53 715.21L256.69 717.23L258 720L259.33 723.85L260.67 728.15L262 732L263.31 734.77L264.47 736.79L265.33 738.67L265.83 740.84L266.17 743.16L266.67 745.33L267.51 747.16L268.49 748.84L269.33 750.67L269.83 752.84L270.17 755.16L270.67 757.33L271.51 759.33L272.39 761.91L273.46 761.85L276.97 762.35L280.02 764.15L282.14 766.98L283.03 770.4L282.53 773.91L280.73 776.96L277.9 779.08L274.48 779.97L273.78 780Z" opacity="0.27"/>
+        <path data-id="folder:src/mutation" data-hops="1" d="M269 615.67L271.64 616.63L274.14 617.15L276.33 617.67L278.19 618.51L280.04 619.49L282.33 620.33L285.35 620.83L288.65 621.17L291.67 621.67L293.99 622.53L296.01 623.69L298.33 625L301.35 626.33L304.65 627.67L307.67 629L309.96 630.31L311.81 631.47L313.67 632.33L315.84 632.78L318.16 632.78L320.33 632.33L322.16 631.44L323.84 630.11L325.67 628.33L327.81 626.14L329.96 623.64L331.67 621L332.63 618.36L333.15 615.86L333.67 613.67L334.48 611.79L335.3 609.77L335.67 607L335.2 603.1L333.69 598.46L331 593.67L327.1 589.22L322.46 585.22L317.67 581.67L313.25 578.56L309.42 575.89L306.33 573.67L304.09 571.81L302.58 569.96L301.67 567.67L301.22 564.65L301.22 561.35L301.67 558.33L302.51 556.04L303.49 554.19L304.33 552.33L304.83 550.16L305.17 547.84L305.67 545.67L306.51 543.77L307.49 541.57L308.33 538.33L308.73 533.64L308.38 528.36L307 523.67L304.46 520.46L301.32 518.43L298.33 517L296.04 515.77L294.19 515.12L292.33 515.67L290.16 517.81L287.84 521.3L285.67 525.67L283.89 530.48L282.56 535.3L281.67 539.67L281.17 543.25L280.83 546.09L280.33 548.33L279.49 550.16L278.51 551.84L277.67 553.67L277.17 555.84L276.83 558.16L276.33 560.33L275.44 562.19L274.11 564.04L272.33 566.33L270.14 569.4L267.64 573.05L265 577L262.38 581.05L260.06 585.4L258.33 590.33L257.42 595.94L257.25 601.4L257.67 605.67L258.56 608.06L259.89 609.27L261.67 610.33L263.86 612.01L266.36 613.99L269 615.67Z" opacity="0.27"/>
+        <path data-id="folder:src/subscription" data-hops="1" d="M287.33 636.33L289.09 632.88L290.25 628.23L290.67 623L290.32 617.74L289.68 612.93L289.33 609L289.7 606.23L290.52 604.21L291.33 602.33L291.85 600.14L292.37 597.64L293.33 595L295.04 592.31L297.19 589.47L299.33 586.33L301.19 582.83L303.04 579.17L305.33 575.67L308.4 572.53L312.05 569.69L316 567L320 564.36L324 561.86L328 559.67L331.95 557.86L335.6 556.36L338.67 555L340.96 553.64L342.81 552.14L344.67 550.33L346.81 548.14L348.96 545.64L350.67 543L351.63 540.36L352.15 537.86L352.67 535.67L353.48 533.81L354.3 531.96L354.67 529.67L354.22 526.63L352.89 523.15L350.67 519.67L347.6 516.58L343.95 514.09L340 512.33L336.05 511.42L332.4 511.25L329.33 511.67L327.06 512.53L325.38 513.69L324 515L322.67 516.38L321.33 518.06L320 520.33L318.67 523.35L317.33 526.65L316 529.67L314.69 531.96L313.53 533.81L312.67 535.67L312.17 537.84L311.83 540.16L311.33 542.33L310.47 544.19L309.31 546.04L308 548.33L306.64 551.37L305.14 554.85L303.33 558.33L301.11 561.52L298.44 564.7L295.33 568.33L291.88 572.8L288.57 578.31L286 585L284.57 592.78L283.88 600.56L283.33 607L282.47 611.22L281.31 614.11L280 617L278.69 620.88L277.53 625.35L276.67 629.67L276.22 633.22L276.22 635.89L276.67 637.67L277.56 638.6L278.89 638.95L280.67 639L282.84 638.9L285.16 638.21L287.33 636.33Z" opacity="0.27"/>
+        <path data-id="folder:src/_internal" data-hops="0" d="M295.82 773.15L296.04 772.68L298.19 769.32L300.33 765.67L302.11 761.32L303.44 756.68L304.33 752.33L304.78 748.75L304.78 745.91L304.33 743.67L303.47 741.86L302.31 740.36L301 739L299.59 737.67L297.74 736.33L295 735L291.07 733.67L286.26 732.33L281 731L275.74 729.67L270.93 728.33L267 727L264.26 725.59L262.41 723.74L261 721L259.67 717.15L258.33 712.85L257 709L255.69 706.23L254.53 704.21L253.67 702.33L253.17 700.16L252.83 697.84L252.33 695.67L251.49 693.72L250.51 691.17L249.67 687L249.17 680.63L248.83 673.37L248.33 667L247.49 662.58L246.51 658.31L245.67 651.67L245.17 641.1L244.83 628.9L244.33 618.33L243.49 611.4L242.51 605.05L241.67 595L241.1 578.56L240.23 559.44L238.33 543L234.95 533.35L230.83 529.77L227 530.33L224.28 533.47L222.6 538.98L221.67 547L221.22 557.3L221.22 568.04L221.67 577L222.51 582.63L223.49 586.04L224.33 589L224.78 592.85L224.78 597.15L224.33 601L223.49 603.91L222.51 606.98L221.67 611.67L221.22 618.88L221.22 627.12L221.67 634.33L222.53 639.02L223.69 642.09L225 645L226.33 648.85L227.67 653.15L229 657L230.28 659.74L231.27 661.59L231.67 663L231.32 664.33L230.68 665.67L230.33 667L230.7 668.41L231.52 670.26L232.33 673L232.83 676.85L233.17 681.15L233.67 685L234.51 687.89L235.49 690.78L236.33 695L236.78 701.37L236.78 708.63L236.33 715L235.44 719.17L234.11 721.72L232.33 723.67L230.11 725.81L227.44 727.96L224.33 729.67L220.85 730.63L217.37 731.15L214.33 731.67L212.04 732.51L210.19 733.49L208.33 734.33L206.16 734.83L203.84 735.17L201.67 735.67L199.77 736.63L197.57 738.48L194.33 741.67L189.64 746.43L184.36 752.23L179.67 758.33L176.46 764.14L174.43 769.64L173 775L171.69 780.36L170.53 785.86L169.67 791.67L169.17 797.77L168.83 803.57L168.33 808.33L167.52 811.52L166.7 813.37L166.33 814.33L166.7 814.95L167.52 816.16L168.33 819L168.83 824.06L169.17 830.16L169.67 835.67L170.51 839.37L171.49 841.74L172.33 843.67L172.83 845.84L173.17 848.16L173.67 850.33L174.56 852.19L175.89 854.04L177.67 856.33L179.89 859.42L182.56 863.25L185.67 867.67L189.17 872.51L192.83 877.49L196.33 882.33L199.42 886.78L201.91 890.78L203.67 894.33L204.63 897.44L205.15 900.11L205.67 902.33L206.51 904.33L207.49 907.22L208.33 912.33L208.85 920.41L209.37 929.81L210.33 938.33L212.14 944.38L214.98 948.95L219 953.67L224.14 959.69L229.42 966.31L233.67 972.33L236.04 976.85L237.07 980.04L237.67 982.33L238.53 984.19L239.69 986.04L241 988.33L242.38 991.35L244.06 994.65L246.33 997.67L249.37 999.84L252.85 1000.83L256.33 1000.33L259.4 998.26L261.72 995.3L263 992.33L263.1 990.01L262.46 987.99L261.67 985.67L261.22 982.65L261.22 979.35L261.67 976.33L262.51 974.04L263.49 972.19L264.33 970.33L264.93 968.06L265.96 965.05L268.33 961L272.56 955.77L277.67 949.79L282.33 943.67L285.52 937.86L287.37 932.36L288.33 927L288.83 921.74L289.17 916.93L289.67 913L290.51 910.23L291.49 908.21L292.33 906.33L292.83 904.16L293.17 901.84L293.67 899.67L294.6 897.77L296.28 895.57L299 892.33L302.85 887.59L307.15 881.96L311 876.33L313.74 871.44L315.59 867.44L317 864.33L318.31 862.01L319.47 859.99L320.33 857.67L320.78 854.65L320.78 851.35L320.33 848.33L319.49 846.04L318.51 844.19L317.67 842.33L317.17 840.16L316.83 837.84L316.33 835.67L315.47 833.81L314.31 831.96L313 829.67L311.67 826.65L310.33 823.35L309 820.33L307.69 818.04L306.53 816.19L305.67 814.33L305.17 812.16L304.83 809.84L304.33 807.67L303.44 805.81L302.11 803.96L300.33 801.67L298.19 798.58L297.27 796.94L293.18 797.57L288.56 797.35L284.36 795.39L281.24 791.97L279.66 787.61L279.88 782.99L281.84 778.79L285.26 775.67L289.62 774.09L295.82 773.15Z" opacity="0.45"/>
+        <path data-id="folder:src/index" data-hops="0" d="M297.51 983.06L296.09 979.72L294.58 974.73L293.67 970.33L293.22 966.75L293.22 963.91L293.67 961.67L294.51 959.79L295.49 957.77L296.33 955L296.83 951.15L297.17 946.85L297.67 943L298.51 940.23L299.49 938.21L300.33 936.33L300.83 934.16L301.17 931.84L301.67 929.67L302.51 927.84L303.49 926.16L304.33 924.33L304.83 922.16L305.17 919.84L305.67 917.67L306.51 915.84L307.49 914.16L308.33 912.33L308.83 910.16L309.17 907.84L309.67 905.67L310.51 903.81L311.49 901.96L312.33 899.67L312.83 896.65L313.17 893.35L313.67 890.33L314.51 887.99L315.49 885.79L316.33 883L316.83 879.15L317.17 874.85L317.67 871L318.53 868.21L319.69 866.01L321 863.67L322.41 860.6L324.26 856.95L327 853L330.9 849.07L335.54 845.59L340.33 843L344.8 841.49L348.98 840.28L353 838.33L356.93 834.93L360.41 830.63L363 826.33L364.43 822.75L365.12 819.91L365.67 817.67L366.51 815.81L367.49 813.96L368.33 811.67L368.78 808.65L368.78 805.35L368.33 802.33L367.49 800.04L366.51 798.19L365.67 796.33L365.17 794.16L364.83 791.84L364.33 789.67L363.35 787.74L361.32 785.37L357.67 781.67L352.11 776.16L345.67 770.06L339.67 765L335.15 762.16L331.96 760.95L329.67 760.33L327.81 759.49L325.96 758.51L323.67 757.67L320.65 757.22L317.35 757.22L314.33 757.67L312.01 758.53L309.99 759.69L307.67 761L304.63 762.36L301.15 763.86L297.67 765.67L294.53 767.86L291.69 770.36L289 773L286.38 775.67L284.06 778.33L282.33 781L281.59 783.81L282.63 787.52L286.33 793L293.05 800.9L300.95 810.88L307.67 822.33L311.4 834.51L312.6 845.94L312.33 855L311.49 860.58L310.51 863.64L309.67 865.67L309.17 867.84L308.83 870.16L308.33 872.33L307.49 874.16L306.51 875.84L305.67 877.67L305.17 879.84L304.83 882.16L304.33 884.33L303.47 886.21L302.31 888.23L301 891L299.67 894.85L298.33 899.15L297 903L295.69 905.77L294.53 907.79L293.67 909.67L293.17 911.84L292.83 914.16L292.33 916.33L291.49 918.21L290.51 920.23L289.67 923L289.17 926.85L288.83 931.15L288.33 935L287.49 937.77L286.51 939.79L285.67 941.67L285.17 943.84L284.83 946.16L284.33 948.33L283.47 950.19L282.31 952.04L281 954.33L279.67 957.35L278.33 960.65L277 963.67L275.67 965.99L274.33 968.01L273 970.33L271.67 973.35L270.33 976.65L269 979.67L267.69 982.04L266.53 984.41L265.67 987.67L265.22 992.33L265.22 997.44L265.67 1001.67L266.51 1004.06L267.49 1005.27L268.33 1006.33L268.83 1008.04L269.17 1010.19L269.67 1012.33L270.6 1014.21L272.28 1016.23L275 1019L278.93 1022.83L283.74 1026.95L289 1030.33L294.26 1032.14L299.07 1032.31L303 1031L305.74 1028.46L307.59 1025.32L309 1022.33L310.31 1020.01L311.47 1017.99L312.33 1015.67L312.78 1012.65L312.78 1009.35L312.33 1006.33L311.42 1003.99L309.91 1001.79L307.67 999L306.66 997.69L302.23 1000.73L299.14 1002.05L295.77 1002.09L292.65 1000.85L290.24 998.5L288.92 995.41L288.88 992.04L290.12 988.92L292.47 986.51L297.51 983.06Z" opacity="0.45"/>
+        <circle data-via="examples/suspense-retry/app/manual-retry.tsx" cx="235.78" cy="1057.78" r="10.92" opacity="0.9"/>
+        <circle data-via="src/_internal/index.ts" cx="285.11" cy="832.13" r="10.1" opacity="0.9"/>
+        <circle data-via="src/index/index.ts" cx="291.4" cy="785.83" r="10.87" opacity="0.9"/>
+      </g>
+      <g id="changed" fill="#5fd8ea" stroke="#5fd8ea" stroke-width="1.5">
+        <circle data-id="src/_internal/index.ts" data-kind="modified" cx="285.11" cy="832.13" r="7.1" stroke="none"/>
+        <circle data-id="src/_internal/types.ts" data-kind="modified" cx="215.54" cy="777.24" r="24.9" stroke="none"/>
+        <circle data-id="src/_internal/utils/cache.ts" data-kind="modified" cx="244.4" cy="846.27" r="12.36" stroke="none"/>
+        <circle data-id="src/_internal/utils/config-context.ts" data-kind="modified" cx="274.28" cy="855.91" r="9.04" stroke="none"/>
+        <circle data-id="src/_internal/utils/config.ts" data-kind="modified" cx="226.4" cy="820.15" r="9.37" stroke="none"/>
+        <circle data-id="src/index/index.ts" data-kind="modified" cx="291.4" cy="785.83" r="7.87" stroke="none"/>
+        <circle data-id="src/index/use-swr.ts" data-kind="modified" cx="331.97" cy="810.55" r="22.99" stroke="none"/>
+      </g>
+      <g id="history">
+        <circle data-id="src/_internal/index.ts" data-churn="0.41" cx="285.11" cy="832.13" r="7.1" fill="url(#hatch)" fill-opacity="0.09"/>
+        <circle data-id="src/_internal/types.ts" data-churn="0.78" cx="215.54" cy="777.24" r="24.9" fill="url(#hatch)" fill-opacity="0.18"/>
+        <circle data-id="src/_internal/types.ts" data-bugfix="0.18" cx="215.54" cy="777.24" r="24.9" fill="url(#stipple)" fill-opacity="0.25"/>
+        <circle data-id="src/_internal/utils/cache.ts" data-churn="0.7" cx="244.4" cy="846.27" r="12.36" fill="url(#hatch)" fill-opacity="0.16"/>
+        <circle data-id="src/_internal/utils/cache.ts" data-bugfix="0.33" cx="244.4" cy="846.27" r="12.36" fill="url(#stipple)" fill-opacity="0.47"/>
+        <circle data-id="src/_internal/utils/config-context.ts" data-churn="0.46" cx="274.28" cy="855.91" r="9.04" fill="url(#hatch)" fill-opacity="0.11"/>
+        <circle data-id="src/_internal/utils/config-context.ts" data-bugfix="0.29" cx="274.28" cy="855.91" r="9.04" fill="url(#stipple)" fill-opacity="0.4"/>
+        <circle data-id="src/_internal/utils/config.ts" data-churn="0.54" cx="226.4" cy="820.15" r="9.37" fill="url(#hatch)" fill-opacity="0.13"/>
+        <circle data-id="src/_internal/utils/config.ts" data-bugfix="0.25" cx="226.4" cy="820.15" r="9.37" fill="url(#stipple)" fill-opacity="0.35"/>
+        <circle data-id="src/index/index.ts" data-churn="1.37" cx="291.4" cy="785.83" r="7.87" fill="url(#hatch)" fill-opacity="0.32"/>
+        <circle data-id="src/index/index.ts" data-bugfix="0.13" cx="291.4" cy="785.83" r="7.87" fill="url(#stipple)" fill-opacity="0.18"/>
+        <circle data-id="src/index/use-swr.ts" data-churn="0.53" cx="331.97" cy="810.55" r="22.99" fill="url(#hatch)" fill-opacity="0.12"/>
+        <circle data-id="src/index/use-swr.ts" data-bugfix="0.43" cx="331.97" cy="810.55" r="22.99" fill="url(#stipple)" fill-opacity="0.6"/>
+      </g>
+      <g id="evidence" stroke-width="2">
+        <g data-id="src/_internal/index.ts" data-covered="8" data-changed="8">
+          <circle cx="285.11" cy="832.13" r="8.35" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+        </g>
+        <g data-id="src/_internal/types.ts" data-covered="19" data-changed="19">
+          <circle cx="215.54" cy="777.24" r="26.15" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+        </g>
+        <g data-id="src/_internal/utils/cache.ts" data-covered="49" data-changed="49">
+          <circle cx="244.4" cy="846.27" r="13.61" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+        </g>
+        <g data-id="src/_internal/utils/config-context.ts" data-covered="1" data-changed="1">
+          <circle cx="274.28" cy="855.91" r="10.29" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+        </g>
+        <g data-id="src/_internal/utils/config.ts" data-covered="7" data-changed="7">
+          <circle cx="226.4" cy="820.15" r="10.62" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+        </g>
+        <g data-id="src/index/index.ts" data-covered="2" data-changed="2">
+          <circle cx="291.4" cy="785.83" r="9.12" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+        </g>
+        <g data-id="src/index/use-swr.ts" data-covered="23" data-changed="25">
+          <circle cx="331.97" cy="810.55" r="24.24" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+          <circle cx="331.97" cy="810.55" r="24.24" fill="none" stroke="#e6edf3" stroke-width="2.5" pathLength="1" stroke-dasharray="0.08 1" transform="rotate(-90 331.97 810.55)"/>
+        </g>
+        <line data-id="src/_internal/index.ts" data-test="test/type/config.tsx" data-status="unknown" stroke="#6b7480" x1="287.3" y1="829.94" x2="292.96" y2="824.28"/>
+        <line data-id="src/_internal/index.ts" data-test="test/type/helper-types.tsx" data-status="unknown" stroke="#6b7480" x1="288.1" y1="831.33" x2="295.83" y2="829.26"/>
+        <line data-id="src/_internal/index.ts" data-test="test/type/internal.tsx" data-status="unknown" stroke="#6b7480" x1="288.1" y1="832.93" x2="295.83" y2="835"/>
+        <line data-id="src/_internal/index.ts" data-test="test/type/mutate.ts" data-status="unknown" stroke="#6b7480" x1="287.3" y1="834.32" x2="292.96" y2="839.98"/>
+        <line data-id="src/_internal/index.ts" data-test="test/type/suspense/helper-types.tsx" data-status="unknown" stroke="#6b7480" x1="285.91" y1="835.12" x2="287.98" y2="842.85"/>
+        <line data-id="src/_internal/index.ts" data-test="test/unit/serialize.test.ts" data-status="passed" stroke="#e6edf3" x1="284.31" y1="835.12" x2="282.24" y2="842.85"/>
+        <line data-id="src/_internal/index.ts" data-test="test/unit/utils.test.tsx" data-status="passed" stroke="#e6edf3" x1="282.92" y1="834.32" x2="277.26" y2="839.98"/>
+        <line data-id="src/_internal/index.ts" data-test="test/use-swr-local-mutation.test.tsx" data-status="focused" stroke="#6b7480" x1="282.12" y1="832.93" x2="274.39" y2="835"/>
+        <line data-id="src/_internal/index.ts" data-test="test/use-swr-middlewares.test.tsx" data-status="passed" stroke="#e6edf3" x1="282.12" y1="831.33" x2="274.39" y2="829.26"/>
+        <line data-id="src/_internal/index.ts" data-test="test/use-swr-node-env.test.tsx" data-status="passed" stroke="#e6edf3" x1="282.92" y1="829.94" x2="277.26" y2="824.28"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/basic-ssr/block.tsx" data-status="unknown" stroke="#6b7480" x1="293.33" y1="782.48" x2="297.33" y2="775.55"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/cache-tags/page.tsx" data-status="unknown" stroke="#6b7480" x1="294.75" y1="783.9" x2="301.68" y2="779.9"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/concurrent-transition/transition-demo.tsx" data-status="unknown" stroke="#6b7480" x1="295.27" y1="785.83" x2="303.27" y2="785.83"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/issue-2702/reproduction.tsx" data-status="unknown" stroke="#6b7480" x1="294.75" y1="787.77" x2="301.68" y2="791.77"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/page.tsx" data-status="unknown" stroke="#6b7480" x1="293.33" y1="789.18" x2="297.33" y2="796.11"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/partially-hydrate/use-data.tsx" data-status="unknown" stroke="#6b7480" x1="291.4" y1="789.7" x2="291.4" y2="797.7"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/perf/page.tsx" data-status="unknown" stroke="#6b7480" x1="289.46" y1="789.18" x2="285.46" y2="796.11"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/react-server-entry/page.tsx" data-status="unknown" stroke="#6b7480" x1="288.05" y1="787.77" x2="281.12" y2="791.77"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/render-count/page.tsx" data-status="unknown" stroke="#6b7480" x1="287.53" y1="785.83" x2="279.53" y2="785.83"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/render-preload-avoid-waterfall/page.tsx" data-status="unknown" stroke="#6b7480" x1="288.05" y1="783.9" x2="281.12" y2="779.9"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/render-preload-basic/page.tsx" data-status="unknown" stroke="#6b7480" x1="289.46" y1="782.48" x2="285.46" y2="775.55"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/render-promise-suspense-error/page.tsx" data-status="unknown" stroke="#6b7480" x1="291.4" y1="781.96" x2="291.4" y2="773.96"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/render-promise-suspense-resolve/page.tsx" data-status="unknown" stroke="#6b7480" x1="293.33" y1="782.48" x2="297.33" y2="775.55"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/render-promise-suspense-shared/page.tsx" data-status="unknown" stroke="#6b7480" x1="294.75" y1="783.9" x2="301.68" y2="779.9"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/render-suspense-avoid-rerender/page.tsx" data-status="unknown" stroke="#6b7480" x1="295.27" y1="785.83" x2="303.27" y2="785.83"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/render-suspense-cached-error/page.tsx" data-status="unknown" stroke="#6b7480" x1="294.75" y1="787.77" x2="301.68" y2="791.77"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/render-suspense-error/page.tsx" data-status="unknown" stroke="#6b7480" x1="293.33" y1="789.18" x2="297.33" y2="796.11"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/render-suspense-fallback/page.tsx" data-status="unknown" stroke="#6b7480" x1="291.4" y1="789.7" x2="291.4" y2="797.7"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/render-suspense-fetcher/page.tsx" data-status="unknown" stroke="#6b7480" x1="289.46" y1="789.18" x2="285.46" y2="796.11"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/render-suspense-infinite-preload/page.tsx" data-status="unknown" stroke="#6b7480" x1="288.05" y1="787.77" x2="281.12" y2="791.77"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/render-suspense-initial-data/page.tsx" data-status="unknown" stroke="#6b7480" x1="287.53" y1="785.83" x2="279.53" y2="785.83"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/render-suspense-keep-previous/page.tsx" data-status="unknown" stroke="#6b7480" x1="288.05" y1="783.9" x2="281.12" y2="779.9"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/render-suspense-key-change/page.tsx" data-status="unknown" stroke="#6b7480" x1="289.46" y1="782.48" x2="285.46" y2="775.55"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/render-suspense-multiple-fallbacks/page.tsx" data-status="unknown" stroke="#6b7480" x1="291.4" y1="781.96" x2="291.4" y2="773.96"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/render-suspense-no-revalidate/page.tsx" data-status="unknown" stroke="#6b7480" x1="293.33" y1="782.48" x2="297.33" y2="775.55"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/render-suspense-non-promise/page.tsx" data-status="unknown" stroke="#6b7480" x1="294.75" y1="783.9" x2="301.68" y2="779.9"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/render-suspense-null-key/page.tsx" data-status="unknown" stroke="#6b7480" x1="295.27" y1="785.83" x2="303.27" y2="785.83"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/render-suspense-same-data/page.tsx" data-status="unknown" stroke="#6b7480" x1="294.75" y1="787.77" x2="301.68" y2="791.77"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/rsc-unstable-preload-conditional/client.tsx" data-status="unknown" stroke="#6b7480" x1="293.33" y1="789.18" x2="297.33" y2="796.11"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/rsc-unstable-preload-conditional/page.tsx" data-status="unknown" stroke="#6b7480" x1="291.4" y1="789.7" x2="291.4" y2="797.7"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/rsc-unstable-preload-no-suspense/client.tsx" data-status="unknown" stroke="#6b7480" x1="289.46" y1="789.18" x2="285.46" y2="796.11"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/rsc-unstable-preload-no-suspense/page.tsx" data-status="unknown" stroke="#6b7480" x1="288.05" y1="787.77" x2="281.12" y2="791.77"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/rsc-unstable-preload/client.tsx" data-status="unknown" stroke="#6b7480" x1="287.53" y1="785.83" x2="279.53" y2="785.83"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/rsc-unstable-preload/page.tsx" data-status="unknown" stroke="#6b7480" x1="288.05" y1="783.9" x2="281.12" y2="779.9"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/server-prefetch-warning/page.tsx" data-status="unknown" stroke="#6b7480" x1="289.46" y1="782.48" x2="285.46" y2="775.55"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/suspense-after-preload/remote-data.tsx" data-status="unknown" stroke="#6b7480" x1="291.4" y1="781.96" x2="291.4" y2="773.96"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/suspense-fallback/layout.tsx" data-status="unknown" stroke="#6b7480" x1="293.33" y1="782.48" x2="297.33" y2="775.55"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/suspense-fallback/promise/page.tsx" data-status="unknown" stroke="#6b7480" x1="294.75" y1="783.9" x2="301.68" y2="779.9"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/suspense-retry/use-remote-data.ts" data-status="unknown" stroke="#6b7480" x1="295.27" y1="785.83" x2="303.27" y2="785.83"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/app/suspense-undefined-key/page.tsx" data-status="unknown" stroke="#6b7480" x1="294.75" y1="787.77" x2="301.68" y2="791.77"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/component/manual-retry-mutate.tsx" data-status="unknown" stroke="#6b7480" x1="293.33" y1="789.18" x2="297.33" y2="796.11"/>
+        <line data-id="src/index/index.ts" data-test="test/e2e/site/component/use-remote-data.ts" data-status="unknown" stroke="#6b7480" x1="291.4" y1="789.7" x2="291.4" y2="797.7"/>
+        <line data-id="src/index/index.ts" data-test="test/type/config.tsx" data-status="unknown" stroke="#6b7480" x1="289.46" y1="789.18" x2="285.46" y2="796.11"/>
+        <line data-id="src/index/index.ts" data-test="test/type/fetcher.ts" data-status="unknown" stroke="#6b7480" x1="288.05" y1="787.77" x2="281.12" y2="791.77"/>
+        <line data-id="src/index/index.ts" data-test="test/type/mutate.ts" data-status="unknown" stroke="#6b7480" x1="287.53" y1="785.83" x2="279.53" y2="785.83"/>
+        <line data-id="src/index/index.ts" data-test="test/type/option-fetcher.ts" data-status="unknown" stroke="#6b7480" x1="288.05" y1="783.9" x2="281.12" y2="779.9"/>
+        <line data-id="src/index/index.ts" data-test="test/type/preload.ts" data-status="unknown" stroke="#6b7480" x1="289.46" y1="782.48" x2="285.46" y2="775.55"/>
+        <line data-id="src/index/index.ts" data-test="test/type/suspense/suspense.ts" data-status="unknown" stroke="#6b7480" x1="291.4" y1="781.96" x2="291.4" y2="773.96"/>
+        <line data-id="src/index/index.ts" data-test="test/type/trigger.ts" data-status="unknown" stroke="#6b7480" x1="293.33" y1="782.48" x2="297.33" y2="775.55"/>
+        <line data-id="src/index/index.ts" data-test="test/unit/serialize.test.ts" data-status="passed" stroke="#e6edf3" x1="294.75" y1="783.9" x2="301.68" y2="779.9"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-cache.test.tsx" data-status="passed" stroke="#e6edf3" x1="295.27" y1="785.83" x2="303.27" y2="785.83"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-concurrent-rendering.test.tsx" data-status="focused" stroke="#6b7480" x1="294.75" y1="787.77" x2="301.68" y2="791.77"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-config-callbacks.test.tsx" data-status="passed" stroke="#e6edf3" x1="293.33" y1="789.18" x2="297.33" y2="796.11"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-config.test.tsx" data-status="passed" stroke="#e6edf3" x1="291.4" y1="789.7" x2="291.4" y2="797.7"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-context-config.test.tsx" data-status="passed" stroke="#e6edf3" x1="289.46" y1="789.18" x2="285.46" y2="796.11"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-error.test.tsx" data-status="focused" stroke="#6b7480" x1="288.05" y1="787.77" x2="281.12" y2="791.77"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-fetcher.test.tsx" data-status="passed" stroke="#e6edf3" x1="287.53" y1="785.83" x2="279.53" y2="785.83"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-focus.test.tsx" data-status="passed" stroke="#e6edf3" x1="288.05" y1="783.9" x2="281.12" y2="779.9"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-immutable.test.tsx" data-status="passed" stroke="#e6edf3" x1="289.46" y1="782.48" x2="285.46" y2="775.55"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-infinite-preload.test.tsx" data-status="focused" stroke="#6b7480" x1="291.4" y1="781.96" x2="291.4" y2="773.96"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-infinite.test.tsx" data-status="passed" stroke="#e6edf3" x1="293.33" y1="782.48" x2="297.33" y2="775.55"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-integration.test.tsx" data-status="passed" stroke="#e6edf3" x1="294.75" y1="783.9" x2="301.68" y2="779.9"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-key.test.tsx" data-status="passed" stroke="#e6edf3" x1="295.27" y1="785.83" x2="303.27" y2="785.83"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-laggy.test.tsx" data-status="passed" stroke="#e6edf3" x1="294.75" y1="787.77" x2="301.68" y2="791.77"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-legacy-react.test.tsx" data-status="passed" stroke="#e6edf3" x1="293.33" y1="789.18" x2="297.33" y2="796.11"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-loading.test.tsx" data-status="passed" stroke="#e6edf3" x1="291.4" y1="789.7" x2="291.4" y2="797.7"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-local-mutation.test.tsx" data-status="focused" stroke="#6b7480" x1="289.46" y1="789.18" x2="285.46" y2="796.11"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-middlewares.test.tsx" data-status="passed" stroke="#e6edf3" x1="288.05" y1="787.77" x2="281.12" y2="791.77"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-node-env.test.tsx" data-status="passed" stroke="#e6edf3" x1="287.53" y1="785.83" x2="279.53" y2="785.83"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-offline.test.tsx" data-status="passed" stroke="#e6edf3" x1="288.05" y1="783.9" x2="281.12" y2="779.9"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-preload.test.tsx" data-status="passed" stroke="#e6edf3" x1="289.46" y1="782.48" x2="285.46" y2="775.55"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-promise.test.tsx" data-status="passed" stroke="#e6edf3" x1="291.4" y1="781.96" x2="291.4" y2="773.96"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-reconnect.test.tsx" data-status="passed" stroke="#e6edf3" x1="293.33" y1="782.48" x2="297.33" y2="775.55"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-refresh.test.tsx" data-status="passed" stroke="#e6edf3" x1="294.75" y1="783.9" x2="301.68" y2="779.9"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-remote-mutation.test.tsx" data-status="passed" stroke="#e6edf3" x1="295.27" y1="785.83" x2="303.27" y2="785.83"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-revalidate.test.tsx" data-status="passed" stroke="#e6edf3" x1="294.75" y1="787.77" x2="301.68" y2="791.77"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-server.test.tsx" data-status="passed" stroke="#e6edf3" x1="293.33" y1="789.18" x2="297.33" y2="796.11"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-streaming-ssr.test.tsx" data-status="passed" stroke="#e6edf3" x1="291.4" y1="789.7" x2="291.4" y2="797.7"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-subscription.test.tsx" data-status="passed" stroke="#e6edf3" x1="289.46" y1="789.18" x2="285.47" y2="796.11"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-suspense.test.tsx" data-status="passed" stroke="#e6edf3" x1="288.05" y1="787.77" x2="281.12" y2="791.77"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-tags.test.tsx" data-status="passed" stroke="#e6edf3" x1="287.53" y1="785.83" x2="279.53" y2="785.83"/>
+        <line data-id="src/index/index.ts" data-test="test/use-swr-unload.test.tsx" data-status="passed" stroke="#e6edf3" x1="288.05" y1="783.9" x2="281.12" y2="779.9"/>
+        <line data-id="src/index/index.ts" data-test="test/utils.tsx" data-status="unknown" stroke="#6b7480" x1="289.46" y1="782.48" x2="285.46" y2="775.55"/>
+      </g>
+      <g id="ghosts" fill="none" stroke="#7c8590" stroke-dasharray="2 2">
+        <circle data-id="package.json" data-with="src/_internal/utils/config-context.ts src/index/index.ts" data-rate="0.63" cx="139" cy="217" r="7"/>
+      </g>
+      <g id="storms" fill="#f0546a">
+        <g data-slot="health" data-over="folder:src/_internal">
+          <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(230.83 519.77)"/>
+          <text x="236.83" y="522.57" font-size="8" font-variant="small-caps">health</text>
+        </g>
+        <g data-slot="health" data-over="folder:src/index">
+          <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(317.35 747.22)"/>
+          <text x="323.35" y="750.02" font-size="8" font-variant="small-caps">health</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="chrome">
+    <g id="hud">
+      <g data-block="category" data-category="IFR">
+        <rect x="10" y="8" width="36.18" height="20" fill="#f0546a"/>
+        <text x="16" y="22.55" font-size="13" fill="#0a0c0f"><tspan font-weight="bold">IFR</tspan></text>
+      </g>
+      <g data-block="patch-cov">
+        <rect x="49.18" y="8" width="84.54" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="55.18" y="21.15" font-size="9" fill="#e6edf3"><tspan>Patch cov </tspan><tspan font-weight="bold">98%</tspan></text>
+      </g>
+      <g data-block="mutants" data-muted="true" data-reason="absent">
+        <rect x="136.72" y="8" width="62.22" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="142.72" y="21.15" font-size="9" fill="#6b7480"><tspan>Mutants </tspan><tspan font-weight="bold">—</tspan></text>
+      </g>
+      <g data-block="reach">
+        <rect x="201.94" y="8" width="90.12" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="207.94" y="21.15" font-size="9" fill="#e6edf3"><tspan>Reach </tspan><tspan font-weight="bold">13</tspan><tspan> cells</tspan></text>
+      </g>
+      <g data-block="size">
+        <rect x="295.06" y="8" width="140.34" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="301.06" y="21.15" font-size="9" fill="#e6edf3"><tspan>Size </tspan><tspan font-weight="bold">+500 −17</tspan><tspan>, 11 files</tspan></text>
+      </g>
+      <g data-block="gate">
+        <rect x="438.4" y="8" width="67.8" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="444.4" y="21.15" font-size="9" fill="#e6edf3"><tspan>Gate </tspan><tspan font-weight="bold">1</tspan><tspan> red</tspan></text>
+      </g>
+      <g data-block="standing">
+        <rect x="509.2" y="8" width="229.62" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="515.2" y="21.15" font-size="9" fill="#e6edf3"><tspan>Standing </tspan><tspan font-weight="bold">4</tspan><tspan> red, global: smoke, snippets</tspan></text>
+      </g>
+      <g data-block="health" data-muted="true" data-reason="head-only">
+        <rect x="10" y="31" width="67.8" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="16" y="44.15" font-size="9" fill="#6b7480"><tspan>Health Δ </tspan><tspan font-weight="bold">—</tspan></text>
+      </g>
+      <g data-block="notices">
+        <rect x="80.8" y="31" width="84.54" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="86.8" y="44.15" font-size="9" fill="#e6edf3"><tspan>Notices </tspan><tspan font-weight="bold">1·2·3</tspan></text>
+      </g>
+      <g data-block="other">
+        <rect x="168.34" y="31" width="51.06" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="174.34" y="44.15" font-size="9" fill="#e6edf3"><tspan>Other </tspan><tspan font-weight="bold">2</tspan></text>
+      </g>
+    </g>
+    <g id="rules" stroke="#2b333d" stroke-width="1">
+      <line x1="0" y1="59" x2="780" y2="59"/>
+      <line x1="480" y1="59" x2="480" y2="1141"/>
+    </g>
+    <g id="leaders" stroke="#9aa5b1" stroke-width="1" stroke-dasharray="0.1 3" stroke-linecap="round" fill="none">
+      <line data-notice="1" x1="495" y1="74" x2="243.8" y2="864.5"/>
+      <line data-notice="2" x1="495" y1="175" x2="263.8" y2="924.67"/>
+      <line data-notice="3" x1="495" y1="244.8" x2="358.88" y2="896.46"/>
+      <line data-notice="4" x1="495" y1="304.2" x2="371.88" y2="896.46"/>
+      <line data-notice="5" x1="495" y1="374" x2="276.8" y2="924.67"/>
+      <line data-notice="6" x1="495" y1="454.2" x2="307.62" y2="861.05"/>
+    </g>
+    <g id="notices">
+      <g data-notice="1" data-tier="primary" data-kind="interface-change" data-target="src/_internal/types.ts">
+        <g data-mark="1" data-tier="primary">
+          <rect x="490" y="69" width="10" height="10" fill="#f0546a"/>
+          <text x="495" y="76.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#0a0c0f">1</text>
+        </g>
+        <text x="505" y="77" font-size="8" font-weight="bold" fill="#e6edf3">src/_internal/types.ts</text>
+        <text x="505" y="86.4" font-size="7" font-variant="small-caps" fill="#e6edf3">interface-change</text>
+        <text x="505" y="96.5" font-size="8" fill="#e6edf3">the interface of `src/_internal` changed</text>
+        <text x="505" y="106.9" font-size="8" fill="#e6edf3">(`TagRevalidator` added, `GlobalState`,</text>
+        <text x="505" y="117.3" font-size="8" fill="#e6edf3">`InternalConfiguration` and `PublicConfiguration`</text>
+        <text x="505" y="127.7" font-size="8" fill="#e6edf3">reshaped) and 12 files read it and `swr` publishes</text>
+        <text x="505" y="138.1" font-size="8" fill="#e6edf3">`Arguments`, `BareFetcher`, `BlockingData` and 36</text>
+        <text x="505" y="148.5" font-size="8" fill="#e6edf3">more</text>
+        <text x="505" y="157.9" font-size="7" fill="#6b7480">severity 8 · fan_in_high 5 · deep_band 4</text>
+      </g>
+      <g data-notice="2" data-tier="secondary" data-kind="interface-change" data-target="src/_internal/utils/cache.ts">
+        <g data-mark="2" data-tier="secondary">
+          <rect x="490" y="170" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
+          <text x="495" y="177.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">2</text>
+        </g>
+        <text x="505" y="178" font-size="8" font-weight="bold" fill="#e6edf3">src/_internal/utils/cache.ts</text>
+        <text x="505" y="187.4" font-size="7" font-variant="small-caps" fill="#e6edf3">interface-change</text>
+        <text x="505" y="197.5" font-size="8" fill="#e6edf3">the interface of `src/_internal` changed (`initCache`</text>
+        <text x="505" y="207.9" font-size="8" fill="#e6edf3">reshaped) and 12 files read it and `swr` publishes</text>
+        <text x="505" y="218.3" font-size="8" fill="#e6edf3">`initCache`</text>
+        <text x="505" y="227.7" font-size="7" fill="#6b7480">severity 8 · fan_in_high 5 · deep_band 4</text>
+      </g>
+      <g data-notice="3" data-tier="secondary" data-kind="uncovered-high-reach" data-target="src/index/use-swr.ts">
+        <g data-mark="3" data-tier="secondary">
+          <rect x="490" y="239.8" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
+          <text x="495" y="247.25" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">3</text>
+        </g>
+        <text x="505" y="247.8" font-size="8" font-weight="bold" fill="#e6edf3">src/index/use-swr.ts</text>
+        <text x="505" y="257.2" font-size="7" font-variant="small-caps" fill="#e6edf3">uncovered-high-reach</text>
+        <text x="505" y="267.3" font-size="8" fill="#e6edf3">2 changed lines are uncovered and the change reaches</text>
+        <text x="505" y="277.7" font-size="8" fill="#e6edf3">13 cells</text>
+        <text x="505" y="287.1" font-size="7" fill="#6b7480">severity 7 · high_reach_cells 3</text>
+      </g>
+      <g data-notice="4" data-tier="tertiary" data-kind="threshold-breached" data-target="src/index/use-swr.ts">
+        <g data-mark="4" data-tier="tertiary">
+          <rect x="490" y="299.2" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="495" y="306.65" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">4</text>
+        </g>
+        <text x="505" y="307.2" font-size="8" font-weight="bold" fill="#e6edf3">src/index/use-swr.ts</text>
+        <text x="505" y="316.6" font-size="7" font-variant="small-caps" fill="#e6edf3">threshold-breached</text>
+        <text x="505" y="326.7" font-size="8" fill="#e6edf3">all over threshold in a function this change touched;</text>
+        <text x="505" y="337.1" font-size="8" fill="#e6edf3">present at head, not measured as introduced by this</text>
+        <text x="505" y="347.5" font-size="8" fill="#e6edf3">change (.check/ is read at head only)</text>
+        <text x="505" y="356.9" font-size="7" fill="#6b7480">severity 5</text>
+      </g>
+      <g data-notice="5" data-tier="tertiary" data-kind="threshold-breached" data-target="src/_internal/utils/cache.ts">
+        <g data-mark="5" data-tier="tertiary">
+          <rect x="490" y="369" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="495" y="376.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">5</text>
+        </g>
+        <text x="505" y="377" font-size="8" font-weight="bold" fill="#e6edf3">src/_internal/utils/cache.ts</text>
+        <text x="505" y="386.4" font-size="7" font-variant="small-caps" fill="#e6edf3">threshold-breached</text>
+        <text x="505" y="396.5" font-size="8" fill="#e6edf3">cognitive_crap over threshold in a function this</text>
+        <text x="505" y="406.9" font-size="8" fill="#e6edf3">change touched; present at head, not measured as</text>
+        <text x="505" y="417.3" font-size="8" fill="#e6edf3">introduced by this change (.check/ is read at head</text>
+        <text x="505" y="427.7" font-size="8" fill="#e6edf3">only)</text>
+        <text x="505" y="437.1" font-size="7" fill="#6b7480">severity 5</text>
+      </g>
+      <g data-notice="6" data-tier="tertiary" data-kind="interface-added" data-target="src/index/index.ts">
+        <g data-mark="6" data-tier="tertiary">
+          <rect x="490" y="449.2" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="495" y="456.65" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">6</text>
+        </g>
+        <text x="505" y="457.2" font-size="8" font-weight="bold" fill="#e6edf3">src/index/index.ts</text>
+        <text x="505" y="466.6" font-size="7" font-variant="small-caps" fill="#e6edf3">interface-added</text>
+        <text x="505" y="476.7" font-size="8" fill="#e6edf3">the interface of `src/index` grew (`TagRevalidator`</text>
+        <text x="505" y="487.1" font-size="8" fill="#e6edf3">and `revalidateTag` added) and 13 files read it and</text>
+        <text x="505" y="497.5" font-size="8" fill="#e6edf3">`swr` publishes `Arguments`, `BareFetcher`, `Cache`</text>
+        <text x="505" y="507.9" font-size="8" fill="#e6edf3">and 28 more</text>
+        <text x="505" y="517.3" font-size="7" fill="#6b7480">severity 3 · fan_in_high 5 · deep_band 4</text>
+      </g>
+    </g>
+    <g id="legend">
+      <rect x="490" y="932" width="280" height="199" fill="none" stroke="#6b7480" stroke-width="1"/>
+      <text x="496" y="945" font-size="7" font-variant="small-caps" fill="#6b7480">legend</text>
+      <g data-mark="category">
+        <g data-balloon="1">
+          <circle cx="503" cy="954" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="956.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">1</text>
+        </g>
+        <g>
+          <rect x="516" y="947" width="19.02" height="14" fill="#4fd37a"/>
+          <text x="519" y="956.45" font-size="7" font-weight="bold" fill="#0a0c0f">VFR</text>
+        </g>
+        <g>
+          <rect x="536.02" y="947" width="23.36" height="14" fill="#5b8def"/>
+          <text x="539.02" y="956.45" font-size="7" font-weight="bold" fill="#0a0c0f">MVFR</text>
+        </g>
+        <g>
+          <rect x="560.38" y="947" width="19.02" height="14" fill="#f0546a"/>
+          <text x="563.38" y="956.45" font-size="7" font-weight="bold" fill="#0a0c0f">IFR</text>
+        </g>
+        <g>
+          <rect x="580.4" y="947" width="23.36" height="14" fill="#e35ce0"/>
+          <text x="583.4" y="956.45" font-size="7" font-weight="bold" fill="#0a0c0f">LIFR</text>
+        </g>
+        <text x="610.76" y="956.45" font-size="7" fill="#e6edf3">category: set by the change alone</text>
+      </g>
+      <g data-mark="lit-arc">
+        <g data-balloon="2">
+          <circle cx="503" cy="972" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="974.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">2</text>
+        </g>
+        <circle cx="528" cy="972" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="528" cy="972" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
+        <circle cx="528" cy="972" r="6.25" fill="none" stroke="#e6edf3" stroke-width="2.5" pathLength="1" stroke-dasharray="0.4 1" transform="rotate(-90 528 972)"/>
+        <text x="546" y="974.45" font-size="7" fill="#e6edf3">lit arc: changed lines no test ran</text>
+      </g>
+      <g data-mark="hairline">
+        <g data-balloon="3">
+          <circle cx="503" cy="990" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="992.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">3</text>
+        </g>
+        <circle cx="528" cy="990" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="528" cy="990" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
+        <text x="546" y="992.45" font-size="7" fill="#e6edf3">hairline: changed lines the tests ran</text>
+      </g>
+      <g data-mark="notch">
+        <g data-balloon="4">
+          <circle cx="503" cy="1008" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="1010.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">4</text>
+        </g>
+        <circle cx="528" cy="1008" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="528" cy="1008" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
+        <path d="M526 1000.5L528 1005L530 1000.5Z" fill="#e6edf3"/>
+        <text x="546" y="1010.45" font-size="7" fill="#e6edf3">notch: a mutant no test killed</text>
+      </g>
+      <g data-mark="stitches">
+        <g data-balloon="5">
+          <circle cx="503" cy="1026" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="1028.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">5</text>
+        </g>
+        <circle cx="528" cy="1026" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <line x1="528.5" y1="1026.87" x2="532.5" y2="1033.79" stroke="#e6edf3" stroke-width="2"/>
+        <line x1="528" y1="1027" x2="528" y2="1035" stroke="#6b7480" stroke-width="2"/>
+        <line x1="527.5" y1="1026.87" x2="526" y2="1029.46" stroke="#f0546a" stroke-width="2"/>
+        <line x1="525" y1="1031.2" x2="523.5" y2="1033.79" stroke="#f0546a" stroke-width="2"/>
+        <text x="546" y="1028.45" font-size="7" fill="#e6edf3">stitches: its tests passed, not run, failed</text>
+      </g>
+      <g data-mark="red-bolt">
+        <g data-balloon="6">
+          <circle cx="503" cy="1044" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="1046.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">6</text>
+        </g>
+        <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" fill="#f0546a" transform="translate(528 1044) scale(1)"/>
+        <text x="546" y="1046.45" font-size="7" fill="#e6edf3">red bolt: a failing check names a changed file</text>
+      </g>
+      <g data-mark="grey-bolt">
+        <g data-balloon="7">
+          <circle cx="503" cy="1062" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="1064.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">7</text>
+        </g>
+        <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" fill="#58616b" transform="translate(528 1062) scale(0.6)"/>
+        <text x="546" y="1064.45" font-size="7" fill="#e6edf3">grey bolt: fails on files the change left alone</text>
+      </g>
+      <g data-mark="ghost">
+        <g data-balloon="8">
+          <circle cx="503" cy="1080" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="1082.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">8</text>
+        </g>
+        <circle cx="528" cy="1080" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="528" cy="1080" r="8" fill="none" stroke="#7c8590" stroke-dasharray="2 2"/>
+        <text x="546" y="1082.45" font-size="7" fill="#e6edf3">ghost: usually changes with these, and did not</text>
+      </g>
+      <g data-mark="stain">
+        <g data-balloon="9">
+          <circle cx="503" cy="1098" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="1100.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">9</text>
+        </g>
+        <circle cx="528" cy="1098" r="5" fill="#5fd8ea" stroke="#5f6873" stroke-width="1"/>
+        <text x="546" y="1100.45" font-size="7" fill="#e6edf3">cyan: a changed file; +path in a row: added</text>
+      </g>
+      <g data-mark="unmeasured">
+        <g data-balloon="10">
+          <circle cx="503" cy="1116" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="1118.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">10</text>
+        </g>
+        <circle cx="528" cy="1116" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="528" cy="1116" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
+        <circle cx="528" cy="1116" r="6.25" fill="none" stroke="#e6edf3" stroke-width="2.5"/>
+        <text x="546" y="1118.45" font-size="7" fill="#e6edf3">skin lit whole: no coverage report names it</text>
+      </g>
+    </g>
+    <g id="marks">
+      <g data-target="src/_internal/types.ts">
+        <circle data-target="src/_internal/types.ts" data-tier="primary" fill="none" stroke="#f0546a" stroke-width="1.5" cx="215.54" cy="836.24" r="29.9"/>
+        <g data-mark="1" data-tier="primary">
+          <rect x="238.8" y="859.5" width="10" height="10" fill="#f0546a"/>
+          <text x="243.8" y="866.95" font-size="7" font-weight="bold" text-anchor="middle" fill="#0a0c0f">1</text>
+        </g>
+        <text data-target="src/_internal/types.ts" x="238.8" y="879.5" font-size="7" font-variant="small-caps" fill="#f0546a">interface-change</text>
+      </g>
+      <g data-target="src/_internal/utils/cache.ts">
+        <circle data-target="src/_internal/utils/cache.ts" data-tier="secondary" fill="none" stroke="#9aa5b1" stroke-width="3" cx="244.4" cy="905.27" r="17.36"/>
+        <g data-mark="2" data-tier="secondary">
+          <rect x="258.8" y="919.67" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
+          <text x="263.8" y="927.12" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">2</text>
+        </g>
+        <g data-mark="5" data-tier="tertiary">
+          <rect x="271.8" y="919.67" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="276.8" y="927.12" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">5</text>
+        </g>
+      </g>
+      <g data-target="src/index/use-swr.ts">
+        <circle data-target="src/index/use-swr.ts" data-tier="secondary" fill="none" stroke="#9aa5b1" stroke-width="3" cx="331.97" cy="869.55" r="27.99"/>
+        <g data-mark="3" data-tier="secondary">
+          <rect x="353.88" y="891.46" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
+          <text x="358.88" y="898.91" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">3</text>
+        </g>
+        <g data-mark="4" data-tier="tertiary">
+          <rect x="366.88" y="891.46" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="371.88" y="898.91" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">4</text>
+        </g>
+      </g>
+      <g data-target="src/index/index.ts">
+        <g data-mark="6" data-tier="tertiary">
+          <rect x="302.62" y="856.05" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="307.62" y="863.5" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">6</text>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>
