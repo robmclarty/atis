@@ -7,30 +7,38 @@
  * normal is read in the fragment stage from the same texture, one sample
  * either side, so the terraces stay soft however coarse the mesh, and the
  * clearcoat reads that normal too: left alone it takes the flat grid's and
- * never glints (the spike's finding). The albedo is graphite where the skin
- * lies on the field and blue-grey where a cell swells through it; at the far
- * field it dims to a trace, the key light and the sky being off there (D151).
- * Nothing here is emissive, and the material says so (D152).
+ * never glints (the spike's finding).
  *
- * The look and the relief come through the registry (D156): the albedos and
- * the sheen are uniforms the loop re-reads each frame, and the relief is laid
- * again when one of its tokens moves.
+ * The base tissue rides a second texture, step 25's grids: the cells' bodies,
+ * which blend the albedo from graphite to blue-grey, and their membrane lines,
+ * teeth and all (D159), laid over it. The tissue has a faint light of its own
+ * (D151): a rim where the skin slopes away from the eye, and each cell's own
+ * glow over its body. Both are emissive and neither ever blooms, so the
+ * material writes nothing to the bloom's target (D152, D11); the weather's
+ * light joins at step 33. At the far field the albedo dims to a trace, the key
+ * light and the sky being off there.
+ *
+ * The look, the tissue's look and the relief come through the registry
+ * (D156): the albedos, the sheen and the lights are uniforms the loop re-reads
+ * each frame, and the relief is laid again when one of its tokens moves.
  */
 
 import { BufferAttribute, BufferGeometry, Color, DataTexture, DataUtils, HalfFloatType, LinearFilter, Mesh, MeshPhysicalNodeMaterial, RGBAFormat } from 'three/webgpu';
 import type { Node, UniformNode } from 'three/webgpu';
-import { clamp, float, mix, normalize, positionLocal, texture, transformNormalToView, uniform, uv, vec2, vec3 } from 'three/tsl';
-import { heightfield } from 'scene';
-import type { Grid, Heightfield, Relief } from 'scene';
+import { clamp, float, mix, mrt, normalize, positionLocal, pow, texture, transformNormalToView, uniform, uv, vec2, vec3, vec4 } from 'three/tsl';
+import { heightfield, tissue } from 'scene';
+import type { Grid, Heightfield, Relief, Tissue } from 'scene';
 import type { MapJson } from 'core';
 
 import type { SkinLook } from '../materials.js';
 
 /** Layout units between the heightfield's samples and the mesh's vertices: the spike's, a skin of about 116k vertices on retake-3. */
-const RESOLUTION = 4;
+export const RESOLUTION = 4;
 
 export type Skin = {
   readonly mesh: Mesh;
+  /** The relief as the GPU reads it, which the organelles ride too. */
+  readonly relief: DataTexture;
   /** The scheduler's amplitude on the cells' mass, 1 at rest. */
   readonly amp: UniformNode<'float', number>;
   /** How far the whole skin hangs above the terrain, in the heightfield's units. */
@@ -52,6 +60,28 @@ const fillRelief = (data: Uint16Array, field: Heightfield): void => {
     data[i * 4 + 2] = 0;
     data[i * 4 + 3] = DataUtils.toHalfFloat(1);
   }
+};
+
+/** The tissue as the GPU reads it: red the cells' bodies, green their membrane lines. */
+const tissueTexture = (layers: Tissue): DataTexture => {
+  const { columns, rows } = layers.body;
+  const data = new Uint16Array(columns * rows * 4);
+  for (let i = 0; i < columns * rows; i += 1) {
+    data[i * 4] = DataUtils.toHalfFloat(layers.body.values[i] ?? 0);
+    data[i * 4 + 1] = DataUtils.toHalfFloat(layers.membrane.values[i] ?? 0);
+    data[i * 4 + 2] = 0;
+    data[i * 4 + 3] = DataUtils.toHalfFloat(1);
+  }
+  return softTexture(new DataTexture(data, columns, rows, RGBAFormat, HalfFloatType));
+};
+
+/** A data texture the skin samples between, as every soft layer is (D152). */
+const softTexture = (map: DataTexture): DataTexture => {
+  map.minFilter = LinearFilter;
+  map.magFilter = LinearFilter;
+  map.generateMipmaps = false;
+  map.needsUpdate = true;
+  return map;
 };
 
 /**
@@ -103,19 +133,20 @@ export const createSkin = (map: MapJson, look: SkinLook, relief: Relief): Skin =
   const { columns, rows, resolution } = field.height;
   const data = new Uint16Array(columns * rows * 4);
   fillRelief(data, field);
-  const reliefMap = new DataTexture(data, columns, rows, RGBAFormat, HalfFloatType);
-  reliefMap.minFilter = LinearFilter;
-  reliefMap.magFilter = LinearFilter;
-  reliefMap.generateMipmaps = false;
-  reliefMap.needsUpdate = true;
+  const reliefMap = softTexture(new DataTexture(data, columns, rows, RGBAFormat, HalfFloatType));
+  const tissueMap = tissueTexture(tissue(map, RESOLUTION));
 
   const amp = uniform(1);
   const lift = uniform(0);
   const surface = uniform(0);
   const fieldAlbedo = uniform(new Color(look.fieldAlbedo));
   const tissueAlbedo = uniform(new Color(look.tissueAlbedo));
+  const membraneLine = uniform(new Color(look.membraneLine));
   const farAlbedo = uniform(look.farAlbedo);
-  const bodyHeight = uniform(relief.bodyHeight);
+  const rimColour = uniform(new Color(look.rimColour));
+  const rimGain = uniform(look.rimGain);
+  const rimPower = uniform(look.rimPower);
+  const cellLight = uniform(look.cellLight);
 
   /** The skin's height at a texture coordinate: the resting terraces and swells, and the cells' mass at the scheduler's amplitude. */
   const heightAt = (at: Node) => {
@@ -135,16 +166,28 @@ export const createSkin = (map: MapJson, look: SkinLook, relief: Relief): Skin =
   material.normalNode = normalInView;
   material.clearcoatNormalNode = normalInView;
 
-  // Blue-grey where a cell swells through the skin, graphite on the field between; a trace of either at the far field.
-  const swell = clamp(texture(reliefMap, uv()).g.div(bodyHeight), 0, 1);
-  const albedo = mix(fieldAlbedo, tissueAlbedo, swell);
+  // Blue-grey where a cell's body lies under the skin, graphite on the field between, the membrane line laid over; a trace of it all at the far field.
+  const base = texture(tissueMap, uv());
+  const body = clamp(base.r, 0, 1);
+  const albedo = mix(fieldAlbedo, tissueAlbedo, body).add(membraneLine.mul(base.g));
   material.colorNode = albedo.mul(mix(farAlbedo, float(1), surface));
-  material.emissiveNode = vec3(0, 0, 0);
+
+  // The tissue's own faint light, which never blooms (D151): a rim where the skin slopes away, and each cell's own glow over its body.
+  const facing = clamp(normalInView.z, 0, 1);
+  const rim = pow(float(1).sub(facing), rimPower).mul(rimGain);
+  const glow = body.mul(cellLight);
+  material.emissiveNode = rimColour.mul(rim.add(glow)).mul(surface);
+  material.mrtNode = mrt({ emissive: vec4(0, 0, 0, 1) });
 
   const restyle = (): void => {
     fieldAlbedo.value.set(look.fieldAlbedo);
     tissueAlbedo.value.set(look.tissueAlbedo);
+    membraneLine.value.set(look.membraneLine);
     farAlbedo.value = look.farAlbedo;
+    rimColour.value.set(look.rimColour);
+    rimGain.value = look.rimGain;
+    rimPower.value = look.rimPower;
+    cellLight.value = look.cellLight;
     material.roughness = look.roughness;
     material.clearcoat = look.clearcoat;
     material.clearcoatRoughness = look.clearcoatRoughness;
@@ -154,12 +197,11 @@ export const createSkin = (map: MapJson, look: SkinLook, relief: Relief): Skin =
   const relayer = (): void => {
     fillRelief(data, heightfield(map, RESOLUTION, { ...relief }));
     reliefMap.needsUpdate = true;
-    bodyHeight.value = relief.bodyHeight;
   };
 
   const { width, height } = map.terrain.layout ?? { width: 0, height: 0 };
   const mesh = new Mesh(gridGeometry(field.height, width, height), material);
   // The vertex stage moves the skin, so its resting bounds would cull it wrongly.
   mesh.frustumCulled = false;
-  return { mesh, amp, lift, surface, restyle, relayer };
+  return { mesh, relief: reliefMap, amp, lift, surface, restyle, relayer };
 };

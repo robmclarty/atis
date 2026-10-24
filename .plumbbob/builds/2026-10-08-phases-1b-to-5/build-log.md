@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 100 — feat(svg): open each touched shore block on a grid of its files
+**Current step:** 32 — feat(web): draw cells and organelles, and the shore in a rail
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -82,7 +82,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 97. feat(web): add a hidden dev panel that tunes every token live
 - ☑ 98. feat(core): record each file's import ties inside and outside its cell
 - ☑ 99. feat(scene): drift each file in an opened cell by its looseness
-- ☐ 100. feat(svg): open each touched shore block on a grid of its files
+- ☑ 100. feat(svg): open each touched shore block on a grid of its files
 - ☐ 48. feat(cli): cache the terrain per base commit
 - ☐ 49. feat(core): relax a new base's layout from the nearest cached one
 - ☐ 50. perf(cli): draw a cached run's first frame within two seconds
@@ -959,3 +959,4 @@ folder, so it rides the branch into the PR.)*
 
 - 2026-10-24 — step 97 checkpointed · 703aa52df — feat(web): add a hidden dev panel that tunes every token live (1 drift, 23m)
 - 2026-10-24 — step 31 checkpointed · fda74e3e1 — feat(cli): serve the world and open it in a tab (1 drift, 9m)
+- 2026-10-24 — step 100 checkpointed · 8be6a3389 — feat(svg): open each touched shore block on a grid of its files (1 drift, 6m)

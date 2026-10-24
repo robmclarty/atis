@@ -15,6 +15,7 @@ const SOURCE_OF: Readonly<Record<string, string>> = {
   SKIN: 'apps/web/src/materials.ts',
   LIGHTING: 'apps/web/src/materials.ts',
   SKY: 'apps/web/src/materials.ts',
+  BLOOM: 'apps/web/src/materials.ts',
   RELIEF: 'libs/scene/src/heightfield.ts',
 };
 

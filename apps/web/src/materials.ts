@@ -8,28 +8,49 @@
  * records them in `docs/design.md` beside their sources.
  */
 
-/** The skin's material: the two albedos, how rough and how wet it is, and the share of its albedo kept at the far field. */
+/** The skin's material: the albedos, the membrane line, how rough and how wet it is, the share of its albedo kept at the far field, and the tissue's own faint light. */
 export type SkinLook = {
   /** The skin where it lies on the field: graphite. */
   readonly fieldAlbedo: string;
-  /** The skin where a cell swells through it: blue-grey. */
+  /** The skin where a cell's body lies under it: blue-grey. */
   readonly tissueAlbedo: string;
+  /** The membrane line laid into the tissue, added over the albedo as wide as the cell's interface. */
+  readonly membraneLine: string;
   readonly roughness: number;
   /** The wet sheen: a clearcoat, and how soft its reflection is. */
   readonly clearcoat: number;
   readonly clearcoatRoughness: number;
   /** The share of the albedo the far field keeps, lit only by the ambient's floor. */
   readonly farAlbedo: number;
+  /** Base tissue's faint light, which never blooms (D151): a rim where the skin slopes away, in this colour, this strong, falling off this sharply with the facing, and each cell's own faint light over its body, this strong. */
+  readonly rimColour: string;
+  readonly rimGain: number;
+  readonly rimPower: number;
+  readonly cellLight: number;
 };
 
 export const SKIN: SkinLook = {
   fieldAlbedo: '#14181e',
   tissueAlbedo: '#2b333d',
+  membraneLine: '#3c4652',
   roughness: 0.46,
   clearcoat: 1,
   clearcoatRoughness: 0.14,
   farAlbedo: 0.05,
+  rimColour: '#7f93a6',
+  rimGain: 0.05,
+  rimPower: 3,
+  cellLight: 0.035,
 };
+
+/** The bloom on the emissive target alone (D11, D12): how strong, how wide, and the light below which nothing blooms. */
+export type BloomLook = {
+  readonly strength: number;
+  readonly radius: number;
+  readonly threshold: number;
+};
+
+export const BLOOM: BloomLook = { strength: 0.9, radius: 0.5, threshold: 0 };
 
 /** The lights: the key, the ambient, and the sky's strength in the sheen. */
 export type Lighting = {

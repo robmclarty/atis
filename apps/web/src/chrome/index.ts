@@ -5,4 +5,5 @@
 
 export * from './frame.js';
 export * from './live.js';
+export * from './rail.js';
 export * from './status.js';

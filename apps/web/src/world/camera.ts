@@ -1,16 +1,19 @@
 /**
  * camera: an orthographic camera hung over the ground plane, which holds the
  * map's x along x and its y along z, looking down with z running down the
- * screen as y does in the SVG. At zoom 1 it fits the layout inside the
- * canvas, the far field, and the view's zoom scales from there: the one
- * scalar the levels of detail read (`lod.ts`). A tilt swings it off overhead
- * about the layout's centre, from the south-west as the spike's tilted frames
- * were taken, up to the view's bound. Step 37's controls take over from here.
+ * screen as y does in the SVG. At zoom 1 it fits the layout inside the free
+ * screen beside the chrome (`fit.ts`), the far field, and the view's zoom
+ * scales from there: the one scalar the levels of detail read (`lod.ts`). A
+ * tilt swings it off overhead about the layout's centre, from the south-west
+ * as the spike's tilted frames were taken, up to the view's bound. Step 37's
+ * controls take over from here.
  */
 
 import { OrthographicCamera } from 'three/webgpu';
 import type { MapJson } from 'core';
 
+import { fitFrame } from '../fit.js';
+import type { Chrome } from '../fit.js';
 import type { View } from '../view.js';
 
 /** The ground the camera frames when the map has no layout to size it by. */
@@ -29,22 +32,22 @@ export const createCamera = (): OrthographicCamera => {
   return camera;
 };
 
-/** Fit the layout's width and height inside the canvas, centred, at the view's zoom and tilt. */
-export const frameCamera = (camera: OrthographicCamera, map: MapJson, aspect: number, view: View): void => {
-  const { width, height } = map.terrain.layout ?? UNLAID;
-  const halfH = Math.max(height, width / aspect) / 2;
-  const halfW = halfH * aspect;
+/** Fit the layout inside the canvas's free screen, centred there, at the view's zoom and tilt. */
+export const frameCamera = (camera: OrthographicCamera, map: MapJson, canvasWidth: number, canvasHeight: number, chrome: Chrome, view: View): void => {
+  const layout = map.terrain.layout ?? UNLAID;
+  const { halfW, halfH, shift } = fitFrame(layout, canvasWidth, canvasHeight, chrome);
   const polar = (view.tilt * Math.PI) / 180;
-  const cx = width / 2;
-  const cz = height / 2;
+  const cx = layout.width / 2;
+  const cz = layout.height / 2;
   camera.position.set(
     cx + CAMERA_DISTANCE * Math.sin(polar) * Math.sin(TILT_AZIMUTH),
     CAMERA_DISTANCE * Math.cos(polar),
     cz + CAMERA_DISTANCE * Math.sin(polar) * Math.cos(TILT_AZIMUTH),
   );
   camera.lookAt(cx, 0, cz);
-  camera.left = -halfW;
-  camera.right = halfW;
+  // The view stands right of the layout's centre by the shift, so the layout centres in the free screen left of the chrome.
+  camera.left = -halfW + shift;
+  camera.right = halfW + shift;
   camera.top = halfH;
   camera.bottom = -halfH;
   camera.near = 1;

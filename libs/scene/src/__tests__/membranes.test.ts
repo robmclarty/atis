@@ -2,14 +2,15 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { assertMap, membraneThickness } from 'core';
+import { assertMap, membraneThickness, withinContour } from 'core';
 import type { MapJson } from 'core';
 import { expect, test } from 'vitest';
 
 import { sampleGrid } from '../heightfield.js';
 import type { Grid } from '../heightfield.js';
-import { TISSUE, membranes, tissue } from '../membranes.js';
+import { TISSUE, dentedRing, membranes, tissue } from '../membranes.js';
 import type { Membrane } from '../membranes.js';
+import { MEMBRANE_DENT_PULL } from '../tokens.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DEMO = assertMap(JSON.parse(readFileSync(join(HERE, '..', '..', '..', 'core', 'fixtures', 'demo', 'map.json'), 'utf8')));
@@ -61,12 +62,33 @@ function triangleArea({ vertices, triangles }: Membrane): number {
 }
 
 const PM = 'folder:libs/core/src/pm';
+/** The demo's pm folder breaks rules, so its skin wears teeth; a cell with none keeps its contour as cut. */
+const UTIL = 'directory:libs/core/src/util';
+
+/** The demo with the named cells' dents replaced. */
+function withDents(dents: Readonly<Record<string, readonly string[]>>, map: MapJson = DEMO): MapJson {
+  return { ...map, terrain: { ...map.terrain, cells: map.terrain.cells.map((cell) => (dents[cell.id] === undefined ? cell : { ...cell, dents: [...(dents[cell.id] ?? [])] })) } };
+}
+
+/** How far a point stands off a ring: its distance to the nearest edge. */
+function offRing(point: Ring[number], ring: Ring): number {
+  let nearest = Number.POSITIVE_INFINITY;
+  ring.forEach(([ax, ay], index) => {
+    const [bx, by] = ring[(index + 1) % ring.length] ?? [ax, ay];
+    const dx = bx - ax;
+    const dy = by - ay;
+    const length2 = dx * dx + dy * dy;
+    const t = length2 === 0 ? 0 : Math.min(1, Math.max(0, ((point[0] - ax) * dx + (point[1] - ay) * dy) / length2));
+    nearest = Math.min(nearest, Math.hypot(point[0] - (ax + t * dx), point[1] - (ay + t * dy)));
+  });
+  return nearest;
+}
 
 /** How many samples a membrane grid lays any line on. */
 const laidSamples = (grid: Grid): number => grid.values.filter((value) => value > 0).length;
 
 test("a concave contour's triangles cover exactly the polygon, and its closing point is not a vertex twice", () => {
-  const [membrane] = membranes(withContours({ [PM]: ELL }));
+  const [membrane] = membranes(withDents({ [PM]: [] }, withContours({ [PM]: ELL })));
   expect(membrane?.cell).toBe(PM);
   expect(membrane?.vertices).toHaveLength(2 * (ELL.length - 1));
   expect(membrane?.triangles).toHaveLength(3 * (ELL.length - 3));
@@ -74,16 +96,47 @@ test("a concave contour's triangles cover exactly the polygon, and its closing p
   expect(ringArea(ELL)).toBe(100 * 100 - 60 * 60);
 });
 
-test("every cell's contour on the demo is cut into triangles that cover it, and no shore group's is", () => {
+test("every cell's skin on the demo, teeth and all, is cut into triangles that cover it, and no shore group's is", () => {
   const cut = membranes(DEMO);
   const contours = DEMO.terrain.layout?.contours ?? {};
+  const dents = new Map(DEMO.terrain.cells.map((cell) => [cell.id, cell.dents.length] as const));
   const cellIds = DEMO.terrain.cells.map((cell) => cell.id).toSorted();
   expect(cut.map((membrane) => membrane.cell)).toEqual(cellIds);
   const groups = DEMO.terrain.groups.map((group) => group.id).filter((id) => contours[id] !== undefined);
   expect(groups.length).toBeGreaterThan(0);
   for (const membrane of cut) {
     expect(membrane.triangles.every((index) => index < membrane.vertices.length / 2)).toBe(true);
-    expect(triangleArea(membrane) / ringArea(contours[membrane.cell] ?? [])).toBeCloseTo(1, 3);
+    expect(triangleArea(membrane) / ringArea(dentedRing(contours[membrane.cell] ?? [], dents.get(membrane.cell) ?? 0))).toBeCloseTo(1, 3);
+  }
+});
+
+test('a cell with dents pulls one point out of its skin per rule, pointing out, and a cell with none keeps its contour as cut (D159)', () => {
+  const contours = DEMO.terrain.layout?.contours ?? {};
+  const dented = DEMO.terrain.cells.filter((cell) => cell.dents.length > 0);
+  expect(dented.length).toBeGreaterThan(0);
+  for (const cell of dented) {
+    const contour = contours[cell.id] ?? [];
+    const ring = dentedRing(contour, cell.dents.length);
+    const pulled = ring.filter((point) => offRing(point, contour) > MEMBRANE_DENT_PULL / 2);
+    expect(pulled, `${cell.id} has one tooth per rule`).toHaveLength(cell.dents.length);
+    for (const point of pulled) expect(withinContour(contour, point[0], point[1]), `${cell.id}'s tooth points out`).toBe(false);
+  }
+  const plain = contours[UTIL] ?? [];
+  expect(dentedRing(plain, 0)).toBe(plain);
+  expect(dentedRing(ELL, 0)).toBe(ELL);
+  expect(dentedRing(ELL.slice(0, 2), 3)).toEqual(ELL.slice(0, 2));
+});
+
+test("the tissue lays the membrane line along the dented ring, so a tooth's tip is on the line and the contour under it is not", () => {
+  const resolution = 1;
+  const toothed = withDents({ [PM]: ['cyclomatic', 'cognitive'] }, withContours({ [PM]: ELL }));
+  const plain = withDents({ [PM]: [] }, withContours({ [PM]: ELL }));
+  const ring = dentedRing(ELL, 2);
+  const tips = ring.filter((point) => offRing(point, ELL) > MEMBRANE_DENT_PULL / 2);
+  expect(tips).toHaveLength(2);
+  for (const [x, y] of tips) {
+    expect(sampleGrid(tissue(toothed, resolution).membrane, x, y)).toBeGreaterThan(0.5);
+    expect(sampleGrid(tissue(plain, resolution).membrane, x, y)).toBe(0);
   }
 });
 
