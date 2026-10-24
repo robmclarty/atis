@@ -12,6 +12,7 @@ import type { ReactElement } from 'react';
 import type { MapJson } from 'core';
 
 import { RAIL_WIDTH } from '../fit.js';
+import type { Nav } from '../nav.js';
 import type { Registry } from '../registry.js';
 import { useLive } from './live.js';
 import { Notices } from './notices.js';
@@ -20,7 +21,7 @@ import { Rail } from './rail.js';
 /** The tokens the column is drawn with, at rest: the shape its live view takes. */
 const LOOK = { CHROME_GROUND, CHROME_INK, CHROME_RULE, CHROME_STROKE_WIDTH, FONT_FAMILY };
 
-export const Column = ({ map, registry }: { readonly map: MapJson; readonly registry: Registry }): ReactElement => {
+export const Column = ({ map, registry, nav }: { readonly map: MapJson; readonly registry: Registry; readonly nav?: Nav | undefined }): ReactElement => {
   useLive(registry);
   const look = registry.view(LOOK);
   return (
@@ -42,7 +43,7 @@ export const Column = ({ map, registry }: { readonly map: MapJson; readonly regi
         pointerEvents: 'auto',
       }}
     >
-      <Notices map={map} registry={registry} />
+      <Notices map={map} registry={registry} nav={nav} />
       <Rail map={map} registry={registry} />
     </aside>
   );

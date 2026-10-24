@@ -27,7 +27,10 @@
  * own geometry where its ray meets the skin, and the thing under it is
  * outlined and tagged at the scheduler's eased hover (step 38). The chrome's
  * line (`nav.ts`) hears the view's outline on the ground for the minimap,
- * and moves the camera where the minimap asks (D154). The canvas says which
+ * and moves the camera where the minimap asks (D154). A notice's row, the
+ * arrows, Enter and Escape fly the camera to a stop along the scheduler's
+ * fly-to, and the skin swings as it lands; the stop goes back over the line
+ * for the HUD's breadcrumb (step 39). The canvas says which
  * backend drew it and when the skin has settled, for the smoke test and a
  * screenshot to wait on.
  */
@@ -36,19 +39,22 @@ import { AgXToneMapping, AmbientLight, Color, DataUtils, DirectionalLight, Rende
 import { emissive, mrt, output, pass } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 import { FIELD_FILL, MOTION_TOKENS, REACH_ORIGIN_OPACITY, RELIEF, createPicker, createScheduler, gridFor, surfacePoint } from 'scene';
-import type { Lod } from 'scene';
+import type { Lod, Point } from 'scene';
 import type { MapJson } from 'core';
 
-import { RAIL_WIDTH } from '../fit.js';
+import { RAIL_WIDTH, zoomFor } from '../fit.js';
 import { hoverOf } from '../hover.js';
 import type { Hovered } from '../hover.js';
 import { marksOf } from '../marks.js';
-import { BLOOM, HOVER, LIGHTING, NOTICE, SKIN, SKY, WEATHER } from '../materials.js';
+import { BLOOM, HOVER, LIGHTING, NOTICE, SKIN, SKY, WALK, WEATHER } from '../materials.js';
 import type { Nav } from '../nav.js';
 import type { Registry } from '../registry.js';
 import type { View } from '../view.js';
+import { FIELD, createWalk, ownsKey } from '../walk.js';
+import type { Stop } from '../walk.js';
 import { createBolts } from './bolts.js';
-import { centreOn, createCamera, createControls, fitCamera, outlineOf, pixelsPerUnit, rayAt } from './camera.js';
+import { centreOn, clampZoom, createCamera, createControls, fitCamera, outlineOf, pixelsPerUnit, rayAt, standAt, standOf } from './camera.js';
+import type { Stand } from './camera.js';
 import { TAG_LOOK, createHover } from './hover.js';
 import { LABEL_LOOK, createLabels, viewportOf } from './labels.js';
 import { ORGANELLE_LOOK, createOrganelles } from './organelles.js';
@@ -144,8 +150,6 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   fit();
   globalThis.addEventListener('resize', fit);
   const controls = createControls(camera, canvas, map, view, { right: RAIL_WIDTH });
-  // The minimap asks for a place and the camera eases there (D154).
-  nav.steer({ lookAt: (point) => centreOn(controls, camera, canvas.clientWidth, { right: RAIL_WIDTH }, point) });
   // The labels ride their anchors while the camera moves and are laid out afresh once it rests.
   controls.addEventListener('rest', () => {
     placeLabels = true;
@@ -193,6 +197,59 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     tokens,
   });
   scheduler.load();
+
+  // The walk (step 39): the stop the view stands at, and the flight under way to the next one, eased by the scheduler's fly-to.
+  const walk = createWalk(map);
+  const walkLook = registry.view(WALK, 'WALK');
+  const layout = map.terrain.layout ?? { width: 1, height: 1 };
+  const chrome = { right: RAIL_WIDTH };
+  let stop: Stop = FIELD;
+  let flight: { readonly from: Stand; readonly to: Point; readonly zoom: number } | undefined;
+  // A hand on the camera ends any flight, and the stop is read back off the view once it rests; the opening frame is read so too.
+  let handled = false;
+  let readStop = true;
+  const settle = (next: Stop): void => {
+    stop = next;
+    nav.settle(next);
+  };
+  const visit = (next: Stop): void => {
+    const box = walk.box(next, walkLook.fileContext);
+    const from = standOf(controls, camera, canvas.clientWidth, chrome);
+    if (box === undefined || from === undefined) return;
+    flight = { from, to: [(box.x0 + box.x1) / 2, (box.y0 + box.y1) / 2], zoom: clampZoom(zoomFor(layout, box, canvas.clientWidth, canvas.clientHeight, chrome, walkLook.share)) };
+    handled = false;
+    readStop = false;
+    settle(next);
+    scheduler.flyTo();
+  };
+  const byHand = (): void => {
+    flight = undefined;
+    handled = true;
+  };
+  canvas.addEventListener('pointerdown', byHand);
+  canvas.addEventListener('wheel', byHand, { passive: true });
+  controls.addEventListener('rest', () => {
+    if (handled) readStop = true;
+    handled = false;
+  });
+  // The minimap asks for a place and the camera eases there (D154); a notice's row asks for a stop and the camera flies there.
+  nav.steer({
+    lookAt: (point) => {
+      byHand();
+      centreOn(controls, camera, canvas.clientWidth, chrome, point);
+    },
+    visit,
+  });
+  // The arrows walk to a sibling, Enter descends and Escape ascends, unless the key is the focused element's own.
+  globalThis.addEventListener('keydown', (event) => {
+    if (event.altKey || event.ctrlKey || event.metaKey || ownsKey(event.target, event.key)) return;
+    const middle = standOf(controls, camera, canvas.clientWidth, chrome)?.centre;
+    const next = middle === undefined ? undefined : walk.key(stop, event.key, middle);
+    if (next === undefined) return;
+    event.preventDefault();
+    visit(next);
+  });
+
   await renderer.setAnimationLoop(() => {
     if (reliefMoved) {
       skin.relayer();
@@ -215,6 +272,22 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     // The surface's layer: 0 at the far field, 1 from LOD1 on, cross-faded between (D151).
     const surface = frame.lod?.opacity[1] ?? 0;
     const lod = frame.lod?.lod ?? 0;
+    // A flight moves the view along the scheduler's ease, centre straight across and zoom by its ratio, and the skin swings once it lands.
+    if (flight !== undefined) {
+      const progress = frame.fly ?? 1;
+      const { from, to, zoom } = flight;
+      standAt(controls, from, [from.centre[0] + (to[0] - from.centre[0]) * progress, from.centre[1] + (to[1] - from.centre[1]) * progress], from.zoom * (zoom / from.zoom) ** progress);
+      controls.update(0);
+      if (progress >= 1) {
+        flight = undefined;
+        scheduler.jiggle();
+      }
+    }
+    if (readStop && flight === undefined) {
+      const middle = standOf(controls, camera, canvas.clientWidth, chrome)?.centre;
+      if (middle !== undefined) settle(walk.stopAt(middle, lod));
+      readStop = false;
+    }
     skin.amp.value = frame.amp;
     skin.lift.value = frame.lift;
     skin.surface.value = surface;

@@ -74,11 +74,38 @@ export const pixelsPerUnit = (camera: OrthographicCamera, canvasWidth: number): 
  * as they ease every input.
  */
 export const centreOn = (controls: CameraControls, camera: OrthographicCamera, canvasWidth: number, chrome: Chrome, [x, y]: Point): void => {
-  const ground = groundOf(...rayAt(camera, -(chrome.right / Math.max(1, canvasWidth)), 0));
-  if (ground === undefined) return;
-  // The target where the camera is now, not where an ease under way will leave it, since the ground point was read from the camera now.
+  const stand = standOf(controls, camera, canvasWidth, chrome);
+  if (stand === undefined) return;
+  // The target where the camera is now, not where an ease under way will leave it, since the stand was read from the camera now.
   const target = controls.getTarget(new Vector3(), false);
-  void controls.moveTo(target.x + x - ground[0], target.y, target.z + y - ground[1], true);
+  void controls.moveTo(x + stand.offset[0], target.y, y + stand.offset[1], true);
+};
+
+/** A zoom held inside the bounds the controls keep. */
+export const clampZoom = (zoom: number): number => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom));
+
+/** Where the view stands: the free screen's centre on the ground, the zoom, and where the target stands from that centre on the ground. */
+export type Stand = { readonly centre: Point; readonly zoom: number; readonly offset: Point };
+
+/** The view's stand now, as the camera is, not as an ease under way will leave it. */
+export const standOf = (controls: CameraControls, camera: OrthographicCamera, canvasWidth: number, chrome: Chrome): Stand | undefined => {
+  const centre = groundOf(...rayAt(camera, -(chrome.right / Math.max(1, canvasWidth)), 0));
+  if (centre === undefined) return undefined;
+  const target = controls.getTarget(new Vector3(), false);
+  return { centre, zoom: camera.zoom, offset: [target.x - centre[0], target.z - centre[1]] };
+};
+
+/**
+ * Stand the view with the free screen centred on a ground point at a zoom, at
+ * once, from a stand read before the move began: the target keeps the same
+ * pixels off the centre, so its offset on the ground shrinks as the zoom
+ * grows. The caller eases a fly-to through it, frame by frame (step 39).
+ */
+export const standAt = (controls: CameraControls, from: Stand, [x, y]: Point, zoom: number): void => {
+  const scale = from.zoom / zoom;
+  const target = controls.getTarget(new Vector3(), false);
+  void controls.moveTo(x + from.offset[0] * scale, target.y, y + from.offset[1] * scale, false);
+  void controls.zoomTo(zoom, false);
 };
 
 /** A camera over the ground plane, between planes the terrain never leaves. */

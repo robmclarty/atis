@@ -31,3 +31,20 @@ export const fitFrame = (layout: { readonly width: number; readonly height: numb
   // The free area's centre is half the rail left of the canvas's; the view moves right by that much so the layout centres in the free area.
   return { halfW, halfH, shift: (perPixel * (width - free)) / 2 };
 };
+
+/** A stretch of the layout to frame: its left, top, right and bottom, in layout units. */
+export type Box = { readonly x0: number; readonly y0: number; readonly x1: number; readonly y1: number };
+
+/**
+ * The camera's zoom over the fit at which a box fills `share` of the free
+ * screen in whichever of its width and height it fills first, so a fly-to
+ * frames its stop with room round it. A box with no extent is taken as a
+ * unit across.
+ */
+export const zoomFor = (layout: { readonly width: number; readonly height: number }, box: Box, canvasWidth: number, canvasHeight: number, chrome: Chrome, share: number): number => {
+  const { halfH } = fitFrame(layout, canvasWidth, canvasHeight, chrome);
+  const height = Math.max(1, canvasHeight);
+  const perPixel = (2 * halfH) / height;
+  const free = Math.max(1, Math.max(1, canvasWidth) - chrome.right);
+  return Math.min((free * perPixel * share) / Math.max(1, box.x1 - box.x0), (height * perPixel * share) / Math.max(1, box.y1 - box.y0));
+};

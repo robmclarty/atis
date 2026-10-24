@@ -5,6 +5,7 @@
 
 export * from './box.js';
 export * from './column.js';
+export * from './crumbs.js';
 export * from './frame.js';
 export * from './glyphs.js';
 export * from './hud.js';

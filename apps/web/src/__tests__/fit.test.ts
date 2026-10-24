@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 
-import { RAIL_WIDTH, fitFrame } from '../fit.js';
+import { RAIL_WIDTH, fitFrame, zoomFor } from '../fit.js';
 
 const LAYOUT = { width: 800, height: 600 };
 
@@ -31,4 +31,17 @@ test('a canvas narrower than the chrome still frames into what is left', () => {
   expect(Number.isFinite(frame.halfW) && frame.halfW > 0).toBe(true);
   expect(Number.isFinite(frame.shift)).toBe(true);
   expect(fitFrame(LAYOUT, 0, 0, { right: 0 }).halfW).toBe(400);
+});
+
+test('a box is framed at the zoom that fills the share of the free screen it fills first (step 39)', () => {
+  // The free area is 1600 by 1200 over an 800 by 600 layout: half a unit per pixel at zoom 1.
+  const canvas = [1600 + RAIL_WIDTH, 1200] as const;
+  // The whole layout at a share of 1 is the fit itself.
+  expect(zoomFor(LAYOUT, { x0: 0, y0: 0, x1: 800, y1: 600 }, ...canvas, { right: RAIL_WIDTH }, 1)).toBeCloseTo(1);
+  // A 100-unit square over half the screen: the height fills first, half of 600 units at zoom 1 over 100.
+  expect(zoomFor(LAYOUT, { x0: 10, y0: 10, x1: 110, y1: 110 }, ...canvas, { right: RAIL_WIDTH }, 0.5)).toBeCloseTo(3);
+  // A wide strip fills its width first.
+  expect(zoomFor(LAYOUT, { x0: 0, y0: 0, x1: 400, y1: 10 }, ...canvas, { right: RAIL_WIDTH }, 1)).toBeCloseTo(2);
+  // A point is a unit across, never a division by nothing.
+  expect(Number.isFinite(zoomFor(LAYOUT, { x0: 5, y0: 5, x1: 5, y1: 5 }, ...canvas, { right: RAIL_WIDTH }, 1))).toBe(true);
 });

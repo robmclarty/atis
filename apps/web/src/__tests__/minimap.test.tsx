@@ -78,8 +78,8 @@ test('the line carries the outline only when it moves, and each ask to the world
 
   const first = vi.fn();
   const second = vi.fn();
-  const letGoFirst = nav.steer({ lookAt: first });
-  const letGoSecond = nav.steer({ lookAt: second });
+  const letGoFirst = nav.steer({ lookAt: first, visit: vi.fn() });
+  const letGoSecond = nav.steer({ lookAt: second, visit: vi.fn() });
   nav.lookAt([3, 4]);
   expect(first).not.toHaveBeenCalled();
   expect(second).toHaveBeenCalledWith([3, 4]);
@@ -138,7 +138,7 @@ test('a click on the inset asks the world to look there, and a drag keeps asking
   if (DRAWN === undefined) throw new Error('the demo drew no minimap');
   const nav = createNav();
   const looked = vi.fn();
-  nav.steer({ lookAt: looked });
+  nav.steer({ lookAt: looked, visit: vi.fn() });
   await act(async () => root.render(<Minimap map={DEMO} registry={createRegistry()} nav={nav} />));
   const svg = element('[data-minimap] svg');
   pointer(svg, 'pointerdown', [40, 30]);

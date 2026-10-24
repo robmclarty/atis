@@ -1,7 +1,7 @@
 /**
  * frame: the chrome's root, the flat DOM the world is framed by (§7, D12),
  * drawn with React (D91). It holds the status line, and once the map is read
- * the HUD's grade blocks over it (§7), the legend inset at the bottom left
+ * the HUD's grade blocks over it (§7) and the breadcrumb under it (§6), the legend inset at the bottom left
  * (D87) over the minimap in the corner (D154), and the right-hand column, the ranked notices over the shore rail
  * (§5.4, D153); and, behind a switch, the dev panel (D156): off and absent by
  * default, its code fetched only when it is first opened. A development build shows a toggle for it; a published
@@ -19,6 +19,7 @@ import { createNav } from '../nav.js';
 import type { Nav } from '../nav.js';
 import type { Registry } from '../registry.js';
 import { Column } from './column.js';
+import { Crumbs } from './crumbs.js';
 import { Hud } from './hud.js';
 import { Legend } from './legend.js';
 import { useLive } from './live.js';
@@ -90,13 +91,14 @@ export const Chrome = ({ state, registry, nav: given, dev, token, load = loadPan
       <div style={COLUMN}>
         {state.status === 'ready' && <Hud map={state.map} registry={registry} token={token} />}
         <Status state={state} registry={registry} />
+        {state.status === 'ready' && <Crumbs map={state.map} registry={registry} nav={nav} />}
         {open && (
           <Suspense fallback={null}>
             <Panel registry={registry} onClose={() => setOpen(false)} />
           </Suspense>
         )}
       </div>
-      {state.status === 'ready' && <Column map={state.map} registry={registry} />}
+      {state.status === 'ready' && <Column map={state.map} registry={registry} nav={nav} />}
       {state.status === 'ready' && (
         <Corner registry={registry}>
           <Legend registry={registry} />

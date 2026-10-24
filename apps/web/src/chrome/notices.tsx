@@ -7,7 +7,9 @@
  * whose target nothing draws says so, since it hangs no marks and no leader
  * (D148). It is the brutalist material (D12): one monospace face, hard
  * edges, nothing that glows, in the shared tokens read live through the
- * registry (D156). A click flies to the notice from step 39.
+ * registry (D156). A click on a row flies the camera to where its target is
+ * drawn, or, for a target on the shore, brings its group's block in the rail
+ * into view (step 39, D153).
  */
 
 import {
@@ -38,9 +40,11 @@ import { useMemo } from 'react';
 import type { ReactElement } from 'react';
 import type { MapJson } from 'core';
 
+import type { Nav } from '../nav.js';
 import { categoryHue, rowsOf, tallyOf } from '../notices.js';
 import { screenType } from '../screen.js';
 import type { Registry } from '../registry.js';
+import { destinationOf } from '../walk.js';
 import { NoticeBox } from './box.js';
 import { useLive } from './live.js';
 
@@ -73,8 +77,15 @@ const LOOK = {
 /** The share of the column the list may take before it scrolls, leaving the rail the rest. */
 const LIST_SHARE = '50%';
 
-/** The ranked list for a map, read live from the registry. */
-export const Notices = ({ map, registry }: { readonly map: MapJson; readonly registry: Registry }): ReactElement => {
+/** Go where a notice's row leads: fly the world to its stop, or bring its shore group's block into view. */
+const go = (map: MapJson, rank: number, nav: Nav | undefined): void => {
+  const destination = destinationOf(map, rank);
+  if (destination?.kind === 'stop') nav?.visit(destination.stop);
+  if (destination?.kind === 'group') document.querySelector(`[data-rail] [data-group="${destination.group}"]`)?.scrollIntoView({ block: 'nearest' });
+};
+
+/** The ranked list for a map, read live from the registry; with the line to the world, a row's click flies there. */
+export const Notices = ({ map, registry, nav }: { readonly map: MapJson; readonly registry: Registry; readonly nav?: Nav | undefined }): ReactElement => {
   useLive(registry);
   const look = registry.view(LOOK);
   const rows = useMemo(() => rowsOf(map), [map]);
@@ -103,7 +114,8 @@ export const Notices = ({ map, registry }: { readonly map: MapJson; readonly reg
             data-kind={row.kind}
             data-target={row.target}
             data-unplaced={row.placed ? undefined : 'true'}
-            style={{ display: 'flex', alignItems: 'flex-start', gap: look.NOTICE_TEXT_GAP }}
+            onClick={row.placed ? () => go(map, row.rank, nav) : undefined}
+            style={{ display: 'flex', alignItems: 'flex-start', gap: look.NOTICE_TEXT_GAP, cursor: row.placed ? 'pointer' : 'default' }}
           >
             <NoticeBox rank={row.rank} tier={row.tier} look={look} hue={hue} side={type.box} numeral={type.numeral} />
             <div style={{ minWidth: 0, overflowWrap: 'anywhere' }}>

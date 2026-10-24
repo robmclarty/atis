@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 38 — feat(web): pick and hover at every level of detail
+**Current step:** 39 — feat(web): fly to a notice and walk the map from the keyboard
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -64,7 +64,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 35. feat(web): render the HUD's grade blocks
 - ☑ 36. feat(web): open each HUD block's parts on click
 - ☑ 37. feat(web): zoom, pan, tilt and rotate the camera continuously
-- ☐ 38. feat(web): pick and hover at every level of detail
+- ☑ 38. feat(web): pick and hover at every level of detail
 - ☐ 39. feat(web): fly to a notice and walk the map from the keyboard
 - ☐ 40. feat(web): open a cell into its stained interior
 - ☐ 41. feat(web): overlay a changed cell's wiring
@@ -1109,3 +1109,4 @@ folder, so it rides the branch into the PR.)*
   camera-controls binds the wheel and a pinch to zoom, a drag to pan, and the right button or three fingers to tilt and rotate, with the polar angle stopped at 35° and no inertia. The first headless trial found two faults. The chrome's root div had grown as wide as the HUD and swallowed the pointer, so the entry lets it pass through and each block that takes the pointer says so. And with the fit's shift in the frustum, one notch slid the point under the cursor 280 px sideways, since camera-controls assumes its target is at the screen's centre; the frustum is now symmetric and the layout opens centred beside the rail by where the target starts, and the point under the cursor stays put. Zooming out across LOD1's gate eased the surface's layer 1, 0.94, 0.61, 0.28, 0 over the fade's 300 ms. The smoothing and the zoom bounds are baked constants until step 44 (P20), and the labels are placed in the overhead frame's estimate under tilt and rotation (P21).
 
 - 2026-10-24 — step 93 checkpointed · 8f9e3e625 — feat(web): draw a minimap that moves the camera (9m)
+- 2026-10-24 — step 38 checkpointed · 64f307a94 — feat(web): pick and hover at every level of detail (11m)

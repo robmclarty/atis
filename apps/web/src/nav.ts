@@ -1,27 +1,37 @@
 /**
  * nav: the one line between the chrome and the world. The world says what
- * its camera shows, the view's outline on the ground, and the chrome's
- * minimap draws it (D154); the chrome asks the world to look somewhere, and
- * the world moves its camera there. Neither imports the other: `main.ts`
- * hands both the same line, and an ask made before the world is drawn, or
- * with no world at all, as in a DOM test, goes nowhere. Pure, so a test
- * reads it straight.
+ * its camera shows, the view's outline on the ground, which the chrome's
+ * minimap draws (D154), and the stop the walk stands at, which the HUD's
+ * breadcrumb reads (step 39); the chrome asks the world to look somewhere, or
+ * to fly to a stop, and the world moves its camera there. Neither imports the
+ * other: `main.ts` hands both the same line, and an ask made before the world
+ * is drawn, or with no world at all, as in a DOM test, goes nowhere. Pure, so
+ * a test reads it straight.
  */
 
 import type { Point } from 'scene';
 
-/** What the world does when the chrome asks: centre the view on a layout point. */
-export type Steering = { readonly lookAt: (point: Point) => void };
+import { FIELD } from './walk.js';
+import type { Stop } from './walk.js';
+
+/** What the world does when the chrome asks: centre the view on a layout point, or fly to a stop. */
+export type Steering = { readonly lookAt: (point: Point) => void; readonly visit: (stop: Stop) => void };
 
 export type Nav = {
   /** The view's outline on the ground, in layout units, as the world last showed it; none before it has. */
   readonly outline: () => readonly Point[] | undefined;
   /** The world shows its view; the chrome hears only an outline that moved. */
   readonly show: (outline: readonly Point[] | undefined) => void;
-  /** Hear the outline move. */
+  /** The stop the walk stands at, the field until the world says otherwise. */
+  readonly stop: () => Stop;
+  /** The world settles on a stop. */
+  readonly settle: (stop: Stop) => void;
+  /** Hear the outline or the stop move. */
   readonly subscribe: (listener: () => void) => () => void;
   /** Ask the world to centre the view on a layout point. */
   readonly lookAt: (point: Point) => void;
+  /** Ask the world to fly to a stop. */
+  readonly visit: (stop: Stop) => void;
   /** The world takes the chrome's asks; the latest to steer is the one asked, until it lets go. */
   readonly steer: (steering: Steering) => () => void;
 };
@@ -35,19 +45,28 @@ const same = (a: readonly Point[] | undefined, b: readonly Point[] | undefined):
 export const createNav = (): Nav => {
   const listeners = new Set<() => void>();
   let outline: readonly Point[] | undefined;
+  let stop: Stop = FIELD;
   let steering: Steering | undefined;
+  const tell = (): void => listeners.forEach((listener) => listener());
   return {
     outline: () => outline,
     show: (next) => {
       if (same(outline, next)) return;
       outline = next;
-      listeners.forEach((listener) => listener());
+      tell();
+    },
+    stop: () => stop,
+    settle: (next) => {
+      if (JSON.stringify(next) === JSON.stringify(stop)) return;
+      stop = next;
+      tell();
     },
     subscribe: (listener) => {
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
     lookAt: (point) => steering?.lookAt(point),
+    visit: (next) => steering?.visit(next),
     steer: (next) => {
       steering = next;
       return () => {
