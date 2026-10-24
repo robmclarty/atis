@@ -20,3 +20,4 @@ export * from './shape.js';
 export * from './shore.js';
 export * from './tokens.js';
 export * from './weather.js';
+export * from './wiring.js';

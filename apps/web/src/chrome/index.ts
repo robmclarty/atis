@@ -16,3 +16,4 @@ export * from './notices.js';
 export * from './parts.js';
 export * from './rail.js';
 export * from './status.js';
+export * from './wiring.js';

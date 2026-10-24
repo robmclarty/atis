@@ -36,15 +36,17 @@
  * labels leave its files to the slide's own tags, and the pointer picks its
  * bodies where they have drifted; it holds while the view stays inside it
  * and closes on zooming out, Esc, a click on open ground or leaving it, with
- * `x`, or the breadcrumb's button, spreading its exploded view. The canvas
- * says which backend drew it, when the skin has settled, and which cell is
- * open, for the smoke test and a screenshot to wait on.
+ * `x`, or the breadcrumb's button, spreading its exploded view, and `w`, or
+ * the breadcrumb's other button, laying its wiring out on a plate in the
+ * chrome (step 41). The canvas says which backend drew it, when the skin has
+ * settled, which cell is open and whether its wiring is drawn, for the smoke
+ * test and a screenshot to wait on.
  */
 
 import { AgXToneMapping, AmbientLight, Color, DataUtils, DirectionalLight, RenderPipeline, Scene, Vector3, WebGPUCoordinateSystem, WebGPURenderer } from 'three/webgpu';
 import { emissive, mrt, output, pass } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
-import { FIELD_FILL, MOTION_TOKENS, REACH_ORIGIN_OPACITY, RELIEF, cellSlide, createPicker, createScheduler, gridFor, interiorOf, surfacePoint } from 'scene';
+import { FIELD_FILL, MOTION_TOKENS, REACH_ORIGIN_OPACITY, RELIEF, cellSlide, cellWiring, createPicker, createScheduler, gridFor, interiorOf, surfacePoint } from 'scene';
 import type { Lod, Point, Slide } from 'scene';
 import type { MapJson } from 'core';
 
@@ -264,6 +266,8 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       }
     }
     if (next.exploded !== opening.exploded) scheduler.explode(next.exploded);
+    if (next.wired) canvas.dataset['wired'] = 'on';
+    else delete canvas.dataset['wired'];
     opening = next;
     nav.open(openedOf(next));
   };
@@ -314,7 +318,11 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     if (handled) readStop = true;
     handled = false;
   });
-  // The minimap asks for a place and the camera eases there (D154); a notice's row asks for a stop and the camera flies there; the breadcrumb's button asks for the exploded view.
+  // The open cell's wiring is drawn only where some of the change's wiring reaches it, as the breadcrumb offers it only there.
+  const wire = (): void => {
+    if (opening.open !== undefined && cellWiring(map, opening.open) !== undefined) apply(openedBy(opening, { kind: 'wire' }));
+  };
+  // The minimap asks for a place and the camera eases there (D154); a notice's row asks for a stop and the camera flies there; the breadcrumb's buttons ask for the exploded view and the wiring.
   nav.steer({
     lookAt: (point) => {
       byHand();
@@ -322,8 +330,9 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     },
     visit,
     explode: () => apply(openedBy(opening, { kind: 'explode' })),
+    wire,
   });
-  // The arrows walk to a sibling, Enter descends and Escape ascends, unless the key is the focused element's own; with a cell open, Escape closes it first and x spreads or gathers its exploded view (D155).
+  // The arrows walk to a sibling, Enter descends and Escape ascends, unless the key is the focused element's own; with a cell open, Escape closes it first, x spreads or gathers its exploded view (D155), and w draws or takes away its wiring.
   globalThis.addEventListener('keydown', (event) => {
     if (event.altKey || event.ctrlKey || event.metaKey || ownsKey(event.target, event.key)) return;
     if (event.key === 'Escape' && opening.open !== undefined) {
@@ -335,6 +344,12 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       if (opening.open === undefined) return;
       event.preventDefault();
       apply(openedBy(opening, { kind: 'explode' }));
+      return;
+    }
+    if (event.key === 'w' || event.key === 'W') {
+      if (opening.open === undefined) return;
+      event.preventDefault();
+      wire();
       return;
     }
     const middle = standOf(controls, camera, canvas.clientWidth, chrome)?.centre;

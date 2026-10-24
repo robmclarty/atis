@@ -3,7 +3,7 @@
  * drawn with React (D91). It holds the status line, and once the map is read
  * the HUD's grade blocks over it (§7) and the breadcrumb under it (§6), the legend inset at the bottom left
  * (D87) over the minimap in the corner (D154), and the right-hand column, the ranked notices over the shore rail
- * (§5.4, D153); and, behind a switch, the dev panel (D156): off and absent by
+ * (§5.4, D153); over them all, the open cell's wiring plate while it is toggled on (step 41); and, behind a switch, the dev panel (D156): off and absent by
  * default, its code fetched only when it is first opened. A development build shows a toggle for it; a published
  * build opens it only through a key combination, which the docs never name.
  * `--png` and a glance reading press nothing, so they never see it.
@@ -25,6 +25,7 @@ import { Legend } from './legend.js';
 import { useLive } from './live.js';
 import { Minimap } from './minimap.js';
 import { Status } from './status.js';
+import { WiringPlate } from './wiring.js';
 
 /** What opening the panel loads: the dev module, or whatever a test hands in. */
 export type PanelModule = { readonly DevPanel: typeof DevPanel };
@@ -105,6 +106,7 @@ export const Chrome = ({ state, registry, nav: given, dev, token, load = loadPan
           <Minimap map={state.map} registry={registry} nav={nav} />
         </Corner>
       )}
+      {state.status === 'ready' && <WiringPlate map={state.map} registry={registry} nav={nav} />}
       {dev && (
         <button type="button" data-dev-toggle onClick={() => setOpen((was) => !was)} style={TOGGLE}>
           tokens

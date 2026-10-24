@@ -285,6 +285,20 @@ test("accepts an organelle's ties, none included, and rejects a count that is ne
   expect(() => assertMap(withTies({ inside: 1 }))).toThrow(/ties\.outside/);
 });
 
+test('accepts the wiring, a group file at one end included, and rejects an end the map does not place, a self-import, or an edge with no changed end (step 41)', () => {
+  const withWiring = (wiring: unknown, groupFiles: readonly string[] = ['README.md']): unknown => {
+    const map = minimalMap();
+    return { ...map, terrain: { ...map.terrain, groups: [{ id: 'docs', files: groupFiles }] }, weather: { ...map.weather, wiring } };
+  };
+  expect(() => assertMap(withWiring([]))).not.toThrow();
+  expect(() => assertMap(withWiring([{ from: 'README.md', to: 'src/foo/index.ts' }]))).not.toThrow();
+  expect(() => assertMap(withWiring([{ from: 'src/foo/index.ts', to: 'src/bar.ts' }]))).toThrow(/weather\.wiring\[0\]\.to: unknown organelle or group file "src\/bar\.ts"/);
+  expect(() => assertMap(withWiring([{ from: 'src/foo/index.ts', to: 'src/foo/index.ts' }]))).toThrow(/weather\.wiring\[0\]: a file does not import itself/);
+  expect(() => assertMap(withWiring([{ from: 'README.md', to: 'NOTES.md' }], ['README.md', 'NOTES.md']))).toThrow(/weather\.wiring\[0\]: neither end is a changed file/);
+  expect(() => assertMap(withWiring([{ from: 'README.md' }]))).toThrow(/weather\.wiring\[0\]\.to: expected a string/);
+  expect(() => assertMap(withWiring({}))).toThrow(/weather\.wiring: expected an array/);
+});
+
 test('rejects a changed entry naming an unknown group', () => {
   const map = minimalMap();
   const withUnknownGroup = {

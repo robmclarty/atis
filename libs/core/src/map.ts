@@ -29,7 +29,7 @@ import type { NamedEdge, PublishingMember, ScanFile } from './notices.js';
 import { TESTS_GROUP, computeReach } from './reach.js';
 import type { DiffFile } from './reach.js';
 import { SCHEMA_VERSION } from './schema.js';
-import type { Cell, DepAdded, DepMoved, ExceptionalEdge, Group, Instruments, MapJson, Organelle, Stability, Ties } from './schema.js';
+import type { Cell, DepAdded, DepMoved, ExceptionalEdge, Group, Instruments, MapJson, Organelle, Stability, Ties, WiringEdge } from './schema.js';
 import { computeTies } from './ties.js';
 
 /**
@@ -308,6 +308,22 @@ function exceptionalEdges(
 }
 
 /**
+ * The change's wiring (§6's LOD2 overlay): every import edge on the head graph
+ * with a changed file at either end, the importers and importees a reviewer
+ * opens a cell to read (D39). A test reads a changed file as any importer
+ * does, so its edges stay. An end the map does not place is dropped, since no
+ * renderer could draw it, and a repeated edge counts once.
+ */
+function wiringOf(edges: readonly ImportEdge[], changed: ReadonlySet<string>, placed: ReadonlySet<string>): readonly WiringEdge[] {
+  const found = new Map<string, WiringEdge>();
+  for (const { from, to } of edges) {
+    if (from === to || !placed.has(from) || !placed.has(to)) continue;
+    if (changed.has(from) || changed.has(to)) found.set(edgeKey({ from, to }), { from, to });
+  }
+  return [...found.values()].toSorted((a, b) => byPath(a.from, b.from) || byPath(a.to, b.to));
+}
+
+/**
  * Every terrain file inside a cell's contour: its own organelles, and every
  * descendant cell's, which is what makes a package cell a contour around all
  * of its descendants rather than around its barrel alone (D45).
@@ -574,6 +590,11 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
     weather: {
       changed: reach.changed,
       reach: reach.reach,
+      wiring: wiringOf(
+        head.edges,
+        new Set(reach.changed.map((file) => file.path)),
+        new Set([...modules.organelles.map((organelle) => organelle.path), ...groups.flatMap((group) => group.files)]),
+      ),
       evidence: evidence.evidence,
       checks,
       ghosts,

@@ -98,15 +98,15 @@ test('while a cell is open the breadcrumb ends in a button that asks the world t
   nav.subscribe(heard);
   await act(async () => root.render(<Crumbs map={DEMO} registry={createRegistry()} nav={nav} />));
   expect(host.querySelector('[data-explode]')).toBeNull();
-  act(() => nav.open({ cell: 'folder:libs/core/src/pm', exploded: false }));
-  expect(nav.opened()).toEqual({ cell: 'folder:libs/core/src/pm', exploded: false });
+  act(() => nav.open({ cell: 'folder:libs/core/src/pm', exploded: false, wired: false }));
+  expect(nav.opened()).toEqual({ cell: 'folder:libs/core/src/pm', exploded: false, wired: false });
   expect(heard).toHaveBeenCalledTimes(1);
   expect(element('[data-explode]').textContent).toBe('explode');
   await click('[data-explode]');
   expect(explode).toHaveBeenCalledTimes(1);
   // The world answers by spreading the view; the same state said again is not news.
-  act(() => nav.open({ cell: 'folder:libs/core/src/pm', exploded: true }));
-  act(() => nav.open({ cell: 'folder:libs/core/src/pm', exploded: true }));
+  act(() => nav.open({ cell: 'folder:libs/core/src/pm', exploded: true, wired: false }));
+  act(() => nav.open({ cell: 'folder:libs/core/src/pm', exploded: true, wired: false }));
   expect(heard).toHaveBeenCalledTimes(2);
   expect(element('[data-explode]').dataset['explode']).toBe('on');
   expect(element('[data-explode]').textContent).toBe('gather');
@@ -116,6 +116,30 @@ test('while a cell is open the breadcrumb ends in a button that asks the world t
   nav.steer({ lookAt: vi.fn(), visit: vi.fn() });
   nav.explode();
   expect(explode).toHaveBeenCalledTimes(1);
+});
+
+test("where the change's wiring reaches the open cell, a second button asks the world to draw it, or take it away, and a map that records none offers none (step 41)", async () => {
+  const nav = createNav();
+  const wire = vi.fn();
+  nav.steer({ lookAt: vi.fn(), visit: vi.fn(), wire });
+  await act(async () => root.render(<Crumbs map={DEMO} registry={createRegistry()} nav={nav} />));
+  expect(host.querySelector('[data-wire]')).toBeNull();
+  act(() => nav.open({ cell: 'folder:libs/core/src/pm', exploded: false, wired: false }));
+  expect(element('[data-wire]').textContent).toBe('wire');
+  await click('[data-wire]');
+  expect(wire).toHaveBeenCalledTimes(1);
+  act(() => nav.open({ cell: 'folder:libs/core/src/pm', exploded: false, wired: true }));
+  expect(element('[data-wire]').dataset['wire']).toBe('on');
+  expect(element('[data-wire]').textContent).toBe('unwire');
+  // A map written before the wiring was recorded mutes the toggle (C2), and the explode stays.
+  const { wiring: _, ...weather } = DEMO.weather;
+  await act(async () => root.render(<Crumbs map={{ ...DEMO, weather }} registry={createRegistry()} nav={nav} />));
+  expect(host.querySelector('[data-wire]')).toBeNull();
+  expect(host.querySelector('[data-explode]')).not.toBeNull();
+  // A world that does not steer the wiring takes the ask and does nothing.
+  nav.steer({ lookAt: vi.fn(), visit: vi.fn() });
+  nav.wire();
+  expect(wire).toHaveBeenCalledTimes(1);
 });
 
 test("a notice's row flies the world to its target, and a shore target's row brings its block into view (D148, D153)", async () => {

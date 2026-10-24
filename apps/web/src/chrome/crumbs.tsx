@@ -5,14 +5,15 @@
  * to, and one the reviewer moved to by hand. The stop it reads is the world's,
  * over the line between them (`nav.ts`). While a cell is open as a slide, a
  * flat button at the line's end spreads its exploded view or gathers it
- * (step 40). It is the brutalist material (D12): one monospace face, the
+ * (step 40), and, where any of the change's wiring reaches the cell, a second
+ * draws its wiring or takes it away (step 41). It is the brutalist material (D12): one monospace face, the
  * stop it stands at in ink and the way down to it in the muted grey, nothing
  * that glows, read live through the registry (D156).
  */
 
-import { CHROME_GROUND, CHROME_INK, CHROME_MUTED, CHROME_PAD, FONT_FAMILY, HUD_FONT_SIZE } from 'scene';
+import { CHROME_GROUND, CHROME_INK, CHROME_MUTED, CHROME_PAD, FONT_FAMILY, HUD_FONT_SIZE, cellWiring } from 'scene';
 import { Fragment, useMemo, useSyncExternalStore } from 'react';
-import type { ReactElement } from 'react';
+import type { CSSProperties, ReactElement } from 'react';
 import type { MapJson } from 'core';
 
 import type { Nav } from '../nav.js';
@@ -33,6 +34,8 @@ export const Crumbs = ({ map, registry, nav }: { readonly map: MapJson; readonly
   const stop = useSyncExternalStore(nav.subscribe, nav.stop, nav.stop);
   const opened = useSyncExternalStore(nav.subscribe, nav.opened, nav.opened);
   const crumbs = walk.crumbs(stop);
+  const wirable = useMemo(() => opened !== undefined && cellWiring(map, opened.cell) !== undefined, [map, opened]);
+  const button: CSSProperties = { marginLeft: look.CHROME_PAD, font: 'inherit', color: look.CHROME_INK, background: 'transparent', border: `1px solid ${look.CHROME_MUTED}`, padding: '0 6px', cursor: 'pointer' };
   return (
     <nav
       data-crumbs={stop.kind}
@@ -48,13 +51,13 @@ export const Crumbs = ({ map, registry, nav }: { readonly map: MapJson; readonly
         </Fragment>
       ))}
       {opened !== undefined && (
-        <button
-          type="button"
-          data-explode={opened.exploded ? 'on' : 'off'}
-          onClick={() => nav.explode()}
-          style={{ marginLeft: look.CHROME_PAD, font: 'inherit', color: look.CHROME_INK, background: 'transparent', border: `1px solid ${look.CHROME_MUTED}`, padding: '0 6px', cursor: 'pointer' }}
-        >
+        <button type="button" data-explode={opened.exploded ? 'on' : 'off'} onClick={() => nav.explode()} style={button}>
           {opened.exploded ? 'gather' : 'explode'}
+        </button>
+      )}
+      {opened !== undefined && wirable && (
+        <button type="button" data-wire={opened.wired ? 'on' : 'off'} onClick={() => nav.wire()} style={button}>
+          {opened.wired ? 'unwire' : 'wire'}
         </button>
       )}
     </nav>

@@ -6,8 +6,9 @@
  * open ground, or once the view has left it altogether, and a click on another
  * cell at that level opens that one instead. A cell closed by hand stays
  * closed while the view's centre is still in it, so it does not spring back
- * open on the next frame. The exploded view is a toggle on the open cell, and
- * gathers when the cell closes. Pure, so a test walks it event by event.
+ * open on the next frame. The exploded view and the wiring overlay (step 41)
+ * are toggles on the open cell, and both go when the cell closes or another
+ * opens. Pure, so a test walks it event by event.
  */
 
 import type { Lod, Pick } from 'scene';
@@ -17,13 +18,13 @@ import type { Stop } from './walk.js';
 /** The level of detail a cell opens at: §6's LOD2, the cell. */
 export const CELL_LOD: Lod = 2;
 
-/** What the chrome hears of the open cell: which, and whether its exploded view is spread. */
-export type Opened = { readonly cell: string; readonly exploded: boolean };
+/** What the chrome hears of the open cell: which, whether its exploded view is spread, and whether its wiring is drawn. */
+export type Opened = { readonly cell: string; readonly exploded: boolean; readonly wired: boolean };
 
-/** The open cell, whether its view is exploded, and a cell closed by hand that must not reopen under the view's centre. */
-export type OpenState = { readonly open?: string; readonly exploded: boolean; readonly dismissed?: string };
+/** The open cell, whether its view is exploded and its wiring drawn, and a cell closed by hand that must not reopen under the view's centre. */
+export type OpenState = { readonly open?: string; readonly exploded: boolean; readonly wired: boolean; readonly dismissed?: string };
 
-export const CLOSED: OpenState = { exploded: false };
+export const CLOSED: OpenState = { exploded: false, wired: false };
 
 export type OpenEvent =
   /** A frame: the level the camera is at, the cell under the view's centre, and whether a cell still shows in the view. */
@@ -31,18 +32,19 @@ export type OpenEvent =
   | { readonly kind: 'escape' }
   /** A click on the canvas: what lay under it at the camera's level. */
   | { readonly kind: 'click'; readonly lod: Lod; readonly pick: Pick | undefined }
-  | { readonly kind: 'explode' };
+  | { readonly kind: 'explode' }
+  | { readonly kind: 'wire' };
 
 /** The cell a stop stands in, if any. */
 export const cellOf = (stop: Stop): string | undefined => (stop.kind === 'field' ? undefined : stop.cell);
 
 /** What the chrome hears of a state. */
-export const openedOf = (state: OpenState): Opened | undefined => (state.open === undefined ? undefined : { cell: state.open, exploded: state.exploded });
+export const openedOf = (state: OpenState): Opened | undefined => (state.open === undefined ? undefined : { cell: state.open, exploded: state.exploded, wired: state.wired });
 
 /** Close the open cell by hand: it stays closed while the centre stays in it. */
-const dismiss = (state: OpenState): OpenState => ({ exploded: false, ...(state.open === undefined ? {} : { dismissed: state.open }) });
+const dismiss = (state: OpenState): OpenState => ({ ...CLOSED, ...(state.open === undefined ? {} : { dismissed: state.open }) });
 
-const openCell = (cell: string): OpenState => ({ open: cell, exploded: false });
+const openCell = (cell: string): OpenState => ({ ...CLOSED, open: cell });
 
 /** The state after an event. */
 export const openedBy = (state: OpenState, event: OpenEvent): OpenState => {
@@ -53,7 +55,7 @@ export const openedBy = (state: OpenState, event: OpenEvent): OpenState => {
       const dismissed = state.dismissed !== undefined && event.under === state.dismissed ? state.dismissed : undefined;
       if (state.open === undefined) {
         if (event.under !== undefined && event.under !== dismissed) return openCell(event.under);
-        return { exploded: false, ...(dismissed === undefined ? {} : { dismissed }) };
+        return { ...CLOSED, ...(dismissed === undefined ? {} : { dismissed }) };
       }
       if (event.shows(state.open)) return state;
       // The view has left the open cell altogether: whatever lies under the centre now opens, or nothing.
@@ -68,6 +70,8 @@ export const openedBy = (state: OpenState, event: OpenEvent): OpenState => {
     }
     case 'explode':
       return state.open === undefined ? state : { ...state, exploded: !state.exploded };
+    case 'wire':
+      return state.open === undefined ? state : { ...state, wired: !state.wired };
     default:
       return state;
   }

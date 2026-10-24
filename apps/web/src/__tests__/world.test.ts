@@ -7,7 +7,8 @@
  * LOD1's gate, since the far field is dark by design until the weather lights
  * it (D151). A second frame opens on one cell past LOD2's gate, where the
  * cell opens as a stained slide (step 40): the canvas names the open cell,
- * the slide tags each of its files, and `x` spreads the exploded view.
+ * the slide tags each of its files, `x` spreads the exploded view, and `w`
+ * lays the cell's wiring out on a plate in the chrome (step 41).
  */
 
 import { accessSync, constants, readFileSync } from 'node:fs';
@@ -145,7 +146,7 @@ const middleOf = (cell: string): readonly [number, number] => {
   return [contour.reduce((total, [x]) => total + x, 0) / contour.length, contour.reduce((total, [, y]) => total + y, 0) / contour.length];
 };
 
-test('framed on one cell past the cell\'s gate, the world opens it as a slide that tags each of its files, and x spreads the exploded view, with a clean console', { timeout: 120_000 }, async () => {
+test('framed on one cell past the cell\'s gate, the world opens it as a slide that tags each of its files, x spreads the exploded view and w lays its wiring out, with a clean console', { timeout: 120_000 }, async () => {
   const { server, url } = await serve();
   const browser = await launch();
   try {
@@ -173,6 +174,16 @@ test('framed on one cell past the cell\'s gate, the world opens it as a slide th
     expect(await page.textContent('[data-explode]')).toBe('gather');
     const sockets = await page.$$eval('[data-interior-socket]', (elements) => elements.filter((element) => element instanceof SVGElement && element.style.display !== 'none').length);
     expect(sockets).toBe(4);
+    // The wiring is laid on w, its plate drawing a box per wired file and a line per wire, and taken away on w again.
+    expect(await page.textContent('[data-wire]')).toBe('wire');
+    await page.keyboard.press('w');
+    await page.waitForSelector(`[data-wiring="${cell}"] svg`, { timeout: 30_000 });
+    expect(await page.getAttribute('#world', 'data-wired')).toBe('on');
+    expect(await page.textContent('[data-wire]')).toBe('unwire');
+    expect(await page.$$eval('[data-wiring-file]', (elements) => elements.length)).toBe(7);
+    expect(await page.$$eval('[data-wiring-line]', (elements) => elements.length)).toBe(7);
+    await page.keyboard.press('w');
+    await page.waitForSelector('[data-wiring]', { state: 'detached', timeout: 30_000 });
     // Escape closes the cell.
     await page.keyboard.press('Escape');
     await page.waitForSelector('#world:not([data-open])', { timeout: 30_000 });

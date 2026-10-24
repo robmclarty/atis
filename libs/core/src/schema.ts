@@ -189,9 +189,19 @@ export type DepAdded = { readonly manifest: string; readonly name: string; reado
 /** A dependency both sides of a manifest name, at a range this change moved `from` another (D83). */
 export type DepMoved = DepAdded & { readonly from: string };
 
+/** An import edge on the head graph with a changed file at one end or both: `from` imports `to` (§6's wiring). */
+export type WiringEdge = { readonly from: string; readonly to: string };
+
 export type Weather = {
   readonly changed: readonly ChangedFile[];
   readonly reach: readonly ReachEntry[];
+  /**
+   * The change's wiring (§6): every import edge on the head graph with a
+   * changed file at either end, a test's included, between files the map
+   * places, sorted (C3). An added key (D85), so a map written before it
+   * reads with no wiring.
+   */
+  readonly wiring?: readonly WiringEdge[];
   readonly evidence: Evidence;
   readonly checks: Checks;
   readonly ghosts: readonly Ghost[];
@@ -407,6 +417,21 @@ function assertShape(value: unknown): asserts value is MapJson {
     }
     if (typeof entry['path'] === 'string') changedPaths.add(entry['path']);
   });
+
+  const wiring = weather['wiring'];
+  if (wiring !== undefined) {
+    expectArray(wiring, 'weather.wiring').forEach((raw, index) => {
+      const at = `weather.wiring[${String(index)}]`;
+      const edge = expectRecord(raw, at);
+      const from = expectString(edge['from'], `${at}.from`);
+      const to = expectString(edge['to'], `${at}.to`);
+      for (const [end, path] of [['from', from], ['to', to]] as const) {
+        if (!organelleIds.has(path) && !groupFiles.has(path)) fail(`${at}.${end}`, `unknown organelle or group file "${path}"`);
+      }
+      if (from === to) fail(at, 'a file does not import itself');
+      if (!changedPaths.has(from) && !changedPaths.has(to)) fail(at, 'neither end is a changed file');
+    });
+  }
 
   const evidence = expectRecord(weather['evidence'], 'weather.evidence');
   const unmeasured = evidence['unmeasured'];

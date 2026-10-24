@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 40 — feat(web): open a cell into its stained interior
+**Current step:** 41 — feat(web): overlay a changed cell's wiring
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -66,8 +66,9 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 37. feat(web): zoom, pan, tilt and rotate the camera continuously
 - ☑ 38. feat(web): pick and hover at every level of detail
 - ☑ 39. feat(web): fly to a notice and walk the map from the keyboard
-- ☐ 40. feat(web): open a cell into its stained interior
+- ☑ 40. feat(web): open a cell into its stained interior
 - ☐ 41. feat(web): overlay a changed cell's wiring
+- ☐ 101. feat(core): write the barrel's export names on the membrane
 - ☐ 42. feat(web): honour reduced motion
 - ☐ 43. perf(web): hold 60 fps at 5,000 files and a 2 s first frame
 - ☐ 44. docs(design): record the world's material tokens and sources
@@ -151,10 +152,10 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] The HUD's block words and the legend's list are derived twice, in libs/svg/src/chrome.ts and legend.ts and again in apps/web/src/hud.ts, held together by hud.test.tsx's parity over every fixture; weigh one derivation in libs/scene for both renderers, as shoreRail and noticeAnchors are (D86, D90)
 - [x] The camera's smoothing (SMOOTH_S, DRAG_SMOOTH_S) and its zoom bounds are baked in apps/web/src/world/camera.ts, and camera-controls' wheel notch zooms 1.85x; move them into the motion tokens the dev panel moves when step 44 records the world's own, after Rob has tried the camera on a trackpad and a mouse
 - [x] labelsFor takes an axis-aligned viewport in layout units, so under a rotated or tilted camera the labels are placed in the overhead frame's estimate and hung from their true anchors; weigh a placement in screen space, projecting each anchor, in libs/scene/src/labels.ts
-- [ ] The map records a cell's interface as a count alone (interface_size), so the opened cell's membrane writes 'index.ts · 3 exports' and never the names; weigh recording the barrel's export names in the map (D85 schema bump, from the scan's ScannedFile.exports) so the membrane can write them
-- [ ] Under an opened cell's slide the surface's evidence marks on its files (the gap ring, mutant notches, stitches, ghosts) give way with the stains, and the slide redraws only the stain with its unstained share; weigh drawing the evidence round each body on the slide, in apps/web/src/world/interior.ts from the scene's weatherOf
-- [ ] LOD2's gate at 6x the fit zoom opens a cell only once it is framed closer than a screen can hold on a small map: the demo's pm folder spans 151 of the layout's 660 units, so at the gate it stands over two screens tall and Enter's 80% framing never reaches the gate; weigh gating the cell level by the cell's size on screen rather than the zoom alone, or lowering the gate, when step 44 records the world's tokens (LOD_GATES in libs/scene/src/lod.ts)
-- [ ] An opened cell's tag columns pull in to the screen's edges when the slide is wider than the screen, where the legend and the minimap already stand at the bottom left and the HUD at the top left, so a left tag can land under them; weigh keeping the columns clear of the chrome's corner, in tagsOf (libs/scene/src/interior.ts) or by passing the chrome's claims as the screen's margins
+- [x] The map records a cell's interface as a count alone (interface_size), so the opened cell's membrane writes 'index.ts · 3 exports' and never the names; weigh recording the barrel's export names in the map (D85 schema bump, from the scan's ScannedFile.exports) so the membrane can write them
+- [x] Under an opened cell's slide the surface's evidence marks on its files (the gap ring, mutant notches, stitches, ghosts) give way with the stains, and the slide redraws only the stain with its unstained share; weigh drawing the evidence round each body on the slide, in apps/web/src/world/interior.ts from the scene's weatherOf
+- [x] LOD2's gate at 6x the fit zoom opens a cell only once it is framed closer than a screen can hold on a small map: the demo's pm folder spans 151 of the layout's 660 units, so at the gate it stands over two screens tall and Enter's 80% framing never reaches the gate; weigh gating the cell level by the cell's size on screen rather than the zoom alone, or lowering the gate, when step 44 records the world's tokens (LOD_GATES in libs/scene/src/lod.ts)
+- [x] An opened cell's tag columns pull in to the screen's edges when the slide is wider than the screen, where the legend and the minimap already stand at the bottom left and the HUD at the top left, so a left tag can land under them; weigh keeping the columns clear of the chrome's corner, in tagsOf (libs/scene/src/interior.ts) or by passing the chrome's claims as the screen's margins
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -200,6 +201,11 @@ Harvest results this boundary:
 - **tangent**: park 19 · The HUD's block words and the legend's list are derived twice, in libs/svg/src/chrome.ts and legend.ts and again in apps/web/src/hud.ts, held together by hud.test.tsx's parity over every fixture; weigh one derivation in libs/scene for both renderers, as shoreRail and noticeAnchors are (D86, D90) → the HUD words are derived twice but a test holds them together on every fixture, so one derivation in scene can wait for a quiet step
 - **tangent**: park 20 · The camera's smoothing (SMOOTH_S, DRAG_SMOOTH_S) and its zoom bounds are baked in apps/web/src/world/camera.ts, and camera-controls' wheel notch zooms 1.85x; move them into the motion tokens the dev panel moves when step 44 records the world's own, after Rob has tried the camera on a trackpad and a mouse → the camera's smoothing and bounds belong with the motion tokens step 44 records, after you have tried the camera on both devices
 - **tangent**: park 21 · labelsFor takes an axis-aligned viewport in layout units, so under a rotated or tilted camera the labels are placed in the overhead frame's estimate and hung from their true anchors; weigh a placement in screen space, projecting each anchor, in libs/scene/src/labels.ts → label placement under rotation and tilt is an estimate that holds in the overhead frame, and a screen-space placement is scene's to add later
+- 2026-10-24, at the step 40 boundary: 4 parked ideas, classified.
+- **blocker**: park 22 · The map records a cell's interface as a count alone (interface_size), so the opened cell's membrane writes 'index.ts · 3 exports' and never the names; weigh recording the barrel's export names in the map (D85 schema bump, from the scan's ScannedFile.exports) so the membrane can write them → §6 and step 40's done-when put the barrel's exports on the membrane, and the map carries only their count, so the names need a small core step before the membrane can write them
+- **tangent**: park 23 · Under an opened cell's slide the surface's evidence marks on its files (the gap ring, mutant notches, stitches, ghosts) give way with the stains, and the slide redraws only the stain with its unstained share; weigh drawing the evidence round each body on the slide, in apps/web/src/world/interior.ts from the scene's weatherOf → the done-when asked for the stains alone, and round two's blind reading in the world will say whether the evidence is missed inside a cell before anything is redrawn there
+- **tangent**: park 24 · LOD2's gate at 6x the fit zoom opens a cell only once it is framed closer than a screen can hold on a small map: the demo's pm folder spans 151 of the layout's 660 units, so at the gate it stands over two screens tall and Enter's 80% framing never reaches the gate; weigh gating the cell level by the cell's size on screen rather than the zoom alone, or lowering the gate, when step 44 records the world's tokens (LOD_GATES in libs/scene/src/lod.ts) → the cell level's gate is a token step 44 records and the dev panel moves, so its size on a small map is tuned there, not fixed now
+- **tangent**: park 25 · An opened cell's tag columns pull in to the screen's edges when the slide is wider than the screen, where the legend and the minimap already stand at the bottom left and the HUD at the top left, so a left tag can land under them; weigh keeping the columns clear of the chrome's corner, in tagsOf (libs/scene/src/interior.ts) or by passing the chrome's claims as the screen's margins → a chrome layout polish the blind reading can judge, since the columns only meet the corner when a slide is wider than the screen
 
 ## Log
 
@@ -1168,3 +1174,61 @@ folder, so it rides the branch into the PR.)*
   **5.** The arrows also walk between files, and a hand move reads the stop back off the view
 
   The plan says "arrow keys walk sibling cells". Once a file is the stop, the arrows walk to its neighbouring files in the same cell, because cells have no siblings at that level. Each arrow picks the sibling furthest along that direction and least off to the side. Enter goes into whatever is under the centre of the view, otherwise into the nearest child. Escape goes up one level, ending at the field. When you move the camera by hand, the breadcrumb follows once it comes to rest: the field from far out, then the cell under the centre, then the file at the file's own zoom level. One small mistake: step 39's commit message says `fitFor`'s `zoomFor`, but the file is `fit.ts`.
+
+- 2026-10-24 — step 40 checkpointed · 5b2252fbc — feat(web): open a cell into its stained interior (1 drift, 44m)
+
+  **Summary**: Zoomed past the cell's gate, the cell under the view's centre opens as a stained slide: a warm, opaque ground inside its dented membrane, floating just over the skin, with each file a body in its morphed outline, pulsing and turning by its rule count and drifting by its looseness, stained cyan where the change touched it with the share no test ran left unstained, the barrel's export count written on the membrane, and the file tags in two columns beside the slide with their rule counts. `x`, or the breadcrumb's button, spreads the exploded view along dotted leaders from each body's socket. The cell holds while you pan and zoom inside it and closes on zooming out, Esc, a click on open ground or leaving it. The layout is `libs/scene`'s and tested; the gate is green; the frames for the pause are `/tmp/atis-40-demo-pm.png`, `/tmp/atis-40-retake3-internals.png` and `/tmp/atis-40-corpus11-sandbox.png`, each with an `-exploded` and a `-hover` twin, beside the same cells clipped from their sheets as `/tmp/atis-40-retake3-internals-svg.png` and `/tmp/atis-40-corpus11-sandbox-svg.png`.
+
+  1. The scene lays the slide and the scheduler fades it, one file outside the seam's names
+  2. Hue stays state inside the cell, and the membrane writes an export count because the map carries no names
+  3. The surface gives way under the slide, and the pointer picks the bodies where they have drifted
+  4. D155's rules are a pure reducer, and the smoke test opens a cell headless
+  5. The frames match the sheets, and two things to see at the pause are parked rather than fixed
+
+  **Readout**:
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored:
+               - D146 (morph-shapes)
+               - D147 (alive-motion)
+               - D157 (organelle-drift)
+               - D155 (open-cell-holds)
+               - D94 (seeded-motion)
+               - D156 (dev-panel)
+               - D90 (scene-lib)
+               - D12 (materials)
+               - D71 (lit-gaps)
+               - D80 (unmeasured-not-closed)
+               - D40 (rename-identity)
+  constraints  14 of 14 honored
+  seam         strayed: 1 path outside the seam
+               → libs/scene/src/motion.ts
+  diff         +1653 -75 across 22 files
+  spent        44 min · 1 turn · 36s gate · green first run
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Recommendation**: Open the demo's pm folder and retake-3's `internals` in your tab, the dev server is still up at `http://127.0.0.1:5173/?map=/@fs/Users/robmclarty/Projects/atis/code/atis/fixtures/retake-3/map.json&zoom=8&centre=643,1185`, set the frames beside their SVG clips, and then answer Q69 by keeping the surface's grammar as it is until round two reads it with motion on, with one candidate to try after that reading: the reach's light travelling one hop outward from the changed cell on each primary flare, so the surface's second motion means where the change escapes. Inside the cell the baseline is alive now, shapes by their rules, drift by looseness and the noticed stain breathing, and a blind reading will say whether it reads before anything more moves.
+
+  **1.** The scene lays the slide and the scheduler fades it, one file outside the seam's names
+
+  `libs/scene/src/interior.ts` holds the whole layout: `cellSlide` cuts the dented membrane into triangles with a hole for each cell it holds, so a package's slide never covers the folders inside it, and lays each file at rest with its stain, its looseness and where the exploded view takes it; `interiorOf` lays the bodies each frame, drifted through `driftOf`, drawn toward their exploded spots by how far the view has spread, in the outline the scheduler's `shape` gives their rule count; `tagsOf` stacks the tags down two columns. The scheduler in `motion.ts` gained the slide's fade in and out and the exploded view's spread, both at the cross-fade's rate and cut under reduced motion, since C12 puts every animation in it; that file is in `libs/scene` but not among the seam's four names, and the seam row will say so. The scene test replays the demo's pm folder: the membrane and the exports, the stains, the drift and the morph, the exploded view clear of overlaps, the columns on and off a small screen, and the fade.
+
+  **2.** Hue stays state inside the cell, and the membrane writes an export count because the map carries no names
+
+  A changed body fills in the change hue over the share of its changed lines the tests ran, and the share they did not is left unstained from the top clockwise, the same arc the evidence ring lights at the surface; a file no report measured is unstained whole, as D80 lights its ring whole; a deleted file is its outline alone in the change hue, the body gone; a renamed one is dashed. A noticed file's stain follows its notice's light, so the primary breathes inside the cell as it does on the skin. The map records a cell's interface as `interface_size` and nothing more, so the membrane writes `index.ts · 3 exports` where the done-when says the barrel's exports; the names are parked as a schema bump. Under the slide the surface's evidence marks on those files give way with the stains, so the notches and stitches the sheet shows round a body are not redrawn inside, which is the second park.
+
+  **3.** The surface gives way under the slide, and the pointer picks the bodies where they have drifted
+
+  The instanced organelles and the marks each carry their cell's number, and a uniform fades the open cell's away as the slide fades in, so nothing doubles beneath a moving body. The labels layer leaves the slide's files to the tags and keeps every notice label. Picking tests the bodies at their current places before the picker's resting ones, and a resting place in the open cell answers nothing, so the hover outline is the moving outline. The slide floats `INTERIOR.lift` above the cell's highest relief, every material double-sided, unlit and never blooming, and the look is an `INTERIOR` material in the registry: the slide's ground and opacity, the frame's ink, the bodies' fill and stroke, the stain's share and the exploded view's spread, push and gap.
+
+  **4.** D155's rules are a pure reducer, and the smoke test opens a cell headless
+
+  `apps/web/src/opened.ts` walks the events: at the cell's level the innermost cell under the view's centre opens; it holds while any of it stays in the view's outline; it closes on zooming out, Esc or a click on open ground, and stays closed under the centre until the centre has left it; a click on another cell switches; the exploded view toggles on the open cell alone. Esc closes before the walk ascends, so one Esc closes the slide and the next flies out. The view gained `?centre=x,y` so a screenshot or a test can frame one cell, and the second smoke test opens the demo's pm folder on WebGL 2, reads its four tags and the exports, spreads the view with `x` and closes it with Esc, console clean.
+
+  **5.** The frames match the sheets, and two things to see at the pause are parked rather than fixed
+
+  On retake-3's `internals` the slide shows the same eight bodies in the same places as the sheet, six stained and two plain, with the primary's uncovered share unstained where the sheet lights its arc; corpus-11's `sandbox` morphs its two dented files and holds a tilt. The slide's cream reads grey-beige under AgX where the spike's was warmer; `INTERIOR.slide` in the panel moves it. The demo's pm folder is over two screens tall at LOD2's gate, so its index.ts sits under the HUD until you pan, and the tag columns pull in to the screen's edges, where the legend already stands; both are parked for step 44's tokens.

@@ -3,9 +3,9 @@
  * its camera shows, the view's outline on the ground, which the chrome's
  * minimap draws (D154), the stop the walk stands at, which the HUD's
  * breadcrumb reads (step 39), and the cell it has opened as a slide, with
- * whether its exploded view is spread (step 40); the chrome asks the world to
- * look somewhere, to fly to a stop, or to explode the open cell, and the
- * world moves its camera or its slide. Neither imports the
+ * whether its exploded view is spread (step 40) and its wiring drawn (step
+ * 41); the chrome asks the world to look somewhere, to fly to a stop, or to
+ * explode or wire the open cell, and the world moves its camera or its slide. Neither imports the
  * other: `main.ts` hands both the same line, and an ask made before the world
  * is drawn, or with no world at all, as in a DOM test, goes nowhere. Pure, so
  * a test reads it straight.
@@ -17,8 +17,8 @@ import type { Opened } from './opened.js';
 import { FIELD } from './walk.js';
 import type { Stop } from './walk.js';
 
-/** What the world does when the chrome asks: centre the view on a layout point, fly to a stop, or spread or gather the open cell's exploded view. */
-export type Steering = { readonly lookAt: (point: Point) => void; readonly visit: (stop: Stop) => void; readonly explode?: () => void };
+/** What the world does when the chrome asks: centre the view on a layout point, fly to a stop, spread or gather the open cell's exploded view, or draw or take away its wiring. */
+export type Steering = { readonly lookAt: (point: Point) => void; readonly visit: (stop: Stop) => void; readonly explode?: () => void; readonly wire?: () => void };
 
 export type Nav = {
   /** The view's outline on the ground, in layout units, as the world last showed it; none before it has. */
@@ -29,9 +29,9 @@ export type Nav = {
   readonly stop: () => Stop;
   /** The world settles on a stop. */
   readonly settle: (stop: Stop) => void;
-  /** The cell the world has opened as a slide, and whether its exploded view is spread; none while every cell is closed. */
+  /** The cell the world has opened as a slide, whether its exploded view is spread, and whether its wiring is drawn; none while every cell is closed. */
   readonly opened: () => Opened | undefined;
-  /** The world opens a cell, spreads or gathers its view, or closes it. */
+  /** The world opens a cell, spreads or gathers its view, draws or takes away its wiring, or closes it. */
   readonly open: (opened: Opened | undefined) => void;
   /** Hear the outline, the stop or the open cell move. */
   readonly subscribe: (listener: () => void) => () => void;
@@ -41,6 +41,8 @@ export type Nav = {
   readonly visit: (stop: Stop) => void;
   /** Ask the world to spread the open cell's exploded view, or gather it. */
   readonly explode: () => void;
+  /** Ask the world to draw the open cell's wiring, or take it away. */
+  readonly wire: () => void;
   /** The world takes the chrome's asks; the latest to steer is the one asked, until it lets go. */
   readonly steer: (steering: Steering) => () => void;
 };
@@ -84,6 +86,7 @@ export const createNav = (): Nav => {
     lookAt: (point) => steering?.lookAt(point),
     visit: (next) => steering?.visit(next),
     explode: () => steering?.explode?.(),
+    wire: () => steering?.wire?.(),
     steer: (next) => {
       steering = next;
       return () => {

@@ -3654,6 +3654,44 @@
         "via": []
       }
     ],
+    "wiring": [
+      {
+        "from": "apps/cli/src/doctor.ts",
+        "to": "libs/core/src/index.ts"
+      },
+      {
+        "from": "apps/cli/src/doctor.ts",
+        "to": "libs/core/src/pm/index.ts"
+      },
+      {
+        "from": "apps/cli/src/index.ts",
+        "to": "apps/cli/src/doctor.ts"
+      },
+      {
+        "from": "libs/core/src/__tests__/pm.test.ts",
+        "to": "libs/core/src/pm/index.ts"
+      },
+      {
+        "from": "libs/core/src/__tests__/pm.test.ts",
+        "to": "libs/core/src/pm/tools.ts"
+      },
+      {
+        "from": "libs/core/src/index.ts",
+        "to": "libs/core/src/pm/index.ts"
+      },
+      {
+        "from": "libs/core/src/pm/index.ts",
+        "to": "libs/core/src/pm/slots.ts"
+      },
+      {
+        "from": "libs/core/src/pm/index.ts",
+        "to": "libs/core/src/pm/tools.ts"
+      },
+      {
+        "from": "libs/core/src/pm/tools.ts",
+        "to": "libs/core/src/util/format.ts"
+      }
+    ],
     "evidence": {
       "patch_coverage": [
         {

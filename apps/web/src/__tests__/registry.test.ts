@@ -49,7 +49,7 @@ test("the panel's sections are the design doc's headings, each listing its table
 /** A material object's fields as the registry names them. */
 const fields = (object: string, from: object): string[] => Object.keys(from).map((field) => `${object}.${field}`);
 
-test("the materials section lists every field of the world's skin, lights, sky, bloom, weather, notices, relief, hover and walk, the minimap's and the slide's", () => {
+test("the materials section lists every field of the world's skin, lights, sky, bloom, weather, notices, relief, hover and walk, the minimap's, the slide's and the wiring's", () => {
   const section = SECTIONS.find((each) => each.title === MATERIALS_TITLE);
   expect(section?.names).toEqual([
     ...fields('SKIN', SKIN),
@@ -63,6 +63,7 @@ test("the materials section lists every field of the world's skin, lights, sky, 
     ...fields('WALK', WALK),
     ...fields('MINIMAP', MINIMAP),
     ...fields('INTERIOR', INTERIOR),
+    ...fields('WIRING', scene.WIRING_SPACING),
   ]);
 });
 

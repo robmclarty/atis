@@ -225,6 +225,39 @@ test("the demo map ties each file to its cell on the head graph, with the test's
   expect(legacy).not.toHaveProperty('ties');
 });
 
+test("the demo map's wiring is every head import edge with a changed file at either end, the test's included and the deleted file's none (step 41)", () => {
+  const map = buildMap(inputsFor('demo'), DEFAULT_CONFIG);
+  expect(map.weather.wiring).toEqual([
+    // The modified doctor reads the package barrel and the pm barrel, and the CLI's entry reads the doctor.
+    { from: 'apps/cli/src/doctor.ts', to: 'libs/core/src/index.ts' },
+    { from: 'apps/cli/src/doctor.ts', to: 'libs/core/src/pm/index.ts' },
+    { from: 'apps/cli/src/index.ts', to: 'apps/cli/src/doctor.ts' },
+    // The modified test reads the barrel and the added file, as any importer does.
+    { from: 'libs/core/src/__tests__/pm.test.ts', to: 'libs/core/src/pm/index.ts' },
+    { from: 'libs/core/src/__tests__/pm.test.ts', to: 'libs/core/src/pm/tools.ts' },
+    { from: 'libs/core/src/index.ts', to: 'libs/core/src/pm/index.ts' },
+    { from: 'libs/core/src/pm/index.ts', to: 'libs/core/src/pm/slots.ts' },
+    { from: 'libs/core/src/pm/index.ts', to: 'libs/core/src/pm/tools.ts' },
+    { from: 'libs/core/src/pm/tools.ts', to: 'libs/core/src/util/format.ts' },
+  ]);
+  // Neither end of slots.ts → format.ts, nor of the util cycle, changed, and the deleted legacy.ts has no edge on the head graph.
+  expect(map.weather.wiring?.some((edge) => edge.from === 'libs/core/src/pm/slots.ts')).toBe(false);
+  expect(map.weather.wiring?.some((edge) => edge.from === 'libs/core/src/util/format.ts' || edge.from === 'libs/core/src/util/text.ts')).toBe(false);
+  expect(map.weather.wiring?.some((edge) => edge.from === 'libs/core/src/pm/legacy.ts' || edge.to === 'libs/core/src/pm/legacy.ts')).toBe(false);
+});
+
+test('the wiring keeps an edge once, drops a self-import, and drops an end the map does not place', () => {
+  const inputs = inputsFor('demo');
+  const edges = [
+    ...inputs.head.edges,
+    { from: 'libs/core/src/pm/tools.ts', to: 'libs/core/src/util/format.ts', names: ['formatSlot'] },
+    { from: 'libs/core/src/pm/tools.ts', to: 'libs/core/src/pm/tools.ts', names: [] },
+    { from: 'libs/core/src/pm/tools.ts', to: 'node_modules/left-pad/index.js', names: [] },
+  ];
+  const map = buildMap({ ...inputs, head: { ...inputs.head, edges } }, DEFAULT_CONFIG);
+  expect(map.weather.wiring?.filter((edge) => edge.from === 'libs/core/src/pm/tools.ts')).toEqual([{ from: 'libs/core/src/pm/tools.ts', to: 'libs/core/src/util/format.ts' }]);
+});
+
 test('the demo map dents the cells that break a rule and marks the clone family', () => {
   const map = buildMap(inputsFor('demo'), DEFAULT_CONFIG);
   const cells = new Map(map.terrain.cells.map((cell) => [cell.id, cell]));
