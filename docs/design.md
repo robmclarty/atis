@@ -236,10 +236,15 @@ the world at its full width, wrapping in rows (D158); the world draws the same
 blocks in a scrolled rail at the tab's right edge. `shoreRail` in
 `libs/scene/src/shore.ts` orders them for both: the groups the change touched
 first, then the rest, each by name and `other` last. A touched block opens on
-its files, each with a mark in the change hue as the world stains it (filled
-for an edit, an outline for a deletion, dashed for a rename) or a ghost's
-dashed grey ring, and its path, `+` before an added one (D120) and cut from the
-left where it would run out of the block. The rest show their name and count.
+a grid of every file in its group (D160): one small flat square per file,
+wrapped to the block's width, in the rail's order, the changed ones first and
+lit in the change hue as the world stains them (filled for an edit, an outline
+for a deletion, dashed for a rename), then any ghost's dashed grey, then the
+rest in the base tissue's grey (`ORGANELLE_FILL`), so a 50-file group with one
+change reads as what it is. Beneath the grid the changed files and the ghosts
+are named, each with the same mark as a disc and its path, `+` before an
+added one (D120) and cut from the left where it would run out of the block. An
+untouched block shows its name and count, and names a ghost if it has one.
 `other` is framed in `CHROME_INK` at `SECONDARY_BOX_WIDTH`, since it is never
 quiet (D48); every other block in a `CHROME_MUTED` hairline. The `tests` group is
 a block like the rest: its files are never terrain (D4), but a changed test file
@@ -260,6 +265,8 @@ raised past any cell skin or storm that reaches above it, under `CHROME_PAD`.
 | `SHORE_BLOCK_WIDTH` | `240` | the widest an open block grows before its paths are cut |
 | `SHORE_FILES_SHOWN` | `6` | how many files an open block names before it says how many more |
 | `SHORE_MARK_R` | `2.5` | the radius of the mark before each named file |
+| `SHORE_GRID_CELL` | `4` | the side of each square in a touched block's grid, one per file of its group (D160) |
+| `SHORE_GRID_GAP` | `1` | the gap between the grid's squares, across and down |
 
 ## The legend inset and the practice map's balloons
 

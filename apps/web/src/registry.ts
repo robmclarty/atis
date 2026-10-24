@@ -138,7 +138,7 @@ export const SECTIONS: readonly Section[] = [
   },
   {
     title: "The shore's band",
-    names: ['SHORE_FONT_SIZE', 'SHORE_LINE', 'SHORE_BLOCK_PAD', 'SHORE_BLOCK_GAP', 'SHORE_BLOCK_WIDTH', 'SHORE_FILES_SHOWN', 'SHORE_MARK_R'],
+    names: ['SHORE_FONT_SIZE', 'SHORE_LINE', 'SHORE_BLOCK_PAD', 'SHORE_BLOCK_GAP', 'SHORE_BLOCK_WIDTH', 'SHORE_FILES_SHOWN', 'SHORE_MARK_R', 'SHORE_GRID_CELL', 'SHORE_GRID_GAP'],
   },
   {
     title: "The legend inset and the practice map's balloons",

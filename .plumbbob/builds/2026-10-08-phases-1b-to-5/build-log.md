@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 31 — feat(cli): serve the world and open it in a tab
+**Current step:** 100 — feat(svg): open each touched shore block on a grid of its files
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -57,7 +57,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 28. feat(scene): plan levels of detail with hysteresis and cross-fades
 - ☑ 29. feat(scene): schedule every animation inside the motion budget
 - ☑ 30. feat(web): render the field and the soft skin from a served map
-- ☐ 31. feat(cli): serve the world and open it in a tab
+- ☑ 31. feat(cli): serve the world and open it in a tab
 - ☐ 32. feat(web): draw cells and organelles, and the shore in a rail
 - ☐ 33. feat(web): draw the weather
 - ☐ 34. feat(web): draw the notices with their labels and leaders
@@ -958,3 +958,4 @@ folder, so it rides the branch into the PR.)*
   `view.ts` reads `?backend=webgl`, `?zoom=`, `?tilt=` (0 to 35°, from the south-west as the spike's tilt frames) and `?seed=`, with a test for each, and the scheduler takes `prefers-reduced-motion` from the page. To look live before step 31 serves the world, run `pnpm --filter web dev` and open `http://localhost:5173/?map=/@fs/<absolute path to a map.json>&zoom=2&tilt=35`, since Vite serves a workspace file raw under `/@fs/`. In the headed Chrome the skin settled 1.1 s after navigation on both backends, within C14's target, which step 43 measures properly. `playwright-core` went in at its latest release, 1.64.1, and C9 asks each new dependency for a row in `docs/inspiration.md`, which is the one path outside the seam; `camera-controls` stays installed and unused until step 37, as fallow's ignore records.
 
 - 2026-10-24 — step 97 checkpointed · 703aa52df — feat(web): add a hidden dev panel that tunes every token live (1 drift, 23m)
+- 2026-10-24 — step 31 checkpointed · fda74e3e1 — feat(cli): serve the world and open it in a tab (1 drift, 9m)

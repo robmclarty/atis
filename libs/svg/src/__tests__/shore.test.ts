@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import { assertMap } from 'core';
 import type { MapJson } from 'core';
-import { CHROME_INK, SECONDARY_BOX_WIDTH, SHORE_BLOCK_GAP, SHORE_FILES_SHOWN, SHORE_LINE, shoreRail } from 'scene';
+import { CHANGE_HUE, CHROME_INK, SECONDARY_BOX_WIDTH, SHORE_BLOCK_GAP, SHORE_BLOCK_PAD, SHORE_BLOCK_WIDTH, SHORE_FILES_SHOWN, SHORE_GRID_CELL, SHORE_GRID_GAP, SHORE_LINE, shoreRail } from 'scene';
 import { expect, test } from 'vitest';
 
 import { renderSvg } from '../render.js';
@@ -96,4 +96,76 @@ test('a map with no shore draws no band and no rule for one', () => {
   const svg = renderSvg(withShore([]));
   expect(svg).not.toContain('id="shore"');
   expect([...svg.matchAll(/<line x1="0" y1="([\d.]+)" x2="[\d.]+" y2="\1"\/>/g)]).toHaveLength(1);
+});
+
+/** The squares of a block's grid, in markup order: each file, its kind, its rectangle, and whether it is lit in the change hue. */
+function squaresIn(band: string, group: string): readonly { readonly file: string; readonly kind: string; readonly x: number; readonly y: number; readonly size: number; readonly lit: boolean }[] {
+  const start = band.indexOf(`<g data-grid="${group}">`);
+  if (start < 0) return [];
+  const grid = band.slice(start, band.indexOf('</g>', start));
+  return [...grid.matchAll(/<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)" height="[\d.]+" data-file="([^"]+)" data-kind="(\w+)"([^>]*)\/>/g)].map(([, x, y, size, file, kind, paint]) => ({
+    file: file ?? '',
+    kind: kind ?? '',
+    x: Number(x),
+    y: Number(y),
+    size: Number(size),
+    lit: (paint ?? '').includes(CHANGE_HUE),
+  }));
+}
+
+test('a touched block opens on a grid with one square per file of its group, the changed first and lit, and an untouched block has none (D160)', () => {
+  const band = bandOf(renderSvg(DEMO));
+  const rail = shoreRail(DEMO);
+  for (const block of rail) {
+    const squares = squaresIn(band, block.group);
+    if (!block.touched) {
+      expect(squares, block.group).toEqual([]);
+      continue;
+    }
+    expect(squares.map((square) => square.file), block.group).toEqual(block.files.map((file) => file.path));
+    expect(squares).toHaveLength(block.count);
+    const changed = block.files.filter((file) => file.change !== undefined).length;
+    expect(squares.filter((square) => square.lit)).toHaveLength(changed);
+    expect(squares.slice(0, changed).every((square) => square.lit)).toBe(true);
+    expect(squares.slice(changed).some((square) => square.lit)).toBe(false);
+    expect(squares.every((square) => square.size === SHORE_GRID_CELL)).toBe(true);
+  }
+  const deps = squaresIn(band, 'deps');
+  expect(deps.map((square) => [square.file, square.kind])).toEqual([
+    ['package.json', 'modified'],
+    ['apps/cli/package.json', 'file'],
+    ['libs/core/package.json', 'file'],
+    ['pnpm-workspace.yaml', 'file'],
+  ]);
+});
+
+test("a 250-file group's grid wraps inside its block, a few rows tall, with no square outside it and the names beneath", () => {
+  const files = Array.from({ length: 250 }, (_, index) => `docs/page-${String(index).padStart(3, '0')}.md`);
+  const changed = [files[7], files[120], files[249]].map((path) => ({ path: path ?? '', kind: 'modified' as const, group: 'docs', is_barrel: false, added: 1, deleted: 0, hunks: [] }));
+  const band = bandOf(renderSvg(withShore([{ id: 'docs', files }], changed)));
+  const block = blocksIn(band).find((each) => each.group === 'docs');
+  expect(block).toBeDefined();
+  const squares = squaresIn(band, 'docs');
+  expect(squares).toHaveLength(250);
+  expect(squares.slice(0, 3).map((square) => square.file)).toEqual([files[7], files[120], files[249]]);
+  expect(squares.filter((square) => square.lit)).toHaveLength(3);
+
+  // The block is as wide as an open block may be, the grid wraps to it, and the block grows by the grid's rows.
+  const pitch = SHORE_GRID_CELL + SHORE_GRID_GAP;
+  const perRow = Math.floor((SHORE_BLOCK_WIDTH - 2 * SHORE_BLOCK_PAD + SHORE_GRID_GAP) / pitch);
+  const rows = Math.ceil(250 / perRow);
+  expect(block?.width).toBe(SHORE_BLOCK_WIDTH);
+  expect(rows).toBeLessThanOrEqual(6);
+  expect(block?.height).toBe(2 * SHORE_BLOCK_PAD + SHORE_LINE * (1 + 3) + rows * pitch - SHORE_GRID_GAP + SHORE_BLOCK_GAP);
+  for (const square of squares) {
+    expect(square.x).toBeGreaterThanOrEqual((block?.x ?? 0) + SHORE_BLOCK_PAD);
+    expect(square.x + square.size).toBeLessThanOrEqual((block?.x ?? 0) + (block?.width ?? 0) - SHORE_BLOCK_PAD);
+    expect(square.y).toBeGreaterThanOrEqual((block?.y ?? 0) + SHORE_BLOCK_PAD + SHORE_LINE);
+    expect(square.y + square.size).toBeLessThanOrEqual((block?.y ?? 0) + (block?.height ?? 0) - SHORE_BLOCK_PAD - 3 * SHORE_LINE);
+  }
+  // The three changed files are named beneath the grid, below its last row.
+  const named = [...band.matchAll(/<g data-id="([^"]+)" data-kind="modified">\s*<circle cx="[\d.]+" cy="([\d.]+)"/g)].map(([, file, cy]) => ({ file, cy: Number(cy) }));
+  expect(named.map((row) => row.file)).toEqual([files[7], files[120], files[249]]);
+  const lastRow = Math.max(...squares.map((square) => square.y + square.size));
+  expect(named.every((row) => row.cy > lastRow)).toBe(true);
 });

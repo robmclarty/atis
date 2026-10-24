@@ -31,9 +31,15 @@ test('the groups the change touched lead, then the rest, each by name with `othe
   for (const block of rail) expect(block.count).toBe(counts.get(block.group));
 });
 
-test('a touched block names its changed files by path with their kinds, and an untouched block names none', () => {
+test('a touched block lists every file of its group in the grid\'s order, the changed first with their kinds, and an untouched block lists none (D160)', () => {
   const rail = shoreRail(DEMO);
   expect(rail.find((block) => block.group === 'docs')?.files).toEqual([{ path: 'README.md', change: { kind: 'modified' } }]);
+  expect(rail.find((block) => block.group === 'deps')?.files).toEqual([
+    { path: 'package.json', change: { kind: 'modified' } },
+    { path: 'apps/cli/package.json' },
+    { path: 'libs/core/package.json' },
+    { path: 'pnpm-workspace.yaml' },
+  ]);
   expect(rail.find((block) => block.group === 'build')?.files).toEqual([]);
   const renamed = shoreRail(
     withWeather({
@@ -48,6 +54,18 @@ test("a shore file that usually changes with these and did not is named as a gho
   const config = shoreRail(withWeather({ ghosts })).find((block) => block.group === 'config');
   expect(config?.files).toEqual([{ path: 'tsconfig.json', ghost: true }]);
   expect(config?.touched).toBe(false);
+});
+
+test("on a touched block a ghost sits after the changed files and before the rest, each run by path (D160)", () => {
+  const ghosts = [{ path: 'pnpm-workspace.yaml', with: ['package.json'], rate: 0.5, support: 2 }];
+  const deps = shoreRail(withWeather({ ghosts })).find((block) => block.group === 'deps');
+  expect(deps?.files.map((file) => [file.path, file.change?.kind ?? (file.ghost === true ? 'ghost' : 'file')])).toEqual([
+    ['package.json', 'modified'],
+    ['pnpm-workspace.yaml', 'ghost'],
+    ['apps/cli/package.json', 'file'],
+    ['libs/core/package.json', 'file'],
+  ]);
+  expect(deps?.count).toBe(4);
 });
 
 test('a red slot naming a shore file hangs over its group, split by the change, and a global slot over none (D68)', () => {

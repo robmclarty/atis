@@ -224,7 +224,9 @@ export const CATEGORY_FONT_SIZE = 13;
  * sheet under the world (D158). A block's text is set this size, a line this
  * tall, inside this padding, the blocks this far apart; an open block is at
  * most this wide and names at most this many files before saying how many
- * more; each named file wears its mark, a disc this big, before its path.
+ * more; each named file wears its mark, a disc this big, before its path. A
+ * touched block opens on a grid of its group's files first (D160): one flat
+ * square per file, this big and this far apart, wrapped to the block's width.
  */
 export const SHORE_FONT_SIZE = 8;
 export const SHORE_LINE = 11;
@@ -233,6 +235,8 @@ export const SHORE_BLOCK_GAP = 6;
 export const SHORE_BLOCK_WIDTH = 240;
 export const SHORE_FILES_SHOWN = 6;
 export const SHORE_MARK_R = 2.5;
+export const SHORE_GRID_CELL = 4;
+export const SHORE_GRID_GAP = 1;
 
 /** The notice column (§5.4): the width the frame reserves, and the type each row is set in. */
 export const NOTICE_COLUMN = 300;
