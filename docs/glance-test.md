@@ -718,3 +718,227 @@ held-out half at step 20, and any miss it leaves is parked past step 20.
 The two misses are parked by fixture number, and so are the three encodings above; the first
 two of those bear on `corpus-4`'s miss. The refine pass that answers them is the one D127
 allows. Its fixes are judged on the held-out half at step 20, never on these six.
+
+## Round one, second retake: fail (2026-10-23)
+
+The blind reading on the SVG that ends wave 0 (D119): five of the held-out six,
+`fixtures/corpus-7` to `fixtures/corpus-12` (see [`fixtures/corpus.md`](../fixtures/corpus.md)),
+read blind (D62) after the legend (D66) and the practice map (D87). It is recorded under this
+name so that §11's round two stays the reading in the world (D63). It failed on all three
+counts. The category read IFR on all five maps, so it told no hold from a merge. An interface
+notice led every map, whatever the review found. And the largest map drew too small to read.
+
+### The practice map (D125)
+
+Before the reading, `pnpm practice-map` re-rendered `docs/glance-practice.svg` from
+`fixtures/retake-5`. It came out byte for byte as step 92 left it, so it already carried every
+fix the tuning half prompted. Each balloon was checked against its row in the legend, and each
+sits on an instance of its own mark:
+
+- **1:** the category block.
+- **3:** a hairline.
+- **4:** a notch.
+- **5:** a stitch.
+- **6:** a red bolt.
+- **7:** a grey bolt.
+- **8:** a ghost.
+- **9:** a changed file's fill.
+
+retake-5 has no lit arc and no skin lit whole, so balloons 2 and 10 are absent, as the legend
+says. Three balloon lines crowd other marks. Balloon 1's crosses the Other block the HUD wrapped
+beneath the category, balloon 5's lies along the stitch it names, and balloon 8's ends at notice
+box 4. They were parked rather than fixed before the reading.
+
+### How the second retake ran
+
+- **One reader, blind.** Rob read alone (D62). He had not written, reviewed or seen any of the
+  six PRs. He opened no corpus folder, `truth.md`, key or PR page until the verdicts were in.
+  Step 19's pause and commit gave counts only, and so did step 20's pause.
+- **Five of six, by a draw.** A script read the six verdicts and flipped a coin for which
+  verdict gets three (merge). It dropped one of the other three at random (`corpus-9`, a hold)
+  and shuffled the five into the letters A to E (D60). It printed nothing about the draw. The
+  copies were the fixtures' `atis.svg` files byte for byte, named by letter alone, and the key
+  sat in a separate folder until the verdicts were in. `corpus-9` is scored below for
+  criterion 5 only.
+- **The legend, then the practice map.** One local page, served on loopback, showed
+  [the legend](#the-legend-d66-d87) above word for word. Then it showed the practice map,
+  untimed and zoomable, with a way back to the legend (D66, D87). Once the first map showed,
+  neither came back.
+- **Ten seconds, enforced.** The page went full screen and scaled each map whole to fit the
+  screen. It removed each map after ten seconds, then asked "Merge or hold? And one reason."
+  Rob opened each map when ready, typed each answer, and pasted the five back. The page never
+  showed a map twice, even after a reload.
+- **The scale each map drew at.** Full screen on this machine's display is 1512 by 982 points,
+  so each sheet drew at the scale its shape allowed: A at 0.62, B at 0.23, C at 0.57, D at 0.86
+  and E at 0.43.
+
+### The second retake's five, unsealed
+
+| copy | fixture | pull request, at the fixture commit | truth | what the reviewer found |
+| --- | --- | --- | --- | --- |
+| A | `corpus-12` | [logaretm/vee-validate#4754](https://github.com/logaretm/vee-validate/pull/4754), use field-level schemas' transformed values on submit, at `61298cf` | **hold** | the submit handler merges the validated output over the raw values, so a key a form-level schema strips (`yup.strip`) survives into the payload; and the public `ValidationResult` gained a type parameter with no default |
+| B | `corpus-7` | [marmelab/react-admin#11024](https://github.com/marmelab/react-admin/pull/11024), fix the mutation hooks' types, at `23a4edd` | **hold** | with a middleware registered, a custom `mutationFn` resolves to the bare record where `{ data }` is expected, in `useCreate`, `useUpdate` and `useUpdateMany`; the custom path in `useDelete` and `useDeleteMany` skips the hooks' guards; and the new paths have no tests |
+| C | `corpus-11` | [inngest/inngest-js#1753](https://github.com/inngest/inngest-js/pull/1753), name Sandbox snapshots, at `aff45e0` | **merge** | approved with no change asked |
+| D | `corpus-8` | [vercel/swr#4336](https://github.com/vercel/swr/pull/4336), cache tag revalidation, at `d3f28b6` | **merge** | approved with no change asked |
+| E | `corpus-10` | [excalidraw/excalidraw#10964](https://github.com/excalidraw/excalidraw/pull/10964), keep the focus point on a transition to inside-inside, at `87a99e6` | **merge** | approved with no change asked |
+| not read | `corpus-9` | [react-hook-form/react-hook-form#13676](https://github.com/react-hook-form/react-hook-form/pull/13676), an `OpaqueTypes` registry for opaque leaf types, at `b929bbb` | **hold** | `ArrayPathImpl` and `DeepMap` lack the registry's leaf branch, so a registered type is still walked by `useFieldArray`'s names and by `dirtyFields` and `touchedFields` |
+
+The reading's five are two holds and three merges, from five repos (D60). The held-out six come
+from six repos, none of them read by the tuning half, round one or the retake (D128). Each
+fixture's `truth.md` quotes the review with its link.
+
+### Second retake verdicts (criteria 3 and 4)
+
+<!-- cspell:ignore stiches -->
+
+| copy | fixture | reader | verdict, and the reason in Rob's words | matches truth? |
+| --- | --- | --- | --- | --- |
+| A | `corpus-12` | Rob | hold: "looks like a health problem? i couldn't see because it was so small" | verdict yes; reason no |
+| B | `corpus-7` | Rob | merge: "looks like changes without many obvious things wrong" | no |
+| C | `corpus-11` | Rob | hold: "seems like some mutants and health storms?" | no |
+| D | `corpus-8` | Rob | hold: "seems like mutants and stiches?" | no |
+| E | `corpus-10` | Rob | merge: "seems like only minor issues" | yes |
+
+### What the second retake's maps showed
+
+| copy | sheet | category | HUD after the category | primary notice |
+| --- | --- | --- | --- | --- |
+| A | 780 × 1590 | IFR | Patch cov 100%, Mutants —, Reach 41 cells, Gate 1 red, Standing 8 red | `interface-change` on `packages/vee-validate/src/types/forms.ts` |
+| B | 1834 × 4215 | IFR | Patch cov 56%, Mutants —, Reach 149 cells, Gate 1 red, Standing 8 red | `interface-change` on `packages/ra-core/src/dataProvider/useUpdate.ts` |
+| C | 1560 × 1710 | IFR | Patch cov 100%, Mutants 7 survived, Reach 131 cells, Gate 2 red, Standing 7 red | `interface-change` on `packages/inngest/src/components/sandbox/validation.ts` |
+| D | 780 × 1141 | IFR | Patch cov 98%, Mutants —, Reach 13 cells, Gate 1 red, Standing 4 red | `interface-change` on `src/_internal/types.ts` |
+| E | 1815 × 2300 | IFR | Patch cov 54%, Mutants —, Reach 92 cells, Gate 2 red, Standing 5 red | `interface-change` on `packages/element/src/arrows/focus.ts` |
+
+- **The category read IFR on all five.** A reader who followed it alone would hold every map
+  and score 2 of 5, the same as the reading. Two rungs put it there:
+  - **A `health` or `dupes` red.** It is the whole of A's IFR (`health` on `useForm.ts` and
+    `validate.ts`) and of C's (`dupes` on `sandbox/types.ts`, `health` on
+    `sandbox/durable.ts`). Each `health` row on these maps says its finding is "present at
+    head, not measured as introduced by this change". The retake parked this pattern as its
+    first encoding. D73 narrowed it to findings on the changed lines, and D90 ranks such a red
+    as the finding behind it, but the red still sets the Gate, and the Gate sets the category.
+  - **Uncovered lines that reach three modules.** On B, D and E, changed lines no test ran sit
+    on a file whose reach spans three or more modules. These changes reach 13 to 149 cells, so
+    any uncovered line meets the rung. On D it is 2 lines of 25 in `src/index/use-swr.ts`, on
+    an approved merge. Each of the three also carries a `health` or `dupes` red on the change.
+- **An interface notice led every map.** Interface notices hold 13 of the 15 top-three rows on
+  the five maps read, and 15 of 18 across the held-out six. All six repos publish packages, so
+  nearly every change reshapes a published name. Step 6 weighs each interface notice by the
+  files that read the names that moved, so on these maps it outweighs everything else. The
+  kind says where a package's surface moved, not that anything is wrong, and it led all three
+  merges.
+  - **On B it pushed the review's evidence out of all six.** B's uncovered changed lines
+    include ones the reviewer flagged:
+    - line 196, in `useCreate.ts`'s middleware path;
+    - line 245, in `useUpdateMany.ts`'s middleware path;
+    - line 119, in `useCreate.ts`'s plain custom path;
+    - line 111, in `useDeleteMany.ts`'s unguarded branch.
+
+    No uncovered row made the six: five interface notices and a `dupes` red took them.
+- **B drew too small to read.** The sheet grows with the repository, and B has 1,637 TypeScript
+  files. Fitting the sheet to the screen shrank the chrome with it. B drew at under a quarter of
+  its size, so its 9-unit HUD and notice text came out about 2 points tall. A, at 0.62, is the
+  map Rob said he "couldn't see because it was so small".
+- **D's stitches read as tests not run.** D draws 87 stitches, and 57 of them are unlit, the
+  mark for a test that did not run. None of the 57 is a test the run reported:
+  - **53 are files under `test/`** that import the library and that the run never reported.
+    Of those, 42 are pages of the end-to-end test site under `test/e2e/site/`, 10 are type
+    tests under `test/type/` that `tsc` checks, and 1 is the helper `test/utils.tsx`.
+  - **4 carry vitest's `focused` status.**
+
+  Rob held D on "mutants and stitches". D has no mutation data (Mutants —), so no notch is drawn
+  on it.
+- **A was held for the map's reason, not the review's.** A's Gate red is `health`, and Rob held
+  it as "a health problem". The review's blocker, the merge at `useForm.ts` lines 535 to 537,
+  is on lines the tests covered (31 of 31 changed lines), and the map carries no mutation data
+  there, so it holds no evidence on the blocker. The review's other finding, the missing
+  default on `ValidationResult`, is notice 1 (counted below).
+
+### Notice precision on the held-out holds (criterion 5, read per D65)
+
+| fixture | read as | the thing ground truth flags | in the top three? |
+| --- | --- | --- | --- |
+| `corpus-12` | A | the merge in `useForm.ts`'s `makeSubmissionFactory` (lines 535 to 537), and `ValidationResult<TValue>` in `types/forms.ts` with no default | **yes**: notice 1 is `interface-change` on `types/forms.ts`, and the change gave `ValidationResult` its type parameter |
+| `corpus-7` | B | `getMutateWithMiddlewares` in `useCreate.ts`, `useUpdate.ts` and `useUpdateMany.ts`; the unguarded custom branch in `useDelete.ts` and `useDeleteMany.ts`; and the missing tests | **no**: notices 1 to 3 are on the three flagged files, but for their reshaped options types, which the fix left alone |
+| `corpus-9` | not read | `ArrayPathImpl` in `src/types/path/eager.ts` and `DeepMap` in `src/types/utils.ts` | **yes**: notice 1 is `interface-change` on `src/types/utils.ts`, the public types the review says are incomplete |
+| `corpus-11`, `corpus-8`, `corpus-10` | C, D, E | nothing (merges) | n/a (D129) |
+
+**2 of 3**, read per D65.
+
+1. **`corpus-12`: yes, on the review's lesser finding.** Notice 1 targets
+   `packages/vee-validate/src/types/forms.ts`, which the truth names. Its kind is what the
+   review's second comment is about: "This is a public interface, lets default the generic
+   `TValue` to `unknown`." The change turned `export interface ValidationResult` into
+   `ValidationResult<TValue>`, which breaks every consumer who writes it bare. The notice counts
+   12 reshaped names in the cell, with none left uncompared, though its why names only three of
+   them, and `ValidationResult` is not among the three. Nothing that bears on the review's
+   blocker, the merge of the output over the raw values at `useForm.ts` lines 535 to 537, makes
+   the six:
+   - Notice 2 is an interface change on `useForm.ts`, for `useForm`'s reshaped signature.
+   - Notice 5 is a `health` threshold in the same file.
+
+   D65 rules out both. Every changed line in the file is covered, and the map carries no
+   mutation data. As with `corpus-2`, the call counts a hit on one flagged finding while the
+   review's blocking one draws no notice.
+2. **`corpus-7`: no, the right files for the wrong kind.** Notices 1 to 3 are interface
+   changes on `useUpdate.ts`, `useCreate.ts` and `useUpdateMany.ts`, the three files the
+   reviewer flagged for the bug, for their reshaped options types. The bug is not in those
+   types. The fix, `abbedc7`, changed no type in the three files. It gave each hook one wrapper
+   that runs the guards and returns `{ data }` on both paths. So the notices say where the new
+   option is, not that its middleware path returns the wrong shape, the call D65 made on the
+   retake's copy D and on `corpus-5`. The map does hold evidence that bears on the review's
+   missing tests: uncovered changed lines on the flagged lines of `useCreate.ts`,
+   `useUpdateMany.ts` and `useDeleteMany.ts`, listed above. But no notice of the six reaches
+   them.
+3. **`corpus-9`: yes, the closest call of the three.** The review asks for the registry's leaf
+   branch in `ArrayPathImpl` and `DeepMap`, both public type helpers, and the fix (`d546021`,
+   "extend OpaqueTypes leaf checks to ArrayPathImpl and DeepMap") reshaped both. Notice 1
+   targets `src/types/utils.ts`, where `DeepMap` sits. Its kind is the public types' surface,
+   which the review says is incomplete, and its why names `DeepMap` among what
+   `react-hook-form` publishes. It names what the change reshaped (`DeepPartial` and
+   `DeepPartialSkipArrayKey`), not what it left out, so it says where to look rather than what
+   is missing. `src/types/path/eager.ts`, where `ArrayPathImpl` sits, draws no notice. Notice 3,
+   six survived mutants in the new type test, does not bear on the missing branches.
+
+### The tuning half's fixes, judged on the held-out half (D127)
+
+- **A `health` or `dead` red (D140, D90).** No `health` or `dead` row sits in any held-out
+  map's top three, down from 9 of the tuning six's 18. One `dupes` red does, `corpus-10`'s
+  notice 2. The ranking moved. The category did not: such a red still sets the Gate, and it is
+  the whole of A's and C's IFR.
+- **Unmeasured lines (D141).** No held-out map reads a changed file as unmeasured, so no barrel
+  reads as a gap.
+- **A mutant no test reached (D143).** Every live mutant on the held-out maps survived the
+  tests. None was left unreached, so the split did not come into play.
+- **A re-export's line (P9).** No held-out map reads LIFR, so none reads LIFR through a barrel's
+  standing cycle.
+
+### Second retake result
+
+One reader, Rob, blind per D62 and briefed per D66 and D87.
+
+- **Criterion 4, verdicts:** 2 of 5 agree with ground truth. The pass line is 4.
+- **Criterion 4, hold reasons:** the one correct hold, A, gives "a health problem": the map's
+  `health` red, not the reviewer's finding. The other two holds, C and D, were merges.
+- **Criterion 5, notice precision:** 2 of 3 on the held-out holds, read per D65, with the merges
+  n/a (D129). The pass line is all three.
+
+**Fail line.** The tuning half's fixes moved the ranking: no `health` or `dead` row leads a
+held-out map's top three. But an interface notice took that place on every map, and the
+category never moved off IFR, so it told no hold from a merge. The encodings to change are
+parked for the refine D119 runs before wave 1 (D38):
+
+1. **The category reads IFR on every map.** Two rungs do it:
+   - A `health` or `dupes` red on a touched function still turns the Gate red, though its own
+     notice says the finding is present at head (A and C).
+   - Changed lines no test ran reach three or more modules on any change to a widely read file
+     (B, D and E).
+2. **An interface change leads every map.** On published packages nearly every change reshapes
+   a public name, and weighing each one by its readers puts it above everything else. On B it
+   kept the flagged uncovered lines out of all six.
+3. **A large repository's map draws too small to read.** The sheet grows with the field, and
+   when it is fit to a screen the chrome shrinks with it. B's HUD and notices drew at under a
+   quarter of their size.
+4. **Files under `test/` that are not reported tests draw as tests not run.** So does vitest's
+   `focused` status. That is 57 of D's 87 stitches, on an approved merge Rob held partly on
+   "stitches".

@@ -79,3 +79,8 @@ generates the maps and holds the key. The fixture steps' pauses and commit bodie
 only, never a repo, PR or verdict. Rob opens no corpus folder, `truth.md` or PR page until
 the verdicts are in. The tuning half's precision is recorded in `docs/glance-test.md` by
 fixture number alone.
+
+**Unsealed on 2026-10-23.** Step 20's reading is done, and its verdicts are recorded in
+[`docs/glance-test.md`](../docs/glance-test.md#round-one-second-retake-fail-2026-10-23). That
+section names each held-out fixture's repo and PR. Each folder's `README.md` names its own, the
+tuning six's included.

@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 19 — chore(fixtures): select and generate the corpus's held-out half
+**Current step:** 20 — chore(glance): read five held-out maps blind on the SVG
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -45,7 +45,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 90. fix(core): rank a health or dead red by the finding behind it
 - ☑ 91. fix(core): read only changed code lines as unmeasured
 - ☑ 92. fix(core): tell a mutant no test reached from one that survived
-- ☐ 19. chore(fixtures): select and generate the corpus's held-out half
+- ☑ 19. chore(fixtures): select and generate the corpus's held-out half
 - ☐ 20. chore(glance): read five held-out maps blind on the SVG
 - ☐ 21. docs(inspiration): cite the corpus repos
 - ☐ 22. docs(design): record the materials spike's verdict and motion tokens
@@ -130,7 +130,12 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] health and dead reds on changed files hold 9 of the tuning six's 18 top-three rows and bear on none of the six findings (docs/glance-test.md, tuning half)
 - [x] a package barrel no test imports reads as an unmeasured gap with high reach (corpus-4's notice 2), though its added lines are exports
 - [x] a NoCoverage mutant is counted and worded as survived (all 88 of corpus-6's, 12 of corpus-1's 14), so the notice overstates what the tests did
-- [ ] fallow 3.35 writes every re-export's import (cycle edges, boundary violations) at line 1, col 0, so D140 keeps the file rule there; corpus-4's 14 barrel cycles stay on the change through packages/builders/src/index.ts until the scan supplies a re-export's real line or D98's base side lands
+- [x] fallow 3.35 writes every re-export's import (cycle edges, boundary violations) at line 1, col 0, so D140 keeps the file rule there; corpus-4's 14 barrel cycles stay on the change through packages/builders/src/index.ts until the scan supplies a re-export's real line or D98's base side lands
+- [ ] the practice map's balloon lines crowd other marks: balloon 1's line crosses the Other block the HUD wrapped beneath the category, balloon 5's lies along the very stitch it names, and balloon 8's ends at notice box 4; each still lands on its own mark (libs/svg/src/practice.ts)
+- [ ] second retake: the category read IFR on all five maps, both holds and all three merges: a health or dupes red on a touched function still turns the Gate red though its notice says present at head (corpus-12, corpus-11), and uncovered changed lines reaching three or more modules make any change to a widely read file IFR (corpus-7, corpus-8, corpus-10)
+- [ ] second retake: an interface notice leads all six held-out maps and holds 15 of their 18 top-three rows; weighed by its readers on a published package it outranks everything, and on corpus-7 it kept the flagged uncovered lines out of all six notices
+- [ ] second retake: a large repo's sheet draws too small to read when fit to a screen: corpus-7's 1834 by 4215 sheet drew at 0.23, its 9-unit HUD and notice text about 2 points tall, and Rob could not see corpus-12 at 0.62
+- [ ] second retake: files under test/ that no test run reports (e2e site pages, tsc type tests, a helper) and vitest's focused status draw as unlit stitches, tests not run: 57 of corpus-8's 87, on an approved merge Rob held partly on stitches
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -159,6 +164,8 @@ Harvest results this boundary:
 - **blocker**: park 6 · health and dead reds on changed files hold 9 of the tuning six's 18 top-three rows and bear on none of the six findings (docs/glance-test.md, tuning half) → it displaced corpus-4's hit and demoted corpus-1's, so the refine should settle it first
 - **blocker**: park 7 · a package barrel no test imports reads as an unmeasured gap with high reach (corpus-4's notice 2), though its added lines are exports → it took corpus-4's notice 2, so it rides with P6 into the refine
 - **tangent**: park 8 · a NoCoverage mutant is counted and worded as survived (all 88 of corpus-6's, 12 of corpus-1's 14), so the notice overstates what the tests did → every hit stands either way, so it is a wording fix the refine can fold in or leave
+- 2026-10-24, at range 4 of 24's stop: 1 parked idea, classified.
+- **tangent**: park 9 · fallow 3.35 writes every re-export's import (cycle edges, boundary violations) at line 1, col 0, so D140 keeps the file rule there; corpus-4's 14 barrel cycles stay on the change through packages/builders/src/index.ts until the scan supplies a re-export's real line or D98's base side lands → C2 holds a finding fallow gives no line to its file, D98's base side replaces the rule in wave 3, and D127 judges the fixes on the held-out maps as they stand, so it waits for step 20's reading to say whether it matters
 
 ## Log
 
@@ -437,3 +444,136 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-23 — step 90 checkpointed · 7c7f63f4f — fix(core): rank a health or dead red by the finding behind it (1 drift, 5m)
 - 2026-10-23 — step 91 checkpointed · 5d6816f32 — fix(core): read only changed code lines as unmeasured (1 drift, 5m)
 - 2026-10-23 — step 92 checkpointed · 69fe9ab33 — fix(core): tell a mutant no test reached from one that survived (1 drift, 4m)
+- 2026-10-23 — step 19 checkpointed · 447b84c7e — chore(fixtures): select and generate the corpus's held-out half (197m)
+- 2026-10-24 — range 4 of 24's stop recorded — review the tuning fixes as they landed, and the held-out six by their counts alone, before your blind reading builds on them
+
+  **Summary**: Range 4 landed the four fixes the tuning refine asked for, then chose and mapped the held-out half. A `dead` red is now held to the lines the change touched. A `health` or `dead` red ranks as the finding behind it. Only changed code lines read as unmeasured. A mutant no test reached is named apart from one that survived. The held-out six are three holds and three merges from six fresh repos, each re-derived from the public record and mapped in check mode with patch coverage. No goldens moved for the first three fixes; the fourth moved the SVG goldens and the practice map.
+
+  1. Steps 90 to 92 each landed a hair off their seam, and every stray keeps something a reader sees consistent
+  2. A dead red is held to the import lines the change touched, but fallow gives no line for a re-export, so corpus-4's barrel cycles still read as the change's
+  3. A health or dead red now ranks as the finding behind it, and only changed code lines read as unmeasured
+  4. A mutant no test reached is now named apart from one that survived, on the notice, the HUD and the legend
+  5. The held-out six, by counts alone
+
+  **Readout**:
+
+  ```text
+  steps        5 of 5 landed
+               - 89 82ef67d · 90 7c7f63f · 91 5d6816f · 92 69fe9ab · 19 447b84c
+  check        green: 1 of 1 checks, 5 landings
+  done-when    met
+  decisions    honored:
+               - D140 (changed-file-reds), D141 (unmeasured-lines)
+               - D143 (untested-mutants), D73 (touched-file-breach)
+               - D74 (failing-test-rank), D80 (unmeasured-not-closed)
+               - D83 (security-on-change), D122 (excluded-from-coverage)
+               - D56 (fixtures-skip-audit), D58 (fixtures-current-toolchain)
+               - D59 (outside-fixtures), D62 (retake-reader-blind)
+               - D88 (precision-corpus), D126 (typescript-corpus)
+               - D128 (held-out-chosen-late), D129 (precision-on-holds)
+  constraints  14 of 14 honored
+  seam         strayed: 5 paths outside 3 steps' seams
+               - step 90: libs/core/src/evidence.ts
+               - step 91: libs/core/src/__tests__/notices.test.ts
+               - step 92: docs/glance-practice.svg and 2 others
+  diff         +706839 -480 across 48 files
+  spent        3h 45m · green first run at every landing · 3 drift warnings
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Harvested**: 1 of 9 parked ideas open
+
+  - P9 · fallow 3.35 writes every re-export's import (cycle edges, boundary violations) at line 1, col 0, so D140 keeps the file rule there; corpus-4's 14 barrel cycles stay on the change through packages/builders/src/index.ts until the scan supplies a re-export's real line or D98's base side lands → lean: tangent, C2 holds a finding fallow gives no line to its file, D98's base side replaces the rule in wave 3, and D127 judges the fixes on the held-out maps as they stand, so it waits for step 20's reading to say whether it matters
+
+  **Recommendation**: Confirm the fixes and the held-out six as they stand, take P9 as a tangent, and run step 20's blind reading next. The fixes did what D140, D141 and D143 asked, except where fallow gives no line, which C2 holds to the file, and the six passed an independent re-derivation. If a held-out map reads LIFR only through a barrel's standing cycle, the reading will show whether P9 needs a fix before wave 1.
+
+  **1.** Steps 90 to 92 each landed a hair off their seam, and every stray keeps something a reader sees consistent
+
+  All three strays were small and needed, so none was a change of scope:
+
+  - **Step 90** exported step 89's unused-export reader from `libs/core/src/evidence.ts`. The notices then read unused exports by the same line rule the split uses.
+  - **Step 91** changed `libs/core/src/__tests__/notices.test.ts`, whose evidence input had to move from the old `emits` flag to code spans.
+  - **Step 92** made three changes:
+    - It rewrote the current legend in `docs/glance-test.md`, which a test holds equal to the inset's words (D125).
+    - It re-rendered `docs/glance-practice.svg` with `pnpm practice-map`, so step 20's practice map shows the new notch and HUD.
+    - It fixed one doc comment in `libs/core/src/schema.ts` that step 91 had left saying "emit code".
+
+  The retake's record in `docs/glance-test.md` keeps its own words.
+
+  **2.** A dead red is held to the import lines the change touched, but fallow gives no line for a re-export, so corpus-4's barrel cycles still read as the change's
+
+  Step 89's tests run from a fallow 3.35 report captured from a small two-zone repo, saved whole as `apps/atis/fixtures/check/dead-findings.json`.
+
+  The capture showed where fallow's lines can be trusted:
+
+  - **A cycle:** each of its edges is the import in its own file, on its real line.
+  - **A boundary violation:** the import is on `line` in `from_path`.
+  - **An unused export:** it carries its own line.
+  - **A re-export:** fallow writes every import made by a re-export (`export … from`) at line 1, column 0, wherever the statement sits. This holds in both a cycle's edges and a boundary violation.
+
+  atis therefore reads 1:0 as no line, and D140's file rule holds such a finding to its file (C2). A cycle holds each file to its own edge, so one file can follow the line rule while another follows the file rule.
+
+  I ran the rule against corpus-4's and corpus-5's real trees, read-only from a git archive, without regenerating either map (D127):
+
+  - **corpus-5:** all five cycles that name a changed file now read as standing.
+  - **corpus-4:** 14 of its 20 cycles stay on the change through the package barrel, whose re-export edges are 1:0. None of the 14 runs through a file the change added, so they are standing in fact, but only a base-side read can show that.
+
+  That is P9. Trusting 1:0 as a line would clear corpus-4, but it would also hide a cycle that a change makes with a new re-export.
+
+  **3.** A health or dead red now ranks as the finding behind it, and only changed code lines read as unmeasured
+
+  **Step 90.** A red slot spends no red-check-slot row on a file where a candidate of its own kind speaks for it:
+
+  - `health` ranks there as `threshold-breached`, at 5.
+  - `dead`'s cycles and boundary violations rank as `cycle-or-boundary`, at 9.
+  - A row that named several slots now names only those left.
+  - An unused export has no kind of its own, so `dead` keeps its row at 10 wherever one is on the change, even beside a cycle's notice.
+  - D74's failing test still leads.
+
+  **Step 91.** The scan now records each file's code spans in place of the one `emits` flag. A file a coverage report omits is unmeasured only where a hunk meets one of those spans:
+
+  - A pure deletion inside a function still counts.
+  - A barrel whose changed lines are re-exports reads as measured, though it holds a constant.
+
+  The demo's inputs are synthetic, so each emitting file there carries one span of its length, and the goldens held.
+
+  **4.** A mutant no test reached is now named apart from one that survived, on the notice, the HUD and the legend
+
+  Core's `mutantOutcomes` splits a file's live mutants by Stryker's status, and every place a reader sees mutants now reads that split:
+
+  - **The notice:** a `survived-mutants` notice says "2 mutants survived and 1 mutant no test reached", or names one alone when the other is zero. Its inputs carry `survived` and `untested`, and its kind, severity and weight are unchanged.
+  - **The HUD:** it reads `Mutants 1 survived, 1 untested` on the demo.
+  - **The legend:** the notch reads "a mutant no test killed".
+
+  The wider Mutants block wraps the demo's HUD onto a second row, which moved the SVG goldens. The tuning six and the retake maps keep the wording they were scored with.
+
+  **5.** The held-out six, by counts alone
+
+  **Choosing (D128).** It ran after every tuning fix had landed, through hidden agents:
+
+  - Three scouts examined 126 repos, some only by a search, and wrote up 29 candidates.
+  - A selector checked 8 of them in full clones and kept 6, with one substitution for feasibility.
+  - An independent verifier re-derived 336 claims from the public record:
+    - All six pass every rule.
+    - All three holds have high substance confidence.
+    - Three cosmetic quote slips were found; the verifier fixed them, then reverted the two whitespace-only ones so no lint suppression was needed.
+
+  **The six.** Three holds and three merges, from six repos, one PR each. None of the repos was read by the tuning half, round one or the retake.
+
+  - 4 to 7 TypeScript source files each.
+  - 3 run jest and 3 run vitest.
+  - 4 use pnpm and 2 use yarn; 5 are workspaces.
+
+  **Generation (D58).** Two generator agents ran step 17's procedure with checkride 0.17.0 and fallow 3.35.0, `security` skipped:
+
+  - All six maps pass `assertMap`, read in check mode, carry patch coverage, and draw the new legend.
+  - Mutation was kept in 2, attempted and dropped in 3, and not attempted in 1, where the repo's runner is outside Stryker's peer range.
+  - One map's coverage names one of its four source files, because the repo's own `collectCoverageFrom` leaves the other three out. D122 keeps those three unmeasured.
+  - No test was edited, skipped or deleted.
+
+  **Three small things:**
+
+  - **The shuffle.** The selector's first random draw put one verdict in all three of the first slots. It redrew once, under a rule it fixed beforehand. Step 20 reads from its own shuffled copies, so the folder order never reaches you.
+  - **A broad `pkill`.** One generator used it to stop its own Stryker run. Nothing shows it reached the other agent, whose kept mutation run completed.
+  - **Scratch state.** A husky hooks path stays set in one scratch clone under `/tmp/atis-heldout/`, because a generator's `git config --unset` was refused. The clones and the agents' notes are left there for you to remove.
