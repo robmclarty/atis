@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 24 — feat(scene): build the heightfield from depth, stability and mass
+**Current step:** 25 — feat(scene): triangulate membranes and lay out organelle instances
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -50,7 +50,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 21. docs(inspiration): cite the corpus repos
 - ☑ 22. docs(design): record the materials spike's verdict and motion tokens
 - ☑ 23. chore(repo): add the scene library and the web app to the workspace
-- ☐ 24. feat(scene): build the heightfield from depth, stability and mass
+- ☑ 24. feat(scene): build the heightfield from depth, stability and mass
 - ☐ 25. feat(scene): triangulate membranes and lay out organelle instances
 - ☐ 26. feat(scene): derive the weather each organelle carries
 - ☐ 27. feat(scene): place labels per level of detail without collisions
@@ -144,6 +144,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] second retake: a large repo's sheet draws too small to read when fit to a screen: corpus-7's 1834 by 4215 sheet drew at 0.23, its 9-unit HUD and notice text about 2 points tall, and Rob could not see corpus-12 at 0.62
 - [x] second retake: files under test/ that no test run reports (e2e site pages, tsc type tests, a helper) and vitest's focused status draw as unlit stitches, tests not run: 57 of corpus-8's 87, on an approved merge Rob held partly on stitches
 - [x] Rob, after the second retake: on most of the five maps he couldn't zoom in or see details; build a coherent, working system on real code he understands first, and refine and tune the encodings later, so range 6's stop defers the four encodings instead of running D119's refine before wave 1
+- [ ] The world's cell membranes carry no teeth yet: the SVG's dented ring (one tooth per rule, step 12) lives in libs/svg/src/terrain.ts, so step 25's tissue grid lays the plain contour; step 32 should move dentedRing into libs/scene so tissue() lays the dented ring both renderers draw (D86, D146)
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -825,3 +826,4 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-24 — step 23 checkpointed · d80907bda — chore(repo): add the scene library and the web app to the workspace (10m)
 - 2026-10-24 — step 95 checkpointed · e9be62690 — feat(core): record every file's stability in the map (3m)
 - 2026-10-24 — step 98 checkpointed · 5ea422332 — feat(core): record each file's import ties inside and outside its cell (2m)
+- 2026-10-24 — step 24 checkpointed · 4f65d8615 — feat(scene): build the heightfield from depth, stability and mass (1 drift, 6m)
