@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 34 — feat(web): draw the notices with their labels and leaders
+**Current step:** 35 — feat(web): render the HUD's grade blocks
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -60,7 +60,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 31. feat(cli): serve the world and open it in a tab
 - ☑ 32. feat(web): draw cells and organelles, and the shore in a rail
 - ☑ 33. feat(web): draw the weather
-- ☐ 34. feat(web): draw the notices with their labels and leaders
+- ☑ 34. feat(web): draw the notices with their labels and leaders
 - ☐ 35. feat(web): render the HUD's grade blocks
 - ☐ 36. feat(web): open each HUD block's parts on click
 - ☐ 37. feat(web): zoom, pan, tilt and rotate the camera continuously
@@ -148,6 +148,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] The world's cell membranes carry no teeth yet: the SVG's dented ring (one tooth per rule, step 12) lives in libs/svg/src/terrain.ts, so step 25's tissue grid lays the plain contour; step 32 should move dentedRing into libs/scene so tissue() lays the dented ring both renderers draw (D86, D146)
 - [x] The shore's open blocks name their changed files but drop the spike's grid: D153 has a touched group open on its files, one small square per file with the changed ones lit, then their names, and the SVG draw the same blocks; step 96 followed D158's narrower 'changed files named', so a 50-file group with one change reads like a 1-file group. Add the grid to the band (from shoreRail's count and changed files) in a small SVG step built ahead of step 32, so the world's rail draws the same grid
 - [ ] A target with several notices wears one label per notice (demo's index.ts four times, retake-3's createOptionsProxy.ts three), since step 27's labelsFor places each notice's label on its own; weigh one label per target with its run of ranks, in libs/scene/src/labels.ts
+- [ ] The HUD's block words and the legend's list are derived twice, in libs/svg/src/chrome.ts and legend.ts and again in apps/web/src/hud.ts, held together by hud.test.tsx's parity over every fixture; weigh one derivation in libs/scene for both renderers, as shoreRail and noticeAnchors are (D86, D90)
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -1024,3 +1025,5 @@ folder, so it rides the branch into the PR.)*
   **5.** Frame times: a second to settled on headless WebGL 2, and 60 fps at every zoom, with the panel's changes proven live
 
   Headless Chrome on the WebGL 2 fallback settled retake-3 in 0.9 to 1.3 s after navigation, retake-1 in 1.0 s, checkride-pr4 in 1.0 s and corpus-1 in 1.3 s, and held 60 fps, the display's cap, over two seconds at zoom 1, 2 and 6 and tilted to 35°, with a clean console on every frame. The dev panel's instrument was proven in the same browser: a skin colour moved the frame on the next frame, survived a reload, opened by its key combination in the published build, and reset to the exact resting frame; the panel's code is its own chunk, fetched only when opened.
+
+- 2026-10-24 — step 34 checkpointed · ed096bfed — feat(web): draw the notices with their labels and leaders (1 drift, 24m)

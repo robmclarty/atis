@@ -38,7 +38,8 @@ import { useMemo } from 'react';
 import type { ReactElement } from 'react';
 import type { MapJson } from 'core';
 
-import { categoryHue, rowsOf, screenType, tallyOf } from '../notices.js';
+import { categoryHue, rowsOf, tallyOf } from '../notices.js';
+import { screenType } from '../screen.js';
 import type { Registry } from '../registry.js';
 import { NoticeBox } from './box.js';
 import { useLive } from './live.js';

@@ -12,8 +12,9 @@ import { IFR_HUE, SECONDARY_BOX_WIDTH, STITCH_LENGTH } from 'scene';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 
 import { Chrome, Column, Notices, Rail } from '../chrome/index.js';
-import { boxStyle, categoryHue, marksOnShore, rowsOf, runsOf, screenType, tallyOf, thresholdsOf } from '../notices.js';
+import { boxStyle, categoryHue, marksOnShore, rowsOf, runsOf, tallyOf, thresholdsOf } from '../notices.js';
 import { createRegistry } from '../registry.js';
+import { screenType } from '../screen.js';
 
 /**
  * The notices as the world draws them (§5.4, step 34): each target's run of

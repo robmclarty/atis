@@ -209,28 +209,3 @@ export const boxStyle = (tier: NoticeTier, look: BoxLook, hue: string, side: num
     lineHeight: '1',
   };
 };
-
-/** The tokens the chrome's notice type is sized from. */
-export type TypeLook = {
-  readonly NOTICE_TEXT_SIZE: number;
-  readonly NOTICE_SMALL_SIZE: number;
-  readonly NOTICE_BOX: number;
-  readonly NOTICE_NUMERAL_SIZE: number;
-};
-
-/**
- * The sheet's notice sizes are set for a page; on a screen the chrome reads
- * them this much larger, in CSS pixels: the text at the size step 27 sets its
- * labels, the small type with it, and the box and its numeral a step less.
- * The offset is baked here until the world's own tokens are recorded (step
- * 44), as the rail's is.
- */
-const SCREEN_UP = 3;
-
-/** The notice type as the screen sets it, from the live look. */
-export const screenType = (look: TypeLook): { readonly text: number; readonly small: number; readonly box: number; readonly numeral: number } => ({
-  text: look.NOTICE_TEXT_SIZE + SCREEN_UP,
-  small: look.NOTICE_SMALL_SIZE + SCREEN_UP,
-  box: look.NOTICE_BOX + SCREEN_UP - 1,
-  numeral: look.NOTICE_NUMERAL_SIZE + SCREEN_UP - 1,
-});

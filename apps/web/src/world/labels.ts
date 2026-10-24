@@ -50,8 +50,9 @@ import {
 import type { Lod, Viewport } from 'scene';
 import type { MapJson } from 'core';
 
-import { boxStyle, categoryHue, runsOf, screenType } from '../notices.js';
+import { boxStyle, categoryHue, runsOf } from '../notices.js';
 import type { Run } from '../notices.js';
+import { screenType } from '../screen.js';
 import type { Label } from '../marks.js';
 import type { Palette } from './palette.js';
 

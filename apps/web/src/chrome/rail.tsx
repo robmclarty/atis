@@ -54,10 +54,12 @@ import type { CSSProperties, ReactElement } from 'react';
 import type { MapJson } from 'core';
 
 import { RAIL_WIDTH } from '../fit.js';
-import { categoryHue, marksOnShore, screenType } from '../notices.js';
+import { categoryHue, marksOnShore } from '../notices.js';
+import { screenType } from '../screen.js';
 import type { Marked } from '../notices.js';
 import type { Registry } from '../registry.js';
 import { NoticeBox } from './box.js';
+import { BOLT } from './glyphs.js';
 import { useLive } from './live.js';
 
 /** The tokens the rail is drawn with, at rest: the shape its live view takes. */
@@ -92,9 +94,6 @@ const LOOK = {
   VFR_HUE,
 };
 type Look = typeof LOOK;
-
-/** The storm bolt, the still sheet's own glyph about its origin, drawn at the line's size. */
-const BOLT = 'M1 -6L-3 1H0L-1 6L3 -1H0Z';
 
 /** The words a named file is written with: `+` before an added path, the old path before a renamed one (D40, D120). */
 const wordsOf = (file: ShoreFile): string => {
