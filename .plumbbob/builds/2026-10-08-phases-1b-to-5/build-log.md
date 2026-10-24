@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 23 — chore(repo): add the scene library and the web app to the workspace
+**Current step:** 95 — feat(core): record every file's stability in the map
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -49,7 +49,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 20. chore(glance): read five held-out maps blind on the SVG
 - ☑ 21. docs(inspiration): cite the corpus repos
 - ☑ 22. docs(design): record the materials spike's verdict and motion tokens
-- ☐ 23. chore(repo): add the scene library and the web app to the workspace
+- ☑ 23. chore(repo): add the scene library and the web app to the workspace
 - ☐ 24. feat(scene): build the heightfield from depth, stability and mass
 - ☐ 25. feat(scene): triangulate membranes and lay out organelle instances
 - ☐ 26. feat(scene): derive the weather each organelle carries
@@ -821,3 +821,5 @@ folder, so it rides the branch into the PR.)*
   With the decay at 4.5 over 600 ms and the frequency at 3.2 Hz, the swing goes +13%, then −4%, then +1% of the relief. That makes the damping ratio about 0.35.
 
   The test reads §5.5's "heavy damping" as "a twentieth of the swing or less is left when it stops", and 4.5 leaves about 1%. A strict spring reading would want a damping ratio of 0.7 or more, with no visible rebound. You made no patch in the spike, so the token keeps the spike's value. If the rebound bothers you in the world, it is a Q3 patch: raise the decay, or lower the frequency.
+
+- 2026-10-24 — step 23 checkpointed · d80907bda — chore(repo): add the scene library and the web app to the workspace (10m)

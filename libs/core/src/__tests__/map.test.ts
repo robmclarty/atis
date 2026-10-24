@@ -191,6 +191,24 @@ test('buildMap threads the stitches to the category, so a torn one makes the cha
   expect(held.weather.checks.category).toBe('MVFR');
 });
 
+test('every organelle the history window saw carries its stability, and one it never saw carries none (D149)', () => {
+  const inputs = inputsFor('demo');
+  const unseen = 'libs/core/src/util/text.ts';
+  const commits = inputs.commits.map((commit) => ({ ...commit, files: commit.files.filter((file) => file.path !== unseen) }));
+  const map = buildMap({ ...inputs, commits }, DEFAULT_CONFIG);
+  const organelles = new Map(map.terrain.organelles.map((organelle) => [organelle.id, organelle]));
+
+  expect(organelles.get(unseen)?.stability).toBeUndefined();
+  for (const organelle of map.terrain.organelles.filter((each) => each.id !== unseen)) {
+    expect(organelle.stability, organelle.id).toBeDefined();
+  }
+  // A changed file keeps its own age and churn as they were, and its stability reads the same numbers.
+  const doctor = organelles.get('apps/cli/src/doctor.ts');
+  expect(doctor?.stability).toEqual({ age_days: doctor?.age_days, churn_ratio: doctor?.churn_ratio });
+  // An untouched file gains no history field of a changed file's, so the SVG, which hatches by those, draws it as before.
+  expect(organelles.get('libs/core/src/index.ts')).not.toHaveProperty('churn_ratio');
+});
+
 test('the demo map dents the cells that break a rule and marks the clone family', () => {
   const map = buildMap(inputsFor('demo'), DEFAULT_CONFIG);
   const cells = new Map(map.terrain.cells.map((cell) => [cell.id, cell]));

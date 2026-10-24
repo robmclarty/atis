@@ -5,7 +5,7 @@
  * alone.
  */
 
-import type { Cochange } from './schema.js';
+import type { Cochange, Stability } from './schema.js';
 
 const DAY_SECONDS = 86_400;
 const BUGFIX = /\b(fix|bug|regression|hotfix)\b/i;
@@ -29,9 +29,13 @@ export type FileHistory = {
   readonly bugfix_rate?: number;
 };
 
+/** A file's stability, for every path the window saw, changed or not (D149). */
+export type FileStability = Stability & { readonly path: string };
+
 export type HistoryResult = {
   readonly window_commits: number;
   readonly files: readonly FileHistory[];
+  readonly stability: readonly FileStability[];
   readonly cochange: readonly Cochange[];
 };
 
@@ -41,8 +45,20 @@ function byPath(a: string, b: string): number {
 
 type PathStats = { changedLines: number; commitCount: number; bugfixCount: number; firstTime: number };
 
+/** The window's added and deleted lines over the file's current size, absent where that size is unknown or zero (C2). */
+function churnOf(entry: PathStats, currentLoc: number | undefined): { readonly churn_ratio?: number } {
+  return currentLoc === undefined || currentLoc === 0 ? {} : { churn_ratio: entry.changedLines / currentLoc };
+}
+
+/** Whole days from the window's first commit touching the file to the head. */
+function ageOf(entry: PathStats, headTime: number): number {
+  return Math.floor((headTime - entry.firstTime) / DAY_SECONDS);
+}
+
 /**
- * Churn ratio, age and bug-fix rate for every `changed` path (D8), and, per
+ * Churn ratio, age and bug-fix rate for every `changed` path (D8); the age
+ * and churn ratio again as the stability of every path the window saw,
+ * changed or not (D149), from the same counts; and, per
  * CHID eq. 3, one directional co-change pair `{ a, b, rate, support }` for
  * every other file a changed file shares a commit with: `support` counts the
  * shared commits and `rate` divides it by how often `a` itself was touched in
@@ -83,14 +99,17 @@ export function computeHistory(
   const files = [...changedSet].toSorted(byPath).map((path): FileHistory => {
     const entry = stats.get(path);
     if (entry === undefined) return { path };
-    const currentLoc = loc.get(path);
     return {
       path,
-      ...(currentLoc === undefined || currentLoc === 0 ? {} : { churn_ratio: entry.changedLines / currentLoc }),
-      age_days: Math.floor((headTime - entry.firstTime) / DAY_SECONDS),
+      ...churnOf(entry, loc.get(path)),
+      age_days: ageOf(entry, headTime),
       bugfix_rate: entry.bugfixCount / entry.commitCount,
     };
   });
+
+  const stability = [...stats.entries()]
+    .toSorted(([a], [b]) => byPath(a, b))
+    .map(([path, entry]): FileStability => ({ path, age_days: ageOf(entry, headTime), ...churnOf(entry, loc.get(path)) }));
 
   const cochange: Cochange[] = [...cochangeCounts.entries()]
     .flatMap(([a, targets]) => {
@@ -99,5 +118,5 @@ export function computeHistory(
     })
     .toSorted((x, y) => byPath(x.a, y.a) || byPath(x.b, y.b));
 
-  return { window_commits: commits.length, files, cochange };
+  return { window_commits: commits.length, files, stability, cochange };
 }

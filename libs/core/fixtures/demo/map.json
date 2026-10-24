@@ -128,7 +128,11 @@
         "dents": [],
         "churn_ratio": 3.3656716417910446,
         "age_days": 151,
-        "bugfix_rate": 0.5
+        "bugfix_rate": 0.5,
+        "stability": {
+          "age_days": 151,
+          "churn_ratio": 3.3656716417910446
+        }
       },
       {
         "id": "apps/cli/src/index.ts",
@@ -138,7 +142,11 @@
         "reachable": true,
         "loc": 24,
         "function_count": 2,
-        "dents": []
+        "dents": [],
+        "stability": {
+          "age_days": 151,
+          "churn_ratio": 0.25
+        }
       },
       {
         "id": "libs/core/src/index.ts",
@@ -148,7 +156,11 @@
         "reachable": true,
         "loc": 14,
         "function_count": 0,
-        "dents": []
+        "dents": [],
+        "stability": {
+          "age_days": 363,
+          "churn_ratio": 1
+        }
       },
       {
         "id": "libs/core/src/pm/index.ts",
@@ -161,7 +173,11 @@
         "dents": [],
         "churn_ratio": 2.763157894736842,
         "age_days": 363,
-        "bugfix_rate": 0.4
+        "bugfix_rate": 0.4,
+        "stability": {
+          "age_days": 363,
+          "churn_ratio": 2.763157894736842
+        }
       },
       {
         "id": "libs/core/src/pm/legacy.ts",
@@ -172,7 +188,10 @@
         "loc": 45,
         "dents": [],
         "age_days": 363,
-        "bugfix_rate": 0
+        "bugfix_rate": 0,
+        "stability": {
+          "age_days": 363
+        }
       },
       {
         "id": "libs/core/src/pm/slots.ts",
@@ -183,6 +202,10 @@
         "loc": 88,
         "function_count": 7,
         "dents": [],
+        "stability": {
+          "age_days": 363,
+          "churn_ratio": 1.2954545454545454
+        },
         "clone_family": "family-1"
       },
       {
@@ -200,6 +223,10 @@
         "churn_ratio": 1,
         "age_days": 1,
         "bugfix_rate": 0,
+        "stability": {
+          "age_days": 1,
+          "churn_ratio": 1
+        },
         "clone_family": "family-1"
       },
       {
@@ -212,7 +239,11 @@
         "function_count": 5,
         "dents": [
           "cycle"
-        ]
+        ],
+        "stability": {
+          "age_days": 91,
+          "churn_ratio": 0.9230769230769231
+        }
       },
       {
         "id": "libs/core/src/util/text.ts",
@@ -224,7 +255,11 @@
         "function_count": 4,
         "dents": [
           "cycle"
-        ]
+        ],
+        "stability": {
+          "age_days": 61,
+          "churn_ratio": 0.4864864864864865
+        }
       }
     ],
     "bands": [

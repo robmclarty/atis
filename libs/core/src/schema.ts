@@ -35,6 +35,13 @@ export type Cell = {
   readonly clone_family?: string;
 };
 
+/**
+ * How settled a file is over the log window (D149): its age in days since the
+ * window first saw it, and its churn ratio, absent where its current size is
+ * unknown or zero (C2). Old, quiet files are the bedrock §5.1 raises.
+ */
+export type Stability = { readonly age_days: number; readonly churn_ratio?: number };
+
 /** A file inside a cell. `id` is the head path; a deleted file keeps its base path (D40). */
 export type Organelle = {
   readonly id: string;
@@ -48,6 +55,8 @@ export type Organelle = {
   readonly churn_ratio?: number;
   readonly age_days?: number;
   readonly bugfix_rate?: number;
+  /** Set on every file the history window saw, changed or not; the SVG never reads it (D149). */
+  readonly stability?: Stability;
   readonly clone_family?: string;
 };
 
@@ -264,6 +273,18 @@ function expectString(value: unknown, path: string): string {
   return value;
 }
 
+function isCount(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0;
+}
+
+/** A stability is an age, and a churn ratio only where one was measured; neither is ever negative. */
+function assertStability(value: unknown, path: string): void {
+  const stability = expectRecord(value, path);
+  if (!isCount(stability['age_days'])) fail(`${path}.age_days`, 'expected a non-negative number');
+  const churn = stability['churn_ratio'];
+  if (churn !== undefined && !isCount(churn)) fail(`${path}.churn_ratio`, 'expected a non-negative number');
+}
+
 /**
  * Every check below is real runtime narrowing (never a cast): `assertMap`
  * hands back a value the compiler only trusts because this function proved
@@ -329,6 +350,7 @@ function assertShape(value: unknown): asserts value is MapJson {
   organelles.forEach((raw, index) => {
     const organelle = expectRecord(raw, `terrain.organelles[${String(index)}]`);
     organelleIds.add(expectString(organelle['id'], `terrain.organelles[${String(index)}].id`));
+    if (organelle['stability'] !== undefined) assertStability(organelle['stability'], `terrain.organelles[${String(index)}].stability`);
   });
 
   const weather = expectRecord(root['weather'], 'weather');

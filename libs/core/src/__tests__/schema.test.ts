@@ -259,6 +259,19 @@ test('accepts unmeasured files beside the coverage they sit outside, and rejects
   );
 });
 
+test("accepts an organelle's stability, with or without its churn ratio, and rejects a negative age or a churn that is not a number (D149)", () => {
+  const withStability = (stability: unknown): unknown => {
+    const map = minimalMap();
+    const [organelle] = map.terrain.organelles;
+    return { ...map, terrain: { ...map.terrain, organelles: [{ ...organelle, stability }] } };
+  };
+  expect(() => assertMap(withStability({ age_days: 30, churn_ratio: 0.5 }))).not.toThrow();
+  expect(() => assertMap(withStability({ age_days: 30 }))).not.toThrow();
+  expect(() => assertMap(withStability({ age_days: -1 }))).toThrow(/stability\.age_days/);
+  expect(() => assertMap(withStability({ age_days: 1, churn_ratio: 'high' }))).toThrow(/stability\.churn_ratio/);
+  expect(() => assertMap(withStability(7))).toThrow(/stability: expected an object/);
+});
+
 test('rejects a changed entry naming an unknown group', () => {
   const map = minimalMap();
   const withUnknownGroup = {

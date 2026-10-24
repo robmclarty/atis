@@ -29,7 +29,7 @@ import type { NamedEdge, PublishingMember, ScanFile } from './notices.js';
 import { TESTS_GROUP, computeReach } from './reach.js';
 import type { DiffFile } from './reach.js';
 import { SCHEMA_VERSION } from './schema.js';
-import type { Cell, DepAdded, DepMoved, ExceptionalEdge, Group, Instruments, MapJson, Organelle } from './schema.js';
+import type { Cell, DepAdded, DepMoved, ExceptionalEdge, Group, Instruments, MapJson, Organelle, Stability } from './schema.js';
 
 /**
  * One workspace member of a scan: its package name, its directory and its
@@ -350,6 +350,7 @@ type Signals = {
   readonly family: ReadonlyMap<string, string>;
   readonly functions: ReadonlyMap<string, number>;
   readonly history: ReadonlyMap<string, FileHistory>;
+  readonly stability: ReadonlyMap<string, Stability>;
 };
 
 function shallowest(files: readonly string[], depth: ReadonlyMap<string, FileDepth>): number {
@@ -403,6 +404,7 @@ function assembleOrganelles(modules: Modules, signals: Signals): readonly Organe
       // Depth is handed exactly this file list, so every organelle has a place.
       const place = signals.depth.get(organelle.path);
       const past = signals.history.get(organelle.path);
+      const settled = signals.stability.get(organelle.path);
       const functions = signals.functions.get(organelle.path);
       const family = signals.family.get(organelle.path);
       return {
@@ -417,6 +419,7 @@ function assembleOrganelles(modules: Modules, signals: Signals): readonly Organe
         ...(past?.churn_ratio === undefined ? {} : { churn_ratio: past.churn_ratio }),
         ...(past?.age_days === undefined ? {} : { age_days: past.age_days }),
         ...(past?.bugfix_rate === undefined ? {} : { bugfix_rate: past.bugfix_rate }),
+        ...(settled === undefined ? {} : { stability: settled }),
         ...(family === undefined ? {} : { clone_family: family }),
       };
     })
@@ -521,6 +524,7 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
     family: cloneFamilies(ran?.dupes),
     functions: functionCounts(ran?.health),
     history: new Map(history.files.map((file) => [file.path, file] as const)),
+    stability: new Map(history.stability.map(({ path, ...settled }) => [path, settled] as const)),
   };
   const cells = assembleCells(modules, edges, signals);
   const organelles = assembleOrganelles(modules, signals);
