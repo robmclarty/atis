@@ -360,3 +360,18 @@ export const LOD_FADE_MS = 300;
 export const SHAPE_PULSE_HZ: readonly number[] = [0, 0.25, 0.4, 0.6, 0.85, 1.15, 1.5];
 export const SHAPE_PULSE: readonly number[] = [0, 0.25, 0.3, 0.32, 0.35, 0.38, 0.42];
 export const SHAPE_TURN: readonly number[] = [0, 0.03, 0.05, 0.08, 0.11, 0.15, 0.2];
+
+/**
+ * Looseness in motion, inside an opened cell (D157): each file wanders about
+ * its place by the share of its import ties that leave the cell, a hub held
+ * by its cellmates barely moving and a file tied to none of them floating
+ * across the whole cell. Its wander runs at a seeded rate between these two
+ * (Hz), reaches this share of the cell's radius when it is wholly loose, keeps
+ * this far off its neighbours and the membrane, and eases in over this long
+ * when the cell opens.
+ */
+export const DRIFT_HZ_MIN = 0.03;
+export const DRIFT_HZ_MAX = 0.08;
+export const DRIFT_REACH = 1;
+export const DRIFT_GAP = 1;
+export const DRIFT_EASE_MS = 600;

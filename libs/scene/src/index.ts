@@ -6,6 +6,7 @@
  * inside the render are tested where they are made.
  */
 
+export * from './drift.js';
 export * from './heightfield.js';
 export * from './instances.js';
 export * from './labels.js';

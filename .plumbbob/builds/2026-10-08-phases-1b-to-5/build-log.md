@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 29 — feat(scene): schedule every animation inside the motion budget
+**Current step:** 99 — feat(scene): drift each file in an opened cell by its looseness
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -55,7 +55,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 26. feat(scene): derive the weather each organelle carries
 - ☑ 27. feat(scene): place labels per level of detail without collisions
 - ☑ 28. feat(scene): plan levels of detail with hysteresis and cross-fades
-- ☐ 29. feat(scene): schedule every animation inside the motion budget
+- ☑ 29. feat(scene): schedule every animation inside the motion budget
 - ☐ 30. feat(web): render the field and the soft skin from a served map
 - ☐ 31. feat(cli): serve the world and open it in a tab
 - ☐ 32. feat(web): draw cells and organelles, and the shore in a rail
@@ -834,3 +834,4 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-24 — step 96 checkpointed · 0678bfc90 — feat(svg): draw the shore as a compact band of flat blocks (1 drift, 14m)
 - 2026-10-24 — step 27 checkpointed · 0b2aded8f — feat(scene): place labels per level of detail without collisions (1 drift, 11m)
 - 2026-10-24 — step 28 checkpointed · f7bd91928 — feat(scene): plan levels of detail with hysteresis and cross-fades (2m)
+- 2026-10-24 — step 29 checkpointed · eb544073d — feat(scene): schedule every animation inside the motion budget (4m)

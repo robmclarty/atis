@@ -15,16 +15,19 @@
  * skin when the camera lands on a cell; a hover eases a highlight in; a
  * fly-to eases the camera across; the levels of detail cross-fade as the zoom
  * crosses their gates. Inside an opened cell each file's shape pulses and
- * turns by the rules it breaks (D147). The curves are the materials spike's,
- * as `docs/design.md` records them.
+ * turns by the rules it breaks (D147), and each file drifts by how loosely its
+ * cellmates hold it (D157). The curves are the materials spike's, as
+ * `docs/design.md` records them.
  *
  * Under reduced motion only a static halo stands for the load flare: no
- * settle, no breathing, no flares, no jiggle, still shapes, and a fly-to that
- * cuts rather than eases.
+ * settle, no breathing, no flares, no jiggle, still shapes, no drift, and a
+ * fly-to that cuts rather than eases.
  */
 
-import type { NoticeTier } from 'core';
+import type { MapJson, NoticeTier } from 'core';
 
+import { driftOf } from './drift.js';
+import type { Drifted } from './drift.js';
 import { lodPlan } from './lod.js';
 import type { LodPlan } from './lod.js';
 import { AT_REST, MAX_RULES } from './shape.js';
@@ -102,6 +105,10 @@ export type Scheduler = {
   readonly frame: (zoom?: number) => MotionFrame;
   /** How a shape breaking `rules` rules moves at the clock's time, inside an opened cell (D147). */
   readonly shape: (rules: number) => ShapeMotion;
+  /** Open a cell now, or close the open one with `undefined`. */
+  readonly open: (cell: string | undefined) => void;
+  /** Where the opened cell's files have drifted by the clock's time (D157); none while no cell is open. */
+  readonly drift: (map: MapJson) => readonly Drifted[];
   /** What happened to every flare asked for, in order: run, queued or dropped, with the time and the rank. */
   readonly log: () => readonly string[];
 };
@@ -169,6 +176,7 @@ export function createScheduler({ clock, seed, tiers, reduced }: SchedulerOption
   let flyStart: number | undefined;
   let lastFrame: number | undefined;
   let lod: LodPlan | undefined;
+  let opened: { readonly cell: string; readonly at: number } | undefined;
 
   const stamp = (now: number, what: string, index: number): void => {
     log.push(`${(now / 1000).toFixed(3)}s ${what} ${String(index + 1)}`);
@@ -286,6 +294,10 @@ export function createScheduler({ clock, seed, tiers, reduced }: SchedulerOption
     },
     frame,
     shape,
+    open: (cell) => {
+      opened = cell === undefined ? undefined : { cell, at: clock() };
+    },
+    drift: (map) => (opened === undefined ? [] : driftOf(map, opened.cell, clock() - opened.at, seed, reduced)),
     log: () => [...log],
   };
 }

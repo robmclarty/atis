@@ -37,14 +37,14 @@ export function rulesOf(dents: readonly string[]): number {
 }
 
 /** A path's seed: FNV-1a over its UTF-16 code units. */
-function seedOf(id: string): number {
+export function seedOf(id: string): number {
   let hash = 2_166_136_261;
   for (let i = 0; i < id.length; i += 1) hash = Math.imul(hash ^ id.charCodeAt(i), 16_777_619);
   return hash >>> 0;
 }
 
 /** The `i`th draw from a seed, in [0, 1), from integer mixing alone so every engine draws the same. */
-function draw(seed: number, i: number): number {
+export function draw(seed: number, i: number): number {
   let t = (seed + Math.imul(i + 1, 0x9e_37_79_b9)) >>> 0;
   t = Math.imul(t ^ (t >>> 15), t | 1);
   t ^= t + Math.imul(t ^ (t >>> 7), t | 61);

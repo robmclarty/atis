@@ -306,8 +306,12 @@ in `libs/scene/src/motion.ts`, on an injected clock and a seeded source of chanc
 reviewer who looked away is pulled back without the map ever twinkling. Inside an
 opened cell motion also means conformance: each file's shape pulses and turns by
 the rules it breaks, faster and further as the level climbs, and a file within
-every threshold stays still (D147). That lifted §5.5's one continuous mover; the
-primary's breathing is no longer the only thing that moves.
+every threshold stays still (D147). And it means looseness: each file drifts
+about its place by the share of its import ties that leave the cell, a hub held
+by its cellmates sitting still and a file tied to none of them floating across
+the cell, bumping the membrane and its neighbours (D157). That lifted §5.5's one
+continuous mover; the primary's breathing is no longer the only thing that
+moves.
 
 These tokens sit where [the materials spike](#phase-1b-the-materials-spike) left
 them. Where §5.5 gives a number, the token stands at it, as §5.5's starting
@@ -346,6 +350,11 @@ bound changes §5.5 itself, and moves the bound in the test with it.
 | `SHAPE_PULSE_HZ` | `0, 0.25, 0.4, 0.6, 0.85, 1.15, 1.5` | 0 at 0 rules, climbing, at most 2: a pulse, never a flicker | how fast a shape's arms pulse inside an opened cell, by rule count (D147) |
 | `SHAPE_PULSE` | `0, 0.25, 0.3, 0.32, 0.35, 0.38, 0.42` | 0 at 0 rules, climbing, below 1: an arm never turns inside out | how far they pulse, as a share of their reach |
 | `SHAPE_TURN` | `0, 0.03, 0.05, 0.08, 0.11, 0.15, 0.2` | 0 at 0 rules, climbing, at most 0.5 rad/s | how fast the shape's body turns, in radians a second; its wobble drifts three times as fast |
+| `DRIFT_HZ_MIN` | `0.03` | above 0, at most 0.25, and no more than the max: a slow float | the slowest a file's wander runs inside an opened cell (D157), in Hz; each file draws its rates between the two from its path and the seed |
+| `DRIFT_HZ_MAX` | `0.08` | above 0, at most 0.25 | the fastest |
+| `DRIFT_REACH` | `1` | above 0, at most 1 | how far a wholly loose file wanders, as a share of its cell's radius; a file wanders its looseness times this, so a hub held by its cellmates stays put |
+| `DRIFT_GAP` | `1` | at least 0 | how far a drifting file keeps off its neighbours and the membrane, in layout units |
+| `DRIFT_EASE_MS` | `600` | above 0, at most 600: a transient | how long the drift takes to ease in as a cell opens |
 
 The curves are shapes rather than tokens, and the spike drew them this way, so
 the scheduler that owns them draws what Rob judged. A flare rises over
@@ -357,7 +366,12 @@ the time it fell due, not the frame that noticed, so the same seed flares at the
 same times at any frame rate. The settle is an underdamped spring that lands
 inside `SETTLE_MS`; a fly-to eases slow out and slow in; a hover and the level
 fades ease at a fixed rate. The scheduler's tests replay a minute of seeded time
-and hold every one of these rules.
+and hold every one of these rules. The drift is a function of the time alone:
+two slow sines per file, eased in as the cell opens, then a dozen rounds pushing
+bodies apart, the looser giving way more, and pulling each moved one back inside
+the membrane; a file alone in its cell, a deleted file and a file with no `ties`
+stay still, as every file does while its cell is closed (`driftOf` in
+`libs/scene/src/drift.ts`).
 
 Measured from the spike's own scheduler on `retake-3`:
 
@@ -384,6 +398,9 @@ its old and new value, and what was seen that called for it.
 - **2026-10-24, D147.** `SHAPE_PULSE_HZ`, `SHAPE_PULSE` and `SHAPE_TURN` join the
   table at the values the spike's moving shapes ran at, when the shapes' motion
   became part of the world.
+- **2026-10-24, D157.** The `DRIFT_` tokens join the table at starting values, a
+  wander of 12 to 33 s reaching a wholly loose file across its cell, for Rob to
+  tune in the world at step 40.
 
 ## Fixed geometry that carries no token
 

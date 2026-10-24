@@ -78,6 +78,11 @@ const MOTION_BOUNDS: Readonly<Record<string, Bound>> = {
   HOVER_MS: { above: 0, atMost: TRANSIENT_MS, why: 'an ease to a highlight, and a transient' },
   FLY_TO_MS: { above: 0, atMost: 400, why: 'an ease of 400 ms or less' },
   LOD_FADE_MS: { above: 0, atMost: 300, why: 'a cross-fade of 300 ms or less, never a blink' },
+  DRIFT_HZ_MIN: { above: 0, atMost: 0.25, why: 'a slow float (D157): a wander of four seconds or longer' },
+  DRIFT_HZ_MAX: { above: 0, atMost: 0.25, why: 'a slow float (D157): a wander of four seconds or longer' },
+  DRIFT_REACH: { above: 0, atMost: 1, why: 'a wholly loose file wanders as far as its cell, and no further' },
+  DRIFT_GAP: { atLeast: 0, why: 'a file keeps off its neighbours and the membrane, never into them' },
+  DRIFT_EASE_MS: { above: 0, atMost: TRANSIENT_MS, why: 'the drift eases in as the cell opens, a transient' },
 };
 
 const VALUES: Readonly<Record<string, unknown>> = tokens;
@@ -97,9 +102,10 @@ test.each(Object.entries(MOTION_BOUNDS))("%s sits inside §5.5's bound", (name, 
   if (bound.below !== undefined) expect(value, bound.why).toBeLessThan(bound.below);
 });
 
-test('each random flare is drawn from a window that opens before it closes', () => {
+test('each random flare, and the drift, is drawn from a window that opens before it closes', () => {
   expect(valueOf('PRIMARY_FLARE_MIN_MS')).toBeLessThanOrEqual(valueOf('PRIMARY_FLARE_MAX_MS'));
   expect(valueOf('SECONDARY_FLARE_MIN_MS')).toBeLessThanOrEqual(valueOf('SECONDARY_FLARE_MAX_MS'));
+  expect(valueOf('DRIFT_HZ_MIN')).toBeLessThanOrEqual(valueOf('DRIFT_HZ_MAX'));
 });
 
 /**
@@ -127,7 +133,7 @@ test.each(Object.entries(SHAPE_MOTION_BOUNDS))('%s is still at 0 rules, climbs w
   });
 });
 
-test("design.md's motion table names exactly the tokens §5.5 and D147 bound", () => {
+test("design.md's motion table names exactly the tokens §5.5, D147 and D157 bound", () => {
   const doc = readFileSync(DESIGN, 'utf8');
   const section = doc.split(/^## /m).find((part) => part.startsWith('Motion'));
   expect(section, 'design.md has no Motion section').toBeDefined();
