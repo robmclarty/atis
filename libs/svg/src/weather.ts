@@ -20,30 +20,15 @@
  * a global slot hangs none (D68). The exceptional edges are the only lines
  * on the map (§5.1).
  *
- * All of it is read from `map.json` and nothing else (D33). A channel the
- * map does not carry is not drawn: no group, no default, no placeholder
- * (C2). A file the layout did not place is not on the field and gets no
- * mark. Every list is sorted by path, so the same map is the same bytes (C3).
+ * All of it is read from `map.json` and nothing else (D33), through the
+ * scene's `weatherOf`, the one derivation the world draws from too, so the two
+ * renderers cannot drift (D90); this file only draws it. A channel the map
+ * does not carry is not drawn: no group, no default, no placeholder (C2). A
+ * file the layout did not place is not on the field and gets no mark. Every
+ * list is sorted by path, so the same map is the same bytes (C3).
  */
 
-import { readRedSplit } from 'core';
-import type {
-  ChangedFile,
-  Contour,
-  Evidence,
-  ExceptionalEdge,
-  Ghost,
-  Layout,
-  MapJson,
-  Mutant,
-  Organelle,
-  PatchCoverage,
-  Position,
-  ReachEntry,
-  Stitch,
-  Terrain,
-  Weather,
-} from 'core';
+import type { Contour, Layout, MapJson, Organelle, Position, Terrain } from 'core';
 import {
   BUGFIX_FULL_AT,
   CHANGE_HUE,
@@ -64,9 +49,7 @@ import {
   INTEGRITY_PAD,
   LABEL_BASELINE,
   MUTANT_NOTCH_DEPTH,
-  MUTANT_NOTCH_SPACING,
   MUTANT_NOTCH_WIDTH,
-  REACH_DECAY,
   REACH_GLOW,
   REACH_ORIGIN_OPACITY,
   RENAME_DASH,
@@ -75,16 +58,17 @@ import {
   STANDING_STORM_FILL,
   STANDING_STORM_SCALE,
   STITCH_LENGTH,
-  STITCH_SPACING,
   STITCH_TEAR,
   STITCH_UNLIT,
   STITCH_WIDTH,
   STORM_LABEL_GAP,
   STORM_LABEL_SIZE,
-  STORM_LIFT,
-  STORM_ROW,
   TEXTURE_MAX_OPACITY,
+  reachLuminance,
+  stitchLook,
+  weatherOf,
 } from 'scene';
+import type { ChangeState, FileWeather, Notch, SceneWeather, Skin, StitchLook, StitchMark, Storm } from 'scene';
 
 import { el, num } from './el.js';
 import type { Markup } from './el.js';
@@ -93,10 +77,6 @@ import { pathOf } from './terrain.js';
 
 /** The storm glyph: a bolt, drawn about its own origin. The legend draws its sample from the same path. */
 export const STORM_GLYPH = 'M1 -6L-3 1H0L-1 6L3 -1H0Z';
-const PASSED = 'passed';
-const FAILED = 'failed';
-const TOP = -Math.PI / 2;
-const BOTTOM = Math.PI / 2;
 
 function byPath(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
@@ -107,11 +87,6 @@ function onRing(at: Position, angle: number, radius: number): readonly [number, 
   return [at.x + radius * Math.cos(angle), at.y + radius * Math.sin(angle)];
 }
 
-/** The angle of the `index`th of `count` marks spread evenly about `centre`, `spacing` apart, so two read as two and not as a lump. */
-function spread(centre: number, index: number, count: number, spacing: number): number {
-  return centre + (index - (count - 1) / 2) * spacing;
-}
-
 /**
  * The opacity a reached cell is filled at: brightest in the changed cell,
  * and a fixed share dimmer per membrane crossed (D5), so it is strictly
@@ -119,67 +94,54 @@ function spread(centre: number, index: number, count: number, spacing: number): 
  * crossings out, further than any map measured reaches.
  */
 export function reachOpacity(hops: number): number {
-  return REACH_ORIGIN_OPACITY * REACH_DECAY ** hops;
-}
-
-/** The nearest hop each reached cell is entered at, dimmest first, so the changed cell's own light is laid last. */
-function cellsReached(reach: readonly ReachEntry[]): readonly (readonly [string, number])[] {
-  const nearest = new Map<string, number>();
-  for (const entry of reach) {
-    const known = nearest.get(entry.cell);
-    if (known === undefined || entry.hops < known) nearest.set(entry.cell, entry.hops);
-  }
-  return [...nearest].toSorted(([a, aHops], [b, bHops]) => bHops - aHops || byPath(a, b));
-}
-
-/** Each cell's direct children in id order: the cells its own territory is cut around (D45). */
-function childrenOf(terrain: Terrain): ReadonlyMap<string, readonly string[]> {
-  const children = new Map<string, string[]>();
-  for (const cell of [...terrain.cells].toSorted((a, b) => byPath(a.id, b.id))) {
-    if (cell.parent === undefined) continue;
-    const held = children.get(cell.parent) ?? [];
-    held.push(cell.id);
-    children.set(cell.parent, held);
-  }
-  return children;
+  return REACH_ORIGIN_OPACITY * reachLuminance(hops);
 }
 
 /**
  * Reach as light: each reached cell's own territory, its contour with the
  * cells it holds cut out (D45), filled with the glow at an opacity by its
- * nearest hop, so a package's light does not spill over a folder inside it
- * that the reach never entered, and a reached folder glows on its own. Each
- * interface file the reach crossed is lit as a disc just past its edge. All
- * of it is blurred together so the light reads as luminescence from within
- * rather than as an outline (§5.6). Absent when nothing is reached.
+ * nearest hop, dimmest first so the changed cell's own light is laid last, so
+ * a package's light does not spill over a folder inside it that the reach
+ * never entered, and a reached folder glows on its own. Each interface file
+ * the reach crossed is lit as a disc just past its edge. All of it is blurred
+ * together so the light reads as luminescence from within rather than as an
+ * outline (§5.6). Absent when nothing is reached.
  */
-function drawReach(weather: Weather, terrain: Terrain, layout: Layout): Markup | undefined {
+function drawReach(weather: SceneWeather, layout: Layout): Markup | undefined {
   const contours = layout.contours ?? {};
-  const children = childrenOf(terrain);
-  const glows = cellsReached(weather.reach).flatMap(([cell, hops]) => {
+  const reached = weather.cells
+    .flatMap((cell) => (cell.reach === undefined ? [] : [{ cell: cell.cell, reach: cell.reach }]))
+    .toSorted((a, b) => b.reach.hops - a.reach.hops || byPath(a.cell, b.cell));
+  const glows = reached.flatMap(({ cell, reach }) => {
     const contour = contours[cell];
     if (contour === undefined) return [];
-    const holes = (children.get(cell) ?? []).flatMap((child) => {
-      const held = contours[child];
+    const holes = reach.holes.flatMap((hole) => {
+      const held = contours[hole];
       return held === undefined ? [] : [pathOf(held)];
     });
     return [
       el('path', {
         'data-id': cell,
-        'data-hops': hops,
+        'data-hops': reach.hops,
         d: [pathOf(contour), ...holes].join(''),
         'fill-rule': holes.length === 0 ? undefined : 'evenodd',
-        opacity: reachOpacity(hops),
+        opacity: REACH_ORIGIN_OPACITY * reach.luminance,
       }),
     ];
   });
-  const crossings = [...new Set(weather.reach.flatMap((entry) => entry.via))].toSorted(byPath).flatMap((path) => {
-    const at = layout.positions[path];
-    if (at === undefined) return [];
-    return [el('circle', { 'data-via': path, cx: at.x, cy: at.y, r: at.r + CROSSING_PAD, opacity: CROSSING_OPACITY })];
-  });
+  const crossings = placedFiles(weather, layout)
+    .filter(({ file }) => file.crossing === true)
+    .map(({ file, at }) => el('circle', { 'data-via': file.path, cx: at.x, cy: at.y, r: at.r + CROSSING_PAD, opacity: CROSSING_OPACITY }));
   if (glows.length === 0 && crossings.length === 0) return undefined;
   return el('g', { id: 'reach', fill: REACH_GLOW, filter: `url(#${GLOW_ID})` }, [...glows, ...crossings]);
+}
+
+/** Each file the weather touches, with the place the layout gave it, in path order. */
+function placedFiles(weather: SceneWeather, layout: Layout): readonly { readonly file: FileWeather; readonly at: Position }[] {
+  return weather.files.flatMap((file) => {
+    const at = layout.positions[file.path];
+    return at === undefined ? [] : [{ file, at }];
+  });
 }
 
 /**
@@ -190,34 +152,29 @@ function drawReach(weather: Weather, terrain: Terrain, layout: Layout): Markup |
  * it (D40). The stain is a circle at the organelle's radius, so a dented
  * file keeps its teeth in the base tissue's grey: shape stays conformance.
  */
-function drawStain(file: ChangedFile, at: Position): readonly Markup[] {
-  const mark = { 'data-id': file.path, 'data-kind': file.kind, cx: at.x, cy: at.y, r: at.r };
-  if (file.kind === 'added' || file.kind === 'modified') return [el('circle', { ...mark, stroke: 'none' })];
-  if (file.kind === 'deleted') return [el('circle', { ...mark, fill: 'none' })];
+function drawStain(path: string, change: ChangeState, at: Position): readonly Markup[] {
+  const mark = { 'data-id': path, 'data-kind': change.kind, cx: at.x, cy: at.y, r: at.r };
+  if (change.kind === 'added' || change.kind === 'modified') return [el('circle', { ...mark, stroke: 'none' })];
+  if (change.kind === 'deleted') return [el('circle', { ...mark, fill: 'none' })];
   const outline = el('circle', { ...mark, fill: 'none', 'stroke-dasharray': RENAME_DASH });
-  if (file.from === undefined) return [outline];
+  if (change.from === undefined) return [outline];
   const label = el(
     'text',
     {
-      'data-id': file.path,
+      'data-id': path,
       x: at.x + at.r + RENAME_LABEL_GAP,
       y: at.y + RENAME_LABEL_SIZE * LABEL_BASELINE,
       'font-size': RENAME_LABEL_SIZE,
       stroke: 'none',
     },
-    [file.from],
+    [change.from],
   );
   return [outline, label];
 }
 
 /** The changed set, stained by kind (§5.2): a shore file at its mark, a test file nowhere, since it is a stitch (D4). */
-function drawChanged(changed: readonly ChangedFile[], layout: Layout): Markup | undefined {
-  const stains = [...changed]
-    .toSorted((a, b) => byPath(a.path, b.path))
-    .flatMap((file) => {
-      const at = layout.positions[file.path];
-      return at === undefined ? [] : drawStain(file, at);
-    });
+function drawChanged(weather: SceneWeather, layout: Layout): Markup | undefined {
+  const stains = placedFiles(weather, layout).flatMap(({ file, at }) => (file.change === undefined ? [] : drawStain(file.path, file.change, at)));
   if (stains.length === 0) return undefined;
   return el('g', { id: 'changed', fill: CHANGE_HUE, stroke: CHANGE_HUE, 'stroke-width': CHANGE_OUTLINE_WIDTH }, stains);
 }
@@ -267,26 +224,24 @@ function drawHistory(terrain: Terrain, layout: Layout): Markup | undefined {
  * did not run is lit at full strength from the top clockwise, so worse
  * evidence draws more light; a closed skin is hairline all round. A file
  * with no changed executable line has no skin and gets no ring, rather than
- * a closed one (C2).
+ * a closed one (C2): the scene gives it none.
  */
-function drawIntegrity(coverage: PatchCoverage, at: Position): Markup | undefined {
-  if (coverage.changed_executable <= 0) return undefined;
-  const open = Math.max(coverage.changed_executable - coverage.covered, 0) / coverage.changed_executable;
+function drawIntegrity(path: string, skin: Extract<Skin, { readonly measured: true }>, at: Position): Markup {
   const ring = { cx: at.x, cy: at.y, r: at.r + INTEGRITY_PAD, fill: 'none', stroke: EVIDENCE_LIGHT };
   const hairline = el('circle', { ...ring, 'stroke-width': INTEGRITY_CLOSED_WIDTH, 'stroke-opacity': INTEGRITY_CLOSED_OPACITY });
   const gap =
-    open > 0
+    skin.open > 0
       ? [
           el('circle', {
             ...ring,
             'stroke-width': INTEGRITY_GAP_WIDTH,
             pathLength: 1,
-            'stroke-dasharray': `${num(open)} 1`,
+            'stroke-dasharray': `${num(skin.open)} 1`,
             transform: `rotate(-90 ${num(at.x)} ${num(at.y)})`,
           }),
         ]
       : [];
-  return el('g', { 'data-id': coverage.path, 'data-covered': coverage.covered, 'data-changed': coverage.changed_executable }, [hairline, ...gap]);
+  return el('g', { 'data-id': path, 'data-covered': skin.covered, 'data-changed': skin.changed_executable }, [hairline, ...gap]);
 }
 
 /**
@@ -303,30 +258,19 @@ function drawUnmeasured(path: string, at: Position): Markup {
   ]);
 }
 
-/** The mutants on each file, by line. */
-function mutantsByPath(mutants: readonly Mutant[]): ReadonlyMap<string, readonly Mutant[]> {
-  const byPathMap = new Map<string, Mutant[]>();
-  for (const mutant of [...mutants].toSorted((a, b) => a.line - b.line || byPath(a.status, b.status))) {
-    const on = byPathMap.get(mutant.path) ?? [];
-    on.push(mutant);
-    byPathMap.set(mutant.path, on);
-  }
-  return byPathMap;
-}
-
 /**
  * Live mutants as lit notches (D71): per mutant, a wedge in the evidence
  * light cut from the skin's outer edge to a point inside the organelle's,
  * spread round the top of the ring, so a mutant that lived adds light where
  * a dark bite took it away.
  */
-function drawDents(path: string, mutants: readonly Mutant[], at: Position): readonly Markup[] {
-  return mutants.map((mutant, index) =>
+function drawDents(path: string, notches: readonly Notch[], at: Position): readonly Markup[] {
+  return notches.map((notch) =>
     el('path', {
       'data-id': path,
-      'data-line': mutant.line,
-      'data-status': mutant.status,
-      d: pathOf(notchOf(at, spread(TOP, index, mutants.length, MUTANT_NOTCH_SPACING))),
+      'data-line': notch.line,
+      'data-status': notch.status,
+      d: pathOf(notchOf(at, notch.angle)),
       fill: EVIDENCE_LIGHT,
     }),
   );
@@ -341,31 +285,18 @@ export function notchOf(at: Position, angle: number): Contour {
   return [[bx - tx, by - ty], onRing(at, angle, at.r - MUTANT_NOTCH_DEPTH), [bx + tx, by + ty]];
 }
 
-type StitchOn = { readonly test: string; readonly status: string };
-
-/** The stitches on each target, in test path order. */
-function stitchesByTarget(stitches: readonly Stitch[]): ReadonlyMap<string, readonly StitchOn[]> {
-  const byTarget = new Map<string, StitchOn[]>();
-  for (const stitch of [...stitches].toSorted((a, b) => byPath(a.test, b.test))) {
-    for (const target of stitch.targets) {
-      const on = byTarget.get(target) ?? [];
-      on.push({ test: stitch.test, status: stitch.status });
-      byTarget.set(target, on);
-    }
-  }
-  return byTarget;
-}
+/** The ink each stitch reads in: the evidence light for a pass, IFR for a tear, unlit grey for a test not run. */
+const STITCH_STROKES: Readonly<Record<StitchLook, string>> = { lit: EVIDENCE_LIGHT, torn: IFR_HUE, unlit: STITCH_UNLIT };
 
 /** A stitch that passed is lit; one that failed is torn and IFR; any other status was not run, and not run is not a pass (C2). */
 export function stitchStroke(status: string): string {
-  if (status === FAILED) return IFR_HUE;
-  return status === PASSED ? EVIDENCE_LIGHT : STITCH_UNLIT;
+  return STITCH_STROKES[stitchLook(status)];
 }
 
 /** One stitch: a short stroke across the edge on its spoke; torn, it breaks either side of the edge. */
-function drawStitch(target: string, stitch: StitchOn, at: Position, angle: number): readonly Markup[] {
-  const mark = { 'data-id': target, 'data-test': stitch.test, 'data-status': stitch.status, stroke: stitchStroke(stitch.status) };
-  return stitchOf(at, angle, stitch.status).map(([[x1, y1], [x2, y2]]) => el('line', { ...mark, x1, y1, x2, y2 }));
+function drawStitch(target: string, stitch: StitchMark, at: Position): readonly Markup[] {
+  const mark = { 'data-id': target, 'data-test': stitch.test, 'data-status': stitch.status, stroke: STITCH_STROKES[stitch.look] };
+  return stitchOf(at, stitch.angle, stitch.status).map(([[x1, y1], [x2, y2]]) => el('line', { ...mark, x1, y1, x2, y2 }));
 }
 
 /** One stitch's strokes across a file's edge at `angle`: one stroke, or two either side of the tear when it failed. The legend draws its samples from it too. */
@@ -375,36 +306,19 @@ export function stitchOf(at: Position, angle: number, status: string): readonly 
     onRing(at, angle, at.r + to),
   ];
   const half = STITCH_LENGTH / 2;
-  if (status !== FAILED) return [segment(-half, half)];
+  if (stitchLook(status) !== 'torn') return [segment(-half, half)];
   return [segment(-half, -STITCH_TEAR / 2), segment(STITCH_TEAR / 2, half)];
 }
 
-/** Evidence on the changed organelles (§5.2): skins, dents and stitches; absent when the map carries none. */
-function drawEvidence(evidence: Evidence, layout: Layout): Markup | undefined {
-  const { positions } = layout;
-  const measured = (evidence.patch_coverage ?? []).map((coverage) => [coverage.path, coverage] as const);
-  const unmeasured = (evidence.unmeasured ?? []).map((path) => [path, undefined] as const);
-  const skins = [...measured, ...unmeasured]
-    .toSorted(([a], [b]) => byPath(a, b))
-    .flatMap(([path, coverage]) => {
-      const at = positions[path];
-      if (at === undefined) return [];
-      const arc = coverage === undefined ? drawUnmeasured(path, at) : drawIntegrity(coverage, at);
-      return arc === undefined ? [] : [arc];
-    });
-  const dents = [...mutantsByPath(evidence.mutants ?? [])]
-    .toSorted(([a], [b]) => byPath(a, b))
-    .flatMap(([path, mutants]) => {
-      const at = positions[path];
-      return at === undefined ? [] : drawDents(path, mutants, at);
-    });
-  const stitches = [...stitchesByTarget(evidence.stitches ?? [])]
-    .toSorted(([a], [b]) => byPath(a, b))
-    .flatMap(([target, on]) => {
-      const at = positions[target];
-      if (at === undefined) return [];
-      return on.flatMap((stitch, index) => drawStitch(target, stitch, at, spread(BOTTOM, index, on.length, STITCH_SPACING)));
-    });
+/** Evidence on the changed organelles (§5.2): skins, then dents, then stitches, each by path; absent when the map carries none. */
+function drawEvidence(weather: SceneWeather, layout: Layout): Markup | undefined {
+  const placed = placedFiles(weather, layout).flatMap(({ file, at }) => (file.evidence === undefined ? [] : [{ path: file.path, evidence: file.evidence, at }]));
+  const skins = placed.flatMap(({ path, evidence, at }) => {
+    if (evidence.skin === undefined) return [];
+    return [evidence.skin.measured ? drawIntegrity(path, evidence.skin, at) : drawUnmeasured(path, at)];
+  });
+  const dents = placed.flatMap(({ path, evidence, at }) => drawDents(path, evidence.notches, at));
+  const stitches = placed.flatMap(({ path, evidence, at }) => evidence.stitches.flatMap((stitch) => drawStitch(path, stitch, at)));
   const marks = [...skins, ...dents, ...stitches];
   return marks.length === 0 ? undefined : el('g', { id: 'evidence', 'stroke-width': STITCH_WIDTH }, marks);
 }
@@ -422,7 +336,7 @@ function toward(from: Position, to: { readonly x: number; readonly y: number }, 
  * lying on one another, its ends pulled back to each organelle's edge so
  * the arrowhead lands on the rim.
  */
-function drawEdge(edge: ExceptionalEdge, from: Position, to: Position): Markup | undefined {
+function drawEdge(edge: SceneWeather['edges'][number], from: Position, to: Position): Markup | undefined {
   const dx = to.x - from.x;
   const dy = to.y - from.y;
   if (dx === 0 && dy === 0) return undefined;
@@ -440,126 +354,34 @@ function drawEdge(edge: ExceptionalEdge, from: Position, to: Position): Markup |
 }
 
 /** The exceptional edges, the only lines on the map (§5.1): a boundary crossed, a cycle, or a cross-cell import this change introduced. */
-function drawEdges(terrain: Terrain, layout: Layout): Markup | undefined {
-  const edges = [...terrain.edges_exceptional]
-    .toSorted((a, b) => byPath(a.from, b.from) || byPath(a.to, b.to) || byPath(a.kind, b.kind))
-    .flatMap((edge) => {
-      const from = layout.positions[edge.from];
-      const to = layout.positions[edge.to];
-      const drawn = from === undefined || to === undefined ? undefined : drawEdge(edge, from, to);
-      return drawn === undefined ? [] : [drawn];
-    });
+function drawEdges(weather: SceneWeather, layout: Layout): Markup | undefined {
+  const edges = weather.edges.flatMap((edge) => {
+    const from = layout.positions[edge.from];
+    const to = layout.positions[edge.to];
+    const drawn = from === undefined || to === undefined ? undefined : drawEdge(edge, from, to);
+    return drawn === undefined ? [] : [drawn];
+  });
   return edges.length === 0 ? undefined : el('g', { id: 'edges', fill: 'none', 'stroke-width': EDGE_WIDTH }, edges);
 }
 
 /** Missing co-change ghosts (§5.2): a dashed outline just outside each untouched file that usually changes with these. */
-function drawGhosts(ghosts: readonly Ghost[], layout: Layout): Markup | undefined {
-  const outlines = [...ghosts]
-    .toSorted((a, b) => byPath(a.path, b.path))
-    .flatMap((ghost) => {
-      const at = layout.positions[ghost.path];
-      if (at === undefined) return [];
-      return [
-        el('circle', {
-          'data-id': ghost.path,
-          'data-with': ghost.with.join(' '),
-          'data-rate': ghost.rate,
-          cx: at.x,
-          cy: at.y,
-          r: at.r + GHOST_PAD,
-        }),
-      ];
-    });
+function drawGhosts(weather: SceneWeather, layout: Layout): Markup | undefined {
+  const outlines = placedFiles(weather, layout).flatMap(({ file, at }) =>
+    file.ghost === undefined
+      ? []
+      : [
+          el('circle', {
+            'data-id': file.path,
+            'data-with': file.ghost.with.join(' '),
+            'data-rate': file.ghost.rate,
+            cx: at.x,
+            cy: at.y,
+            r: at.r + GHOST_PAD,
+          }),
+        ],
+  );
   if (outlines.length === 0) return undefined;
   return el('g', { id: 'ghosts', fill: 'none', stroke: GHOST_STROKE, 'stroke-dasharray': GHOST_DASH }, outlines);
-}
-
-/**
- * Where a red slot's named file sits on the field: its cell; for a test
- * file, which has no cell (D4), the cells of the files it stitches; else
- * its shore group. A path the map cannot place hangs nothing.
- */
-function placesOf(scope: readonly string[], terrain: Terrain, stitches: readonly Stitch[]): readonly string[] {
-  const cellOf = new Map(terrain.organelles.map((organelle) => [organelle.id, organelle.cell] as const));
-  const groupOf = new Map(terrain.groups.flatMap((group) => group.files.map((file) => [file, group.id] as const)));
-  const stitchedBy = new Map(stitches.map((stitch) => [stitch.test, stitch.targets] as const));
-  const places = scope.flatMap((path): readonly string[] => {
-    const cell = cellOf.get(path);
-    if (cell !== undefined) return [cell];
-    const targets = stitchedBy.get(path);
-    if (targets !== undefined) {
-      return targets.flatMap((target) => {
-        const stitched = cellOf.get(target);
-        return stitched === undefined ? [] : [stitched];
-      });
-    }
-    const group = groupOf.get(path);
-    return group === undefined ? [] : [group];
-  });
-  return [...new Set(places)].toSorted(byPath);
-}
-
-/** The topmost point of a contour, leftmost on a tie: where a storm hangs. */
-function topOf(contour: Contour): readonly [number, number] | undefined {
-  let top: readonly [number, number] | undefined;
-  for (const point of contour) {
-    if (top === undefined || point[1] < top[1] || (point[1] === top[1] && point[0] < top[0])) top = point;
-  }
-  return top;
-}
-
-/** A red slot over one place, and whether it is the change's there or standing state (D68). */
-type Storm = { readonly slot: string; readonly place: string; readonly change: boolean };
-
-/** A storm with the point its bolt hangs at. */
-export type HungStorm = Storm & { readonly x: number; readonly y: number };
-
-/**
- * The storms, from core's split of the red slots as the map records it (D67,
- * D73): each slot is the change's over every place a changed file it is on
- * the change through sits on, and standing state over every other place the
- * files it names sit on. A global slot names no file, so it hangs nothing;
- * the HUD counts it instead (D68). The change's storms come first, each list
- * in slot name order (C3).
- */
-function stormsOf(weather: Weather, terrain: Terrain): readonly Storm[] {
-  const stitches = weather.evidence.stitches ?? [];
-  const red = readRedSplit(weather.checks.slots);
-  const change = red.change.flatMap((slot) =>
-    placesOf(slot.change, terrain, stitches).map((place): Storm => ({ slot: slot.name, place, change: true })),
-  );
-  const standing = [...red.change, ...red.standing]
-    .toSorted((a, b) => byPath(a.name, b.name))
-    .flatMap((slot) => {
-      const onChange = new Set(placesOf(slot.change, terrain, stitches));
-      return placesOf(slot.named, terrain, stitches)
-        .filter((place) => !onChange.has(place))
-        .map((place): Storm => ({ slot: slot.name, place, change: false }));
-    });
-  return [...change, ...standing];
-}
-
-/**
- * Each storm hung above the top of its place's contour, stacked where two
- * hang over one place in the order they come, so the change's red sits
- * nearest the cell and the grey stacks above it. A place with no contour
- * hangs nothing.
- */
-function hang(storms: readonly Storm[], layout: Layout): readonly HungStorm[] {
-  const contours = layout.contours ?? {};
-  const rows = new Map<string, number>();
-  return storms.flatMap((storm) => {
-    const top = topOf(contours[storm.place] ?? []);
-    if (top === undefined) return [];
-    const row = rows.get(storm.place) ?? 0;
-    rows.set(storm.place, row + 1);
-    return [{ ...storm, x: top[0], y: top[1] - STORM_LIFT - row * STORM_ROW }];
-  });
-}
-
-/** Every storm the map hangs, the change's first, each at the point its bolt is drawn: where the practice map points its callouts. */
-export function stormsHung(map: MapJson, layout: Layout): readonly HungStorm[] {
-  return hang(stormsOf(map.weather, map.terrain), layout);
 }
 
 /**
@@ -567,7 +389,7 @@ export function stormsHung(map: MapJson, layout: Layout): readonly HungStorm[] {
  * name to its right, over each cell or shore group where a red slot names a
  * changed file. A skipped slot is not red, and a green one is no storm.
  */
-function drawStorms(storms: readonly HungStorm[]): Markup | undefined {
+function drawStorms(storms: readonly Storm[]): Markup | undefined {
   const bolts = storms
     .filter((storm) => storm.change)
     .map((storm) =>
@@ -593,7 +415,7 @@ function drawStorms(storms: readonly HungStorm[]): Markup | undefined {
  * touch is terrain, not weather, so its bolt is smaller, graphite, and
  * carries no label, the way §5.3 keeps unchanged terrain greyscale.
  */
-function drawStandingStorms(storms: readonly HungStorm[]): Markup | undefined {
+function drawStandingStorms(storms: readonly Storm[]): Markup | undefined {
   const bolts = storms
     .filter((storm) => !storm.change)
     .map((storm) =>
@@ -617,16 +439,16 @@ function drawStandingStorms(storms: readonly HungStorm[]): Markup | undefined {
  * layer with nothing to draw is left out rather than emptied (C2).
  */
 export function drawWeather(map: MapJson, layout: Layout): Markup {
-  const storms = stormsHung(map, layout);
+  const weather = weatherOf(map);
   const layers = [
-    drawStandingStorms(storms),
-    drawReach(map.weather, map.terrain, layout),
-    drawChanged(map.weather.changed, layout),
+    drawStandingStorms(weather.storms),
+    drawReach(weather, layout),
+    drawChanged(weather, layout),
     drawHistory(map.terrain, layout),
-    drawEvidence(map.weather.evidence, layout),
-    drawEdges(map.terrain, layout),
-    drawGhosts(map.weather.ghosts, layout),
-    drawStorms(storms),
+    drawEvidence(weather, layout),
+    drawEdges(weather, layout),
+    drawGhosts(weather, layout),
+    drawStorms(weather.storms),
   ].flatMap((layer) => (layer === undefined ? [] : [layer]));
   return el('g', { id: 'weather' }, [drawDefs(), ...layers]);
 }

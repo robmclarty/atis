@@ -27,6 +27,7 @@ import {
   INTEGRITY_GAP_WIDTH,
   INTEGRITY_PAD,
   MUTANT_NOTCH_SPACING,
+  weatherOf,
 } from 'scene';
 
 import type { Box, Chrome } from './chrome.js';
@@ -34,7 +35,6 @@ import { el } from './el.js';
 import type { Markup } from './el.js';
 import { LEGEND, drawBalloon } from './legend.js';
 import { drawSheet, frameOf } from './render.js';
-import { stormsHung } from './weather.js';
 
 type Point = readonly [number, number];
 
@@ -137,8 +137,8 @@ function findStitches(sheet: Sheet): Anchor | undefined {
 }
 
 /** The first bolt of the change's storms, or of the standing ones, its balloon to the left since a red bolt's slot is written to its right. */
-function findBolt({ map, layout, chrome }: Sheet, change: boolean): Anchor | undefined {
-  const storm = stormsHung(map, layout).find((hung) => hung.change === change);
+function findBolt({ map, chrome }: Sheet, change: boolean): Anchor | undefined {
+  const storm = weatherOf(map).storms.find((hung) => hung.change === change);
   return storm === undefined ? undefined : { at: [storm.x, storm.y + chrome.worldY], toward: [-1, 0] };
 }
 

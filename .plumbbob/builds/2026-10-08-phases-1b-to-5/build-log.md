@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 26 — feat(scene): derive the weather each organelle carries
+**Current step:** 88 — refactor(svg): draw the still map's weather from the scene's derivations
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -52,7 +52,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 23. chore(repo): add the scene library and the web app to the workspace
 - ☑ 24. feat(scene): build the heightfield from depth, stability and mass
 - ☑ 25. feat(scene): triangulate membranes and lay out organelle instances
-- ☐ 26. feat(scene): derive the weather each organelle carries
+- ☑ 26. feat(scene): derive the weather each organelle carries
 - ☐ 27. feat(scene): place labels per level of detail without collisions
 - ☐ 28. feat(scene): plan levels of detail with hysteresis and cross-fades
 - ☐ 29. feat(scene): schedule every animation inside the motion budget
@@ -828,3 +828,4 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-24 — step 98 checkpointed · 5ea422332 — feat(core): record each file's import ties inside and outside its cell (2m)
 - 2026-10-24 — step 24 checkpointed · 4f65d8615 — feat(scene): build the heightfield from depth, stability and mass (1 drift, 6m)
 - 2026-10-24 — step 25 checkpointed · bcd9a4ed2 — feat(scene): triangulate membranes and lay out organelle instances (4m)
+- 2026-10-24 — step 26 checkpointed · cae7a4574 — feat(scene): derive the weather each organelle carries (1 drift, 6m)
