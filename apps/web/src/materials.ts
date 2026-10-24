@@ -52,6 +52,25 @@ export type BloomLook = {
 
 export const BLOOM: BloomLook = { strength: 0.9, radius: 0.5, threshold: 0 };
 
+/**
+ * The weather's light in the world (D151): how much the reach lights the skin
+ * and how much of that the bloom sees (a fifth, so a broad reach stays a
+ * luminance and not a fog), how much brighter the reach reads over a cell's
+ * body than in the crease between, how far the reach is softened in samples,
+ * the share of a mark's light the bloom sees, and of a ribbon's.
+ */
+export type WeatherLook = {
+  readonly reachGain: number;
+  readonly reachBloom: number;
+  readonly reachBodyGain: number;
+  readonly reachSoften: number;
+  readonly markBloom: number;
+  readonly ribbonBloom: number;
+};
+
+// The reach's gain starts under the spike's 1.05: under AgX, added to the lit albedo and bloomed, that read as a white wash where the sheet lays a warm tint, so it opens lower for the panel to tune (D156).
+export const WEATHER: WeatherLook = { reachGain: 0.7, reachBloom: 0.2, reachBodyGain: 1.1, reachSoften: 2, markBloom: 1, ribbonBloom: 0.3 };
+
 /** The lights: the key, the ambient, and the sky's strength in the sheen. */
 export type Lighting = {
   /** The key light's colour, its strength at the surface, and where it shines from, relative to the layout's centre. */

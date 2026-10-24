@@ -7,7 +7,12 @@
  * mesh on it; and one render loop, which asks the scheduler for every frame
  * (step 29, C12): the settle's amplitude and lift, and the levels of detail,
  * which keep the key light and the sky off at the far field and bring them,
- * and the organelles, up as the surface resolves. The frame goes through one
+ * the organelles and the weather's surface marks up as the surface resolves,
+ * the change's stains alone lighting the far field (§5.6). The weather is
+ * step 26's derivation drawn: the reach in the skin, every mark on a file as
+ * one instanced mesh, the storms as bolts, the exceptional edges as ribbons,
+ * and the slot names and old paths as flat tags over the canvas (step 33).
+ * The frame goes through one
  * post-processing pass whose bloom reads the emissive target alone, so base
  * tissue never blooms and only a state's light does (D11, D12, D152). Every
  * material and the scheduler read their tokens through the registry (D156):
@@ -17,18 +22,24 @@
  * when the skin has settled, for the smoke test and a screenshot to wait on.
  */
 
-import { AgXToneMapping, AmbientLight, Color, DirectionalLight, RenderPipeline, Scene, Vector3, WebGPUCoordinateSystem, WebGPURenderer } from 'three/webgpu';
+import { AgXToneMapping, AmbientLight, Color, DataUtils, DirectionalLight, RenderPipeline, Scene, Vector3, WebGPUCoordinateSystem, WebGPURenderer } from 'three/webgpu';
 import { emissive, mrt, output, pass } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
-import { FIELD_FILL, MOTION_TOKENS, RELIEF, createScheduler, gridFor } from 'scene';
+import { FIELD_FILL, MOTION_TOKENS, REACH_ORIGIN_OPACITY, RELIEF, createScheduler, gridFor } from 'scene';
 import type { MapJson } from 'core';
 
 import { RAIL_WIDTH } from '../fit.js';
-import { BLOOM, LIGHTING, SKIN, SKY } from '../materials.js';
+import { marksOf } from '../marks.js';
+import { BLOOM, LIGHTING, SKIN, SKY, WEATHER } from '../materials.js';
 import type { Registry } from '../registry.js';
 import type { View } from '../view.js';
+import { createBolts } from './bolts.js';
 import { createCamera, frameCamera } from './camera.js';
+import { createLabels } from './labels.js';
 import { ORGANELLE_LOOK, createOrganelles } from './organelles.js';
+import { PALETTE_LOOK, createPalette } from './palette.js';
+import { createRibbons } from './ribbons.js';
+import { createSectors } from './sectors.js';
 import { RESOLUTION, createSkin } from './skin.js';
 import { createSky } from './sky.js';
 
@@ -41,8 +52,9 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   const skyLook = registry.view(SKY, 'SKY');
   const skinLook = registry.view(SKIN, 'SKIN');
   const bloomLook = registry.view(BLOOM, 'BLOOM');
+  const weatherLook = registry.view(WEATHER, 'WEATHER');
   const relief = registry.view(RELIEF, 'RELIEF');
-  const tokens = registry.view({ ...MOTION_TOKENS, FIELD_FILL, ...ORGANELLE_LOOK });
+  const tokens = registry.view({ ...MOTION_TOKENS, FIELD_FILL, REACH_ORIGIN_OPACITY, ...ORGANELLE_LOOK, ...PALETTE_LOOK });
 
   const renderer = new WebGPURenderer({ canvas, antialias: true, forceWebGL: view.backend === 'webgl' });
   await renderer.init();
@@ -63,10 +75,27 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   scene.add(key, key.target);
   const ambient = new AmbientLight(lighting.ambient, lighting.ambientIntensity);
   scene.add(ambient);
-  const skin = createSkin(map, skinLook, relief);
+  const skin = createSkin(map, skinLook, weatherLook, tokens, relief);
   scene.add(skin.mesh);
-  const organelles = createOrganelles(map, skin.relief, gridFor(map, RESOLUTION), skin.amp, skin.lift, tokens);
+  const grid = gridFor(map, RESOLUTION);
+  const organelles = createOrganelles(map, skin.relief, grid, skin.amp, skin.lift, tokens);
   scene.add(...organelles.meshes);
+  const palette = createPalette(tokens);
+  const marks = marksOf(map);
+  const sectors = createSectors(marks.sectors, skin.relief, grid, skin.amp, skin.lift, organelles.surface, palette);
+  const bolts = createBolts(marks.bolts, skin.relief, grid, skin.amp, skin.lift, organelles.surface, palette);
+  const ribbons = createRibbons(marks.ribbons, skin.relief, grid, skin.amp, skin.lift, organelles.surface, palette);
+  scene.add(sectors.mesh, ribbons.mesh, bolts.mesh);
+  // The tags over the canvas: a layer of their own between the canvas and the chrome, at each point's resting height on the skin.
+  const heightAt = (x: number, y: number): number => {
+    const column = Math.min(grid.columns - 1, Math.max(0, Math.round(x / grid.resolution)));
+    const row = Math.min(grid.rows - 1, Math.max(0, Math.round(y / grid.resolution)));
+    const field = skin.relief.image.data;
+    const i = (row * grid.columns + column) * 4;
+    return field instanceof Uint16Array ? DataUtils.fromHalfFloat(field[i] ?? 0) + DataUtils.fromHalfFloat(field[i + 1] ?? 0) : 0;
+  };
+  const labels = createLabels(marks.labels, heightAt, palette);
+  canvas.after(labels.element);
 
   // The frame through one pass with an emissive target beside its colour, and the bloom over that target alone (D152).
   const post = new RenderPipeline(renderer);
@@ -120,6 +149,10 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     skin.restyle();
     organelles.surface.value = surface;
     organelles.restyle();
+    palette.restyle();
+    sectors.bloom.value = weatherLook.markBloom;
+    bolts.bloom.value = weatherLook.markBloom;
+    ribbons.bloom.value = weatherLook.ribbonBloom;
     background.set(tokens.FIELD_FILL);
     key.color.set(lighting.key);
     key.position.set(...lighting.keyFrom).multiplyScalar(CAMERA_REACH).add(centre);
@@ -131,6 +164,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     glow.radius.value = bloomLook.radius;
     glow.threshold.value = bloomLook.threshold;
     post.render();
+    labels.render(camera, canvas.clientWidth, canvas.clientHeight, surface);
     if (frame.lift === 0) canvas.dataset['world'] = 'settled';
   });
 };

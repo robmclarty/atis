@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 32 — feat(web): draw cells and organelles, and the shore in a rail
+**Current step:** 33 — feat(web): draw the weather
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -58,7 +58,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 29. feat(scene): schedule every animation inside the motion budget
 - ☑ 30. feat(web): render the field and the soft skin from a served map
 - ☑ 31. feat(cli): serve the world and open it in a tab
-- ☐ 32. feat(web): draw cells and organelles, and the shore in a rail
+- ☑ 32. feat(web): draw cells and organelles, and the shore in a rail
 - ☐ 33. feat(web): draw the weather
 - ☐ 34. feat(web): draw the notices with their labels and leaders
 - ☐ 35. feat(web): render the HUD's grade blocks
@@ -960,3 +960,4 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-24 — step 97 checkpointed · 703aa52df — feat(web): add a hidden dev panel that tunes every token live (1 drift, 23m)
 - 2026-10-24 — step 31 checkpointed · fda74e3e1 — feat(cli): serve the world and open it in a tab (1 drift, 9m)
 - 2026-10-24 — step 100 checkpointed · 8be6a3389 — feat(svg): open each touched shore block on a grid of its files (1 drift, 6m)
+- 2026-10-24 — step 32 checkpointed · 2045a4c70 — feat(web): draw cells and organelles, and the shore in a rail (17m)

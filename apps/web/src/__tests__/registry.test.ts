@@ -6,7 +6,7 @@ import * as scene from 'scene';
 import { MOTION_TOKENS, createScheduler } from 'scene';
 import { expect, test } from 'vitest';
 
-import { BLOOM, LIGHTING, SKIN, SKY } from '../materials.js';
+import { BLOOM, LIGHTING, SKIN, SKY, WEATHER } from '../materials.js';
 import { MATERIALS_TITLE, SECTIONS, createRegistry, kindOf } from '../registry.js';
 import type { Store } from '../registry.js';
 
@@ -49,9 +49,9 @@ test("the panel's sections are the design doc's headings, each listing its table
 /** A material object's fields as the registry names them. */
 const fields = (object: string, from: object): string[] => Object.keys(from).map((field) => `${object}.${field}`);
 
-test("the materials section lists every field of the world's skin, lights, sky, bloom and relief", () => {
+test("the materials section lists every field of the world's skin, lights, sky, bloom, weather and relief", () => {
   const section = SECTIONS.find((each) => each.title === MATERIALS_TITLE);
-  expect(section?.names).toEqual([...fields('SKIN', SKIN), ...fields('LIGHTING', LIGHTING), ...fields('SKY', SKY), ...fields('BLOOM', BLOOM), ...fields('RELIEF', scene.RELIEF)]);
+  expect(section?.names).toEqual([...fields('SKIN', SKIN), ...fields('LIGHTING', LIGHTING), ...fields('SKY', SKY), ...fields('BLOOM', BLOOM), ...fields('WEATHER', WEATHER), ...fields('RELIEF', scene.RELIEF)]);
 });
 
 test('every listed token rests at a value, named once', () => {
