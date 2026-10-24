@@ -1,8 +1,9 @@
 /**
  * tokens: every colour, stroke, font and size the still renderer draws with,
- * each named by what it means rather than by what it looks like (P3, C11).
- * This file is the single source those numbers are read from; step 21 writes
- * `docs/design.md` from it.
+ * each named by what it means rather than by what it looks like (P3, C11),
+ * and the motion the moving world times its animations with (D51). This file
+ * is the single source those numbers are read from; `docs/design.md` is
+ * written from it.
  *
  * Everything here is base tissue, and base tissue is greyscale and dim (§5.6,
  * D11): a near-black field, graphite terraces, membranes and organelles in a
@@ -251,3 +252,65 @@ export const CALLOUT_REACH = 22;
 export const CALLOUT_FONT_SIZE = 7;
 /** The clear ground a balloon keeps round it: off a notice's marks, the column, the HUD strip and every other balloon. */
 export const CALLOUT_CLEARANCE = 2;
+
+/**
+ * Motion (§5.5, D51): the timings, intensities and spring constants the
+ * world's scheduler animates with, beside the colours so the still and the
+ * moving renderer read one file. The still SVG draws none of them (C10).
+ * Motion means urgency (C11), and its budget is §5.5's: one continuous mover
+ * (the primary's breathing), at most one flare in flight, transients of
+ * 600 ms or less and cross-fades of 300 ms or less (C12). Each value is
+ * where the materials spike left it; a balance patch moves it, and
+ * `docs/design.md`'s motion table logs the patch (Q3). Durations are in
+ * milliseconds.
+ */
+
+/**
+ * The load settle, the one moment the whole surface moves: the skin drops
+ * from this far above the terrain, in the heightfield's units, onto it
+ * inside this long, on a spring with this damping ratio, so it lands with a
+ * small overshoot rather than a bounce.
+ */
+export const SETTLE_MS = 400;
+export const SETTLE_LIFT = 18;
+export const SETTLE_DAMPING = 0.72;
+
+/**
+ * A flare, the loud channel, spent deliberately: a burst this long that adds
+ * this many times a notice's own light at its peak and swells its glow by
+ * this share. The primary flares once on load, then at random.
+ */
+export const FLARE_MS = 600;
+export const FLARE_GAIN = 3;
+export const FLARE_GROW = 0.45;
+
+/** The primary's breathing, the one continuous mover: its glow swells and shrinks by this share of its radius, once each period. */
+export const BREATHE_PERIOD_MS = 2000;
+export const BREATHE_AMPLITUDE = 0.03;
+
+/**
+ * Random flares: the primary's next comes after a wait drawn between these
+ * two; a secondary's comes rarer, between these, at this share of the
+ * primary's intensity. Tertiaries and everything else never flare.
+ */
+export const PRIMARY_FLARE_MIN_MS = 8000;
+export const PRIMARY_FLARE_MAX_MS = 20000;
+export const SECONDARY_FLARE_MIN_MS = 40000;
+export const SECONDARY_FLARE_MAX_MS = 90000;
+export const SECONDARY_FLARE_GAIN = 0.5;
+
+/**
+ * The jiggle when the camera lands on a cell or a cell opens: the skin's
+ * relief swings by this share at this frequency, and the swing decays
+ * through this many e-folds across this long, so it is at rest by the time
+ * it stops. A transient; it never repeats on its own.
+ */
+export const JIGGLE_MS = 600;
+export const JIGGLE_AMPLITUDE = 0.22;
+export const JIGGLE_HZ = 3.2;
+export const JIGGLE_DECAY = 4.5;
+
+/** The eases: a hover's highlight, a fly-to from a notice, and the cross-fade between levels of detail, which is never a blink. */
+export const HOVER_MS = 100;
+export const FLY_TO_MS = 400;
+export const LOD_FADE_MS = 300;

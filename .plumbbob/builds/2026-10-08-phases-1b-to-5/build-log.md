@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** none (at the boundary)
+**Current step:** 22 — docs(design): record the materials spike's verdict and motion tokens
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -47,7 +47,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 92. fix(core): tell a mutant no test reached from one that survived
 - ☑ 19. chore(fixtures): select and generate the corpus's held-out half
 - ☑ 20. chore(glance): read five held-out maps blind on the SVG
-- ☐ 21. docs(inspiration): cite the corpus repos
+- ☑ 21. docs(inspiration): cite the corpus repos
 - ☐ 22. docs(design): record the materials spike's verdict and motion tokens
 - ☐ 23. chore(repo): add the scene library and the web app to the workspace
 - ☐ 24. feat(scene): build the heightfield from depth, stability and mass
@@ -685,3 +685,54 @@ folder, so it rides the branch into the PR.)*
   - **A re-export's line (P9):** no held-out map is LIFR, so P9 never bore on the reading.
 
   The interface notices took the place those reds left.
+
+- 2026-10-24 — step 21 checkpointed · 1cd481818 — docs(inspiration): cite the corpus repos
+- 2026-10-24 — range 6 of 24's stop recorded — wave 0's boundary: settle the reading's result and its parks (the encodings wait for a working system, [D144 (working-system-first)](#d144)), then run `/plumbbob:spike materials` ([D89 (spike-on-a-fixture)](#d89)), whose verdict step 22 records
+
+  **Summary**: Range 6 landed step 21, which closes wave 0. The fixtures section of `docs/inspiration.md` now credits the twelve precision-corpus repos, one row each, and says what was taken: the tree at the fixture commit and the reviewer's words as ground truth. No row claims code. The second retake's result and all its parks were settled at step 20's boundary, so no park is open on this card.
+
+  1. Each of the twelve corpus repos has a row with its link, licence, PR, fixture commit and the reviewer whose words are the truth
+  2. Two licences differ from what GitHub reports today, and their rows say so
+  3. The first full check failed only on test timeouts while the machine was heavily loaded, then passed in full when the step landed
+  4. The reading's result and its parks were settled before this range began
+
+  **Readout**:
+
+  ```text
+  steps        1 of 1 landed
+               - 21 1cd4818
+  check        green: 1 of 1 checks, 1 landing
+  done-when    met
+  decisions    2 of 2 honored
+  constraints  14 of 14 honored
+  seam         held: 1 of 1 steps, no strays
+  diff         +26 -0 across 1 file
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Confirm the range, then run `/plumbbob:spike materials` before range 7. D144 already settled the reading, so the spike is the only thing left of this stop: per D89 (spike-on-a-fixture), it runs in a throwaway worktree on a retake fixture's real `map.json`, and step 22 (model: fable) records its verdict and the motion tokens.
+
+  **1.** Each of the twelve corpus repos has a row with its link, licence, PR, fixture commit and the reviewer whose words are the truth
+
+  A new paragraph after the retake's table explains what the precision corpus (D88) read. Every repo was one that neither round one nor the retake had used. The tuning half was six holds and the held-out half was three holds and three merges, and five held-out maps were read blind. From each repo atis took two things and no code: the tree at the fixture commit, scanned into `map.json` and drawn as `atis.svg`, and a human reviewer's words, quoted in `truth.md`. No tooling names were taken, so the shore table is as the retake left it.
+
+  The table that follows has the retake table's four columns. Each "what was taken" cell names the reviewer and which of their words count: the review body, the inline comments it rests on, or an approval. Each "where" cell links to the fixture's folder and its row or copy letter in `glance-test.md`. `corpus-9` is marked as scored but not read.
+
+  **2.** Two licences differ from what GitHub reports today, and their rows say so
+
+  Each licence was read from the tree's own licence file at its fixture commit, not from GitHub's repository metadata.
+
+  MCP Inspector was MIT, Anthropic, PBC, at its fixture commit. Its licence file at head now describes a move to Apache-2.0, and GitHub reports "Other".
+
+  inngest-js has no licence file at its root. Each package under `packages/` carries an Apache-2.0 `LICENSE.md`, and `packages/inngest`'s `package.json` says Apache-2.0. Two examples carry their own MIT licence. GitHub's metadata nonetheless reports GPL-3.0.
+
+  The other ten match GitHub's metadata: eight are MIT, and matrix-js-sdk and discord.js are Apache-2.0. Where an Apache licence file names no copyright holder, the holder comes from the source headers: The Matrix.org Foundation C.I.C. for matrix-js-sdk.
+
+  **3.** The first full check failed only on test timeouts while the machine was heavily loaded, then passed in full when the step landed
+
+  The first `plumbbob check` failed four tests, each on vitest's 5-second timeout after running 10 to 21 seconds, in the svg, legend, git-log and shapes suites. At the time the load average was 41: a VM, Zed and an `rg` were taking most of the CPU. A doc-only diff cannot reach those tests. The test slot alone then passed 446 of 446, and the checkpoint's own gate passed every slot in 26 seconds. No test was changed.
+
+  **4.** The reading's result and its parks were settled before this range began
+
+  Step 20's boundary recorded all six of its parks. P10 to P14 are tangents. P15 was folded in as D144 (working-system-first): the second retake's encodings stay parked until atis works on code Rob knows, and no refine runs before wave 1. All fifteen parks in the list are closed, so this card has nothing to classify. What remains of the stop is the materials spike.
