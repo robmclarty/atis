@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import { assertMap } from 'core';
 import type { MapJson } from 'core';
-import { ARROW_SIZE, CROSSING_PAD, GHOST_PAD, INTEGRITY_GAP_WIDTH, INTEGRITY_PAD, MUTANT_NOTCH_DEPTH, STANDING_STORM_SCALE, STITCH_LENGTH, STITCH_TEAR, STORM_LABEL_GAP, weatherOf } from 'scene';
+import { ARROW_SIZE, CROSSING_PAD, EMPHASIS_PAD, GHOST_PAD, INTEGRITY_GAP_WIDTH, INTEGRITY_PAD, MUTANT_NOTCH_DEPTH, PRIMARY_RING_WIDTH, SECONDARY_RING_WIDTH, STANDING_STORM_SCALE, STITCH_LENGTH, STITCH_TEAR, STORM_LABEL_GAP, weatherOf } from 'scene';
 import { expect, test } from 'vitest';
 
 import { HUES, marksOf } from '../marks.js';
@@ -181,9 +181,46 @@ test('an exceptional edge is a ribbon along the bow, pulled back to each file, w
   });
 });
 
-test('the hues a mark can name are the nine the palette holds, and a map with no weather has no marks', () => {
-  expect(HUES).toHaveLength(9);
+test('the hues a mark can name are the eleven the palette holds, and a map with no weather or notices has no marks', () => {
+  expect(HUES).toHaveLength(11);
   const unhistoried = DEMO.terrain.organelles.map(({ churn_ratio: _churn, bugfix_rate: _bugfix, ...organelle }) => organelle);
-  const quiet: MapJson = { ...DEMO, terrain: { ...DEMO.terrain, organelles: unhistoried, edges_exceptional: [] }, weather: { ...DEMO.weather, changed: [], reach: [], ghosts: [], evidence: {}, checks: { ...DEMO.weather.checks, slots: [] } } };
+  const quiet: MapJson = { ...DEMO, terrain: { ...DEMO.terrain, organelles: unhistoried, edges_exceptional: [] }, weather: { ...DEMO.weather, changed: [], reach: [], ghosts: [], evidence: {}, checks: { ...DEMO.weather.checks, slots: [] } }, notices: [] };
   expect(marksOf(quiet)).toEqual({ sectors: [], bolts: [], ribbons: [], labels: [] });
+});
+
+test("a notice's target wears its tier's emphasis: the primary a halo and a thin ring in the category hue, a secondary a thick ring in the leaders' grey, a tertiary nothing, and each follows its notice's light (§5.4, D72, D148)", () => {
+  const { sectors } = marksOf(DEMO);
+  const at = DEMO.terrain.layout?.positions['libs/core/src/pm/index.ts'];
+  const halos = ofKind(sectors, 'halo');
+  expect(halos.map((halo) => [halo.path, halo.hue, halo.inner, halo.outer, halo.notice, halo.far, halo.bloom])).toEqual([['libs/core/src/pm/index.ts', 'category', -(at?.r ?? 0), EMPHASIS_PAD, 0, true, 1]]);
+  const rings = ofKind(sectors, 'ring');
+  expect(rings.map((ring) => [ring.path, ring.hue, ring.outer - ring.inner, (ring.inner + ring.outer) / 2, ring.notice, ring.bloom, ring.far])).toEqual([['libs/core/src/pm/index.ts', 'category', PRIMARY_RING_WIDTH, EMPHASIS_PAD, 0, 0, false]]);
+
+  // A noticed file's own stain follows its notice's light; every other mark rests.
+  const stains = [...ofKind(sectors, 'stain'), ...ofKind(sectors, 'outline')];
+  expect(stains.find((stain) => stain.path === 'libs/core/src/pm/index.ts')?.notice).toBe(0);
+  expect(stains.find((stain) => stain.path === 'libs/core/src/pm/tools.ts')?.notice).toBe(5);
+  expect(stains.find((stain) => stain.path === 'libs/core/src/pm/legacy.ts')?.notice).toBe(-1);
+  for (const sector of sectors) if (sector.kind !== 'stain' && sector.kind !== 'halo' && sector.kind !== 'ring') expect(sector.notice).toBe(-1);
+
+  // The halo lies over the stains and under the evidence; the rings lie over everything.
+  const kinds = sectors.map((sector) => sector.kind);
+  expect(kinds.indexOf('halo')).toBeGreaterThan(kinds.lastIndexOf('stain'));
+  expect(kinds.indexOf('halo')).toBeLessThan(kinds.indexOf('hairline'));
+  expect(kinds.lastIndexOf('ring')).toBe(kinds.length - 1);
+
+  // A secondary on a file of its own: the thick grey ring, following the secondary's light, and no halo.
+  const shared = { ...DEMO, notices: DEMO.notices.map((notice, index) => (index === 1 ? { ...notice, target: 'libs/core/src/pm/tools.ts' } : notice)) };
+  const tools = ofKind(marksOf(shared).sectors, 'ring').find((ring) => ring.path === 'libs/core/src/pm/tools.ts');
+  expect(tools?.hue).toBe('leader');
+  expect((tools?.outer ?? 0) - (tools?.inner ?? 0)).toBeCloseTo(SECONDARY_RING_WIDTH, 10);
+  expect(tools?.notice).toBe(1);
+  expect(ofKind(marksOf(shared).sectors, 'halo')).toHaveLength(1);
+
+  // A notice on a shore file draws nothing on the field: its box hangs in the rail.
+  const ashore = { ...DEMO, notices: DEMO.notices.map((notice) => ({ ...notice, target: 'README.md' })) };
+  expect(ofKind(marksOf(ashore).sectors, 'halo')).toHaveLength(0);
+  expect(ofKind(marksOf(ashore).sectors, 'ring')).toHaveLength(0);
+  expect(HUES).toContain('category');
+  expect(HUES).toContain('leader');
 });

@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 33 — feat(web): draw the weather
+**Current step:** 34 — feat(web): draw the notices with their labels and leaders
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -59,7 +59,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 30. feat(web): render the field and the soft skin from a served map
 - ☑ 31. feat(cli): serve the world and open it in a tab
 - ☑ 32. feat(web): draw cells and organelles, and the shore in a rail
-- ☐ 33. feat(web): draw the weather
+- ☑ 33. feat(web): draw the weather
 - ☐ 34. feat(web): draw the notices with their labels and leaders
 - ☐ 35. feat(web): render the HUD's grade blocks
 - ☐ 36. feat(web): open each HUD block's parts on click
@@ -147,6 +147,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] Rob, after the second retake: on most of the five maps he couldn't zoom in or see details; build a coherent, working system on real code he understands first, and refine and tune the encodings later, so range 6's stop defers the four encodings instead of running D119's refine before wave 1
 - [x] The world's cell membranes carry no teeth yet: the SVG's dented ring (one tooth per rule, step 12) lives in libs/svg/src/terrain.ts, so step 25's tissue grid lays the plain contour; step 32 should move dentedRing into libs/scene so tissue() lays the dented ring both renderers draw (D86, D146)
 - [x] The shore's open blocks name their changed files but drop the spike's grid: D153 has a touched group open on its files, one small square per file with the changed ones lit, then their names, and the SVG draw the same blocks; step 96 followed D158's narrower 'changed files named', so a 50-file group with one change reads like a 1-file group. Add the grid to the band (from shoreRail's count and changed files) in a small SVG step built ahead of step 32, so the world's rail draws the same grid
+- [ ] A target with several notices wears one label per notice (demo's index.ts four times, retake-3's createOptionsProxy.ts three), since step 27's labelsFor places each notice's label on its own; weigh one label per target with its run of ranks, in libs/scene/src/labels.ts
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -961,3 +962,65 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-24 — step 31 checkpointed · fda74e3e1 — feat(cli): serve the world and open it in a tab (1 drift, 9m)
 - 2026-10-24 — step 100 checkpointed · 8be6a3389 — feat(svg): open each touched shore block on a grid of its files (1 drift, 6m)
 - 2026-10-24 — step 32 checkpointed · 2045a4c70 — feat(web): draw cells and organelles, and the shore in a rail (17m)
+- 2026-10-24 — step 33 checkpointed · 4c4a9c042 — feat(web): draw the weather (13m)
+- 2026-10-24 — range 10 of 24's stop recorded — open `atis --base main` in your own tab, with the dev panel to hand (step 97), and review the world at LOD1 before notices are labelled over it: dark tissue with its faint rim, organelles lit only by state, the shore rail, base tissue that never blooms (step 32's review), and three fixtures' weather against their SVGs, mark for mark (step 33's check)
+
+  **Summary**: The world now serves itself and draws the whole surface: `atis --base <ref>` builds the map and serves the built app and the map on loopback behind a per-run token, opening a tab that shows the dark tissue with its teeth, every file as one instanced mesh, the shore as a rail beside the terrain, bloom on emissive light alone, and the weather mark for mark with the still sheet, with a hidden panel that moves every token live and a registry every material and the scheduler read through.
+
+  1. Three steps landed a hair off their seams, each by a line or two the done-when needed
+  2. `pnpm build` fills `apps/atis/web`, and `atis --base <ref>` serves it on loopback behind a token until Ctrl-C
+  3. The surface is the spike's look rebuilt properly: tissue with teeth, instanced files, bloom on emissive alone, and the rail
+  4. The weather matches the sheet mark for mark, with one judgment for the panel: the reach's gain
+  5. Frame times: a second to settled on headless WebGL 2, and 60 fps at every zoom, with the panel's changes proven live
+
+  **Readout**:
+
+  ```text
+  steps        5 of 5 landed
+               - 97 703aa52 · 31 fda74e3 · 100 8be6a33 · 32 2045a4c · 33 4c4a9c0
+  check        green: 1 of 1 checks, 5 landings
+  done-when    met
+  decisions    honored:
+               - D156 (dev-panel)
+               - D92 (serve-and-open)
+               - D133 (served-assets)
+               - D134 (loopback-trust)
+               - D160 (shore-grid)
+               - D159 (shared-teeth)
+               - D151 (dark-wet-skin)
+               - D152 (soft-layers-as-data)
+               - D153 (shore-rail)
+               - D86 (svg-stays-the-fixture)
+               - D68 (standing-state-storms)
+  constraints  14 of 14 honored
+  seam         strayed: 7 paths outside 3 steps' seams
+               - step 97: libs/scene/src/drift.ts, libs/scene/src/motion.ts
+               - step 31: .gitignore and 3 others
+               - step 100: apps/web/src/registry.ts
+  diff         +5443 -1255 across 62 files
+  spent        71 min · green first run at every landing · 3 drift warnings
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Recommendation**: Build, open this range's own change, and judge the surface with the panel to hand before step 34 labels notices over it. `pnpm build` then `node apps/atis/dist/cli.js --repo . --base HEAD~5` with `&zoom=2` (and `&tilt=35` for the sheen) added to the opened URL shows the dark tissue, the rail and the weather on code you know, and the frames at /tmp/atis-33-*.png stand beside their sheets for the mark-for-mark check; move `WEATHER.reachGain` first, and the look you settle on rides into step 44's material tokens.
+
+  **1.** Three steps landed a hair off their seams, each by a line or two the done-when needed
+
+  Step 97 gave the scheduler a `tokens` option on `createScheduler`, `settleAt`, `flareAt`, `jiggleAt` and `driftOf` in `libs/scene`, two paths outside its seam, because the done-when has the scheduler read its tokens through the registry and its constants were module imports with no way in. Step 31 had the web app forward the page's `token` to `/map.json` (`apps/web/src/load.ts` and its test), since the server refuses the map without it, and added the copied `apps/atis/web/` to `.gitignore`. Step 100 listed its two grid tokens in the panel's registry, whose test holds the listing to the design doc's tables. Steps 32 and 33 landed plumb. Nothing in any of them is scope the plan did not ask for; they are the seams written a path short.
+
+  **2.** `pnpm build` fills `apps/atis/web`, and `atis --base <ref>` serves it on loopback behind a token until Ctrl-C
+
+  With no `--out` or `--svg`, the CLI builds the map, finds the web app in a `web/` directory beside its own `dist/`, which `pnpm build` now fills by building `apps/web` and copying it there, and serves both on 127.0.0.1 at a port the system picks, answering only its own `Host` and the map only to a token drawn per run and carried in the URL it opens; `--no-open` keeps the tab closed, SIGINT closes the server and exits 0, and with no build there the command exits 2 naming `pnpm build`. To look now: `pnpm build`, then `node apps/atis/dist/cli.js --repo . --base HEAD~5`, and add `&zoom=2` to the URL it opens, since the camera stays at the far field until step 37's controls land; `--base main` from the `main` branch itself maps an empty change, so this range's own five commits are the nearest real weather.
+
+  **3.** The surface is the spike's look rebuilt properly: tissue with teeth, instanced files, bloom on emissive alone, and the rail
+
+  The skin samples step 25's tissue grids, which now lay the dented ring the SVG draws from the same place in the scene (every golden byte-identical), with a rim where the skin slopes away and each cell's own faint light, both emissive and neither reaching the bloom. Every placed file is one instanced fan scaled per vertex by the radius its morphed outline has at that angle, draped on the relief and riding the settle, dim and flat, with a glow that is nothing at rest; the frame goes through one pass whose bloom reads the emissive target alone. The shore is a scrolled rail at the right edge from `shoreRail` and the grid, the touched groups open with their changed files named and long paths cut from the left, and the camera fits the terrain into the screen left of it.
+
+  **4.** The weather matches the sheet mark for mark, with one judgment for the panel: the reach's gain
+
+  `marks.ts` turns `weatherOf` into records a test holds to the scene's weather on three maps, and the world draws them as instanced sectors, bolts, ribbons and projected labels, their nine hues live from the registry. Against the sheets at /tmp/atis-33-{calm,red,rename}-svg.png, the frames at /tmp/atis-33-{calm,red,rename}.png carry every mark: stains with their hatching, hairlines and lit gaps, notches, stitches, dashed ghosts, deleted and renamed outlines with the old path beside, warm crossings, graphite standing bolts, red change bolts with their slots (corpus-1, at /tmp/atis-33-storms.png), and the edges as the only lines. The one thing that does not match by eye is the reach's weight: at the spike's gain of 1.05, under AgX, added to the lit albedo and bloomed, a reached cell read as a near-white wash where the sheet lays a warm tint at 0.45; it opens at 0.7 and still reads bright, so `WEATHER.reachGain` is the first token to move in the panel, and the panel copies whatever you settle as the patch step 44 records. The rename frame is retake-4 with one changed file turned into a rename, since no fixture carries one.
+
+  **5.** Frame times: a second to settled on headless WebGL 2, and 60 fps at every zoom, with the panel's changes proven live
+
+  Headless Chrome on the WebGL 2 fallback settled retake-3 in 0.9 to 1.3 s after navigation, retake-1 in 1.0 s, checkride-pr4 in 1.0 s and corpus-1 in 1.3 s, and held 60 fps, the display's cap, over two seconds at zoom 1, 2 and 6 and tilted to 35°, with a clean console on every frame. The dev panel's instrument was proven in the same browser: a skin colour moved the frame on the next frame, survived a reload, opened by its key combination in the published build, and reset to the exact resting frame; the panel's code is its own chunk, fetched only when opened.

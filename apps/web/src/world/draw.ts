@@ -12,7 +12,12 @@
  * step 26's derivation drawn: the reach in the skin, every mark on a file as
  * one instanced mesh, the storms as bolts, the exceptional edges as ribbons,
  * and the slot names and old paths as flat tags over the canvas (step 33).
- * The frame goes through one
+ * The notices take §5.4's tiers (step 34): the primary's halo and ring and
+ * every noticed file's stain follow the scheduler's light for their notice,
+ * so the primary breathes and flares at its anchor (D148), and the labels
+ * layer writes each notice's label with its leader and its run of boxes at
+ * step 27's placements, laid again whenever the view, the level of detail
+ * or a token changes. The frame goes through one
  * post-processing pass whose bloom reads the emissive target alone, so base
  * tissue never blooms and only a state's light does (D11, D12, D152). Every
  * material and the scheduler read their tokens through the registry (D156):
@@ -30,12 +35,12 @@ import type { MapJson } from 'core';
 
 import { RAIL_WIDTH } from '../fit.js';
 import { marksOf } from '../marks.js';
-import { BLOOM, LIGHTING, SKIN, SKY, WEATHER } from '../materials.js';
+import { BLOOM, LIGHTING, NOTICE, SKIN, SKY, WEATHER } from '../materials.js';
 import type { Registry } from '../registry.js';
 import type { View } from '../view.js';
 import { createBolts } from './bolts.js';
 import { createCamera, frameCamera } from './camera.js';
-import { createLabels } from './labels.js';
+import { LABEL_LOOK, createLabels, viewportOf } from './labels.js';
 import { ORGANELLE_LOOK, createOrganelles } from './organelles.js';
 import { PALETTE_LOOK, createPalette } from './palette.js';
 import { createRibbons } from './ribbons.js';
@@ -53,6 +58,8 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   const skinLook = registry.view(SKIN, 'SKIN');
   const bloomLook = registry.view(BLOOM, 'BLOOM');
   const weatherLook = registry.view(WEATHER, 'WEATHER');
+  const noticeLook = registry.view(NOTICE, 'NOTICE');
+  const labelLook = registry.view(LABEL_LOOK);
   const relief = registry.view(RELIEF, 'RELIEF');
   const tokens = registry.view({ ...MOTION_TOKENS, FIELD_FILL, REACH_ORIGIN_OPACITY, ...ORGANELLE_LOOK, ...PALETTE_LOOK });
 
@@ -80,7 +87,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   const grid = gridFor(map, RESOLUTION);
   const organelles = createOrganelles(map, skin.relief, grid, skin.amp, skin.lift, tokens);
   scene.add(...organelles.meshes);
-  const palette = createPalette(tokens);
+  const palette = createPalette(tokens, map.weather.checks.category);
   const marks = marksOf(map);
   const sectors = createSectors(marks.sectors, skin.relief, grid, skin.amp, skin.lift, organelles.surface, palette);
   const bolts = createBolts(marks.bolts, skin.relief, grid, skin.amp, skin.lift, organelles.surface, palette);
@@ -94,8 +101,8 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     const i = (row * grid.columns + column) * 4;
     return field instanceof Uint16Array ? DataUtils.fromHalfFloat(field[i] ?? 0) + DataUtils.fromHalfFloat(field[i + 1] ?? 0) : 0;
   };
-  const labels = createLabels(marks.labels, heightAt, palette);
-  canvas.after(labels.element);
+  const labels = createLabels(map, marks.labels, heightAt, palette, labelLook);
+  canvas.after(...labels.elements);
 
   // The frame through one pass with an emissive target beside its colour, and the bloom over that target alone (D152).
   const post = new RenderPipeline(renderer);
@@ -104,11 +111,15 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   const glow = bloom(scenePass.getTextureNode('emissive'), bloomLook.strength, bloomLook.radius, bloomLook.threshold);
   post.outputNode = scenePass.getTextureNode('output').add(glow);
 
+  // The labels are placed again on the next frame after the view, the level of detail or a token changes.
+  let placeLabels = true;
+  let placedLod: number | undefined;
   const fit = (): void => {
     const { clientWidth, clientHeight } = canvas;
     renderer.setPixelRatio(globalThis.devicePixelRatio);
     renderer.setSize(clientWidth, clientHeight, false);
     frameCamera(camera, map, clientWidth, clientHeight, { right: RAIL_WIDTH }, view);
+    placeLabels = true;
   };
   fit();
   globalThis.addEventListener('resize', fit);
@@ -119,6 +130,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   registry.subscribe((name) => {
     if (name.startsWith('RELIEF.')) reliefMoved = true;
     if (name.startsWith('SKY.')) skyMoved = true;
+    placeLabels = true;
   });
 
   const scheduler = createScheduler({
@@ -143,6 +155,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     const frame = scheduler.frame(view.zoom);
     // The surface's layer: 0 at the far field, 1 from LOD1 on, cross-faded between (D151).
     const surface = frame.lod?.opacity[1] ?? 0;
+    const lod = frame.lod?.lod ?? 0;
     skin.amp.value = frame.amp;
     skin.lift.value = frame.lift;
     skin.surface.value = surface;
@@ -150,6 +163,9 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     organelles.surface.value = surface;
     organelles.restyle();
     palette.restyle();
+    sectors.light(frame.notices);
+    sectors.halo.opacity.value = noticeLook.haloOpacity;
+    sectors.halo.bloom.value = noticeLook.haloBloom;
     sectors.bloom.value = weatherLook.markBloom;
     bolts.bloom.value = weatherLook.markBloom;
     ribbons.bloom.value = weatherLook.ribbonBloom;
@@ -164,6 +180,11 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     glow.radius.value = bloomLook.radius;
     glow.threshold.value = bloomLook.threshold;
     post.render();
+    if (placeLabels || lod !== placedLod) {
+      labels.place(viewportOf(camera, canvas.clientWidth), lod);
+      placeLabels = false;
+      placedLod = lod;
+    }
     labels.render(camera, canvas.clientWidth, canvas.clientHeight, surface);
     if (frame.lift === 0) canvas.dataset['world'] = 'settled';
   });

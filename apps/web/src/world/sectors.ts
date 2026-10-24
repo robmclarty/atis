@@ -9,14 +9,21 @@
  * layer unless the mark shows at the far field; a dashed mark is cut along
  * its arc; and a history texture is laid in the fragment stage from the
  * ground's own coordinates (C11). Every mark is emissive, and the bloom sees
- * the share of its light the mark names (D152).
+ * the share of its light the mark names (D152). A mark that names a notice
+ * follows that notice's light from the scheduler each frame (step 34, §5.5):
+ * its gain brightens the mark and its scale swells the mark's radius, so the
+ * primary's stain and halo breathe and flare where the scene anchors it
+ * (D148) and a secondary's stain flares rarer and dimmer. The halo's own
+ * share of light and bloom are the notice look's, live from the registry.
+ * The instance's numbers are packed into five buffers beside the strip's
+ * two, since WebGPU allows a pipeline eight vertex buffers and no more.
  */
 
 import { BufferAttribute, DataTexture, DoubleSide, InstancedBufferAttribute, InstancedBufferGeometry, Mesh, MeshBasicNodeMaterial } from 'three/webgpu';
 import type { UniformNode } from 'three/webgpu';
-import { attribute, cos, float, fract, length, mix, mrt, positionLocal, select, sin, step, texture, uniform, varying, vec2, vec3, vec4 } from 'three/tsl';
+import { attribute, cos, float, fract, length, mix, mrt, positionLocal, select, sin, step, texture, uniform, uniformArray, varying, vec2, vec3, vec4 } from 'three/tsl';
 import { HATCH_PITCH, HATCH_WIDTH, STIPPLE_DOT, STIPPLE_PITCH } from 'scene';
-import type { Grid } from 'scene';
+import type { Grid, NoticeLight } from 'scene';
 
 import { hueIndex } from './palette.js';
 import type { Palette } from './palette.js';
@@ -29,24 +36,29 @@ const STEPS = 48;
 /** How far above the organelles the marks sit, in the heightfield's units. */
 const LIFT = 0.9;
 const PATTERN_INDEX = { none: 0, hatch: 1, stipple: 2 } as const;
+/** The lights the material carries: one slot at rest for every mark no notice moves, then one per rank of C7's six. */
+const LIGHT_SLOTS = 7;
 
 export type Sectors = {
   readonly mesh: Mesh;
   /** The share of a mark's light the bloom sees, from the weather's look. */
   readonly bloom: Float;
+  /** The halo's share of its hue's light, and of that the bloom's, from the notice look. */
+  readonly halo: { readonly opacity: Float; readonly bloom: Float };
+  /** Move every mark that names a notice by that notice's light this frame, in rank order. */
+  readonly light: (lights: readonly NoticeLight[]) => void;
 };
 
-/** A strip of `STEPS` steps along and two rows across: each vertex knows how far along it is and which side it is on. */
+/** A strip of `STEPS` steps along and two rows across: each vertex knows how far along it is and which side it is on, as one `step` of two. */
 const stripGeometry = (): InstancedBufferGeometry => {
   const count = (STEPS + 1) * 2;
   const position = new Float32Array(count * 3);
-  const along = new Float32Array(count);
-  const side = new Float32Array(count);
+  const steps = new Float32Array(count * 2);
   for (let i = 0; i <= STEPS; i += 1) {
     for (let s = 0; s < 2; s += 1) {
       const v = i * 2 + s;
-      along[v] = i / STEPS;
-      side[v] = s;
+      steps[v * 2] = i / STEPS;
+      steps[v * 2 + 1] = s;
     }
   }
   const index = new Uint16Array(STEPS * 6);
@@ -56,8 +68,7 @@ const stripGeometry = (): InstancedBufferGeometry => {
   }
   const geometry = new InstancedBufferGeometry();
   geometry.setAttribute('position', new BufferAttribute(position, 3));
-  geometry.setAttribute('along', new BufferAttribute(along, 1));
-  geometry.setAttribute('side', new BufferAttribute(side, 1));
+  geometry.setAttribute('step', new BufferAttribute(steps, 2));
   geometry.setIndex(new BufferAttribute(index, 1));
   return geometry;
 };
@@ -67,44 +78,49 @@ export const createSectors = (sectors: readonly Sector[], relief: DataTexture, g
   const count = sectors.length;
   const geometry = stripGeometry();
   geometry.instanceCount = count;
+  // Five buffers per instance: its centre and radius; its sweep, the two angles and the two offsets; its edges, the two half widths and the dash; its style; and the rest, its pattern, its light slot after the resting one, and whether it is the halo the notice look sizes.
   const centre = new Float32Array(count * 3);
-  const angles = new Float32Array(count * 2);
-  const offsets = new Float32Array(count * 2);
-  const halves = new Float32Array(count * 2);
+  const sweep = new Float32Array(count * 4);
+  const edges = new Float32Array(count * 4);
   const style = new Float32Array(count * 4);
-  const dashes = new Float32Array(count * 2);
-  const patterns = new Float32Array(count * 2);
+  const extra = new Float32Array(count * 4);
   sectors.forEach((sector, i) => {
     centre.set([sector.x, sector.y, sector.r], i * 3);
-    angles.set([sector.from, sector.to], i * 2);
-    offsets.set([sector.inner, sector.outer], i * 2);
-    halves.set([sector.innerHalf, sector.outerHalf], i * 2);
+    sweep.set([sector.from, sector.to, sector.inner, sector.outer], i * 4);
+    edges.set([sector.innerHalf, sector.outerHalf, sector.dash[0], sector.dash[1]], i * 4);
     style.set([hueIndex(sector.hue), sector.opacity, sector.bloom, sector.far ? 1 : 0], i * 4);
-    dashes.set([sector.dash[0], sector.dash[1]], i * 2);
-    patterns.set([PATTERN_INDEX[sector.pattern], 0], i * 2);
+    extra.set([PATTERN_INDEX[sector.pattern], sector.notice + 1, sector.kind === 'halo' ? 1 : 0, 0], i * 4);
   });
   geometry.setAttribute('centre', new InstancedBufferAttribute(centre, 3));
-  geometry.setAttribute('angles', new InstancedBufferAttribute(angles, 2));
-  geometry.setAttribute('offsets', new InstancedBufferAttribute(offsets, 2));
-  geometry.setAttribute('halves', new InstancedBufferAttribute(halves, 2));
+  geometry.setAttribute('sweep', new InstancedBufferAttribute(sweep, 4));
+  geometry.setAttribute('edges', new InstancedBufferAttribute(edges, 4));
   geometry.setAttribute('style', new InstancedBufferAttribute(style, 4));
-  geometry.setAttribute('dashes', new InstancedBufferAttribute(dashes, 2));
-  geometry.setAttribute('patterns', new InstancedBufferAttribute(patterns, 2));
+  geometry.setAttribute('extra', new InstancedBufferAttribute(extra, 4));
 
   const bloom = uniform(1);
+  const haloOpacity = uniform(1);
+  const haloBloom = uniform(1);
+  // Each notice's light this frame, by its slot: a gain on the mark's light and a scale on its radius, both 1 at rest.
+  const gains = uniformArray<'float'>(Array.from({ length: LIGHT_SLOTS }, () => 1), 'float');
+  const scales = uniformArray<'float'>(Array.from({ length: LIGHT_SLOTS }, () => 1), 'float');
   const at = attribute('centre', 'vec3');
-  const span = attribute('angles', 'vec2');
-  const offset = attribute('offsets', 'vec2');
-  const half = attribute('halves', 'vec2');
+  const span = attribute('sweep', 'vec4').xy;
+  const offset = attribute('sweep', 'vec4').zw;
+  const half = attribute('edges', 'vec4').xy;
+  const dash = attribute('edges', 'vec4').zw;
   const look = attribute('style', 'vec4');
-  const dash = attribute('dashes', 'vec2');
-  const pattern = attribute('patterns', 'vec2').x;
-  const along = attribute('along', 'float');
-  const side = attribute('side', 'float');
+  const rest = attribute('extra', 'vec4');
+  const pattern = rest.x;
+  const slot = rest.y.toInt();
+  const halo = rest.z;
+  const along = attribute('step', 'vec2').x;
+  const side = attribute('step', 'vec2').y;
+  const gain = gains.element(slot);
+  const scale = scales.element(slot);
 
-  // Swept from the start angle to the end along the strip, between the two offsets across it; along a spoke, the strip's width is the mark's.
+  // Swept from the start angle to the end along the strip, between the two offsets across it, swelled by its notice's light; along a spoke, the strip's width is the mark's.
   const angle = mix(span.x, span.y, along);
-  const radial = at.z.add(mix(offset.x, offset.y, side));
+  const radial = at.z.add(mix(offset.x, offset.y, side)).mul(scale);
   const tangential = along.mul(2).sub(1).mul(mix(half.x, half.y, side));
   const x = at.x.add(cos(angle).mul(radial)).sub(sin(angle).mul(tangential));
   const z = at.y.add(sin(angle).mul(radial)).add(cos(angle).mul(tangential));
@@ -127,17 +143,28 @@ export const createSectors = (sectors: readonly Sector[], relief: DataTexture, g
   const stippled = step(length(fract(ground.div(STIPPLE_PITCH)).sub(0.5)).mul(STIPPLE_PITCH), float(STIPPLE_DOT));
   const textured = select(pattern.lessThan(0.5), float(1), select(pattern.lessThan(1.5), hatched, stippled));
   const shown = mix(surface, float(1), look.w);
-  const alpha = look.y.mul(shown).mul(dashed).mul(textured);
-  const colour = palette.colourOf(look.x);
+  const alpha = look.y.mul(mix(float(1), haloOpacity, halo)).mul(shown).mul(dashed).mul(textured);
+  // A mark's colour, brightened by its notice's light while it flares.
+  const colour = palette.colourOf(look.x).mul(gain);
   material.colorNode = colour;
   material.opacityNode = alpha;
-  // A mark is light; the bloom sees the share it names (D152).
-  material.mrtNode = mrt({ emissive: vec4(colour.mul(alpha).mul(look.z).mul(bloom), 1) });
+  // A mark is light; the bloom sees the share it names (D152), and of the halo's the share the notice look gives it.
+  material.mrtNode = mrt({ emissive: vec4(colour.mul(alpha).mul(look.z).mul(mix(float(1), haloBloom, halo)).mul(bloom), 1) });
 
   const mesh = new Mesh(geometry, material);
   mesh.frustumCulled = false;
   mesh.renderOrder = 2;
   mesh.visible = count > 0;
-  return { mesh, bloom };
+  return {
+    mesh,
+    bloom,
+    halo: { opacity: haloOpacity, bloom: haloBloom },
+    light: (lights) => {
+      for (let rank = 0; rank < LIGHT_SLOTS - 1; rank += 1) {
+        gains.array[rank + 1] = lights[rank]?.gain ?? 1;
+        scales.array[rank + 1] = lights[rank]?.scale ?? 1;
+      }
+    },
+  };
 };
 

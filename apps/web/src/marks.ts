@@ -6,7 +6,12 @@
  * SVG draws has its record here, mark for mark (D86), with the same tokens
  * for its size and the same hue by meaning (C11); the hues themselves are
  * named by index, so the material reads them live through the registry
- * (D156). Pure: no three, no DOM, so a test reads the records straight.
+ * (D156). The notices' emphasis is here too (step 34, §5.4): the primary's
+ * halo and thin ring in the category hue, a secondary's thick ring in the
+ * leaders' grey (D72), each a sector like the rest, and every sector names
+ * the notice whose light the scheduler moves it by, so the primary's stain
+ * and halo breathe and flare where the scene anchors it (D148). Pure: no
+ * three, no DOM, so a test reads the records straight.
  */
 
 import {
@@ -18,6 +23,7 @@ import {
   CROSSING_PAD,
   EDGE_BOW,
   EDGE_WIDTH,
+  EMPHASIS_PAD,
   GHOST_DASH,
   GHOST_PAD,
   INTEGRITY_CLOSED_OPACITY,
@@ -26,8 +32,10 @@ import {
   INTEGRITY_PAD,
   MUTANT_NOTCH_DEPTH,
   MUTANT_NOTCH_WIDTH,
+  PRIMARY_RING_WIDTH,
   RENAME_DASH,
   RENAME_LABEL_GAP,
+  SECONDARY_RING_WIDTH,
   STANDING_STORM_SCALE,
   STITCH_LENGTH,
   STITCH_TEAR,
@@ -39,15 +47,17 @@ import {
 import type { FileWeather, SceneWeather, Storm } from 'scene';
 import type { MapJson, Position } from 'core';
 
-/** The hues a mark can take, by what it means: the index the material's palette is read at. */
-export const HUES = ['change', 'reach', 'evidence', 'ifr', 'unlit', 'ghost', 'ink', 'lifr', 'standing'] as const;
+import { runsOf } from './notices.js';
+
+/** The hues a mark can take, by what it means: the index the material's palette is read at. `category` is the map's flight category's, `leader` the chrome's leaders' grey. */
+export const HUES = ['change', 'reach', 'evidence', 'ifr', 'unlit', 'ghost', 'ink', 'lifr', 'standing', 'category', 'leader'] as const;
 export type Hue = (typeof HUES)[number];
 
 /** A texture laid over a mark: none, hatching for churn, stipple for bug-fix rate (C11). */
 export type Pattern = 'none' | 'hatch' | 'stipple';
 
-/** What a mark is, for a reader and a test; the GPU reads the numbers. */
-export type MarkKind = 'stain' | 'outline' | 'crossing' | 'hairline' | 'gap' | 'notch' | 'stitch' | 'ghost' | 'history';
+/** What a mark is, for a reader and a test; the GPU reads the numbers. A `halo` is the primary notice's light, a `ring` a tier's emphasis (§5.4). */
+export type MarkKind = 'stain' | 'outline' | 'crossing' | 'hairline' | 'gap' | 'notch' | 'stitch' | 'ghost' | 'history' | 'halo' | 'ring';
 
 /**
  * One sector about a file: an arc from `from` to `to` (radians, y down, the
@@ -55,8 +65,10 @@ export type MarkKind = 'stain' | 'outline' | 'crossing' | 'hairline' | 'gap' | '
  * when `from` equals `to`, a strip along that spoke, `innerHalf` and
  * `outerHalf` wide either side at its two ends, which is how a stitch and a
  * notch are cut. Its `dash` is on and off along the arc, 0 for solid; its
- * `bloom` is the share of its light the bloom sees; and `far` says it shows
- * at the far field too, where only the change's lights show (§5.6).
+ * `bloom` is the share of its light the bloom sees; `far` says it shows at
+ * the far field too, where only the change's lights show (§5.6); and
+ * `notice` is the index of the notice whose light the scheduler moves it by,
+ * its gain and its swell, or -1 for a mark no notice moves.
  */
 export type Sector = {
   readonly kind: MarkKind;
@@ -76,6 +88,7 @@ export type Sector = {
   readonly bloom: number;
   readonly pattern: Pattern;
   readonly far: boolean;
+  readonly notice: number;
 };
 
 /** A storm's bolt, flat on the skin where the scene hangs it, the change's full size and standing state smaller and graphite (D68). */
@@ -115,7 +128,7 @@ const dashOf = (token: string): readonly [number, number] => {
 };
 
 /** A sector's fields that most marks leave at rest. */
-const REST = { innerHalf: 0, outerHalf: 0, dash: SOLID, pattern: 'none' as const, far: false };
+const REST = { innerHalf: 0, outerHalf: 0, dash: SOLID, pattern: 'none' as const, far: false, notice: -1 };
 
 /** A full ring of `width` centred `offset` past the file's radius. */
 const ring = (kind: MarkKind, file: FileWeather, at: Position, offset: number, width: number, hue: Hue, opacity: number, bloom: number, dash: readonly [number, number] = SOLID): Sector => ({
@@ -173,12 +186,39 @@ const spoke = (kind: MarkKind, file: FileWeather, at: Position, angle: number, i
   bloom,
 });
 
-/** The change's stain by kind: a filled disc for an edit, the outline alone for a deletion, a dashed outline for a rename (D40). The stain shows at the far field, as the change's light. */
-const stainOf = (file: FileWeather, at: Position): readonly Sector[] => {
+/** The change's stain by kind: a filled disc for an edit, the outline alone for a deletion, a dashed outline for a rename (D40). The stain shows at the far field, as the change's light, and a noticed file's follows its notice's light. */
+const stainOf = (file: FileWeather, at: Position, notice: number): readonly Sector[] => {
   const change = file.change;
   if (change === undefined) return [];
-  if (change.kind === 'added' || change.kind === 'modified') return [disc('stain', file, at, 0, 'change', 1, 1, true)];
-  return [ring('outline', file, at, 0, CHANGE_OUTLINE_WIDTH, 'change', 1, 1, change.kind === 'renamed' ? dashOf(RENAME_DASH) : SOLID)];
+  if (change.kind === 'added' || change.kind === 'modified') return [{ ...disc('stain', file, at, 0, 'change', 1, 1, true), notice }];
+  return [{ ...ring('outline', file, at, 0, CHANGE_OUTLINE_WIDTH, 'change', 1, 1, change.kind === 'renamed' ? dashOf(RENAME_DASH) : SOLID), notice }];
+};
+
+/**
+ * The notices' emphasis on the field (§5.4, step 34), one per target by its
+ * strongest tier: the primary a halo, a disc in the category hue out to the
+ * ring that shows at the far field and breathes and flares with its light,
+ * under a thin ring in the same hue; a secondary a thick ring in the
+ * leaders' grey, clear of the evidence light (D72); a tertiary nothing but
+ * the box the labels layer hangs. The rings are annotations and never bloom
+ * (D12). Beside them, the index of the notice each target's own stain
+ * follows.
+ */
+const emphasisOf = (map: MapJson): { readonly halos: readonly Sector[]; readonly rings: readonly Sector[]; readonly lightOf: ReadonlyMap<string, number> } => {
+  const halos: Sector[] = [];
+  const rings: Sector[] = [];
+  const lightOf = new Map<string, number>();
+  for (const run of runsOf(map)) {
+    const file: FileWeather = { path: run.target };
+    lightOf.set(run.target, run.light);
+    if (run.strongest === 'primary') {
+      halos.push({ ...disc('halo', file, run.spot, EMPHASIS_PAD, 'category', 1, 1, true), notice: run.light });
+      rings.push({ ...ring('ring', file, run.spot, EMPHASIS_PAD, PRIMARY_RING_WIDTH, 'category', 1, 0), notice: run.light });
+    } else if (run.strongest === 'secondary') {
+      rings.push({ ...ring('ring', file, run.spot, EMPHASIS_PAD, SECONDARY_RING_WIDTH, 'leader', 1, 0), notice: run.light });
+    }
+  }
+  return { halos, rings, lightOf };
 };
 
 /** The evidence on a changed file (D71): its skin's hairline and lit gap, or the whole ring lit when nobody measured it (D80); its mutants as notches; its stitches, torn in two when the test failed. */
@@ -230,18 +270,19 @@ const historyOf = (map: MapJson): readonly Sector[] => {
     });
 };
 
-/** The marks on every placed file the weather touches, in the SVG's own layer order: stains, history, evidence, ghosts; crossings with the reach beneath. */
+/** The marks on every placed file the weather touches, in the SVG's own layer order: stains, the primary's halo, history, evidence, ghosts, the tier rings; crossings with the reach beneath. */
 const sectorsOf = (map: MapJson, weather: SceneWeather): readonly Sector[] => {
   const positions = map.terrain.layout?.positions ?? {};
   const placed = weather.files.flatMap((file) => {
     const at = positions[file.path];
     return at === undefined ? [] : [{ file, at }];
   });
+  const { halos, rings, lightOf } = emphasisOf(map);
   const crossings = placed.flatMap(({ file, at }) => (file.crossing === true ? [disc('crossing', file, at, CROSSING_PAD, 'reach', CROSSING_OPACITY, 1, false)] : []));
-  const stains = placed.flatMap(({ file, at }) => stainOf(file, at));
+  const stains = placed.flatMap(({ file, at }) => stainOf(file, at, lightOf.get(file.path) ?? -1));
   const evidence = placed.flatMap(({ file, at }) => evidenceOf(file, at));
   const ghosts = placed.flatMap(({ file, at }) => (file.ghost === undefined ? [] : [ring('ghost', file, at, GHOST_PAD, 1, 'ghost', 1, 0, dashOf(GHOST_DASH))]));
-  return [...crossings, ...stains, ...historyOf(map), ...evidence, ...ghosts];
+  return [...crossings, ...stains, ...halos, ...historyOf(map), ...evidence, ...ghosts, ...rings];
 };
 
 /** Every storm as a bolt where the scene hangs it; a change's labelled with its slot beside it. */

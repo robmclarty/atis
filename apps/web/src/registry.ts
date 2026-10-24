@@ -14,18 +14,18 @@
 
 import * as scene from 'scene';
 
-import { BLOOM, LIGHTING, SKIN, SKY, WEATHER } from './materials.js';
+import { BLOOM, LIGHTING, NOTICE, SKIN, SKY, WEATHER } from './materials.js';
 
 /** One section of the panel: the design doc's heading and the tokens its table names, in the table's order. */
 export type Section = { readonly title: string; readonly names: readonly string[] };
 
 /** The world's material objects, each field a token named `OBJECT.field`. */
-const MATERIALS: Readonly<Record<string, Readonly<Record<string, unknown>>>> = { SKIN, LIGHTING, SKY, BLOOM, WEATHER, RELIEF: scene.RELIEF };
+const MATERIALS: Readonly<Record<string, Readonly<Record<string, unknown>>>> = { SKIN, LIGHTING, SKY, BLOOM, WEATHER, NOTICE, RELIEF: scene.RELIEF };
 
 const fieldsOf = (object: string): readonly string[] => Object.keys(MATERIALS[object] ?? {}).map((field) => `${object}.${field}`);
 
 /** Where the materials rest; the panel lists them under this heading until the design doc gives them one. */
-export const MATERIALS_TITLE = "Materials (the world's skin, lights, sky, bloom, weather and relief)";
+export const MATERIALS_TITLE = "Materials (the world's skin, lights, sky, bloom, weather, notices and relief)";
 
 /** The sections, `docs/design.md`'s headings and tables verbatim, with the materials before the motion. */
 export const SECTIONS: readonly Section[] = [
@@ -144,7 +144,7 @@ export const SECTIONS: readonly Section[] = [
     title: "The legend inset and the practice map's balloons",
     names: ['LEGEND_ROW', 'LEGEND_SAMPLE_R', 'LEGEND_SLOT', 'LEGEND_FONT_SIZE', 'LEGEND_PAD', 'LEGEND_KEY_PITCH', 'CALLOUT_R', 'CALLOUT_REACH', 'CALLOUT_FONT_SIZE', 'CALLOUT_CLEARANCE'],
   },
-  { title: MATERIALS_TITLE, names: [...fieldsOf('SKIN'), ...fieldsOf('LIGHTING'), ...fieldsOf('SKY'), ...fieldsOf('BLOOM'), ...fieldsOf('WEATHER'), ...fieldsOf('RELIEF')] },
+  { title: MATERIALS_TITLE, names: [...fieldsOf('SKIN'), ...fieldsOf('LIGHTING'), ...fieldsOf('SKY'), ...fieldsOf('BLOOM'), ...fieldsOf('WEATHER'), ...fieldsOf('NOTICE'), ...fieldsOf('RELIEF')] },
   {
     title: 'Motion',
     names: [

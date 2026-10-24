@@ -1,8 +1,9 @@
 /**
  * frame: the chrome's root, the flat DOM the world is framed by (§7, D12),
- * drawn with React (D91). It holds the status line, the shore rail once the
- * map is read (D153), and, behind a switch, the dev panel (D156): off and absent by default, its code fetched only when it
- * is first opened. A development build shows a toggle for it; a published
+ * drawn with React (D91). It holds the status line, the right-hand column
+ * once the map is read, the ranked notices over the shore rail (§5.4, D153),
+ * and, behind a switch, the dev panel (D156): off and absent by default, its
+ * code fetched only when it is first opened. A development build shows a toggle for it; a published
  * build opens it only through a key combination, which the docs never name.
  * `--png` and a glance reading press nothing, so they never see it.
  */
@@ -14,7 +15,7 @@ import type { CSSProperties, ReactElement } from 'react';
 import type { DevPanel } from '../dev/index.js';
 import type { MapState } from '../load.js';
 import type { Registry } from '../registry.js';
-import { Rail } from './rail.js';
+import { Column } from './column.js';
 import { Status } from './status.js';
 
 /** What opening the panel loads: the dev module, or whatever a test hands in. */
@@ -74,7 +75,7 @@ export const Chrome = ({ state, registry, dev, load = loadPanel }: ChromeProps):
           </Suspense>
         )}
       </div>
-      {state.status === 'ready' && <Rail map={state.map} registry={registry} />}
+      {state.status === 'ready' && <Column map={state.map} registry={registry} />}
       {dev && (
         <button type="button" data-dev-toggle onClick={() => setOpen((was) => !was)} style={TOGGLE}>
           tokens

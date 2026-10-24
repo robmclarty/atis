@@ -10,11 +10,15 @@
  * closes its block. A red slot over a group hangs its bolt on the header, the
  * change's in the IFR hue with its slot, standing state grey. It is the
  * brutalist material (D12): one monospace face, hard edges, nothing that
- * glows, drawn in the shared tokens read through the registry (D156). The
- * notices' numbered boxes join it at step 34.
+ * glows, drawn in the shared tokens read through the registry (D156). A
+ * notice on a shore file, or on a group, wears its numbered box at the end
+ * of its group's header, in rank order (step 34, D148), since the shore is
+ * chrome and the box is where the notice's leader would land. The rail
+ * stands beneath the ranked list in the chrome's column.
  */
 
 import {
+  CATEGORY_LETTERS,
   CHANGE_HUE,
   CHROME_GROUND,
   CHROME_INK,
@@ -24,7 +28,14 @@ import {
   FONT_FAMILY,
   GHOST_STROKE,
   IFR_HUE,
+  LIFR_HUE,
   MONO_ADVANCE,
+  MVFR_HUE,
+  NOTICE_BOX,
+  NOTICE_BOX_GAP,
+  NOTICE_NUMERAL_SIZE,
+  NOTICE_SMALL_SIZE,
+  NOTICE_TEXT_SIZE,
   ORGANELLE_FILL,
   SECONDARY_BOX_WIDTH,
   SHORE_BLOCK_GAP,
@@ -34,6 +45,7 @@ import {
   SHORE_GRID_GAP,
   SHORE_LINE,
   STANDING_STORM_FILL,
+  VFR_HUE,
   shoreRail,
 } from 'scene';
 import type { ShoreBlock, ShoreFile, ShoreStorm } from 'scene';
@@ -42,11 +54,15 @@ import type { CSSProperties, ReactElement } from 'react';
 import type { MapJson } from 'core';
 
 import { RAIL_WIDTH } from '../fit.js';
+import { categoryHue, marksOnShore, screenType } from '../notices.js';
+import type { Marked } from '../notices.js';
 import type { Registry } from '../registry.js';
+import { NoticeBox } from './box.js';
 import { useLive } from './live.js';
 
 /** The tokens the rail is drawn with, at rest: the shape its live view takes. */
 const LOOK = {
+  CATEGORY_LETTERS,
   CHANGE_HUE,
   CHROME_GROUND,
   CHROME_INK,
@@ -56,7 +72,14 @@ const LOOK = {
   FONT_FAMILY,
   GHOST_STROKE,
   IFR_HUE,
+  LIFR_HUE,
   MONO_ADVANCE,
+  MVFR_HUE,
+  NOTICE_BOX,
+  NOTICE_BOX_GAP,
+  NOTICE_NUMERAL_SIZE,
+  NOTICE_SMALL_SIZE,
+  NOTICE_TEXT_SIZE,
   ORGANELLE_FILL,
   SECONDARY_BOX_WIDTH,
   SHORE_BLOCK_GAP,
@@ -66,6 +89,7 @@ const LOOK = {
   SHORE_GRID_GAP,
   SHORE_LINE,
   STANDING_STORM_FILL,
+  VFR_HUE,
 };
 type Look = typeof LOOK;
 
@@ -104,7 +128,19 @@ const Storm = ({ storm, look }: { readonly storm: ShoreStorm; readonly look: Loo
   </span>
 );
 
-const Block = ({ block, look }: { readonly block: ShoreBlock; readonly look: Look }): ReactElement => {
+/** The notices' boxes at the end of a block's header, in rank order (D148, D153). */
+const Boxes = ({ marked, look, hue }: { readonly marked: readonly Marked[]; readonly look: Look; readonly hue: string }): ReactElement => {
+  const type = screenType(look);
+  return (
+    <span data-marks style={{ display: 'inline-flex', gap: look.NOTICE_BOX_GAP, marginLeft: look.SHORE_BLOCK_GAP }}>
+      {marked.map(({ rank, tier }) => (
+        <NoticeBox key={rank} rank={rank} tier={tier} look={look} hue={hue} side={type.box} numeral={type.numeral} />
+      ))}
+    </span>
+  );
+};
+
+const Block = ({ block, look, marked, hue }: { readonly block: ShoreBlock; readonly look: Look; readonly marked: readonly Marked[]; readonly hue: string }): ReactElement => {
   const [open, setOpen] = useState(block.touched);
   const named = block.files.filter((file) => file.change !== undefined || file.ghost === true);
   const opens = block.touched || named.length > 0;
@@ -141,6 +177,7 @@ const Block = ({ block, look }: { readonly block: ShoreBlock; readonly look: Loo
         {block.storms.map((storm) => (
           <Storm key={storm.slot} storm={storm} look={look} />
         ))}
+        {marked.length > 0 && <Boxes marked={marked} look={look} hue={hue} />}
       </button>
       {opens && open && (
         <div style={{ padding: `0 ${String(look.SHORE_BLOCK_PAD)}px ${String(look.SHORE_BLOCK_PAD)}px` }}>
@@ -165,28 +202,25 @@ const Block = ({ block, look }: { readonly block: ShoreBlock; readonly look: Loo
   );
 };
 
-/** The shore rail for a map, read live from the registry. */
+/** The shore rail for a map, read live from the registry; it fills what the column leaves it. */
 export const Rail = ({ map, registry }: { readonly map: MapJson; readonly registry: Registry }): ReactElement => {
   useLive(registry);
   const look = registry.view(LOOK);
   const blocks = useMemo(() => shoreRail(map), [map]);
+  const marks = useMemo(() => marksOnShore(map), [map]);
+  const hue = categoryHue(map.weather.checks.category, look);
   const files = blocks.reduce((total, block) => total + block.count, 0);
   return (
-    <aside
+    <section
       data-rail
       aria-label="shore"
       style={{
-        position: 'fixed',
-        top: 0,
-        right: 0,
-        bottom: 0,
-        width: RAIL_WIDTH,
-        boxSizing: 'border-box',
+        flex: 1,
+        minHeight: 0,
         display: 'flex',
         flexDirection: 'column',
         background: look.CHROME_GROUND,
         color: look.CHROME_INK,
-        borderLeft: `${String(look.CHROME_STROKE_WIDTH)}px solid ${look.CHROME_RULE}`,
         fontFamily: look.FONT_FAMILY,
         fontSize: look.SHORE_FONT_SIZE + 2,
         pointerEvents: 'auto',
@@ -200,9 +234,9 @@ export const Rail = ({ map, registry }: { readonly map: MapJson; readonly regist
       </header>
       <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
         {blocks.map((block) => (
-          <Block key={block.group} block={block} look={look} />
+          <Block key={block.group} block={block} look={look} marked={marks.get(block.group) ?? []} hue={hue} />
         ))}
       </div>
-    </aside>
+    </section>
   );
 };

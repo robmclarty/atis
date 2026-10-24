@@ -71,6 +71,20 @@ export type WeatherLook = {
 // The reach's gain starts under the spike's 1.05: under AgX, added to the lit albedo and bloomed, that read as a white wash where the sheet lays a warm tint, so it opens lower for the panel to tune (D156).
 export const WEATHER: WeatherLook = { reachGain: 0.7, reachBloom: 0.2, reachBodyGain: 1.1, reachSoften: 2, markBloom: 1, ribbonBloom: 0.3 };
 
+/**
+ * A notice's light on the field (§5.4, step 34): the primary's halo, a disc
+ * in the category hue over its anchor out to its ring, which breathes and
+ * flares through the scheduler, at this share of the hue's light, and the
+ * share of that the bloom sees. The tier rings are annotations in the
+ * chrome's manner and never bloom (D12, D72).
+ */
+export type NoticeLook = {
+  readonly haloOpacity: number;
+  readonly haloBloom: number;
+};
+
+export const NOTICE: NoticeLook = { haloOpacity: 0.35, haloBloom: 1 };
+
 /** The lights: the key, the ambient, and the sky's strength in the sheen. */
 export type Lighting = {
   /** The key light's colour, its strength at the surface, and where it shines from, relative to the layout's centre. */
