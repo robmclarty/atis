@@ -5,7 +5,9 @@
  * the scene's (`libs/scene/src/tokens.ts`), kept here as data with no three
  * import so the registry (D156) and its tests read them in Node; `world/`
  * reads each through the registry, so the dev panel moves them live. Step 44
- * records them in `docs/design.md` beside their sources.
+ * records them in `docs/design.md` beside their sources. The minimap's look
+ * rides with them (D154), the one piece of chrome the scene's tokens do not
+ * already dress.
  */
 
 /** The skin's material: the albedos, the membrane line, how rough and how wet it is, the share of its albedo kept at the far field, and the tissue's own faint light. */
@@ -137,3 +139,24 @@ export const SKY: SkyLook = {
     [0.1, 0.5, 0.7, 1.5],
   ],
 };
+
+/**
+ * The minimap at the chrome's bottom left (D154): flat chrome, never glowing
+ * (D12). It takes at most this much room, keeps this margin inside its frame,
+ * and draws the body flat in one grey; a reached cell's own ground lays the
+ * reach's hue over it at its luminance times this share, flattened as the
+ * legend flattens the world's one translucent ink; a changed file is a dot of
+ * this radius; and the view is outlined in this ink at this width.
+ */
+export type MinimapLook = {
+  readonly width: number;
+  readonly height: number;
+  readonly pad: number;
+  readonly body: string;
+  readonly reachShare: number;
+  readonly changedR: number;
+  readonly view: string;
+  readonly viewWidth: number;
+};
+
+export const MINIMAP: MinimapLook = { width: 240, height: 180, pad: 6, body: '#333c47', reachShare: 0.55, changedR: 1.5, view: '#e6edf3', viewWidth: 1 };

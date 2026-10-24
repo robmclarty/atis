@@ -36,10 +36,11 @@ import type { MapJson } from 'core';
 import { RAIL_WIDTH } from '../fit.js';
 import { marksOf } from '../marks.js';
 import { BLOOM, LIGHTING, NOTICE, SKIN, SKY, WEATHER } from '../materials.js';
+import type { Nav } from '../nav.js';
 import type { Registry } from '../registry.js';
 import type { View } from '../view.js';
 import { createBolts } from './bolts.js';
-import { createCamera, createControls, fitCamera } from './camera.js';
+import { centreOn, createCamera, createControls, fitCamera, outlineOf } from './camera.js';
 import { LABEL_LOOK, createLabels, viewportOf } from './labels.js';
 import { ORGANELLE_LOOK, createOrganelles } from './organelles.js';
 import { PALETTE_LOOK, createPalette } from './palette.js';
@@ -51,8 +52,8 @@ import { createSky } from './sky.js';
 /** How far off the key light stands: far enough that its direction is one across the layout. */
 const CAMERA_REACH = 1000;
 
-/** Draw the world for a map into the canvas, keep it fitted to the window beside the rail, and run its one loop. */
-export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: View, registry: Registry): Promise<void> => {
+/** Draw the world for a map into the canvas, keep it fitted to the window beside the rail, run its one loop, and keep the chrome's line to it (`nav.ts`). */
+export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: View, registry: Registry, nav: Nav): Promise<void> => {
   const lighting = registry.view(LIGHTING, 'LIGHTING');
   const skyLook = registry.view(SKY, 'SKY');
   const skinLook = registry.view(SKIN, 'SKIN');
@@ -124,6 +125,8 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   fit();
   globalThis.addEventListener('resize', fit);
   const controls = createControls(camera, canvas, map, view, { right: RAIL_WIDTH });
+  // The minimap asks for a place and the camera eases there (D154).
+  nav.steer({ lookAt: (point) => centreOn(controls, camera, canvas.clientWidth, { right: RAIL_WIDTH }, point) });
   // The labels ride their anchors while the camera moves and are laid out afresh once it rests.
   controls.addEventListener('rest', () => {
     placeLabels = true;
@@ -161,6 +164,8 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     const now = performance.now();
     controls.update((now - lastFrame) / 1000);
     lastFrame = now;
+    // The minimap hears the view's outline only when it moved.
+    nav.show(outlineOf(camera, canvas.clientWidth, { right: RAIL_WIDTH }));
     // The camera's zoom over the fit is the one scalar the levels of detail read.
     const frame = scheduler.frame(camera.zoom);
     // The surface's layer: 0 at the far field, 1 from LOD1 on, cross-faded between (D151).

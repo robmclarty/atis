@@ -6,7 +6,7 @@ import * as scene from 'scene';
 import { MOTION_TOKENS, createScheduler } from 'scene';
 import { expect, test } from 'vitest';
 
-import { BLOOM, LIGHTING, NOTICE, SKIN, SKY, WEATHER } from '../materials.js';
+import { BLOOM, LIGHTING, MINIMAP, NOTICE, SKIN, SKY, WEATHER } from '../materials.js';
 import { MATERIALS_TITLE, SECTIONS, createRegistry, kindOf } from '../registry.js';
 import type { Store } from '../registry.js';
 
@@ -49,7 +49,7 @@ test("the panel's sections are the design doc's headings, each listing its table
 /** A material object's fields as the registry names them. */
 const fields = (object: string, from: object): string[] => Object.keys(from).map((field) => `${object}.${field}`);
 
-test("the materials section lists every field of the world's skin, lights, sky, bloom, weather, notices and relief", () => {
+test("the materials section lists every field of the world's skin, lights, sky, bloom, weather, notices and relief, and the minimap's", () => {
   const section = SECTIONS.find((each) => each.title === MATERIALS_TITLE);
   expect(section?.names).toEqual([
     ...fields('SKIN', SKIN),
@@ -59,6 +59,7 @@ test("the materials section lists every field of the world's skin, lights, sky, 
     ...fields('WEATHER', WEATHER),
     ...fields('NOTICE', NOTICE),
     ...fields('RELIEF', scene.RELIEF),
+    ...fields('MINIMAP', MINIMAP),
   ]);
 });
 

@@ -14,6 +14,8 @@
 
 import CameraControls from 'camera-controls';
 import { Box3, Matrix4, OrthographicCamera, Quaternion, Raycaster, Sphere, Spherical, Vector2, Vector3, Vector4 } from 'three/webgpu';
+import { groundOf, viewOutline } from 'scene';
+import type { Point, WorldPoint } from 'scene';
 import type { MapJson } from 'core';
 
 import { fitFrame } from '../fit.js';
@@ -45,6 +47,33 @@ const MAX_ZOOM = 200;
  */
 const SMOOTH_S = 0.1;
 const DRAG_SMOOTH_S = 0.05;
+
+/**
+ * The view's outline on the ground: where the rays through the corners of
+ * the screen left of the chrome meet it (`viewOutline`), so the minimap draws
+ * what the reviewer sees, tilt and all (D154).
+ */
+export const outlineOf = (camera: OrthographicCamera, canvasWidth: number, chrome: Chrome): readonly Point[] | undefined => {
+  // The free screen's right edge in normalised device coordinates.
+  const right = 1 - (2 * chrome.right) / Math.max(1, canvasWidth);
+  const ray = (x: number, y: number): readonly [WorldPoint, WorldPoint] => [new Vector3(x, y, -1).unproject(camera).toArray(), new Vector3(x, y, 1).unproject(camera).toArray()];
+  return viewOutline([ray(-1, 1), ray(right, 1), ray(right, -1), ray(-1, -1)]);
+};
+
+/**
+ * Centre the free screen on a layout point: move the target by however far
+ * the free screen's centre on the ground lies from the point, so a tilt or a
+ * turn keeps its view and only where it looks moves. The controls ease there
+ * as they ease every input.
+ */
+export const centreOn = (controls: CameraControls, camera: OrthographicCamera, canvasWidth: number, chrome: Chrome, [x, y]: Point): void => {
+  const middle = -(chrome.right / Math.max(1, canvasWidth));
+  const ground = groundOf(new Vector3(middle, 0, -1).unproject(camera).toArray(), new Vector3(middle, 0, 1).unproject(camera).toArray());
+  if (ground === undefined) return;
+  // The target where the camera is now, not where an ease under way will leave it, since the ground point was read from the camera now.
+  const target = controls.getTarget(new Vector3(), false);
+  void controls.moveTo(target.x + x - ground[0], target.y, target.z + y - ground[1], true);
+};
 
 /** A camera over the ground plane, between planes the terrain never leaves. */
 export const createCamera = (): OrthographicCamera => {

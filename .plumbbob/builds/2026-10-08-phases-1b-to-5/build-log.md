@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 37 — feat(web): zoom, pan, tilt and rotate the camera continuously
+**Current step:** 93 — feat(web): draw a minimap that moves the camera
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -63,7 +63,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 34. feat(web): draw the notices with their labels and leaders
 - ☑ 35. feat(web): render the HUD's grade blocks
 - ☑ 36. feat(web): open each HUD block's parts on click
-- ☐ 37. feat(web): zoom, pan, tilt and rotate the camera continuously
+- ☑ 37. feat(web): zoom, pan, tilt and rotate the camera continuously
 - ☐ 38. feat(web): pick and hover at every level of detail
 - ☐ 39. feat(web): fly to a notice and walk the map from the keyboard
 - ☐ 40. feat(web): open a cell into its stained interior
@@ -147,10 +147,10 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] Rob, after the second retake: on most of the five maps he couldn't zoom in or see details; build a coherent, working system on real code he understands first, and refine and tune the encodings later, so range 6's stop defers the four encodings instead of running D119's refine before wave 1
 - [x] The world's cell membranes carry no teeth yet: the SVG's dented ring (one tooth per rule, step 12) lives in libs/svg/src/terrain.ts, so step 25's tissue grid lays the plain contour; step 32 should move dentedRing into libs/scene so tissue() lays the dented ring both renderers draw (D86, D146)
 - [x] The shore's open blocks name their changed files but drop the spike's grid: D153 has a touched group open on its files, one small square per file with the changed ones lit, then their names, and the SVG draw the same blocks; step 96 followed D158's narrower 'changed files named', so a 50-file group with one change reads like a 1-file group. Add the grid to the band (from shoreRail's count and changed files) in a small SVG step built ahead of step 32, so the world's rail draws the same grid
-- [ ] A target with several notices wears one label per notice (demo's index.ts four times, retake-3's createOptionsProxy.ts three), since step 27's labelsFor places each notice's label on its own; weigh one label per target with its run of ranks, in libs/scene/src/labels.ts
-- [ ] The HUD's block words and the legend's list are derived twice, in libs/svg/src/chrome.ts and legend.ts and again in apps/web/src/hud.ts, held together by hud.test.tsx's parity over every fixture; weigh one derivation in libs/scene for both renderers, as shoreRail and noticeAnchors are (D86, D90)
-- [ ] The camera's smoothing (SMOOTH_S, DRAG_SMOOTH_S) and its zoom bounds are baked in apps/web/src/world/camera.ts, and camera-controls' wheel notch zooms 1.85x; move them into the motion tokens the dev panel moves when step 44 records the world's own, after Rob has tried the camera on a trackpad and a mouse
-- [ ] labelsFor takes an axis-aligned viewport in layout units, so under a rotated or tilted camera the labels are placed in the overhead frame's estimate and hung from their true anchors; weigh a placement in screen space, projecting each anchor, in libs/scene/src/labels.ts
+- [x] A target with several notices wears one label per notice (demo's index.ts four times, retake-3's createOptionsProxy.ts three), since step 27's labelsFor places each notice's label on its own; weigh one label per target with its run of ranks, in libs/scene/src/labels.ts
+- [x] The HUD's block words and the legend's list are derived twice, in libs/svg/src/chrome.ts and legend.ts and again in apps/web/src/hud.ts, held together by hud.test.tsx's parity over every fixture; weigh one derivation in libs/scene for both renderers, as shoreRail and noticeAnchors are (D86, D90)
+- [x] The camera's smoothing (SMOOTH_S, DRAG_SMOOTH_S) and its zoom bounds are baked in apps/web/src/world/camera.ts, and camera-controls' wheel notch zooms 1.85x; move them into the motion tokens the dev panel moves when step 44 records the world's own, after Rob has tried the camera on a trackpad and a mouse
+- [x] labelsFor takes an axis-aligned viewport in layout units, so under a rotated or tilted camera the labels are placed in the overhead frame's estimate and hung from their true anchors; weigh a placement in screen space, projecting each anchor, in libs/scene/src/labels.ts
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -191,6 +191,11 @@ Harvest results this boundary:
 - 2026-10-24, at range 8 of 24's stop: 2 parked ideas, classified.
 - **blocker**: park 16 · The world's cell membranes carry no teeth yet: the SVG's dented ring (one tooth per rule, step 12) lives in libs/svg/src/terrain.ts, so step 25's tissue grid lays the plain contour; step 32 should move dentedRing into libs/scene so tissue() lays the dented ring both renderers draw (D86, D146) → step 32's done-when draws the world's membranes from the tissue grid with no teeth, while D86 and D146 keep a cell's teeth in both renderers; the fold moves the dented ring into `libs/scene` at step 32
 - **blocker**: park 17 · The shore's open blocks name their changed files but drop the spike's grid: D153 has a touched group open on its files, one small square per file with the changed ones lit, then their names, and the SVG draw the same blocks; step 96 followed D158's narrower 'changed files named', so a 50-file group with one change reads like a 1-file group. Add the grid to the band (from shoreRail's count and changed files) in a small SVG step built ahead of step 32, so the world's rail draws the same grid → D153 opens a touched shore group on a grid of its files with the changed ones lit, and step 96 drew names alone; the fold adds a small SVG step for the grid ahead of step 32, so the world's rail draws the same blocks
+- 2026-10-24, at range 11 of 24's stop: 4 parked ideas, classified.
+- **tangent**: park 18 · A target with several notices wears one label per notice (demo's index.ts four times, retake-3's createOptionsProxy.ts three), since step 27's labelsFor places each notice's label on its own; weigh one label per target with its run of ranks, in libs/scene/src/labels.ts → one label per notice at a shared target is step 27's own placement, in libs/scene, and a later range can re-cut it once you have seen it
+- **tangent**: park 19 · The HUD's block words and the legend's list are derived twice, in libs/svg/src/chrome.ts and legend.ts and again in apps/web/src/hud.ts, held together by hud.test.tsx's parity over every fixture; weigh one derivation in libs/scene for both renderers, as shoreRail and noticeAnchors are (D86, D90) → the HUD words are derived twice but a test holds them together on every fixture, so one derivation in scene can wait for a quiet step
+- **tangent**: park 20 · The camera's smoothing (SMOOTH_S, DRAG_SMOOTH_S) and its zoom bounds are baked in apps/web/src/world/camera.ts, and camera-controls' wheel notch zooms 1.85x; move them into the motion tokens the dev panel moves when step 44 records the world's own, after Rob has tried the camera on a trackpad and a mouse → the camera's smoothing and bounds belong with the motion tokens step 44 records, after you have tried the camera on both devices
+- **tangent**: park 21 · labelsFor takes an axis-aligned viewport in layout units, so under a rotated or tilted camera the labels are placed in the overhead frame's estimate and hung from their true anchors; weigh a placement in screen space, projecting each anchor, in libs/scene/src/labels.ts → label placement under rotation and tilt is an estimate that holds in the overhead frame, and a screen-space placement is scene's to add later
 
 ## Log
 
@@ -1031,3 +1036,74 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-24 — step 34 checkpointed · ed096bfed — feat(web): draw the notices with their labels and leaders (1 drift, 24m)
 - 2026-10-24 — step 35 checkpointed · 20fcfdaed — feat(web): render the HUD's grade blocks (1 drift, 8m)
 - 2026-10-24 — step 36 checkpointed · 68f9f8cea — feat(web): open each HUD block's parts on click (1 drift, 8m)
+- 2026-10-24 — step 37 checkpointed · 3c0d4d65a — feat(web): zoom, pan, tilt and rotate the camera continuously (1 drift, 9m)
+- 2026-10-24 — range 11 of 24's stop recorded — try the camera on a trackpad and a mouse (step 37's check: continuous zoom, tilt stopping at 35°, nothing moving on its own, level-of-detail cross-fades without a blink), and review the notices' tiers, labels and leaders and the HUD's blocks and their parts
+
+  **Summary**: The world now carries its chrome and its instruments: the six notices in §5.4's tiers, the primary's halo breathing and flaring at its anchor, every notice labelled through CSS2DRenderer with a dotted leader to its numbered box and the ranked list over the shore rail; §7's grade blocks across the top with the legend inset at the bottom left, each block opening its parts on click and a red slot linking to its raw output when the run is served; and the camera on the pointer, zooming toward the cursor, panning, tilting to 35° and rotating, with the levels of detail cross-fading as it moves. Along the way the sector material was found never to have drawn on WebGPU and now does, and three loads once under an alias.
+
+  1. Every step landed a line outside its seam, each the done-when needed
+  2. Step 33's marks had never drawn on WebGPU, and both backends now draw clean
+  3. The notices take their tiers, and a target with several wears one label per notice
+  4. The HUD matches the sheet block for block on every fixture, and a red slot opens its raw output when served
+  5. The camera zooms toward the cursor once the frustum is symmetric, and the pointer passes through the chrome
+
+  **Readout**:
+
+  ```text
+  steps        4 of 4 landed
+               - 34 ed096bf · 35 20fcfda · 36 68f9f8c · 37 3c0d4d6
+  check        green: 1 of 1 checks, 4 landings
+  done-when    met
+  decisions    honored:
+               - D148 (notice-anchors)
+               - D153 (shore-rail)
+               - D12 (materials)
+               - D72 (tier-ring-not-evidence)
+               - D91 (web-stack)
+               - D94 (seeded-motion)
+               - D87 (legend-inset)
+               - D146 (morph-shapes)
+               - D70 (gate-blocks)
+               - D93 (app-reads-what-it-is-served)
+               - D134 (loopback-trust)
+               - D156 (dev-panel)
+  constraints  14 of 14 honored
+  seam         strayed: 4 paths outside 4 steps' seams
+               - step 34: apps/web/vite.config.ts
+               - step 35: apps/web/tsconfig.json
+               - step 36: apps/atis/src/run.ts
+               - step 37: fallow.toml
+  diff         +2740 -299 across 38 files
+  spent        50 min · green first run at every landing · 4 drift warnings
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Harvested**: 4 of 21 parked ideas open
+
+  - P18 · A target with several notices wears one label per notice (demo's index.ts four times, retake-3's createOptionsProxy.ts three), since step 27's labelsFor places each notice's label on its own; weigh one label per target with its run of ranks, in libs/scene/src/labels.ts → lean: tangent, one label per notice at a shared target is step 27's own placement, in libs/scene, and a later range can re-cut it once you have seen it
+  - P19 · The HUD's block words and the legend's list are derived twice, in libs/svg/src/chrome.ts and legend.ts and again in apps/web/src/hud.ts, held together by hud.test.tsx's parity over every fixture; weigh one derivation in libs/scene for both renderers, as shoreRail and noticeAnchors are (D86, D90) → lean: tangent, the HUD words are derived twice but a test holds them together on every fixture, so one derivation in scene can wait for a quiet step
+  - P20 · The camera's smoothing (SMOOTH_S, DRAG_SMOOTH_S) and its zoom bounds are baked in apps/web/src/world/camera.ts, and camera-controls' wheel notch zooms 1.85x; move them into the motion tokens the dev panel moves when step 44 records the world's own, after Rob has tried the camera on a trackpad and a mouse → lean: tangent, the camera's smoothing and bounds belong with the motion tokens step 44 records, after you have tried the camera on both devices
+  - P21 · labelsFor takes an axis-aligned viewport in layout units, so under a rotated or tilted camera the labels are placed in the overhead frame's estimate and hung from their true anchors; weigh a placement in screen space, projecting each anchor, in libs/scene/src/labels.ts → lean: tangent, label placement under rotation and tilt is an estimate that holds in the overhead frame, and a screen-space placement is scene's to add later
+
+  **Recommendation**: Run `pnpm build`, open `node apps/atis/dist/cli.js --repo . --base HEAD~4` in your own tab, try the camera on the trackpad and the mouse, then click through the HUD's blocks and read the notices on retake-3 and the demo, and take the four parks as tangents. Everything the range built is in place and measured headless, but the feel of the zoom, the tilt and the smoothing is yours to judge on real hardware, and the one thing I would want your eye on before the next range is the notice labels crowding a shared target (P18), which decides whether step 27's placement is re-cut.
+
+  **1.** Every step landed a line outside its seam, each the done-when needed
+
+  Step 34 aliased three's bare name to its WebGPU build in `apps/web/vite.config.ts`, since the CSS2D addon the done-when names imports the core build and a second copy of three warns on the console the smoke test watches. Step 35 added a project reference to `libs/svg` in `apps/web/tsconfig.json`, since the parity test the done-when asks for imports the sheet's renderer and `tsc --build` needs the reference to order the builds. Step 36 passed the run's `.check/` and the map's slots to the server from `apps/atis/src/run.ts`, since `serve.ts` cannot know the repository on its own. Step 37 dropped the `camera-controls` entry from `fallow.toml`'s ignored dependencies, which its own comment reserved for this step. None is scope the plan did not ask for.
+
+  **2.** Step 33's marks had never drawn on WebGPU, and both backends now draw clean
+
+  Headless Chrome 155 here runs WebGPU, and the first capture of step 34 showed every mark missing with the console full of pipeline errors: the sector material carried ten vertex buffers, eleven with the notice slot, where WebGPU allows a pipeline eight. The smoke test forces WebGL 2, so it never saw it. The instance's numbers are now packed into five buffers beside the strip's two, and retake-3, retake-1, corpus-1 and the demo draw on WebGPU with a clean console, the primary's red light measured swinging between 47 and 58 on a 2 s period.
+
+  **3.** The notices take their tiers, and a target with several wears one label per notice
+
+  Each target wears its strongest tier's emphasis as sectors: the primary a halo in the category hue, which breathes and flares through the scheduler's gain and swell read per rank from two uniform arrays, under a thin ring; a secondary a thick ring in the leaders' grey; a tertiary its box alone. Labels are DOM text through CSS2DRenderer at step 27's placements, hung from their anchors by a pixel offset, each notice's joined by a dotted SVG leader to its box in the run its target wears, with the primary's kind under the run; the ranked list heads the right-hand column over the rail, and a notice on a shore file wears its box on its group's block, retake-1's primary on the tests block. Step 27 places each notice's label on its own, so the demo's `index.ts` wears its name four times and retake-3's `createOptionsProxy.ts` three, which reads busy and is parked (P18).
+
+  **4.** The HUD matches the sheet block for block on every fixture, and a red slot opens its raw output when served
+
+  The grade blocks come from a derivation carried over from the sheet, and a DOM test renders the sheet for the demo, its four other categories and every committed fixture map and holds the world's ids, words and muted reasons to it; the legend keys the same ten marks in the same words with the seven shapes beside them. A click opens a block's parts beneath the row, read from the map alone: the red slots with the changed files they name, the uncovered lines per file, the live mutants, the reach by cell with hops and the interfaces crossed, the changed files with their sizes. In served mode the server answers `/check/<slot>` with the slot's standard output or report, only with the token and only for a slot the map holds, and the red slot's heading links there; a fixture shows the parts without the link. The block words are derived twice, in `libs/svg` and `apps/web`, held together by the parity test, which is parked (P19).
+
+  **5.** The camera zooms toward the cursor once the frustum is symmetric, and the pointer passes through the chrome
+
+  camera-controls binds the wheel and a pinch to zoom, a drag to pan, and the right button or three fingers to tilt and rotate, with the polar angle stopped at 35° and no inertia. The first headless trial found two faults. The chrome's root div had grown as wide as the HUD and swallowed the pointer, so the entry lets it pass through and each block that takes the pointer says so. And with the fit's shift in the frustum, one notch slid the point under the cursor 280 px sideways, since camera-controls assumes its target is at the screen's centre; the frustum is now symmetric and the layout opens centred beside the rail by where the target starts, and the point under the cursor stays put. Zooming out across LOD1's gate eased the surface's layer 1, 0.94, 0.61, 0.28, 0 over the fade's 300 ms. The smoothing and the zoom bounds are baked constants until step 44 (P20), and the labels are placed in the overhead frame's estimate under tilt and rotation (P21).

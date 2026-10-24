@@ -1,6 +1,6 @@
 /**
  * legend: the key every map carries in its chrome (D87), an inset at the
- * world's bottom left: a hairline frame, a small-caps title, one numbered row
+ * world's bottom left, over the minimap (D154): a hairline frame, a small-caps title, one numbered row
  * per mark with a small sample of the mark beside a few words on what it
  * measures, and last the key of the seven shapes (D146). The rows and their
  * words are `hud.ts`'s, the still sheet's row for row, and the samples are
@@ -299,9 +299,6 @@ export const Legend = ({ registry }: { readonly registry: Registry }): ReactElem
       data-legend
       aria-label="legend"
       style={{
-        position: 'fixed',
-        left: look.CHROME_PAD,
-        bottom: look.CHROME_PAD,
         padding: look.LEGEND_PAD * scale,
         boxSizing: 'border-box',
         background: look.CHROME_GROUND,
