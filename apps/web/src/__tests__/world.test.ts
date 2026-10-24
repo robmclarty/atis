@@ -5,7 +5,9 @@
  * path in the installed Chrome, else a Chromium on the PATH (D145), and fails
  * on a console error or a blank frame. It looks at the lit surface, past
  * LOD1's gate, since the far field is dark by design until the weather lights
- * it (D151).
+ * it (D151). A second frame opens on one cell past LOD2's gate, where the
+ * cell opens as a stained slide (step 40): the canvas names the open cell,
+ * the slide tags each of its files, and `x` spreads the exploded view.
  */
 
 import { accessSync, constants, readFileSync } from 'node:fs';
@@ -130,6 +132,51 @@ test('the world draws the demo map headless on WebGL 2, lit at the surface, with
     // A blank frame is the field alone: nothing clear of it, in one shade. The lit skin covers the frame in hundreds.
     expect(reading.lit / reading.pixels).toBeGreaterThan(0.2);
     expect(reading.shades).toBeGreaterThan(64);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+/** The middle of a cell's contour on the demo, where a frame centred on it opens the cell. */
+const middleOf = (cell: string): readonly [number, number] => {
+  const parsed: unknown = JSON.parse(readFileSync(DEMO, 'utf8'));
+  const contour = (parsed as { terrain: { layout: { contours: Record<string, readonly (readonly [number, number])[]> } } }).terrain.layout.contours[cell] ?? [];
+  return [contour.reduce((total, [x]) => total + x, 0) / contour.length, contour.reduce((total, [, y]) => total + y, 0) / contour.length];
+};
+
+test('framed on one cell past the cell\'s gate, the world opens it as a slide that tags each of its files, and x spreads the exploded view, with a clean console', { timeout: 120_000 }, async () => {
+  const { server, url } = await serve();
+  const browser = await launch();
+  try {
+    const page = await browser.newPage({ viewport: { width: 960, height: 720 } });
+    const complaints: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error' || message.type() === 'warning') complaints.push(`${message.type()}: ${message.text()}`);
+    });
+    page.on('pageerror', (error) => complaints.push(`pageerror: ${error.message}`));
+
+    const cell = 'folder:libs/core/src/pm';
+    const [x, y] = middleOf(cell);
+    await page.goto(`${url}/?backend=webgl&zoom=8&centre=${String(x)},${String(y)}`);
+    await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
+    await page.waitForSelector(`#world[data-open="${cell}"]`, { timeout: 30_000 });
+    // The slide tags every file the layout placed in the cell, each with its rule count, and writes the barrel's exports on the membrane.
+    await page.waitForSelector('[data-interior-tag]', { timeout: 30_000 });
+    const tags = await page.$$eval('[data-interior-tag]', (elements) => elements.map((element) => element.textContent));
+    expect(tags.toSorted()).toEqual(['+tools.ts · 2', 'index.ts', 'legacy.ts', 'slots.ts']);
+    expect(await page.textContent('[data-interior-exports]')).toBe('index.ts · 3 exports');
+    expect(await page.textContent('[data-explode]')).toBe('explode');
+    // The exploded view spreads on x, and the breadcrumb's button reads so.
+    await page.keyboard.press('x');
+    await page.waitForSelector('#world[data-exploded="on"]', { timeout: 30_000 });
+    expect(await page.textContent('[data-explode]')).toBe('gather');
+    const sockets = await page.$$eval('[data-interior-socket]', (elements) => elements.filter((element) => element instanceof SVGElement && element.style.display !== 'none').length);
+    expect(sockets).toBe(4);
+    // Escape closes the cell.
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('#world:not([data-open])', { timeout: 30_000 });
+    expect(complaints).toEqual([]);
   } finally {
     await browser.close();
     await server.close();

@@ -68,7 +68,9 @@ export type MarkKind = 'stain' | 'outline' | 'crossing' | 'hairline' | 'gap' | '
  * `bloom` is the share of its light the bloom sees; `far` says it shows at
  * the far field too, where only the change's lights show (§5.6); and
  * `notice` is the index of the notice whose light the scheduler moves it by,
- * its gain and its swell, or -1 for a mark no notice moves.
+ * its gain and its swell, or -1 for a mark no notice moves. Its `cell` is the
+ * cell the mark sits in, when the terrain holds one, so the world can hide it
+ * under that cell's slide (step 40).
  */
 export type Sector = {
   readonly kind: MarkKind;
@@ -89,6 +91,7 @@ export type Sector = {
   readonly pattern: Pattern;
   readonly far: boolean;
   readonly notice: number;
+  readonly cell?: string;
 };
 
 /** A storm's bolt, flat on the skin where the scene hangs it, the change's full size and standing state smaller and graphite (D68). */
@@ -282,7 +285,13 @@ const sectorsOf = (map: MapJson, weather: SceneWeather): readonly Sector[] => {
   const stains = placed.flatMap(({ file, at }) => stainOf(file, at, lightOf.get(file.path) ?? -1));
   const evidence = placed.flatMap(({ file, at }) => evidenceOf(file, at));
   const ghosts = placed.flatMap(({ file, at }) => (file.ghost === undefined ? [] : [ring('ghost', file, at, GHOST_PAD, 1, 'ghost', 1, 0, dashOf(GHOST_DASH))]));
-  return [...crossings, ...stains, ...halos, ...historyOf(map), ...evidence, ...ghosts, ...rings];
+  // The cell each mark sits in: its file's, or the cell itself when a notice's emphasis hangs on a cell's skin.
+  const cellOf = new Map(map.terrain.organelles.map((organelle) => [organelle.id, organelle.cell] as const));
+  const cells = new Set(map.terrain.cells.map((cell) => cell.id));
+  return [...crossings, ...stains, ...halos, ...historyOf(map), ...evidence, ...ghosts, ...rings].map((sector): Sector => {
+    const cell = cellOf.get(sector.path) ?? (cells.has(sector.path) ? sector.path : undefined);
+    return cell === undefined ? sector : { ...sector, cell };
+  });
 };
 
 /** Every storm as a bolt where the scene hangs it; a change's labelled with its slot beside it. */

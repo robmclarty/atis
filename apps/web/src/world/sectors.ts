@@ -15,13 +15,15 @@
  * primary's stain and halo breathe and flare where the scene anchors it
  * (D148) and a secondary's stain flares rarer and dimmer. The halo's own
  * share of light and bloom are the notice look's, live from the registry.
- * The instance's numbers are packed into five buffers beside the strip's
- * two, since WebGPU allows a pipeline eight vertex buffers and no more.
+ * Under an opened cell's slide the marks in that cell give way as the slide
+ * fades in, since the slide draws the change its own way (step 40). The
+ * instance's numbers are packed into five buffers beside the strip's two,
+ * since WebGPU allows a pipeline eight vertex buffers and no more.
  */
 
 import { BufferAttribute, DataTexture, DoubleSide, InstancedBufferAttribute, InstancedBufferGeometry, Mesh, MeshBasicNodeMaterial } from 'three/webgpu';
 import type { UniformNode } from 'three/webgpu';
-import { attribute, cos, float, fract, length, mix, mrt, positionLocal, select, sin, step, texture, uniform, uniformArray, varying, vec2, vec3, vec4 } from 'three/tsl';
+import { abs, attribute, cos, float, fract, length, mix, mrt, positionLocal, select, sin, step, texture, uniform, uniformArray, varying, vec2, vec3, vec4 } from 'three/tsl';
 import { HATCH_PITCH, HATCH_WIDTH, STIPPLE_DOT, STIPPLE_PITCH } from 'scene';
 import type { Grid, NoticeLight } from 'scene';
 
@@ -47,6 +49,8 @@ export type Sectors = {
   readonly halo: { readonly opacity: Float; readonly bloom: Float };
   /** Move every mark that names a notice by that notice's light this frame, in rank order. */
   readonly light: (lights: readonly NoticeLight[]) => void;
+  /** Let the marks in a cell give way under its slide, by how far the slide has faded in; none with no cell open. */
+  readonly hide: (cell: string | undefined, fade: number) => void;
 };
 
 /** A strip of `STEPS` steps along and two rows across: each vertex knows how far along it is and which side it is on, as one `step` of two. */
@@ -78,7 +82,10 @@ export const createSectors = (sectors: readonly Sector[], relief: DataTexture, g
   const count = sectors.length;
   const geometry = stripGeometry();
   geometry.instanceCount = count;
-  // Five buffers per instance: its centre and radius; its sweep, the two angles and the two offsets; its edges, the two half widths and the dash; its style; and the rest, its pattern, its light slot after the resting one, and whether it is the halo the notice look sizes.
+  // The cells the marks sit in, each numbered from 1, so a mark can be hidden under its cell's slide; 0 is no cell.
+  const cells = [...new Set(sectors.flatMap((sector) => (sector.cell === undefined ? [] : [sector.cell])))].toSorted();
+  const cellNumber = new Map(cells.map((cell, index) => [cell, index + 1] as const));
+  // Five buffers per instance: its centre and radius; its sweep, the two angles and the two offsets; its edges, the two half widths and the dash; its style; and the rest, its pattern, its light slot after the resting one, whether it is the halo the notice look sizes, and its cell's number.
   const centre = new Float32Array(count * 3);
   const sweep = new Float32Array(count * 4);
   const edges = new Float32Array(count * 4);
@@ -89,7 +96,7 @@ export const createSectors = (sectors: readonly Sector[], relief: DataTexture, g
     sweep.set([sector.from, sector.to, sector.inner, sector.outer], i * 4);
     edges.set([sector.innerHalf, sector.outerHalf, sector.dash[0], sector.dash[1]], i * 4);
     style.set([hueIndex(sector.hue), sector.opacity, sector.bloom, sector.far ? 1 : 0], i * 4);
-    extra.set([PATTERN_INDEX[sector.pattern], sector.notice + 1, sector.kind === 'halo' ? 1 : 0, 0], i * 4);
+    extra.set([PATTERN_INDEX[sector.pattern], sector.notice + 1, sector.kind === 'halo' ? 1 : 0, sector.cell === undefined ? 0 : (cellNumber.get(sector.cell) ?? 0)], i * 4);
   });
   geometry.setAttribute('centre', new InstancedBufferAttribute(centre, 3));
   geometry.setAttribute('sweep', new InstancedBufferAttribute(sweep, 4));
@@ -100,6 +107,9 @@ export const createSectors = (sectors: readonly Sector[], relief: DataTexture, g
   const bloom = uniform(1);
   const haloOpacity = uniform(1);
   const haloBloom = uniform(1);
+  // The cell under a slide, by its number, and how far the slide has faded in over it.
+  const hidden = uniform(0);
+  const hiddenFade = uniform(0);
   // Each notice's light this frame, by its slot: a gain on the mark's light and a scale on its radius, both 1 at rest.
   const gains = uniformArray<'float'>(Array.from({ length: LIGHT_SLOTS }, () => 1), 'float');
   const scales = uniformArray<'float'>(Array.from({ length: LIGHT_SLOTS }, () => 1), 'float');
@@ -113,6 +123,7 @@ export const createSectors = (sectors: readonly Sector[], relief: DataTexture, g
   const pattern = rest.x;
   const slot = rest.y.toInt();
   const halo = rest.z;
+  const inCell = rest.w;
   const along = attribute('step', 'vec2').x;
   const side = attribute('step', 'vec2').y;
   const gain = gains.element(slot);
@@ -143,7 +154,9 @@ export const createSectors = (sectors: readonly Sector[], relief: DataTexture, g
   const stippled = step(length(fract(ground.div(STIPPLE_PITCH)).sub(0.5)).mul(STIPPLE_PITCH), float(STIPPLE_DOT));
   const textured = select(pattern.lessThan(0.5), float(1), select(pattern.lessThan(1.5), hatched, stippled));
   const shown = mix(surface, float(1), look.w);
-  const alpha = look.y.mul(mix(float(1), haloOpacity, halo)).mul(shown).mul(dashed).mul(textured);
+  // A mark in the opened cell gives way as its slide fades in.
+  const under = step(abs(inCell.sub(hidden)), float(0.5)).mul(hiddenFade);
+  const alpha = look.y.mul(mix(float(1), haloOpacity, halo)).mul(shown).mul(dashed).mul(textured).mul(float(1).sub(under));
   // A mark's colour, brightened by its notice's light while it flares.
   const colour = palette.colourOf(look.x).mul(gain);
   material.colorNode = colour;
@@ -164,6 +177,10 @@ export const createSectors = (sectors: readonly Sector[], relief: DataTexture, g
         gains.array[rank + 1] = lights[rank]?.gain ?? 1;
         scales.array[rank + 1] = lights[rank]?.scale ?? 1;
       }
+    },
+    hide: (cell, fade) => {
+      hidden.value = cell === undefined ? 0 : (cellNumber.get(cell) ?? 0);
+      hiddenFade.value = fade;
     },
   };
 };

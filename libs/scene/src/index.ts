@@ -9,6 +9,7 @@
 export * from './drift.js';
 export * from './heightfield.js';
 export * from './instances.js';
+export * from './interior.js';
 export * from './labels.js';
 export * from './lod.js';
 export * from './membranes.js';

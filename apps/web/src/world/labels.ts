@@ -86,8 +86,8 @@ export type LabelLook = typeof LABEL_LOOK;
 export type Labels = {
   /** The layers over the canvas, in the order they stack: the leaders, then the text. */
   readonly elements: readonly Element[];
-  /** Lay the labels out again for what the camera shows at this level of detail: every notice's label and the level's budget of file names, clear of each other (step 27). */
-  readonly place: (viewport: Viewport, lod: Lod) => void;
+  /** Lay the labels out again for what the camera shows at this level of detail: every notice's label and the level's budget of file names, clear of each other (step 27), but for the files an opened cell's slide tags in its own columns (step 40). */
+  readonly place: (viewport: Viewport, lod: Lod, onSlide?: ReadonlySet<string>) => void;
   /** Keep every label over its point for this camera and canvas, and draw the leaders, with the surface's layer as the layers' opacity. */
   readonly render: (camera: Camera, width: number, height: number, surface: number) => void;
 };
@@ -224,7 +224,7 @@ export const createLabels = (map: MapJson, tags: readonly Label[], heightAt: Hei
     }
   };
 
-  const place = (viewport: Viewport, lod: Lod): void => {
+  const place = (viewport: Viewport, lod: Lod, onSlide: ReadonlySet<string> = new Set()): void => {
     const ppu = viewport.pixelsPerUnit;
     layRuns(ppu);
     for (const { tag, label } of tagged) {
@@ -238,7 +238,9 @@ export const createLabels = (map: MapJson, tags: readonly Label[], heightAt: Hei
     strokes.setAttribute('stroke-linecap', 'round');
     strokes.setAttribute('fill', 'none');
     const byTarget = new Map(runs.map((marks) => [marks.run.target, marks] as const));
-    placed = labelsFor(map, lod, viewport).map((label): Pinned => {
+    placed = labelsFor(map, lod, viewport)
+      .filter((label) => label.rank !== undefined || !onSlide.has(label.target))
+      .map((label): Pinned => {
       const { outer, inner } = hanger();
       const notice = label.rank !== undefined;
       outer.dataset['label'] = notice ? 'notice' : 'file';

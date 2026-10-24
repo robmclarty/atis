@@ -90,6 +90,34 @@ test('the breadcrumb reads the stop down from the field, the stop it stands at i
   expect(element('[data-crumb="0"]').style.color).toBe('');
 });
 
+test('while a cell is open the breadcrumb ends in a button that asks the world to explode its view, or gather it (step 40)', async () => {
+  const nav = createNav();
+  const explode = vi.fn();
+  nav.steer({ lookAt: vi.fn(), visit: vi.fn(), explode });
+  const heard = vi.fn();
+  nav.subscribe(heard);
+  await act(async () => root.render(<Crumbs map={DEMO} registry={createRegistry()} nav={nav} />));
+  expect(host.querySelector('[data-explode]')).toBeNull();
+  act(() => nav.open({ cell: 'folder:libs/core/src/pm', exploded: false }));
+  expect(nav.opened()).toEqual({ cell: 'folder:libs/core/src/pm', exploded: false });
+  expect(heard).toHaveBeenCalledTimes(1);
+  expect(element('[data-explode]').textContent).toBe('explode');
+  await click('[data-explode]');
+  expect(explode).toHaveBeenCalledTimes(1);
+  // The world answers by spreading the view; the same state said again is not news.
+  act(() => nav.open({ cell: 'folder:libs/core/src/pm', exploded: true }));
+  act(() => nav.open({ cell: 'folder:libs/core/src/pm', exploded: true }));
+  expect(heard).toHaveBeenCalledTimes(2);
+  expect(element('[data-explode]').dataset['explode']).toBe('on');
+  expect(element('[data-explode]').textContent).toBe('gather');
+  act(() => nav.open(undefined));
+  expect(host.querySelector('[data-explode]')).toBeNull();
+  // A world that does not steer the explode takes the ask and does nothing.
+  nav.steer({ lookAt: vi.fn(), visit: vi.fn() });
+  nav.explode();
+  expect(explode).toHaveBeenCalledTimes(1);
+});
+
 test("a notice's row flies the world to its target, and a shore target's row brings its block into view (D148, D153)", async () => {
   const nav = createNav();
   const visit = vi.fn();

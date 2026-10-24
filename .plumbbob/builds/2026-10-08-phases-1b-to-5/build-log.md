@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 39 — feat(web): fly to a notice and walk the map from the keyboard
+**Current step:** 40 — feat(web): open a cell into its stained interior
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -65,7 +65,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 36. feat(web): open each HUD block's parts on click
 - ☑ 37. feat(web): zoom, pan, tilt and rotate the camera continuously
 - ☑ 38. feat(web): pick and hover at every level of detail
-- ☐ 39. feat(web): fly to a notice and walk the map from the keyboard
+- ☑ 39. feat(web): fly to a notice and walk the map from the keyboard
 - ☐ 40. feat(web): open a cell into its stained interior
 - ☐ 41. feat(web): overlay a changed cell's wiring
 - ☐ 42. feat(web): honour reduced motion
@@ -151,6 +151,10 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] The HUD's block words and the legend's list are derived twice, in libs/svg/src/chrome.ts and legend.ts and again in apps/web/src/hud.ts, held together by hud.test.tsx's parity over every fixture; weigh one derivation in libs/scene for both renderers, as shoreRail and noticeAnchors are (D86, D90)
 - [x] The camera's smoothing (SMOOTH_S, DRAG_SMOOTH_S) and its zoom bounds are baked in apps/web/src/world/camera.ts, and camera-controls' wheel notch zooms 1.85x; move them into the motion tokens the dev panel moves when step 44 records the world's own, after Rob has tried the camera on a trackpad and a mouse
 - [x] labelsFor takes an axis-aligned viewport in layout units, so under a rotated or tilted camera the labels are placed in the overhead frame's estimate and hung from their true anchors; weigh a placement in screen space, projecting each anchor, in libs/scene/src/labels.ts
+- [ ] The map records a cell's interface as a count alone (interface_size), so the opened cell's membrane writes 'index.ts · 3 exports' and never the names; weigh recording the barrel's export names in the map (D85 schema bump, from the scan's ScannedFile.exports) so the membrane can write them
+- [ ] Under an opened cell's slide the surface's evidence marks on its files (the gap ring, mutant notches, stitches, ghosts) give way with the stains, and the slide redraws only the stain with its unstained share; weigh drawing the evidence round each body on the slide, in apps/web/src/world/interior.ts from the scene's weatherOf
+- [ ] LOD2's gate at 6x the fit zoom opens a cell only once it is framed closer than a screen can hold on a small map: the demo's pm folder spans 151 of the layout's 660 units, so at the gate it stands over two screens tall and Enter's 80% framing never reaches the gate; weigh gating the cell level by the cell's size on screen rather than the zoom alone, or lowering the gate, when step 44 records the world's tokens (LOD_GATES in libs/scene/src/lod.ts)
+- [ ] An opened cell's tag columns pull in to the screen's edges when the slide is wider than the screen, where the legend and the minimap already stand at the bottom left and the HUD at the top left, so a left tag can land under them; weigh keeping the columns clear of the chrome's corner, in tagsOf (libs/scene/src/interior.ts) or by passing the chrome's claims as the screen's margins
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -1110,3 +1114,57 @@ folder, so it rides the branch into the PR.)*
 
 - 2026-10-24 — step 93 checkpointed · 8f9e3e625 — feat(web): draw a minimap that moves the camera (9m)
 - 2026-10-24 — step 38 checkpointed · 64f307a94 — feat(web): pick and hover at every level of detail (11m)
+- 2026-10-24 — step 39 checkpointed · a866dd39b — feat(web): fly to a notice and walk the map from the keyboard (11m)
+- 2026-10-24 — range 12 of 24's stop recorded — try picking and hover at every level of detail, fly-to from a notice row, the keyboard walk with its breadcrumb (step 39's check), and the minimap (step 93), before the cell's interior opens beneath them
+
+  **Summary**: The world can now be travelled, not just looked at. A flat minimap in the bottom-left corner shows the body, the reach, the changed files, the notices and the view's outline, and a click or drag on it moves the camera. The pointer picks a file or a cell at every level of detail, with an eased outline and a path tag. A notice row flies the camera to its target in 400 ms and the skin swings on landing. The arrows, Enter and Escape walk the map, and the HUD's new breadcrumb reads `field › cell › file` at every stop. All three steps landed green, and I tried each in a browser on retake-3, overhead and tilted.
+
+  1. Going straight from one hovered thing to the next moves the lit outline across without easing it in again
+  2. The minimap sits in the bottom-left corner, and the legend now sits on top of it
+  3. One line, `nav.ts`, connects the chrome and the world
+  4. Picking follows what is drawn: the skin's height under the pointer, and only the points of light at the far field
+  5. The arrows also walk between files, and a hand move reads the stop back off the view
+
+  **Readout**:
+
+  ```text
+  steps        3 of 3 landed
+               - 93 8f9e3e6 · 38 64f307a · 39 a866dd3
+  check        green: 1 of 1 checks, 3 landings
+  done-when    met
+  decisions    honored:
+               - D154 (minimap)
+               - D12 (materials)
+               - D153 (shore-rail)
+               - D148 (notice-anchors)
+               - D156 (dev-panel)
+               - D94 (seeded-motion)
+  constraints  14 of 14 honored
+  seam         held: 3 of 3 steps, no strays
+  diff         +2185 -81 across 30 files
+  spent        30 min · green first run at every landing
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Try it now in a tab: `atis --base main` on this repo, or retake-3 through the dev server already running at `http://localhost:5199/?map=/@fs/Users/robmclarty/Projects/atis/code/atis/fixtures/retake-3/map.json&zoom=2`. Hover at the field, the surface and a cell, tilted once. Click notice 1. Walk with the arrows, Enter and Escape while watching the breadcrumb. Drag on the minimap. Then run range 13. The one real call is highlight 1: keep the outline moving straight between files, or have the scheduler ease each new one in. I would keep it, because a sweep across a dense cell reads as one highlight moving, not a flicker.
+
+  **1.** Going straight from one hovered thing to the next moves the lit outline across without easing it in again
+
+  The plan says the hovered thing "eases to a highlight in 100 ms". The scheduler has one hover value, and `motion.ts` was outside step 38's seam. So the outline eases in when the pointer arrives from open ground and eases out when it leaves to open ground. Between two files it simply jumps to the new one, already lit. The other way would be to fade out and back in on every file, which adds about 200 ms of lag per file and flickers when the pointer sweeps across a cell. If you want each new thing to ease in, that is a small change to the scheduler: one hover value per target.
+
+  **2.** The minimap sits in the bottom-left corner, and the legend now sits on top of it
+
+  D154 and D87 both put their insets at the bottom left. The minimap takes the corner, and the legend stacks above it, a pad apart, both in one fixed column. That raises the legend by about 190 px at 900 px tall. The minimap is framed on the body's own outline, not the full layout, so the empty shore strip doesn't waste space. At low zoom the view's outline is larger than the inset and gets clipped at its edges. Its size, the silhouette's grey, the reach tint, the dot size and the outline's ink are all `MINIMAP.*` tokens in the dev panel.
+
+  **3.** One line, `nav.ts`, connects the chrome and the world
+
+  The minimap reads the view's outline from it and asks it to look at a point. A notice row asks it to fly to a stop. The breadcrumb reads the world's current stop from it. Neither side imports the other. A chrome rendered with no world, as in the DOM tests, makes its own line that nothing steers. The view's outline is where the frustum's corner rays, over the screen left of the rail, meet the ground. That is pure geometry in `libs/scene`, tested, so a tilt draws a parallelogram. A click on the minimap landed exactly where it was aimed, both overhead and at 35°.
+
+  **4.** Picking follows what is drawn: the skin's height under the pointer, and only the points of light at the far field
+
+  `surfacePoint` walks the pointer's ray down through the relief, so a tilted view picks the file you see on a raised terrace, not the one behind it. Files answer a few pixels past their edge (`HOVER.slop`), and the nearest edge wins. Cells are picked against their triangulated, toothed skins, smallest first, so a nested cell answers before the one holding it. At LOD0 only the changed files and the notices' files answer, since those are the only lights at that zoom; everywhere else the pointer answers with the cell. The shore never answers. Its rail blocks are DOM and take the pointer themselves: a file is outlined right away, and its title shows the path. The test picks every placed file in retake-3 at its own centre.
+
+  **5.** The arrows also walk between files, and a hand move reads the stop back off the view
+
+  The plan says "arrow keys walk sibling cells". Once a file is the stop, the arrows walk to its neighbouring files in the same cell, because cells have no siblings at that level. Each arrow picks the sibling furthest along that direction and least off to the side. Enter goes into whatever is under the centre of the view, otherwise into the nearest child. Escape goes up one level, ending at the field. When you move the camera by hand, the breadcrumb follows once it comes to rest: the field from far out, then the cell under the centre, then the file at the file's own zoom level. One small mistake: step 39's commit message says `fitFor`'s `zoomFor`, but the file is `fit.ts`.

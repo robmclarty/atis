@@ -8,8 +8,9 @@
  * wheel's steps read as one continuous zoom. At zoom 1 the frustum fits the
  * layout inside the free screen beside the chrome (`fit.ts`), the far field,
  * and the camera's zoom over that is the one scalar the levels of detail read
- * (`lod.ts`). The page's `?zoom=` and `?tilt=` set the opening frame, a tilt
- * from the south-west as the spike's tilted frames were taken. The frustum's
+ * (`lod.ts`). The page's `?zoom=`, `?tilt=` and `?centre=` set the opening
+ * frame, a tilt from the south-west as the spike's tilted frames were taken,
+ * centred on the layout's middle unless the page names a point. The frustum's
  * corners on the ground are the view the minimap outlines, and a place on the
  * ground the minimap names is where the controls ease the view (D154).
  */
@@ -144,16 +145,18 @@ const bind = (controls: CameraControls): void => {
 };
 
 /**
- * Hang the controls on the canvas, the camera over the layout's centre at the
- * view's zoom and tilt, and apply them once so the first frame is framed. The
- * target stands right of the layout's centre by the fit's shift, so the layout
- * opens centred in the free screen left of the chrome (`fit.ts`).
+ * Hang the controls on the canvas, the camera over the view's centre, the
+ * layout's middle unless the page names a point, at the view's zoom and tilt,
+ * and apply them once so the first frame is framed. The target stands right of
+ * the centre by the fit's shift, which the zoom shrinks on the ground, so the
+ * centre opens in the middle of the free screen left of the chrome (`fit.ts`).
  */
 export const createControls = (camera: OrthographicCamera, canvas: HTMLCanvasElement, map: MapJson, view: View, chrome: Chrome): CameraControls => {
   const layout = map.terrain.layout ?? UNLAID;
   const { shift } = fitFrame(layout, canvas.clientWidth, canvas.clientHeight, chrome);
-  const cx = layout.width / 2 + shift;
-  const cz = layout.height / 2;
+  const [x, y] = view.centre ?? [layout.width / 2, layout.height / 2];
+  const cx = x + shift / view.zoom;
+  const cz = y;
   const controls = new CameraControls(camera, canvas);
   controls.minPolarAngle = 0;
   controls.maxPolarAngle = (MAX_TILT * Math.PI) / 180;

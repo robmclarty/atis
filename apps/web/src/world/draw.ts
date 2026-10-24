@@ -30,24 +30,33 @@
  * and moves the camera where the minimap asks (D154). A notice's row, the
  * arrows, Enter and Escape fly the camera to a stop along the scheduler's
  * fly-to, and the skin swings as it lands; the stop goes back over the line
- * for the HUD's breadcrumb (step 39). The canvas says which
- * backend drew it and when the skin has settled, for the smoke test and a
- * screenshot to wait on.
+ * for the HUD's breadcrumb (step 39). At the cell's level the cell under the
+ * view's centre opens as a stained slide (step 40, D155): the scene lays it
+ * and its bodies, the surface's files and marks in it give way beneath, the
+ * labels leave its files to the slide's own tags, and the pointer picks its
+ * bodies where they have drifted; it holds while the view stays inside it
+ * and closes on zooming out, Esc, a click on open ground or leaving it, with
+ * `x`, or the breadcrumb's button, spreading its exploded view. The canvas
+ * says which backend drew it, when the skin has settled, and which cell is
+ * open, for the smoke test and a screenshot to wait on.
  */
 
 import { AgXToneMapping, AmbientLight, Color, DataUtils, DirectionalLight, RenderPipeline, Scene, Vector3, WebGPUCoordinateSystem, WebGPURenderer } from 'three/webgpu';
 import { emissive, mrt, output, pass } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
-import { FIELD_FILL, MOTION_TOKENS, REACH_ORIGIN_OPACITY, RELIEF, createPicker, createScheduler, gridFor, surfacePoint } from 'scene';
-import type { Lod, Point } from 'scene';
+import { FIELD_FILL, MOTION_TOKENS, REACH_ORIGIN_OPACITY, RELIEF, cellSlide, createPicker, createScheduler, gridFor, interiorOf, surfacePoint } from 'scene';
+import type { Lod, Point, Slide } from 'scene';
 import type { MapJson } from 'core';
 
 import { RAIL_WIDTH, zoomFor } from '../fit.js';
 import { hoverOf } from '../hover.js';
 import type { Hovered } from '../hover.js';
 import { marksOf } from '../marks.js';
-import { BLOOM, HOVER, LIGHTING, NOTICE, SKIN, SKY, WALK, WEATHER } from '../materials.js';
+import { BLOOM, HOVER, INTERIOR, LIGHTING, NOTICE, SKIN, SKY, WALK, WEATHER } from '../materials.js';
 import type { Nav } from '../nav.js';
+import { runsOf } from '../notices.js';
+import { CELL_LOD, CLOSED, cellOf, openedBy, openedOf } from '../opened.js';
+import type { OpenState } from '../opened.js';
 import type { Registry } from '../registry.js';
 import type { View } from '../view.js';
 import { FIELD, createWalk, ownsKey } from '../walk.js';
@@ -56,6 +65,7 @@ import { createBolts } from './bolts.js';
 import { centreOn, clampZoom, createCamera, createControls, fitCamera, outlineOf, pixelsPerUnit, rayAt, standAt, standOf } from './camera.js';
 import type { Stand } from './camera.js';
 import { TAG_LOOK, createHover } from './hover.js';
+import { SLIDE_CHROME, createInterior } from './interior.js';
 import { LABEL_LOOK, createLabels, viewportOf } from './labels.js';
 import { ORGANELLE_LOOK, createOrganelles } from './organelles.js';
 import { PALETTE_LOOK, createPalette } from './palette.js';
@@ -66,6 +76,18 @@ import { createSky } from './sky.js';
 
 /** How far off the key light stands: far enough that its direction is one across the layout. */
 const CAMERA_REACH = 1000;
+
+/** A press that moves no further than this, in pixels, and lasts no longer than this, is a click. */
+const CLICK_SLOP = 4;
+const CLICK_MS = 400;
+
+/** A stretch of the layout: the box round some points on it. */
+type Box = { readonly x0: number; readonly y0: number; readonly x1: number; readonly y1: number };
+
+const boxOf = (points: readonly Point[] | undefined): Box | undefined =>
+  points === undefined || points.length === 0 ? undefined : { x0: Math.min(...points.map(([x]) => x)), y0: Math.min(...points.map(([, y]) => y)), x1: Math.max(...points.map(([x]) => x)), y1: Math.max(...points.map(([, y]) => y)) };
+
+const overlaps = (a: Box, b: Box): boolean => a.x0 <= b.x1 && a.x1 >= b.x0 && a.y0 <= b.y1 && a.y1 >= b.y0;
 
 /** Draw the world for a map into the canvas, keep it fitted to the window beside the rail, run its one loop, and keep the chrome's line to it (`nav.ts`). */
 export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: View, registry: Registry, nav: Nav): Promise<void> => {
@@ -121,7 +143,19 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   // The hover's outline lies under the labels and its tag over them (step 38).
   const hoverLook = registry.view(HOVER, 'HOVER');
   const hover = createHover(heightAt, hoverLook, registry.view(TAG_LOOK));
-  canvas.after(hover.outline, ...labels.elements, hover.tag);
+  // The opened cell's slide (step 40): its meshes in the scene, its tags and leaders under the labels.
+  const interiorLook = registry.view(INTERIOR, 'INTERIOR');
+  const interior = createInterior(heightAt, RESOLUTION, interiorLook, registry.view(SLIDE_CHROME));
+  scene.add(...interior.meshes);
+  canvas.after(...interior.elements, hover.outline, ...labels.elements, hover.tag);
+  // Which cell is open, the slide laid for it, and the level the last frame was drawn at, which a click is read against.
+  let opening: OpenState = CLOSED;
+  let slide: Slide | undefined;
+  let slideCell: string | undefined;
+  let lastLod: Lod = 0;
+  let exploded = false;
+  // The index of the notice whose light each target's stain follows inside the slide (step 34).
+  const lightOf = new Map(runsOf(map).map((run) => [run.target, run.light] as const));
   // The highest the skin rises at rest, where a ray under the pointer starts its walk down to it.
   const highest = (): number => {
     let top = 0;
@@ -171,13 +205,33 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   controls.addEventListener('update', () => {
     pickAgain = true;
   });
-  /** The thing under a point of the page at a level of detail: where its ray meets the skin, picked with the hover's reach past a file's edge. */
-  const hoveredAt = (at: { readonly x: number; readonly y: number }, lod: Lod): Hovered | undefined => {
+  /** The layout point under a point of the page: where its ray meets the skin. */
+  const groundAt = (at: { readonly x: number; readonly y: number }): Point | undefined => {
     const box = canvas.getBoundingClientRect();
-    const ground = surfacePoint(...rayAt(camera, ((at.x - box.left) / box.width) * 2 - 1, 1 - ((at.y - box.top) / box.height) * 2), heightAt, top);
-    const pick = ground === undefined ? undefined : picker.pick(ground, lod, hoverLook.slop / pixelsPerUnit(camera, canvas.clientWidth));
+    return surfacePoint(...rayAt(camera, ((at.x - box.left) / box.width) * 2 - 1, 1 - ((at.y - box.top) / box.height) * 2), heightAt, top);
+  };
+  /** The thing under a point of the page at a level of detail, picked with the hover's reach past a file's edge; inside an opened cell, its bodies where they have drifted. */
+  const hoveredAt = (at: { readonly x: number; readonly y: number }, lod: Lod): Hovered | undefined => {
+    const ground = groundAt(at);
+    if (ground === undefined) return undefined;
+    const slop = hoverLook.slop / pixelsPerUnit(camera, canvas.clientWidth);
+    if (slide !== undefined && opening.open === slide.cell) {
+      let hit: { readonly body: (typeof bodies)[number]; readonly gap: number } | undefined;
+      for (const body of interior.bodies()) {
+        const gap = Math.hypot(ground[0] - body.x, ground[1] - body.y) - body.r;
+        if (gap <= slop && (hit === undefined || gap < hit.gap)) hit = { body, gap };
+      }
+      if (hit !== undefined) {
+        const hovered = hoverOf(map, { kind: 'organelle', path: hit.body.id, cell: slide.cell, x: hit.body.x, y: hit.body.y, r: hit.body.r });
+        return hovered === undefined ? undefined : { ...hovered, ring: hit.body.outline.ring };
+      }
+    }
+    const pick = picker.pick(ground, lod, slop);
+    // A file of the opened cell has left where the layout put it, so the picker's place for it answers nothing.
+    if (pick?.kind === 'organelle' && slide !== undefined && opening.open === slide.cell && pick.cell === slide.cell) return undefined;
     return pick === undefined ? undefined : hoverOf(map, pick);
   };
+  let bodies: ReturnType<typeof interiorOf> = [];
   let lastFrame = performance.now();
 
   // The two layers laid on the CPU are laid again on the next frame after one of their tokens moves, once however many moved.
@@ -189,14 +243,42 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     placeLabels = true;
   });
 
+  const reduced = globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const scheduler = createScheduler({
     clock: () => performance.now(),
     seed: view.seed,
     tiers: map.notices.map((notice) => notice.tier),
-    reduced: globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches,
+    reduced,
     tokens,
   });
   scheduler.load();
+
+  /** Take the open cell's next state: the scheduler opens or closes the slide, the skin swings as a cell opens, and the chrome hears of it. */
+  const apply = (next: OpenState): void => {
+    if (next.open !== opening.open) {
+      scheduler.open(next.open);
+      if (next.open === undefined) delete canvas.dataset['open'];
+      else {
+        scheduler.jiggle();
+        canvas.dataset['open'] = next.open;
+      }
+    }
+    if (next.exploded !== opening.exploded) scheduler.explode(next.exploded);
+    opening = next;
+    nav.open(openedOf(next));
+  };
+  // A click on the canvas, a press of the left button that neither moved nor lingered, opens the cell under it or closes the open one (D155).
+  let pressed: { readonly x: number; readonly y: number; readonly at: number } | undefined;
+  canvas.addEventListener('pointerdown', (event) => {
+    pressed = event.button === 0 ? { x: event.clientX, y: event.clientY, at: performance.now() } : undefined;
+  });
+  canvas.addEventListener('pointerup', (event) => {
+    const press = pressed;
+    pressed = undefined;
+    if (press === undefined || Math.hypot(event.clientX - press.x, event.clientY - press.y) > CLICK_SLOP || performance.now() - press.at > CLICK_MS) return;
+    const ground = groundAt({ x: event.clientX, y: event.clientY });
+    apply(openedBy(opening, { kind: 'click', lod: lastLod, pick: ground === undefined ? undefined : picker.pick(ground, lastLod, 0) }));
+  });
 
   // The walk (step 39): the stop the view stands at, and the flight under way to the next one, eased by the scheduler's fly-to.
   const walk = createWalk(map);
@@ -232,17 +314,29 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     if (handled) readStop = true;
     handled = false;
   });
-  // The minimap asks for a place and the camera eases there (D154); a notice's row asks for a stop and the camera flies there.
+  // The minimap asks for a place and the camera eases there (D154); a notice's row asks for a stop and the camera flies there; the breadcrumb's button asks for the exploded view.
   nav.steer({
     lookAt: (point) => {
       byHand();
       centreOn(controls, camera, canvas.clientWidth, chrome, point);
     },
     visit,
+    explode: () => apply(openedBy(opening, { kind: 'explode' })),
   });
-  // The arrows walk to a sibling, Enter descends and Escape ascends, unless the key is the focused element's own.
+  // The arrows walk to a sibling, Enter descends and Escape ascends, unless the key is the focused element's own; with a cell open, Escape closes it first and x spreads or gathers its exploded view (D155).
   globalThis.addEventListener('keydown', (event) => {
     if (event.altKey || event.ctrlKey || event.metaKey || ownsKey(event.target, event.key)) return;
+    if (event.key === 'Escape' && opening.open !== undefined) {
+      event.preventDefault();
+      apply(openedBy(opening, { kind: 'escape' }));
+      return;
+    }
+    if (event.key === 'x' || event.key === 'X') {
+      if (opening.open === undefined) return;
+      event.preventDefault();
+      apply(openedBy(opening, { kind: 'explode' }));
+      return;
+    }
     const middle = standOf(controls, camera, canvas.clientWidth, chrome)?.centre;
     const next = middle === undefined ? undefined : walk.key(stop, event.key, middle);
     if (next === undefined) return;
@@ -266,12 +360,29 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     controls.update((now - lastFrame) / 1000);
     lastFrame = now;
     // The minimap hears the view's outline only when it moved.
-    nav.show(outlineOf(camera, canvas.clientWidth, { right: RAIL_WIDTH }));
+    const outline = outlineOf(camera, canvas.clientWidth, chrome);
+    nav.show(outline);
     // The camera's zoom over the fit is the one scalar the levels of detail read.
     const frame = scheduler.frame(camera.zoom);
     // The surface's layer: 0 at the far field, 1 from LOD1 on, cross-faded between (D151).
     const surface = frame.lod?.opacity[1] ?? 0;
     const lod = frame.lod?.lod ?? 0;
+    lastLod = lod;
+    const middle = standOf(controls, camera, canvas.clientWidth, chrome)?.centre;
+    // The opened cell (D155): at the cell's level the innermost cell under the view's centre opens, and holds while any of it stays in view.
+    const under = middle === undefined || lod < CELL_LOD ? undefined : cellOf(walk.stopAt(middle, lod));
+    const viewBox = boxOf(outline);
+    apply(
+      openedBy(opening, {
+        kind: 'frame',
+        lod,
+        under,
+        shows: (cell) => {
+          const box = walk.box({ kind: 'cell', cell }, 1);
+          return box !== undefined && viewBox !== undefined && overlaps(box, viewBox);
+        },
+      }),
+    );
     // A flight moves the view along the scheduler's ease, centre straight across and zoom by its ratio, and the skin swings once it lands.
     if (flight !== undefined) {
       const progress = frame.fly ?? 1;
@@ -284,9 +395,27 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       }
     }
     if (readStop && flight === undefined) {
-      const middle = standOf(controls, camera, canvas.clientWidth, chrome)?.centre;
       if (middle !== undefined) settle(walk.stopAt(middle, lod));
       readStop = false;
+    }
+    // The slide (step 40): laid when the cell it shows changes, its bodies laid every frame where the scene has them, and the surface's files and marks in it giving way as it fades in.
+    const open = frame.open;
+    if (open.cell !== slideCell) {
+      slideCell = open.cell;
+      slide = open.cell === undefined ? undefined : cellSlide(map, open.cell, interiorLook);
+      interior.slide(slide);
+      placeLabels = true;
+    }
+    bodies = slide === undefined || open.shown <= 0 ? [] : interiorOf(map, slide, { ...(open.since === undefined ? {} : { t: open.since }), seed: view.seed, reduced, explode: open.exploded, shape: scheduler.shape, drift: tokens });
+    interior.show(bodies, open.shown, (id) => {
+      const light = lightOf.get(id);
+      return light === undefined ? 1 : (frame.notices[light]?.gain ?? 1);
+    });
+    organelles.hide(slide?.cell, open.shown);
+    sectors.hide(slide?.cell, open.shown);
+    if (open.exploded >= 1 !== exploded) {
+      exploded = open.exploded >= 1;
+      canvas.dataset['exploded'] = exploded ? 'on' : 'off';
     }
     skin.amp.value = frame.amp;
     skin.lift.value = frame.lift;
@@ -313,11 +442,12 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     glow.threshold.value = bloomLook.threshold;
     post.render();
     if (placeLabels || lod !== placedLod) {
-      labels.place(viewportOf(camera, canvas.clientWidth), lod);
+      labels.place(viewportOf(camera, canvas.clientWidth), lod, new Set(slide === undefined ? [] : slide.files.map((file) => file.id)));
       placeLabels = false;
       placedLod = lod;
     }
     labels.render(camera, canvas.clientWidth, canvas.clientHeight, surface);
+    interior.render(camera, canvas.clientWidth, canvas.clientHeight, canvas.clientWidth - RAIL_WIDTH, pixelsPerUnit(camera, canvas.clientWidth), open.exploded);
     if (pickAgain || lod !== pickedLod) {
       const hovered = pointer === undefined ? undefined : hoveredAt(pointer, lod);
       hover.show(hovered, pointer);

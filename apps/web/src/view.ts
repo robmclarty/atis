@@ -7,8 +7,12 @@
  * one scalar the levels of detail read (`lod.ts`), so 1 opens on the far field
  * and 1.7 enters the surface. `?tilt=35` tips the camera that many degrees
  * off overhead, where the wet sheen reads (D151). `?seed=7` seeds the
- * scheduler, so one seed and one time give one frame (D94, C3).
+ * scheduler, so one seed and one time give one frame (D94, C3). `?centre=x,y`
+ * opens the frame on that layout point rather than the layout's middle, so a
+ * screenshot or the smoke test can frame one cell (step 40).
  */
+
+import type { Point } from 'scene';
 
 /** The renderer's backend: three's `WebGPURenderer`, falling back by itself, or its WebGL 2 backend forced. */
 export type Backend = 'webgpu' | 'webgl';
@@ -21,6 +25,8 @@ export type View = {
   readonly tilt: number;
   /** The scheduler's seed. */
   readonly seed: number;
+  /** The layout point the frame opens centred on; the layout's middle when the page names none. */
+  readonly centre?: Point;
 };
 
 /** How far the camera tips off overhead, where the materials spike's controls stopped; step 37's camera keeps the bound. */
@@ -34,14 +40,23 @@ const numberOr = (value: string | null, fallback: number): number => {
   return Number.isFinite(n) ? n : fallback;
 };
 
+/** A `x,y` parameter as a layout point, or none when it is absent or not two numbers. */
+const pointOr = (value: string | null): Point | undefined => {
+  const parts = (value ?? '').split(',').map((part) => (part.trim() === '' ? Number.NaN : Number(part)));
+  const [x, y] = parts;
+  return parts.length === 2 && x !== undefined && y !== undefined && Number.isFinite(x) && Number.isFinite(y) ? [x, y] : undefined;
+};
+
 /** The view the page asks for; every parameter it leaves out or gets wrong takes the opening frame's value. */
 export const viewOf = (search: string): View => {
   const params = new URLSearchParams(search);
   const zoom = numberOr(params.get('zoom'), 1);
+  const centre = pointOr(params.get('centre'));
   return {
     backend: params.get('backend') === 'webgl' ? 'webgl' : 'webgpu',
     zoom: zoom > 0 ? zoom : 1,
     tilt: Math.min(MAX_TILT, Math.max(0, numberOr(params.get('tilt'), 0))),
     seed: Math.trunc(numberOr(params.get('seed'), DEFAULT_SEED)),
+    ...(centre === undefined ? {} : { centre }),
   };
 };

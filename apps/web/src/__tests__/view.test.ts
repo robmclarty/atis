@@ -33,3 +33,13 @@ test('the seed is a whole number', () => {
   expect(viewOf('?seed=4.7').seed).toBe(4);
   expect(viewOf('?seed=lucky').seed).toBe(DEFAULT_SEED);
 });
+
+test('the centre is a layout point, `x,y`, else the frame opens on the layout\'s middle', () => {
+  expect(viewOf('?centre=120,340').centre).toEqual([120, 340]);
+  expect(viewOf('?centre=12.5,-4').centre).toEqual([12.5, -4]);
+  expect(viewOf('?centre=120').centre).toBeUndefined();
+  expect(viewOf('?centre=120,').centre).toBeUndefined();
+  expect(viewOf('?centre=here,there').centre).toBeUndefined();
+  expect(viewOf('?centre=1,2,3').centre).toBeUndefined();
+  expect(viewOf('')).not.toHaveProperty('centre');
+});

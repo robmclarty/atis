@@ -14,14 +14,15 @@
  * waits in a queue one deep, and any after it is dropped. A jiggle swings the
  * skin when the camera lands on a cell; a hover eases a highlight in; a
  * fly-to eases the camera across; the levels of detail cross-fade as the zoom
- * crosses their gates. Inside an opened cell each file's shape pulses and
- * turns by the rules it breaks (D147), and each file drifts by how loosely its
- * cellmates hold it (D157). The curves are the materials spike's, as
- * `docs/design.md` records them.
+ * crosses their gates. An opened cell's slide fades in and out at the same
+ * rate, and its exploded view spreads and gathers at it too (step 40). Inside
+ * an opened cell each file's shape pulses and turns by the rules it breaks
+ * (D147), and each file drifts by how loosely its cellmates hold it (D157).
+ * The curves are the materials spike's, as `docs/design.md` records them.
  *
  * Under reduced motion only a static halo stands for the load flare: no
  * settle, no breathing, no flares, no jiggle, still shapes, no drift, and a
- * fly-to that cuts rather than eases.
+ * fly-to, a slide and an exploded view that cut rather than ease.
  *
  * The tokens it is timed from come in as one object, read at the moment each
  * is needed and never once at the start, so the dev panel's registry can hand
@@ -130,6 +131,15 @@ export type SchedulerOptions = {
 /** One notice's light this frame: a gain on its own light and a scale on its glow, both 1 at rest. */
 export type NoticeLight = { readonly gain: number; readonly scale: number };
 
+/**
+ * The opened cell this frame: which cell its slide shows, while it is open
+ * and until it has faded out; how far the slide has faded in, 0 to 1; how far
+ * its exploded view has spread, 0 to 1; and the milliseconds since the cell
+ * opened, held where they stood once it closes, so the bodies keep their
+ * places while the slide fades.
+ */
+export type OpenFrame = { readonly cell: string | undefined; readonly shown: number; readonly exploded: number; readonly since: number | undefined };
+
 /** Everything the world moves this frame. */
 export type MotionFrame = {
   /** Milliseconds since load. */
@@ -148,6 +158,8 @@ export type MotionFrame = {
   readonly hover: number;
   /** A fly-to's progress, eased from 0 to 1, while one is under way. */
   readonly fly: number | undefined;
+  /** The opened cell: its slide's fade and its exploded view's spread. */
+  readonly open: OpenFrame;
   /** The levels of detail, when the frame was given the zoom. */
   readonly lod?: LodPlan;
 };
@@ -167,8 +179,10 @@ export type Scheduler = {
   readonly frame: (zoom?: number) => MotionFrame;
   /** How a shape breaking `rules` rules moves at the clock's time, inside an opened cell (D147). */
   readonly shape: (rules: number) => ShapeMotion;
-  /** Open a cell now, or close the open one with `undefined`. */
+  /** Open a cell now, or close the open one with `undefined`; its slide fades in or out from here, and its exploded view gathers. */
   readonly open: (cell: string | undefined) => void;
+  /** Spread the opened cell's exploded view, or gather it; nothing while no cell is open. */
+  readonly explode: (on: boolean) => void;
   /** Where the opened cell's files have drifted by the clock's time (D157); none while no cell is open. */
   readonly drift: (map: MapJson) => readonly Drifted[];
   /** What happened to every flare asked for, in order: run, queued or dropped, with the time and the rank. */
@@ -239,6 +253,19 @@ export function createScheduler({ clock, seed, tiers, reduced, tokens: T = MOTIO
   let lastFrame: number | undefined;
   let lod: LodPlan | undefined;
   let opened: { readonly cell: string; readonly at: number } | undefined;
+  // The slide: the cell it shows until it has faded out, how far it has faded in, and the time the closed cell had been open.
+  let shownCell: string | undefined;
+  let shown = 0;
+  let held: number | undefined;
+  let exploded = 0;
+  let explodeTarget = 0;
+
+  /** A value eased toward its target at a fixed rate: a cross-fade from anywhere takes at most `LOD_FADE_MS`. */
+  const approach = (value: number, target: number, elapsed: number): number => {
+    if (reduced || T.LOD_FADE_MS <= 0) return target;
+    const step = elapsed / T.LOD_FADE_MS;
+    return value < target ? Math.min(target, value + step) : Math.max(target, value - step);
+  };
 
   const stamp = (now: number, what: string, index: number): void => {
     log.push(`${(now / 1000).toFixed(3)}s ${what} ${String(index + 1)}`);
@@ -309,7 +336,14 @@ export function createScheduler({ clock, seed, tiers, reduced, tokens: T = MOTIO
     const flying = flyStart === undefined ? undefined : reduced ? 1 : easeInOut((now - flyStart) / T.FLY_TO_MS);
     if (flyStart !== undefined && (reduced || now - flyStart >= T.FLY_TO_MS)) flyStart = undefined;
     lod = zoom === undefined ? lod : lodPlan(lod, zoom, elapsed, T.LOD_FADE_MS);
-    const shared = { t: since, hover: hoverValue, fly: flying, ...(lod === undefined || zoom === undefined ? {} : { lod }) };
+    shown = approach(shown, opened === undefined ? 0 : 1, elapsed);
+    exploded = approach(exploded, explodeTarget, elapsed);
+    if (shown === 0 && opened === undefined) {
+      shownCell = undefined;
+      held = undefined;
+    }
+    const open: OpenFrame = { cell: shownCell, shown, exploded, since: opened === undefined ? held : now - opened.at };
+    const shared = { t: since, hover: hoverValue, fly: flying, open, ...(lod === undefined || zoom === undefined ? {} : { lod }) };
 
     if (reduced || loadAt === undefined) {
       return { ...shared, amp: 1, lift: 0, notices: tiers.map(() => ({ gain: 1, scale: 1 })), flaring: undefined, halo: reduced && tiers.includes('primary') };
@@ -357,7 +391,22 @@ export function createScheduler({ clock, seed, tiers, reduced, tokens: T = MOTIO
     frame,
     shape,
     open: (cell) => {
-      opened = cell === undefined ? undefined : { cell, at: clock() };
+      const now = clock();
+      if (cell === undefined) {
+        held = opened === undefined ? held : now - opened.at;
+        opened = undefined;
+      } else {
+        // Another cell opens over the last: its slide fades in from nothing.
+        if (opened?.cell !== cell) shown = 0;
+        opened = { cell, at: now };
+        shownCell = cell;
+        held = undefined;
+      }
+      explodeTarget = 0;
+      exploded = 0;
+    },
+    explode: (on) => {
+      explodeTarget = opened !== undefined && on ? 1 : 0;
     },
     drift: (map) => (opened === undefined ? [] : driftOf(map, opened.cell, clock() - opened.at, seed, reduced, T)),
     log: () => [...log],

@@ -7,8 +7,11 @@
  * reads each through the registry, so the dev panel moves them live. Step 44
  * records them in `docs/design.md` beside their sources. The minimap's look
  * rides with them (D154), the one piece of chrome the scene's tokens do not
- * already dress.
+ * already dress, and so does an opened cell's slide (step 40).
  */
+
+import { INTERIOR_LAYOUT } from 'scene';
+import type { InteriorLayout } from 'scene';
 
 /** The skin's material: the albedos, the membrane line, how rough and how wet it is, the share of its albedo kept at the far field, and the tissue's own faint light. */
 export type SkinLook = {
@@ -188,3 +191,25 @@ export type WalkLook = {
 };
 
 export const WALK: WalkLook = { share: 0.8, fileContext: 6 };
+
+/**
+ * An opened cell's slide (§5.6's inside, step 40): warm and clinical where
+ * the surface is dark. The slide's ground and how opaque it is; the membrane's
+ * ink, drawn round the files as the frame; each body's fill and stroke, the
+ * stroke this wide in layout units; how much of the change hue a stained body
+ * takes; how far above the cell's highest relief the slide floats, in the
+ * heightfield's units; and the exploded view's spread, push and gap, which
+ * the scene lays the view by. Every body is unlit and nothing here blooms.
+ */
+export type InteriorLook = InteriorLayout & {
+  readonly slide: string;
+  readonly slideOpacity: number;
+  readonly frame: string;
+  readonly body: string;
+  readonly bodyStroke: string;
+  readonly strokeWidth: number;
+  readonly stainShare: number;
+  readonly lift: number;
+};
+
+export const INTERIOR: InteriorLook = { ...INTERIOR_LAYOUT, slide: '#efe6d3', slideOpacity: 0.94, frame: '#1e2733', body: '#b9a9cc', bodyStroke: '#6f5f8a', strokeWidth: 1, stainShare: 1, lift: 4 };

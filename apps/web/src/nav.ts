@@ -1,9 +1,11 @@
 /**
  * nav: the one line between the chrome and the world. The world says what
  * its camera shows, the view's outline on the ground, which the chrome's
- * minimap draws (D154), and the stop the walk stands at, which the HUD's
- * breadcrumb reads (step 39); the chrome asks the world to look somewhere, or
- * to fly to a stop, and the world moves its camera there. Neither imports the
+ * minimap draws (D154), the stop the walk stands at, which the HUD's
+ * breadcrumb reads (step 39), and the cell it has opened as a slide, with
+ * whether its exploded view is spread (step 40); the chrome asks the world to
+ * look somewhere, to fly to a stop, or to explode the open cell, and the
+ * world moves its camera or its slide. Neither imports the
  * other: `main.ts` hands both the same line, and an ask made before the world
  * is drawn, or with no world at all, as in a DOM test, goes nowhere. Pure, so
  * a test reads it straight.
@@ -11,11 +13,12 @@
 
 import type { Point } from 'scene';
 
+import type { Opened } from './opened.js';
 import { FIELD } from './walk.js';
 import type { Stop } from './walk.js';
 
-/** What the world does when the chrome asks: centre the view on a layout point, or fly to a stop. */
-export type Steering = { readonly lookAt: (point: Point) => void; readonly visit: (stop: Stop) => void };
+/** What the world does when the chrome asks: centre the view on a layout point, fly to a stop, or spread or gather the open cell's exploded view. */
+export type Steering = { readonly lookAt: (point: Point) => void; readonly visit: (stop: Stop) => void; readonly explode?: () => void };
 
 export type Nav = {
   /** The view's outline on the ground, in layout units, as the world last showed it; none before it has. */
@@ -26,12 +29,18 @@ export type Nav = {
   readonly stop: () => Stop;
   /** The world settles on a stop. */
   readonly settle: (stop: Stop) => void;
-  /** Hear the outline or the stop move. */
+  /** The cell the world has opened as a slide, and whether its exploded view is spread; none while every cell is closed. */
+  readonly opened: () => Opened | undefined;
+  /** The world opens a cell, spreads or gathers its view, or closes it. */
+  readonly open: (opened: Opened | undefined) => void;
+  /** Hear the outline, the stop or the open cell move. */
   readonly subscribe: (listener: () => void) => () => void;
   /** Ask the world to centre the view on a layout point. */
   readonly lookAt: (point: Point) => void;
   /** Ask the world to fly to a stop. */
   readonly visit: (stop: Stop) => void;
+  /** Ask the world to spread the open cell's exploded view, or gather it. */
+  readonly explode: () => void;
   /** The world takes the chrome's asks; the latest to steer is the one asked, until it lets go. */
   readonly steer: (steering: Steering) => () => void;
 };
@@ -46,6 +55,7 @@ export const createNav = (): Nav => {
   const listeners = new Set<() => void>();
   let outline: readonly Point[] | undefined;
   let stop: Stop = FIELD;
+  let opened: Opened | undefined;
   let steering: Steering | undefined;
   const tell = (): void => listeners.forEach((listener) => listener());
   return {
@@ -61,12 +71,19 @@ export const createNav = (): Nav => {
       stop = next;
       tell();
     },
+    opened: () => opened,
+    open: (next) => {
+      if (JSON.stringify(next) === JSON.stringify(opened)) return;
+      opened = next;
+      tell();
+    },
     subscribe: (listener) => {
       listeners.add(listener);
       return () => listeners.delete(listener);
     },
     lookAt: (point) => steering?.lookAt(point),
     visit: (next) => steering?.visit(next),
+    explode: () => steering?.explode?.(),
     steer: (next) => {
       steering = next;
       return () => {
