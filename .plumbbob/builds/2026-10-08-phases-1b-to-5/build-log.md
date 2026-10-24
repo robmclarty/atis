@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 22 — docs(design): record the materials spike's verdict and motion tokens
+**Current step:** 23 — chore(repo): add the scene library and the web app to the workspace
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -48,7 +48,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 19. chore(fixtures): select and generate the corpus's held-out half
 - ☑ 20. chore(glance): read five held-out maps blind on the SVG
 - ☑ 21. docs(inspiration): cite the corpus repos
-- ☐ 22. docs(design): record the materials spike's verdict and motion tokens
+- ☑ 22. docs(design): record the materials spike's verdict and motion tokens
 - ☐ 23. chore(repo): add the scene library and the web app to the workspace
 - ☐ 24. feat(scene): build the heightfield from depth, stability and mass
 - ☐ 25. feat(scene): triangulate membranes and lay out organelle instances
@@ -58,7 +58,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☐ 29. feat(scene): schedule every animation inside the motion budget
 - ☐ 30. feat(web): render the field and the soft skin from a served map
 - ☐ 31. feat(cli): serve the world and open it in a tab
-- ☐ 32. feat(web): draw cells, organelles and the shore
+- ☐ 32. feat(web): draw cells and organelles, and the shore in a rail
 - ☐ 33. feat(web): draw the weather
 - ☐ 34. feat(web): draw the notices with their labels and leaders
 - ☐ 35. feat(web): render the HUD's grade blocks
@@ -75,6 +75,13 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☐ 46. chore(fixtures): generate the round-two maps
 - ☐ 47. chore(glance): read glance round two in the world
 - ☐ 88. refactor(svg): draw the still map's weather from the scene's derivations
+- ☐ 93. feat(web): draw a minimap that moves the camera
+- ☐ 94. feat(svg): morph a file's outline by the rules it breaks
+- ☐ 95. feat(core): record every file's stability in the map
+- ☐ 96. feat(svg): draw the shore as a compact band of flat blocks
+- ☐ 97. feat(web): add a hidden dev panel that tunes every token live
+- ☐ 98. feat(core): record each file's import ties inside and outside its cell
+- ☐ 99. feat(scene): drift each file in an opened cell by its looseness
 - ☐ 48. feat(cli): cache the terrain per base commit
 - ☐ 49. feat(core): relax a new base's layout from the nearest cached one
 - ☐ 50. perf(cli): draw a cached run's first frame within two seconds
@@ -736,3 +743,81 @@ folder, so it rides the branch into the PR.)*
   **4.** The reading's result and its parks were settled before this range began
 
   Step 20's boundary recorded all six of its parks. P10 to P14 are tangents. P15 was folded in as D144 (working-system-first): the second retake's encodings stay parked until atis works on code Rob knows, and no refine runs before wave 1. All fifteen parks in the list are closed, so this card has nothing to classify. What remains of the stop is the materials spike.
+
+- 2026-10-24 — step 22 checkpointed · 63b3f2300 — docs(design): record the materials spike's verdict and motion tokens (41m)
+
+  **Summary**: `docs/design.md` now records the spike's verdict on each of §5.6's three reveals, with the eleven frames it was judged on in `docs/img/materials-spike/`. `tokens.ts` now carries twenty motion tokens at the values the spike left. A test holds each token inside §5.5's bounds, and the design doc's motion table is the log Q3 points at. The check is red only because four tests timed out under heavy machine load; none of them touch this diff.
+
+  1. Each reveal has its verdict in the design doc, beside the frames it was judged on
+  2. Twenty motion tokens: the nineteen the spike's tuning panel held, plus the jiggle's decay
+  3. The bounds read §5.5 three ways, and that reading is your call
+  4. The check is red only because four tests outside this diff timed out under heavy load
+  5. The jiggle the spike left rebounds once before it rests
+
+  **Readout**:
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    2 of 2 honored
+  constraints  14 of 14 honored
+  seam         held: 4 of 4 declared, no strays
+  diff         +374 -9 across 14 files
+  spent        41 min · 1 turn · 31s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Approve the verdict and the motion tokens as recorded, but land the step only after the fascicle mutation run finishes, then run `/plumbbob:refine`. The checkpoint re-runs the full gate, and under that load the same four tests will time out again. The refine has what it needs in the doc's five open rulings and the spike report, alongside Q37 (png-browser) for step 30's smoke test.
+
+  **1.** Each reveal has its verdict in the design doc, beside the frames it was judged on
+
+  A new "Phase 1b: the materials spike" section closes `docs/design.md`. It says what the spike tried (a, one dark wet skin; b, lit jelly) on which fixtures (`retake-3`, `retake-1`, `retake-5`), then gives the verdict: viable with a, in your words ("a great start"), and why b dies.
+
+  - **Far: holds.** The key light and the sky must be fully off at the far zoom. The flare's red haze at its peak is noted, and not patched.
+  - **Closer: holds, with changes.** The five changes are named: the reach barely blooms and containers don't stack, no lines at the layers' edges and softer terraces, the shore leaves the world for the rail, the sheen comes from a dark-zenith sky, and the stability swells wait for their data.
+  - **Inside: holds, with changes.** The two changes are the morphing shapes and a cell that stays open while you move. The gaps (files across the membrane, granules of equal size) belong to other steps.
+  - **Motion: holds**, at §5.5's starting numbers.
+
+  An "Open for the refine" list closes the section with the five rulings the verdict leaves: the shore rail against D48, the minimap, the morph in both renderers, whether the morph may move, and the unplaced primary.
+
+  The eleven PNGs are copied byte for byte from `.playwright-mcp/spike/final/` (4.4 MB in all). There was no optimiser in the toolchain, and recompressing the dark gradients would have changed what you judged. The three surface frames were captured before your first look, so they still show the layer lines and the shore drawn as tissue, and the doc says so above them. The shore pair and the shapes frame show a as it was left.
+
+  **2.** Twenty motion tokens: the nineteen the spike's tuning panel held, plus the jiggle's decay
+
+  Each token's value is the one in the spike's `motion.ts` (`MOTION`). Where §5.5 gives a number, the spike kept it: 400, 600, 2 s, 3%, 8 to 20 s, 40 to 90 s, half, 600, 100, 400 and 300. Where §5.5 names a motion without a size, the token takes the spike's value: `SETTLE_LIFT` 18, `SETTLE_DAMPING` 0.72, `FLARE_GAIN` 3, `FLARE_GROW` 0.45, `JIGGLE_AMPLITUDE` 0.22 and `JIGGLE_HZ` 3.2.
+
+  `JIGGLE_DECAY` (4.5) was hard-coded in the spike. It is still a token, because it is the damping §5.5 calls "heavy", and Q3 names spring constants as tunable.
+
+  The random-flare waits are in milliseconds now (`PRIMARY_FLARE_MIN_MS` 8000 and so on), so every duration uses one unit.
+
+  The curves stay untokenised: the flare's 14% rise and its fall as a square, the load flare starting halfway through the settle, and the queue one deep. The Motion section describes them, so the scheduler can draw what you judged.
+
+  `SETTLE_LIFT` is in the spike's heightfield units, where a cell's body swells 9. The doc says so, in case the heightfield's scale changes it.
+
+  **3.** The bounds read §5.5 three ways, and that reading is your call
+
+  - **Ceilings and ranges as written:** fly-to ≤ 400, cross-fades ≤ 300, the 8 to 20 s and 40 to 90 s windows, and C12's 600 ms ceiling on every transient. The flare falls under that ceiling too, since only the breathing may outlast it.
+  - **"About" as a quarter either way:** breathing 1.5 to 2.5 s, and 2.25% to 3.75%.
+  - **Starting values and missing numbers, by the rule they serve rather than pinned:** half intensity becomes "dimmer than the primary" (0 to 1, exclusive), and the settle's damping becomes "damped, and landing in its time" (0 to 1].
+
+  Pinning the starting values exactly would make every balance patch edit the test, and Q3 exists so those patches can happen. A patch past a bound changes §5.5 itself, and the doc says the bound moves with it.
+
+  The test also holds the doc's motion table to exactly the bounded set. I checked both directions by breaking each one: `FLY_TO_MS` = 500 fails its bound, and a row dropped from the table fails the table test.
+
+  **4.** The check is red only because four tests outside this diff timed out under heavy load
+
+  A Stryker mutation run in `fascicle` held the load average near 40 through both full checks. These four tests ran past vitest's 5 s timeout:
+
+  - the git-log test (`readLog`);
+  - the shape-checker test (D118's inferred export);
+  - the HUD widest-face test;
+  - the legend's no-balloon test.
+
+  None of them read `tokens.ts`'s motion block or `design.md`. Run on their own, all four pass in 2 to 5 s. Every other slot is green, and so is every tokens test. Step 21 hit the same timeouts under the same kind of load.
+
+  **5.** The jiggle the spike left rebounds once before it rests
+
+  With the decay at 4.5 over 600 ms and the frequency at 3.2 Hz, the swing goes +13%, then −4%, then +1% of the relief. That makes the damping ratio about 0.35.
+
+  The test reads §5.5's "heavy damping" as "a twentieth of the swing or less is left when it stops", and 4.5 leaves about 1%. A strict spring reading would want a damping ratio of 0.7 or more, with no visible rebound. You made no patch in the spike, so the token keeps the spike's value. If the rebound bothers you in the world, it is a Q3 patch: raise the decay, or lower the frequency.

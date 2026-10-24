@@ -2,8 +2,10 @@
   "files": [],
   "references": [
     { "path": "./libs/core" },
+    { "path": "./libs/scene" },
     { "path": "./libs/svg" },
     { "path": "./apps/atis" },
+    { "path": "./apps/web" },
     { "path": "./scripts" }
   ]
 }

@@ -4,11 +4,6 @@ import { fileURLToPath } from 'node:url';
 
 import { assertMap } from 'core';
 import type { CheckSlot, FlightCategory, MapJson, Notice, NoticeTier, Organelle } from 'core';
-import { expect, test } from 'vitest';
-
-import { CATEGORY_HUES, HUD_ORDER, NOTICE_BUDGET, wrap } from '../chrome.js';
-import { LEGEND } from '../legend.js';
-import { renderSvg } from '../render.js';
 import {
   CHANGE_HUE,
   CHROME_INK,
@@ -26,7 +21,12 @@ import {
   NOTICE_BOX,
   PRIMARY_RING_WIDTH,
   SECONDARY_RING_WIDTH,
-} from '../tokens.js';
+} from 'scene';
+import { expect, test } from 'vitest';
+
+import { CATEGORY_HUES, HUD_ORDER, NOTICE_BUDGET, wrap } from '../chrome.js';
+import { LEGEND } from '../legend.js';
+import { renderSvg } from '../render.js';
 
 /**
  * The demo map is core's own golden, read across the workspace (P2, and see

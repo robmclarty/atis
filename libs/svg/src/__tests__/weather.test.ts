@@ -4,11 +4,6 @@ import { fileURLToPath } from 'node:url';
 
 import { assertMap } from 'core';
 import type { ChangedFile, Contour, ExceptionalEdge, MapJson, Organelle, Weather } from 'core';
-import { expect, test } from 'vitest';
-
-import { num } from '../el.js';
-import { GLOW_ID, HATCH_ID, STIPPLE_ID } from '../patterns.js';
-import { renderSvg } from '../render.js';
 import {
   CHANGE_HUE,
   EMPHASIS_PAD,
@@ -32,7 +27,12 @@ import {
   STITCH_UNLIT,
   TEXTURE_INK,
   TEXTURE_MAX_OPACITY,
-} from '../tokens.js';
+} from 'scene';
+import { expect, test } from 'vitest';
+
+import { num } from '../el.js';
+import { GLOW_ID, HATCH_ID, STIPPLE_ID } from '../patterns.js';
+import { renderSvg } from '../render.js';
 import { reachOpacity } from '../weather.js';
 
 /**

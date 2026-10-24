@@ -4,12 +4,12 @@ import { fileURLToPath } from 'node:url';
 
 import { assertMap } from 'core';
 import type { MapJson } from 'core';
+import { CALLOUT_R } from 'scene';
 import { expect, test } from 'vitest';
 
 import { LEGEND } from '../legend.js';
 import { FINDERS, calloutsOf, renderPractice } from '../practice.js';
 import { frameOf } from '../render.js';
-import { CALLOUT_R } from '../tokens.js';
 
 /**
  * The legend's one list of marks is read three ways: the inset on every

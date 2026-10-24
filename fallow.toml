@@ -4,8 +4,9 @@
 entry = [
   "apps/*/src/index.ts",
   "apps/atis/src/cli.ts",
+  "apps/web/src/main.ts",
   "libs/*/src/index.ts",
-  "apps/*/src/**/*.test.ts",
+  "apps/*/src/**/*.test.{ts,tsx}",
   "libs/*/src/**/*.test.ts",
   "apps/*/test/**/*.test.ts",
   "libs/*/test/**/*.test.ts",
@@ -14,7 +15,9 @@ entry = [
 ]
 
 # CLI/tooling deps used via command line or config files, not imported from source.
-ignoreDependencies = ["@ast-grep/cli"]
+# camera-controls is installed with the web app (C9) and first driven by step 37's
+# camera; it needs a DOM to construct, so no Node smoke test can load it before then.
+ignoreDependencies = ["@ast-grep/cli", "camera-controls"]
 
 [rules]
 unused-exports = "error"

@@ -19,3 +19,25 @@ rule:
         - regex: "from\\s+['\"]\\.{1,2}/"
         - not:
             regex: "from\\s+['\"]\\.{1,2}/[^'\"]*\\.(js|mjs|json)['\"]"
+---
+# The same rule for the React chrome (C8): ast-grep parses `.tsx` as its own language.
+id: require-js-extension-tsx
+message: |
+  NodeNext resolution requires an explicit `.js` (or `.mjs` / `.json`) extension
+  on relative imports. Use `'./foo.js'`, not `'./foo'` or `'./foo.ts'`.
+severity: error
+language: tsx
+files:
+  - '**/src/**/*.tsx'
+rule:
+  any:
+    - all:
+        - kind: import_statement
+        - regex: "from\\s+['\"]\\.{1,2}/"
+        - not:
+            regex: "from\\s+['\"]\\.{1,2}/[^'\"]*\\.(js|mjs|json)['\"]"
+    - all:
+        - kind: export_statement
+        - regex: "from\\s+['\"]\\.{1,2}/"
+        - not:
+            regex: "from\\s+['\"]\\.{1,2}/[^'\"]*\\.(js|mjs|json)['\"]"

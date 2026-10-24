@@ -44,11 +44,6 @@ import type {
   Terrain,
   Weather,
 } from 'core';
-
-import { el, num } from './el.js';
-import type { Markup } from './el.js';
-import { EDGE_HUES, GLOW_ID, HATCH_ID, STIPPLE_ID, arrowId, drawDefs } from './patterns.js';
-import { pathOf } from './terrain.js';
 import {
   BUGFIX_FULL_AT,
   CHANGE_HUE,
@@ -89,7 +84,12 @@ import {
   STORM_LIFT,
   STORM_ROW,
   TEXTURE_MAX_OPACITY,
-} from './tokens.js';
+} from 'scene';
+
+import { el, num } from './el.js';
+import type { Markup } from './el.js';
+import { EDGE_HUES, GLOW_ID, HATCH_ID, STIPPLE_ID, arrowId, drawDefs } from './patterns.js';
+import { pathOf } from './terrain.js';
 
 /** The storm glyph: a bolt, drawn about its own origin. The legend draws its sample from the same path. */
 export const STORM_GLYPH = 'M1 -6L-3 1H0L-1 6L3 -1H0Z';

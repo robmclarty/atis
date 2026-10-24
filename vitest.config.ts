@@ -8,16 +8,19 @@ export default defineConfig({
   resolve: { conditions: ['source'] },
   ssr: { resolve: { conditions: ['source', 'module', 'node', 'development|production'] } },
   test: {
-    include: ['**/src/**/*.{test,spec}.ts', '**/test/**/*.{test,spec}.ts'],
+    include: ['**/src/**/*.{test,spec}.{ts,tsx}', '**/test/**/*.{test,spec}.ts'],
     exclude: ['**/node_modules/**', '**/dist/**'],
     reporters: ['default'],
     coverage: {
       provider: 'v8',
-      include: ['**/src/**/*.ts'],
+      include: ['**/src/**/*.{ts,tsx}'],
       exclude: [
-        '**/src/**/*.{test,spec}.ts',
+        '**/src/**/*.{test,spec}.{ts,tsx}',
         '**/src/**/*.d.ts',
+        // Entries a test cannot load in-process: the CLI's bin runs as a child,
+        // and the world's GPU code runs only in a browser, judged by its frames.
         '**/src/cli.ts',
+        'apps/web/src/world/**',
         '**/node_modules/**',
         '**/dist/**',
       ],

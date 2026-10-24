@@ -9,14 +9,14 @@ import * as tokens from '../tokens.js';
 /**
  * docs/design.md is the human-facing record of the look the SVG settled on,
  * written from the static SVG as §5.6 asks, and tokens.ts is the single source
- * the renderer reads it from (D51, step 21). The two drift the moment a token
+ * both renderers read it from (D51, D130). The two drift the moment a token
  * is added or renamed with no line in the doc, so this test holds the doc to
  * naming every token the file exports.
  *
  * It is the forward direction only: the doc may also name fixed geometry that
  * is not a token (the clone glyphs, the arrowhead), which it lists on purpose,
  * so a reverse check would flag those. Reading files with node:fs is fine in a
- * test; C1 keeps Node out of the code the package ships, and nothing svg
+ * test; C1 keeps Node out of the code the package ships, and nothing the scene
  * exports reaches for it.
  */
 const HERE = dirname(fileURLToPath(import.meta.url));

@@ -4,11 +4,11 @@ import { fileURLToPath } from 'node:url';
 
 import { assertMap, membraneThickness, withinContour } from 'core';
 import type { Contour, MapJson } from 'core';
+import { DENT_PULL, GLYPH_OFFSET, MEMBRANE_DENT_PULL } from 'scene';
 import { expect, test } from 'vitest';
 
 import { renderSvg } from '../render.js';
 import { pathOf } from '../terrain.js';
-import { DENT_PULL, GLYPH_OFFSET, MEMBRANE_DENT_PULL } from '../tokens.js';
 
 /**
  * The fixture map is core's own demo golden, read across the workspace rather

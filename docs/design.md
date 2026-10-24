@@ -29,12 +29,13 @@ root `<svg>`: `#world` holds `#field`, `#terraces`, `#shore`, `#membranes`,
 holds `#ground`, `#hud`, `#rules`, `#leaders`, `#notices`, `#legend` and `#marks`.
 The practice map alone adds `#callouts` over both.
 
-Every value here is read from `libs/svg/src/tokens.ts`, the still renderer's
+Every value here is read from `libs/scene/src/tokens.ts`, the still renderer's
 colours and sizes and the world's motion alike, which is the single source; the
 value shown beside each token is a copy for reading, and `tokens.ts` is
-authoritative if the two ever disagree. A test
-(`libs/svg/src/__tests__/tokens.test.ts`) keeps this document naming every
-token the file exports, and every motion token inside §5.5's bounds.
+authoritative if the two ever disagree. The file lives in the scene, beneath both
+renderers, so the SVG and the world import one file and neither imports the other
+(D130). A test (`libs/scene/src/__tests__/tokens.test.ts`) keeps this document
+naming every token the file exports, and every motion token inside §5.5's bounds.
 
 ## Type
 

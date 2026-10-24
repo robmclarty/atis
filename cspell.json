@@ -3,7 +3,7 @@
   "language": "en,en-GB",
   "unknownWords": "report-common-typos",
   "files": [
-    "**/src/**/*.ts",
+    "**/src/**/*.{ts,tsx}",
     "**/test/**/*.ts",
     "**/*.md"
   ],

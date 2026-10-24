@@ -17,12 +17,6 @@
 
 import { computeMembranes } from 'core';
 import type { Layout, MapJson, PatchCoverage, Position } from 'core';
-
-import type { Box, Chrome } from './chrome.js';
-import { el } from './el.js';
-import type { Markup } from './el.js';
-import { LEGEND, drawBalloon } from './legend.js';
-import { drawSheet, frameOf } from './render.js';
 import {
   CALLOUT_CLEARANCE,
   CALLOUT_R,
@@ -33,7 +27,13 @@ import {
   INTEGRITY_GAP_WIDTH,
   INTEGRITY_PAD,
   MUTANT_NOTCH_SPACING,
-} from './tokens.js';
+} from 'scene';
+
+import type { Box, Chrome } from './chrome.js';
+import { el } from './el.js';
+import type { Markup } from './el.js';
+import { LEGEND, drawBalloon } from './legend.js';
+import { drawSheet, frameOf } from './render.js';
 import { stormsHung } from './weather.js';
 
 type Point = readonly [number, number];

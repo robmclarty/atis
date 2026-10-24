@@ -25,11 +25,6 @@
 
 import { OTHER_GROUP, mutantOutcomes, readRedSplit } from 'core';
 import type { Contour, FlightCategory, Layout, MapJson, Notice, NoticeTier, Position } from 'core';
-
-import { el, num } from './el.js';
-import type { Attrs, Markup } from './el.js';
-import { drawLegend, legendHeight } from './legend.js';
-import { pathOf } from './terrain.js';
 import {
   CATEGORY_FONT_SIZE,
   CATEGORY_LETTERS,
@@ -67,7 +62,12 @@ import {
   SECONDARY_BOX_WIDTH,
   SECONDARY_RING_WIDTH,
   VFR_HUE,
-} from './tokens.js';
+} from 'scene';
+
+import { el, num } from './el.js';
+import type { Attrs, Markup } from './el.js';
+import { drawLegend, legendHeight } from './legend.js';
+import { pathOf } from './terrain.js';
 
 /** A box the chrome drew, in the canvas's coordinates. */
 export type Box = { readonly x: number; readonly y: number; readonly width: number; readonly height: number };

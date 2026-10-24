@@ -13,13 +13,13 @@
  */
 
 import type { Layout, MapJson } from 'core';
+import { FONT_FAMILY } from 'scene';
 
 import { drawChrome, drawGround } from './chrome.js';
 import type { Chrome } from './chrome.js';
 import { el, num, serialize } from './el.js';
 import type { Markup } from './el.js';
 import { drawField, drawMembranes, drawOrganelles, drawShore, drawTerraces } from './terrain.js';
-import { FONT_FAMILY } from './tokens.js';
 import { drawWeather } from './weather.js';
 
 const XMLNS = 'http://www.w3.org/2000/svg';

@@ -12,10 +12,10 @@
  */
 
 import type { ExceptionalEdgeKind } from 'core';
+import { ARROW_SIZE, CHANGE_HUE, HATCH_PITCH, HATCH_WIDTH, LIFR_HUE, REACH_BLUR, STIPPLE_DOT, STIPPLE_PITCH, TEXTURE_INK } from 'scene';
 
 import { el, num } from './el.js';
 import type { Markup } from './el.js';
-import { ARROW_SIZE, CHANGE_HUE, HATCH_PITCH, HATCH_WIDTH, LIFR_HUE, REACH_BLUR, STIPPLE_DOT, STIPPLE_PITCH, TEXTURE_INK } from './tokens.js';
 
 export const HATCH_ID = 'hatch';
 export const STIPPLE_ID = 'stipple';

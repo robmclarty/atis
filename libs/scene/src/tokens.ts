@@ -3,7 +3,8 @@
  * each named by what it means rather than by what it looks like (P3, C11),
  * and the motion the moving world times its animations with (D51). This file
  * is the single source those numbers are read from; `docs/design.md` is
- * written from it.
+ * written from it. It lives in the scene, beneath both renderers, so the SVG
+ * and the world read one file and neither package imports the other (D130).
  *
  * Everything here is base tissue, and base tissue is greyscale and dim (§5.6,
  * D11): a near-black field, graphite terraces, membranes and organelles in a

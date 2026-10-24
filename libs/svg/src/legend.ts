@@ -15,9 +15,6 @@
  * test holds the two lists together.
  */
 
-import { el, num } from './el.js';
-import type { Markup } from './el.js';
-import { pathOf } from './terrain.js';
 import {
   CALLOUT_FONT_SIZE,
   CALLOUT_R,
@@ -53,7 +50,11 @@ import {
   STITCH_SPACING,
   STITCH_WIDTH,
   VFR_HUE,
-} from './tokens.js';
+} from 'scene';
+
+import { el, num } from './el.js';
+import type { Markup } from './el.js';
+import { pathOf } from './terrain.js';
 import { STORM_GLYPH, notchOf, stitchOf, stitchStroke } from './weather.js';
 
 /** One mark the legend keys: its id, which the practice map's callouts find it by, and the few words its row says. */

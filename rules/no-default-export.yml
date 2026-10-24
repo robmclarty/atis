@@ -7,3 +7,14 @@ files:
 rule:
   any:
     - pattern: export default $$$
+---
+# The same rule for the React chrome (C8): ast-grep parses `.tsx` as its own language.
+id: no-default-export-tsx
+message: Avoid default exports. Named exports give agents stable, discoverable names.
+severity: error
+language: tsx
+files:
+  - '**/src/**/*.tsx'
+rule:
+  any:
+    - pattern: export default $$$

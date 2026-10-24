@@ -6,3 +6,13 @@ rule:
   any:
     - kind: class_declaration
     - kind: abstract_class_declaration
+---
+# The same rule for the React chrome (C8): ast-grep parses `.tsx` as its own language.
+id: no-class-tsx
+message: Prefer functional/procedural style over classes. Use modules and closures instead.
+severity: error
+language: tsx
+rule:
+  any:
+    - kind: class_declaration
+    - kind: abstract_class_declaration

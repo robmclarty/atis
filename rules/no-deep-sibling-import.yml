@@ -13,3 +13,20 @@ rule:
     - regex: "from\\s+['\"]\\.\\./[^/]+/[^'\"]+['\"]"
     - not:
         regex: "from\\s+['\"]\\.\\./[^/]+/index\\.js['\"]"
+---
+# The same rule for the React chrome (C8): ast-grep parses `.tsx` as its own language.
+id: no-deep-sibling-import-tsx
+message: |
+  Deep-module boundary: don't reach past a sibling module's index.
+  Use `import { ... } from '../<sibling>/index.js'` instead of
+  `'../<sibling>/<internal>.js'`.
+severity: error
+language: tsx
+files:
+  - '**/src/**/*.tsx'
+rule:
+  all:
+    - kind: import_statement
+    - regex: "from\\s+['\"]\\.\\./[^/]+/[^'\"]+['\"]"
+    - not:
+        regex: "from\\s+['\"]\\.\\./[^/]+/index\\.js['\"]"

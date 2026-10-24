@@ -23,9 +23,6 @@
 
 import { membraneThickness } from 'core';
 import type { Cell, Contour, Group, Layout, Organelle, Position, Terrain } from 'core';
-
-import { el, num } from './el.js';
-import type { Markup } from './el.js';
 import {
   DENT_PULL,
   DENT_VERTICES,
@@ -50,7 +47,10 @@ import {
   TERRACE_FILL,
   TERRACE_LINE,
   TERRACE_LINE_WIDTH,
-} from './tokens.js';
+} from 'scene';
+
+import { el, num } from './el.js';
+import type { Markup } from './el.js';
 
 /**
  * The clone glyphs, one per family in the order the families sort, wrapping
