@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 95 — feat(core): record every file's stability in the map
+**Current step:** 98 — feat(core): record each file's import ties inside and outside its cell
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -77,7 +77,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☐ 88. refactor(svg): draw the still map's weather from the scene's derivations
 - ☐ 93. feat(web): draw a minimap that moves the camera
 - ☐ 94. feat(svg): morph a file's outline by the rules it breaks
-- ☐ 95. feat(core): record every file's stability in the map
+- ☑ 95. feat(core): record every file's stability in the map
 - ☐ 96. feat(svg): draw the shore as a compact band of flat blocks
 - ☐ 97. feat(web): add a hidden dev panel that tunes every token live
 - ☐ 98. feat(core): record each file's import ties inside and outside its cell
@@ -823,3 +823,4 @@ folder, so it rides the branch into the PR.)*
   The test reads §5.5's "heavy damping" as "a twentieth of the swing or less is left when it stops", and 4.5 leaves about 1%. A strict spring reading would want a damping ratio of 0.7 or more, with no visible rebound. You made no patch in the spike, so the token keeps the spike's value. If the rebound bothers you in the world, it is a Q3 patch: raise the decay, or lower the frequency.
 
 - 2026-10-24 — step 23 checkpointed · d80907bda — chore(repo): add the scene library and the web app to the workspace (10m)
+- 2026-10-24 — step 95 checkpointed · e9be62690 — feat(core): record every file's stability in the map (3m)

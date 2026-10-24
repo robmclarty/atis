@@ -42,6 +42,13 @@ export type Cell = {
  */
 export type Stability = { readonly age_days: number; readonly churn_ratio?: number };
 
+/**
+ * How a file is held in its cell (D157): its import edges on the head graph,
+ * in either direction, to files in its own cell and to terrain files in other
+ * cells. Tests and the shore are no terrain, so they tie nothing (D4).
+ */
+export type Ties = { readonly inside: number; readonly outside: number };
+
 /** A file inside a cell. `id` is the head path; a deleted file keeps its base path (D40). */
 export type Organelle = {
   readonly id: string;
@@ -57,6 +64,8 @@ export type Organelle = {
   readonly bugfix_rate?: number;
   /** Set on every file the history window saw, changed or not; the SVG never reads it (D149). */
   readonly stability?: Stability;
+  /** Set on every file the head holds, a file with no ties included; a deleted file has none (D157). */
+  readonly ties?: Ties;
   readonly clone_family?: string;
 };
 
@@ -285,6 +294,15 @@ function assertStability(value: unknown, path: string): void {
   if (churn !== undefined && !isCount(churn)) fail(`${path}.churn_ratio`, 'expected a non-negative number');
 }
 
+/** Ties are two counts of edges, whole and never negative. */
+function assertTies(value: unknown, path: string): void {
+  const ties = expectRecord(value, path);
+  for (const side of ['inside', 'outside'] as const) {
+    const count = ties[side];
+    if (!isCount(count) || !Number.isInteger(count)) fail(`${path}.${side}`, 'expected a whole count');
+  }
+}
+
 /**
  * Every check below is real runtime narrowing (never a cast): `assertMap`
  * hands back a value the compiler only trusts because this function proved
@@ -351,6 +369,7 @@ function assertShape(value: unknown): asserts value is MapJson {
     const organelle = expectRecord(raw, `terrain.organelles[${String(index)}]`);
     organelleIds.add(expectString(organelle['id'], `terrain.organelles[${String(index)}].id`));
     if (organelle['stability'] !== undefined) assertStability(organelle['stability'], `terrain.organelles[${String(index)}].stability`);
+    if (organelle['ties'] !== undefined) assertTies(organelle['ties'], `terrain.organelles[${String(index)}].ties`);
   });
 
   const weather = expectRecord(root['weather'], 'weather');

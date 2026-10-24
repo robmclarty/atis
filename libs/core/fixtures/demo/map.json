@@ -132,6 +132,10 @@
         "stability": {
           "age_days": 151,
           "churn_ratio": 3.3656716417910446
+        },
+        "ties": {
+          "inside": 0,
+          "outside": 3
         }
       },
       {
@@ -146,6 +150,10 @@
         "stability": {
           "age_days": 151,
           "churn_ratio": 0.25
+        },
+        "ties": {
+          "inside": 0,
+          "outside": 1
         }
       },
       {
@@ -160,6 +168,10 @@
         "stability": {
           "age_days": 363,
           "churn_ratio": 1
+        },
+        "ties": {
+          "inside": 0,
+          "outside": 2
         }
       },
       {
@@ -177,6 +189,10 @@
         "stability": {
           "age_days": 363,
           "churn_ratio": 2.763157894736842
+        },
+        "ties": {
+          "inside": 2,
+          "outside": 2
         }
       },
       {
@@ -206,6 +222,10 @@
           "age_days": 363,
           "churn_ratio": 1.2954545454545454
         },
+        "ties": {
+          "inside": 1,
+          "outside": 1
+        },
         "clone_family": "family-1"
       },
       {
@@ -227,6 +247,10 @@
           "age_days": 1,
           "churn_ratio": 1
         },
+        "ties": {
+          "inside": 1,
+          "outside": 1
+        },
         "clone_family": "family-1"
       },
       {
@@ -243,6 +267,10 @@
         "stability": {
           "age_days": 91,
           "churn_ratio": 0.9230769230769231
+        },
+        "ties": {
+          "inside": 2,
+          "outside": 2
         }
       },
       {
@@ -259,6 +287,10 @@
         "stability": {
           "age_days": 61,
           "churn_ratio": 0.4864864864864865
+        },
+        "ties": {
+          "inside": 2,
+          "outside": 0
         }
       }
     ],

@@ -272,6 +272,19 @@ test("accepts an organelle's stability, with or without its churn ratio, and rej
   expect(() => assertMap(withStability(7))).toThrow(/stability: expected an object/);
 });
 
+test("accepts an organelle's ties, none included, and rejects a count that is negative, fractional or missing (D157)", () => {
+  const withTies = (ties: unknown): unknown => {
+    const map = minimalMap();
+    const [organelle] = map.terrain.organelles;
+    return { ...map, terrain: { ...map.terrain, organelles: [{ ...organelle, ties }] } };
+  };
+  expect(() => assertMap(withTies({ inside: 2, outside: 1 }))).not.toThrow();
+  expect(() => assertMap(withTies({ inside: 0, outside: 0 }))).not.toThrow();
+  expect(() => assertMap(withTies({ inside: -1, outside: 0 }))).toThrow(/ties\.inside/);
+  expect(() => assertMap(withTies({ inside: 1, outside: 0.5 }))).toThrow(/ties\.outside/);
+  expect(() => assertMap(withTies({ inside: 1 }))).toThrow(/ties\.outside/);
+});
+
 test('rejects a changed entry naming an unknown group', () => {
   const map = minimalMap();
   const withUnknownGroup = {

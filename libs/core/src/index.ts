@@ -14,3 +14,4 @@ export * from './modules.js';
 export * from './notices.js';
 export * from './reach.js';
 export * from './schema.js';
+export * from './ties.js';

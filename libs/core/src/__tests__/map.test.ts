@@ -209,6 +209,22 @@ test('every organelle the history window saw carries its stability, and one it n
   expect(organelles.get('libs/core/src/index.ts')).not.toHaveProperty('churn_ratio');
 });
 
+test("the demo map ties each file to its cell on the head graph, with the test's edges left out and the deleted file given none (D157)", () => {
+  const map = buildMap(inputsFor('demo'), DEFAULT_CONFIG);
+  const ties = new Map(map.terrain.organelles.map((organelle) => [organelle.id, organelle.ties]));
+
+  // pm's barrel reads its two siblings and is read by the CLI and the package barrel; the test that imports it ties nothing.
+  expect(ties.get('libs/core/src/pm/index.ts')).toEqual({ inside: 2, outside: 2 });
+  // A file whose every edge leaves its cell.
+  expect(ties.get('apps/cli/src/doctor.ts')).toEqual({ inside: 0, outside: 3 });
+  // text.ts and format.ts import each other: two edges, both inside.
+  expect(ties.get('libs/core/src/util/text.ts')).toEqual({ inside: 2, outside: 0 });
+  // The deleted file stays on the base terrain with no head edges to count, so it carries no key.
+  const legacy = map.terrain.organelles.find((organelle) => organelle.id === 'libs/core/src/pm/legacy.ts');
+  expect(legacy).toBeDefined();
+  expect(legacy).not.toHaveProperty('ties');
+});
+
 test('the demo map dents the cells that break a rule and marks the clone family', () => {
   const map = buildMap(inputsFor('demo'), DEFAULT_CONFIG);
   const cells = new Map(map.terrain.cells.map((cell) => [cell.id, cell]));
