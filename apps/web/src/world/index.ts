@@ -1,7 +1,7 @@
 /**
  * world: the three.js half of the app (D91), the GPU code the coverage
  * thresholds leave out as they leave out `cli.ts`; it is judged by its
- * frames, and from step 30 by the gate's smoke test (D132).
+ * frames, and by the gate's smoke test (D132).
  */
 
-export * from './field.js';
+export * from './draw.js';

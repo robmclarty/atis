@@ -1,6 +1,7 @@
 /**
- * main: the page's entry. It finds its map (D93), says where the load is in
- * the chrome, and once the map is read and trusted draws the world under it.
+ * main: the page's entry. It finds its map (D93) and how the page asks to see
+ * it, says where the load is in the chrome, and once the map is read and
+ * trusted draws the world under it.
  */
 
 import { createElement } from 'react';
@@ -10,7 +11,8 @@ import { FIELD_FILL } from 'scene';
 import { Status } from './chrome/index.js';
 import { loadMap, mapUrl } from './load.js';
 import type { MapState } from './load.js';
-import { drawField } from './world/index.js';
+import { viewOf } from './view.js';
+import { drawWorld } from './world/index.js';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#world');
 const chromeRoot = document.querySelector<HTMLElement>('#chrome');
@@ -24,4 +26,4 @@ const url = mapUrl(location.search);
 show({ status: 'loading', url });
 const state = await loadMap(url, (target) => fetch(target));
 show(state);
-if (state.status === 'ready') await drawField(canvas, state.map);
+if (state.status === 'ready') await drawWorld(canvas, state.map, viewOf(location.search));

@@ -86,6 +86,7 @@ ever matters.
 | `postprocessing` | Raoul van Rüschen | Zlib | Selective bloom, if three's node-based bloom proves insufficient |
 | `elkjs` | Ulf Rüegg and the Eclipse Layout Kernel team, Kiel University | EPL-2.0 OR GPL-3.0-or-later | LOD2 wiring overlay only |
 | `react` | Meta and contributors | MIT | The HUD |
+| `playwright-core` | Microsoft | Apache-2.0 | Driving the installed Chrome headless, downloading no browser of its own (D145): the world's smoke test (D132) and `--png` |
 | `deck.gl` | vis.gl / OpenJS Foundation | MIT | Evaluated, not chosen (§15) |
 
 ## 5. Fixtures (trees and reviews, no code taken)

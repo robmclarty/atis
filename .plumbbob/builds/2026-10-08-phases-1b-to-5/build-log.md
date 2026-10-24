@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 99 — feat(scene): drift each file in an opened cell by its looseness
+**Current step:** 30 — feat(web): render the field and the soft skin from a served map
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -81,7 +81,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 96. feat(svg): draw the shore as a compact band of flat blocks
 - ☐ 97. feat(web): add a hidden dev panel that tunes every token live
 - ☑ 98. feat(core): record each file's import ties inside and outside its cell
-- ☐ 99. feat(scene): drift each file in an opened cell by its looseness
+- ☑ 99. feat(scene): drift each file in an opened cell by its looseness
+- ☐ 100. feat(svg): open each touched shore block on a grid of its files
 - ☐ 48. feat(cli): cache the terrain per base commit
 - ☐ 49. feat(core): relax a new base's layout from the nearest cached one
 - ☐ 50. perf(cli): draw a cached run's first frame within two seconds
@@ -144,7 +145,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] second retake: a large repo's sheet draws too small to read when fit to a screen: corpus-7's 1834 by 4215 sheet drew at 0.23, its 9-unit HUD and notice text about 2 points tall, and Rob could not see corpus-12 at 0.62
 - [x] second retake: files under test/ that no test run reports (e2e site pages, tsc type tests, a helper) and vitest's focused status draw as unlit stitches, tests not run: 57 of corpus-8's 87, on an approved merge Rob held partly on stitches
 - [x] Rob, after the second retake: on most of the five maps he couldn't zoom in or see details; build a coherent, working system on real code he understands first, and refine and tune the encodings later, so range 6's stop defers the four encodings instead of running D119's refine before wave 1
-- [ ] The world's cell membranes carry no teeth yet: the SVG's dented ring (one tooth per rule, step 12) lives in libs/svg/src/terrain.ts, so step 25's tissue grid lays the plain contour; step 32 should move dentedRing into libs/scene so tissue() lays the dented ring both renderers draw (D86, D146)
+- [x] The world's cell membranes carry no teeth yet: the SVG's dented ring (one tooth per rule, step 12) lives in libs/svg/src/terrain.ts, so step 25's tissue grid lays the plain contour; step 32 should move dentedRing into libs/scene so tissue() lays the dented ring both renderers draw (D86, D146)
+- [x] The shore's open blocks name their changed files but drop the spike's grid: D153 has a touched group open on its files, one small square per file with the changed ones lit, then their names, and the SVG draw the same blocks; step 96 followed D158's narrower 'changed files named', so a 50-file group with one change reads like a 1-file group. Add the grid to the band (from shoreRail's count and changed files) in a small SVG step built ahead of step 32, so the world's rail draws the same grid
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -182,6 +184,9 @@ Harvest results this boundary:
 - **tangent**: park 13 · second retake: a large repo's sheet draws too small to read when fit to a screen: corpus-7's 1834 by 4215 sheet drew at 0.23, its 9-unit HUD and notice text about 2 points tall, and Rob could not see corpus-12 at 0.62 → the world's continuous zoom (step 37) answers it for a reader, and the still map's size can wait for wave 4's PNG and comment
 - **tangent**: park 14 · second retake: files under test/ that no test run reports (e2e site pages, tsc type tests, a helper) and vitest's focused status draw as unlit stitches, tests not run: 57 of corpus-8's 87, on an approved merge Rob held partly on stitches → a false mark worth fixing, but in the stitch reader, which no step in waves 1 or 2 depends on, so it can ride a later fix
 - **blocker**: park 15 · Rob, after the second retake: on most of the five maps he couldn't zoom in or see details; build a coherent, working system on real code he understands first, and refine and tune the encodings later, so range 6's stop defers the four encodings instead of running D119's refine before wave 1 → it changes what range 6's stop does, so fold it now as D144 (working-system-first): the second retake's encodings stay parked as tangents, and no refine runs before wave 1, amending D119; range 6's stop drops its refine clause
+- 2026-10-24, at range 8 of 24's stop: 2 parked ideas, classified.
+- **blocker**: park 16 · The world's cell membranes carry no teeth yet: the SVG's dented ring (one tooth per rule, step 12) lives in libs/svg/src/terrain.ts, so step 25's tissue grid lays the plain contour; step 32 should move dentedRing into libs/scene so tissue() lays the dented ring both renderers draw (D86, D146) → step 32's done-when draws the world's membranes from the tissue grid with no teeth, while D86 and D146 keep a cell's teeth in both renderers; the fold moves the dented ring into `libs/scene` at step 32
+- **blocker**: park 17 · The shore's open blocks name their changed files but drop the spike's grid: D153 has a touched group open on its files, one small square per file with the changed ones lit, then their names, and the SVG draw the same blocks; step 96 followed D158's narrower 'changed files named', so a 50-file group with one change reads like a 1-file group. Add the grid to the band (from shoreRail's count and changed files) in a small SVG step built ahead of step 32, so the world's rail draws the same grid → D153 opens a touched shore group on a grid of its files with the changed ones lit, and step 96 drew names alone; the fold adds a small SVG step for the grid ahead of step 32, so the world's rail draws the same blocks
 
 ## Log
 
@@ -835,3 +840,66 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-24 — step 27 checkpointed · 0b2aded8f — feat(scene): place labels per level of detail without collisions (1 drift, 11m)
 - 2026-10-24 — step 28 checkpointed · f7bd91928 — feat(scene): plan levels of detail with hysteresis and cross-fades (2m)
 - 2026-10-24 — step 29 checkpointed · eb544073d — feat(scene): schedule every animation inside the motion budget (4m)
+- 2026-10-24 — step 99 checkpointed · d25cfc345 — feat(scene): drift each file in an opened cell by its looseness (1 drift, 4m)
+- 2026-10-24 — range 8 of 24's stop recorded — review the scene model, with the stability and the ties it reads (steps 95 and 98) and the drift's seeded replay (step 99); the SVG drawn from it with every golden unchanged (step 88); then the SVG's morphed outlines with their shape key (step 94) and its shore as a band of flat blocks along the bottom (step 96), before the world renders them
+
+  **Summary**: The scene model the world will render is built and tested, and the still SVG already draws from it. `libs/scene` and `apps/web` joined the workspace, and the tokens moved under both renderers (step 23). Core now records each file's stability and its import ties (steps 95 and 98). The scene derives the relief, membranes, tissue, instances, weather, reach field, labels, notice anchors, levels of detail, the motion scheduler and the drift (steps 24 to 29 and 99). The SVG reads the scene's weather byte for byte (step 88). It now morphs each file's outline by the rules it breaks, with a key of the seven forms (step 94), and draws the shore as a band of flat blocks under a world cropped to its terrain (step 96).
+
+  1. The reach field reads D151's "skipping container cells" as a container lighting only its own ground, as the SVG does
+  2. The SVG draws its weather from the scene, proved identical on every map the repo holds
+  3. The SVG's look changed on purpose: morphed outlines with a shape key, and the shore as a band under a cropped world
+  4. retake-1's primary is now seen, on the tests block, which revised step 96
+  5. The scheduler and the drift replay seeded minutes, and the replay caught a bug
+
+  **Readout**:
+
+  ```text
+  steps        13 of 13 landed
+               - 23 d80907b · 24 4f65d86 · 25 bcd9a4e · 26 cae7a45 · 27 0b2aded
+               - 28 f7bd919 · 29 eb54407 · 88 dc47134 · 94 7c9938a · 95 e9be626
+               - 96 0678bfc · 98 5ea4223 · 99 d25cfc3
+  check        green: 1 of 1 checks, 13 landings
+  done-when    met
+  decisions    bent
+               → D151 (dark-wet-skin): containers light their own ground
+  constraints  bent
+               → C9 (deps-earn-their-place): rows wait for step 44
+  seam         strayed: 12 paths outside 6 steps' seams
+               - step 24: libs/scene/package.json and 2 others
+               - step 26: libs/scene/src/membranes.ts, libs/scene/src/raster.ts
+               - step 27: docs/design.md and 3 others
+               - step 88: libs/svg/src/practice.ts
+               - step 96: libs/scene/src/weather.ts
+               - step 99: libs/scene/src/shape.ts
+  diff         +8650 -3474 across 84 files
+  spent        81 min · green first run at every landing · 6 drift warnings
+  ```
+
+  **Verdict**: ○ Out of plumb (decisions bent)
+
+  **Harvested**: 2 of 17 parked ideas open
+
+  - P16 · The world's cell membranes carry no teeth yet: the SVG's dented ring (one tooth per rule, step 12) lives in libs/svg/src/terrain.ts, so step 25's tissue grid lays the plain contour; step 32 should move dentedRing into libs/scene so tissue() lays the dented ring both renderers draw (D86, D146) → lean: blocker, step 32's done-when draws the world's membranes from the tissue grid with no teeth, while D86 and D146 keep a cell's teeth in both renderers; the fold moves the dented ring into `libs/scene` at step 32
+  - P17 · The shore's open blocks name their changed files but drop the spike's grid: D153 has a touched group open on its files, one small square per file with the changed ones lit, then their names, and the SVG draw the same blocks; step 96 followed D158's narrower 'changed files named', so a 50-file group with one change reads like a 1-file group. Add the grid to the band (from shoreRail's count and changed files) in a small SVG step built ahead of step 32, so the world's rail draws the same grid → lean: blocker, D153 opens a touched shore group on a grid of its files with the changed ones lit, and step 96 drew names alone; the fold adds a small SVG step for the grid ahead of step 32, so the world's rail draws the same blocks
+
+  **Recommendation**: Approve the range, and settle P16 and P17 as blockers: the teeth folded into step 32, and the shore grid as a small SVG step ahead of it. Before then, look at the two rendered sheets for the band and the shape key, and say whether D151's container reading should stand as built. Every later wave-2 step renders this model, so a change to the reach reading or the band is cheapest now. The teeth belong in step 32, the step that first draws the world's membranes.
+
+  **1.** The reach field reads D151's "skipping container cells" as a container lighting only its own ground, as the SVG does
+
+  D151 and step 26's done-when say each point of the reach takes "the brightest reach of the cells over it, skipping container cells, so nested skins never stack". The spike skipped every cell that holds another, so a reached package's own loose files went dark. The SVG has always lit a reached package's own territory, its contour with its children cut out (D45). Since step 88 makes both renderers draw one derivation (D86), `reachField` lights each reached cell's own territory and keeps the brightest at each point. Nothing stacks, and the world and the SVG agree. If you want the spike's reading back, the world goes dark where the SVG glows, and step 33 would have to say so. Step 24 made the matching call: a package's bump weighs only its own files, since its `body_loc` counts its folders too.
+
+  **2.** The SVG draws its weather from the scene, proved identical on every map the repo holds
+
+  Step 88 deleted the SVG's own weather derivations: reach cells and holes, mutants, stitches, storm placement and hanging. It draws `weatherOf` instead, and the file is about 270 lines shorter. The proof went past the goldens. All 22 fixture maps and the core demo render byte-identical from HEAD and from the new tree, as does the practice sheet. fallow found no new clone.
+
+  **3.** The SVG's look changed on purpose: morphed outlines with a shape key, and the shore as a band under a cropped world
+
+  `outlineOf` (step 94) is the spike's morph Rob judged: seven forms, seeded by path, drawn still in the SVG and movable by the scheduler. Round files stay circles. A legend row keys the seven forms without a number, so the reading record's marks and the practice callouts are unchanged. At the legend's 5-unit radius, level 1's wobble is barely distinguishable from round. Step 96 moved the shore off the terrain into a band of flat blocks along the foot (D153, D158), with the touched groups first, `other` framed loud, and long paths cut from the left. The world now frames the terrain alone, so `retake-3`'s sheet dropped from about 1,800 to 1,150 tall. To see both, open `libs/svg/fixtures/demo/atis.svg` and `docs/glance-practice.svg`. A notice on a shore file hangs its boxes on its group's block.
+
+  **4.** retake-1's primary is now seen, on the tests block, which revised step 96
+
+  D148's anchors live in the scene (step 27), and the SVG now rings and boxes each notice where the scene anchors it. `retake-1`'s primary is a test file that draws no stitch, since the frozen map predates the import that would make one. So it falls through to its shore group, `tests`. Step 96 had left `tests` out of the rail as evidence; step 27 put it back as a block like any other, naming its changed test files. Its files are still never terrain (D4).
+
+  **5.** The scheduler and the drift replay seeded minutes, and the replay caught a bug
+
+  `createScheduler` reproduces the spike's measured curves: a 3.8% settle overshoot at 400 ms, a load flare peaking near four times the light, and random flares inside their windows. It never has two flares in flight, its flares fall at the same times at any frame rate, and it adds the shapes' motion by rule count (D147). One test caught a stale flare that still counted as in flight when no frame had been drawn since it ended. The drift is a pure function of time on the demo's pm cell: a tethered file stays within a unit of its place, a loose one crosses the cell and touches the membrane without crossing it, and no two bodies overlap in any frame. One side note: other projects' checks pushed this machine's load past 90 for a while. Two heavy tests timed out under coverage, `retake-5`'s practice render (now given 30 s) and an earlier step's type-checker test. The second passed once the load fell.
