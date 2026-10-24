@@ -24,6 +24,20 @@ import type { Ring } from './raster.js';
 import { draw, seedOf } from './shape.js';
 import { DRIFT_EASE_MS, DRIFT_GAP, DRIFT_HZ_MAX, DRIFT_HZ_MIN, DRIFT_REACH } from './tokens.js';
 
+/**
+ * The drift's tokens as one object, so a registry can hand in live values and
+ * a change shows on the next frame (D156); `DRIFT_TOKENS` is where they rest,
+ * at `tokens.ts`'s values. The drift reads each at the moment it needs it.
+ */
+export type DriftTokens = {
+  readonly DRIFT_HZ_MIN: number;
+  readonly DRIFT_HZ_MAX: number;
+  readonly DRIFT_REACH: number;
+  readonly DRIFT_GAP: number;
+  readonly DRIFT_EASE_MS: number;
+};
+export const DRIFT_TOKENS: DriftTokens = { DRIFT_HZ_MIN, DRIFT_HZ_MAX, DRIFT_REACH, DRIFT_GAP, DRIFT_EASE_MS };
+
 /** A file of the opened cell where the drift has it, and how loose it is; `undefined` for a file that stays still. */
 export type Drifted = { readonly id: string; readonly x: number; readonly y: number; readonly r: number; readonly looseness: number | undefined };
 
@@ -75,9 +89,9 @@ function insideRing(ring: Ring, x: number, y: number): boolean {
 }
 
 /** Bring a body back inside the membrane, clear of it by its radius and the gap, toward where it rests, which the layout put inside. */
-function keepIn(body: Body, ring: Ring): void {
+function keepIn(body: Body, ring: Ring, gap: number): void {
   const [qx, qy] = nearestOn(ring, body.x, body.y);
-  const clearance = body.r + DRIFT_GAP;
+  const clearance = body.r + gap;
   const inside = insideRing(ring, body.x, body.y);
   if (inside && Math.hypot(body.x - qx, body.y - qy) >= clearance) return;
   const towardX = body.restX - qx;
@@ -90,13 +104,13 @@ function keepIn(body: Body, ring: Ring): void {
 }
 
 /** Push two overlapping bodies apart along the line between them, each by its share of the two's mobility. */
-function separate(a: Body, b: Body): void {
+function separate(a: Body, b: Body, gap: number): void {
   const free = a.mobility + b.mobility;
   if (free <= 0) return;
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const distance = Math.hypot(dx, dy);
-  const overlap = a.r + b.r + DRIFT_GAP - distance;
+  const overlap = a.r + b.r + gap - distance;
   if (overlap <= 0) return;
   const [ux, uy] = distance === 0 ? [1, 0] : [dx / distance, dy / distance];
   a.x -= ux * overlap * (a.mobility / free);
@@ -115,9 +129,10 @@ function extentOf(ring: Ring): { readonly x: number; readonly y: number; readonl
 /**
  * Where each placed file of `cell` is, `t` milliseconds after the cell
  * opened, by path. A closed cell (`t` undefined), reduced motion, or a cell
- * with one file leaves every file where the layout put it.
+ * with one file leaves every file where the layout put it. The tokens it is
+ * timed from rest at `tokens.ts`'s values when none are handed in (D156).
  */
-export function driftOf(map: MapJson, cell: string, t: number | undefined, seed: number, reduced = false): readonly Drifted[] {
+export function driftOf(map: MapJson, cell: string, t: number | undefined, seed: number, reduced = false, tokens: DriftTokens = DRIFT_TOKENS): readonly Drifted[] {
   const positions = map.terrain.layout?.positions ?? {};
   const contour = map.terrain.layout?.contours?.[cell];
   const files = map.terrain.organelles
@@ -132,15 +147,15 @@ export function driftOf(map: MapJson, cell: string, t: number | undefined, seed:
 
   const ring = openRing(contour);
   const { radius } = extentOf(ring);
-  const ease = Math.min(1, Math.max(0, t / DRIFT_EASE_MS));
+  const ease = Math.min(1, Math.max(0, t / tokens.DRIFT_EASE_MS));
   const eased = ease * ease * (3 - 2 * ease);
   const seconds = t / 1000;
   const bodies = placed.map((file): Body => {
     const mobility = file.looseness ?? 0;
     const own = (seedOf(file.id) ^ Math.imul(seed >>> 0, 0x9e_37_79_b9)) >>> 0;
-    const rate = (i: number): number => DRIFT_HZ_MIN + draw(own, i) * (DRIFT_HZ_MAX - DRIFT_HZ_MIN);
+    const rate = (i: number): number => tokens.DRIFT_HZ_MIN + draw(own, i) * (tokens.DRIFT_HZ_MAX - tokens.DRIFT_HZ_MIN);
     const phase = (i: number): number => draw(own, i) * 2 * Math.PI;
-    const reach = mobility * DRIFT_REACH * radius * eased;
+    const reach = mobility * tokens.DRIFT_REACH * radius * eased;
     return {
       id: file.id,
       x: file.x + reach * Math.sin(2 * Math.PI * rate(0) * seconds + phase(2)),
@@ -152,9 +167,9 @@ export function driftOf(map: MapJson, cell: string, t: number | undefined, seed:
     };
   });
   for (let round = 0; round < ROUNDS; round += 1) {
-    for (const body of bodies) if (body.mobility > 0) keepIn(body, ring);
+    for (const body of bodies) if (body.mobility > 0) keepIn(body, ring, tokens.DRIFT_GAP);
     bodies.forEach((body, index) => {
-      for (const other of bodies.slice(index + 1)) separate(body, other);
+      for (const other of bodies.slice(index + 1)) separate(body, other, tokens.DRIFT_GAP);
     });
   }
   return bodies.map((body, index) => ({ id: body.id, x: body.x, y: body.y, r: body.r, looseness: placed[index]?.looseness }));

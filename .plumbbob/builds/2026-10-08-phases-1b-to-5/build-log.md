@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 30 — feat(web): render the field and the soft skin from a served map
+**Current step:** 97 — feat(web): add a hidden dev panel that tunes every token live
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -56,7 +56,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 27. feat(scene): place labels per level of detail without collisions
 - ☑ 28. feat(scene): plan levels of detail with hysteresis and cross-fades
 - ☑ 29. feat(scene): schedule every animation inside the motion budget
-- ☐ 30. feat(web): render the field and the soft skin from a served map
+- ☑ 30. feat(web): render the field and the soft skin from a served map
 - ☐ 31. feat(cli): serve the world and open it in a tab
 - ☐ 32. feat(web): draw cells and organelles, and the shore in a rail
 - ☐ 33. feat(web): draw the weather
@@ -903,3 +903,56 @@ folder, so it rides the branch into the PR.)*
   **5.** The scheduler and the drift replay seeded minutes, and the replay caught a bug
 
   `createScheduler` reproduces the spike's measured curves: a 3.8% settle overshoot at 400 ms, a load flare peaking near four times the light, and random flares inside their windows. It never has two flares in flight, its flares fall at the same times at any frame rate, and it adds the shapes' motion by rule count (D147). One test caught a stale flare that still counted as in flight when no frame had been drawn since it ended. The drift is a pure function of time on the demo's pm cell: a tethered file stays within a unit of its place, a loose one crosses the cell and touches the membrane without crossing it, and no two bodies overlap in any frame. One side note: other projects' checks pushed this machine's load past 90 for a while. Two heavy tests timed out under coverage, `retake-5`'s practice render (now given 30 s) and an earlier step's type-checker test. The second passed once the load fell.
+
+- 2026-10-24 — step 30 checkpointed · 6575c416f — feat(web): render the field and the soft skin from a served map (1 drift, 107m)
+
+  **Summary**: `apps/web` draws step 24's heightfield as one mesh over the near-black field: the relief rides a half-float data texture, the vertex stage displaces by it with the scheduler's amplitude and lift, the fragment stage reads its normal from the same texture, and a physical material in graphite and blue-grey wears a clearcoat sheen under one key light, an ambient and a sky black at the zenith. One render loop asks the scheduler for every frame, and the level of detail switches the key light and the sky off at the far field. The gate gains the world's smoke test, which serves the app from Vite in-process and renders the demo map headless on WebGL 2 in the installed Chrome in about two seconds. Both backends draw the same frames with clean consoles, and the frames to judge are in `.playwright-mcp/step-30/`: the opening frame, the surface at `?zoom=2`, the tilt at 35°, each on WebGPU and WebGL 2, and retake-3's surface and tilt.
+
+  1. The world opens on the dark far field, so the pause's frames are at the surface and tilted
+  2. AgX replaces the spike's Neutral tone mapping, which zeroed the graphite's red
+  3. The relief rides one data texture, and the albedo blends by the cells' mass until the tissue grid lands
+  4. The smoke test opens Chrome on the WebGL 2 path and judges a screenshot in the page
+  5. Four page parameters are the only instruments until the camera lands, and one row strayed outside the seam
+
+  **Readout**:
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    drift: the opening frame is the far field, dark by D151
+               → terraces and swells show from `?zoom=2`, the frames judged
+  decisions    honored:
+               - D151 (dark-wet-skin)
+               - D152 (soft-layers-as-data)
+               - D132 (world-smoke-test)
+               - D145 (png-browser)
+               - D94 (seeded-motion)
+  constraints  14 of 14 honored
+  seam         strayed: 1 path outside the seam
+               → docs/inspiration.md
+  diff         +651 -62 across 14 files
+  spent        107 min · 2 turns · 31s gate · green first run
+  ```
+
+  **Verdict**: ✗ Not standing (done-when drifted)
+
+  **Recommendation**: Take the skin as the world's base under AgX and keep the far field dark as the spike's approved frame. The soft terraces, the swells and the sheen all read on the tilted frames, the key light and the sky switch with the level of detail as D151 asks, and the weather of steps 33 and 34 is what lights the far field; the sheen on the demo map's five small cells reads as glossy beads at the spike's clearcoat values and as broad flanks on retake-3, and step 97's panel is the place to tune that rather than this step.
+
+  **1.** The world opens on the dark far field, so the pause's frames are at the surface and tilted
+
+  The step's sentence asks the demo map's opening frame to show terraces and swells, and D151 turns the key light and the sky off at LOD0. The opening frame is zoom 1, the far field: `lod.ts` reads its one scalar as the zoom over the fit, §5.6's first reveal is lights on a dark field, and the spike's approved far frame was taken there, a black pool with the lights in it, the skin at a twentieth of its albedo under a tenth of the ambient. Until steps 33 and 34 put the notices and the changed set in it, that pool is the whole opening frame (`opening-webgpu.png`, a black rectangle a shade under the field). So the step reads "opening frame" as the frame the reviewer opens on: `?zoom=2` is past LOD1's gate at 1.7, the plan's second layer brings the key light, the ambient and the sky up, and the surface and tilt frames were taken there, where the smoke test looks too. The call this pause reserves is between two readings: keep the far field as the opening, the glance test's ten-second frame, and let the weather light it; or open one level in until it does. I kept the far field.
+
+  **2.** AgX replaces the spike's Neutral tone mapping, which zeroed the graphite's red
+
+  The first surface frames came out blue-black. Measured over the central crop, the mean was 4.8, 14.2 and 24.6 in red, green and blue, where the albedo's own ratio is two thirds red to blue, and the key light alone gave 3.8, 10.8 and 19.3, so the light was not the cause. Three's Neutral tone mapping takes a black point off every colour: for any colour whose lowest channel sits under 0.08 it subtracts that channel, and every value of a base tissue this dark sits there, so the graphite's red went to nothing. Under AgX the same frame measured 28, 34 and 41, the albedo's ratio to within a few percent; linear output measured 32, 36 and 42 but clips the sheen's glints to white, and ACES 15, 18 and 23 with crushed shadows. The spike's frames carried Neutral's cast under brighter tissue and the warm reach, which is why it was not seen. AgX also rolls the weather's HDR light off instead of clipping it, at the cost of paling a hue at its peak, which steps 33 and 34 will see on the flares; step 97's panel is where to compare them live.
+
+  **3.** The relief rides one data texture, and the albedo blends by the cells' mass until the tissue grid lands
+
+  The heightfield's three grids go up as one RGBA half-float texture, filterable on both backends: red the terraces and swells at rest, green the cells' mass, which the vertex stage scales by the scheduler's amplitude and the whole lifted by its lift, so the settle and the jiggle move the bumps alone. The normal is read in the fragment stage from four samples one texel either side, so the terraces stay soft however coarse the mesh and the normal follows the settle, and the clearcoat reads the same normal, since left to its own it takes the flat grid's and never glints. The mesh has one vertex per sample at a resolution of 4 layout units: 121 by 166 on the demo map, 265 by 437 on retake-3, the spike's size. The albedo runs from graphite on the field to blue-grey by each point's share of a cell's full mass, a stand-in for step 32's tissue grid, and dims to a twentieth at the far field. The material sets its emissive output to nothing by name (D152); the MRT target it feeds comes with bloom at step 32. The sky is a 256 by 128 equirectangular data texture laid on the CPU, black at the zenith, the band and the three boxes at the spike's values, which the physical material filters into its reflection levels, and `environmentIntensity` carries the level-of-detail switch with the lights.
+
+  **4.** The smoke test opens Chrome on the WebGL 2 path and judges a screenshot in the page
+
+  The test starts Vite in-process on the app's own config, root `apps/web`, silent, on a port the system picks, with one plugin that answers `/map.json` with the demo fixture. It launches the installed Chrome through `playwright-core`, else the first of `chromium`, `chromium-browser`, `google-chrome`, `google-chrome-stable` or `chrome` on the PATH, and with neither it fails naming both rather than skipping, since a world no test can open is no gate. It opens `?backend=webgl&zoom=2`, waits for the canvas to carry `data-world="settled"`, which the loop sets once the scheduler's lift reaches zero, checks the canvas says `webgl`, hides the chrome, takes a screenshot and decodes it in the page with `createImageBitmap` and an `OffscreenCanvas`: it fails on any console error or warning, on fewer than a fifth of the pixels clear of the field, or on fewer than 64 shades. It takes 2.2 s here and the test slot 30 s. Its first run failed on a 404: Chrome asks for a favicon by itself, so `index.html` now carries an inline empty icon. Headless Chrome 155 on this machine has no WebGPU, so the fallback is the natural headless path, and forcing it keeps the test honest once a Chrome ships WebGPU headless.
+
+  **5.** Four page parameters are the only instruments until the camera lands, and one row strayed outside the seam
+
+  `view.ts` reads `?backend=webgl`, `?zoom=`, `?tilt=` (0 to 35°, from the south-west as the spike's tilt frames) and `?seed=`, with a test for each, and the scheduler takes `prefers-reduced-motion` from the page. To look live before step 31 serves the world, run `pnpm --filter web dev` and open `http://localhost:5173/?map=/@fs/<absolute path to a map.json>&zoom=2&tilt=35`, since Vite serves a workspace file raw under `/@fs/`. In the headed Chrome the skin settled 1.1 s after navigation on both backends, within C14's target, which step 43 measures properly. `playwright-core` went in at its latest release, 1.64.1, and C9 asks each new dependency for a row in `docs/inspiration.md`, which is the one path outside the seam; `camera-controls` stays installed and unused until step 37, as fallow's ignore records.

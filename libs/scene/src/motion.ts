@@ -22,12 +22,17 @@
  * Under reduced motion only a static halo stands for the load flare: no
  * settle, no breathing, no flares, no jiggle, still shapes, no drift, and a
  * fly-to that cuts rather than eases.
+ *
+ * The tokens it is timed from come in as one object, read at the moment each
+ * is needed and never once at the start, so the dev panel's registry can hand
+ * in live values and a change shows on the next frame (D156); left out, they
+ * rest at `tokens.ts`'s values.
  */
 
 import type { MapJson, NoticeTier } from 'core';
 
-import { driftOf } from './drift.js';
-import type { Drifted } from './drift.js';
+import { DRIFT_TOKENS, driftOf } from './drift.js';
+import type { Drifted, DriftTokens } from './drift.js';
 import { lodPlan } from './lod.js';
 import type { LodPlan } from './lod.js';
 import { AT_REST, MAX_RULES } from './shape.js';
@@ -44,6 +49,7 @@ import {
   JIGGLE_DECAY,
   JIGGLE_HZ,
   JIGGLE_MS,
+  LOD_FADE_MS,
   PRIMARY_FLARE_MAX_MS,
   PRIMARY_FLARE_MIN_MS,
   SECONDARY_FLARE_GAIN,
@@ -57,12 +63,68 @@ import {
   SHAPE_TURN,
 } from './tokens.js';
 
-/** What the scheduler is told: the clock it reads, the seed its chance is drawn from, each notice's tier in rank order, and whether motion is reduced. */
+/** Every motion token the scheduler and the drift time themselves from, as one object (D156); `MOTION_TOKENS` is where they rest. */
+export type MotionTokens = DriftTokens & {
+  readonly SETTLE_MS: number;
+  readonly SETTLE_LIFT: number;
+  readonly SETTLE_DAMPING: number;
+  readonly FLARE_MS: number;
+  readonly FLARE_GAIN: number;
+  readonly FLARE_GROW: number;
+  readonly BREATHE_PERIOD_MS: number;
+  readonly BREATHE_AMPLITUDE: number;
+  readonly PRIMARY_FLARE_MIN_MS: number;
+  readonly PRIMARY_FLARE_MAX_MS: number;
+  readonly SECONDARY_FLARE_MIN_MS: number;
+  readonly SECONDARY_FLARE_MAX_MS: number;
+  readonly SECONDARY_FLARE_GAIN: number;
+  readonly JIGGLE_MS: number;
+  readonly JIGGLE_AMPLITUDE: number;
+  readonly JIGGLE_HZ: number;
+  readonly JIGGLE_DECAY: number;
+  readonly HOVER_MS: number;
+  readonly FLY_TO_MS: number;
+  readonly LOD_FADE_MS: number;
+  readonly SHAPE_PULSE_HZ: readonly number[];
+  readonly SHAPE_PULSE: readonly number[];
+  readonly SHAPE_TURN: readonly number[];
+};
+
+/** The motion tokens at rest: `tokens.ts`'s values, which the design doc's motion table logs (Q3). */
+export const MOTION_TOKENS: MotionTokens = {
+  ...DRIFT_TOKENS,
+  SETTLE_MS,
+  SETTLE_LIFT,
+  SETTLE_DAMPING,
+  FLARE_MS,
+  FLARE_GAIN,
+  FLARE_GROW,
+  BREATHE_PERIOD_MS,
+  BREATHE_AMPLITUDE,
+  PRIMARY_FLARE_MIN_MS,
+  PRIMARY_FLARE_MAX_MS,
+  SECONDARY_FLARE_MIN_MS,
+  SECONDARY_FLARE_MAX_MS,
+  SECONDARY_FLARE_GAIN,
+  JIGGLE_MS,
+  JIGGLE_AMPLITUDE,
+  JIGGLE_HZ,
+  JIGGLE_DECAY,
+  HOVER_MS,
+  FLY_TO_MS,
+  LOD_FADE_MS,
+  SHAPE_PULSE_HZ,
+  SHAPE_PULSE,
+  SHAPE_TURN,
+};
+
+/** What the scheduler is told: the clock it reads, the seed its chance is drawn from, each notice's tier in rank order, whether motion is reduced, and the tokens it is timed from, resting when left out. */
 export type SchedulerOptions = {
   readonly clock: () => number;
   readonly seed: number;
   readonly tiers: readonly NoticeTier[];
   readonly reduced: boolean;
+  readonly tokens?: MotionTokens;
 };
 
 /** One notice's light this frame: a gain on its own light and a scale on its glow, both 1 at rest. */
@@ -126,11 +188,11 @@ export function seeded(seed: number): () => number {
 }
 
 /** The settle: an underdamped spring from 0 to 1 that lands inside `SETTLE_MS`, with a small overshoot rather than a bounce. */
-export function settleAt(t: number): number {
-  if (t >= SETTLE_MS) return 1;
+export function settleAt(t: number, tokens: MotionTokens = MOTION_TOKENS): number {
+  if (t >= tokens.SETTLE_MS) return 1;
   if (t <= 0) return 0;
-  const zeta = SETTLE_DAMPING;
-  const omega = 4 / (zeta * (SETTLE_MS / 1000));
+  const zeta = tokens.SETTLE_DAMPING;
+  const omega = 4 / (zeta * (tokens.SETTLE_MS / 1000));
   const s = t / 1000;
   if (zeta >= 1) return 1 - Math.exp(-omega * s) * (1 + omega * s);
   const root = Math.sqrt(1 - zeta * zeta);
@@ -142,16 +204,16 @@ export function settleAt(t: number): number {
 const FLARE_RISE = 0.14;
 
 /** A flare's envelope at `t` into it: a straight rise over its first seventh, then a fall as the square of what remains; nothing outside it. */
-export function flareAt(t: number): number {
-  if (t < 0 || t >= FLARE_MS) return 0;
-  const rise = FLARE_MS * FLARE_RISE;
-  return t < rise ? t / rise : (1 - (t - rise) / (FLARE_MS - rise)) ** 2;
+export function flareAt(t: number, tokens: MotionTokens = MOTION_TOKENS): number {
+  if (t < 0 || t >= tokens.FLARE_MS) return 0;
+  const rise = tokens.FLARE_MS * FLARE_RISE;
+  return t < rise ? t / rise : (1 - (t - rise) / (tokens.FLARE_MS - rise)) ** 2;
 }
 
 /** The jiggle's swing at `t` into it: a sine decaying through `JIGGLE_DECAY` e-folds across `JIGGLE_MS`. */
-export function jiggleAt(t: number): number {
-  if (t < 0 || t >= JIGGLE_MS) return 0;
-  return JIGGLE_AMPLITUDE * Math.exp((-t / JIGGLE_MS) * JIGGLE_DECAY) * Math.sin((2 * Math.PI * JIGGLE_HZ * t) / 1000);
+export function jiggleAt(t: number, tokens: MotionTokens = MOTION_TOKENS): number {
+  if (t < 0 || t >= tokens.JIGGLE_MS) return 0;
+  return tokens.JIGGLE_AMPLITUDE * Math.exp((-t / tokens.JIGGLE_MS) * tokens.JIGGLE_DECAY) * Math.sin((2 * Math.PI * tokens.JIGGLE_HZ * t) / 1000);
 }
 
 /** A fly-to's ease: slow out, slow in. */
@@ -163,7 +225,7 @@ function easeInOut(progress: number): number {
 type Flare = { readonly index: number; readonly start: number; readonly gain: number };
 
 /** The scheduler, over its clock and its seed. */
-export function createScheduler({ clock, seed, tiers, reduced }: SchedulerOptions): Scheduler {
+export function createScheduler({ clock, seed, tiers, reduced, tokens: T = MOTION_TOKENS }: SchedulerOptions): Scheduler {
   const chance = seeded(seed);
   const log: string[] = [];
   const due = new Map<number, number>();
@@ -185,12 +247,12 @@ export function createScheduler({ clock, seed, tiers, reduced }: SchedulerOption
   /** Draw the next due time for a notice that flares at random, from `from`. */
   const schedule = (index: number, from: number): void => {
     const tier = tiers[index];
-    if (tier === 'primary') due.set(index, from + PRIMARY_FLARE_MIN_MS + chance() * (PRIMARY_FLARE_MAX_MS - PRIMARY_FLARE_MIN_MS));
-    else if (tier === 'secondary') due.set(index, from + SECONDARY_FLARE_MIN_MS + chance() * (SECONDARY_FLARE_MAX_MS - SECONDARY_FLARE_MIN_MS));
+    if (tier === 'primary') due.set(index, from + T.PRIMARY_FLARE_MIN_MS + chance() * (T.PRIMARY_FLARE_MAX_MS - T.PRIMARY_FLARE_MIN_MS));
+    else if (tier === 'secondary') due.set(index, from + T.SECONDARY_FLARE_MIN_MS + chance() * (T.SECONDARY_FLARE_MAX_MS - T.SECONDARY_FLARE_MIN_MS));
   };
 
   const request = (index: number, now: number): void => {
-    const flare = { index, start: now, gain: tiers[index] === 'primary' ? 1 : SECONDARY_FLARE_GAIN };
+    const flare = { index, start: now, gain: tiers[index] === 'primary' ? 1 : T.SECONDARY_FLARE_GAIN };
     if (inFlight === undefined) {
       inFlight = flare;
       stamp(now, 'run', index);
@@ -209,16 +271,16 @@ export function createScheduler({ clock, seed, tiers, reduced }: SchedulerOption
     if (reduced) return;
     const primary = tiers.indexOf('primary');
     if (primary >= 0) {
-      inFlight = { index: primary, start: now + SETTLE_MS / 2, gain: 1 };
-      stamp(now + SETTLE_MS / 2, 'run', primary);
+      inFlight = { index: primary, start: now + T.SETTLE_MS / 2, gain: 1 };
+      stamp(now + T.SETTLE_MS / 2, 'run', primary);
     }
-    tiers.forEach((_, index) => schedule(index, now + SETTLE_MS));
+    tiers.forEach((_, index) => schedule(index, now + T.SETTLE_MS));
   };
 
   /** The flare in flight ends, and the queued one, if any, starts where it ended. */
   const retire = (now: number): void => {
-    while (inFlight !== undefined && now - inFlight.start >= FLARE_MS) {
-      const ended = inFlight.start + FLARE_MS;
+    while (inFlight !== undefined && now - inFlight.start >= T.FLARE_MS) {
+      const ended = inFlight.start + T.FLARE_MS;
       inFlight = queued === undefined ? undefined : { ...queued, start: Math.max(queued.start, ended) };
       queued = undefined;
     }
@@ -243,10 +305,10 @@ export function createScheduler({ clock, seed, tiers, reduced }: SchedulerOption
     lastFrame = now;
     const since = loadAt === undefined ? 0 : now - loadAt;
 
-    hoverValue = HOVER_MS <= 0 ? hoverTarget : hoverValue < hoverTarget ? Math.min(hoverTarget, hoverValue + elapsed / HOVER_MS) : Math.max(hoverTarget, hoverValue - elapsed / HOVER_MS);
-    const flying = flyStart === undefined ? undefined : reduced ? 1 : easeInOut((now - flyStart) / FLY_TO_MS);
-    if (flyStart !== undefined && (reduced || now - flyStart >= FLY_TO_MS)) flyStart = undefined;
-    lod = zoom === undefined ? lod : lodPlan(lod, zoom, elapsed);
+    hoverValue = T.HOVER_MS <= 0 ? hoverTarget : hoverValue < hoverTarget ? Math.min(hoverTarget, hoverValue + elapsed / T.HOVER_MS) : Math.max(hoverTarget, hoverValue - elapsed / T.HOVER_MS);
+    const flying = flyStart === undefined ? undefined : reduced ? 1 : easeInOut((now - flyStart) / T.FLY_TO_MS);
+    if (flyStart !== undefined && (reduced || now - flyStart >= T.FLY_TO_MS)) flyStart = undefined;
+    lod = zoom === undefined ? lod : lodPlan(lod, zoom, elapsed, T.LOD_FADE_MS);
     const shared = { t: since, hover: hoverValue, fly: flying, ...(lod === undefined || zoom === undefined ? {} : { lod }) };
 
     if (reduced || loadAt === undefined) {
@@ -254,24 +316,24 @@ export function createScheduler({ clock, seed, tiers, reduced }: SchedulerOption
     }
 
     advanceFlares(now);
-    const settled = settleAt(since);
-    const swing = jiggleStart === undefined ? 0 : jiggleAt(now - jiggleStart);
-    if (jiggleStart !== undefined && now - jiggleStart >= JIGGLE_MS) jiggleStart = undefined;
+    const settled = settleAt(since, T);
+    const swing = jiggleStart === undefined ? 0 : jiggleAt(now - jiggleStart, T);
+    if (jiggleStart !== undefined && now - jiggleStart >= T.JIGGLE_MS) jiggleStart = undefined;
     const primary = tiers.indexOf('primary');
     const notices = tiers.map((_, index): NoticeLight => {
-      const breath = index === primary && since > SETTLE_MS ? 1 + BREATHE_AMPLITUDE * Math.sin((2 * Math.PI * (since - SETTLE_MS)) / BREATHE_PERIOD_MS) : 1;
-      const burst = inFlight?.index === index ? inFlight.gain * flareAt(now - inFlight.start) : 0;
-      return { gain: 1 + FLARE_GAIN * burst, scale: breath * (1 + FLARE_GROW * burst) };
+      const breath = index === primary && since > T.SETTLE_MS ? 1 + T.BREATHE_AMPLITUDE * Math.sin((2 * Math.PI * (since - T.SETTLE_MS)) / T.BREATHE_PERIOD_MS) : 1;
+      const burst = inFlight?.index === index ? inFlight.gain * flareAt(now - inFlight.start, T) : 0;
+      return { gain: 1 + T.FLARE_GAIN * burst, scale: breath * (1 + T.FLARE_GROW * burst) };
     });
     const flaring = inFlight !== undefined && now >= inFlight.start ? inFlight.index : undefined;
-    return { ...shared, amp: settled + swing, lift: (1 - settled) * SETTLE_LIFT, notices, flaring, halo: false };
+    return { ...shared, amp: settled + swing, lift: (1 - settled) * T.SETTLE_LIFT, notices, flaring, halo: false };
   };
 
   const shape = (rules: number): ShapeMotion => {
     const level = Math.max(0, Math.min(MAX_RULES, Math.round(rules)));
     if (reduced || level === 0) return AT_REST;
     const t = (clock() - (loadAt ?? clock())) / 1000;
-    return { t, pulseHz: SHAPE_PULSE_HZ[level] ?? 0, pulse: SHAPE_PULSE[level] ?? 0, turn: SHAPE_TURN[level] ?? 0 };
+    return { t, pulseHz: T.SHAPE_PULSE_HZ[level] ?? 0, pulse: T.SHAPE_PULSE[level] ?? 0, turn: T.SHAPE_TURN[level] ?? 0 };
   };
 
   return {
@@ -297,7 +359,7 @@ export function createScheduler({ clock, seed, tiers, reduced }: SchedulerOption
     open: (cell) => {
       opened = cell === undefined ? undefined : { cell, at: clock() };
     },
-    drift: (map) => (opened === undefined ? [] : driftOf(map, opened.cell, clock() - opened.at, seed, reduced)),
+    drift: (map) => (opened === undefined ? [] : driftOf(map, opened.cell, clock() - opened.at, seed, reduced, T)),
     log: () => [...log],
   };
 }

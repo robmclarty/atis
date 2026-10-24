@@ -11,42 +11,20 @@
  * lies on the field and blue-grey where a cell swells through it; at the far
  * field it dims to a trace, the key light and the sky being off there (D151).
  * Nothing here is emissive, and the material says so (D152).
+ *
+ * The look and the relief come through the registry (D156): the albedos and
+ * the sheen are uniforms the loop re-reads each frame, and the relief is laid
+ * again when one of its tokens moves.
  */
 
-import { BufferAttribute, BufferGeometry, DataTexture, DataUtils, HalfFloatType, LinearFilter, Mesh, MeshPhysicalNodeMaterial, RGBAFormat } from 'three/webgpu';
+import { BufferAttribute, BufferGeometry, Color, DataTexture, DataUtils, HalfFloatType, LinearFilter, Mesh, MeshPhysicalNodeMaterial, RGBAFormat } from 'three/webgpu';
 import type { Node, UniformNode } from 'three/webgpu';
-import { clamp, color, float, mix, normalize, positionLocal, texture, transformNormalToView, uniform, uv, vec2, vec3 } from 'three/tsl';
-import { RELIEF, heightfield } from 'scene';
-import type { Grid, Heightfield } from 'scene';
+import { clamp, float, mix, normalize, positionLocal, texture, transformNormalToView, uniform, uv, vec2, vec3 } from 'three/tsl';
+import { heightfield } from 'scene';
+import type { Grid, Heightfield, Relief } from 'scene';
 import type { MapJson } from 'core';
 
-/**
- * The skin's material, at the values the materials spike left them (D151):
- * the two albedos, how rough and how wet it is, and the share of its albedo
- * kept at the far field. One object, so the dev panel can move them live
- * (D156); `SKIN` is where they rest.
- */
-export type SkinLook = {
-  /** The skin where it lies on the field: graphite. */
-  readonly fieldAlbedo: string;
-  /** The skin where a cell swells through it: blue-grey. */
-  readonly tissueAlbedo: string;
-  readonly roughness: number;
-  /** The wet sheen: a clearcoat, and how soft its reflection is. */
-  readonly clearcoat: number;
-  readonly clearcoatRoughness: number;
-  /** The share of the albedo the far field keeps, lit only by the ambient's floor. */
-  readonly farAlbedo: number;
-};
-
-const SKIN: SkinLook = {
-  fieldAlbedo: '#14181e',
-  tissueAlbedo: '#2b333d',
-  roughness: 0.46,
-  clearcoat: 1,
-  clearcoatRoughness: 0.14,
-  farAlbedo: 0.05,
-};
+import type { SkinLook } from '../materials.js';
 
 /** Layout units between the heightfield's samples and the mesh's vertices: the spike's, a skin of about 116k vertices on retake-3. */
 const RESOLUTION = 4;
@@ -59,24 +37,21 @@ export type Skin = {
   readonly lift: UniformNode<'float', number>;
   /** How far the surface has resolved: 0 at the far field, 1 from LOD1 on, the plan's second layer. */
   readonly surface: UniformNode<'float', number>;
+  /** Re-read the look into the material, each frame, so a token moved in the registry shows on the next (D156). */
+  readonly restyle: () => void;
+  /** Lay the relief again from the registry's relief, when one of its tokens moved. */
+  readonly relayer: () => void;
 };
 
-/** The relief as the GPU reads it: red the resting terraces and swells, green the cells' mass, half floats so both backends filter it. */
-const reliefTexture = (field: Heightfield): DataTexture => {
+/** Fill the relief as the GPU reads it: red the resting terraces and swells, green the cells' mass, half floats so both backends filter it. */
+const fillRelief = (data: Uint16Array, field: Heightfield): void => {
   const { columns, rows } = field.height;
-  const data = new Uint16Array(columns * rows * 4);
   for (let i = 0; i < columns * rows; i += 1) {
     data[i * 4] = DataUtils.toHalfFloat((field.terrace.values[i] ?? 0) + (field.swell.values[i] ?? 0));
     data[i * 4 + 1] = DataUtils.toHalfFloat(field.mass.values[i] ?? 0);
     data[i * 4 + 2] = 0;
     data[i * 4 + 3] = DataUtils.toHalfFloat(1);
   }
-  const relief = new DataTexture(data, columns, rows, RGBAFormat, HalfFloatType);
-  relief.minFilter = LinearFilter;
-  relief.magFilter = LinearFilter;
-  relief.generateMipmaps = false;
-  relief.needsUpdate = true;
-  return relief;
 };
 
 /**
@@ -122,18 +97,29 @@ const gridGeometry = (grid: Grid, width: number, height: number): BufferGeometry
   return geometry;
 };
 
-/** The skin for a map: its mesh, and the uniforms the render loop moves each frame. */
-export const createSkin = (map: MapJson, look: SkinLook = SKIN): Skin => {
-  const field = heightfield(map, RESOLUTION);
-  const relief = reliefTexture(field);
+/** The skin for a map over a look and a relief, both read live: its mesh, and the uniforms the render loop moves each frame. */
+export const createSkin = (map: MapJson, look: SkinLook, relief: Relief): Skin => {
+  const field = heightfield(map, RESOLUTION, { ...relief });
   const { columns, rows, resolution } = field.height;
+  const data = new Uint16Array(columns * rows * 4);
+  fillRelief(data, field);
+  const reliefMap = new DataTexture(data, columns, rows, RGBAFormat, HalfFloatType);
+  reliefMap.minFilter = LinearFilter;
+  reliefMap.magFilter = LinearFilter;
+  reliefMap.generateMipmaps = false;
+  reliefMap.needsUpdate = true;
+
   const amp = uniform(1);
   const lift = uniform(0);
   const surface = uniform(0);
+  const fieldAlbedo = uniform(new Color(look.fieldAlbedo));
+  const tissueAlbedo = uniform(new Color(look.tissueAlbedo));
+  const farAlbedo = uniform(look.farAlbedo);
+  const bodyHeight = uniform(relief.bodyHeight);
 
   /** The skin's height at a texture coordinate: the resting terraces and swells, and the cells' mass at the scheduler's amplitude. */
   const heightAt = (at: Node) => {
-    const sample = texture(relief, at);
+    const sample = texture(reliefMap, at);
     return sample.r.add(sample.g.mul(amp));
   };
 
@@ -150,17 +136,30 @@ export const createSkin = (map: MapJson, look: SkinLook = SKIN): Skin => {
   material.clearcoatNormalNode = normalInView;
 
   // Blue-grey where a cell swells through the skin, graphite on the field between; a trace of either at the far field.
-  const swell = clamp(texture(relief, uv()).g.div(RELIEF.bodyHeight), 0, 1);
-  const albedo = mix(color(look.fieldAlbedo), color(look.tissueAlbedo), swell);
-  material.colorNode = albedo.mul(mix(float(look.farAlbedo), float(1), surface));
+  const swell = clamp(texture(reliefMap, uv()).g.div(bodyHeight), 0, 1);
+  const albedo = mix(fieldAlbedo, tissueAlbedo, swell);
+  material.colorNode = albedo.mul(mix(farAlbedo, float(1), surface));
   material.emissiveNode = vec3(0, 0, 0);
-  material.roughness = look.roughness;
-  material.clearcoat = look.clearcoat;
-  material.clearcoatRoughness = look.clearcoatRoughness;
+
+  const restyle = (): void => {
+    fieldAlbedo.value.set(look.fieldAlbedo);
+    tissueAlbedo.value.set(look.tissueAlbedo);
+    farAlbedo.value = look.farAlbedo;
+    material.roughness = look.roughness;
+    material.clearcoat = look.clearcoat;
+    material.clearcoatRoughness = look.clearcoatRoughness;
+  };
+  restyle();
+
+  const relayer = (): void => {
+    fillRelief(data, heightfield(map, RESOLUTION, { ...relief }));
+    reliefMap.needsUpdate = true;
+    bodyHeight.value = relief.bodyHeight;
+  };
 
   const { width, height } = map.terrain.layout ?? { width: 0, height: 0 };
   const mesh = new Mesh(gridGeometry(field.height, width, height), material);
   // The vertex stage moves the skin, so its resting bounds would cull it wrongly.
   mesh.frustumCulled = false;
-  return { mesh, amp, lift, surface };
+  return { mesh, amp, lift, surface, restyle, relayer };
 };

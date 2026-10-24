@@ -6,39 +6,13 @@
  * The spike found three's room environment greyed the whole field this way.
  * It is an equirectangular data texture laid on the CPU, as the scene's other
  * soft layers are (D152), which the physical material filters into its
- * reflection levels.
+ * reflection levels. Its look comes through the registry (D156): the loop
+ * lays the sky again when one of its tokens moves.
  */
 
 import { Color, DataTexture, DataUtils, EquirectangularReflectionMapping, HalfFloatType, LinearFilter, LinearSRGBColorSpace, RGBAFormat } from 'three/webgpu';
 
-/** The sky's light, at the values the materials spike left them (D151), one object for the dev panel to move (D156). */
-type SkyLook = {
-  /** The band's colour and its gain over the sRGB value, an HDR light the sheen can catch. */
-  readonly band: string;
-  readonly bandGain: number;
-  /** The band fades out between these two elevations, as sines: full below the lower, gone above the upper. */
-  readonly bandTop: readonly [number, number];
-  /** It fades in across the horizon, between these two. */
-  readonly horizon: readonly [number, number];
-  /** The boxes' colour, how narrow each is, and each box's direction and gain. */
-  readonly box: string;
-  readonly boxFocus: number;
-  readonly boxes: readonly (readonly [number, number, number, number])[];
-};
-
-const SKY: SkyLook = {
-  band: '#8ea4ba',
-  bandGain: 2.2,
-  bandTop: [0.62, 0.9],
-  horizon: [-0.1, 0.12],
-  box: '#f2f6fa',
-  boxFocus: 40,
-  boxes: [
-    [-0.55, 0.62, -0.45, 2.5],
-    [0.6, 0.55, -0.3, 2],
-    [0.1, 0.5, 0.7, 1.5],
-  ],
-};
+import type { SkyLook } from '../materials.js';
 
 /** Texels round the sky and up it; soft light needs few. */
 const WIDTH = 256;
@@ -50,8 +24,8 @@ const ease = (from: number, to: number, x: number): number => {
   return t * t * (3 - 2 * t);
 };
 
-/** The sky as a texture, laid once; its light is linear, so the texture says so. */
-export const createSky = (look: SkyLook = SKY): DataTexture => {
+/** The sky as a texture, laid once from the look's values now; its light is linear, so the texture says so. */
+export const createSky = (look: SkyLook): DataTexture => {
   const band = new Color(look.band);
   const box = new Color(look.box);
   const boxes = look.boxes.map(([x, y, z, gain]) => {
