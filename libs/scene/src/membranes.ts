@@ -16,6 +16,8 @@ import type { MapJson } from 'core';
 
 import { gridFor } from './heightfield.js';
 import type { Grid } from './heightfield.js';
+import { openRing, scanRing } from './raster.js';
+import type { Ring } from './raster.js';
 
 /** A cell's skin cut into triangles: its ring's points as `x, y` pairs in layout units, and three indices per triangle. */
 export type Membrane = {
@@ -38,19 +40,8 @@ export type TissueLook = {
 
 export const TISSUE: TissueLook = { bodyShare: 0.5, bodySoften: 1 };
 
-type Ring = readonly (readonly [number, number])[];
-
 function byPath(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
-}
-
-/** A contour's points, the closing repeat of the first dropped, which earcut and the scanline both read as a zero-length edge. */
-function openRing(contour: Ring): Ring {
-  const first = contour[0];
-  const last = contour.at(-1);
-  return contour.length > 1 && first !== undefined && last !== undefined && first[0] === last[0] && first[1] === last[1]
-    ? contour.slice(0, -1)
-    : contour;
 }
 
 /** Every cell that has a contour, in cell order, with its contour opened. */
@@ -70,31 +61,6 @@ export function membranes(map: MapJson): readonly Membrane[] {
     const flat = ring.flatMap(([x, y]) => [x, y]);
     return { cell, vertices: Float32Array.from(flat), triangles: Uint32Array.from(earcut(flat)) };
   });
-}
-
-/** Add one ring's inside to the body grid, a row at a time, by the even-odd rule. */
-function fillRing(grid: Grid, ring: Ring, share: number): void {
-  const ys = ring.map(([, y]) => y);
-  const r0 = Math.max(0, Math.ceil(Math.min(...ys) / grid.resolution));
-  const r1 = Math.min(grid.rows - 1, Math.floor(Math.max(...ys) / grid.resolution));
-  for (let row = r0; row <= r1; row += 1) {
-    const y = row * grid.resolution;
-    const crossings: number[] = [];
-    ring.forEach(([ax, ay], index) => {
-      const [bx, by] = ring[(index + 1) % ring.length] ?? [ax, ay];
-      if (ay <= y === by <= y) return;
-      crossings.push(ax + ((y - ay) / (by - ay)) * (bx - ax));
-    });
-    crossings.sort((a, b) => a - b);
-    for (let pair = 0; pair + 1 < crossings.length; pair += 2) {
-      const c0 = Math.max(0, Math.ceil((crossings[pair] ?? 0) / grid.resolution));
-      const c1 = Math.min(grid.columns - 1, Math.floor((crossings[pair + 1] ?? 0) / grid.resolution));
-      for (let column = c0; column <= c1; column += 1) {
-        const index = row * grid.columns + column;
-        grid.values[index] = Math.min(1, (grid.values[index] ?? 0) + share);
-      }
-    }
-  }
 }
 
 /** The distance from a point to a segment. */
@@ -161,7 +127,9 @@ export function tissue(map: MapJson, resolution: number, look: TissueLook = TISS
   const body = gridFor(map, resolution);
   const membrane = gridFor(map, resolution);
   for (const { ring, interfaceSize } of skinsOf(map)) {
-    fillRing(body, ring, look.bodyShare);
+    scanRing(body, ring, (index) => {
+      body.values[index] = Math.min(1, (body.values[index] ?? 0) + look.bodyShare);
+    });
     strokeRing(membrane, ring, membraneThickness(interfaceSize));
   }
   return { body: soften(body, look.bodySoften), membrane };

@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 25 — feat(scene): triangulate membranes and lay out organelle instances
+**Current step:** 26 — feat(scene): derive the weather each organelle carries
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -51,7 +51,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 22. docs(design): record the materials spike's verdict and motion tokens
 - ☑ 23. chore(repo): add the scene library and the web app to the workspace
 - ☑ 24. feat(scene): build the heightfield from depth, stability and mass
-- ☐ 25. feat(scene): triangulate membranes and lay out organelle instances
+- ☑ 25. feat(scene): triangulate membranes and lay out organelle instances
 - ☐ 26. feat(scene): derive the weather each organelle carries
 - ☐ 27. feat(scene): place labels per level of detail without collisions
 - ☐ 28. feat(scene): plan levels of detail with hysteresis and cross-fades
@@ -827,3 +827,4 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-24 — step 95 checkpointed · e9be62690 — feat(core): record every file's stability in the map (3m)
 - 2026-10-24 — step 98 checkpointed · 5ea422332 — feat(core): record each file's import ties inside and outside its cell (2m)
 - 2026-10-24 — step 24 checkpointed · 4f65d8615 — feat(scene): build the heightfield from depth, stability and mass (1 drift, 6m)
+- 2026-10-24 — step 25 checkpointed · bcd9a4ed2 — feat(scene): triangulate membranes and lay out organelle instances (4m)
