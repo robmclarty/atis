@@ -1,11 +1,10 @@
 /**
  * terrain: the ground the weather is drawn over (§5.1, D13), as still SVG.
  *
- * Read downward, like the field it draws (D24). The shore comes first, a
- * strip of the tracked files that are not code, with one small skin and one
- * small-caps label per group that has a mark on the field (D48). Under it the
- * terraces, band 0 at the top where the entry points are and the deepest band
- * at the bottom. Over them the membranes, one closed path per cell traced from
+ * Read downward, like the field it draws (D24): the terraces, band 0 at the
+ * top where the entry points are and the deepest band at the bottom. The
+ * shore, the tracked files that are not code (D48), is no land here: the
+ * chrome draws it as a band of flat blocks under the world (D153, D158). Over them the membranes, one closed path per cell traced from
  * the contour core cut, its stroke as thick as the cell's interface: a deep
  * module is a big body with a thin skin. On top the organelles, a circle sized
  * by mass, or, when a file breaks rules, its outline morphed by how many
@@ -22,7 +21,7 @@
  */
 
 import { membraneThickness } from 'core';
-import type { Cell, Contour, Group, Layout, Organelle, Position, Terrain } from 'core';
+import type { Cell, Contour, Layout, Organelle, Position, Terrain } from 'core';
 import {
   FIELD_FILL,
   GLYPH_OFFSET,
@@ -35,13 +34,6 @@ import {
   ORGANELLE_FILL,
   ORGANELLE_STROKE,
   ORGANELLE_STROKE_WIDTH,
-  SHORE_CONTOUR,
-  SHORE_CONTOUR_WIDTH,
-  SHORE_FILL,
-  SHORE_LABEL,
-  SHORE_LABEL_GAP,
-  SHORE_LABEL_SIZE,
-  SHORE_MARK,
   TERRACE_FILL,
   TERRACE_LINE,
   TERRACE_LINE_WIDTH,
@@ -67,7 +59,6 @@ const GLYPHS: readonly string[] = [
   'M0 -3A3 3 0 1 1 0 3A3 3 0 1 1 0 -3Z',
 ];
 
-type Mark = { readonly file: string; readonly at: Position };
 type Point = readonly [number, number];
 
 function byPath(a: string, b: string): number {
@@ -81,9 +72,9 @@ export function pathOf(contour: Contour): string {
   return `M${num(first[0])} ${num(first[1])}${rest.map(([x, y]) => `L${num(x)} ${num(y)}`).join('')}Z`;
 }
 
-/** The near-black the whole map is dim against. */
-export function drawField(layout: Layout): Markup {
-  return el('rect', { id: 'field', x: 0, y: 0, width: layout.width, height: layout.height, fill: FIELD_FILL });
+/** The near-black the whole map is dim against, from the world's top, `top` in the layout's units, down. */
+export function drawField(layout: Layout, top: number): Markup {
+  return el('rect', { id: 'field', x: 0, y: top, width: layout.width, height: layout.height - top, fill: FIELD_FILL });
 }
 
 /** One faint strip and one contour line per band, band 0 uppermost: the entry points are at the top (D13). */
@@ -106,56 +97,6 @@ export function drawTerraces(layout: Layout): Markup {
       ]),
     ),
   );
-}
-
-/** The top-left corner of whatever the shore drew for a group, which is where its label hangs. */
-function cornerOf(marks: readonly Mark[], contour: Contour | undefined): readonly [number, number] {
-  const points: readonly (readonly [number, number])[] = [
-    ...marks.map(({ at }) => [at.x - at.r, at.y - at.r] as const),
-    ...(contour ?? []),
-  ];
-  return [Math.min(...points.map(([x]) => x)), Math.min(...points.map(([, y]) => y))];
-}
-
-/**
- * One group: its skin, its files as faint marks, and its name in small caps.
- * A group with no mark on the field (the `tests` group, whose files are
- * evidence and got no place, D4) draws nothing, and the group's contour is
- * read from the map rather than assumed, so a group core could not skin
- * still shows its marks and its name.
- */
-function drawGroup(group: Group, layout: Layout): Markup | undefined {
-  const marks = group.files.flatMap((file): readonly Mark[] => {
-    const at = layout.positions[file];
-    return at === undefined ? [] : [{ file, at }];
-  });
-  if (marks.length === 0) return undefined;
-  const contour = layout.contours?.[group.id];
-  const [left, top] = cornerOf(marks, contour);
-  const skin =
-    contour === undefined
-      ? []
-      : [el('path', { d: pathOf(contour), fill: 'none', stroke: SHORE_CONTOUR, 'stroke-width': SHORE_CONTOUR_WIDTH })];
-  return el('g', { 'data-group': group.id }, [
-    ...skin,
-    ...marks.map(({ file, at }) => el('circle', { 'data-id': file, cx: at.x, cy: at.y, r: at.r, fill: SHORE_MARK })),
-    el(
-      'text',
-      { x: left, y: top - SHORE_LABEL_GAP, 'font-size': SHORE_LABEL_SIZE, 'font-variant': 'small-caps', fill: SHORE_LABEL },
-      [group.id],
-    ),
-  ]);
-}
-
-/** The strip above the top terrace: land above the abyss, one block per group in D48's table order. */
-export function drawShore(terrain: Terrain, layout: Layout): Markup {
-  const height = layout.shore.y1 - layout.shore.y0;
-  const strip = height > 0 ? [el('rect', { x: 0, y: layout.shore.y0, width: layout.width, height, fill: SHORE_FILL })] : [];
-  const groups = terrain.groups.flatMap((group) => {
-    const drawn = drawGroup(group, layout);
-    return drawn === undefined ? [] : [drawn];
-  });
-  return el('g', { id: 'shore' }, [...strip, ...groups]);
 }
 
 /** How many cells stand between a cell and the top of its tree, bounded so a malformed chain cannot loop. */

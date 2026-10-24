@@ -83,12 +83,19 @@ test('each balloon stands off its mark, on the field, clear of the notices\' mar
   }
 });
 
-test('a fixture without a mark gets no balloon for it, and the render says which marks those are', () => {
-  // retake-5 has every skin closed and no file outside its coverage report.
-  const practice = renderPractice(fixture('retake-5'));
-  expect(practice.missing).toEqual(['lit-arc', 'unmeasured']);
-  expect(practice.callouts.map((callout) => callout.number)).toEqual([1, 3, 4, 5, 6, 7, 8, 9]);
-});
+/** A real fixture's practice render re-cuts every skin core drew, a second or two on its own and more under coverage. */
+const PRACTICE_RENDER_MS = 30_000;
+
+test(
+  'a fixture without a mark gets no balloon for it, and the render says which marks those are',
+  () => {
+    // retake-5 has every skin closed and no file outside its coverage report.
+    const practice = renderPractice(fixture('retake-5'));
+    expect(practice.missing).toEqual(['lit-arc', 'unmeasured']);
+    expect(practice.callouts.map((callout) => callout.number)).toEqual([1, 3, 4, 5, 6, 7, 8, 9]);
+  },
+  PRACTICE_RENDER_MS,
+);
 
 test('the balloons are flat chrome laid over everything, and the committed practice map carries them and the inset', () => {
   const practice = renderPractice(demo());

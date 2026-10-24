@@ -10,5 +10,6 @@ export * from './legend.js';
 export * from './patterns.js';
 export * from './practice.js';
 export * from './render.js';
+export * from './shore.js';
 export * from './terrain.js';
 export * from './weather.js';

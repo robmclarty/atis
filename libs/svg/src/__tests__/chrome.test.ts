@@ -616,14 +616,25 @@ test('the chrome frames the world and never covers it', () => {
   const layout = map.terrain.layout;
   expect(layout).toBeDefined();
   if (layout === undefined) return;
-  // The canvas is the world plus the strip above it and the column beside it; the world is set down under the strip.
+  // The canvas is the world plus the strip above it, the band below it and the column beside it; the world is
+  // cropped to its terrain and set down under the strip, so its field starts where the strip's hard rule runs.
   const canvas = /viewBox="0 0 ([\d.]+) ([\d.]+)"/.exec(svg);
   expect(Number(canvas?.[1])).toBe(layout.width + 300);
-  expect(Number(canvas?.[2])).toBeGreaterThanOrEqual(layout.height);
-  const shift = /<g id="world" transform="translate\(0 ([\d.]+)\)">/.exec(svg);
-  const worldY = Number(shift?.[1]);
+  const shift = /<g id="world" transform="translate\(0 ([\d.-]+)\)">/.exec(svg);
+  const top = Number(/<rect id="field" x="0" y="([\d.]+)"/.exec(svg)?.[1]);
+  const worldY = Number(shift?.[1]) + top;
   expect(worldY).toBeGreaterThan(0);
+  const worldBottom = worldY + layout.height - top;
+  const band = /<line x1="0" y1="([\d.]+)" x2="([\d.]+)" y2="\1"\/>/g;
+  const ruled = [...drawn(chromeOf(svg), 'rules').matchAll(band)].map(([, y]) => Number(y));
+  expect(ruled).toEqual([worldY, worldBottom]);
+  expect(Number(canvas?.[2])).toBeGreaterThan(worldBottom);
   const chrome = chromeOf(svg);
+  // The shore's band lies under the world and beside nothing but the column.
+  for (const [, x, y, width] of drawn(chrome, 'shore').matchAll(/<rect x="([\d.]+)" y="([\d.]+)" width="([\d.]+)"/g)) {
+    expect(Number(y)).toBeGreaterThan(worldBottom);
+    expect(Number(x) + Number(width)).toBeLessThanOrEqual(layout.width);
+  }
   for (const [, y, height] of drawn(chrome, 'hud').matchAll(/<rect x="[\d.]+" y="([\d.]+)" width="[\d.]+" height="([\d.]+)"/g)) {
     expect(Number(y) + Number(height)).toBeLessThanOrEqual(worldY);
   }

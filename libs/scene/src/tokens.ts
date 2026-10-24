@@ -24,16 +24,6 @@ export const TERRACE_FILL = '#10141a';
 export const TERRACE_LINE = '#222831';
 export const TERRACE_LINE_WIDTH = 1;
 
-/** The shore: land above the abyss (D48), a shade lighter than the terraces. */
-export const SHORE_FILL = '#161b21';
-export const SHORE_CONTOUR = '#3b434d';
-export const SHORE_CONTOUR_WIDTH = 1;
-export const SHORE_MARK = '#2d343c';
-export const SHORE_LABEL = '#5d6670';
-export const SHORE_LABEL_SIZE = 8;
-/** How far a group's label sits above the top of its skin. */
-export const SHORE_LABEL_GAP = 3;
-
 /** The membranes: a dim skin over a dimmer, translucent body. */
 export const MEMBRANE_STROKE = '#4b535e';
 export const MEMBRANE_FILL = '#7a838e';
@@ -227,6 +217,22 @@ export const HUD_BLOCK_PAD = 6;
 export const HUD_BLOCK_GAP = 3;
 export const HUD_FONT_SIZE = 9;
 export const CATEGORY_FONT_SIZE = 13;
+
+/**
+ * The shore (D48, D153): no longer land on the terrain but flat blocks in the
+ * chrome, one per group, in the SVG a band wrapping along the foot of the
+ * sheet under the world (D158). A block's text is set this size, a line this
+ * tall, inside this padding, the blocks this far apart; an open block is at
+ * most this wide and names at most this many files before saying how many
+ * more; each named file wears its mark, a disc this big, before its path.
+ */
+export const SHORE_FONT_SIZE = 8;
+export const SHORE_LINE = 11;
+export const SHORE_BLOCK_PAD = 5;
+export const SHORE_BLOCK_GAP = 6;
+export const SHORE_BLOCK_WIDTH = 240;
+export const SHORE_FILES_SHOWN = 6;
+export const SHORE_MARK_R = 2.5;
 
 /** The notice column (§5.4): the width the frame reserves, and the type each row is set in. */
 export const NOTICE_COLUMN = 300;

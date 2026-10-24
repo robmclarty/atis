@@ -95,7 +95,7 @@ function awkward(): MapJson {
       },
     },
     weather: {
-      changed: [],
+      changed: [{ path: AWKWARD_DOC, kind: 'modified', group: AWKWARD_GROUP, is_barrel: false, added: 1, deleted: 0, hunks: [] }],
       reach: [],
       evidence: {},
       checks: { category: 'NOINST', checks_run: 0, slots: [] },
@@ -125,19 +125,32 @@ test('paths and names with <, & and quotes round-trip through the attributes and
   expect(ids).toContain(AWKWARD_FILE);
   expect(ids).toContain(AWKWARD_DOC);
   expect(ids).toContain('single:src/<weird>&"q\'s".ts');
+  // The world writes no label of its own; the shore's group and its changed file are written in the band (D153).
   const world = svg.slice(0, svg.indexOf('<g id="chrome"'));
-  const labels = [...world.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map(([, text]) => unescape(text ?? ''));
-  expect(labels).toEqual([AWKWARD_GROUP]);
-  expect(svg).toContain('data-group="docs &amp; &lt;notes&gt;"');
+  expect([...world.matchAll(/<text[^>]*>([^<]*)<\/text>/g)]).toEqual([]);
+  const band = layer(svg, 'shore');
+  expect(band).toContain('data-group="docs &amp; &lt;notes&gt;"');
+  const words = [...band.matchAll(/<text[^>]*>([^<]*)(?:<tspan|<\/text>)/g)].map(([, text]) => unescape(text ?? ''));
+  expect(words).toEqual([AWKWARD_GROUP, AWKWARD_DOC]);
 });
 
-test('the world is drawn bottom up: field, terraces, shore, membranes, organelles', () => {
-  const svg = renderSvg(demo());
+test('the world is drawn bottom up: field, terraces, membranes, organelles, and holds no shore (D153)', () => {
+  const map = demo();
+  const svg = renderSvg(map);
   expect(svg.startsWith('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ')).toBe(true);
-  const order = ['world', 'field', 'terraces', 'shore', 'membranes', 'organelles'].map((id) => svg.indexOf(`id="${id}"`));
+  const order = ['world', 'field', 'terraces', 'membranes', 'organelles'].map((id) => svg.indexOf(`id="${id}"`));
   expect(order.every((at) => at >= 0)).toBe(true);
   expect(order).toEqual([...order].toSorted((a, b) => a - b));
-  expect(layer(svg, 'field')).toMatch(/^id="field" x="0" y="0" width="480" height="660" fill="#[0-9a-f]{6}"/);
+  // The field starts at the world's top, cropped above the shallowest terrace, and runs to the layout's foot.
+  const field = /^id="field" x="0" y="([\d.]+)" width="480" height="([\d.]+)" fill="#[0-9a-f]{6}"/.exec(layer(svg, 'field'));
+  const top = Number(field?.[1]);
+  expect(top).toBeGreaterThan(0);
+  expect(top).toBeLessThan(map.terrain.layout?.bands[0]?.y0 ?? 0);
+  expect(top + Number(field?.[2])).toBe(map.terrain.layout?.height);
+  // No shore mark is left under #world: no group, and none of the shore's files.
+  const world = svg.slice(svg.indexOf('<g id="world"'), svg.indexOf('<g id="chrome"'));
+  expect(world).not.toContain('data-group=');
+  for (const file of map.terrain.groups.flatMap((group) => group.files)) expect(world).not.toContain(`data-id="${file}"`);
 });
 
 test('one faint strip and one contour line per band, with band 0 uppermost', () => {
@@ -151,20 +164,6 @@ test('one faint strip and one contour line per band, with band 0 uppermost', () 
   const ys = tops.map(([, y]) => y);
   expect(ys).toEqual(ys.toSorted((a, b) => a - b));
   expect(tops[0]?.[1]).toBe(map.terrain.layout?.shore.y1);
-});
-
-test('the shore draws one contour, one small-caps label and its marks per group with a mark on the field', () => {
-  const map = demo();
-  const shore = layer(renderSvg(map), 'shore');
-  const drawn = map.terrain.groups.filter((group) => group.files.some((file) => map.terrain.layout?.positions[file] !== undefined));
-  expect(drawn.map((group) => group.id)).toEqual(['build', 'docs', 'config', 'settings', 'deps', 'other']);
-  expect([...shore.matchAll(/data-group="([^"]+)"/g)].map(([, id]) => id)).toEqual(drawn.map((group) => group.id));
-  expect(count(shore, /<path /g)).toBe(drawn.length);
-  expect(count(shore, /font-variant="small-caps"/g)).toBe(drawn.length);
-  expect(count(shore, /<circle /g)).toBe(drawn.reduce((total, group) => total + group.files.length, 0));
-  // The tests group has files and no marks (D4), so it has no block.
-  expect(shore).not.toContain('data-group="tests"');
-  expect(shore).not.toContain('pm.test.ts');
 });
 
 test('one membrane path per cell, stroked as thick as its interface', () => {

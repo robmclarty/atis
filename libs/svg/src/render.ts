@@ -19,7 +19,7 @@ import { drawChrome, drawGround } from './chrome.js';
 import type { Chrome } from './chrome.js';
 import { el, num, serialize } from './el.js';
 import type { Markup } from './el.js';
-import { drawField, drawMembranes, drawOrganelles, drawShore, drawTerraces } from './terrain.js';
+import { drawField, drawMembranes, drawOrganelles, drawTerraces } from './terrain.js';
 import { drawWeather } from './weather.js';
 
 const XMLNS = 'http://www.w3.org/2000/svg';
@@ -41,12 +41,11 @@ export function frameOf(map: MapJson): Frame {
   return { layout, chrome: drawChrome(map, layout) };
 }
 
-/** The sheet: the ground, the world under the HUD strip, the chrome, and over all of them whatever `over` lays on top (the practice map's callouts). */
+/** The sheet: the ground, the world under the HUD strip cropped to the terrain, the chrome with the shore's band under the world, and over all of them whatever `over` lays on top (the practice map's callouts). */
 export function drawSheet(map: MapJson, { layout, chrome }: Frame, over: readonly Markup[] = []): string {
-  const world = el('g', { id: 'world', transform: `translate(0 ${num(chrome.worldY)})` }, [
-    drawField(layout),
+  const world = el('g', { id: 'world', transform: `translate(0 ${num(chrome.originY)})` }, [
+    drawField(layout, chrome.worldTop),
     drawTerraces(layout),
-    drawShore(map.terrain, layout),
     drawMembranes(map.terrain, layout),
     drawOrganelles(map.terrain, layout),
     drawWeather(map, layout),

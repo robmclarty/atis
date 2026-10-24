@@ -12,8 +12,10 @@
  * to a numbered mark beside its target; round the primary a thin ring in
  * the category hue with its kind written under the mark; round a secondary
  * a thick ring in the leaders' grey, never the evidence light (D72); for a
- * tertiary the mark alone. A notice whose target
- * the field does not place, a slot's name say, keeps its row and draws no
+ * tertiary the mark alone. A notice on a shore file, or on a shore group,
+ * hangs its marks on that group's block in the band along the foot of the
+ * sheet, since the shore is chrome and no longer land (D153, D158). A notice
+ * whose target nothing places, a slot's name say, keeps its row and draws no
  * leader, since a global slot hangs no storm (D68).
  *
  * Every number in the HUD is read from the map (D33), and a block whose
@@ -62,11 +64,15 @@ import {
   SECONDARY_BOX_WIDTH,
   SECONDARY_RING_WIDTH,
   VFR_HUE,
+  shoreRail,
+  weatherOf,
 } from 'scene';
 
 import { el, num } from './el.js';
 import type { Attrs, Markup } from './el.js';
 import { drawLegend, legendHeight } from './legend.js';
+import { layOutShore } from './shore.js';
+import type { Band } from './shore.js';
 import { pathOf } from './terrain.js';
 
 /** A box the chrome drew, in the canvas's coordinates. */
@@ -76,16 +82,22 @@ export type Box = { readonly x: number; readonly y: number; readonly width: numb
 export type RowAt = { readonly rank: number; readonly target: string; readonly added: boolean; readonly x: number; readonly y: number };
 
 /**
- * The chrome as drawn, and the canvas it needs: the world is set `worldY`
- * down, so the HUD strip never covers it. It also says where it put the
- * category block, each notice row and the legend inset, which is what the
- * practice map hangs its callouts from (D125).
+ * The chrome as drawn, and the canvas it needs: the world's frame starts
+ * `worldY` down, under the HUD strip, and holds the terrain alone, cropped to
+ * `worldTop` in the layout's own units, so a layout point `(x, y)` lands on
+ * the sheet at `(x, y + originY)`. Under the world runs the shore's band. It
+ * also says where it put the category block, each notice row, the legend
+ * inset and the band, which is what the practice map hangs its callouts from
+ * and keeps them off (D125).
  */
 export type Chrome = {
   readonly markup: Markup;
   readonly width: number;
   readonly height: number;
   readonly worldY: number;
+  readonly worldTop: number;
+  readonly originY: number;
+  readonly band: Box | undefined;
   readonly category: Box | undefined;
   readonly rows: readonly RowAt[];
   readonly legend: Box;
@@ -146,10 +158,11 @@ type Block = {
 
 type PlacedBlock = { readonly block: Block; readonly x: number; readonly y: number; readonly width: number };
 
-/** Where a notice's target is on the field: a placed file, or a skinned cell or group. */
+/** Where a notice's target is: a placed file or a skinned cell on the field, or a shore group's block in the band. */
 type Anchor =
   | { readonly kind: 'point'; readonly at: Position }
-  | { readonly kind: 'contour'; readonly contour: Contour; readonly foot: readonly [number, number] };
+  | { readonly kind: 'contour'; readonly contour: Contour; readonly foot: readonly [number, number] }
+  | { readonly kind: 'block'; readonly group: string };
 
 /** A notice with its rank, whether the change added its target, and, when the field has it, its target's anchor and the origin its marks hang from. */
 type Ranked = {
@@ -387,8 +400,14 @@ function footOf(contour: Contour): readonly [number, number] | undefined {
   return foot;
 }
 
-/** A target's anchor: its position when the layout placed it, else its contour when core skinned it, else nothing to point at. */
-function anchorOf(target: string, layout: Layout): Anchor | undefined {
+/**
+ * A target's anchor: a shore group's block, for the group or a file on it;
+ * else its position when the layout placed it; else its contour when core
+ * skinned it; else nothing to point at.
+ */
+function anchorOf(target: string, layout: Layout, groupOf: ReadonlyMap<string, string>): Anchor | undefined {
+  const group = groupOf.get(target);
+  if (group !== undefined) return { kind: 'block', group };
   const at = layout.positions[target];
   if (at !== undefined) return { kind: 'point', at };
   const contour = layout.contours?.[target];
@@ -397,11 +416,17 @@ function anchorOf(target: string, layout: Layout): Anchor | undefined {
   return foot === undefined ? undefined : { kind: 'contour', contour, foot };
 }
 
-/** The six the list has room for, in the map's rank order (C7), each with its anchor when the field has one. */
+/** Each shore group, and each file on one, keyed to its group. */
+function shoreGroups(map: MapJson): ReadonlyMap<string, string> {
+  return new Map(map.terrain.groups.flatMap((group) => [[group.id, group.id] as const, ...group.files.map((file) => [file, group.id] as const)]));
+}
+
+/** The six the list has room for, in the map's rank order (C7), each with its anchor when the sheet has one. */
 function noticesInBudget(map: MapJson, layout: Layout): readonly Ranked[] {
   const added = new Set(map.weather.changed.filter((file) => file.kind === 'added').map((file) => file.path));
+  const groupOf = shoreGroups(map);
   return map.notices.slice(0, NOTICE_BUDGET).map((notice, index): Ranked => {
-    const anchor = anchorOf(notice.target, layout);
+    const anchor = anchorOf(notice.target, layout, groupOf);
     return { rank: index + 1, notice, added: added.has(notice.target), ...(anchor === undefined ? {} : { anchor }) };
   });
 }
@@ -538,23 +563,28 @@ function strongest(tiers: readonly NoticeTier[]): NoticeTier {
  * Where a target's marks hang: off the lower right of a placed file, just
  * past its emphasis ring, so they stay clear of the glyph at its upper
  * right, the old name at its right and the stitches under it; below the
- * foot of a skinned group. A run that would leave the field hangs to the
- * lower left instead, its order kept.
+ * foot of a skinned cell; at the end of a shore block's first line. A file's
+ * run that would leave the field hangs to the lower left instead, its order
+ * kept. A block the band did not lay, the `tests` group's say, hangs nothing.
  */
-function marksFor(target: string, anchor: Anchor, ranks: readonly number[], layout: Layout, worldY: number): Marks {
+function marksFor(target: string, anchor: Anchor, ranks: readonly number[], layout: Layout, originY: number, band: Band): Marks | undefined {
+  if (anchor.kind === 'block') {
+    const run = band.blocks.get(anchor.group)?.run;
+    return run === undefined ? undefined : { target, anchor, ranks, x: run.x, y: run.y };
+  }
   const run = ranks.length * NOTICE_BOX + (ranks.length - 1) * NOTICE_BOX_GAP;
   const [right, y] =
     anchor.kind === 'point'
       ? [anchor.at.x + (anchor.at.r + EMPHASIS_PAD + NOTICE_BOX_GAP) * SQRT_HALF, anchor.at.y + (anchor.at.r + EMPHASIS_PAD + NOTICE_BOX_GAP) * SQRT_HALF]
       : [anchor.foot[0] - NOTICE_BOX / 2, anchor.foot[1] + NOTICE_BOX_GAP];
   const fits = right + run <= layout.width - CHROME_PAD;
-  // A group's foot is on the shore, which the layout keeps inside the field, so only a file's run ever flips.
+  // A cell's foot is inside its terrace, which the layout keeps inside the field, so only a file's run ever flips.
   const left = anchor.kind === 'point' ? anchor.at.x - (anchor.at.r + EMPHASIS_PAD + NOTICE_BOX_GAP) * SQRT_HALF - run : right;
-  return { target, anchor, ranks, x: fits ? right : left, y: y + worldY };
+  return { target, anchor, ranks, x: fits ? right : left, y: y + originY };
 }
 
 /** Each target's marks, in the order the targets first appear in the list, so the primary's come first. */
-function marksOf(ranked: readonly Ranked[], layout: Layout, worldY: number): readonly Marks[] {
+function marksOf(ranked: readonly Ranked[], layout: Layout, originY: number, band: Band): readonly Marks[] {
   const byTarget = new Map<string, { readonly anchor: Anchor; readonly ranks: number[] }>();
   for (const entry of ranked) {
     if (entry.anchor === undefined) continue;
@@ -562,7 +592,22 @@ function marksOf(ranked: readonly Ranked[], layout: Layout, worldY: number): rea
     held.ranks.push(entry.rank);
     byTarget.set(entry.notice.target, held);
   }
-  return [...byTarget].map(([target, { anchor, ranks }]) => marksFor(target, anchor, ranks, layout, worldY));
+  return [...byTarget].flatMap(([target, { anchor, ranks }]) => {
+    const marks = marksFor(target, anchor, ranks, layout, originY, band);
+    return marks === undefined ? [] : [marks];
+  });
+}
+
+/** The ranks each shore group's block carries, from every notice on the group or a file on it, in rank order. */
+function ranksOnShore(ranked: readonly Ranked[]): ReadonlyMap<string, readonly number[]> {
+  const ranks = new Map<string, number[]>();
+  for (const entry of ranked) {
+    if (entry.anchor?.kind !== 'block') continue;
+    const held = ranks.get(entry.anchor.group) ?? [];
+    held.push(entry.rank);
+    ranks.set(entry.anchor.group, held);
+  }
+  return ranks;
 }
 
 /** The centre of the `rank`th box of a run of marks. */
@@ -578,16 +623,21 @@ function boxCentre(marks: Marks, rank: number): readonly [number, number] {
  * evidence light's colour, so a ring round a skin cannot read as its gap
  * lit all round (D72, C11).
  */
-function drawEmphasis(marks: Marks, tier: NoticeTier, hue: string, worldY: number): Markup | undefined {
+function drawEmphasis(marks: Marks, tier: NoticeTier, hue: string, originY: number, band: Band): Markup | undefined {
   if (tier === 'tertiary') return undefined;
   const stroke = tier === 'primary' ? hue : LEADER_INK;
   const width = tier === 'primary' ? PRIMARY_RING_WIDTH : SECONDARY_RING_WIDTH;
   const shared = { 'data-target': marks.target, 'data-tier': tier, fill: 'none', stroke, 'stroke-width': width };
   if (marks.anchor.kind === 'point') {
     const { at } = marks.anchor;
-    return el('circle', { ...shared, cx: at.x, cy: at.y + worldY, r: at.r + EMPHASIS_PAD });
+    return el('circle', { ...shared, cx: at.x, cy: at.y + originY, r: at.r + EMPHASIS_PAD });
   }
-  return el('path', { ...shared, d: pathOf(marks.anchor.contour), transform: `translate(0 ${num(worldY)})` });
+  if (marks.anchor.kind === 'block') {
+    const rect = band.blocks.get(marks.anchor.group)?.rect;
+    if (rect === undefined) return undefined;
+    return el('rect', { ...shared, x: rect.x - NOTICE_BOX_GAP, y: rect.y - NOTICE_BOX_GAP, width: rect.width + 2 * NOTICE_BOX_GAP, height: rect.height + 2 * NOTICE_BOX_GAP });
+  }
+  return el('path', { ...shared, d: pathOf(marks.anchor.contour), transform: `translate(0 ${num(originY)})` });
 }
 
 /** The box a run of marks covers on the sheet: its numbered boxes, and the primary's kind under them where it has one. */
@@ -624,7 +674,7 @@ function drawPrimaryLabel(marks: Marks, kind: string, hue: string): Markup {
  * tier, then its numbered boxes in rank order, then the primary's kind. The
  * boxes are drawn over the leaders, so each leader ends where its box begins.
  */
-function drawMarks(ranked: readonly Ranked[], marks: readonly Marks[], hue: string, worldY: number): Markup | undefined {
+function drawMarks(ranked: readonly Ranked[], marks: readonly Marks[], hue: string, originY: number, band: Band): Markup | undefined {
   const tierOf = new Map(ranked.map((entry) => [entry.rank, entry.notice] as const));
   const perTarget = marks.map((run) => {
     const notices = run.ranks.flatMap((rank) => {
@@ -632,7 +682,7 @@ function drawMarks(ranked: readonly Ranked[], marks: readonly Marks[], hue: stri
       return notice === undefined ? [] : [notice];
     });
     const tier = strongest(notices.map((notice) => notice.tier));
-    const emphasis = drawEmphasis(run, tier, hue, worldY);
+    const emphasis = drawEmphasis(run, tier, hue, originY, band);
     const primary = notices.find((notice) => notice.tier === 'primary');
     return el('g', { 'data-target': run.target }, [
       ...(emphasis === undefined ? [] : [emphasis]),
@@ -675,44 +725,70 @@ export function drawGround(chrome: Chrome): Markup {
   return el('rect', { id: 'ground', x: 0, y: 0, width: chrome.width, height: chrome.height, fill: CHROME_GROUND });
 }
 
+/** Half a storm bolt's height, the headroom its glyph needs above the point it hangs at. */
+const BOLT_HALF = 6;
+
+/**
+ * Where the world's frame starts, in the layout's units: the top of the
+ * shallowest terrace, raised past any cell skin or storm bolt that reaches
+ * above it, with the chrome's quiet edge over that. The shore strip core
+ * still lays above band 0 is cropped away, so the frame holds the terrain
+ * alone (D153).
+ */
+function worldTopOf(map: MapJson, layout: Layout): number {
+  const contours = layout.contours ?? {};
+  const tops = [
+    ...layout.bands.map((band) => band.y0),
+    ...map.terrain.cells.flatMap((cell) => (contours[cell.id] ?? []).map(([, y]) => y)),
+    ...weatherOf(map).storms.map((storm) => storm.y - BOLT_HALF),
+  ];
+  return tops.length === 0 ? layout.shore.y1 : Math.max(0, Math.min(...tops) - CHROME_PAD);
+}
+
 /**
  * The chrome over the world: the HUD strip, the hard rules, the leaders,
- * the notice column, the legend inset and the marks, in that order, so the
- * rows and the boxes lie over the leaders that join them. The canvas is the
- * world plus the strip above it and the column beside it, as tall as the
- * taller of the world and the list with the inset under it. The inset sits
- * at the foot of the column, below the last row, so it covers neither the
- * world nor a notice (D87).
+ * the notice column, the shore's band, the legend inset and the marks, in
+ * that order, so the rows and the boxes lie over the leaders that join them.
+ * The canvas is the world plus the strip above it, the band below it and the
+ * column beside it, as tall as the taller of the world with its band and the
+ * list with the inset under it. The inset sits at the foot of the column,
+ * below the last row, so it covers neither the world nor a notice (D87).
  */
 export function drawChrome(map: MapJson, layout: Layout): Chrome {
   const width = layout.width + NOTICE_COLUMN;
   const ranked = noticesInBudget(map, layout);
   const hud = layOutHud(blocksOf(map, ranked.map((entry) => entry.notice)), width);
   const worldY = hud.height;
+  const worldTop = worldTopOf(map, layout);
+  const worldBottom = worldY + layout.height - worldTop;
+  const originY = worldY - worldTop;
+  const band = layOutShore(shoreRail(map), ranksOnShore(ranked), 0, worldBottom, layout.width);
   const columnX = layout.width + CHROME_PAD;
   const rows = layOutRows(ranked, worldY + CHROME_PAD);
   const last = rows.at(-1);
   const listBottom = last === undefined ? worldY + CHROME_PAD : last.y + last.height + CHROME_PAD;
   const legend = {
     x: columnX,
-    y: Math.max(listBottom, worldY + layout.height - CHROME_PAD - legendHeight()),
+    y: Math.max(listBottom, worldBottom + band.height - CHROME_PAD - legendHeight()),
     width: NOTICE_COLUMN - 2 * CHROME_PAD,
     height: legendHeight(),
   };
-  const height = Math.max(worldY + layout.height, Math.ceil(legend.y + legend.height + CHROME_PAD));
+  const height = Math.max(worldBottom + band.height, Math.ceil(legend.y + legend.height + CHROME_PAD));
   const { category } = map.weather.checks;
   const hue = CATEGORY_HUES[category] ?? CHROME_INK;
-  const marks = marksOf(ranked, layout, worldY);
+  const marks = marksOf(ranked, layout, originY, band);
   const leaders = drawLeaders(rows, marks, columnX);
-  const drawnMarks = drawMarks(ranked, marks, hue, worldY);
+  const drawnMarks = drawMarks(ranked, marks, hue, originY, band);
   const markup = el('g', { id: 'chrome' }, [
     el('g', { id: 'hud' }, hud.placed.map((placed) => drawBlock(placed, category))),
     el('g', { id: 'rules', stroke: CHROME_RULE, 'stroke-width': CHROME_STROKE_WIDTH }, [
       el('line', { x1: 0, y1: worldY, x2: width, y2: worldY }),
       el('line', { x1: layout.width, y1: worldY, x2: layout.width, y2: height }),
+      ...(band.markup === undefined ? [] : [el('line', { x1: 0, y1: worldBottom, x2: layout.width, y2: worldBottom })]),
     ]),
     ...(leaders === undefined ? [] : [leaders]),
     el('g', { id: 'notices' }, rows.map((row) => drawRow(row, columnX, hue))),
+    ...(band.markup === undefined ? [] : [band.markup]),
     drawLegend(legend.x, legend.y, legend.width),
     ...(drawnMarks === undefined ? [] : [drawnMarks]),
   ]);
@@ -722,6 +798,9 @@ export function drawChrome(map: MapJson, layout: Layout): Chrome {
     width,
     height,
     worldY,
+    worldTop,
+    originY,
+    band: band.markup === undefined ? undefined : { x: 0, y: worldBottom, width: layout.width, height: band.height },
     category: placed === undefined ? undefined : { x: placed.x, y: placed.y, width: placed.width, height: HUD_BLOCK_HEIGHT },
     rows: rows.map(({ ranked: { rank, notice, added }, y }) => ({
       rank,

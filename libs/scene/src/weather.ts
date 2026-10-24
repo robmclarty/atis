@@ -3,7 +3,7 @@
  * The SVG draws it still and the world draws it moving, and neither works it
  * out for itself, so the two cannot drift (D86).
  *
- * Each file the layout placed carries its own state: its change kind, and a
+ * Each terrain file the layout placed carries its own state: its change kind, and a
  * renamed file its old path (D40); a lit crossing where the reach left a cell
  * through it; its evidence, the skin's open share (D71, D80), its mutants as
  * notches round the top and its stitches round the bottom; and a ghost's
@@ -11,6 +11,10 @@
  * fixed share per membrane crossed (D5), and the storms over it, split by
  * whether the red is the change's (D68). The exceptional edges come beside
  * them. Each attribute has one channel of C11 and no other.
+ *
+ * The shore is no part of it: both renderers draw the shore as flat blocks
+ * in the chrome (D153), from `shoreRail`, so a shore file's change and a
+ * storm over a shore group are the rail's to say.
  *
  * All of it is read from `map.json` alone (D33). A channel the map does not
  * carry is absent, never defaulted (C2), a file the layout did not place
@@ -63,7 +67,7 @@ export type FileEvidence = {
 /** A file that usually changes with these and did not (§5.2): the changed files it goes with, how often, and on how many commits. */
 export type GhostState = { readonly with: readonly string[]; readonly rate: number; readonly support: number };
 
-/** One placed file's weather; a file the weather leaves alone is not listed. */
+/** One placed terrain file's weather; a file the weather leaves alone is not listed. */
 export type FileWeather = {
   readonly path: string;
   readonly change?: ChangeState;
@@ -82,7 +86,7 @@ export type FileWeather = {
  */
 export type CellReach = { readonly hops: number; readonly luminance: number; readonly holes: readonly string[] };
 
-/** A red slot over a place (a cell, or a shore group), the change's or standing (D68), hung at the bolt's point above its contour. */
+/** A red slot over a cell, the change's or standing (D68), hung at the bolt's point above its contour. */
 export type Storm = {
   readonly slot: string;
   readonly place: string;
@@ -91,7 +95,7 @@ export type Storm = {
   readonly y: number;
 };
 
-/** One cell's or shore group's weather; one the weather leaves alone is not listed. */
+/** One cell's weather; one the weather leaves alone is not listed. */
 export type CellWeather = {
   readonly cell: string;
   readonly reach?: CellReach;
@@ -197,9 +201,10 @@ function stitchesOf(map: MapJson): ReadonlyMap<string, readonly StitchMark[]> {
   );
 }
 
-/** Every placed file the weather touches, with its state, by path. */
+/** Every placed terrain file the weather touches, with its state, by path. */
 function filesOf(map: MapJson): readonly FileWeather[] {
   const positions = map.terrain.layout?.positions ?? {};
+  const terrain = new Set(map.terrain.organelles.map((organelle) => organelle.id));
   const changes = new Map(map.weather.changed.map((file) => [file.path, file] as const));
   const crossings = new Set(map.weather.reach.flatMap((entry) => entry.via));
   const skins = skinsOf(map);
@@ -208,7 +213,7 @@ function filesOf(map: MapJson): readonly FileWeather[] {
   const ghosts = new Map(map.weather.ghosts.map((ghost) => [ghost.path, ghost] as const));
   const touched = new Set([...changes.keys(), ...crossings, ...skins.keys(), ...notches.keys(), ...stitches.keys(), ...ghosts.keys()]);
   return [...touched]
-    .filter((path) => positions[path] !== undefined)
+    .filter((path) => terrain.has(path) && positions[path] !== undefined)
     .toSorted(byPath)
     .map((path): FileWeather => {
       const change = changes.get(path);
@@ -261,16 +266,19 @@ function topOf(contour: Ring): readonly [number, number] | undefined {
   return top;
 }
 
+/** A red slot over a place, a cell or a shore group, before it is hung: the change's, or standing state (D68). */
+export type StormPlace = { readonly slot: string; readonly place: string; readonly change: boolean };
+
 /**
  * The storms, from core's split of the red slots as the map records it (D67,
  * D73): each slot is the change's over every place a changed file it is on
  * the change through sits on, and standing state over every other place the
  * files it names sit on. A global slot names no file and hangs nothing; the
- * HUD counts it instead (D68). Each is hung above the top of its place's
- * contour, stacked where two hang over one place in the order they come, so
- * the change's red sits nearest; a place with no contour hangs nothing.
+ * HUD counts it instead (D68). The change's come first, then the standing,
+ * each by slot name (C3). A place is a cell or, for a shore file, its group,
+ * which the rail carries.
  */
-function stormsOf(map: MapJson): readonly Storm[] {
+export function stormPlaces(map: MapJson): readonly StormPlace[] {
   const { terrain, weather } = map;
   const stitches = weather.evidence.stitches ?? [];
   const red = readRedSplit(weather.checks.slots);
@@ -283,10 +291,20 @@ function stormsOf(map: MapJson): readonly Storm[] {
         .filter((place) => !onChange.has(place))
         .map((place) => ({ slot: slot.name, place, change: false }));
     });
-  const contours = terrain.layout?.contours ?? {};
+  return [...change, ...standing];
+}
+
+/**
+ * The storms over cells, each hung above the top of its cell's contour,
+ * stacked where two hang over one cell in the order they come, so the
+ * change's red sits nearest; a cell with no contour hangs nothing.
+ */
+function stormsOf(map: MapJson): readonly Storm[] {
+  const cells = new Set(map.terrain.cells.map((cell) => cell.id));
+  const contours = map.terrain.layout?.contours ?? {};
   const rows = new Map<string, number>();
-  return [...change, ...standing].flatMap((storm): Storm[] => {
-    const top = topOf(contours[storm.place] ?? []);
+  return stormPlaces(map).flatMap((storm): Storm[] => {
+    const top = cells.has(storm.place) ? topOf(contours[storm.place] ?? []) : undefined;
     if (top === undefined) return [];
     const row = rows.get(storm.place) ?? 0;
     rows.set(storm.place, row + 1);
@@ -294,7 +312,7 @@ function stormsOf(map: MapJson): readonly Storm[] {
   });
 }
 
-/** Every cell the reach entered and every place a storm hangs over, with its state, by id. */
+/** Every cell the reach entered and every cell a storm hangs over, with its state, by id. */
 function cellsOf(map: MapJson, storms: readonly Storm[]): readonly CellWeather[] {
   const hops = nearestHops(map.weather.reach);
   const holes = holesOf(map.terrain);

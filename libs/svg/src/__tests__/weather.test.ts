@@ -174,7 +174,7 @@ test('the weather is drawn inside the world after the organelles, its definition
   expect(count(svg, /<defs>/g)).toBe(1);
 });
 
-test('changed organelles and shore files are stained by kind, and a changed test file is nowhere on the field', () => {
+test('changed organelles are stained by kind, a changed shore file is the band\'s, and a changed test file is nowhere on the field', () => {
   const svg = renderSvg(demo());
   const changed = drawn(svg, 'changed');
   expect(changed).toContain(`fill="${CHANGE_HUE}" stroke="${CHANGE_HUE}"`);
@@ -182,21 +182,22 @@ test('changed organelles and shore files are stained by kind, and a changed test
     ([, id, kind, r, rest]) => ({ id, kind, r: Number(r), rest: rest ?? '' }),
   );
   expect(stains.map((stain) => [stain.id, stain.kind])).toEqual([
-    ['README.md', 'modified'],
     ['apps/cli/src/doctor.ts', 'modified'],
     ['libs/core/src/pm/index.ts', 'modified'],
     ['libs/core/src/pm/legacy.ts', 'deleted'],
     ['libs/core/src/pm/tools.ts', 'added'],
-    ['notes.xyz', 'modified'],
-    ['package.json', 'modified'],
   ]);
   for (const stain of stains) {
     // Added and modified are the hue through, with no rim of their own; deleted is the outline alone, the body gone.
     if (stain.kind === 'deleted') expect(stain.rest).toBe(' fill="none"');
     else expect(stain.rest).toBe(' stroke="none"');
   }
-  // A shore file is stained at its own small mark, never drawn as an organelle (D48).
-  expect(stains.find((stain) => stain.id === 'README.md')?.r).toBe(4);
+  // A changed shore file is named on its group's block in the band, never on the field (D153).
+  const world = drawn(svg, 'world');
+  for (const shore of ['README.md', 'notes.xyz', 'package.json']) {
+    expect(world).not.toContain(`data-id="${shore}"`);
+    expect(drawn(svg, 'shore')).toContain(`<g data-id="${shore}" data-kind="modified">`);
+  }
   // The changed test file is a stitch, not a stain (D4).
   expect(changed).not.toContain('pm.test.ts');
 });
@@ -480,9 +481,10 @@ test('a global red slot hangs no storm; a slot naming a changed and an untouched
   const grey = stormsIn(drawn(svg, 'standing-storms'));
   expect(grey.map((storm) => [storm.slot, storm.over])).toEqual([
     ['dead', CELL_B],
-    ['docs', 'docs'],
     ['struct', CELL_A],
   ]);
+  // The standing `docs` red names a shore file, so its bolt hangs on the docs block in the band, grey and unlabelled (D153).
+  expect(drawn(svg, 'shore')).toContain('data-slot="docs" data-change="false"');
   // Over A's cell the change's two storms stack nearest the cell, and the standing `struct` above them, so no bolt covers another.
   const overA = [...storms, ...grey].filter((storm) => storm.over === CELL_A).map((storm) => storm.y);
   expect(overA).toEqual([...overA].toSorted((a, b) => b - a));

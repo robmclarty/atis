@@ -23,10 +23,12 @@ Every channel carries one meaning and no other (P3, C11):
 
 The sections below are those channels, plus the base tissue the weather is drawn
 over and the chrome that frames it. Each mark lands in a named group under the
-root `<svg>`: `#world` holds `#field`, `#terraces`, `#shore`, `#membranes`,
+root `<svg>`: `#world` holds `#field`, `#terraces`, `#membranes`,
 `#organelles` and `#weather` (itself `#standing-storms`, `#reach`, `#changed`,
 `#history`, `#evidence`, `#edges`, `#ghosts`, `#storms`, bottom up); `#chrome`
-holds `#ground`, `#hud`, `#rules`, `#leaders`, `#notices`, `#legend` and `#marks`.
+holds `#ground`, `#hud`, `#rules`, `#leaders`, `#notices`, `#shore`, `#legend`
+and `#marks`. The world holds the terrain alone: the shore is chrome, a band of
+flat blocks under it (D153, D158).
 The practice map alone adds `#callouts` over both.
 
 Every value here is read from `libs/scene/src/tokens.ts`, the still renderer's
@@ -60,13 +62,6 @@ D11). Nothing in this section is luminous; light is the weather's to draw.
 | `TERRACE_FILL` | `#10141a` | each depth band's strip in `#terraces` |
 | `TERRACE_LINE` | `#222831` | the contour line at the top of each band |
 | `TERRACE_LINE_WIDTH` | `1` | that line's width |
-| `SHORE_FILL` | `#161b21` | the shore strip above the top terrace (`#shore`), a shade lighter than a terrace |
-| `SHORE_CONTOUR` | `#3b434d` | the small skin around each non-empty shore group |
-| `SHORE_CONTOUR_WIDTH` | `1` | that skin's stroke width |
-| `SHORE_MARK` | `#2d343c` | each shore file drawn as a faint disc |
-| `SHORE_LABEL` | `#5d6670` | the small-caps group name |
-| `SHORE_LABEL_SIZE` | `8` | that label's font size |
-| `SHORE_LABEL_GAP` | `3` | how far the label sits above the group's skin |
 | `MEMBRANE_STROKE` | `#4b535e` | the cell skins in `#membranes`, each width scaled by the cell's interface |
 | `MEMBRANE_FILL` | `#7a838e` | the translucent body inside each membrane |
 | `MEMBRANE_FILL_OPACITY` | `0.08` | that body's opacity, so nested skins read a shade fuller |
@@ -232,6 +227,36 @@ emphasis rings.
 | `LEADER_INK` | `#9aa5b1` | `#leaders`, the dotted lines from a notice row to its mark, and the secondary ring round its target, so no mark on the map shares the evidence light's colour (D72) |
 | `LEADER_WIDTH` | `1` | a leader's width |
 | `LEADER_DASH` | `0.1 3` | a leader's round-dotted dash |
+
+## The shore's band
+
+The shore, every tracked file that is not terrain (D48), is chrome rather than
+land (D153). The still sheet draws it as `#shore`, a band of flat blocks under
+the world at its full width, wrapping in rows (D158); the world draws the same
+blocks in a scrolled rail at the tab's right edge. `shoreRail` in
+`libs/scene/src/shore.ts` orders them for both: the groups the change touched
+first, then the rest, each by name and `other` last. A touched block opens on
+its files, each with a mark in the change hue as the world stains it (filled
+for an edit, an outline for a deletion, dashed for a rename) or a ghost's
+dashed grey ring, and its path, `+` before an added one (D120) and cut from the
+left where it would run out of the block. The rest show their name and count.
+`other` is framed in `CHROME_INK` at `SECONDARY_BOX_WIDTH`, since it is never
+quiet (D48); every other block in a `CHROME_MUTED` hairline. A red slot over a
+shore file hangs its bolt on the group's first line, the change's in `IFR_HUE`
+with its slot, standing state grey, and a notice on a shore file hangs its
+numbered boxes at that line's end, its leader running down to the band. The
+world's frame is cropped to its terrain: the top of the shallowest terrace,
+raised past any cell skin or storm that reaches above it, under `CHROME_PAD`.
+
+| Token | Value | Where it appears |
+| --- | --- | --- |
+| `SHORE_FONT_SIZE` | `8` | a block's words: its group's name and count, and each named file |
+| `SHORE_LINE` | `11` | the height of each line in a block |
+| `SHORE_BLOCK_PAD` | `5` | a block's inner padding |
+| `SHORE_BLOCK_GAP` | `6` | the gap between blocks, and between a header's words and its storms and boxes |
+| `SHORE_BLOCK_WIDTH` | `240` | the widest an open block grows before its paths are cut |
+| `SHORE_FILES_SHOWN` | `6` | how many files an open block names before it says how many more |
+| `SHORE_MARK_R` | `2.5` | the radius of the mark before each named file |
 
 ## The legend inset and the practice map's balloons
 

@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 94 — feat(svg): morph a file's outline by the rules it breaks
+**Current step:** 96 — feat(svg): draw the shore as a compact band of flat blocks
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -76,7 +76,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☐ 47. chore(glance): read glance round two in the world
 - ☑ 88. refactor(svg): draw the still map's weather from the scene's derivations
 - ☐ 93. feat(web): draw a minimap that moves the camera
-- ☐ 94. feat(svg): morph a file's outline by the rules it breaks
+- ☑ 94. feat(svg): morph a file's outline by the rules it breaks
 - ☑ 95. feat(core): record every file's stability in the map
 - ☐ 96. feat(svg): draw the shore as a compact band of flat blocks
 - ☐ 97. feat(web): add a hidden dev panel that tunes every token live
@@ -830,3 +830,4 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-24 — step 25 checkpointed · bcd9a4ed2 — feat(scene): triangulate membranes and lay out organelle instances (4m)
 - 2026-10-24 — step 26 checkpointed · cae7a4574 — feat(scene): derive the weather each organelle carries (1 drift, 6m)
 - 2026-10-24 — step 88 checkpointed · dc47134d3 — refactor(svg): draw the still map's weather from the scene's derivations (1 drift, 6m)
+- 2026-10-24 — step 94 checkpointed · 7c9938acb — feat(svg): morph a file's outline by the rules it breaks (7m)

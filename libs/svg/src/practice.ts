@@ -58,17 +58,18 @@ function heading(angle: number): Point {
   return [Math.cos(angle), Math.sin(angle)];
 }
 
-/** A point on a file's ring `radius` out at `angle`, standing off outward. */
-function onRing(at: Position, radius: number, angle: number, worldY: number): Anchor {
+/** A point on a file's ring `radius` out at `angle`, standing off outward; `originY` is where the layout's top lands on the sheet. */
+function onRing(at: Position, radius: number, angle: number, originY: number): Anchor {
   const [dx, dy] = heading(angle);
-  return { at: [at.x + radius * dx, at.y + worldY + radius * dy], toward: [dx, dy] };
+  return { at: [at.x + radius * dx, at.y + originY + radius * dy], toward: [dx, dy] };
 }
 
-/** The first of `paths`, in path order, that the layout placed. */
-function firstPlaced(paths: readonly string[], layout: Layout): readonly [string, Position] | undefined {
+/** The first of `paths`, in path order, that the layout placed on the terrain: a shore file's mark is the band's, not the world's (D153). */
+function firstPlaced(paths: readonly string[], layout: Layout, map: MapJson): readonly [string, Position] | undefined {
+  const terrain = new Set(map.terrain.organelles.map((organelle) => organelle.id));
   for (const path of [...paths].toSorted(byPath)) {
     const at = layout.positions[path];
-    if (at !== undefined) return [path, at];
+    if (at !== undefined && terrain.has(path)) return [path, at];
   }
   return undefined;
 }
@@ -105,7 +106,7 @@ function findLitArc(sheet: Sheet): Anchor | undefined {
   const file = openFile(sheet);
   const at = file === undefined ? undefined : sheet.layout.positions[file.path];
   if (file === undefined || at === undefined) return undefined;
-  return onRing(at, skin(at) + INTEGRITY_GAP_WIDTH / 2, TOP + openShare(file) * Math.PI, sheet.chrome.worldY);
+  return onRing(at, skin(at) + INTEGRITY_GAP_WIDTH / 2, TOP + openShare(file) * Math.PI, sheet.chrome.originY);
 }
 
 /** The middle of the hairline, the rest of the ring, on a file the tests ran some of; a different file from the arc's where the map has one. */
@@ -116,50 +117,50 @@ function findHairline(sheet: Sheet): Anchor | undefined {
     .toSorted((a, b) => Number(a.path === arc) - Number(b.path === arc) || byPath(a.path, b.path));
   const at = file === undefined ? undefined : sheet.layout.positions[file.path];
   if (file === undefined || at === undefined) return undefined;
-  return onRing(at, skin(at), TOP + (1 + openShare(file)) * Math.PI, sheet.chrome.worldY);
+  return onRing(at, skin(at), TOP + (1 + openShare(file)) * Math.PI, sheet.chrome.originY);
 }
 
 /** The first notch on the first file with a live mutant, at the top of its ring. */
 function findNotch(sheet: Sheet): Anchor | undefined {
   const mutants = sheet.map.weather.evidence.mutants ?? [];
-  const found = firstPlaced([...new Set(mutants.map((mutant) => mutant.path))], sheet.layout);
+  const found = firstPlaced([...new Set(mutants.map((mutant) => mutant.path))], sheet.layout, sheet.map);
   if (found === undefined) return undefined;
   const [path, at] = found;
   const count = mutants.filter((mutant) => mutant.path === path).length;
-  return onRing(at, skin(at) + INTEGRITY_GAP_WIDTH / 2, TOP - ((count - 1) / 2) * MUTANT_NOTCH_SPACING, sheet.chrome.worldY);
+  return onRing(at, skin(at) + INTEGRITY_GAP_WIDTH / 2, TOP - ((count - 1) / 2) * MUTANT_NOTCH_SPACING, sheet.chrome.originY);
 }
 
 /** The stitches across the bottom of the first file a test imports. */
 function findStitches(sheet: Sheet): Anchor | undefined {
   const targets = (sheet.map.weather.evidence.stitches ?? []).flatMap((stitch) => stitch.targets);
-  const found = firstPlaced([...new Set(targets)], sheet.layout);
-  return found === undefined ? undefined : onRing(found[1], found[1].r, Math.PI / 2, sheet.chrome.worldY);
+  const found = firstPlaced([...new Set(targets)], sheet.layout, sheet.map);
+  return found === undefined ? undefined : onRing(found[1], found[1].r, Math.PI / 2, sheet.chrome.originY);
 }
 
 /** The first bolt of the change's storms, or of the standing ones, its balloon to the left since a red bolt's slot is written to its right. */
 function findBolt({ map, chrome }: Sheet, change: boolean): Anchor | undefined {
   const storm = weatherOf(map).storms.find((hung) => hung.change === change);
-  return storm === undefined ? undefined : { at: [storm.x, storm.y + chrome.worldY], toward: [-1, 0] };
+  return storm === undefined ? undefined : { at: [storm.x, storm.y + chrome.originY], toward: [-1, 0] };
 }
 
 /** The dashed ring past the first ghost. */
 function findGhost(sheet: Sheet): Anchor | undefined {
-  const found = firstPlaced(sheet.map.weather.ghosts.map((ghost) => ghost.path), sheet.layout);
-  return found === undefined ? undefined : onRing(found[1], found[1].r + GHOST_PAD, (3 * Math.PI) / 4, sheet.chrome.worldY);
+  const found = firstPlaced(sheet.map.weather.ghosts.map((ghost) => ghost.path), sheet.layout, sheet.map);
+  return found === undefined ? undefined : onRing(found[1], found[1].r + GHOST_PAD, (3 * Math.PI) / 4, sheet.chrome.originY);
 }
 
 /** An added file's stain where the map has one, else a modified file's, since the cyan is the one hue for both (D120). */
 function findStain(sheet: Sheet): Anchor | undefined {
   const changed = sheet.map.weather.changed;
   const of = (kind: string): readonly string[] => changed.filter((file) => file.kind === kind).map((file) => file.path);
-  const found = firstPlaced(of('added'), sheet.layout) ?? firstPlaced(of('modified'), sheet.layout);
-  return found === undefined ? undefined : onRing(found[1], found[1].r, (5 * Math.PI) / 4, sheet.chrome.worldY);
+  const found = firstPlaced(of('added'), sheet.layout, sheet.map) ?? firstPlaced(of('modified'), sheet.layout, sheet.map);
+  return found === undefined ? undefined : onRing(found[1], found[1].r, (5 * Math.PI) / 4, sheet.chrome.originY);
 }
 
 /** The right of the first skin lit whole. */
 function findUnmeasured(sheet: Sheet): Anchor | undefined {
-  const found = firstPlaced(sheet.map.weather.evidence.unmeasured ?? [], sheet.layout);
-  return found === undefined ? undefined : onRing(found[1], skin(found[1]) + INTEGRITY_GAP_WIDTH / 2, 0, sheet.chrome.worldY);
+  const found = firstPlaced(sheet.map.weather.evidence.unmeasured ?? [], sheet.layout, sheet.map);
+  return found === undefined ? undefined : onRing(found[1], skin(found[1]) + INTEGRITY_GAP_WIDTH / 2, 0, sheet.chrome.originY);
 }
 
 /**
@@ -180,7 +181,7 @@ export const FINDERS: Readonly<Record<string, (sheet: Sheet) => Anchor | undefin
   unmeasured: findUnmeasured,
 };
 
-/** Where a balloon may not stand: on a notice's marks, in the notice column or the HUD strip, or on a balloon already hung. */
+/** Where a balloon may not stand: on a notice's marks, in the notice column, the HUD strip or the shore's band, or on a balloon already hung. */
 type Keepout = { readonly boxes: readonly Box[]; readonly balloons: readonly Point[] };
 
 /** The turns a balloon tries off the way it faces, nearest first, an eighth of a turn apart. */
@@ -216,6 +217,7 @@ export function calloutsOf(map: MapJson, layout: Layout, chrome: Chrome): readon
     ...chrome.marks,
     { x: 0, y: 0, width: chrome.width, height: chrome.worldY },
     { x: layout.width, y: chrome.worldY, width: chrome.width - layout.width, height: chrome.height - chrome.worldY },
+    ...(chrome.band === undefined ? [] : [chrome.band]),
   ];
   const callouts: Callout[] = [];
   LEGEND.forEach((mark, index) => {
