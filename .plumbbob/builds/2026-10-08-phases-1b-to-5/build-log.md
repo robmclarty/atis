@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 20 — chore(glance): read five held-out maps blind on the SVG
+**Current step:** none (at the boundary)
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -46,7 +46,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 91. fix(core): read only changed code lines as unmeasured
 - ☑ 92. fix(core): tell a mutant no test reached from one that survived
 - ☑ 19. chore(fixtures): select and generate the corpus's held-out half
-- ☐ 20. chore(glance): read five held-out maps blind on the SVG
+- ☑ 20. chore(glance): read five held-out maps blind on the SVG
 - ☐ 21. docs(inspiration): cite the corpus repos
 - ☐ 22. docs(design): record the materials spike's verdict and motion tokens
 - ☐ 23. chore(repo): add the scene library and the web app to the workspace
@@ -131,11 +131,12 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] a package barrel no test imports reads as an unmeasured gap with high reach (corpus-4's notice 2), though its added lines are exports
 - [x] a NoCoverage mutant is counted and worded as survived (all 88 of corpus-6's, 12 of corpus-1's 14), so the notice overstates what the tests did
 - [x] fallow 3.35 writes every re-export's import (cycle edges, boundary violations) at line 1, col 0, so D140 keeps the file rule there; corpus-4's 14 barrel cycles stay on the change through packages/builders/src/index.ts until the scan supplies a re-export's real line or D98's base side lands
-- [ ] the practice map's balloon lines crowd other marks: balloon 1's line crosses the Other block the HUD wrapped beneath the category, balloon 5's lies along the very stitch it names, and balloon 8's ends at notice box 4; each still lands on its own mark (libs/svg/src/practice.ts)
-- [ ] second retake: the category read IFR on all five maps, both holds and all three merges: a health or dupes red on a touched function still turns the Gate red though its notice says present at head (corpus-12, corpus-11), and uncovered changed lines reaching three or more modules make any change to a widely read file IFR (corpus-7, corpus-8, corpus-10)
-- [ ] second retake: an interface notice leads all six held-out maps and holds 15 of their 18 top-three rows; weighed by its readers on a published package it outranks everything, and on corpus-7 it kept the flagged uncovered lines out of all six notices
-- [ ] second retake: a large repo's sheet draws too small to read when fit to a screen: corpus-7's 1834 by 4215 sheet drew at 0.23, its 9-unit HUD and notice text about 2 points tall, and Rob could not see corpus-12 at 0.62
-- [ ] second retake: files under test/ that no test run reports (e2e site pages, tsc type tests, a helper) and vitest's focused status draw as unlit stitches, tests not run: 57 of corpus-8's 87, on an approved merge Rob held partly on stitches
+- [x] the practice map's balloon lines crowd other marks: balloon 1's line crosses the Other block the HUD wrapped beneath the category, balloon 5's lies along the very stitch it names, and balloon 8's ends at notice box 4; each still lands on its own mark (libs/svg/src/practice.ts)
+- [x] second retake: the category read IFR on all five maps, both holds and all three merges: a health or dupes red on a touched function still turns the Gate red though its notice says present at head (corpus-12, corpus-11), and uncovered changed lines reaching three or more modules make any change to a widely read file IFR (corpus-7, corpus-8, corpus-10)
+- [x] second retake: an interface notice leads all six held-out maps and holds 15 of their 18 top-three rows; weighed by its readers on a published package it outranks everything, and on corpus-7 it kept the flagged uncovered lines out of all six notices
+- [x] second retake: a large repo's sheet draws too small to read when fit to a screen: corpus-7's 1834 by 4215 sheet drew at 0.23, its 9-unit HUD and notice text about 2 points tall, and Rob could not see corpus-12 at 0.62
+- [x] second retake: files under test/ that no test run reports (e2e site pages, tsc type tests, a helper) and vitest's focused status draw as unlit stitches, tests not run: 57 of corpus-8's 87, on an approved merge Rob held partly on stitches
+- [x] Rob, after the second retake: on most of the five maps he couldn't zoom in or see details; build a coherent, working system on real code he understands first, and refine and tune the encodings later, so range 6's stop defers the four encodings instead of running D119's refine before wave 1
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -166,6 +167,13 @@ Harvest results this boundary:
 - **tangent**: park 8 · a NoCoverage mutant is counted and worded as survived (all 88 of corpus-6's, 12 of corpus-1's 14), so the notice overstates what the tests did → every hit stands either way, so it is a wording fix the refine can fold in or leave
 - 2026-10-24, at range 4 of 24's stop: 1 parked idea, classified.
 - **tangent**: park 9 · fallow 3.35 writes every re-export's import (cycle edges, boundary violations) at line 1, col 0, so D140 keeps the file rule there; corpus-4's 14 barrel cycles stay on the change through packages/builders/src/index.ts until the scan supplies a re-export's real line or D98's base side lands → C2 holds a finding fallow gives no line to its file, D98's base side replaces the rule in wave 3, and D127 judges the fixes on the held-out maps as they stand, so it waits for step 20's reading to say whether it matters
+- 2026-10-24, at the step 20 boundary: 6 parked ideas, classified.
+- **tangent**: park 10 · the practice map's balloon lines crowd other marks: balloon 1's line crosses the Other block the HUD wrapped beneath the category, balloon 5's lies along the very stitch it names, and balloon 8's ends at notice box 4; each still lands on its own mark (libs/svg/src/practice.ts) → each balloon still lands on its own mark, and round two's practice map is the world's, not this SVG's
+- **tangent**: park 11 · second retake: the category read IFR on all five maps, both holds and all three merges: a health or dupes red on a touched function still turns the Gate red though its notice says present at head (corpus-12, corpus-11), and uncovered changed lines reaching three or more modules make any change to a widely read file IFR (corpus-7, corpus-8, corpus-10) → a tuning of the category deferred under P15, and wave 3's base side (steps 51 and 52) is what tells a breach the change made from one present at head
+- **tangent**: park 12 · second retake: an interface notice leads all six held-out maps and holds 15 of their 18 top-three rows; weighed by its readers on a published package it outranks everything, and on corpus-7 it kept the flagged uncovered lines out of all six notices → a ranking tune deferred under P15, and the world lets a reader open every notice, not just the top three
+- **tangent**: park 13 · second retake: a large repo's sheet draws too small to read when fit to a screen: corpus-7's 1834 by 4215 sheet drew at 0.23, its 9-unit HUD and notice text about 2 points tall, and Rob could not see corpus-12 at 0.62 → the world's continuous zoom (step 37) answers it for a reader, and the still map's size can wait for wave 4's PNG and comment
+- **tangent**: park 14 · second retake: files under test/ that no test run reports (e2e site pages, tsc type tests, a helper) and vitest's focused status draw as unlit stitches, tests not run: 57 of corpus-8's 87, on an approved merge Rob held partly on stitches → a false mark worth fixing, but in the stitch reader, which no step in waves 1 or 2 depends on, so it can ride a later fix
+- **blocker**: park 15 · Rob, after the second retake: on most of the five maps he couldn't zoom in or see details; build a coherent, working system on real code he understands first, and refine and tune the encodings later, so range 6's stop defers the four encodings instead of running D119's refine before wave 1 → it changes what range 6's stop does, so fold it now as D144 (working-system-first): the second retake's encodings stay parked as tangents, and no refine runs before wave 1, amending D119; range 6's stop drops its refine clause
 
 ## Log
 
@@ -577,3 +585,103 @@ folder, so it rides the branch into the PR.)*
   - **The shuffle.** The selector's first random draw put one verdict in all three of the first slots. It redrew once, under a rule it fixed beforehand. Step 20 reads from its own shuffled copies, so the folder order never reaches you.
   - **A broad `pkill`.** One generator used it to stop its own Stryker run. Nothing shows it reached the other agent, whose kept mutation run completed.
   - **Scratch state.** A husky hooks path stays set in one scratch clone under `/tmp/atis-heldout/`, because a generator's `git config --unset` was refused. The clones and the agents' notes are left there for you to remove.
+- 2026-10-24 — step 20 checkpointed · f8f5646fb — chore(glance): read five held-out maps blind on the SVG (23m)
+
+  **Summary**: The second retake failed on all three counts. You matched 2 of 5 verdicts. Your one correct hold gave the map's `health` red as its reason, not the reviewer's finding. And criterion 5 scored 2 of 3 on the held-out holds. `docs/glance-test.md` now records the reading with the five unsealed, and the fail line's four encodings are parked for the refine that D119 runs before wave 1.
+
+  1. The score: 2 of 5 verdicts, no hold reason that matches its review, and 2 of 3 on notice precision
+  2. The category read IFR on all five maps, so it told no hold from a merge
+  3. An interface notice led every map, and on B it crowded out the evidence that bore on the review
+  4. B drew at under a quarter of its size, and D's grey stitches came from files that are not tests
+  5. The tuning fixes moved the ranking: no health or dead red reaches any held-out map's top three
+
+  **Readout**:
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored:
+               - D119 (svg-reading), D125 (practice-map-current)
+               - D60 (fixture-balance), D62 (retake-reader-blind)
+               - D66 (legend-briefing), D87 (legend-inset)
+               - D65 (notice-precision-reading), D129 (precision-on-holds)
+               - D127 (tuning-loop), D38 (glance-is-a-step)
+  constraints  14 of 14 honored
+  seam         held: 2 of 3 declared, no strays
+  diff         +229 -0 across 2 files
+  spent        23 min · 2 turns · 22s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Land step 20 as a recorded fail, then run range 6 (`/plumbbob:run`), whose stop settles the four encodings and runs the refine before wave 1. D38 makes a fail a park, not a failed build. The category's IFR and the interface ranking decide what a reader sees first on every map, so the refine should settle those two before the sheet's size and the stitches.
+
+  **1.** The score: 2 of 5 verdicts, no hold reason that matches its review, and 2 of 3 on notice precision
+
+  The key:
+
+  | copy | fixture | pull request | truth | your verdict |
+  | --- | --- | --- | --- | --- |
+  | A | `corpus-12` | vee-validate #4754 | hold | hold |
+  | B | `corpus-7` | react-admin #11024 | hold | merge |
+  | C | `corpus-11` | inngest-js #1753 | merge | hold |
+  | D | `corpus-8` | swr #4336 | merge | hold |
+  | E | `corpus-10` | excalidraw #10964 | merge | merge |
+
+  The draw also dropped `corpus-9` (react-hook-form #13676, a hold), which is scored for criterion 5 only.
+
+  **Your hold reason on A.** You held A on "a health problem", which is A's `health` red, a threshold on functions the change touched that its own notice says is "present at head". The reviewer blocked something else: the submit handler merges the validated output over the raw values, so a key a schema strips survives. The map holds no evidence on that, since those lines are covered and the map has no mutation data.
+
+  **Criterion 5 (D65), holds only (D129):**
+
+  - **`corpus-12`: yes, on the review's lesser finding.** Notice 1 is an interface change on `types/forms.ts`, where `ValidationResult` gained a type parameter with no default.
+  - **`corpus-7`: no.** Notices 1 to 3 are on the three files the reviewer flagged, but for options types the fix left alone.
+  - **`corpus-9`: yes, the closest call.** Notice 1 is an interface change on `src/types/utils.ts`, whose public types the review says are incomplete.
+
+  The doc names you as the one reader beside the result. The page, the copies and the key are still in `/tmp/atis-glance/` and `/tmp/atis-glance-key/`, and my scripts and screenshots are in `/tmp/atis-step20/`. I'll delete all three once this lands, unless you want the page kept to practise on.
+
+  **2.** The category read IFR on all five maps, so it told no hold from a merge
+
+  Reading the category alone holds every map and scores 2 of 5, the same as the reading. Two rungs put it there:
+
+  - **A `health` or `dupes` red on a function the change touched.** It is the whole of A's IFR and of C's. D140 and D90 moved such a red out of the top three, but it still turns the Gate red, and the Gate sets the category.
+  - **Changed lines no test ran, on a file that reaches three or more modules.** These changes reach 13 to 149 cells, so one uncovered line is enough. That made B, D and E IFR. On D it is 2 lines of 25, on an approved merge.
+
+  **3.** An interface notice led every map, and on B it crowded out the evidence that bore on the review
+
+  Interface notices hold 13 of the 15 top-three rows on the five maps you read, and they are the primary on all six held-out maps. All six repos publish packages, so nearly every change reshapes a published name. Step 6 weighs each interface notice by the files that read the names, so it outranks everything else on a widely read package.
+
+  On B the map had the evidence. Uncovered changed lines sit on the very lines the reviewer flagged:
+
+  - line 196, in `useCreate.ts`'s middleware path;
+  - line 245, in `useUpdateMany.ts`'s middleware path;
+  - line 119, in `useCreate.ts`'s plain custom path;
+  - line 111, in `useDeleteMany.ts`'s unguarded branch.
+
+  But five interface notices and a `dupes` red took all six slots, so no notice reached them.
+
+  **4.** B drew at under a quarter of its size, and D's grey stitches came from files that are not tests
+
+  **B was too small to read.** B's sheet is 1834 by 4215, because react-admin has 1,637 TypeScript files. Fit to this machine's 1512 by 982 full screen it drew at 0.23, so its 9-unit HUD and notice text came out about 2 points tall. You merged B on "changes without many obvious things wrong". A, at 0.62, is the one you said you couldn't see.
+
+  **D's stitches read as tests not run.** 57 of D's 87 stitches are unlit, the mark for a test that did not run, and none of the 57 is a test the run reported:
+
+  - 42 are pages of swr's end-to-end test site;
+  - 10 are type tests that `tsc` checks;
+  - 1 is a helper;
+  - 4 carry vitest's `focused` status.
+
+  You held D on "mutants and stitches". D has no mutation data, so it draws no notch.
+
+  Both are parked beside the category and the interface ranking as the fail line's four encodings.
+
+  **5.** The tuning fixes moved the ranking: no health or dead red reaches any held-out map's top three
+
+  D127 judges the tuning fixes on the held-out half alone:
+
+  - **A `health` or `dead` red (D140, D90):** none in any held-out map's top three, down from 9 of the tuning six's 18. One `dupes` red remains, at `corpus-10`'s notice 2.
+  - **Unmeasured lines (D141):** no held-out map reads a file as unmeasured.
+  - **A mutant no test reached (D143):** every held-out mutant survived the tests, so the split never came into play.
+  - **A re-export's line (P9):** no held-out map is LIFR, so P9 never bore on the reading.
+
+  The interface notices took the place those reds left.
