@@ -23,24 +23,33 @@
  * material and the scheduler read their tokens through the registry (D156):
  * the cheap ones each frame, and the sky and the relief laid again on the
  * frame after one of their tokens moves. The terrain is framed in the screen
- * left of the shore rail (D153). The canvas says which backend drew it and
- * when the skin has settled, for the smoke test and a screenshot to wait on.
+ * left of the shore rail (D153). The pointer is picked against the scene's
+ * own geometry where its ray meets the skin, and the thing under it is
+ * outlined and tagged at the scheduler's eased hover (step 38). The chrome's
+ * line (`nav.ts`) hears the view's outline on the ground for the minimap,
+ * and moves the camera where the minimap asks (D154). The canvas says which
+ * backend drew it and when the skin has settled, for the smoke test and a
+ * screenshot to wait on.
  */
 
 import { AgXToneMapping, AmbientLight, Color, DataUtils, DirectionalLight, RenderPipeline, Scene, Vector3, WebGPUCoordinateSystem, WebGPURenderer } from 'three/webgpu';
 import { emissive, mrt, output, pass } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
-import { FIELD_FILL, MOTION_TOKENS, REACH_ORIGIN_OPACITY, RELIEF, createScheduler, gridFor } from 'scene';
+import { FIELD_FILL, MOTION_TOKENS, REACH_ORIGIN_OPACITY, RELIEF, createPicker, createScheduler, gridFor, surfacePoint } from 'scene';
+import type { Lod } from 'scene';
 import type { MapJson } from 'core';
 
 import { RAIL_WIDTH } from '../fit.js';
+import { hoverOf } from '../hover.js';
+import type { Hovered } from '../hover.js';
 import { marksOf } from '../marks.js';
-import { BLOOM, LIGHTING, NOTICE, SKIN, SKY, WEATHER } from '../materials.js';
+import { BLOOM, HOVER, LIGHTING, NOTICE, SKIN, SKY, WEATHER } from '../materials.js';
 import type { Nav } from '../nav.js';
 import type { Registry } from '../registry.js';
 import type { View } from '../view.js';
 import { createBolts } from './bolts.js';
-import { centreOn, createCamera, createControls, fitCamera, outlineOf } from './camera.js';
+import { centreOn, createCamera, createControls, fitCamera, outlineOf, pixelsPerUnit, rayAt } from './camera.js';
+import { TAG_LOOK, createHover } from './hover.js';
 import { LABEL_LOOK, createLabels, viewportOf } from './labels.js';
 import { ORGANELLE_LOOK, createOrganelles } from './organelles.js';
 import { PALETTE_LOOK, createPalette } from './palette.js';
@@ -103,7 +112,17 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     return field instanceof Uint16Array ? DataUtils.fromHalfFloat(field[i] ?? 0) + DataUtils.fromHalfFloat(field[i + 1] ?? 0) : 0;
   };
   const labels = createLabels(map, marks.labels, heightAt, palette, labelLook);
-  canvas.after(...labels.elements);
+  // The hover's outline lies under the labels and its tag over them (step 38).
+  const hoverLook = registry.view(HOVER, 'HOVER');
+  const hover = createHover(heightAt, hoverLook, registry.view(TAG_LOOK));
+  canvas.after(hover.outline, ...labels.elements, hover.tag);
+  // The highest the skin rises at rest, where a ray under the pointer starts its walk down to it.
+  const highest = (): number => {
+    let top = 0;
+    for (let row = 0; row < grid.rows; row += 1) for (let column = 0; column < grid.columns; column += 1) top = Math.max(top, heightAt(column * grid.resolution, row * grid.resolution));
+    return top + 1;
+  };
+  let top = highest();
 
   // The frame through one pass with an emissive target beside its colour, and the bloom over that target alone (D152).
   const post = new RenderPipeline(renderer);
@@ -131,6 +150,30 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   controls.addEventListener('rest', () => {
     placeLabels = true;
   });
+
+  // The pointer is picked again on the next frame after it moves, leaves, or the camera moves under it (step 38).
+  const picker = createPicker(map);
+  let pointer: { readonly x: number; readonly y: number } | undefined;
+  let pickAgain = false;
+  let pickedLod: number | undefined;
+  canvas.addEventListener('pointermove', (event) => {
+    pointer = { x: event.clientX, y: event.clientY };
+    pickAgain = true;
+  });
+  canvas.addEventListener('pointerleave', () => {
+    pointer = undefined;
+    pickAgain = true;
+  });
+  controls.addEventListener('update', () => {
+    pickAgain = true;
+  });
+  /** The thing under a point of the page at a level of detail: where its ray meets the skin, picked with the hover's reach past a file's edge. */
+  const hoveredAt = (at: { readonly x: number; readonly y: number }, lod: Lod): Hovered | undefined => {
+    const box = canvas.getBoundingClientRect();
+    const ground = surfacePoint(...rayAt(camera, ((at.x - box.left) / box.width) * 2 - 1, 1 - ((at.y - box.top) / box.height) * 2), heightAt, top);
+    const pick = ground === undefined ? undefined : picker.pick(ground, lod, hoverLook.slop / pixelsPerUnit(camera, canvas.clientWidth));
+    return pick === undefined ? undefined : hoverOf(map, pick);
+  };
   let lastFrame = performance.now();
 
   // The two layers laid on the CPU are laid again on the next frame after one of their tokens moves, once however many moved.
@@ -153,6 +196,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   await renderer.setAnimationLoop(() => {
     if (reliefMoved) {
       skin.relayer();
+      top = highest();
       reliefMoved = false;
     }
     if (skyMoved) {
@@ -201,6 +245,14 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       placedLod = lod;
     }
     labels.render(camera, canvas.clientWidth, canvas.clientHeight, surface);
+    if (pickAgain || lod !== pickedLod) {
+      const hovered = pointer === undefined ? undefined : hoveredAt(pointer, lod);
+      hover.show(hovered, pointer);
+      scheduler.hover(hovered !== undefined);
+      pickAgain = false;
+      pickedLod = lod;
+    }
+    hover.render(camera, canvas.clientWidth, canvas.clientHeight, frame.hover);
     if (frame.lift === 0) canvas.dataset['world'] = 'settled';
   });
 };

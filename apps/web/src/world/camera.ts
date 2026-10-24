@@ -9,7 +9,9 @@
  * layout inside the free screen beside the chrome (`fit.ts`), the far field,
  * and the camera's zoom over that is the one scalar the levels of detail read
  * (`lod.ts`). The page's `?zoom=` and `?tilt=` set the opening frame, a tilt
- * from the south-west as the spike's tilted frames were taken.
+ * from the south-west as the spike's tilted frames were taken. The frustum's
+ * corners on the ground are the view the minimap outlines, and a place on the
+ * ground the minimap names is where the controls ease the view (D154).
  */
 
 import CameraControls from 'camera-controls';
@@ -56,9 +58,14 @@ const DRAG_SMOOTH_S = 0.05;
 export const outlineOf = (camera: OrthographicCamera, canvasWidth: number, chrome: Chrome): readonly Point[] | undefined => {
   // The free screen's right edge in normalised device coordinates.
   const right = 1 - (2 * chrome.right) / Math.max(1, canvasWidth);
-  const ray = (x: number, y: number): readonly [WorldPoint, WorldPoint] => [new Vector3(x, y, -1).unproject(camera).toArray(), new Vector3(x, y, 1).unproject(camera).toArray()];
-  return viewOutline([ray(-1, 1), ray(right, 1), ray(right, -1), ray(-1, -1)]);
+  return viewOutline([rayAt(camera, -1, 1), rayAt(camera, right, 1), rayAt(camera, right, -1), rayAt(camera, -1, -1)]);
 };
+
+/** The ray through a point of the screen, in normalised device coordinates, as a point on the near plane and one on the far. */
+export const rayAt = (camera: OrthographicCamera, x: number, y: number): readonly [WorldPoint, WorldPoint] => [new Vector3(x, y, -1).unproject(camera).toArray(), new Vector3(x, y, 1).unproject(camera).toArray()];
+
+/** How many screen pixels one layout unit takes at the camera's zoom, across a canvas this wide. */
+export const pixelsPerUnit = (camera: OrthographicCamera, canvasWidth: number): number => canvasWidth / ((camera.right - camera.left) / camera.zoom);
 
 /**
  * Centre the free screen on a layout point: move the target by however far
@@ -67,8 +74,7 @@ export const outlineOf = (camera: OrthographicCamera, canvasWidth: number, chrom
  * as they ease every input.
  */
 export const centreOn = (controls: CameraControls, camera: OrthographicCamera, canvasWidth: number, chrome: Chrome, [x, y]: Point): void => {
-  const middle = -(chrome.right / Math.max(1, canvasWidth));
-  const ground = groundOf(new Vector3(middle, 0, -1).unproject(camera).toArray(), new Vector3(middle, 0, 1).unproject(camera).toArray());
+  const ground = groundOf(...rayAt(camera, -(chrome.right / Math.max(1, canvasWidth)), 0));
   if (ground === undefined) return;
   // The target where the camera is now, not where an ease under way will leave it, since the ground point was read from the camera now.
   const target = controls.getTarget(new Vector3(), false);

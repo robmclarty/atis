@@ -14,6 +14,7 @@ export * from './lod.js';
 export * from './membranes.js';
 export * from './minimap.js';
 export * from './motion.js';
+export * from './picking.js';
 export * from './shape.js';
 export * from './shore.js';
 export * from './tokens.js';

@@ -160,3 +160,19 @@ export type MinimapLook = {
 };
 
 export const MINIMAP: MinimapLook = { width: 240, height: 180, pad: 6, body: '#333c47', reachShare: 0.55, changedR: 1.5, view: '#e6edf3', viewWidth: 1 };
+
+/**
+ * The hover (step 38): the thing under the pointer is outlined in this ink at
+ * this width, a flat annotation in the chrome's manner that never blooms
+ * (D12); a file answers the pointer this many pixels past its edge, so one too
+ * small to aim at still does; and its tag stands this many pixels right of and
+ * below the pointer.
+ */
+export type HoverLook = {
+  readonly ink: string;
+  readonly width: number;
+  readonly slop: number;
+  readonly tagGap: number;
+};
+
+export const HOVER: HoverLook = { ink: '#e6edf3', width: 1.5, slop: 4, tagGap: 14 };

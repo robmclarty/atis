@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 93 — feat(web): draw a minimap that moves the camera
+**Current step:** 38 — feat(web): pick and hover at every level of detail
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -75,7 +75,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☐ 46. chore(fixtures): generate the round-two maps
 - ☐ 47. chore(glance): read glance round two in the world
 - ☑ 88. refactor(svg): draw the still map's weather from the scene's derivations
-- ☐ 93. feat(web): draw a minimap that moves the camera
+- ☑ 93. feat(web): draw a minimap that moves the camera
 - ☑ 94. feat(svg): morph a file's outline by the rules it breaks
 - ☑ 95. feat(core): record every file's stability in the map
 - ☑ 96. feat(svg): draw the shore as a compact band of flat blocks
@@ -1107,3 +1107,5 @@ folder, so it rides the branch into the PR.)*
   **5.** The camera zooms toward the cursor once the frustum is symmetric, and the pointer passes through the chrome
 
   camera-controls binds the wheel and a pinch to zoom, a drag to pan, and the right button or three fingers to tilt and rotate, with the polar angle stopped at 35° and no inertia. The first headless trial found two faults. The chrome's root div had grown as wide as the HUD and swallowed the pointer, so the entry lets it pass through and each block that takes the pointer says so. And with the fit's shift in the frustum, one notch slid the point under the cursor 280 px sideways, since camera-controls assumes its target is at the screen's centre; the frustum is now symmetric and the layout opens centred beside the rail by where the target starts, and the point under the cursor stays put. Zooming out across LOD1's gate eased the surface's layer 1, 0.94, 0.61, 0.28, 0 over the fade's 300 ms. The smoothing and the zoom bounds are baked constants until step 44 (P20), and the labels are placed in the overhead frame's estimate under tilt and rotation (P21).
+
+- 2026-10-24 — step 93 checkpointed · 8f9e3e625 — feat(web): draw a minimap that moves the camera (9m)

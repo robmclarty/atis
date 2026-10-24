@@ -14,7 +14,9 @@
  * notice on a shore file, or on a group, wears its numbered box at the end
  * of its group's header, in rank order (step 34, D148), since the shore is
  * chrome and the box is where the notice's leader would land. The rail
- * stands beneath the ranked list in the chrome's column.
+ * stands beneath the ranked list in the chrome's column. Its blocks take the
+ * pointer themselves, never the world's picker (step 38): a file under it is
+ * outlined in the ink at once, and its path is its title.
  */
 
 import {
@@ -141,6 +143,14 @@ const Boxes = ({ marked, look, hue }: { readonly marked: readonly Marked[]; read
 
 const Block = ({ block, look, marked, hue }: { readonly block: ShoreBlock; readonly look: Look; readonly marked: readonly Marked[]; readonly hue: string }): ReactElement => {
   const [open, setOpen] = useState(block.touched);
+  // The file under the pointer, outlined in the ink at once: the rail is DOM and takes the pointer itself, its title the hover tag (step 38).
+  const [hovered, setHovered] = useState<string | undefined>(undefined);
+  const hoverOn = (path: string): { readonly onPointerEnter: () => void; readonly onPointerLeave: () => void; readonly 'data-hovered': true | undefined } => ({
+    onPointerEnter: () => setHovered(path),
+    onPointerLeave: () => setHovered((was) => (was === path ? undefined : was)),
+    'data-hovered': hovered === path || undefined,
+  });
+  const lit = (path: string): CSSProperties => (hovered === path ? { outline: `${String(look.CHROME_STROKE_WIDTH)}px solid ${look.CHROME_INK}`, outlineOffset: look.CHROME_STROKE_WIDTH } : {});
   const named = block.files.filter((file) => file.change !== undefined || file.ghost === true);
   const opens = block.touched || named.length > 0;
   const square = { width: look.SHORE_GRID_CELL, height: look.SHORE_GRID_CELL, boxSizing: 'border-box' as const };
@@ -183,14 +193,14 @@ const Block = ({ block, look, marked, hue }: { readonly block: ShoreBlock; reado
           {block.touched && (
             <div data-grid style={{ display: 'flex', flexWrap: 'wrap', gap: look.SHORE_GRID_GAP, marginBottom: look.SHORE_BLOCK_GAP }}>
               {block.files.map((file) => (
-                <span key={file.path} data-file={file.path} data-kind={kindOf(file)} title={file.path} style={{ ...square, ...paintOf(file, look) }} />
+                <span key={file.path} data-file={file.path} data-kind={kindOf(file)} title={file.path} {...hoverOn(file.path)} style={{ ...square, ...paintOf(file, look), ...lit(file.path) }} />
               ))}
             </div>
           )}
           <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
             {named.map((file) => (
-              <li key={file.path} data-id={file.path} data-kind={kindOf(file)} title={file.path} style={{ display: 'flex', alignItems: 'center', gap: look.SHORE_BLOCK_GAP / 2, lineHeight: `${String(look.SHORE_LINE)}px`, whiteSpace: 'nowrap' }}>
-                <span style={{ ...square, borderRadius: '50%', flex: 'none', ...paintOf(file, look) }} />
+              <li key={file.path} data-id={file.path} data-kind={kindOf(file)} title={file.path} {...hoverOn(file.path)} style={{ display: 'flex', alignItems: 'center', gap: look.SHORE_BLOCK_GAP / 2, lineHeight: `${String(look.SHORE_LINE)}px`, whiteSpace: 'nowrap' }}>
+                <span style={{ ...square, borderRadius: '50%', flex: 'none', ...paintOf(file, look), ...lit(file.path) }} />
                 <span>{fitted(wordsOf(file), budget)}</span>
               </li>
             ))}

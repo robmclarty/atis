@@ -139,3 +139,25 @@ test('the chrome carries the rail once the map is read, and not before', async (
   expect(host.querySelector('[data-rail]')).not.toBeNull();
   expect(host.querySelector('[data-rail]')?.textContent).not.toMatch(/shadow|blur|gradient/);
 });
+
+/** The pointer passing onto an element and off it again, as a browser sends it and React reads it. */
+const pass = (target: Element, onto: boolean): Promise<void> =>
+  act(async () => {
+    target.dispatchEvent(new MouseEvent(onto ? 'pointerover' : 'pointerout', { bubbles: true, relatedTarget: null }));
+  });
+
+test('the rail takes the pointer itself: a file under it is outlined at once, its path its title, and let go when the pointer leaves (step 38)', async () => {
+  await mount();
+  const square = host.querySelector('[data-grid] [data-file="README.md"]');
+  if (!(square instanceof HTMLElement)) throw new Error('README.md has no square in its grid');
+  expect(square.title).toBe('README.md');
+  expect(square.style.outline).toBe('');
+  await pass(square, true);
+  expect(square.dataset['hovered']).toBe('true');
+  expect(square.style.outline).toContain('solid');
+  // The same file's named row lights with it: one file is under the pointer, wherever the rail writes it.
+  expect(host.querySelector('[data-id="README.md"]')?.getAttribute('data-hovered')).toBe('true');
+  await pass(square, false);
+  expect(square.dataset['hovered']).toBeUndefined();
+  expect(square.style.outline).toBe('');
+});
