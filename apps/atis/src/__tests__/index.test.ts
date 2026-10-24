@@ -20,12 +20,17 @@ test('the usage text names every flag the bin parses', () => {
     '--out <file>',
     '--svg <file>',
     '--open',
+    '--no-open',
     '--verbose',
     '--version',
     '--help',
   ]) {
     expect(USAGE).toContain(flag);
   }
+});
+
+test('the usage text names the served default', () => {
+  expect(USAGE).toContain('With no --out or --svg, atis serves the world on 127.0.0.1');
 });
 
 test('the usage text tells a reader that --open needs --svg', () => {

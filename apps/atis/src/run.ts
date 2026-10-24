@@ -1,30 +1,38 @@
 /**
- * run: everything impure between the flags and `map.json`.
+ * run: everything impure between the flags and the map.
  *
- * `run` extracts the merge-base tree and the `HEAD` tree with `git archive`
+ * `measure` extracts the merge-base tree and the `HEAD` tree with `git archive`
  * into temp directories and scans each one, so the terrain comes from the base
  * and the weather from the head (D32) and both sides describe commits rather
  * than a working tree (D46). The diff, the manifest delta and the log window
  * come from the repository itself; only `.check/` is read from the working
- * tree, since artifacts are not committed. The extractions are removed, the
- * sources go to the pure `buildMap`, and the map is written atomically.
+ * tree, since artifacts are not committed. The extractions are removed and the
+ * sources go to the pure `buildMap`.
  *
- * It never blocks: a map that was written exits 0 whatever the weather says,
- * and only misuse or a repository it cannot read exits 2 (C4).
+ * The map then goes one of two ways. `run` writes it atomically, and the still
+ * SVG beside it, and exits. `serveRun` keeps it in memory and serves it with
+ * the built web app on loopback, opening the tab (D92), until the process is
+ * interrupted. Neither blocks on the weather: a map that was written or served
+ * exits 0 whatever it says, and only misuse, a repository it cannot read or a
+ * web app that was never built exits 2 (C4).
  */
 
 import { execFileSync, spawn } from 'node:child_process';
-import { mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
+import { existsSync, mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { platform, tmpdir } from 'node:os';
 import { basename, dirname, join, resolve } from 'node:path';
 
 import { buildMap } from 'core';
+import type { MapJson } from 'core';
 import { renderSvg } from 'svg';
 
+import { serve } from './serve.js';
+import type { Served } from './serve.js';
 import { checkInferredShapes, readCheck, readDiff, readLog, readManifests, scanImports, shapePaths } from './sources/index.js';
 import type { Scan } from './sources/index.js';
 
-/** The flags, already parsed: `cli.ts` owns the parsing, `run` owns the work. */
+/** The flags for a run that writes files, already parsed: `cli.ts` owns the parsing, `run` owns the work. */
 export type Options = {
   /** The repository to read. */
   readonly repo: string;
@@ -40,8 +48,21 @@ export type Options = {
   readonly verbose: boolean;
 };
 
-/** What the command prints and how it exits: 0 when it wrote a map, 2 on misuse or an unreadable repo (C4). */
-export type Outcome = { exitCode: 0 | 2; stdout: string; stderr: string };
+/** The flags for the served run (D92, D133). */
+export type ServeRunOptions = {
+  readonly repo: string;
+  readonly base: string;
+  /** The built web app's directory, `index.html` and its assets; `pnpm build` fills it. */
+  readonly assets: string;
+  /** Open the tab once serving; a no-op under a test run. */
+  readonly open: boolean;
+  readonly verbose: boolean;
+  /** The run's token (D134); drawn at random unless a test names one. */
+  readonly token?: string | undefined;
+};
+
+/** What the command prints and how it exits: 0 when it wrote or served a map, 2 on misuse or an unreadable repo (C4); `served` while a server runs. */
+export type Outcome = { readonly exitCode: 0 | 2; readonly stdout: string; readonly stderr: string; readonly served?: Served };
 
 const HEAD = 'HEAD';
 const SHA = /^[0-9a-f]{40}$/;
@@ -63,9 +84,14 @@ function messageOf(error: unknown): string {
   return detail === '' ? message : `${message}: ${detail}`;
 }
 
+/** The exit-2 outcome every failure comes back as (C4). */
+function failed(error: unknown): Outcome {
+  return { exitCode: 2, stdout: '', stderr: `atis: ${messageOf(error)}\n` };
+}
+
 /**
  * The commit the weather is of, and the clock every age is measured back from.
- * This is the first thing `run` does, so a directory that is not a repository
+ * This is the first thing a run does, so a directory that is not a repository
  * fails here, quietly and by name, before any source has shelled out.
  */
 function headOf(repo: string): { readonly sha: string; readonly time: number } {
@@ -116,21 +142,21 @@ function writeAtomic(path: string, text: string): void {
 }
 
 /**
- * Hand a file to the platform's opener (`open` on macOS, `xdg-open` elsewhere),
- * detached so this short-lived command never waits on the viewer, and a no-op
+ * Hand a file or a URL to the platform's opener (`open` on macOS, `xdg-open`
+ * elsewhere), detached so the command never waits on the viewer, and a no-op
  * under a test run so the suite launches nothing. Opening is best-effort: a
- * missing opener never changes the exit code, since the outputs are already on
- * disk (C4).
+ * missing opener never changes the exit code, since the outputs are already
+ * on disk or on the wire (C4).
  */
-function openFile(path: string): void {
+function openTarget(target: string): void {
   if (process.env['VITEST'] !== undefined || process.env['NODE_ENV'] === 'test') return;
   const opener = platform() === 'darwin' ? 'open' : 'xdg-open';
   try {
-    const child = spawn(opener, [path], { stdio: 'ignore', detached: true });
+    const child = spawn(opener, [target], { stdio: 'ignore', detached: true });
     child.on('error', () => {});
     child.unref();
   } catch {
-    /* the map and the SVG are written; a viewer that will not launch is not a failure */
+    /* the outputs are written or served; a viewer that will not launch is not a failure */
   }
 }
 
@@ -143,10 +169,17 @@ function serialize(map: unknown): string {
   return `${JSON.stringify(map, null, 2)}\n`;
 }
 
-/** Read the repository, build the map and write it. Exits 0 on a written map, 2 on a repository it cannot read (C4). */
-export function run(options: Options): Outcome {
-  const repo = resolve(options.repo);
-  const out = resolve(options.out);
+/** The one line every run prints: the category, the change's size and the notices. */
+function summary(map: MapJson): string {
+  return `${map.weather.checks.category}, ${counted(map.weather.changed.length, 'file')} changed, ${counted(map.notices.length, 'notice')}`;
+}
+
+/** The map built, and the timings so far, which the caller adds its own to. */
+type Measured = { readonly map: MapJson; readonly timings: Timing[] };
+
+/** Read the repository and build the map; throws on a repository it cannot read, with the extractions removed either way. */
+function measure(repoPath: string, base: string): Measured {
+  const repo = resolve(repoPath);
   const timings: Timing[] = [];
   const extractions: Extraction[] = [];
 
@@ -159,7 +192,7 @@ export function run(options: Options): Outcome {
 
   try {
     const head = headOf(repo);
-    const diff = timed(timings, 'diff', () => readDiff(repo, options.base));
+    const diff = timed(timings, 'diff', () => readDiff(repo, base));
     const baseSide = scan('scan base', diff.merge_base);
     const headSide = scan('scan head', head.sha);
     // The names only the checker can print, in the changed interface files alone, each side timed (D118).
@@ -174,7 +207,7 @@ export function run(options: Options): Outcome {
       buildMap({
         meta: {
           repo: basename(repo),
-          base: options.base,
+          base,
           head: head.sha,
           merge_base: diff.merge_base,
           generated_at: new Date().toISOString(),
@@ -189,6 +222,17 @@ export function run(options: Options): Outcome {
         check,
       }),
     );
+    return { map, timings };
+  } finally {
+    for (const extraction of extractions) rmSync(extraction.root, { recursive: true, force: true });
+  }
+}
+
+/** Read the repository, build the map and write it, with the SVG beside it when asked. Exits 0 on a written map, 2 on a repository it cannot read (C4). */
+export function run(options: Options): Outcome {
+  const out = resolve(options.out);
+  try {
+    const { map, timings } = measure(options.repo, options.base);
     timed(timings, 'write', () => {
       writeAtomic(out, serialize(map));
     });
@@ -199,19 +243,42 @@ export function run(options: Options): Outcome {
       timed(timings, 'write svg', () => {
         writeAtomic(svgOut, svg);
       });
-      if (options.open === true) openFile(svgOut);
+      if (options.open === true) openTarget(svgOut);
     }
 
-    const { category } = map.weather.checks;
     const wrote = options.svg === undefined ? options.out : `${options.out} and ${options.svg}`;
+    return { exitCode: 0, stdout: `${summary(map)}, wrote ${wrote}\n`, stderr: options.verbose ? report(timings) : '' };
+  } catch (error) {
+    return failed(error);
+  }
+}
+
+/**
+ * Read the repository, build the map and serve it with the built web app on
+ * loopback (D92, D133, D134), opening the tab unless told not to. The outcome
+ * carries the server, which the caller closes on interrupt; its exit code is
+ * 0 once serving, and 2 with no built app to serve or a repository it cannot
+ * read (C4).
+ */
+export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
+  const assets = resolve(options.assets);
+  if (!existsSync(join(assets, 'index.html'))) {
+    return { exitCode: 2, stdout: '', stderr: `atis: no built web app at ${assets}; run \`pnpm build\` first\n` };
+  }
+  try {
+    const { map, timings } = measure(options.repo, options.base);
+    const token = options.token ?? randomBytes(16).toString('hex');
+    const started = performance.now();
+    const served = await serve({ assets, map: serialize(map), token });
+    timings.push({ source: 'serve', ms: Math.round(performance.now() - started) });
+    if (options.open) openTarget(served.url);
     return {
       exitCode: 0,
-      stdout: `${category}, ${counted(map.weather.changed.length, 'file')} changed, ${counted(map.notices.length, 'notice')}, wrote ${wrote}\n`,
+      stdout: `${summary(map)}, serving at ${served.url} (Ctrl-C to stop)\n`,
       stderr: options.verbose ? report(timings) : '',
+      served,
     };
   } catch (error) {
-    return { exitCode: 2, stdout: '', stderr: `atis: ${messageOf(error)}\n` };
-  } finally {
-    for (const extraction of extractions) rmSync(extraction.root, { recursive: true, force: true });
+    return failed(error);
   }
 }

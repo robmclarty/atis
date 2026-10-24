@@ -9,8 +9,14 @@
 import { assertMap } from 'core';
 import type { MapJson } from 'core';
 
-/** Where the map comes from: the page's `map` parameter, else the served `/map.json`. */
-export const mapUrl = (search: string): string => new URLSearchParams(search).get('map') ?? '/map.json';
+/** Where the map comes from: the page's `map` parameter, else the served `/map.json`, carrying the run's token when the page was opened with one (D134). */
+export const mapUrl = (search: string): string => {
+  const params = new URLSearchParams(search);
+  const named = params.get('map');
+  if (named !== null) return named;
+  const token = params.get('token');
+  return token === null ? '/map.json' : `/map.json?token=${encodeURIComponent(token)}`;
+};
 
 /** The map as the app holds it: on its way, read and trusted, or failed with the reason. */
 export type MapState =

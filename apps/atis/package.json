@@ -32,7 +32,8 @@
   },
   "files": [
     "dist",
-    "!dist/**/__tests__/**"
+    "!dist/**/__tests__/**",
+    "web"
   ],
   "dependencies": {
     "core": "workspace:*",

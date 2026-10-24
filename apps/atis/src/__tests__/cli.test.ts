@@ -1,5 +1,5 @@
-import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -8,7 +8,7 @@ import { assertMap } from 'core';
 import type { MapJson } from 'core';
 import { afterAll, expect, test } from 'vitest';
 
-import { run } from '../run.js';
+import { run, serveRun } from '../run.js';
 
 /**
  * The command end to end, run the way a user runs it: the `bin` in a child
@@ -71,13 +71,22 @@ afterAll(() => {
 
 type Run = { readonly status: number; readonly stdout: string; readonly stderr: string };
 
-function atis(args: readonly string[]): Run {
+function atis(args: readonly string[], env: Readonly<Record<string, string>> = {}): Run {
   const result = spawnSync(process.execPath, [...NODE_FLAGS, CLI, ...args], {
     cwd: REPO,
     encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024,
+    env: { ...process.env, ...env },
   });
   return { status: result.status ?? -1, stdout: result.stdout, stderr: result.stderr };
+}
+
+/** A stub of the built web app (D133): a directory with an `index.html`, so the served default has something to serve. */
+function stubWeb(prefix: string): string {
+  const dir = join(temp(prefix), 'web');
+  mkdirSync(dir);
+  writeFileSync(join(dir, 'index.html'), '<!doctype html><title>atis stub</title>\n');
+  return dir;
 }
 
 function mapAt(path: string): MapJson {
@@ -141,6 +150,57 @@ test('--svg writes the still render beside the map in one run', () => {
   expect(result.stdout.trimEnd().split('\n')).toHaveLength(1);
   expect(result.stdout).toContain(out);
   expect(result.stdout).toContain(svg);
+}, MINUTE);
+
+test('with no --out or --svg the command serves the world, prints its URL, and exits 0 on interrupt (D92, C4)', async () => {
+  const web = stubWeb('served');
+  const child = spawn(process.execPath, [...NODE_FLAGS, CLI, '--repo', REPO, '--base', 'HEAD~1', '--no-open'], {
+    cwd: REPO,
+    env: { ...process.env, ATIS_WEB: web },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  let stdout = '';
+  let stderr = '';
+  child.stdout.setEncoding('utf8');
+  child.stderr.setEncoding('utf8');
+  child.stderr.on('data', (chunk: string) => (stderr += chunk));
+  const line = await new Promise<string>((printed, failed) => {
+    child.stdout.on('data', (chunk: string) => {
+      stdout += chunk;
+      if (stdout.includes('\n')) printed(stdout.split('\n')[0] ?? '');
+    });
+    child.once('exit', (code) => failed(new Error(`the command exited ${String(code)} before serving: ${stderr}`)));
+  });
+  const url = /serving at (http:\/\/127\.0\.0\.1:\d+\/\?token=[0-9a-f]{32}) \(Ctrl-C to stop\)$/.exec(line)?.[1];
+  expect(url, line).toBeDefined();
+  expect(line).toMatch(/^(VFR|MVFR|IFR|LIFR|NOINST), \d+ files? changed, \d+ notices?, serving at /);
+
+  // The page is the stub's, and the map behind the token is this repository's.
+  const page = await fetch(url ?? '');
+  expect(page.status).toBe(200);
+  expect(await page.text()).toContain('atis stub');
+  const map = await fetch(new URL(`/map.json${new URL(url ?? '').search}`, url));
+  expect(map.status).toBe(200);
+  expect(assertMap(await map.json()).meta.base).toBe('HEAD~1');
+  expect((await fetch(new URL('/map.json', url))).status).toBe(403);
+
+  const exit = new Promise<number | null>((exited) => child.once('exit', (code) => exited(code)));
+  child.kill('SIGINT');
+  expect(await exit).toBe(0);
+}, MINUTE);
+
+test('the served default exits 2 and names pnpm build when the web app was never built (D133)', () => {
+  const result = atis(['--repo', REPO, '--base', 'HEAD~1', '--no-open'], { ATIS_WEB: join(temp('unbuilt'), 'web') });
+  expect(result.status).toBe(2);
+  expect(result.stdout).toBe('');
+  expect(result.stderr).toContain('pnpm build');
+  expect(result.stderr).toContain('no built web app');
+
+  const outcome = serveRun({ repo: REPO, base: 'HEAD~1', assets: join(temp('unbuilt-2'), 'web'), open: false, verbose: false });
+  return outcome.then((served) => {
+    expect(served.exitCode).toBe(2);
+    expect(served.served).toBeUndefined();
+  });
 }, MINUTE);
 
 test('--open is a no-op under a test run, and needs --svg', () => {

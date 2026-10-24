@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 97 — feat(web): add a hidden dev panel that tunes every token live
+**Current step:** 31 — feat(cli): serve the world and open it in a tab
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -79,7 +79,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 94. feat(svg): morph a file's outline by the rules it breaks
 - ☑ 95. feat(core): record every file's stability in the map
 - ☑ 96. feat(svg): draw the shore as a compact band of flat blocks
-- ☐ 97. feat(web): add a hidden dev panel that tunes every token live
+- ☑ 97. feat(web): add a hidden dev panel that tunes every token live
 - ☑ 98. feat(core): record each file's import ties inside and outside its cell
 - ☑ 99. feat(scene): drift each file in an opened cell by its looseness
 - ☐ 100. feat(svg): open each touched shore block on a grid of its files
@@ -956,3 +956,5 @@ folder, so it rides the branch into the PR.)*
   **5.** Four page parameters are the only instruments until the camera lands, and one row strayed outside the seam
 
   `view.ts` reads `?backend=webgl`, `?zoom=`, `?tilt=` (0 to 35°, from the south-west as the spike's tilt frames) and `?seed=`, with a test for each, and the scheduler takes `prefers-reduced-motion` from the page. To look live before step 31 serves the world, run `pnpm --filter web dev` and open `http://localhost:5173/?map=/@fs/<absolute path to a map.json>&zoom=2&tilt=35`, since Vite serves a workspace file raw under `/@fs/`. In the headed Chrome the skin settled 1.1 s after navigation on both backends, within C14's target, which step 43 measures properly. `playwright-core` went in at its latest release, 1.64.1, and C9 asks each new dependency for a row in `docs/inspiration.md`, which is the one path outside the seam; `camera-controls` stays installed and unused until step 37, as fallow's ignore records.
+
+- 2026-10-24 — step 97 checkpointed · 703aa52df — feat(web): add a hidden dev panel that tunes every token live (1 drift, 23m)

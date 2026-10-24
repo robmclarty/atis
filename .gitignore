@@ -1,5 +1,7 @@
 node_modules/
 dist/
+# D133: the built web app the CLI serves, copied beside apps/atis/dist by `pnpm build`.
+apps/atis/web/
 .check/
 .fallow/
 .stryker-tmp/

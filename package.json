@@ -21,7 +21,7 @@
     "doctor": "checkride doctor",
     "test": "vitest run",
     "test:watch": "vitest",
-    "build": "tsc --build && pnpm --filter web build",
+    "build": "tsc --build && pnpm --filter web build && node -e \"const fs=require('node:fs');fs.rmSync('apps/atis/web',{recursive:true,force:true});fs.cpSync('apps/web/dist','apps/atis/web',{recursive:true})\"",
     "types": "tsc --build",
     "practice-map": "tsc --build && node scripts/practice-map.ts"
   },

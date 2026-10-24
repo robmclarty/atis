@@ -25,9 +25,12 @@ test('the map comes from the page parameter when it names one', () => {
   expect(mapUrl('?map=https%3A%2F%2F127.0.0.1%3A4000%2Fmap.json')).toBe('https://127.0.0.1:4000/map.json');
 });
 
-test('the map comes from the served /map.json when the page names none', () => {
+test('the map comes from the served /map.json when the page names none, with the token the page was opened with (D134)', () => {
   expect(mapUrl('')).toBe('/map.json');
   expect(mapUrl('?other=1')).toBe('/map.json');
+  expect(mapUrl('?token=a3f1')).toBe('/map.json?token=a3f1');
+  expect(mapUrl('?zoom=2&token=a%2Fb')).toBe('/map.json?token=a%2Fb');
+  expect(mapUrl('?map=/fixture.json&token=a3f1')).toBe('/fixture.json');
 });
 
 test('a served map that passes the guard is ready', async () => {
