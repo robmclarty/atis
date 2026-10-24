@@ -15,9 +15,7 @@ entry = [
 ]
 
 # CLI/tooling deps used via command line or config files, not imported from source.
-# camera-controls is installed with the web app (C9) and first driven by step 37's
-# camera; it needs a DOM to construct, so no Node smoke test can load it before then.
-ignoreDependencies = ["@ast-grep/cli", "camera-controls"]
+ignoreDependencies = ["@ast-grep/cli"]
 
 [rules]
 unused-exports = "error"

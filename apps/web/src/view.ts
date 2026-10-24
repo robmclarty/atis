@@ -1,14 +1,13 @@
 /**
- * view: how the page asks to see the world, read from its query string. Until
- * the camera takes the pointer (step 37) and the dev panel takes the tokens
- * (step 97), these are the only instruments a reviewer, the smoke test and a
- * screenshot have. `?backend=webgl` forces three's WebGL 2 fallback, the path
- * the smoke test renders on (D132). `?zoom=2` is the camera's zoom over the
- * zoom that fits the whole layout, the one scalar the levels of detail read
- * (`lod.ts`), so 1 opens on the far field and 1.7 enters the surface.
- * `?tilt=35` tips the camera that many degrees off overhead, where the wet
- * sheen reads (D151). `?seed=7` seeds the scheduler, so one seed and one time
- * give one frame (D94, C3).
+ * view: how the page asks to see the world, read from its query string: the
+ * opening frame, which the camera's controls move from (step 37), and the
+ * instruments the smoke test and a screenshot set it by. `?backend=webgl`
+ * forces three's WebGL 2 fallback, the path the smoke test renders on (D132).
+ * `?zoom=2` is the camera's zoom over the zoom that fits the whole layout, the
+ * one scalar the levels of detail read (`lod.ts`), so 1 opens on the far field
+ * and 1.7 enters the surface. `?tilt=35` tips the camera that many degrees
+ * off overhead, where the wet sheen reads (D151). `?seed=7` seeds the
+ * scheduler, so one seed and one time give one frame (D94, C3).
  */
 
 /** The renderer's backend: three's `WebGPURenderer`, falling back by itself, or its WebGL 2 backend forced. */

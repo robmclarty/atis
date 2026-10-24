@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 36 — feat(web): open each HUD block's parts on click
+**Current step:** 37 — feat(web): zoom, pan, tilt and rotate the camera continuously
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -62,7 +62,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 33. feat(web): draw the weather
 - ☑ 34. feat(web): draw the notices with their labels and leaders
 - ☑ 35. feat(web): render the HUD's grade blocks
-- ☐ 36. feat(web): open each HUD block's parts on click
+- ☑ 36. feat(web): open each HUD block's parts on click
 - ☐ 37. feat(web): zoom, pan, tilt and rotate the camera continuously
 - ☐ 38. feat(web): pick and hover at every level of detail
 - ☐ 39. feat(web): fly to a notice and walk the map from the keyboard
@@ -149,6 +149,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] The shore's open blocks name their changed files but drop the spike's grid: D153 has a touched group open on its files, one small square per file with the changed ones lit, then their names, and the SVG draw the same blocks; step 96 followed D158's narrower 'changed files named', so a 50-file group with one change reads like a 1-file group. Add the grid to the band (from shoreRail's count and changed files) in a small SVG step built ahead of step 32, so the world's rail draws the same grid
 - [ ] A target with several notices wears one label per notice (demo's index.ts four times, retake-3's createOptionsProxy.ts three), since step 27's labelsFor places each notice's label on its own; weigh one label per target with its run of ranks, in libs/scene/src/labels.ts
 - [ ] The HUD's block words and the legend's list are derived twice, in libs/svg/src/chrome.ts and legend.ts and again in apps/web/src/hud.ts, held together by hud.test.tsx's parity over every fixture; weigh one derivation in libs/scene for both renderers, as shoreRail and noticeAnchors are (D86, D90)
+- [ ] The camera's smoothing (SMOOTH_S, DRAG_SMOOTH_S) and its zoom bounds are baked in apps/web/src/world/camera.ts, and camera-controls' wheel notch zooms 1.85x; move them into the motion tokens the dev panel moves when step 44 records the world's own, after Rob has tried the camera on a trackpad and a mouse
+- [ ] labelsFor takes an axis-aligned viewport in layout units, so under a rotated or tilted camera the labels are placed in the overhead frame's estimate and hung from their true anchors; weigh a placement in screen space, projecting each anchor, in libs/scene/src/labels.ts
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -1028,3 +1030,4 @@ folder, so it rides the branch into the PR.)*
 
 - 2026-10-24 — step 34 checkpointed · ed096bfed — feat(web): draw the notices with their labels and leaders (1 drift, 24m)
 - 2026-10-24 — step 35 checkpointed · 20fcfdaed — feat(web): render the HUD's grade blocks (1 drift, 8m)
+- 2026-10-24 — step 36 checkpointed · 68f9f8cea — feat(web): open each HUD block's parts on click (1 drift, 8m)

@@ -19,6 +19,8 @@ import { drawWorld } from './world/index.js';
 const canvas = document.querySelector<HTMLCanvasElement>('#world');
 const chromeRoot = document.querySelector<HTMLElement>('#chrome');
 if (!canvas || !chromeRoot) throw new Error('index.html lost its #world canvas or its #chrome root');
+// The chrome's root lies over the canvas as wide as its blocks; the pointer passes through it to the camera's controls (step 37), and each block that takes the pointer says so itself.
+chromeRoot.style.pointerEvents = 'none';
 
 const registry = createRegistry(sessionStore());
 const field = (): void => {

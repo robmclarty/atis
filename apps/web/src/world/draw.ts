@@ -39,7 +39,7 @@ import { BLOOM, LIGHTING, NOTICE, SKIN, SKY, WEATHER } from '../materials.js';
 import type { Registry } from '../registry.js';
 import type { View } from '../view.js';
 import { createBolts } from './bolts.js';
-import { createCamera, frameCamera } from './camera.js';
+import { createCamera, createControls, fitCamera } from './camera.js';
 import { LABEL_LOOK, createLabels, viewportOf } from './labels.js';
 import { ORGANELLE_LOOK, createOrganelles } from './organelles.js';
 import { PALETTE_LOOK, createPalette } from './palette.js';
@@ -118,11 +118,17 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     const { clientWidth, clientHeight } = canvas;
     renderer.setPixelRatio(globalThis.devicePixelRatio);
     renderer.setSize(clientWidth, clientHeight, false);
-    frameCamera(camera, map, clientWidth, clientHeight, { right: RAIL_WIDTH }, view);
+    fitCamera(camera, map, clientWidth, clientHeight, { right: RAIL_WIDTH });
     placeLabels = true;
   };
   fit();
   globalThis.addEventListener('resize', fit);
+  const controls = createControls(camera, canvas, map, view, { right: RAIL_WIDTH });
+  // The labels ride their anchors while the camera moves and are laid out afresh once it rests.
+  controls.addEventListener('rest', () => {
+    placeLabels = true;
+  });
+  let lastFrame = performance.now();
 
   // The two layers laid on the CPU are laid again on the next frame after one of their tokens moves, once however many moved.
   let reliefMoved = false;
@@ -152,7 +158,11 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       scene.environment = sky;
       skyMoved = false;
     }
-    const frame = scheduler.frame(view.zoom);
+    const now = performance.now();
+    controls.update((now - lastFrame) / 1000);
+    lastFrame = now;
+    // The camera's zoom over the fit is the one scalar the levels of detail read.
+    const frame = scheduler.frame(camera.zoom);
     // The surface's layer: 0 at the far field, 1 from LOD1 on, cross-faded between (D151).
     const surface = frame.lod?.opacity[1] ?? 0;
     const lod = frame.lod?.lod ?? 0;
