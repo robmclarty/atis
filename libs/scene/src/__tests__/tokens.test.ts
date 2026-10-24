@@ -102,10 +102,35 @@ test('each random flare is drawn from a window that opens before it closes', () 
   expect(valueOf('SECONDARY_FLARE_MIN_MS')).toBeLessThanOrEqual(valueOf('SECONDARY_FLARE_MAX_MS'));
 });
 
-test("design.md's motion table names exactly the tokens §5.5 bounds", () => {
+/**
+ * The shapes' motion inside an opened cell (D147), one value per rule count,
+ * 0 to 6: still at 0, and faster and further as the level climbs, each within
+ * the bound its rule serves.
+ */
+const SHAPE_MOTION_BOUNDS: Readonly<Record<string, Bound>> = {
+  SHAPE_PULSE_HZ: { atLeast: 0, atMost: 2, why: 'a pulse, never a flicker: two beats a second at most' },
+  SHAPE_PULSE: { atLeast: 0, below: 1, why: 'an arm swells and shrinks but never turns inside out' },
+  SHAPE_TURN: { atLeast: 0, atMost: 0.5, why: 'a slow turn, under a twelfth of a revolution a second' },
+};
+
+test.each(Object.entries(SHAPE_MOTION_BOUNDS))('%s is still at 0 rules, climbs with the level, and keeps inside its bound', (name, bound) => {
+  const values = VALUES[name];
+  if (!Array.isArray(values)) throw new Error(`${name} is not an exported list`);
+  expect(values).toHaveLength(7);
+  expect(values[0]).toBe(0);
+  values.forEach((value: unknown, level) => {
+    if (typeof value !== 'number') throw new Error(`${name}[${String(level)}] is not a number`);
+    if (level > 0) expect(value, `${name} climbs at ${String(level)}`).toBeGreaterThan(Number(values[level - 1]));
+    if (bound.atLeast !== undefined) expect(value, bound.why).toBeGreaterThanOrEqual(bound.atLeast);
+    if (bound.atMost !== undefined) expect(value, bound.why).toBeLessThanOrEqual(bound.atMost);
+    if (bound.below !== undefined) expect(value, bound.why).toBeLessThan(bound.below);
+  });
+});
+
+test("design.md's motion table names exactly the tokens §5.5 and D147 bound", () => {
   const doc = readFileSync(DESIGN, 'utf8');
   const section = doc.split(/^## /m).find((part) => part.startsWith('Motion'));
   expect(section, 'design.md has no Motion section').toBeDefined();
   const rows = [...(section ?? '').matchAll(/^\| `([A-Z][A-Z0-9_]*)` \|/gm)].map((match) => match[1] ?? '');
-  expect(rows.toSorted()).toEqual(Object.keys(MOTION_BOUNDS).toSorted());
+  expect(rows.toSorted()).toEqual([...Object.keys(MOTION_BOUNDS), ...Object.keys(SHAPE_MOTION_BOUNDS)].toSorted());
 });

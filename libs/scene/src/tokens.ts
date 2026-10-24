@@ -292,12 +292,13 @@ export const CALLOUT_CLEARANCE = 2;
  * Motion (§5.5, D51): the timings, intensities and spring constants the
  * world's scheduler animates with, beside the colours so the still and the
  * moving renderer read one file. The still SVG draws none of them (C10).
- * Motion means urgency (C11), and its budget is §5.5's: one continuous mover
- * (the primary's breathing), at most one flare in flight, transients of
- * 600 ms or less and cross-fades of 300 ms or less (C12). Each value is
- * where the materials spike left it; a balance patch moves it, and
- * `docs/design.md`'s motion table logs the patch (Q3). Durations are in
- * milliseconds.
+ * At the surface motion means urgency (C11), and its budget is §5.5's: at
+ * most one flare in flight, transients of 600 ms or less and cross-fades of
+ * 300 ms or less (C12). Inside an opened cell it also means conformance, each
+ * file's shape moving by the rules it breaks (D147), which lifted §5.5's one
+ * continuous mover. Each value is where the materials spike left it; a balance
+ * patch moves it, and `docs/design.md`'s motion table logs the patch (Q3).
+ * Durations are in milliseconds.
  */
 
 /**
@@ -349,3 +350,13 @@ export const JIGGLE_DECAY = 4.5;
 export const HOVER_MS = 100;
 export const FLY_TO_MS = 400;
 export const LOD_FADE_MS = 300;
+
+/**
+ * Conformance in motion, inside an opened cell (D147): by rule count, 0 to 6,
+ * how fast a file's arms pulse (Hz), how far (a share of their reach), and how
+ * fast its body turns (radians a second). Still at 0, faster and further as
+ * the level climbs; reduced motion stills them all.
+ */
+export const SHAPE_PULSE_HZ: readonly number[] = [0, 0.25, 0.4, 0.6, 0.85, 1.15, 1.5];
+export const SHAPE_PULSE: readonly number[] = [0, 0.25, 0.3, 0.32, 0.35, 0.38, 0.42];
+export const SHAPE_TURN: readonly number[] = [0, 0.03, 0.05, 0.08, 0.11, 0.15, 0.2];

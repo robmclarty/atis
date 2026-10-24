@@ -297,13 +297,17 @@ leader's dots.
 
 ## Motion
 
-Motion means urgency (C11), and it is the world's alone: the still SVG draws none
-of it (C10). §5.5 budgets it. There is one continuous mover, the primary's
-breathing, and at most one flare in flight. Transients last 600 ms or less and
-cross-fades 300 ms or less, and nothing animates outside the one scheduler that
-owns them all (C12). A flare is the loud channel, spent once on load and then at
-random, so a reviewer who looked away is pulled back without the map ever
-twinkling.
+Motion is the world's alone: the still SVG draws none of it (C10). At the
+surface it means urgency (C11), and §5.5 budgets it: at most one flare in flight,
+transients of 600 ms or less and cross-fades of 300 ms or less, and nothing
+animates outside the one scheduler that owns them all (C12), `createScheduler`
+in `libs/scene/src/motion.ts`, on an injected clock and a seeded source of chance
+(D94). A flare is the loud channel, spent once on load and then at random, so a
+reviewer who looked away is pulled back without the map ever twinkling. Inside an
+opened cell motion also means conformance: each file's shape pulses and turns by
+the rules it breaks, faster and further as the level climbs, and a file within
+every threshold stays still (D147). That lifted §5.5's one continuous mover; the
+primary's breathing is no longer the only thing that moves.
 
 These tokens sit where [the materials spike](#phase-1b-the-materials-spike) left
 them. Where §5.5 gives a number, the token stands at it, as §5.5's starting
@@ -339,13 +343,21 @@ bound changes §5.5 itself, and moves the bound in the test with it.
 | `HOVER_MS` | `100` | above 0, at most 600: a transient (§5.5 starts it at 100) | the ease to a hover's highlight; nothing on the hovered thing moves |
 | `FLY_TO_MS` | `400` | above 0, at most 400 | the ease of a fly-to from a notice |
 | `LOD_FADE_MS` | `300` | above 0, at most 300: a cross-fade, never a blink | the cross-fade between levels of detail at a zoom threshold |
+| `SHAPE_PULSE_HZ` | `0, 0.25, 0.4, 0.6, 0.85, 1.15, 1.5` | 0 at 0 rules, climbing, at most 2: a pulse, never a flicker | how fast a shape's arms pulse inside an opened cell, by rule count (D147) |
+| `SHAPE_PULSE` | `0, 0.25, 0.3, 0.32, 0.35, 0.38, 0.42` | 0 at 0 rules, climbing, below 1: an arm never turns inside out | how far they pulse, as a share of their reach |
+| `SHAPE_TURN` | `0, 0.03, 0.05, 0.08, 0.11, 0.15, 0.2` | 0 at 0 rules, climbing, at most 0.5 rad/s | how fast the shape's body turns, in radians a second; its wobble drifts three times as fast |
 
 The curves are shapes rather than tokens, and the spike drew them this way, so
-the scheduler that owns them can draw what Rob judged. A flare rises over
+the scheduler that owns them draws what Rob judged. A flare rises over
 its first 14% and falls as the square of what remains. The load flare starts
 halfway through the settle. The breathing is a sine that starts when the settle
 ends, and the random flares' clocks start then too. A flare that arrives while one
-is in flight waits in a queue one deep, and a third is dropped.
+is in flight waits in a queue one deep, and a third is dropped; a flare starts at
+the time it fell due, not the frame that noticed, so the same seed flares at the
+same times at any frame rate. The settle is an underdamped spring that lands
+inside `SETTLE_MS`; a fly-to eases slow out and slow in; a hover and the level
+fades ease at a fixed rate. The scheduler's tests replay a minute of seeded time
+and hold every one of these rules.
 
 Measured from the spike's own scheduler on `retake-3`:
 
@@ -369,6 +381,9 @@ its old and new value, and what was seen that called for it.
 
 - **2026-10-24, the materials spike.** Every token set at the value in the table.
   No patch: the motion held at §5.5's starting numbers.
+- **2026-10-24, D147.** `SHAPE_PULSE_HZ`, `SHAPE_PULSE` and `SHAPE_TURN` join the
+  table at the values the spike's moving shapes ran at, when the shapes' motion
+  became part of the world.
 
 ## Fixed geometry that carries no token
 
