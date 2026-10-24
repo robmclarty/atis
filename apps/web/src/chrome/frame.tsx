@@ -51,10 +51,12 @@ export type ChromeProps = {
   readonly registry: Registry;
   /** A development build shows the toggle; a published one does not. */
   readonly dev: boolean;
+  /** The run's token when the map is served (D134), which the raw check output a HUD part links to requires; none for a fixture. */
+  readonly token?: string | undefined;
   readonly load?: LoadPanel;
 };
 
-export const Chrome = ({ state, registry, dev, load = loadPanel }: ChromeProps): ReactElement => {
+export const Chrome = ({ state, registry, dev, token, load = loadPanel }: ChromeProps): ReactElement => {
   const [open, setOpen] = useState(false);
   const Panel = useMemo(() => lazy(() => load().then((module) => ({ default: module.DevPanel }))), [load]);
 
@@ -71,7 +73,7 @@ export const Chrome = ({ state, registry, dev, load = loadPanel }: ChromeProps):
   return (
     <>
       <div style={COLUMN}>
-        {state.status === 'ready' && <Hud map={state.map} registry={registry} />}
+        {state.status === 'ready' && <Hud map={state.map} registry={registry} token={token} />}
         <Status state={state} registry={registry} />
         {open && (
           <Suspense fallback={null}>

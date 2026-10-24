@@ -11,8 +11,9 @@ import type { Served } from '../serve.js';
 
 /**
  * The loopback server in-process over a stub app (D133): it answers the page,
- * the assets and the map, and nothing else; binds loopback alone (C13); and
- * refuses a foreign Host and a missing or wrong token (D134).
+ * the assets, the map and a held slot's raw output, and nothing else; binds
+ * loopback alone (C13); and refuses a foreign Host and a missing or wrong
+ * token (D134).
  */
 const TOKEN = 'a3f1c2d4e5b6a7f8091a2b3c4d5e6f70';
 const MAP = '{"meta":{"repo":"stub"}}\n';
@@ -35,6 +36,16 @@ const start = async (assets = stubApp()): Promise<Served> => {
   const served = await serve({ assets, map: MAP, token: TOKEN });
   servers.push(served);
   return served;
+};
+
+/** A temp `.check/` holding the raw output of two slots: `test`'s standard output and `lint`'s report, and `summary.json` beside them. */
+const stubChecks = (): string => {
+  const dir = mkdtempSync(join(tmpdir(), 'atis-check-'));
+  temps.push(dir);
+  writeFileSync(join(dir, 'summary.json'), '{"schema_version":1}\n');
+  writeFileSync(join(dir, 'test.stdout.txt'), 'FAIL pm.test.ts\n');
+  writeFileSync(join(dir, 'lint.json'), '[{"message":"unused"}]\n');
+  return dir;
 };
 
 afterAll(async () => {
@@ -117,4 +128,31 @@ test('close stops it answering', async () => {
   expect((await get(served.port, '/')).status).toBe(200);
   await served.close();
   await expect(get(served.port, '/')).rejects.toThrow();
+});
+
+test("a held slot's raw output is served at /check/<slot> with the token: its standard output first, else its report (D93, D134)", async () => {
+  const served = await serve({ assets: stubApp(), map: MAP, token: TOKEN, checks: { dir: stubChecks(), slots: ['test', 'lint', 'types'] } });
+  servers.push(served);
+  const stdout = await get(served.port, `/check/test?token=${TOKEN}`);
+  expect(stdout.status).toBe(200);
+  expect(stdout.type).toBe('text/plain; charset=utf-8');
+  expect(stdout.body).toBe('FAIL pm.test.ts\n');
+  const lint = await get(served.port, `/check/lint?token=${TOKEN}`);
+  expect(lint.status).toBe(200);
+  expect(lint.type).toBe('application/json; charset=utf-8');
+  expect(lint.body).toContain('unused');
+  // A held slot with no raw file, a slot the map does not hold, and a name that is a path are all not served.
+  const paths = ['/check/types', '/check/dead', '/check/summary', '/check/..%2Fsummary.json', '/check/%zz', '/check/', '/check/test/extra'];
+  const answers = await Promise.all(paths.map((path) => get(served.port, `${path}?token=${TOKEN}`)));
+  expect(answers.map((answer) => answer.status)).toEqual(paths.map(() => 404));
+});
+
+test("the raw output is refused without the token, and never served when the run has no checks to serve (D134)", async () => {
+  const withChecks = await serve({ assets: stubApp(), map: MAP, token: TOKEN, checks: { dir: stubChecks(), slots: ['test'] } });
+  servers.push(withChecks);
+  const refused = await Promise.all(['/check/test', '/check/test?token=', `/check/test?token=${TOKEN}0`].map((path) => get(withChecks.port, path)));
+  expect(refused.map((answer) => answer.status)).toEqual([403, 403, 403]);
+  for (const answer of refused) expect(answer.body).toContain('token');
+  const without = await start();
+  expect((await get(without.port, `/check/test?token=${TOKEN}`)).status).toBe(404);
 });

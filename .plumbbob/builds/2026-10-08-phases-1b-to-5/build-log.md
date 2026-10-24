@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 35 — feat(web): render the HUD's grade blocks
+**Current step:** 36 — feat(web): open each HUD block's parts on click
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -61,7 +61,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 32. feat(web): draw cells and organelles, and the shore in a rail
 - ☑ 33. feat(web): draw the weather
 - ☑ 34. feat(web): draw the notices with their labels and leaders
-- ☐ 35. feat(web): render the HUD's grade blocks
+- ☑ 35. feat(web): render the HUD's grade blocks
 - ☐ 36. feat(web): open each HUD block's parts on click
 - ☐ 37. feat(web): zoom, pan, tilt and rotate the camera continuously
 - ☐ 38. feat(web): pick and hover at every level of detail
@@ -1027,3 +1027,4 @@ folder, so it rides the branch into the PR.)*
   Headless Chrome on the WebGL 2 fallback settled retake-3 in 0.9 to 1.3 s after navigation, retake-1 in 1.0 s, checkride-pr4 in 1.0 s and corpus-1 in 1.3 s, and held 60 fps, the display's cap, over two seconds at zoom 1, 2 and 6 and tilted to 35°, with a clean console on every frame. The dev panel's instrument was proven in the same browser: a skin colour moved the frame on the next frame, survived a reload, opened by its key combination in the published build, and reset to the exact resting frame; the panel's code is its own chunk, fetched only when opened.
 
 - 2026-10-24 — step 34 checkpointed · ed096bfed — feat(web): draw the notices with their labels and leaders (1 drift, 24m)
+- 2026-10-24 — step 35 checkpointed · 20fcfdaed — feat(web): render the HUD's grade blocks (1 drift, 8m)

@@ -1,28 +1,38 @@
 /**
  * serve: the world on loopback (D92, C13). One `node:http` server bound to
- * `127.0.0.1` at a port the system picks, answering three things and nothing
+ * `127.0.0.1` at a port the system picks, answering four things and nothing
  * else (D93): the built app's `index.html` at `/`, its assets by path under the
- * directory it is handed, and the map at `/map.json`, held in memory. It
- * answers only a `Host` of `127.0.0.1:<port>` or `localhost:<port>`, and the
- * map only to the run's token (D134): a page in another tab can reach a
- * loopback port, and through DNS rebinding read what it answers, so the server
- * trusts neither the port nor the origin but the token the opened URL carries.
- * The asset directory is an argument, so a test serves a stub `index.html` and
- * no test needs a Vite build (D133).
+ * directory it is handed, the map at `/map.json`, held in memory, and, when it
+ * is handed the run's `.check/`, a slot's raw output at `/check/<slot>`, read
+ * only, for the slots the map holds and no other (D134). It answers only a
+ * `Host` of `127.0.0.1:<port>` or `localhost:<port>`, and the map and the raw
+ * output only to the run's token: a page in another tab can reach a loopback
+ * port, and through DNS rebinding read what it answers, so the server trusts
+ * neither the port nor the origin but the token the opened URL carries. The
+ * asset directory is an argument, so a test serves a stub `index.html` and no
+ * test needs a Vite build (D133).
  */
 
 import { readFile, stat } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { extname, resolve, sep } from 'node:path';
+import { extname, join, resolve, sep } from 'node:path';
+
+/** The run's check artifacts: where checkride wrote them, and the slots the map holds, the only ones served. */
+export type ServedChecks = {
+  readonly dir: string;
+  readonly slots: readonly string[];
+};
 
 export type ServeOptions = {
   /** The built web app: `index.html` and its assets, served by path beneath it. */
   readonly assets: string;
   /** The map as its JSON text. */
   readonly map: string;
-  /** The run's token, which `/map.json` requires as `?token=`. */
+  /** The run's token, which `/map.json` and `/check/<slot>` require as `?token=`. */
   readonly token: string;
+  /** The check artifacts to serve raw at `/check/<slot>`; left out, as a fixture or a test leaves it, the path is not served. */
+  readonly checks?: ServedChecks | undefined;
 };
 
 export type Served = {
@@ -55,6 +65,11 @@ const TYPES: Readonly<Record<string, string>> = {
 const OCTETS = 'application/octet-stream';
 const PLAIN = 'text/plain; charset=utf-8';
 
+/** A slot's name as checkride writes it: one plain word, never a path. */
+const SLOT_NAME = /^[a-z0-9_-]+$/i;
+/** A slot's raw output, by the files checkride writes beside its summary: its standard output first, else its structured report. */
+const RAW_FILES = ['.stdout.txt', '.json'] as const;
+
 /** One answer: the status, the type, and the body, left off a HEAD. */
 const answer = (request: IncomingMessage, response: ServerResponse, status: number, type: string, body: string | Buffer): void => {
   response.writeHead(status, { 'content-type': type, 'content-length': Buffer.byteLength(body), 'cache-control': 'no-store' });
@@ -71,8 +86,34 @@ const fileFor = (root: string, pathname: string): string | undefined => {
   }
 };
 
-/** Serve the app and the map on loopback at a port of the system's choosing; resolves once it is listening. */
-export const serve = async ({ assets, map, token }: ServeOptions): Promise<Served> => {
+/** A path segment decoded, or left as it came when it does not decode, which no slot is named like. */
+const decodedOr = (segment: string): string => {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
+};
+
+/** Whether a path is a file that exists. */
+const isFile = async (file: string): Promise<boolean> => {
+  try {
+    return (await stat(file)).isFile();
+  } catch {
+    return false;
+  }
+};
+
+/** The first raw file a held slot has, or none; a slot the map does not hold, or a name that is not one, is never looked for. */
+const rawFileFor = async (checks: ServedChecks | undefined, slot: string): Promise<string | undefined> => {
+  if (checks === undefined || !SLOT_NAME.test(slot) || !checks.slots.includes(slot)) return undefined;
+  const files = RAW_FILES.map((suffix) => join(resolve(checks.dir), `${slot}${suffix}`));
+  const present = await Promise.all(files.map(isFile));
+  return files.find((_, index) => present[index] === true);
+};
+
+/** Serve the app, the map and the raw check output on loopback at a port of the system's choosing; resolves once it is listening. */
+export const serve = async ({ assets, map, token, checks }: ServeOptions): Promise<Served> => {
   const root = resolve(assets);
   let port = 0;
 
@@ -93,6 +134,20 @@ export const serve = async ({ assets, map, token }: ServeOptions): Promise<Serve
         return;
       }
       answer(request, response, 200, TYPES['.json'] ?? OCTETS, map);
+      return;
+    }
+    const slot = /^\/check\/([^/]+)$/.exec(url.pathname)?.[1];
+    if (slot !== undefined) {
+      if (url.searchParams.get('token') !== token) {
+        answer(request, response, 403, PLAIN, "a check's raw output answers only to this run's token\n");
+        return;
+      }
+      const file = await rawFileFor(checks, decodedOr(slot));
+      if (file === undefined) {
+        answer(request, response, 404, PLAIN, 'no raw output for that slot\n');
+        return;
+      }
+      answer(request, response, 200, TYPES[extname(file)] ?? PLAIN, await readFile(file));
       return;
     }
     const file = fileFor(root, url.pathname);

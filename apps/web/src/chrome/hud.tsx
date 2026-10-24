@@ -7,8 +7,8 @@
  * outlined and written in the muted grey with the dash where its number
  * would be (C2, D41). The words are `hud.ts`'s, the still sheet's block for
  * block. The blocks wrap when the screen is narrow, and each opens its parts
- * on click from step 36. Every token is read live through the registry
- * (D156).
+ * beneath the row on click, one block at a time, a second click closing it
+ * (step 36). Every token is read live through the registry (D156).
  */
 
 import {
@@ -30,16 +30,18 @@ import {
   MVFR_HUE,
   VFR_HUE,
 } from 'scene';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { ReactElement } from 'react';
 import type { MapJson } from 'core';
 
 import { RAIL_WIDTH } from '../fit.js';
 import { blocksOf } from '../hud.js';
 import { categoryHue } from '../notices.js';
+import { partsOf } from '../parts.js';
 import type { Registry } from '../registry.js';
 import { hudType } from '../screen.js';
 import { useLive } from './live.js';
+import { PartsPanel } from './parts.js';
 
 /** The tokens the row is drawn with, at rest: the shape its live view takes. */
 const LOOK = {
@@ -62,59 +64,68 @@ const LOOK = {
   VFR_HUE,
 };
 
-/** The grade blocks for a map, read live from the registry. */
-export const Hud = ({ map, registry }: { readonly map: MapJson; readonly registry: Registry }): ReactElement => {
+/** The grade blocks for a map, read live from the registry, with the run's token when the map is served (D134), for the raw output a red slot links to. */
+export const Hud = ({ map, registry, token }: { readonly map: MapJson; readonly registry: Registry; readonly token?: string | undefined }): ReactElement => {
   useLive(registry);
   const look = registry.view(LOOK);
   const blocks = useMemo(() => blocksOf(map), [map]);
+  const [open, setOpen] = useState<string | undefined>(undefined);
+  const parts = useMemo(() => (open === undefined ? undefined : partsOf(map, open)), [map, open]);
   const hue = categoryHue(map.weather.checks.category, look);
   const type = hudType(look);
   return (
-    <nav
-      data-hud
-      aria-label="grades"
-      style={{
-        display: 'flex',
-        flexWrap: 'wrap',
-        gap: look.HUD_BLOCK_GAP,
-        maxWidth: `calc(100vw - ${String(RAIL_WIDTH)}px)`,
-        boxSizing: 'border-box',
-        padding: `${String(look.HUD_PAD)}px ${String(look.CHROME_PAD)}px`,
-        background: look.CHROME_GROUND,
-        fontFamily: look.FONT_FAMILY,
-        pointerEvents: 'auto',
-      }}
-    >
-      {blocks.map((block) => {
-        const category = block.id === 'category';
-        const ink = block.muted === undefined ? look.CHROME_INK : look.CHROME_MUTED;
-        return (
-          <span
-            key={block.id}
-            data-block={block.id}
-            data-category={category ? block.value : undefined}
-            data-muted={block.muted === undefined ? undefined : 'true'}
-            data-reason={block.muted}
-            style={{
-              // Inline, not flex, so the space between a label and its value is kept.
-              display: 'inline-block',
-              height: type.height,
-              lineHeight: `${String(type.height)}px`,
-              padding: `0 ${String(look.HUD_BLOCK_PAD)}px`,
-              boxSizing: 'border-box',
-              fontSize: category ? type.category : type.text,
-              whiteSpace: 'nowrap',
-              background: category ? hue : 'transparent',
-              color: category ? look.CATEGORY_LETTERS : ink,
-              border: category ? 'none' : `${String(look.CHROME_STROKE_WIDTH)}px solid ${ink}`,
-            }}
-          >
-            {block.label !== '' && <span>{block.label} </span>}
-            <b>{block.value}</b>
-            {block.tail !== '' && <span>{block.tail}</span>}
-          </span>
-        );
-      })}
-    </nav>
+    <div style={{ maxWidth: `calc(100vw - ${String(RAIL_WIDTH)}px)`, boxSizing: 'border-box' }}>
+      <nav
+        data-hud
+        aria-label="grades"
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: look.HUD_BLOCK_GAP,
+          padding: `${String(look.HUD_PAD)}px ${String(look.CHROME_PAD)}px`,
+          background: look.CHROME_GROUND,
+          fontFamily: look.FONT_FAMILY,
+          pointerEvents: 'auto',
+        }}
+      >
+        {blocks.map((block) => {
+          const category = block.id === 'category';
+          const ink = block.muted === undefined ? look.CHROME_INK : look.CHROME_MUTED;
+          return (
+            <button
+              type="button"
+              key={block.id}
+              data-block={block.id}
+              data-category={category ? block.value : undefined}
+              data-muted={block.muted === undefined ? undefined : 'true'}
+              data-reason={block.muted}
+              aria-expanded={open === block.id}
+              onClick={() => setOpen((was) => (was === block.id ? undefined : block.id))}
+              style={{
+                // Inline, not flex, so the space between a label and its value is kept.
+                display: 'inline-block',
+                height: type.height,
+                lineHeight: `${String(type.height)}px`,
+                padding: `0 ${String(look.HUD_BLOCK_PAD)}px`,
+                boxSizing: 'border-box',
+                font: 'inherit',
+                fontSize: category ? type.category : type.text,
+                whiteSpace: 'nowrap',
+                background: category ? hue : 'transparent',
+                color: category ? look.CATEGORY_LETTERS : ink,
+                border: category ? 'none' : `${String(look.CHROME_STROKE_WIDTH)}px solid ${ink}`,
+                borderRadius: 0,
+                cursor: 'pointer',
+              }}
+            >
+              {block.label !== '' && <span>{block.label} </span>}
+              <b>{block.value}</b>
+              {block.tail !== '' && <span>{block.tail}</span>}
+            </button>
+          );
+        })}
+      </nav>
+      {parts !== undefined && <PartsPanel parts={parts} token={token} size={type.text} registry={registry} />}
+    </div>
   );
 };

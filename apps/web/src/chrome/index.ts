@@ -11,5 +11,6 @@ export * from './hud.js';
 export * from './legend.js';
 export * from './live.js';
 export * from './notices.js';
+export * from './parts.js';
 export * from './rail.js';
 export * from './status.js';

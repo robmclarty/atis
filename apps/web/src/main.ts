@@ -10,7 +10,7 @@ import { createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { Chrome } from './chrome/index.js';
-import { loadMap, mapUrl } from './load.js';
+import { loadMap, mapUrl, servedToken } from './load.js';
 import type { MapState } from './load.js';
 import { createRegistry, sessionStore } from './registry.js';
 import { viewOf } from './view.js';
@@ -30,7 +30,8 @@ registry.subscribe((name) => {
 });
 
 const chrome = createRoot(chromeRoot);
-const show = (state: MapState): void => chrome.render(createElement(Chrome, { state, registry, dev: import.meta.env.DEV }));
+const token = servedToken(location.search);
+const show = (state: MapState): void => chrome.render(createElement(Chrome, { state, registry, dev: import.meta.env.DEV, token }));
 
 const url = mapUrl(location.search);
 show({ status: 'loading', url });

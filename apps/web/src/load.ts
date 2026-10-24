@@ -9,6 +9,12 @@
 import { assertMap } from 'core';
 import type { MapJson } from 'core';
 
+/** The run's token when the page is served, which the served paths beyond the map require too (D93, D134); none when the page names a map of its own. */
+export const servedToken = (search: string): string | undefined => {
+  const params = new URLSearchParams(search);
+  return params.get('map') === null ? (params.get('token') ?? undefined) : undefined;
+};
+
 /** Where the map comes from: the page's `map` parameter, else the served `/map.json`, carrying the run's token when the page was opened with one (D134). */
 export const mapUrl = (search: string): string => {
   const params = new URLSearchParams(search);

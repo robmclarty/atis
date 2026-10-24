@@ -1,0 +1,141 @@
+/**
+ * parts: what each HUD block opens on click (§7, step 36), read from the map
+ * alone (D93): a red slot's named files, the uncovered lines per file, the
+ * live mutants, the reach list with its hops and the interfaces crossed, the
+ * changed files with their sizes, the slots the category was set by, the
+ * notices by rank, and the shore's `other` files. A block whose input the map
+ * does not carry opens the one line that says so, never a number (C2). In
+ * served mode a red slot also names the slot whose raw output the CLI serves
+ * at `/check/<slot>` (D134); the chrome adds the link, so a fixture with no
+ * server shows the parts without it. Pure: no React, no DOM.
+ */
+
+import { OTHER_GROUP, readRedSplit } from 'core';
+import type { CheckSlot, MapJson } from 'core';
+
+import { rowsOf, tallyOf } from './notices.js';
+
+/** One group of lines a block opens: a heading, its lines, and, for a red slot, the slot whose raw output the server can show. */
+export type Part = { readonly heading: string; readonly lines: readonly string[]; readonly slot?: string };
+
+/** What a block opens: its parts, or the one line saying why it has none. */
+export type Parts = { readonly block: string; readonly parts: readonly Part[]; readonly empty?: string };
+
+/** The minus sign a tally is written with, and the separator between a line's parts. */
+const MINUS = '−';
+const DOT = '·';
+
+const byPath = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
+
+/** `1 hop`, `2 hops`. */
+const hopsOf = (hops: number): string => `${String(hops)} ${hops === 1 ? 'hop' : 'hops'}`;
+
+/** A slot's verdict in a word. */
+const verdictOf = (slot: CheckSlot): string => (slot.skipped ? 'skipped' : slot.ok ? 'green' : 'red');
+
+/** A red slot as a part: the changed files it is on the change through, then the rest of the files it names, or `global`. */
+const redSlotPart = (slot: CheckSlot, standing: boolean): Part => {
+  const change = slot.change ?? [];
+  const rest = slot.scope === 'global' ? [] : slot.scope.filter((path) => !change.includes(path));
+  const lines = slot.scope === 'global' ? ['global: no file named'] : [...change.map((path) => `${path} ${DOT} changed`), ...rest];
+  return { heading: `${slot.name} ${DOT} red${standing ? ', standing' : ' on the change'}`, lines, slot: slot.name };
+};
+
+/** The change's red slots, or the standing ones, as parts; the gate's muted reasons open the line that says why (C2, D41, D70). */
+const redParts = (map: MapJson, block: string, standing: boolean): Parts => {
+  if (map.meta.instruments.mode !== 'check') return { block, parts: [], empty: 'no .check/ was trusted, so no slot was read' };
+  const { slots } = map.weather.checks;
+  if (slots.every((slot) => slot.skipped)) return { block, parts: [], empty: 'every slot was skipped, so nothing went through the gate' };
+  const split = readRedSplit(slots);
+  const names = new Set((standing ? split.standing : split.change).map((slot) => slot.name));
+  const parts = slots.filter((slot) => names.has(slot.name)).map((slot) => redSlotPart(slot, standing));
+  return parts.length === 0 ? { block, parts, empty: standing ? 'no red is standing' : 'no red is on the change' } : { block, parts };
+};
+
+/** The covered share and the uncovered lines of each measured file, then the files no report names (D80). */
+const coverageParts = (map: MapJson): Parts => {
+  const block = 'patch-cov';
+  const { patch_coverage: coverage, unmeasured = [] } = map.weather.evidence;
+  if (coverage === undefined) return { block, parts: [], empty: 'no coverage report was read' };
+  const parts = coverage.map(
+    (file): Part => ({
+      heading: `${file.path} ${DOT} ${String(file.covered)} of ${String(file.changed_executable)} changed lines ran`,
+      lines: file.changed_executable === 0 ? ['no changed line is executable'] : file.uncovered_lines.length === 0 ? ['every changed line ran'] : [`uncovered: ${file.uncovered_lines.map(String).join(', ')}`],
+    }),
+  );
+  const rest = unmeasured.length === 0 ? [] : [{ heading: `${String(unmeasured.length)} unmeasured: no report names them`, lines: [...unmeasured] }];
+  return { block, parts: [...parts, ...rest] };
+};
+
+/** The live mutants by file, each its line and its status (D143). */
+const mutantParts = (map: MapJson): Parts => {
+  const block = 'mutants';
+  const mutants = map.weather.evidence.mutants;
+  if (mutants === undefined) return { block, parts: [], empty: 'no mutation report was read' };
+  if (mutants.length === 0) return { block, parts: [], empty: 'no mutant on a changed line is live' };
+  const byFile = new Map<string, string[]>();
+  for (const mutant of [...mutants].toSorted((a, b) => byPath(a.path, b.path) || a.line - b.line)) {
+    const lines = byFile.get(mutant.path) ?? [];
+    lines.push(`line ${String(mutant.line)} ${DOT} ${mutant.status.toLowerCase() === 'nocoverage' ? 'no test reached it' : mutant.status.toLowerCase()}`);
+    byFile.set(mutant.path, lines);
+  }
+  return { block, parts: [...byFile].map(([path, lines]) => ({ heading: path, lines })) };
+};
+
+/** The reach by cell, nearest first: each file with its hops and the interfaces the reach crossed to get there (D5, D45). */
+const reachParts = (map: MapJson): Parts => {
+  const block = 'reach';
+  const byCell = new Map<string, { hops: number; readonly lines: string[] }>();
+  for (const entry of [...map.weather.reach].toSorted((a, b) => a.hops - b.hops || byPath(a.path, b.path))) {
+    const held = byCell.get(entry.cell) ?? { hops: entry.hops, lines: [] };
+    held.hops = Math.min(held.hops, entry.hops);
+    held.lines.push(entry.via.length === 0 ? `${entry.path} ${DOT} ${hopsOf(entry.hops)}` : `${entry.path} ${DOT} ${hopsOf(entry.hops)} via ${entry.via.join(' › ')}`);
+    byCell.set(entry.cell, held);
+  }
+  if (byCell.size === 0) return { block, parts: [], empty: 'the change reaches no cell' };
+  const parts = [...byCell].toSorted(([a, ha], [b, hb]) => ha.hops - hb.hops || byPath(a, b)).map(([cell, { hops, lines }]) => ({ heading: `${cell} ${DOT} ${hopsOf(hops)}`, lines }));
+  return { block, parts };
+};
+
+/** Every changed file with its kind and its lines added and deleted (D40, D120). */
+const sizeParts = (map: MapJson): Parts => {
+  const { changed } = map.weather;
+  if (changed.length === 0) return { block: 'size', parts: [], empty: 'no file changed' };
+  const lines = [...changed]
+    .toSorted((a, b) => byPath(a.path, b.path))
+    .map((file) => `${file.kind} ${file.from === undefined ? file.path : `${file.from} → ${file.path}`} ${DOT} +${String(file.added)} ${MINUS}${String(file.deleted)}`);
+  return { block: 'size', parts: [{ heading: `${String(changed.length)} files`, lines }] };
+};
+
+/** What a block opens, by its id. */
+export const partsOf = (map: MapJson, block: string): Parts => {
+  switch (block) {
+    case 'category': {
+      const { slots } = map.weather.checks;
+      if (map.meta.instruments.mode !== 'check') return { block, parts: [], empty: `no .check/ was trusted${map.meta.instruments.reason === undefined ? '' : `: ${map.meta.instruments.reason}`}` };
+      return { block, parts: [{ heading: `${map.weather.checks.category}, set by the change alone`, lines: slots.map((slot) => `${slot.name} ${DOT} ${verdictOf(slot)}`) }] };
+    }
+    case 'patch-cov':
+      return coverageParts(map);
+    case 'mutants':
+      return mutantParts(map);
+    case 'reach':
+      return reachParts(map);
+    case 'size':
+      return sizeParts(map);
+    case 'gate':
+      return redParts(map, block, false);
+    case 'standing':
+      return redParts(map, block, true);
+    case 'health':
+      return { block, parts: [], empty: 'the delta needs a base side this build does not take yet' };
+    case 'notices':
+      return { block, parts: [{ heading: `${tallyOf(map)} by tier`, lines: rowsOf(map).map((row) => `${String(row.rank)} ${DOT} ${row.tier} ${DOT} ${row.kind} ${DOT} ${row.words}`) }] };
+    case 'other': {
+      const files = map.terrain.groups.find((group) => group.id === OTHER_GROUP)?.files ?? [];
+      return files.length === 0 ? { block, parts: [], empty: 'nothing fell to other' } : { block, parts: [{ heading: `${String(files.length)} files no group claims`, lines: [...files].toSorted(byPath) }] };
+    }
+    default:
+      return { block, parts: [], empty: 'nothing to open' };
+  }
+};

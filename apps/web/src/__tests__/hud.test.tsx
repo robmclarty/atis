@@ -168,8 +168,9 @@ test('the chrome carries the HUD over the status line and the legend inset once 
   expect(host.querySelector('[data-hud]')).toBeNull();
   expect(host.querySelector('[data-legend]')).toBeNull();
   await act(async () => root.render(<Chrome state={{ status: 'ready', url: '/map.json', map: DEMO }} registry={registry} dev={false} />));
+  // The row and the panel it opens share a wrapper, and the status line follows it.
   const hud = element('[data-hud]');
-  expect(hud.nextElementSibling?.getAttribute('role')).toBe('status');
+  expect(hud.parentElement?.nextElementSibling?.getAttribute('role')).toBe('status');
   expect(all('[data-hud] [data-block]')).toHaveLength(HUD_ORDER.length);
   expect(host.querySelector('[data-legend]')).not.toBeNull();
 });

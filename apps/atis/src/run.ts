@@ -269,7 +269,8 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
     const { map, timings } = measure(options.repo, options.base);
     const token = options.token ?? randomBytes(16).toString('hex');
     const started = performance.now();
-    const served = await serve({ assets, map: serialize(map), token });
+    // The raw check output beside the map (D93): the run's `.check/`, for the slots the map holds alone (D134).
+    const served = await serve({ assets, map: serialize(map), token, checks: { dir: join(options.repo, '.check'), slots: map.weather.checks.slots.map((slot) => slot.name) } });
     timings.push({ source: 'serve', ms: Math.round(performance.now() - started) });
     if (options.open) openTarget(served.url);
     return {
