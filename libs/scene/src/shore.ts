@@ -11,10 +11,12 @@
  * Within each, groups go by name, and `other` last, loud as D48 keeps it, a
  * dumping ground no one can miss. A red slot over a shore file hangs over its
  * group's block, split by the change as on the terrain (D68). The `tests`
- * group is evidence, drawn as stitches, never shore (D4).
+ * group is a block like any other: its files are never terrain (D4), but a
+ * changed test file is part of the change, and a notice on one that draws no
+ * stitch anchors to this block (D148).
  */
 
-import { OTHER_GROUP, TESTS_GROUP } from 'core';
+import { OTHER_GROUP } from 'core';
 import type { MapJson } from 'core';
 
 import { stormPlaces } from './weather.js';
@@ -55,7 +57,7 @@ export function shoreRail(map: MapJson): readonly ShoreBlock[] {
   const ghosts = new Set(map.weather.ghosts.map((ghost) => ghost.path));
   const storms = stormPlaces(map);
   const blocks = map.terrain.groups
-    .filter((group) => group.id !== TESTS_GROUP && group.files.length > 0)
+    .filter((group) => group.files.length > 0)
     .map((group): ShoreBlock => {
       const files = group.files
         .filter((path) => changes.has(path) || ghosts.has(path))

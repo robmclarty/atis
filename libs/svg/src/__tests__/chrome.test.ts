@@ -21,6 +21,7 @@ import {
   NOTICE_BOX,
   PRIMARY_RING_WIDTH,
   SECONDARY_RING_WIDTH,
+  noticeAnchors,
 } from 'scene';
 import { expect, test } from 'vitest';
 
@@ -700,4 +701,27 @@ test.each(CATEGORIES)('the %s golden renders byte for byte', (category) => {
   const path = join(SVG_FIXTURES, GOLDENS[category]);
   if (process.env['ATIS_UPDATE_GOLDENS'] === '1') writeFileSync(path, svg);
   expect(svg).toBe(readFileSync(path, 'utf8'));
+});
+
+test('a notice on a test file rings the stitch it draws, and the scene says where (D148)', () => {
+  const map: MapJson = { ...demo(), notices: [noticeOf('primary', 'red-check-slot', 'libs/core/src/__tests__/pm.test.ts')] };
+  const [anchored] = noticeAnchors(map);
+  if (anchored?.anchor?.kind !== 'stitch') throw new Error('the demo test file draws a stitch');
+  const svg = renderSvg(map);
+  const shift = Number(/<g id="world" transform="translate\(0 ([\d.-]+)\)">/.exec(svg)?.[1]);
+  const ring = /<circle data-target="libs\/core\/src\/__tests__\/pm\.test\.ts" data-tier="primary"[^>]* cx="([\d.]+)" cy="([\d.]+)"/.exec(svg);
+  expect(Number(ring?.[1])).toBeCloseTo(anchored.anchor.x, 1);
+  expect(Number(ring?.[2])).toBeCloseTo(anchored.anchor.y + shift, 1);
+  expect(boxCentre(drawn(chromeOf(svg), 'marks'), 1)).toBeDefined();
+});
+
+test("retake-1's primary, a test file that draws no stitch, is seen: its box hangs on the tests block in the band (D148)", () => {
+  const map = assertMap(JSON.parse(readFileSync(join(REPO_FIXTURES, 'retake-1', 'map.json'), 'utf8')));
+  const target = map.notices[0]?.target ?? '';
+  expect(noticeAnchors(map)[0]?.anchor).toEqual({ kind: 'group', group: 'tests' });
+  const svg = renderSvg(map);
+  const marks = drawn(chromeOf(svg), 'marks');
+  expect(marks).toContain(`<g data-target="${target}">`);
+  expect(marks).toMatch(/<rect data-target="[^"]+" data-tier="primary"/);
+  expect(svg).toMatch(/<line data-notice="1" /);
 });

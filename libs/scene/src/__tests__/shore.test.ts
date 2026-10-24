@@ -21,6 +21,7 @@ test('the groups the change touched lead, then the rest, each by name with `othe
   expect(rail.map((block) => [block.group, block.touched, block.loud])).toEqual([
     ['deps', true, false],
     ['docs', true, false],
+    ['tests', true, false],
     ['other', true, true],
     ['build', false, false],
     ['config', false, false],
@@ -64,9 +65,10 @@ test('a red slot naming a shore file hangs over its group, split by the change, 
   expect(rail.find((block) => block.group === 'deps')?.storms).toEqual([]);
 });
 
-test('the tests group is evidence, never shore (D4), and an empty group has no block', () => {
-  expect(DEMO.terrain.groups.some((group) => group.id === 'tests')).toBe(true);
-  expect(shoreRail(DEMO).some((block) => block.group === 'tests')).toBe(false);
+test('the tests group is a block like any other, naming its changed test files, and an empty group has no block', () => {
+  const tests = shoreRail(DEMO).find((block) => block.group === 'tests');
+  expect(tests?.touched).toBe(true);
+  expect(tests?.files).toEqual([{ path: 'libs/core/src/__tests__/pm.test.ts', change: { kind: 'modified' } }]);
   const empty = shoreRail(withWeather({}, [...DEMO.terrain.groups, { id: 'assets', files: [] }]));
   expect(empty.some((block) => block.group === 'assets')).toBe(false);
 });

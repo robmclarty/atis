@@ -12,10 +12,11 @@
  * to a numbered mark beside its target; round the primary a thin ring in
  * the category hue with its kind written under the mark; round a secondary
  * a thick ring in the leaders' grey, never the evidence light (D72); for a
- * tertiary the mark alone. A notice on a shore file, or on a shore group,
- * hangs its marks on that group's block in the band along the foot of the
- * sheet, since the shore is chrome and no longer land (D153, D158). A notice
- * whose target nothing places, a slot's name say, keeps its row and draws no
+ * tertiary the mark alone. Each hangs where the scene anchors it (D148):
+ * its file, or for a test file the stitch it draws, a cell's skin, or for a
+ * shore file its group's block in the band along the foot of the sheet,
+ * since the shore is chrome and no longer land (D153, D158). A notice whose
+ * target nothing draws, a slot's name say, keeps its row and draws no
  * leader, since a global slot hangs no storm (D68).
  *
  * Every number in the HUD is read from the map (D33), and a block whose
@@ -63,10 +64,13 @@ import {
   PRIMARY_RING_WIDTH,
   SECONDARY_BOX_WIDTH,
   SECONDARY_RING_WIDTH,
+  STITCH_LENGTH,
   VFR_HUE,
+  noticeAnchors,
   shoreRail,
   weatherOf,
 } from 'scene';
+import type { NoticeAnchor } from 'scene';
 
 import { el, num } from './el.js';
 import type { Attrs, Markup } from './el.js';
@@ -401,33 +405,26 @@ function footOf(contour: Contour): readonly [number, number] | undefined {
 }
 
 /**
- * A target's anchor: a shore group's block, for the group or a file on it;
- * else its position when the layout placed it; else its contour when core
- * skinned it; else nothing to point at.
+ * A notice's anchor as the chrome draws it, from the scene's (D148): a placed
+ * file, or the stitch a test file draws, as a point it rings; a cell's skin
+ * by its contour, hanging its marks from the contour's foot; a shore group's
+ * block in the band.
  */
-function anchorOf(target: string, layout: Layout, groupOf: ReadonlyMap<string, string>): Anchor | undefined {
-  const group = groupOf.get(target);
-  if (group !== undefined) return { kind: 'block', group };
-  const at = layout.positions[target];
-  if (at !== undefined) return { kind: 'point', at };
-  const contour = layout.contours?.[target];
-  if (contour === undefined) return undefined;
-  const foot = footOf(contour);
-  return foot === undefined ? undefined : { kind: 'contour', contour, foot };
+function anchorOf(anchor: NoticeAnchor, layout: Layout): Anchor | undefined {
+  if (anchor.kind === 'organelle') return { kind: 'point', at: { x: anchor.x, y: anchor.y, r: anchor.r } };
+  if (anchor.kind === 'stitch') return { kind: 'point', at: { x: anchor.x, y: anchor.y, r: STITCH_LENGTH / 2 } };
+  if (anchor.kind === 'group') return { kind: 'block', group: anchor.group };
+  const contour = layout.contours?.[anchor.cell];
+  const foot = contour === undefined ? undefined : footOf(contour);
+  return contour === undefined || foot === undefined ? undefined : { kind: 'contour', contour, foot };
 }
 
-/** Each shore group, and each file on one, keyed to its group. */
-function shoreGroups(map: MapJson): ReadonlyMap<string, string> {
-  return new Map(map.terrain.groups.flatMap((group) => [[group.id, group.id] as const, ...group.files.map((file) => [file, group.id] as const)]));
-}
-
-/** The six the list has room for, in the map's rank order (C7), each with its anchor when the sheet has one. */
+/** The six the list has room for, in the map's rank order (C7), each with its anchor when the sheet draws one. */
 function noticesInBudget(map: MapJson, layout: Layout): readonly Ranked[] {
   const added = new Set(map.weather.changed.filter((file) => file.kind === 'added').map((file) => file.path));
-  const groupOf = shoreGroups(map);
-  return map.notices.slice(0, NOTICE_BUDGET).map((notice, index): Ranked => {
-    const anchor = anchorOf(notice.target, layout, groupOf);
-    return { rank: index + 1, notice, added: added.has(notice.target), ...(anchor === undefined ? {} : { anchor }) };
+  return noticeAnchors(map).map(({ rank, notice, anchor: placed }): Ranked => {
+    const anchor = placed === undefined ? undefined : anchorOf(placed, layout);
+    return { rank, notice, added: added.has(notice.target), ...(anchor === undefined ? {} : { anchor }) };
   });
 }
 

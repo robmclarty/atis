@@ -241,7 +241,10 @@ for an edit, an outline for a deletion, dashed for a rename) or a ghost's
 dashed grey ring, and its path, `+` before an added one (D120) and cut from the
 left where it would run out of the block. The rest show their name and count.
 `other` is framed in `CHROME_INK` at `SECONDARY_BOX_WIDTH`, since it is never
-quiet (D48); every other block in a `CHROME_MUTED` hairline. A red slot over a
+quiet (D48); every other block in a `CHROME_MUTED` hairline. The `tests` group is
+a block like the rest: its files are never terrain (D4), but a changed test file
+is part of the change, and a notice on one that draws no stitch hangs there
+(D148). A red slot over a
 shore file hangs its bolt on the group's first line, the change's in `IFR_HUE`
 with its slot, standing state grey, and a notice on a shore file hangs its
 numbered boxes at that line's end, its leader running down to the band. The
