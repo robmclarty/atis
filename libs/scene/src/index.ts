@@ -6,4 +6,5 @@
  * inside the render are tested where they are made.
  */
 
+export * from './heightfield.js';
 export * from './tokens.js';

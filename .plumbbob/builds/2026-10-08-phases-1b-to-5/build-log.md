@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 98 — feat(core): record each file's import ties inside and outside its cell
+**Current step:** 24 — feat(scene): build the heightfield from depth, stability and mass
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -80,7 +80,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 95. feat(core): record every file's stability in the map
 - ☐ 96. feat(svg): draw the shore as a compact band of flat blocks
 - ☐ 97. feat(web): add a hidden dev panel that tunes every token live
-- ☐ 98. feat(core): record each file's import ties inside and outside its cell
+- ☑ 98. feat(core): record each file's import ties inside and outside its cell
 - ☐ 99. feat(scene): drift each file in an opened cell by its looseness
 - ☐ 48. feat(cli): cache the terrain per base commit
 - ☐ 49. feat(core): relax a new base's layout from the nearest cached one
@@ -824,3 +824,4 @@ folder, so it rides the branch into the PR.)*
 
 - 2026-10-24 — step 23 checkpointed · d80907bda — chore(repo): add the scene library and the web app to the workspace (10m)
 - 2026-10-24 — step 95 checkpointed · e9be62690 — feat(core): record every file's stability in the map (3m)
+- 2026-10-24 — step 98 checkpointed · 5ea422332 — feat(core): record each file's import ties inside and outside its cell (2m)

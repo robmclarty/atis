@@ -10,5 +10,10 @@
   "exclude": [
     "dist",
     "node_modules"
+  ],
+  "references": [
+    {
+      "path": "../../libs/core"
+    }
   ]
 }
