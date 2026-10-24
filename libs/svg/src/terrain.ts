@@ -8,8 +8,8 @@
  * at the bottom. Over them the membranes, one closed path per cell traced from
  * the contour core cut, its stroke as thick as the cell's interface: a deep
  * module is a big body with a thin skin. On top the organelles, a circle sized
- * by mass, or a polygon with one vertex pulled per breached rule when a file
- * has dents, and the same small glyph on every member of a clone family. A
+ * by mass, or, when a file breaks rules, its outline morphed by how many
+ * (D146), and the same small glyph on every member of a clone family. A
  * cell wears its own rules and family the same way, on its skin: one point
  * pulled out of the membrane per rule its files break, and its family's glyph
  * just outside it.
@@ -24,8 +24,6 @@
 import { membraneThickness } from 'core';
 import type { Cell, Contour, Group, Layout, Organelle, Position, Terrain } from 'core';
 import {
-  DENT_PULL,
-  DENT_VERTICES,
   FIELD_FILL,
   GLYPH_OFFSET,
   GLYPH_STROKE,
@@ -47,6 +45,8 @@ import {
   TERRACE_FILL,
   TERRACE_LINE,
   TERRACE_LINE_WIDTH,
+  outlineOf,
+  rulesOf,
 } from 'scene';
 
 import { el, num } from './el.js';
@@ -323,21 +323,6 @@ export function drawMembranes(terrain: Terrain, layout: Layout): Markup {
 }
 
 /**
- * The dented outline: a polygon on the organelle's circle with one vertex
- * pulled out per dent, the pulled vertices spread evenly round the ring
- * starting from the top, so two dents read as two teeth and not as a lump.
- */
-function dentedPoints(at: Position, dents: number): string {
-  const count = Math.min(dents, DENT_VERTICES);
-  const pulled = new Set(Array.from({ length: count }, (_, k) => Math.round((k * DENT_VERTICES) / dents) % DENT_VERTICES));
-  return Array.from({ length: DENT_VERTICES }, (_, i) => {
-    const angle = -Math.PI / 2 + (2 * Math.PI * i) / DENT_VERTICES;
-    const radius = pulled.has(i) ? at.r * DENT_PULL : at.r;
-    return `${num(at.x + radius * Math.cos(angle))},${num(at.y + radius * Math.sin(angle))}`;
-  }).join(' ');
-}
-
-/**
  * The families present on organelles and cells alike, each with its glyph's
  * index, in path order so the same map gives the same marks (C3), and a cell
  * wears the very glyph its files do.
@@ -361,27 +346,35 @@ function drawGlyph(id: string, family: string, index: number, [x, y]: Point): Ma
   });
 }
 
-/** One organelle: its shape, then its clone glyph when it has a family, just outside its edge at its upper right. */
+/**
+ * One organelle: its shape, then its clone glyph when it has a family, just
+ * outside its edge at its upper right. A file within every threshold is a
+ * circle at the radius core gave its mass; one that breaks rules is its
+ * outline morphed by how many (D146), drawn still at rest (C10) through the
+ * scene's `outlineOf`, the shape the world moves, with a disc for each bulb
+ * at levels 5 and 6.
+ */
 function drawOrganelle(organelle: Organelle, at: Position, families: ReadonlyMap<string, number>): readonly Markup[] {
   const identity = { 'data-id': organelle.id, 'data-reachable': organelle.reachable ? undefined : 'false' };
+  const rules = rulesOf(organelle.dents);
+  const outline = rules === 0 ? undefined : outlineOf(organelle.id, at, rules);
   const shape =
-    organelle.dents.length === 0
-      ? el('circle', { ...identity, cx: at.x, cy: at.y, r: at.r })
-      : el('polygon', {
-          ...identity,
-          'data-dents': organelle.dents.join(' '),
-          points: dentedPoints(at, organelle.dents.length),
-        });
+    outline === undefined
+      ? [el('circle', { ...identity, cx: at.x, cy: at.y, r: at.r })]
+      : [
+          el('path', { ...identity, 'data-dents': organelle.dents.join(' '), d: pathOf(outline.ring) }),
+          ...outline.bulbs.map((bulb) => el('circle', { 'data-id': organelle.id, 'data-bulb': 'true', cx: bulb.x, cy: bulb.y, r: bulb.r })),
+        ];
   const family = organelle.clone_family;
-  if (family === undefined) return [shape];
+  if (family === undefined) return shape;
   const offset = (at.r + GLYPH_OFFSET) * Math.SQRT1_2;
-  return [shape, drawGlyph(organelle.id, family, families.get(family) ?? 0, [at.x + offset, at.y - offset])];
+  return [...shape, drawGlyph(organelle.id, family, families.get(family) ?? 0, [at.x + offset, at.y - offset])];
 }
 
 /**
  * One shape per organelle the layout placed: a circle at the radius core gave
- * its mass, or a polygon with a pulled vertex per dent (shape is conformance,
- * §5.1), with the same small glyph on every member of a clone family
+ * its mass, or its outline morphed by the rules it breaks (shape is
+ * conformance, §5.1, D146), with the same small glyph on every member of a clone family
  * (repetition is duplication). A file the layout did not place is not on the
  * field, and draws nothing.
  */

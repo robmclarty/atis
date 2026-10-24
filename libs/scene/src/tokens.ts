@@ -45,12 +45,38 @@ export const ORGANELLE_STROKE = '#5f6873';
 export const ORGANELLE_STROKE_WIDTH = 1;
 
 /**
- * Shape means conformance (§5.1): an organelle with dents is a polygon of this
- * many vertices, and each breached rule pulls one of them out to this multiple
- * of the radius.
+ * Shape means conformance (§5.1, D146): a file's outline morphs by how many
+ * rules it breaks, 0 to 6 (fallow's four thresholds, a boundary violation and
+ * a cycle). Round within every threshold, then a soft wobble, lobes, angular
+ * protuberances, spikes, and at 5 and 6 spiked arms with bulbs at their tips.
+ * Per level, by rule count: how many `arms` reach out round the body; how far
+ * an arm reaches as a share of the radius (`reach`); how narrow it is, 1 a
+ * smooth wave and higher a spike (`sharp`); a low two-lobed `wobble` that keeps
+ * the gentle levels soft rather than geared; a `bulb` at each arm's tip as a
+ * share of the radius; and how many points the outline is drawn through
+ * (`samples`), enough to keep the narrowest spike sharp. The values are the
+ * materials spike's, which Rob judged.
  */
-export const DENT_VERTICES = 12;
-export const DENT_PULL = 1.4;
+export const SHAPE_LEVELS: readonly {
+  readonly arms: number;
+  readonly reach: number;
+  readonly sharp: number;
+  readonly wobble: number;
+  readonly bulb: number;
+  readonly samples: number;
+}[] = [
+  { arms: 0, reach: 0, sharp: 1, wobble: 0, bulb: 0, samples: 48 },
+  { arms: 3, reach: 0.06, sharp: 1, wobble: 0.05, bulb: 0, samples: 48 },
+  { arms: 4, reach: 0.13, sharp: 1.3, wobble: 0.07, bulb: 0, samples: 64 },
+  { arms: 6, reach: 0.24, sharp: 2.4, wobble: 0.05, bulb: 0, samples: 72 },
+  { arms: 9, reach: 0.4, sharp: 5, wobble: 0.03, bulb: 0, samples: 96 },
+  { arms: 13, reach: 0.62, sharp: 11, wobble: 0.02, bulb: 0.1, samples: 128 },
+  { arms: 18, reach: 0.85, sharp: 20, wobble: 0.02, bulb: 0.12, samples: 160 },
+];
+/** The body gives this share of an arm's reach back, so a spiked file keeps about the size its mass gave it (C11). */
+export const SHAPE_CORE_GIVE = 0.2;
+/** Each arm's own length varies by up to this share either way, seeded by the file's path, so no two files' spikes match. */
+export const SHAPE_ARM_SPREAD = 0.3;
 /**
  * A cell breaks a rule when one of its files does, and its membrane wears it
  * the same way: one point per rule pulled this far out of the skin, the skin
@@ -241,6 +267,8 @@ export const LEGEND_SAMPLE_R = 5;
 export const LEGEND_SLOT = 24;
 export const LEGEND_FONT_SIZE = 7;
 export const LEGEND_PAD = 6;
+/** The key of the seven shapes under the numbered rows (D146): one form per rule count, this far apart, on a file of `LEGEND_SAMPLE_R`. */
+export const LEGEND_KEY_PITCH = 18;
 
 /**
  * The practice map's callouts (D87, D125): a numbered balloon, the

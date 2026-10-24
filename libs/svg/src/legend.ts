@@ -35,11 +35,13 @@ import {
   INTEGRITY_PAD,
   LABEL_BASELINE,
   LEGEND_FONT_SIZE,
+  LEGEND_KEY_PITCH,
   LEGEND_PAD,
   LEGEND_ROW,
   LEGEND_SAMPLE_R,
   LEGEND_SLOT,
   LIFR_HUE,
+  MAX_RULES,
   MONO_ADVANCE,
   MVFR_HUE,
   ORGANELLE_FILL,
@@ -50,6 +52,7 @@ import {
   STITCH_SPACING,
   STITCH_WIDTH,
   VFR_HUE,
+  outlineOf,
 } from 'scene';
 
 import { el, num } from './el.js';
@@ -223,9 +226,36 @@ function sampleOf(id: string, x: number, y: number): Sample {
   }
 }
 
-/** How tall the inset is: its title, a row per mark, and its padding. */
+/** What the key of the seven shapes says beside them (D146). */
+export const SHAPE_KEY_WORDS = 'shape: rules it breaks, 0 to 6';
+
+/** How tall the inset is: its title, a row per mark, the shape key's row, and its padding. */
 export function legendHeight(): number {
-  return 2 * LEGEND_PAD + LEGEND_FONT_SIZE + LEGEND_ROW * LEGEND.length;
+  return 2 * LEGEND_PAD + LEGEND_FONT_SIZE + LEGEND_ROW * (LEGEND.length + 1);
+}
+
+/**
+ * The key of the seven shapes (D146), a row of its own under the numbered
+ * marks: one file at each rule count, 0 to 6 from left to right, drawn by the
+ * scene's `outlineOf` at rest as every organelle is, then the words. It keys a
+ * scale, as the category row does, so it takes no number and no balloon.
+ */
+function drawShapeKey(x: number, centre: number): Markup {
+  const first = x + LEGEND_PAD + LEGEND_KEY_PITCH / 2;
+  const forms = Array.from({ length: MAX_RULES + 1 }, (_, rules) => {
+    const at = { x: first + rules * LEGEND_KEY_PITCH, y: centre, r: LEGEND_SAMPLE_R };
+    const outline = outlineOf(`legend-key-${String(rules)}`, at, rules);
+    const style = { fill: ORGANELLE_FILL, stroke: ORGANELLE_STROKE, 'stroke-width': ORGANELLE_STROKE_WIDTH };
+    return el('g', { 'data-rules': rules }, [
+      rules === 0 ? el('circle', { cx: at.x, cy: at.y, r: at.r, ...style }) : el('path', { d: pathOf(outline.ring), ...style }),
+      ...outline.bulbs.map((bulb) => el('circle', { cx: bulb.x, cy: bulb.y, r: bulb.r, ...style })),
+    ]);
+  });
+  const words = first + MAX_RULES * LEGEND_KEY_PITCH + LEGEND_KEY_PITCH / 2 + LEGEND_PAD;
+  return el('g', { 'data-key': 'shapes' }, [
+    ...forms,
+    el('text', { x: words, y: centre + LEGEND_FONT_SIZE * LABEL_BASELINE, 'font-size': LEGEND_FONT_SIZE, fill: CHROME_INK }, [SHAPE_KEY_WORDS]),
+  ]);
 }
 
 /** The left of each row's three parts from the inset's left: its balloon's centre, its sample slot's centre, and where its words start. */
@@ -238,7 +268,8 @@ function columnsOf(x: number): { readonly balloon: number; readonly slot: number
 /**
  * The inset, its top-left at `(x, y)` and `width` wide: a hairline frame,
  * a small-caps title, then one row per mark in `LEGEND` order, each its
- * numbered balloon, its sample and its words.
+ * numbered balloon, its sample and its words, and last the key of the seven
+ * shapes.
  */
 export function drawLegend(x: number, y: number, width: number): Markup {
   const columns = columnsOf(x);
@@ -259,5 +290,6 @@ export function drawLegend(x: number, y: number, width: number): Markup {
       'legend',
     ]),
     ...rows,
+    drawShapeKey(x, top + LEGEND_ROW * (LEGEND.length + 0.5)),
   ]);
 }

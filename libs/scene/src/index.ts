@@ -9,5 +9,6 @@
 export * from './heightfield.js';
 export * from './instances.js';
 export * from './membranes.js';
+export * from './shape.js';
 export * from './tokens.js';
 export * from './weather.js';

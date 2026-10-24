@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import { assertMap, membraneThickness, withinContour } from 'core';
 import type { Contour, MapJson } from 'core';
-import { DENT_PULL, GLYPH_OFFSET, MEMBRANE_DENT_PULL } from 'scene';
+import { GLYPH_OFFSET, MEMBRANE_DENT_PULL, outlineOf, rulesOf } from 'scene';
 import { expect, test } from 'vitest';
 
 import { renderSvg } from '../render.js';
@@ -314,7 +314,8 @@ test('a cell in a clone family carries its family glyph just past its membrane, 
 test('one shape per organelle, a circle sized by loc when it conforms', () => {
   const map = demo();
   const organelles = layer(renderSvg(map), 'organelles');
-  expect(count(organelles, /<(circle|polygon) /g)).toBe(map.terrain.organelles.length);
+  const shapes = [...organelles.matchAll(/<(circle|path) data-id="([^"]+)"(?! data-(?:bulb|family)=)/g)].map(([, , id]) => id);
+  expect(shapes).toEqual(map.terrain.organelles.map((organelle) => organelle.id));
   const radii = new Map([...organelles.matchAll(/<circle data-id="([^"]+)" cx="[\d.]+" cy="[\d.]+" r="([\d.]+)"/g)].map(([, id, r]) => [id, Number(r)]));
   const locOf = new Map(map.terrain.organelles.map((organelle) => [organelle.id, organelle.loc]));
   // Bigger file, bigger circle: doctor.ts (212 lines) against index.ts (24).
@@ -326,25 +327,55 @@ test('one shape per organelle, a circle sized by loc when it conforms', () => {
   }
 });
 
-test('a two-dent organelle is a polygon with exactly two pulled vertices', () => {
+/** The points of an organelle's outline path as the SVG writes it. */
+function drawnOutline(organelles: string, id: string): readonly (readonly [number, number])[] {
+  const path = new RegExp(`<path data-id="${id}" data-dents="[^"]*" d="M([^"]+)Z"`).exec(organelles);
+  return (path?.[1] ?? '').split('L').map((pair) => {
+    const [x = Number.NaN, y = Number.NaN] = pair.split(' ').map(Number);
+    return [x, y] as const;
+  });
+}
+
+test("a file that breaks rules is drawn as the scene's outline at rest, morphed by how many it breaks (D146)", () => {
   const map = demo();
   const id = 'libs/core/src/pm/tools.ts';
   const organelle = map.terrain.organelles.find((candidate) => candidate.id === id);
   expect(organelle?.dents).toEqual(['crap', 'cyclomatic']);
   const at = map.terrain.layout?.positions[id];
-  expect(at).toBeDefined();
-  if (at === undefined) return;
+  if (at === undefined || organelle === undefined) throw new Error('the demo places tools.ts');
 
-  const organelles = layer(renderSvg(map), 'organelles');
-  const polygon = new RegExp(`<polygon data-id="${id}" data-dents="crap cyclomatic" points="([^"]+)"`).exec(organelles);
-  expect(polygon).not.toBeNull();
-  const points = (polygon?.[1] ?? '').split(' ').map((pair) => pair.split(',').map(Number));
-  const distances = points.map(([x = 0, y = 0]) => Math.hypot(x - at.x, y - at.y));
-  const pulled = distances.filter((distance) => distance > at.r * 1.1);
-  expect(pulled).toHaveLength(2);
-  for (const distance of pulled) expect(distance).toBeCloseTo(at.r * DENT_PULL, 1);
-  const resting = distances.filter((distance) => distance <= at.r * 1.1);
-  for (const distance of resting) expect(distance).toBeCloseTo(at.r, 1);
+  const drawn = drawnOutline(layer(renderSvg(map), 'organelles'), id);
+  const outline = outlineOf(id, at, rulesOf(organelle.dents));
+  expect(outline.level).toBe(2);
+  expect(drawn).toHaveLength(outline.ring.length);
+  drawn.forEach(([x, y], index) => {
+    const [ox = 0, oy = 0] = outline.ring[index] ?? [];
+    expect(x).toBeCloseTo(ox, 2);
+    expect(y).toBeCloseTo(oy, 2);
+  });
+  // Two rules make lobes, not teeth: the outline swings about the radius it was given, a little either way.
+  const distances = drawn.map(([x, y]) => Math.hypot(x - at.x, y - at.y));
+  expect(Math.max(...distances)).toBeGreaterThan(at.r);
+  expect(Math.max(...distances)).toBeLessThan(at.r * 1.3);
+  expect(Math.min(...distances)).toBeGreaterThan(at.r * 0.85);
+});
+
+test('a file breaking five rules or more wears a bulb at each arm, and one breaking six is drawn at the highest form', () => {
+  const map = demo();
+  const id = 'libs/core/src/pm/tools.ts';
+  const rules = ['boundary', 'cognitive', 'crap', 'cycle', 'cyclomatic', 'unit-size', 'extra'];
+  const spiked: MapJson = {
+    ...map,
+    terrain: { ...map.terrain, organelles: map.terrain.organelles.map((organelle) => (organelle.id === id ? { ...organelle, dents: rules } : organelle)) },
+  };
+  const organelles = layer(renderSvg(spiked), 'organelles');
+  const at = map.terrain.layout?.positions[id];
+  if (at === undefined) throw new Error('the demo places tools.ts');
+  const outline = outlineOf(id, at, 6);
+  const bulbs = [...organelles.matchAll(new RegExp(`<circle data-id="${id}" data-bulb="true"`, 'g'))];
+  expect(bulbs).toHaveLength(outline.bulbs.length);
+  expect(outline.bulbs.length).toBeGreaterThan(0);
+  expect(drawnOutline(organelles, id)).toHaveLength(outline.ring.length);
 });
 
 test('every member of a clone family carries the same small glyph, and nobody else carries one', () => {

@@ -73,12 +73,34 @@ D11). Nothing in this section is luminous; light is the weather's to draw.
 | `ORGANELLE_FILL` | `#333a43` | each file's body in `#organelles` |
 | `ORGANELLE_STROKE` | `#5f6873` | each organelle's outline |
 | `ORGANELLE_STROKE_WIDTH` | `1` | that outline's width |
-| `DENT_VERTICES` | `12` | shape is conformance (§5.1): a dented organelle is a polygon of this many vertices |
-| `DENT_PULL` | `1.4` | each breached rule pulls one vertex out to this multiple of the radius |
+| `SHAPE_LEVELS` | seven forms, below | shape is conformance (§5.1, D146): a file's outline morphs by how many rules it breaks, 0 to 6, drawn by `outlineOf` in `libs/scene/src/shape.ts` for both renderers, still in the SVG |
+| `SHAPE_CORE_GIVE` | `0.2` | the body gives this share of an arm's reach back, so a spiked file keeps about the size its mass gave it |
+| `SHAPE_ARM_SPREAD` | `0.3` | each arm's own length varies by up to this share either way, seeded by the file's path, so no two files' spikes match |
 | `MEMBRANE_DENT_PULL` | `8` | a cell wears its files' breached rules on its membrane: one point per rule pulled this far out of the skin, the teeth spread evenly along the ring with its top left clear for a storm |
 | `MEMBRANE_DENT_SPAN` | `6` | how far along the skin either side of that point the cut reaches, so the point reads as a tooth (narrower when the teeth would crowd) |
 | `GLYPH_STROKE` | `#7b848f` | repetition is duplication (§5.1): the clone-family glyph beside an organelle, and the same glyph beside the membrane of a cell in that family |
 | `GLYPH_OFFSET` | `4` | how far past the organelle's edge that glyph sits, or past the outer edge of a cell's membrane at its upper right |
+
+`SHAPE_LEVELS` holds one form per rule count, at the materials spike's values,
+which Rob judged in the world (D146). A form's arms are raised cosines round
+evenly spaced spokes: `reach` is how far an arm reaches as a share of the
+radius, `sharp` how narrow it is (1 a smooth wave, higher a spike), `wobble` a
+low two-lobed swell that keeps the gentle forms soft rather than geared, `bulb`
+the disc at each arm's tip as a share of the radius, and `samples` the points
+the outline is drawn through. A file within every threshold is a plain circle.
+Where the arms turn to and each arm's length are seeded by the file's path
+(C3); the world moves the same outline by its rule count inside an opened cell
+(D147), and the SVG draws it at rest.
+
+| Rules | Form | `arms` | `reach` | `sharp` | `wobble` | `bulb` | `samples` |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 0 | round | 0 | 0 | 1 | 0 | 0 | 48 |
+| 1 | a soft wobble | 3 | 0.06 | 1 | 0.05 | 0 | 48 |
+| 2 | lobes | 4 | 0.13 | 1.3 | 0.07 | 0 | 64 |
+| 3 | angular protuberances | 6 | 0.24 | 2.4 | 0.05 | 0 | 72 |
+| 4 | spikes | 9 | 0.4 | 5 | 0.03 | 0 | 96 |
+| 5 | spiked arms, bulbed | 13 | 0.62 | 11 | 0.02 | 0.1 | 128 |
+| 6 | spiked arms, bulbed | 18 | 0.85 | 20 | 0.02 | 0.12 | 160 |
 
 ## State (hue)
 
@@ -217,7 +239,10 @@ Every map carries a compact key in its chrome (D87), `#legend` at the foot of th
 notice column, below the last row and clear of the world: a hairline frame in
 `CHROME_MUTED`, a small-caps title, and one row per mark in `LEGEND`'s order
 (`libs/svg/src/legend.ts`), each a numbered balloon, a sample of the mark and a few
-words. The samples are the world's own shapes and inks drawn flat (D12): no
+words. Under them a last row keys the seven shapes (D146): one file at each rule
+count, 0 to 6 from the left, `LEGEND_KEY_PITCH` apart, then their words. It keys
+a scale, as the category row does, so it takes no number and the practice map
+hangs no balloon on it. The samples are the world's own shapes and inks drawn flat (D12): no
 opacity, no blur, no pattern. The one ink the world draws at a share is the
 hairline, and the inset draws it in `EVIDENCE_LIGHT` already laid at
 `INTEGRITY_CLOSED_OPACITY` over `CHROME_GROUND`. When the world is shorter than the
@@ -236,6 +261,7 @@ leader's dots.
 | `LEGEND_SLOT` | `24` | the width of a row's sample slot |
 | `LEGEND_FONT_SIZE` | `7` | the inset's words, its title and the category scale's letters |
 | `LEGEND_PAD` | `6` | the inset's inner padding and the gaps inside a row |
+| `LEGEND_KEY_PITCH` | `18` | how far apart the shape key's seven forms stand |
 | `CALLOUT_R` | `7` | a balloon's radius, in the inset and on the practice map |
 | `CALLOUT_REACH` | `22` | how far a practice balloon stands off its mark |
 | `CALLOUT_FONT_SIZE` | `7` | the number inside a balloon |

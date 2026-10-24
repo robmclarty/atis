@@ -421,7 +421,7 @@ go, py, tf, sh (w5) ──────┘                                   .ati
 
 *Added at refine pass one, and built right after step 26 ([D131 (svg-migration-step)](#d131)):*
 
-88. [ ] refactor(svg): draw the still map's weather from the scene's derivations, **done when:** per [D90 (scene-lib)](#d90) and [D131 (svg-migration-step)](#d131), `libs/svg` reads step 26's `weatherOf` wherever it computed its own (reach by hop and the lit crossings, gap arcs and mutant notches, stitches, the split storms, ghosts, and the renamed and deleted outlines). The code it replaces is deleted and fallow's `dupes` stays green, and `libs/svg/fixtures/demo/atis.svg` and the four goldens under `libs/svg/fixtures/categories/` are byte-identical before and after
+88. [x] refactor(svg): draw the still map's weather from the scene's derivations, **done when:** per [D90 (scene-lib)](#d90) and [D131 (svg-migration-step)](#d131), `libs/svg` reads step 26's `weatherOf` wherever it computed its own (reach by hop and the lit crossings, gap arcs and mutant notches, stitches, the split storms, ghosts, and the renamed and deleted outlines). The code it replaces is deleted and fallow's `dupes` stays green, and `libs/svg/fixtures/demo/atis.svg` and the four goldens under `libs/svg/fixtures/categories/` are byte-identical before and after
     - seam: `libs/svg/src/weather.ts`, `libs/svg/src/__tests__/weather.test.ts`, `libs/scene/src/weather.ts`, `libs/scene/src/__tests__/weather.test.ts`
     - model: opus (a refactor proved byte for byte)
 

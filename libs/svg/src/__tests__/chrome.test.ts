@@ -25,7 +25,7 @@ import {
 import { expect, test } from 'vitest';
 
 import { CATEGORY_HUES, HUD_ORDER, NOTICE_BUDGET, wrap } from '../chrome.js';
-import { LEGEND } from '../legend.js';
+import { LEGEND, SHAPE_KEY_WORDS } from '../legend.js';
 import { renderSvg } from '../render.js';
 
 /**
@@ -665,6 +665,15 @@ test('every map carries the legend inset at the foot of the notice column, clear
       const [left = 0, size = 0] = (words ?? []).slice(1).map(Number);
       expect(left + mark.words.length * size * WIDEST_FACE, `${mark.id}'s words fit the inset`).toBeLessThanOrEqual(x + width);
     }
+
+    // Under the marks, the key of the seven shapes: one form per rule count, round first, then its words, inside the frame (D146).
+    const key = legend.slice(legend.indexOf('<g data-key="shapes">'));
+    expect([...key.matchAll(/<g data-rules="(\d)">/g)].map(([, rules]) => Number(rules))).toEqual([0, 1, 2, 3, 4, 5, 6]);
+    const keyWords = new RegExp(`<text x="([\\d.]+)" y="([\\d.]+)"[^>]*font-size="([\\d.]+)"[^>]*>${SHAPE_KEY_WORDS}</text>`).exec(key);
+    expect(keyWords, 'the shape key has its words').not.toBeNull();
+    const [keyLeft = 0, keyBaseline = 0, keySize = 0] = (keyWords ?? []).slice(1).map(Number);
+    expect(keyLeft + SHAPE_KEY_WORDS.length * keySize * WIDEST_FACE, "the shape key's words fit the inset").toBeLessThanOrEqual(x + width);
+    expect(keyBaseline).toBeLessThan(y + height);
   }
 });
 

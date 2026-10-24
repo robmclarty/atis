@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 88 — refactor(svg): draw the still map's weather from the scene's derivations
+**Current step:** 94 — feat(svg): morph a file's outline by the rules it breaks
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -74,7 +74,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☐ 45. chore(fixtures): select five fresh outside PRs for glance round two
 - ☐ 46. chore(fixtures): generate the round-two maps
 - ☐ 47. chore(glance): read glance round two in the world
-- ☐ 88. refactor(svg): draw the still map's weather from the scene's derivations
+- ☑ 88. refactor(svg): draw the still map's weather from the scene's derivations
 - ☐ 93. feat(web): draw a minimap that moves the camera
 - ☐ 94. feat(svg): morph a file's outline by the rules it breaks
 - ☑ 95. feat(core): record every file's stability in the map
@@ -829,3 +829,4 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-24 — step 24 checkpointed · 4f65d8615 — feat(scene): build the heightfield from depth, stability and mass (1 drift, 6m)
 - 2026-10-24 — step 25 checkpointed · bcd9a4ed2 — feat(scene): triangulate membranes and lay out organelle instances (4m)
 - 2026-10-24 — step 26 checkpointed · cae7a4574 — feat(scene): derive the weather each organelle carries (1 drift, 6m)
+- 2026-10-24 — step 88 checkpointed · dc47134d3 — refactor(svg): draw the still map's weather from the scene's derivations (1 drift, 6m)
