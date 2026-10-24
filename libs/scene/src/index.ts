@@ -9,6 +9,7 @@
 export * from './heightfield.js';
 export * from './instances.js';
 export * from './labels.js';
+export * from './lod.js';
 export * from './membranes.js';
 export * from './shape.js';
 export * from './shore.js';

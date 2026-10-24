@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 27 — feat(scene): place labels per level of detail without collisions
+**Current step:** 28 — feat(scene): plan levels of detail with hysteresis and cross-fades
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -53,7 +53,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 24. feat(scene): build the heightfield from depth, stability and mass
 - ☑ 25. feat(scene): triangulate membranes and lay out organelle instances
 - ☑ 26. feat(scene): derive the weather each organelle carries
-- ☐ 27. feat(scene): place labels per level of detail without collisions
+- ☑ 27. feat(scene): place labels per level of detail without collisions
 - ☐ 28. feat(scene): plan levels of detail with hysteresis and cross-fades
 - ☐ 29. feat(scene): schedule every animation inside the motion budget
 - ☐ 30. feat(web): render the field and the soft skin from a served map
@@ -832,3 +832,4 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-24 — step 88 checkpointed · dc47134d3 — refactor(svg): draw the still map's weather from the scene's derivations (1 drift, 6m)
 - 2026-10-24 — step 94 checkpointed · 7c9938acb — feat(svg): morph a file's outline by the rules it breaks (7m)
 - 2026-10-24 — step 96 checkpointed · 0678bfc90 — feat(svg): draw the shore as a compact band of flat blocks (1 drift, 14m)
+- 2026-10-24 — step 27 checkpointed · 0b2aded8f — feat(scene): place labels per level of detail without collisions (1 drift, 11m)
