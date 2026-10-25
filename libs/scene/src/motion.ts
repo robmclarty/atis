@@ -18,10 +18,11 @@
  * rate, and its exploded view spreads and gathers at it too (step 40). Inside
  * an opened cell each file's shape pulses and turns by the rules it breaks
  * (D147), and each file floats by how loosely its cellmates hold it (D157),
- * slowly and on the screen's scale; once the cell closes, the surface draws
- * its files where they last floated, and they ease home only as the view
- * climbs on toward the field (D165). The curves are the materials spike's, as
- * `docs/design.md` records them.
+ * or on a package's slide its package (D167), slowly and on the screen's
+ * scale; once the cell closes, the surface draws its files where they last
+ * floated, and they ease home only as the view climbs on toward the field
+ * (D165). The curves are the materials spike's, as `docs/design.md` records
+ * them.
  *
  * Under reduced motion only a static halo stands for the load flare: no
  * settle, no breathing, no flares, no jiggle, still shapes, no float, and a

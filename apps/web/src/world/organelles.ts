@@ -21,7 +21,7 @@
 import { BufferAttribute, Color, DataTexture, DataUtils, DoubleSide, DynamicDrawUsage, HalfFloatType, InstancedBufferAttribute, InstancedBufferGeometry, Mesh, MeshBasicNodeMaterial, NearestFilter, RGBAFormat } from 'three/webgpu';
 import type { UniformNode } from 'three/webgpu';
 import { abs, attribute, float, instanceIndex, mix, mrt, positionLocal, smoothstep, step, texture, uniform, varying, vec2, vec3, vec4 } from 'three/tsl';
-import { ORGANELLE_FILL, ORGANELLE_STROKE, ORGANELLE_STROKE_WIDTH, instances, outlineOf, rulesOf } from 'scene';
+import { ORGANELLE_FILL, ORGANELLE_STROKE, ORGANELLE_STROKE_WIDTH, instances, outlineOf, rulesOf, slideCellOf } from 'scene';
 import type { Grid, Instance, Point } from 'scene';
 import type { MapJson } from 'core';
 
@@ -177,7 +177,7 @@ const instancedMesh = (placed: Placed, relief: DataTexture, grid: Grid, amp: Flo
   return { mesh, restyle, centre: centreAttribute };
 };
 
-/** Every placed file as instances, and the bulbs of the files at levels 5 and 6 as a second set, each numbered by its cell. */
+/** Every placed file as instances, and the bulbs of the files at levels 5 and 6 as a second set, each numbered by the cell whose slide it gives way under: its own, or the package a single-file module floats in (D167). */
 const placedOf = (map: MapJson, cellNumber: ReadonlyMap<string, number>): { readonly files: Placed; readonly bulbs: Placed } => {
   const files = instances(map);
   const centres = new Float32Array(files.length * 2);
@@ -190,12 +190,13 @@ const placedOf = (map: MapJson, cellNumber: ReadonlyMap<string, number>): { read
   const radii = files.map((file, index) => {
     centres[index * 2] = file.x;
     centres[index * 2 + 1] = file.y;
-    cells[index] = cellNumber.get(file.cell) ?? 0;
+    const slide = cellNumber.get(slideCellOf(map, file.cell)) ?? 0;
+    cells[index] = slide;
     const rules = rulesOf(file.dents);
     if (rules > 0) {
       for (const bulb of outlineOf(file.id, { x: file.x, y: file.y, r: file.r }, rules).bulbs) {
         bulbCentres.push(bulb.x, bulb.y);
-        bulbCells.push(cellNumber.get(file.cell) ?? 0);
+        bulbCells.push(slide);
         bulbOwners.push(index);
         bulbRadii.push(Array.from({ length: SAMPLES }, () => bulb.r));
       }

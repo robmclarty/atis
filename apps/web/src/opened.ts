@@ -7,10 +7,12 @@
  * the share it holds at, on Esc, on a click on open ground, or once the view
  * has left it altogether. A click on one of its files, where it has floated,
  * keeps it open, and a click on another cell that would hold open at this
- * view opens that one instead. A cell that holds no files of its own, a
- * package whose files all sit in the cells it holds, never opens: its slide
- * would be holes and nothing else, so the world never names it under the
- * centre, never says it holds, and reads its ground as open ground. A cell
+ * view opens that one instead. A single-file module a package holds opens as
+ * that package, whose slide floats its file beside the package's own (D167).
+ * A cell whose slide shows no files, a package whose files all sit in the
+ * folders it holds, never opens: its slide would be holes and nothing else,
+ * so the world never names it under the centre, never says it holds, and
+ * reads its ground as open ground. A cell
  * closed by hand stays closed while the
  * view's centre is still in it, so it does not spring back open on the next
  * frame. The exploded view and the wiring overlay (step 41) are toggles on the

@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** none (at the boundary)
+**Current step:** 105 — feat(web): float a package's modules inside its opened slide
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -86,6 +86,12 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 98. feat(core): record each file's import ties inside and outside its cell
 - ☑ 99. feat(scene): drift each file in an opened cell by its looseness
 - ☑ 100. feat(svg): open each touched shore block on a grid of its files
+- ☑ 104. feat(core): record each file's ties within its package
+- ☐ 105. feat(web): float a package's modules inside its opened slide
+- ☐ 106. feat(svg): key the reach, its crossings and the history textures in the legend
+- ☐ 107. fix(web): keep the legend and other cells' labels off the world
+- ☐ 108. fix(core): keep each package's cells together so no skin crosses another's
+- ☐ 109. fix(core): keep the shore's docs and data out of co-change notices and the HUD's size
 - ☐ 48. feat(cli): cache the terrain per base commit
 - ☐ 49. feat(core): relax a new base's layout from the nearest cached one
 - ☐ 50. perf(cli): draw a cached run's first frame within two seconds
@@ -179,6 +185,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] guided read of atis's own map at step 103's pause: the 19 brightest marks are reach crossings the legend never keys, the legend covers the world's left third and one of the three changed files, apps/atis's skin overlaps apps/web/src/world, the bloom blurs the surface, three tertiary notices flag plumbbob build logs, Size counts fixture JSON lines, and the frame Rob was sent to held none of the change
 - [x] core makes every file directly in apps/web/src its own single-file cell (19 of them, beside 4 folders), so the apps/web package holds no file of its own and its opened slide is a cream sheet of 23 holes with nothing on it; a package's loose source files might share one cell
 - [x] modules float inside their package: on checkride-shaped repos most cells are single-file modules (56 of 69 on atis's map), so an opened package is its barrel and a sheet of holes and no module ever floats; let a package's slide draw the files of the single-file cells it holds as bodies, with looseness measured against the package, which needs core to record each file's ties within its package (a schema bump) and reshapes D157 and step 40's holes
+- [ ] the world smoke test's reduced-motion frame flakes about one run in five at HEAD: two frames of the opened pm folder 1.5 s apart differ (`still.equals(later)`), with its layers over the world still shown
+- [ ] an opened package's wiring overlay (`cellWiring`) counts only edges at the package's own files, so a package of modules such as `apps/web` shows none of its modules' wiring (D167)
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -1576,3 +1584,5 @@ folder, so it rides the branch into the PR.)*
   The browser smoke test opens the demo's pm cell. It clicks a floating body where the canvas takes the pointer and checks the cell stays open. Then it closes the cell with Esc, waits for the surface to hold the moved files, and zooms out until they are home.
 
   The reduced-motion frame comparison failed once under the full check's coverage run. It then passed in four solo runs, three full-suite runs and three more checks. It is parked as P42, since nothing in the frame was saved. A git integration test also timed out once at 5.8 s while my two CLI servers and a browser ran beside the check; with them stopped, the check was green.
+
+- 2026-10-25 — step 104 checkpointed · a4cee0a5e — feat(core): record each file's ties within its package

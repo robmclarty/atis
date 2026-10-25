@@ -484,7 +484,11 @@ the rules it breaks, faster and further as the level climbs, and a file within
 every threshold stays still (D147). And it means looseness: each file floats
 about its place by the share of its import ties that leave the cell, a hub held
 by its cellmates sitting still and a file tied to none of them wandering
-furthest, pushed off the membrane and its neighbours (D157). The float is slow
+furthest, pushed off the membrane and its neighbours (D157). An opened package
+floats the file of each single-file cell it holds beside its own, by the share of
+its `package_ties` that leave the package, and cuts holes only for its folders and
+directories, so a package of modules opens on them rather than on a sheet of
+holes (D167). The float is slow
 and on the screen's scale: no file leaves its membrane or jumps, and none moves
 more than a small share of the screen a second at any zoom (D165). That lifted
 §5.5's one continuous mover; the primary's breathing is no longer the only thing
@@ -553,9 +557,9 @@ then is pushed off its neighbours, the looser giving way more, and off the
 membrane and the cells its cell holds, never nearer them than it rests. No step
 moves a file more than `DRIFT_SPEED` of the screen a second, and a step that
 would cross the membrane, or into a held cell, leaves the file where it was, so
-no file leaves its membrane or jumps. A file alone in its cell, a deleted file
-and a file with no `ties` stay still, and so does every file under reduced
-motion. Once a cell closes, the surface draws its files where they last floated,
+no file leaves its membrane or jumps. A file alone on its slide, a deleted file
+and a file with no `ties`, or on a package's slide no `package_ties`, stay still,
+and so does every file under reduced motion. Once a cell closes, the surface draws its files where they last floated,
 still, until the cell fills less of the screen than it closes at, and eases them
 home as it shrinks on to `LEVELS.cellHome`; a cell opened again floats on from
 wherever the surface draws them (D165).

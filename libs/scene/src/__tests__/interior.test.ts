@@ -32,6 +32,8 @@ const INDEX = 'libs/core/src/pm/index.ts';
 const TOOLS = 'libs/core/src/pm/tools.ts';
 const LEGACY = 'libs/core/src/pm/legacy.ts';
 const SLOTS = 'libs/core/src/pm/slots.ts';
+const CLI = 'package:apps/cli';
+const DOCTOR = 'apps/cli/src/doctor.ts';
 
 function slideOf(cell: string, map: MapJson = DEMO): Slide {
   const slide = cellSlide(map, cell);
@@ -87,6 +89,39 @@ test("a cell's slide is its dented membrane with the barrel's exports on it, its
   expect(cellSlide(DEMO, 'folder:nowhere')).toBeUndefined();
 });
 
+test("a package's slide holds the file of each single-file cell it holds as a body beside its own, floating by its package ties, and cuts holes only for its folders and directories (D167)", () => {
+  // apps/cli holds its barrel and the single-file module doctor.ts, and no folder: one slide, two bodies, no holes.
+  const cli = slideOf(CLI);
+  expect(cli.files.map((file) => file.id)).toEqual([DOCTOR, 'apps/cli/src/index.ts']);
+  expect(cli.holes).toEqual([]);
+  expect(cli.vertices.length).toBe(cli.ring.length * 2);
+  for (const file of cli.files) expect(file.rest).toEqual(DEMO.terrain.layout?.positions[file.id]);
+  // doctor.ts is held once from inside apps/cli and reaches out twice; the barrel's one tie is to doctor.ts beside it.
+  expect(cli.files.map((file) => [file.id, file.looseness])).toEqual([
+    [DOCTOR, 2 / 3],
+    ['apps/cli/src/index.ts', 0],
+  ]);
+  // The module floats on its package's slide, so it has none of its own.
+  expect(cellSlide(DEMO, 'single:apps/cli/src/doctor.ts')).toBeUndefined();
+  // libs/core holds a folder and a directory and no single-file module: holes for both, and its barrel alone on the slide.
+  const core = slideOf(CORE);
+  expect(core.holes).toHaveLength(2);
+  expect(core.files.map((file) => file.id)).toEqual(['libs/core/src/index.ts']);
+  // A module the map gives no package ties stays still there (C2).
+  const untied: MapJson = {
+    ...DEMO,
+    terrain: {
+      ...DEMO.terrain,
+      organelles: DEMO.terrain.organelles.map((organelle) => {
+        if (organelle.id !== DOCTOR) return organelle;
+        const { package_ties: _, ...rest } = organelle;
+        return rest;
+      }),
+    },
+  };
+  expect(slideOf(CLI, untied).files.find((file) => file.id === DOCTOR)?.looseness).toBeUndefined();
+});
+
 test("the membrane writes the names a few to a line in columns as wide as their longest, the rest counted past a dozen, and the count alone where the map records no names (D162, C2)", () => {
   const names = Array.from({ length: 14 }, (_, index) => `name${'x'.repeat(index % 3)}${String(index).padStart(2, '0')}`);
   expect(exportsWords({ count: names.length, names, barrel: 'index.ts', x: 0, y: 0 })).toEqual([
@@ -119,8 +154,8 @@ test('each file is stained by what the change did to it, with the share of its c
   expect(stain(TOOLS)).toEqual({ kind: 'added', open: 2 / 9 });
   expect(stain(LEGACY)).toEqual({ kind: 'deleted', open: 0 });
   expect(stain(SLOTS)).toBeUndefined();
-  const doctor = slideOf('single:apps/cli/src/doctor.ts');
-  expect(doctor.files[0]?.stain).toEqual({ kind: 'modified', open: 1 });
+  // doctor.ts floats on its package's slide, and its stain rides with it there (D167).
+  expect(slideOf(CLI).files.find((file) => file.id === DOCTOR)?.stain).toEqual({ kind: 'modified', open: 1 });
   const renamed: MapJson = { ...DEMO, weather: { ...DEMO.weather, changed: DEMO.weather.changed.map((file) => (file.path === INDEX ? { ...file, kind: 'renamed', from: 'libs/core/src/pm/main.ts' } : file)) } };
   expect(slideOf(PM, renamed).files.find((file) => file.id === INDEX)?.stain).toEqual({ kind: 'renamed', from: 'libs/core/src/pm/main.ts', open: 5 / 9 });
   // The rules each file breaks, and how loosely its cell holds it, ride with it.

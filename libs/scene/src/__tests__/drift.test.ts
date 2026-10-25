@@ -30,6 +30,9 @@ const RULES = 'directory:src/rules';
 const TOOLS = 'libs/core/src/pm/tools.ts';
 const SLOTS = 'libs/core/src/pm/slots.ts';
 const INDEX = 'libs/core/src/pm/index.ts';
+const CLI = 'package:apps/cli';
+const DOCTOR = 'apps/cli/src/doctor.ts';
+const CLI_BARREL = 'apps/cli/src/index.ts';
 const MINUTE_MS = 60_000;
 
 /** The demo with these files' ties set as given. */
@@ -121,13 +124,13 @@ function inside(ring: Ring, x: number, y: number): boolean {
   return within;
 }
 
-/** A cell's membrane as the slide draws it, teeth and all, and the skins of the cells it holds. */
+/** A cell's membrane as the slide draws it, teeth and all, and the skins of the cells it holds, but a single-file module, whose file floats on it (D167). */
 function skinsOf(map: MapJson, cell: string): { readonly membrane: Ring; readonly held: readonly Ring[] } {
   const contours = map.terrain.layout?.contours ?? {};
   const dentsOf = (id: string): number => map.terrain.cells.find((each) => each.id === id)?.dents.length ?? 0;
   return {
     membrane: openRing(dentedRing(contours[cell] ?? [], dentsOf(cell))),
-    held: map.terrain.cells.filter((each) => each.parent === cell).map((each) => openRing(dentedRing(contours[each.id] ?? [], dentsOf(each.id)))),
+    held: map.terrain.cells.filter((each) => each.parent === cell && each.kind !== 'single').map((each) => openRing(dentedRing(contours[each.id] ?? [], dentsOf(each.id)))),
   };
 }
 
@@ -397,4 +400,65 @@ test('as a cell closes the surface holds its files where they last floated while
   expect(scheduler.float(LOOSE, view).surface.size).toBe(0);
   fill = CELL_GATE.open;
   expect(scheduler.float(LOOSE, view).surface.size).toBe(0);
+});
+
+test("an opened package floats its single-file modules on its slide by their package ties, every body inside the slide's membrane through a minute of seeded time, and still under reduced motion (D167)", () => {
+  const floats = minute(DEMO, CLI, openingScreen(DEMO, CLI));
+  expect(floats[0]?.files.map((file) => [file.id, file.looseness])).toEqual([
+    [DOCTOR, 2 / 3],
+    [CLI_BARREL, 0],
+  ]);
+  expect(strays(DEMO, CLI, floats)).toEqual([]);
+  // doctor.ts reaches out of apps/cli for two of its three ties, so it wanders; the barrel, held by doctor.ts alone, stays home.
+  expect(farthest(DEMO, floats, DOCTOR)).toBeGreaterThan(0);
+  expect(farthest(DEMO, floats, CLI_BARREL)).toBe(0);
+  expect(fastestStep(floats)).toBeLessThanOrEqual((DRIFT_SPEED * openingScreen(DEMO, CLI) * DRIFT_STEP_MS) / 1000 + 1e-9);
+  // Its own cell of one file floats nothing, and under reduced motion the package's bodies sit where the layout put them.
+  expect(driftOf(DEMO, 'single:apps/cli/src/doctor.ts', 30_000, { seed: 7, screen: 400 })).toEqual([]);
+  const stilled = driftOf(DEMO, CLI, 30_000, { seed: 7, screen: 400, reduced: true });
+  expect(stilled.map((file) => [file.id, file.x, file.y])).toEqual([DOCTOR, CLI_BARREL].map((id) => [id, restOf(DEMO, id).x, restOf(DEMO, id).y]));
+  // A module the map gives no package ties stays still there (C2).
+  const untied: MapJson = {
+    ...DEMO,
+    terrain: {
+      ...DEMO.terrain,
+      organelles: DEMO.terrain.organelles.map((organelle) => {
+        if (organelle.id !== DOCTOR) return organelle;
+        const { package_ties: _, ...rest } = organelle;
+        return rest;
+      }),
+    },
+  };
+  expect(farthest(untied, minute(untied, CLI, openingScreen(untied, CLI)), DOCTOR)).toBe(0);
+});
+
+test('as a package closes the surface holds its module where it last floated, and eases it home as the view climbs on (D165, D167)', () => {
+  const clock = { now: 0 };
+  let fill = CELL_GATE.open;
+  const screen = openingScreen(DEMO, CLI);
+  const view: FloatView = { screen, fill: () => fill };
+  const scheduler = createScheduler({ clock: () => clock.now, seed: 7, tiers: [], reduced: false });
+  scheduler.load();
+  const ask = (): void => {
+    scheduler.frame();
+    scheduler.float(DEMO, view);
+  };
+  scheduler.open(CLI);
+  floatUntil(clock, 20_000, ask);
+  const floated = scheduler.float(DEMO, view).open;
+  expect(floated).toEqual(driftOf(DEMO, CLI, 20_000, { seed: 7, screen }));
+  const doctor = fileOf(floated, DOCTOR);
+  expect([doctor.x, doctor.y]).not.toEqual([restOf(DEMO, DOCTOR).x, restOf(DEMO, DOCTOR).y]);
+  // Closed where the package still fills the screen: the surface draws the module where it floated, and the barrel, never away, at its place.
+  scheduler.open(undefined);
+  floatUntil(clock, clock.now + 5000, ask);
+  const closed = scheduler.float(DEMO, view).surface;
+  expect(closed).toEqual(new Map([[DOCTOR, [doctor.x, doctor.y]]]));
+  // Halfway between the gate's close and its home it is halfway home, and past its home it is home.
+  fill = (CELL_GATE.close + CELL_GATE.home) / 2;
+  const halfway = scheduler.float(DEMO, view).surface.get(DOCTOR) ?? [0, 0];
+  expect(halfway[0]).toBeCloseTo((doctor.x + restOf(DEMO, DOCTOR).x) / 2, 9);
+  expect(halfway[1]).toBeCloseTo((doctor.y + restOf(DEMO, DOCTOR).y) / 2, 9);
+  fill = CELL_GATE.home;
+  expect(scheduler.float(DEMO, view).surface.size).toBe(0);
 });

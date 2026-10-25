@@ -11,7 +11,8 @@
  * keeps it open, `x` spreads the exploded view, and `w` lays the cell's wiring
  * out on a plate in the chrome (step 41); Esc closes it, the surface holds its
  * files where they floated, and zooming out toward the field brings them
- * home. A third
+ * home. Framed on a package, the world opens it on its modules, the file of
+ * the single-file cell it holds tagged beside its barrel (D167). A fourth
  * emulates `prefers-reduced-motion` and holds the frames still after load, in
  * an opened cell and across a fly-to, beside a page with motion on whose
  * frames move (step 42).
@@ -252,6 +253,21 @@ const twoFrames = async (page: Page, apart: number): Promise<readonly [Buffer, B
   await page.waitForTimeout(apart);
   return [first, await page.screenshot({ type: 'png' })];
 };
+
+test('framed on a package, the world opens it on its modules, tagging the file of the single-file cell it holds beside its barrel, with a clean console (D167)', { timeout: 120_000 }, async () => {
+  const { server, url } = await serve();
+  const browser = await launch();
+  try {
+    const cell = 'package:apps/cli';
+    const { page, complaints } = await openedOn(browser, url, cell, 'no-preference');
+    const tags = await page.$$eval('[data-interior-tag]', (elements) => elements.map((element) => element.textContent));
+    expect(tags.toSorted()).toEqual(['doctor.ts', 'index.ts']);
+    expect(complaints).toEqual([]);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
 
 test('under reduced motion nothing changes from frame to frame after load, in an opened cell or across a fly-to, while with motion on the same frames move, with a clean console', { timeout: 120_000 }, async () => {
   const { server, url } = await serve();

@@ -1,8 +1,10 @@
 /**
  * interior: an opened cell as a stained slide (§5.6's inside, §6's LOD2),
  * laid out for the world and tested here. The slide is the cell's membrane,
- * teeth and all (D159), cut into triangles with a hole for each cell it holds,
- * so a package's slide never covers the folders inside it; the membrane is
+ * teeth and all (D159), cut into triangles with a hole for each folder and
+ * directory it holds, so a package's slide never covers the folders inside
+ * it, while the file of each single-file cell it holds is a body on it beside
+ * the package's own (D167); the membrane is
  * the frame round the files, and the barrel's exports are written on it, the
  * names the map records under their count, a few to a line and the rest
  * counted past a dozen, or the count alone where the map records no names
@@ -28,7 +30,7 @@ import earcut from 'earcut';
 import { membraneThickness } from 'core';
 import type { ChangeKind, MapJson, Position } from 'core';
 
-import { loosenessOf } from './drift.js';
+import { heldCellsOf, slideCellOf, slideFilesOf } from './drift.js';
 import type { Drifted } from './drift.js';
 import { LABELING } from './labels.js';
 import type { LabelBox, Labeling } from './labels.js';
@@ -237,7 +239,8 @@ function explodedOf(files: readonly { readonly id: string; readonly rest: Positi
 
 /**
  * The slide an opened cell shows, laid once as it opens: none for a cell the
- * map lacks or the layout drew no skin for. The barrel's exports sit on the
+ * map lacks, the layout drew no skin for, or whose file floats on its
+ * package's slide (D167). The barrel's exports sit on the
  * membrane nearest the barrel's own body, or at the membrane's top when the
  * cell has no barrel on the slide.
  */
@@ -245,15 +248,12 @@ export function cellSlide(map: MapJson, cell: string, layout: InteriorLayout = I
   const found = map.terrain.cells.find((each) => each.id === cell);
   const contours = map.terrain.layout?.contours ?? {};
   const contour = contours[cell];
-  if (found === undefined || contour === undefined || contour.length < 3) return undefined;
+  if (found === undefined || contour === undefined || contour.length < 3 || slideCellOf(map, cell) !== cell) return undefined;
   const ring = openRing(dentedRing(contour, found.dents.length));
-  const holes = map.terrain.cells
-    .filter((each) => each.parent === cell)
-    .toSorted((a, b) => byPath(a.id, b.id))
-    .flatMap((each) => {
-      const held = contours[each.id];
-      return held === undefined || held.length < 3 ? [] : [openRing(held)];
-    });
+  const holes = heldCellsOf(map, cell).flatMap((each) => {
+    const held = contours[each.id];
+    return held === undefined || held.length < 3 ? [] : [openRing(held)];
+  });
   const flat = [ring, ...holes].flatMap((each) => each.flatMap(([x, y]) => [x, y]));
   const holeStarts: number[] = [];
   let start = ring.length;
@@ -265,12 +265,11 @@ export function cellSlide(map: MapJson, cell: string, layout: InteriorLayout = I
 
   const positions = map.terrain.layout?.positions ?? {};
   const stains = stainsOf(map);
-  const placed = map.terrain.organelles.filter((organelle) => organelle.cell === cell && positions[organelle.id] !== undefined).toSorted((a, b) => byPath(a.id, b.id));
-  const rests = placed.map((organelle) => ({ id: organelle.id, rest: positions[organelle.id] ?? { x: 0, y: 0, r: 0 } }));
+  const placed = slideFilesOf(map, cell);
+  const rests = placed.map(({ organelle }) => ({ id: organelle.id, rest: positions[organelle.id] ?? { x: 0, y: 0, r: 0 } }));
   const exploded = explodedOf(rests, centre, radius, layout);
-  const files = placed.map((organelle, index): SlideFile => {
+  const files = placed.map(({ organelle, looseness }, index): SlideFile => {
     const stain = stains.get(organelle.id);
-    const looseness = loosenessOf(organelle);
     return {
       id: organelle.id,
       rest: rests[index]?.rest ?? { x: 0, y: 0, r: 0 },

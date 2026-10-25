@@ -32,8 +32,9 @@
  * fly-to, and the skin swings as it lands; the stop goes back over the line
  * for the HUD's breadcrumb (step 39). From the surface on, the innermost cell
  * under the view's centre opens as a stained slide once its skin fills the
- * cell gate's share of the free screen, if it holds files of its own (step
- * 40, D155, D165): the scene lays it and
+ * cell gate's share of the free screen, if its slide shows files (step 40,
+ * D155, D165), a single-file module opening as the package it floats in
+ * (D167): the scene lays it and
  * its bodies, which float where the scheduler floats them, slowly and on the
  * screen's scale, the surface's files and marks in it give way beneath, the
  * labels leave its files to the slide's own tags, and the pointer picks and
@@ -63,7 +64,7 @@
 import { AgXToneMapping, AmbientLight, Color, DataUtils, DirectionalLight, RenderPipeline, Scene, Vector3, WebGPUCoordinateSystem, WebGPURenderer } from 'three/webgpu';
 import { emissive, mrt, output, pass } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
-import { FIELD_FILL, MOTION_TOKENS, REACH_ORIGIN_OPACITY, RELIEF, cellSlide, cellWiring, createPicker, createScheduler, fillOf, gridFor, instances, interiorOf, surfacePoint } from 'scene';
+import { FIELD_FILL, MOTION_TOKENS, REACH_ORIGIN_OPACITY, RELIEF, cellSlide, cellWiring, createPicker, createScheduler, fillOf, gridFor, instances, interiorOf, slideCellOf, surfacePoint } from 'scene';
 import type { Lod, Pick, Point, Slide } from 'scene';
 import type { MapJson } from 'core';
 
@@ -264,9 +265,11 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     const floated = lod === 0 ? undefined : floatedAt(ground, slop);
     if (floated !== undefined) return floated;
     const pick = picker.pick(ground, lod, slop);
+    // Under the open slide, a module that floats on it answers as the slide's ground, its skin and its file's place alike (D167).
+    const shown = slide !== undefined && opening.open === slide.cell ? slide.cell : undefined;
+    if (pick !== undefined && shown !== undefined && slideCellOf(map, pick.cell) === shown && (pick.kind === 'organelle' || pick.cell !== shown)) return { kind: 'membrane', cell: shown };
     // A file drawn where it floated has left where the layout put it, so the picker's place for it answers as its cell.
-    const away = pick?.kind === 'organelle' && ((slide !== undefined && opening.open === slide.cell && pick.cell === slide.cell) || floatedOnSurface.has(pick.path));
-    return away && pick !== undefined ? { kind: 'membrane', cell: pick.cell } : pick;
+    return pick?.kind === 'organelle' && floatedOnSurface.has(pick.path) ? { kind: 'membrane', cell: pick.cell } : pick;
   };
   /** The thing under a point of the page at a level of detail, picked with the hover's reach past a file's edge; a floated file where it has floated. */
   const hoveredAt = (at: { readonly x: number; readonly y: number }, lod: Lod): Hovered | undefined => {
@@ -325,8 +328,9 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     pressed = undefined;
     if (press === undefined || Math.hypot(event.clientX - press.x, event.clientY - press.y) > CLICK_SLOP || performance.now() - press.at > CLICK_MS) return;
     const ground = groundAt({ x: event.clientX, y: event.clientY });
-    // A file of the opened cell answers the click where it has floated, so a click on it keeps its cell open (D165); a cell with no files of its own answers as open ground.
-    const picked = ground === undefined ? undefined : pickAt(ground, lastLod, 0);
+    // A file of the opened cell answers the click where it has floated, so a click on it keeps its cell open (D165); a module answers as the package it floats in (D167); a cell whose slide shows no files answers as open ground.
+    const found = ground === undefined ? undefined : pickAt(ground, lastLod, 0);
+    const picked = found === undefined ? undefined : { ...found, cell: slideCellOf(map, found.cell) };
     const pick = picked?.kind === 'membrane' && !withFiles.has(picked.cell) ? undefined : picked;
     apply(openedBy(opening, { kind: 'click', lod: lastLod, pick, holds: holdsIn(boxOf(outlineOf(camera, canvas.clientWidth, chrome))) }));
   });
@@ -348,11 +352,12 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     const screen = { width: Math.max(1, canvas.clientWidth - RAIL_WIDTH), height: canvas.clientHeight, pixelsPerUnit: pixelsPerUnit(camera, canvas.clientWidth) };
     return box === undefined ? 0 : fillOf({ width: box.x1 - box.x0, height: box.y1 - box.y0 }, screen);
   };
-  // A cell with no placed files of its own, a package whose files all sit in the cells it holds, has nothing to show as a slide but holes, so it never opens and its ground is open ground.
-  const withFiles = new Set([...placed.values()].map((file) => file.cell));
-  /** The innermost cell under a layout point, once its skin fills the gate's share of the free screen and it holds files of its own: the cell that opens there. A cell that holds it never opens in its stead, so zooming in on a folder opens the folder. */
+  // A cell whose slide shows no files, a package whose files all sit in the folders it holds, has nothing to show but holes, so it never opens and its ground is open ground; a package of modules shows them (D167).
+  const withFiles = new Set([...placed.values()].map((file) => slideCellOf(map, file.cell)));
+  /** The innermost cell under a layout point, or the package a single-file module there floats in (D167), once its skin fills the gate's share of the free screen and its slide shows files: the cell that opens there. A cell that holds it never opens in its stead, so zooming in on a folder opens the folder. */
   const openableAt = (point: Point): string | undefined => {
-    const cell = picker.pick(point, 1, 0)?.cell;
+    const under = picker.pick(point, 1, 0)?.cell;
+    const cell = under === undefined ? undefined : slideCellOf(map, under);
     return cell !== undefined && withFiles.has(cell) && fillOfCell(cell) >= levels.cellOpen ? cell : undefined;
   };
   /** Whether a cell holds open with the view on this stretch of the ground: some of it in view, and filling at least the share it holds at. */

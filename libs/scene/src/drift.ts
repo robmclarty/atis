@@ -6,9 +6,16 @@
  * cellmates sits still near the middle, and a file that works with none of
  * them wanders furthest. Drift means looseness, as C11 names it.
  *
- * A file alone in its cell, a deleted file, and a file the map gives no
- * `ties` stay still (C2). So does every file under reduced motion (C12), and
- * in the SVG, which never draws it.
+ * An opened package floats the file of each single-file cell it holds on its
+ * own slide, beside its own files, and cuts holes only for the folders and
+ * directories it holds (D167): checkride's convention makes each
+ * `src/<name>.ts` a cell of one file, so a package was otherwise its barrel
+ * and a sheet of holes. On a package's slide a file's looseness is the share
+ * of its `package_ties` that leave the package.
+ *
+ * A file alone on its slide, a deleted file, and a file the map gives no
+ * ties to read stay still (C2). So does every file under reduced motion
+ * (C12), and in the SVG, which never draws it.
  *
  * The float is stepped, `DRIFT_STEP_MS` at a time whatever the frame rate,
  * from rest or from wherever the surface last drew the cell's files, so one
@@ -24,7 +31,7 @@
  * membrane or jumps, at any zoom.
  */
 
-import type { MapJson, Organelle } from 'core';
+import type { Cell, MapJson, Organelle } from 'core';
 
 import { dentedRing } from './membranes.js';
 import { openRing } from './raster.js';
@@ -69,14 +76,66 @@ const ROUNDS = 2;
 const EPSILON = 1e-6;
 
 /**
- * A file's looseness, 0 to 1: the share of its ties that leave its cell, and 1
- * for a file with none. A file the map gives no ties has none (C2).
+ * A file's looseness, 0 to 1: the share of its ties that leave its cell, or
+ * its package on a package's slide (D167), and 1 for a file with none. A file
+ * the map gives no such ties has none (C2).
  */
-export function loosenessOf(organelle: Organelle): number | undefined {
-  const ties = organelle.ties;
+export function loosenessOf(organelle: Organelle, home: 'cell' | 'package' = 'cell'): number | undefined {
+  const ties = home === 'package' ? organelle.package_ties : organelle.ties;
   if (ties === undefined) return undefined;
   const total = ties.inside + ties.outside;
   return total === 0 ? 1 : ties.outside / total;
+}
+
+function byPath(a: { readonly id: string }, b: { readonly id: string }): number {
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+}
+
+/** A file an opened cell's slide shows, and how loose it is there. */
+export type OnSlide = { readonly organelle: Organelle; readonly looseness: number | undefined };
+
+/** Each cell's slide, per map: the cell whose slide shows its files, and each slide's placed files in path order. */
+type Slides = { readonly slideOf: ReadonlyMap<string, string>; readonly files: ReadonlyMap<string, readonly OnSlide[]> };
+
+const SLIDES = new WeakMap<MapJson, Slides>();
+
+function slidesOf(map: MapJson): Slides {
+  const cached = SLIDES.get(map);
+  if (cached !== undefined) return cached;
+  const cells = new Map(map.terrain.cells.map((cell) => [cell.id, cell] as const));
+  const slideOf = new Map(map.terrain.cells.map((cell) => [cell.id, cell.kind === 'single' && cell.parent !== undefined && cells.get(cell.parent)?.kind === 'package' ? cell.parent : cell.id] as const));
+  const positions = map.terrain.layout?.positions ?? {};
+  const files = new Map<string, OnSlide[]>();
+  for (const organelle of map.terrain.organelles.toSorted(byPath)) {
+    if (positions[organelle.id] === undefined) continue;
+    const slide = slideOf.get(organelle.cell) ?? organelle.cell;
+    const looseness = loosenessOf(organelle, cells.get(slide)?.kind === 'package' ? 'package' : 'cell');
+    const list = files.get(slide) ?? [];
+    list.push({ organelle, looseness });
+    files.set(slide, list);
+  }
+  const slides: Slides = { slideOf, files };
+  SLIDES.set(map, slides);
+  return slides;
+}
+
+/**
+ * The cell whose slide shows a cell's files: the package's, for a single-file
+ * cell a package holds, whose file floats on the package's slide (D167), and
+ * the cell's own otherwise.
+ */
+export function slideCellOf(map: MapJson, cell: string): string {
+  return slidesOf(map).slideOf.get(cell) ?? cell;
+}
+
+/** The placed files an opened cell's slide shows, in path order: its own, and a package's single-file cells' (D167), each with its looseness there. */
+export function slideFilesOf(map: MapJson, cell: string): readonly OnSlide[] {
+  return slidesOf(map).files.get(cell) ?? [];
+}
+
+/** The cells an opened cell cuts out of its slide, in id order: every cell it holds but those whose files float on it (D167). */
+export function heldCellsOf(map: MapJson, cell: string): readonly Cell[] {
+  return map.terrain.cells.filter((each) => each.parent === cell && slideCellOf(map, each.id) !== cell).toSorted(byPath);
 }
 
 /** A file as the float reads it: where it rests, how freely it moves, and how far it rests from the membrane and from each cell its cell holds. */
@@ -168,23 +227,13 @@ function crossings(edges: Edges, list: Int32Array, x0: number, y0: number, x1: n
   return count;
 }
 
-function byPath(a: { readonly id: string }, b: { readonly id: string }): number {
-  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
-}
-
 /** Each cell's float as laid, per map, so a frame steps it without laying it again. */
 const LAID = new WeakMap<MapJson, Map<string, Laid | undefined>>();
 
-/** The placed files of `cell`, in path order. */
-function placedIn(map: MapJson, cell: string): readonly Organelle[] {
-  const positions = map.terrain.layout?.positions ?? {};
-  return map.terrain.organelles.filter((organelle) => organelle.cell === cell && positions[organelle.id] !== undefined).toSorted(byPath);
-}
-
 /**
- * A cell's float laid: none for a cell with fewer than two placed files or no
- * skin, whose files all stay still. A file the layout rests outside its
- * membrane, or inside a cell its cell holds, stays still too.
+ * A cell's float laid: none for a cell with fewer than two placed files on
+ * its slide or no skin, whose files all stay still. A file the layout rests
+ * outside its membrane, or inside a cell its cell holds, stays still too.
  */
 function laidOf(map: MapJson, cell: string): Laid | undefined {
   const cached = LAID.get(map) ?? new Map<string, Laid | undefined>();
@@ -193,25 +242,21 @@ function laidOf(map: MapJson, cell: string): Laid | undefined {
   const contours = map.terrain.layout?.contours ?? {};
   const contour = contours[cell];
   const found = map.terrain.cells.find((each) => each.id === cell);
-  const organelles = placedIn(map, cell);
+  const onSlide = slideFilesOf(map, cell);
   let laid: Laid | undefined;
-  if (found !== undefined && contour !== undefined && contour.length >= 3 && organelles.length >= 2) {
+  if (found !== undefined && contour !== undefined && contour.length >= 3 && onSlide.length >= 2) {
     const outline = openRing(dentedRing(contour, found.dents.length));
     const ring = edgesOf(outline);
-    const holes = map.terrain.cells
-      .filter((each) => each.parent === cell)
-      .toSorted(byPath)
-      .flatMap((each) => {
-        const held = contours[each.id];
-        return held === undefined || held.length < 3 ? [] : [edgesOf(openRing(dentedRing(held, each.dents.length)))];
-      });
+    const holes = heldCellsOf(map, cell).flatMap((each) => {
+      const held = contours[each.id];
+      return held === undefined || held.length < 3 ? [] : [edgesOf(openRing(dentedRing(held, each.dents.length)))];
+    });
     const cx = outline.reduce((total, [x]) => total + x, 0) / outline.length;
     const cy = outline.reduce((total, [, y]) => total + y, 0) / outline.length;
     const radius = Math.max(...outline.map(([x, y]) => Math.hypot(x - cx, y - cy)));
     const positions = map.terrain.layout?.positions ?? {};
-    const files = organelles.map((organelle): Resting => {
+    const files = onSlide.map(({ organelle, looseness }): Resting => {
       const at = positions[organelle.id] ?? { x: 0, y: 0, r: 0 };
-      const looseness = loosenessOf(organelle);
       const placed = insideEdges(ring, at.x, at.y) && holes.every((hole) => !insideEdges(hole, at.x, at.y));
       return {
         id: organelle.id,
@@ -257,13 +302,13 @@ function nearOf(laid: Laid, reach: number): Near {
   return near;
 }
 
-/** The float of `cell` at rest as it opens: every placed file where the layout put it. */
+/** The float of `cell` at rest as it opens: every placed file on its slide where the layout put it. */
 export function startFloat(map: MapJson, cell: string): Float {
   const laid = laidOf(map, cell);
   const positions = map.terrain.layout?.positions ?? {};
-  const files = placedIn(map, cell).map((organelle): Drifted => {
+  const files = slideFilesOf(map, cell).map(({ organelle, looseness }): Drifted => {
     const at = positions[organelle.id] ?? { x: 0, y: 0, r: 0 };
-    return { id: organelle.id, x: at.x, y: at.y, r: at.r, looseness: laid === undefined ? undefined : loosenessOf(organelle) };
+    return { id: organelle.id, x: at.x, y: at.y, r: at.r, looseness: laid === undefined ? undefined : looseness };
   });
   return { cell, t: 0, wander: 0, files };
 }
