@@ -35,7 +35,7 @@ import type { MapJson, NoticeTier } from 'core';
 import { DRIFT_TOKENS, driftOf } from './drift.js';
 import type { Drifted, DriftTokens } from './drift.js';
 import { lodPlan } from './lod.js';
-import type { LodPlan } from './lod.js';
+import type { LodGate, LodPlan } from './lod.js';
 import { AT_REST, MAX_RULES } from './shape.js';
 import type { ShapeMotion } from './shape.js';
 import {
@@ -175,8 +175,8 @@ export type Scheduler = {
   readonly hover: (on: boolean) => void;
   /** Start a fly-to. */
   readonly flyTo: () => void;
-  /** The frame at the clock's time; given the camera's zoom, its levels of detail too. */
-  readonly frame: (zoom?: number) => MotionFrame;
+  /** The frame at the clock's time; given the camera's zoom, its levels of detail too, through the gates handed in or `LOD_GATES`. */
+  readonly frame: (zoom?: number, gates?: readonly LodGate[]) => MotionFrame;
   /** How a shape breaking `rules` rules moves at the clock's time, inside an opened cell (D147). */
   readonly shape: (rules: number) => ShapeMotion;
   /** Open a cell now, or close the open one with `undefined`; its slide fades in or out from here, and its exploded view gathers. */
@@ -326,7 +326,7 @@ export function createScheduler({ clock, seed, tiers, reduced, tokens: T = MOTIO
     retire(now);
   };
 
-  const frame = (zoom?: number): MotionFrame => {
+  const frame = (zoom?: number, gates?: readonly LodGate[]): MotionFrame => {
     const now = clock();
     const elapsed = lastFrame === undefined ? 0 : now - lastFrame;
     lastFrame = now;
@@ -335,7 +335,7 @@ export function createScheduler({ clock, seed, tiers, reduced, tokens: T = MOTIO
     hoverValue = T.HOVER_MS <= 0 ? hoverTarget : hoverValue < hoverTarget ? Math.min(hoverTarget, hoverValue + elapsed / T.HOVER_MS) : Math.max(hoverTarget, hoverValue - elapsed / T.HOVER_MS);
     const flying = flyStart === undefined ? undefined : reduced ? 1 : easeInOut((now - flyStart) / T.FLY_TO_MS);
     if (flyStart !== undefined && (reduced || now - flyStart >= T.FLY_TO_MS)) flyStart = undefined;
-    lod = zoom === undefined ? lod : lodPlan(lod, zoom, elapsed, T.LOD_FADE_MS);
+    lod = zoom === undefined ? lod : lodPlan(lod, zoom, elapsed, T.LOD_FADE_MS, gates);
     shown = approach(shown, opened === undefined ? 0 : 1, elapsed);
     exploded = approach(exploded, explodeTarget, elapsed);
     if (shown === 0 && opened === undefined) {

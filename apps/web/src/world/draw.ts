@@ -63,7 +63,7 @@ import { RAIL_WIDTH, zoomFor } from '../fit.js';
 import { hoverOf } from '../hover.js';
 import type { Hovered } from '../hover.js';
 import { marksOf } from '../marks.js';
-import { BLOOM, HOVER, INTERIOR, LIGHTING, NOTICE, SKIN, SKY, WALK, WEATHER } from '../materials.js';
+import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, NOTICE, SKIN, SKY, WALK, WEATHER } from '../materials.js';
 import type { Nav } from '../nav.js';
 import { runsOf } from '../notices.js';
 import { CELL_LOD, CLOSED, cellOf, openedBy, openedOf } from '../opened.js';
@@ -73,7 +73,7 @@ import type { View } from '../view.js';
 import { FIELD, createWalk, ownsKey } from '../walk.js';
 import type { Stop } from '../walk.js';
 import { createBolts } from './bolts.js';
-import { centreOn, clampZoom, createCamera, createControls, fitCamera, outlineOf, pixelsPerUnit, rayAt, standAt, standOf } from './camera.js';
+import { centreOn, clampZoom, createCamera, createControls, fitCamera, outlineOf, pixelsPerUnit, rayAt, smoothControls, standAt, standOf } from './camera.js';
 import type { Stand } from './camera.js';
 import { TAG_LOOK, createHover } from './hover.js';
 import { SLIDE_CHROME, createInterior } from './interior.js';
@@ -197,6 +197,8 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   const reduced = globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches;
   canvas.dataset['motion'] = reduced ? 'reduced' : 'full';
   const controls = createControls(camera, canvas, map, view, { right: RAIL_WIDTH }, reduced);
+  const cameraLook = registry.view(CAMERA, 'CAMERA');
+  const levels = registry.view(LEVELS, 'LEVELS');
   // The labels ride their anchors while the camera moves and are laid out afresh once it rests.
   controls.addEventListener('rest', () => {
     placeLabels = true;
@@ -390,13 +392,14 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       skyMoved = false;
     }
     const now = performance.now();
+    smoothControls(controls, cameraLook, reduced);
     controls.update((now - lastFrame) / 1000);
     lastFrame = now;
     // The minimap hears the view's outline only when it moved.
     const outline = outlineOf(camera, canvas.clientWidth, chrome);
     nav.show(outline);
     // The camera's zoom over the fit is the one scalar the levels of detail read.
-    const frame = scheduler.frame(camera.zoom);
+    const frame = scheduler.frame(camera.zoom, levels.gates);
     // The surface's layer: 0 at the far field, 1 from LOD1 on, cross-faded between (D151).
     const surface = frame.lod?.opacity[1] ?? 0;
     const lod = frame.lod?.lod ?? 0;

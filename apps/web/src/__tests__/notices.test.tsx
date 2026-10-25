@@ -108,7 +108,7 @@ test('the rows are the notices in rank order with their words, the thresholds as
 
 test("a box is solid in the category hue for the primary, framed thick in ink for a secondary and thin in the muted grey for a tertiary; NOINST's hue is the muted grey", () => {
   const registry = createRegistry();
-  const look = registry.view({ CHROME_GROUND: '', CHROME_INK: '', CHROME_MUTED: '', CHROME_STROKE_WIDTH: 0, SECONDARY_BOX_WIDTH: 0, CATEGORY_LETTERS: '', FONT_FAMILY: '', VFR_HUE: '', MVFR_HUE: '', IFR_HUE: '', LIFR_HUE: '', NOTICE_TEXT_SIZE: 0, NOTICE_SMALL_SIZE: 0, NOTICE_BOX: 0, NOTICE_NUMERAL_SIZE: 0 });
+  const look = registry.view({ SCREEN_TYPE_UP: 0, CHROME_GROUND: '', CHROME_INK: '', CHROME_MUTED: '', CHROME_STROKE_WIDTH: 0, SECONDARY_BOX_WIDTH: 0, CATEGORY_LETTERS: '', FONT_FAMILY: '', VFR_HUE: '', MVFR_HUE: '', IFR_HUE: '', LIFR_HUE: '', NOTICE_TEXT_SIZE: 0, NOTICE_SMALL_SIZE: 0, NOTICE_BOX: 0, NOTICE_NUMERAL_SIZE: 0 });
   const hue = categoryHue('IFR', look);
   expect(hue).toBe(IFR_HUE);
   expect(categoryHue('NOINST', look)).toBe(look.CHROME_MUTED);

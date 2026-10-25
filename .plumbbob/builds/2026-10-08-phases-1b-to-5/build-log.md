@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 43 — perf(web): hold 60 fps at 5,000 files and a 2 s first frame
+**Current step:** 44 — docs(design): record the world's material tokens and sources
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -70,7 +70,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 41. feat(web): overlay a changed cell's wiring
 - ☑ 101. feat(core): write the barrel's export names on the membrane
 - ☑ 42. feat(web): honour reduced motion
-- ☐ 43. perf(web): hold 60 fps at 5,000 files and a 2 s first frame
+- ☑ 43. perf(web): hold 60 fps at 5,000 files and a 2 s first frame
 - ☐ 44. docs(design): record the world's material tokens and sources
 - ☐ 45. chore(fixtures): select five fresh outside PRs for glance round two
 - ☐ 46. chore(fixtures): generate the round-two maps
@@ -1239,3 +1239,4 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-24 — step 41 checkpointed · e462f476c — feat(web): overlay a changed cell's wiring (<1m)
 - 2026-10-25 — step 101 checkpointed · 0bf7e2c0a — feat(core): write the barrel's export names on the membrane (1 drift, 5m)
 - 2026-10-25 — step 42 checkpointed · 27e040b97 — feat(web): honour reduced motion (7m)
+- 2026-10-25 — step 43 checkpointed · 1a18f99bd — perf(web): hold 60 fps at 5,000 files and a 2 s first frame (1 drift, 25m)

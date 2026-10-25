@@ -6,7 +6,7 @@ import * as scene from 'scene';
 import { MOTION_TOKENS, createScheduler } from 'scene';
 import { expect, test } from 'vitest';
 
-import { BLOOM, HOVER, INTERIOR, LIGHTING, MINIMAP, NOTICE, SKIN, SKY, WALK, WEATHER } from '../materials.js';
+import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, MINIMAP, NOTICE, SKIN, SKY, WALK, WEATHER } from '../materials.js';
 import { MATERIALS_TITLE, SECTIONS, createRegistry, kindOf } from '../registry.js';
 import type { Store } from '../registry.js';
 
@@ -20,7 +20,7 @@ const documented = (): ReadonlyMap<string, readonly string[]> => {
   for (const line of DESIGN.split('\n')) {
     const title = /^## (.+)$/.exec(line);
     if (title?.[1] !== undefined) heading = title[1];
-    const row = /^\| `([A-Z][A-Z0-9_]*)` \|/.exec(line);
+    const row = /^\| `([A-Z][A-Z0-9_]*(?:\.[a-z][A-Za-z0-9]*)?)` \|/.exec(line);
     if (row?.[1] !== undefined) tables.set(heading, [...(tables.get(heading) ?? []), row[1]]);
   }
   return tables;
@@ -40,8 +40,8 @@ test("the panel's sections are the design doc's headings, each listing its table
     expect(section, `the registry has no section for the doc's "${heading}"`).toBeDefined();
     expect(section?.names).toEqual(names);
   }
-  const extra = SECTIONS.filter((section) => !tables.has(section.title)).map((section) => section.title);
-  expect(extra).toEqual([MATERIALS_TITLE]);
+  // Every section is the doc's, the world's materials included (step 44).
+  expect(SECTIONS.filter((section) => !tables.has(section.title)).map((section) => section.title)).toEqual([]);
   const motion = SECTIONS.findIndex((section) => section.title === 'Motion');
   expect(SECTIONS[motion - 1]?.title).toBe(MATERIALS_TITLE);
 });
@@ -49,7 +49,7 @@ test("the panel's sections are the design doc's headings, each listing its table
 /** A material object's fields as the registry names them. */
 const fields = (object: string, from: object): string[] => Object.keys(from).map((field) => `${object}.${field}`);
 
-test("the materials section lists every field of the world's skin, lights, sky, bloom, weather, notices, relief, hover and walk, the minimap's, the slide's and the wiring's", () => {
+test("the materials section lists every field of the world's skin, lights, sky, bloom, weather, notices, relief, levels and camera, hover and walk, the minimap's, the slide's and the wiring's", () => {
   const section = SECTIONS.find((each) => each.title === MATERIALS_TITLE);
   expect(section?.names).toEqual([
     ...fields('SKIN', SKIN),
@@ -59,6 +59,8 @@ test("the materials section lists every field of the world's skin, lights, sky, 
     ...fields('WEATHER', WEATHER),
     ...fields('NOTICE', NOTICE),
     ...fields('RELIEF', scene.RELIEF),
+    ...fields('LEVELS', LEVELS),
+    ...fields('CAMERA', CAMERA),
     ...fields('HOVER', HOVER),
     ...fields('WALK', WALK),
     ...fields('MINIMAP', MINIMAP),

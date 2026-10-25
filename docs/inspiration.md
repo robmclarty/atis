@@ -72,20 +72,23 @@ All permissive; each requires its copyright notice to travel with
 distributed code, so the build carries a third-party notices file.
 `elkjs` is EPL-2.0, which is compatible with an Apache-2.0 project as a
 dependency but is the one licence here that is not MIT/ISC/Zlib; it is used
-only for the LOD2 wiring overlay and can be swapped for d3-force if that
-ever matters.
+only for the LOD2 wiring overlay, loaded the first time a plate is laid, and
+can be swapped for d3-force if that ever matters. The rows with a version are
+installed, pinned at that release, and land where their last column says; the
+rest are evaluated or held in reserve.
 
 | Package | Author | Licence | Used for |
 | --- | --- | --- | --- |
-| `three` | mrdoob and contributors | MIT | The world renderer (§15) |
-| `d3-force`, `d3-hierarchy` | Mike Bostock / Observable | ISC | Within-terrace layout; hierarchy rollups |
-| `bubblesets-js` | Samuel Gratzl (a JavaScript implementation of Collins et al. 2009) | MIT | Membranes |
-| `earcut` | Volodymyr Agafonkin | ISC | Triangulating contours |
-| `camera-controls` | Yomotsu | MIT | Orthographic zoom, pan, tilt |
-| `troika-three-text` | Jason Johnston | MIT | In-world text, if CSS2D labels prove insufficient |
-| `postprocessing` | Raoul van Rüschen | Zlib | Selective bloom, if three's node-based bloom proves insufficient |
-| `elkjs` | Ulf Rüegg and the Eclipse Layout Kernel team, Kiel University | EPL-2.0 OR GPL-3.0-or-later | LOD2 wiring overlay only |
-| `react` | Meta and contributors | MIT | The HUD |
+| `three` 0.186.1 | mrdoob and contributors | MIT | The world renderer (§15): its `WebGPURenderer`, falling back to WebGL 2 by itself, the TSL node materials, and the bloom node over the emissive target, in `apps/web/src/world/` |
+| `d3-force`, `d3-hierarchy` | Mike Bostock / Observable | ISC | Within-terrace layout (`libs/core/src/layout/`); hierarchy rollups |
+| `bubblesets-js` | Samuel Gratzl (a JavaScript implementation of Collins et al. 2009) | MIT | Membranes (`libs/core/src/layout/membranes.ts`) |
+| `earcut` 3.2.4 | Volodymyr Agafonkin | ISC | Triangulating the membranes for the skin and the picker, and an opened cell's slide with its held cells cut out, in `libs/scene/src/membranes.ts` and `libs/scene/src/interior.ts` |
+| `camera-controls` 3.1.2 | Yomotsu | MIT | The orthographic camera's zoom toward the cursor, pan, tilt and rotation, in `apps/web/src/world/camera.ts` |
+| `troika-three-text` | Jason Johnston | MIT | Held in reserve for in-world text; the labels are DOM over the canvas, and have needed none |
+| `postprocessing` | Raoul van Rüschen | Zlib | Held in reserve for selective bloom; three's node-based bloom over the emissive target was enough |
+| `elkjs` 0.12.0 | Ulf Rüegg and the Eclipse Layout Kernel team, Kiel University | EPL-2.0 OR GPL-3.0-or-later | The LOD2 wiring overlay only: `layWiring` in `libs/scene/src/wiring.ts` lays a cell's change-only subgraph out as a layered drawing, its bundle a chunk of its own |
+| `react`, `react-dom` 19.3.1 | Meta and contributors | MIT | The chrome: the HUD and its parts, the breadcrumb, the notices and the shore rail, the legend inset, the minimap, the wiring plate and the dev panel, in `apps/web/src/chrome/` and `apps/web/src/dev/` |
+| `vite` 8.3.5, `@vitejs/plugin-react` 6.1.2 | Evan You and Vite contributors | MIT | Building `apps/web` into the assets the CLI serves (`apps/web/vite.config.ts`), and serving the app from source for the world's smoke test and the budget script (`apps/web/scripts/budget.ts`) |
 | `playwright-core` | Microsoft | Apache-2.0 | Driving the installed Chrome headless, downloading no browser of its own (D145): the world's smoke test (D132) and `--png` |
 | `deck.gl` | vis.gl / OpenJS Foundation | MIT | Evaluated, not chosen (§15) |
 

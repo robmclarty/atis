@@ -4,14 +4,15 @@
  * ambient, and the sky the sheen mirrors. They are the world's tokens beside
  * the scene's (`libs/scene/src/tokens.ts`), kept here as data with no three
  * import so the registry (D156) and its tests read them in Node; `world/`
- * reads each through the registry, so the dev panel moves them live. Step 44
- * records them in `docs/design.md` beside their sources. The minimap's look
- * rides with them (D154), the one piece of chrome the scene's tokens do not
- * already dress, and so does an opened cell's slide (step 40).
+ * reads each through the registry, so the dev panel moves them live, and
+ * `docs/design.md` records every field under "World materials". The levels of
+ * detail's gates and the camera's give ride with them (step 44), and so do the
+ * minimap's look (D154), the one piece of chrome the scene's tokens do not
+ * already dress, and an opened cell's slide (step 40).
  */
 
-import { INTERIOR_LAYOUT } from 'scene';
-import type { InteriorLayout } from 'scene';
+import { INTERIOR_LAYOUT, LOD_GATES } from 'scene';
+import type { InteriorLayout, LodGate } from 'scene';
 
 /** The skin's material: the albedos, the membrane line, how rough and how wet it is, the share of its albedo kept at the far field, and the tissue's own faint light. */
 export type SkinLook = {
@@ -142,6 +143,25 @@ export const SKY: SkyLook = {
     [0.1, 0.5, 0.7, 1.5],
   ],
 };
+
+/**
+ * The camera's give (step 37): how long the controls take to settle on an
+ * input, in seconds, long enough that a wheel's steps read as one continuous
+ * zoom and short enough that nothing coasts once the pointer stops, and the
+ * shorter settle a drag takes. Under reduced motion the controls settle at
+ * once (step 42).
+ */
+export type CameraLook = {
+  readonly smooth: number;
+  readonly dragSmooth: number;
+};
+
+export const CAMERA: CameraLook = { smooth: 0.1, dragSmooth: 0.05 };
+
+/** The levels of detail's gates (§6): the zoom over the fit each of LOD1 to LOD4 is entered at and left at (`libs/scene/src/lod.ts`). */
+export type LevelsLook = { readonly gates: readonly LodGate[] };
+
+export const LEVELS: LevelsLook = { gates: LOD_GATES };
 
 /**
  * The minimap at the chrome's bottom left (D154): flat chrome, never glowing

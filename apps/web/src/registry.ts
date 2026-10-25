@@ -4,8 +4,8 @@
  * the world's materials (`materials.ts`) rest at their exported values; the
  * registry holds the session's overrides over them, and every world material
  * and the scheduler read their tokens through it, so a change shows on the
- * next frame. It lists them by the sections `docs/design.md` gives them, with
- * one more for the world's materials, which the doc records at step 44.
+ * next frame. It lists them by the sections `docs/design.md` gives them, the
+ * world's materials among them.
  *
  * Overrides last for the session, in the store the registry is handed (the
  * tab's `sessionStorage`), so a reload keeps a tuning under way. A fresh tab
@@ -14,18 +14,33 @@
 
 import * as scene from 'scene';
 
-import { BLOOM, HOVER, INTERIOR, LIGHTING, MINIMAP, NOTICE, SKIN, SKY, WALK, WEATHER } from './materials.js';
+import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, MINIMAP, NOTICE, SKIN, SKY, WALK, WEATHER } from './materials.js';
 
 /** One section of the panel: the design doc's heading and the tokens its table names, in the table's order. */
 export type Section = { readonly title: string; readonly names: readonly string[] };
 
 /** The world's material objects, each field a token named `OBJECT.field`. */
-const MATERIALS: Readonly<Record<string, Readonly<Record<string, unknown>>>> = { SKIN, LIGHTING, SKY, BLOOM, WEATHER, NOTICE, RELIEF: scene.RELIEF, HOVER, WALK, MINIMAP, INTERIOR, WIRING: scene.WIRING_SPACING };
+const MATERIALS: Readonly<Record<string, Readonly<Record<string, unknown>>>> = {
+  SKIN,
+  LIGHTING,
+  SKY,
+  BLOOM,
+  WEATHER,
+  NOTICE,
+  RELIEF: scene.RELIEF,
+  LEVELS,
+  CAMERA,
+  HOVER,
+  WALK,
+  MINIMAP,
+  INTERIOR,
+  WIRING: scene.WIRING_SPACING,
+};
 
 const fieldsOf = (object: string): readonly string[] => Object.keys(MATERIALS[object] ?? {}).map((field) => `${object}.${field}`);
 
-/** Where the materials rest; the panel lists them under this heading until the design doc gives them one. */
-export const MATERIALS_TITLE = "Materials (the world's skin, lights, sky, bloom, weather, notices, relief, hover and walk, the minimap, and an opened cell's slide and wiring)";
+/** The world's materials, under the design doc's heading for them; each field is `OBJECT.field`. */
+export const MATERIALS_TITLE = 'World materials';
 
 /** The sections, `docs/design.md`'s headings and tables verbatim, with the materials before the motion. */
 export const SECTIONS: readonly Section[] = [
@@ -134,6 +149,7 @@ export const SECTIONS: readonly Section[] = [
       'LEADER_INK',
       'LEADER_WIDTH',
       'LEADER_DASH',
+      'SCREEN_TYPE_UP',
     ],
   },
   {
@@ -144,7 +160,7 @@ export const SECTIONS: readonly Section[] = [
     title: "The legend inset and the practice map's balloons",
     names: ['LEGEND_ROW', 'LEGEND_SAMPLE_R', 'LEGEND_SLOT', 'LEGEND_FONT_SIZE', 'LEGEND_PAD', 'LEGEND_KEY_PITCH', 'CALLOUT_R', 'CALLOUT_REACH', 'CALLOUT_FONT_SIZE', 'CALLOUT_CLEARANCE'],
   },
-  { title: MATERIALS_TITLE, names: [...fieldsOf('SKIN'), ...fieldsOf('LIGHTING'), ...fieldsOf('SKY'), ...fieldsOf('BLOOM'), ...fieldsOf('WEATHER'), ...fieldsOf('NOTICE'), ...fieldsOf('RELIEF'), ...fieldsOf('HOVER'), ...fieldsOf('WALK'), ...fieldsOf('MINIMAP'), ...fieldsOf('INTERIOR'), ...fieldsOf('WIRING')] },
+  { title: MATERIALS_TITLE, names: [...fieldsOf('SKIN'), ...fieldsOf('LIGHTING'), ...fieldsOf('SKY'), ...fieldsOf('BLOOM'), ...fieldsOf('WEATHER'), ...fieldsOf('NOTICE'), ...fieldsOf('RELIEF'), ...fieldsOf('LEVELS'), ...fieldsOf('CAMERA'), ...fieldsOf('HOVER'), ...fieldsOf('WALK'), ...fieldsOf('MINIMAP'), ...fieldsOf('INTERIOR'), ...fieldsOf('WIRING')] },
   {
     title: 'Motion',
     names: [

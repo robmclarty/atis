@@ -28,6 +28,7 @@ import {
   IFR_HUE,
   LIFR_HUE,
   MVFR_HUE,
+  SCREEN_TYPE_UP,
   VFR_HUE,
 } from 'scene';
 import { useMemo, useState } from 'react';
@@ -61,6 +62,7 @@ const LOOK = {
   IFR_HUE,
   LIFR_HUE,
   MVFR_HUE,
+  SCREEN_TYPE_UP,
   VFR_HUE,
 };
 

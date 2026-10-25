@@ -265,6 +265,8 @@ export const SECONDARY_BOX_WIDTH = 2;
 export const LEADER_INK = '#9aa5b1';
 export const LEADER_WIDTH = 1;
 export const LEADER_DASH = '0.1 3';
+/** How much larger the sheet's type sizes read in the world's chrome, in CSS pixels: the notice text lands at the size the world's labels are set at, and the HUD, the rail and the legend keep step (`apps/web/src/screen.ts`). The still sheet never reads it. */
+export const SCREEN_TYPE_UP = 3;
 
 /**
  * The legend inset (D87): a key in the chrome's own flat material at the

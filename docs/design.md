@@ -3,9 +3,10 @@
 The still SVG is the far-and-surface frame of §5.6 in one image (D11): a
 near-black field, dim tissue, and light only where it means something. This
 document records the colours, strokes, fonts and sizes that image settled on,
-written from the static SVG as §5.6 asks. It also records the motion the moving
-world is timed with (D51), and the materials spike's verdict on the world's look
-(phase 1b), which wave 2 builds to.
+written from the static SVG as §5.6 asks. It also records the world's own
+materials, the motion the moving world is timed with (D51), the materials
+spike's verdict on the world's look (phase 1b), which wave 2 builds to, and the
+world's measured budget.
 
 Two materials share one sheet (D12). The **world** is organic: soft membranes,
 translucent bodies, and glow rendered as luminescence from within, so gradients
@@ -227,6 +228,7 @@ emphasis rings.
 | `LEADER_INK` | `#9aa5b1` | `#leaders`, the dotted lines from a notice row to its mark, and the secondary ring round its target, so no mark on the map shares the evidence light's colour (D72) |
 | `LEADER_WIDTH` | `1` | a leader's width |
 | `LEADER_DASH` | `0.1 3` | a leader's round-dotted dash |
+| `SCREEN_TYPE_UP` | `3` | how much larger, in CSS pixels, the world's chrome sets the sheet's type sizes: the notice text at the world labels' size, and the HUD, the rail and the legend in step; the still sheet never reads it |
 
 ## The shore's band
 
@@ -301,6 +303,169 @@ leader's dots.
 | `CALLOUT_REACH` | `22` | how far a practice balloon stands off its mark |
 | `CALLOUT_FONT_SIZE` | `7` | the number inside a balloon |
 | `CALLOUT_CLEARANCE` | `2` | the clear ground a practice balloon keeps off a notice's marks, the column, the HUD strip and the other balloons |
+
+## World materials
+
+The world's own look, beside the sheet's tokens above: the skin and its lights,
+the sky its sheen mirrors, the bloom, the weather's and the notices' light in
+the world, the relief, the levels of detail and the camera, and the chrome the
+world alone draws (the hover, the walk's framing, the minimap, an opened cell's
+slide and its wiring plate). Each is a field of one object, defined once: the
+skin, lights, sky, bloom, weather, notices, levels, camera, hover, walk, minimap
+and slide in `apps/web/src/materials.ts`, the relief in
+`libs/scene/src/heightfield.ts` (`RELIEF`), the slide's layout in
+`libs/scene/src/interior.ts` (`INTERIOR_LAYOUT`) and the wiring plate's spacing
+in `libs/scene/src/wiring.ts` (`WIRING_SPACING`). The world reads every one
+through the registry, `OBJECT.field` by name, so the dev panel moves it on the
+next frame (D156); the relief and the sky are laid again on the frame after one
+of theirs moves. As above, the code is authoritative and the value here a copy,
+and a test (`apps/web/src/__tests__/registry.test.ts`) keeps these tables naming
+every field the panel lists, in its order.
+
+The values are the materials spike's verdict, a (D151), carried into wave 2
+with the changes its build made: AgX tone mapping in place of the spike's
+Neutral, which took the red out of a graphite this dark; the reach's gain opened
+at 0.7 under the spike's 1.05, which washed white under AgX; and the bloom's
+threshold at 0, since only the emissive target blooms at all (D152). Nothing in
+the base tissue blooms. Its faint rim and each cell's own light are emissive
+only in the colour pass. The skin's light is graded by the levels of detail: at
+the far field the key light, the sky and most of the ambient are off, so only
+the change's stains and the notices light the dark (§5.6).
+
+### The skin
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `SKIN.fieldAlbedo` | `#14181e` | the skin's albedo where it lies on the open field: graphite |
+| `SKIN.tissueAlbedo` | `#2b333d` | the skin's albedo over a cell's body: blue-grey |
+| `SKIN.membraneLine` | `#3c4652` | the membrane line laid into the tissue, added over the albedo as wide as the cell's interface |
+| `SKIN.roughness` | `0.46` | the skin's roughness under the key light |
+| `SKIN.clearcoat` | `1` | the wet sheen: a clearcoat over the albedo |
+| `SKIN.clearcoatRoughness` | `0.14` | how soft the sheen's reflection of the sky is |
+| `SKIN.farAlbedo` | `0.05` | the share of the albedo the far field keeps, lit only by the ambient's floor |
+| `SKIN.rimColour` | `#7f93a6` | the base tissue's faint rim where the skin slopes away from the eye |
+| `SKIN.rimGain` | `0.05` | how strong the rim is; it never blooms |
+| `SKIN.rimPower` | `3` | how sharply the rim falls off with the skin's facing |
+| `SKIN.cellLight` | `0.035` | each cell's own faint light over its body; it never blooms |
+
+### The lights
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `LIGHTING.key` | `#dfe8f2` | the one key light's colour (§5.6's relief) |
+| `LIGHTING.keyIntensity` | `2.2` | its strength at the surface; off at the far field |
+| `LIGHTING.keyFrom` | `[-0.55, 1, -0.45]` | where it shines from, relative to the layout's centre: high in the north-west |
+| `LIGHTING.ambient` | `#8796a8` | the ambient's colour |
+| `LIGHTING.ambientIntensity` | `0.35` | its strength at the surface |
+| `LIGHTING.ambientFloor` | `0.1` | the share of the ambient the far field keeps |
+| `LIGHTING.sky` | `0.35` | the sky's strength in the sheen at the surface; off at the far field |
+
+### The sky the sheen mirrors
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `SKY.band` | `#8ea4ba` | the band of sky below about 60° of elevation, black above it |
+| `SKY.bandGain` | `2.2` | the band's gain over its sRGB value, a high-dynamic-range light the sheen can catch |
+| `SKY.bandTop` | `[0.62, 0.9]` | the elevations, as sines, between which the band fades out going up |
+| `SKY.horizon` | `[-0.1, 0.12]` | the elevations, as sines, across which it fades in over the horizon |
+| `SKY.box` | `#f2f6fa` | the soft boxes' colour |
+| `SKY.boxFocus` | `40` | how narrow each soft box is |
+| `SKY.boxes` | `[[-0.55, 0.62, -0.45, 2.5], [0.6, 0.55, -0.3, 2], [0.1, 0.5, 0.7, 1.5]]` | the three soft boxes round the key light: each one's direction and gain |
+
+### The bloom
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `BLOOM.strength` | `0.9` | how strong the bloom over the emissive target is (D152) |
+| `BLOOM.radius` | `0.5` | how wide it spreads |
+| `BLOOM.threshold` | `0` | the light below which nothing blooms; 0, since only what the emissive target holds blooms at all |
+
+### The weather's light
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `WEATHER.reachGain` | `0.7` | how much the reach lights the skin: its emissive strength over the tissue |
+| `WEATHER.reachBloom` | `0.2` | the reach's share of the bloom, a fifth, so a broad reach stays a luminance and not a fog |
+| `WEATHER.reachBodyGain` | `1.1` | how much brighter the reach reads over a cell's body than in the crease between |
+| `WEATHER.reachSoften` | `2` | how far the reach's edge is softened, in samples of the skin's grid |
+| `WEATHER.markBloom` | `1` | the share of a mark's light the bloom sees (the stains, rings, arcs, stitches and storms) |
+| `WEATHER.ribbonBloom` | `0.3` | the share of an exceptional edge's ribbon light the bloom sees |
+
+### The notices' light
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `NOTICE.haloOpacity` | `0.35` | the primary's halo, a disc in the category hue over its anchor, at this share of the hue's light |
+| `NOTICE.haloBloom` | `1` | the share of the halo's light the bloom sees; the tier rings never bloom (D12, D72) |
+
+### The relief
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `RELIEF.terraceStep` | `4` | how far each band's terrace sits below the one above it, in the heightfield's units |
+| `RELIEF.terraceSoft` | `36` | half the span a terrace edge is eased across, in layout units: soft enough that no line shows (D151) |
+| `RELIEF.swellHeight` | `3` | a swell's peak: up this far under bedrock, down this far under churn (D149) |
+| `RELIEF.swellSpread` | `48` | how broad the swell round each file is, a gaussian's sigma in layout units |
+| `RELIEF.swellOldDays` | `365` | the age, in days, at which a file reads as fully old |
+| `RELIEF.swellChurnFull` | `4` | the churn ratio at which a file reads as fully churny |
+| `RELIEF.bodyHeight` | `9` | the height a cell's body tends to as its mass grows |
+| `RELIEF.bodyHalfLoc` | `400` | the lines of code at which a cell's body stands at half of `bodyHeight` |
+| `RELIEF.bodyPad` | `12` | how far past its outermost file's edge a cell's body reaches, in layout units |
+
+### The levels of detail and the camera
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `LEVELS.gates` | `[{ enter: 1.7, exit: 1.45 }, { enter: 6, exit: 5 }, { enter: 24, exit: 20 }, { enter: 80, exit: 66 }]` | the zoom over the fit at which each of LOD1 to LOD4 is entered and left (§6); LOD1's where the spike left it, the deeper ones an order of magnitude apart, each left at about five sixths of where it is entered |
+| `CAMERA.smooth` | `0.1` | how long, in seconds, the camera settles on an input: a wheel's steps read as one continuous zoom, and nothing coasts once the pointer stops; reduced motion settles at once |
+| `CAMERA.dragSmooth` | `0.05` | the shorter settle a drag takes |
+
+### The hover and the walk
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `HOVER.ink` | `#e6edf3` | the ink the thing under the pointer is outlined in, flat and never blooming (D12) |
+| `HOVER.width` | `1.5` | the outline's width, in pixels |
+| `HOVER.slop` | `4` | how far past its edge, in pixels, a file answers the pointer |
+| `HOVER.tagGap` | `14` | how far right of and below the pointer the hover's tag stands, in pixels |
+| `WALK.share` | `0.8` | the share of the free screen a stop the camera flies to fills, in whichever of its width and height it fills first |
+| `WALK.fileContext` | `6` | how many of a file's radii of ground a file stop is framed with |
+
+### The minimap
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `MINIMAP.width` | `240` | the most room the inset takes across, in pixels (D154) |
+| `MINIMAP.height` | `180` | and down |
+| `MINIMAP.pad` | `6` | the margin inside its frame |
+| `MINIMAP.body` | `#333c47` | the body, drawn flat in one grey |
+| `MINIMAP.reachShare` | `0.55` | the share of a reached cell's luminance its ground takes in the reach's hue, flattened as the legend flattens the world's one translucent ink |
+| `MINIMAP.changedR` | `1.5` | a changed file's dot |
+| `MINIMAP.view` | `#e6edf3` | the ink the view's outline is drawn in |
+| `MINIMAP.viewWidth` | `1` | its width |
+
+### An opened cell: the slide and its wiring
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `INTERIOR.explodeSpread` | `1.6` | the exploded view moves each body out from the cell's middle to this many times its distance from it |
+| `INTERIOR.explodePush` | `0.35` | plus this share of the cell's radius |
+| `INTERIOR.explodeGap` | `3` | and keeps this much clear ground off its neighbours, in layout units |
+| `INTERIOR.exportsPerLine` | `3` | how many export names the membrane writes to a line (D162) |
+| `INTERIOR.exportsShown` | `12` | how many it writes before the rest are only counted |
+| `INTERIOR.slide` | `#efe6d3` | the slide's ground: warm and clinical where the surface is dark |
+| `INTERIOR.slideOpacity` | `0.94` | how opaque it is |
+| `INTERIOR.frame` | `#1e2733` | the membrane's ink, drawn round the files as the frame |
+| `INTERIOR.body` | `#b9a9cc` | each body's fill before the change stains it |
+| `INTERIOR.bodyStroke` | `#6f5f8a` | an unchanged body's stroke |
+| `INTERIOR.strokeWidth` | `1` | the stroke's width, in layout units |
+| `INTERIOR.stainShare` | `1` | how much of the change hue a stained body takes |
+| `INTERIOR.lift` | `4` | how far above the cell's highest relief the slide floats, in the heightfield's units |
+| `WIRING.fontSize` | `11` | the wiring plate's type size, in pixels (step 41) |
+| `WIRING.pad` | `3` | the pad round a name in its box |
+| `WIRING.nodeGap` | `10` | the gap between two files in a column |
+| `WIRING.layerGap` | `36` | the gap between two columns, importers left of importees |
+| `WIRING.framePad` | `8` | the pad inside a home's frame and round the plate |
 
 ## Motion
 

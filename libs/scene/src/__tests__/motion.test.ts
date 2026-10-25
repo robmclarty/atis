@@ -172,6 +172,15 @@ test('a hover eases in over its time, a fly-to over at most its own, and the lev
   expect(scheduler.frame(inside).lod?.opacity[1]).toBe(1);
 });
 
+test("the levels of detail follow the gates the world hands in each frame, so the panel's gates move them (step 44)", () => {
+  const scheduler = createScheduler({ clock: () => 0, seed: 1, tiers: [], reduced: true });
+  // At zoom 3 the resting gates put the camera at LOD1; gates that open LOD2 at 2.5 put it at LOD2.
+  expect(scheduler.frame(3).lod?.lod).toBe(1);
+  const moved = [{ enter: 1.2, exit: 1.1 }, { enter: 2.5, exit: 2.2 }, { enter: 24, exit: 20 }, { enter: 80, exit: 66 }];
+  expect(scheduler.frame(3, moved).lod?.lod).toBe(2);
+  expect(scheduler.frame(3, LOD_GATES).lod?.lod).toBe(1);
+});
+
 test('under reduced motion only a static halo stands for the load flare: no settle, breath, flare or jiggle, and a fly-to cuts', () => {
   const frames = minute(7, true);
   for (const frame of frames) {

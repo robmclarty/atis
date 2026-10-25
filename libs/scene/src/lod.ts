@@ -27,8 +27,9 @@ export type LodGate = { readonly enter: number; readonly exit: number };
 /**
  * The gates into LOD1 to LOD4, in order. LOD1's are where the materials spike
  * left them; the deeper ones stand an order of magnitude apart, each left at
- * about five sixths of where it is entered. Tuned live by the dev panel
- * (D156), and recorded with the world's tokens (step 44).
+ * about five sixths of where it is entered. The world hands them to the
+ * scheduler each frame from its `LEVELS` material, so the dev panel moves them
+ * live (D156), and `docs/design.md` records them with the world's tokens.
  */
 export const LOD_GATES: readonly LodGate[] = [
   { enter: 1.7, exit: 1.45 },

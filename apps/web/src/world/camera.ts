@@ -25,6 +25,8 @@ import type { MapJson } from 'core';
 
 import { fitFrame } from '../fit.js';
 import type { Chrome } from '../fit.js';
+import { CAMERA } from '../materials.js';
+import type { CameraLook } from '../materials.js';
 import { MAX_TILT } from '../view.js';
 import type { View } from '../view.js';
 
@@ -44,14 +46,6 @@ const TILT_AZIMUTH = (-25 * Math.PI) / 180;
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 200;
 
-/**
- * How long the camera takes to settle on an input, in seconds: long enough
- * that a wheel's steps read as one continuous zoom, short enough that nothing
- * coasts once the pointer stops. Baked here until the world's own tokens are
- * recorded (step 44).
- */
-const SMOOTH_S = 0.1;
-const DRAG_SMOOTH_S = 0.05;
 
 /**
  * The view's outline on the ground: where the rays through the corners of
@@ -152,8 +146,15 @@ const bind = (controls: CameraControls): void => {
  * and apply them once so the first frame is framed. The target stands right of
  * the centre by the fit's shift, which the zoom shrinks on the ground, so the
  * centre opens in the middle of the free screen left of the chrome (`fit.ts`).
- * Under reduced motion the controls smooth nothing.
+ * The controls settle on an input over the camera look's times, which the
+ * world sets again each frame so the dev panel moves them (D156); under
+ * reduced motion they smooth nothing.
  */
+export const smoothControls = (controls: CameraControls, look: CameraLook, reduced: boolean): void => {
+  controls.smoothTime = reduced ? 0 : look.smooth;
+  controls.draggingSmoothTime = reduced ? 0 : look.dragSmooth;
+};
+
 export const createControls = (camera: OrthographicCamera, canvas: HTMLCanvasElement, map: MapJson, view: View, chrome: Chrome, reduced = false): CameraControls => {
   const layout = map.terrain.layout ?? UNLAID;
   const { shift } = fitFrame(layout, canvas.clientWidth, canvas.clientHeight, chrome);
@@ -166,8 +167,7 @@ export const createControls = (camera: OrthographicCamera, canvas: HTMLCanvasEle
   controls.minZoom = MIN_ZOOM;
   controls.maxZoom = MAX_ZOOM;
   controls.dollyToCursor = true;
-  controls.smoothTime = reduced ? 0 : SMOOTH_S;
-  controls.draggingSmoothTime = reduced ? 0 : DRAG_SMOOTH_S;
+  smoothControls(controls, CAMERA, reduced);
   bind(controls);
   void controls.setLookAt(cx, CAMERA_DISTANCE, cz, cx, 0, cz, false);
   void controls.rotateTo(view.tilt > 0 ? TILT_AZIMUTH : 0, (view.tilt * Math.PI) / 180, false);
