@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 44 — docs(design): record the world's material tokens and sources
+**Current step:** 45 — chore(fixtures): select five fresh outside PRs for glance round two
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -71,7 +71,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 101. feat(core): write the barrel's export names on the membrane
 - ☑ 42. feat(web): honour reduced motion
 - ☑ 43. perf(web): hold 60 fps at 5,000 files and a 2 s first frame
-- ☐ 44. docs(design): record the world's material tokens and sources
+- ☑ 44. docs(design): record the world's material tokens and sources
 - ☐ 45. chore(fixtures): select five fresh outside PRs for glance round two
 - ☐ 46. chore(fixtures): generate the round-two maps
 - ☐ 47. chore(glance): read glance round two in the world
@@ -159,6 +159,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [ ] the opened pm cell writes index.ts four times round its barrel at LOD2 (zoom 8 centred on it, 1280x800): the slide's tag and what look like one label per notice on that target, where D148 gives a target one label and a run of boxes (.playwright-mcp/101/demo-pm-barrel-slide.png)
 - [ ] core's buildMap takes 274 s on step 43's 5,000-file synthetic map (1.8 s at 500, 32 s at 2,000, worse than n²), most of it in bubblesets-js's outline routing (outcode, intersectsLine) under the membranes pass: a first, uncached run of atis on a repo that size waits minutes, which wave 3's cache (steps 48 to 50) hides from the second run only
 - [ ] on step 43's 5,000-file map the zoom sweep keeps one frame of 40 to 50 ms where the first cell opens at LOD2 (114 fps over the sweep, both backends); warming the slide's materials before the first frame left it at 34 to 42 ms, so it is not their shader compile; the long-animation-frame entry names no script over 5 ms
+- [ ] classifyFile reads a *.tst.ts type-test file (tstyche's naming) as source, since it matches neither *.test.* nor *.spec.*, so such a file lands on the terrain as a cell's organelle; one round-two fixture's change carries one
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -1240,3 +1241,4 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-25 — step 101 checkpointed · 0bf7e2c0a — feat(core): write the barrel's export names on the membrane (1 drift, 5m)
 - 2026-10-25 — step 42 checkpointed · 27e040b97 — feat(web): honour reduced motion (7m)
 - 2026-10-25 — step 43 checkpointed · 1a18f99bd — perf(web): hold 60 fps at 5,000 files and a 2 s first frame (1 drift, 25m)
+- 2026-10-25 — step 44 checkpointed · 8112faf13 — docs(design): record the world's material tokens and sources (6m)
