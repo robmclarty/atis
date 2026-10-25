@@ -80,7 +80,8 @@ const MOTION_BOUNDS: Readonly<Record<string, Bound>> = {
   LOD_FADE_MS: { above: 0, atMost: 300, why: 'a cross-fade of 300 ms or less, never a blink' },
   DRIFT_HZ_MIN: { above: 0, atMost: 0.25, why: 'a slow float (D157): a wander of four seconds or longer' },
   DRIFT_HZ_MAX: { above: 0, atMost: 0.25, why: 'a slow float (D157): a wander of four seconds or longer' },
-  DRIFT_REACH: { above: 0, atMost: 1, why: 'a wholly loose file wanders as far as its cell, and no further' },
+  DRIFT_REACH: { above: 0, atMost: 0.5, why: 'a loose file wanders about its place, never across its cell (D165)' },
+  DRIFT_SPEED: { above: 0, atMost: 0.05, why: 'a slow float on the screen (D165): a small share of it a second, twenty seconds or more to cross it' },
   DRIFT_GAP: { atLeast: 0, why: 'a file keeps off its neighbours and the membrane, never into them' },
   DRIFT_EASE_MS: { above: 0, atMost: TRANSIENT_MS, why: 'the drift eases in as the cell opens, a transient' },
 };
@@ -133,7 +134,7 @@ test.each(Object.entries(SHAPE_MOTION_BOUNDS))('%s is still at 0 rules, climbs w
   });
 });
 
-test("design.md's motion table names exactly the tokens §5.5, D147 and D157 bound", () => {
+test("design.md's motion table names exactly the tokens §5.5, D147, D157 and D165 bound", () => {
   const doc = readFileSync(DESIGN, 'utf8');
   const section = doc.split(/^## /m).find((part) => part.startsWith('Motion'));
   expect(section, 'design.md has no Motion section').toBeDefined();

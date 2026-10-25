@@ -1,22 +1,29 @@
 /**
  * opened: which cell is open as a stained slide, and what opens and closes it
- * (§6, D155). At the cell's level of detail the innermost cell under the
- * view's centre opens, and it stays open while the reviewer pans and zooms
- * inside it: it closes on zooming out past the level, on Esc, on a click on
- * open ground, or once the view has left it altogether, and a click on another
- * cell at that level opens that one instead. A cell closed by hand stays
- * closed while the view's centre is still in it, so it does not spring back
- * open on the next frame. The exploded view and the wiring overlay (step 41)
- * are toggles on the open cell, and both go when the cell closes or another
- * opens. Pure, so a test walks it event by event.
+ * (§6, D155, D165). From the surface on, the innermost cell under the view's
+ * centre opens once its skin fills the cell gate's share of the free screen,
+ * so the whole cell is seen as it opens, and it stays open while the reviewer
+ * pans and zooms inside it: it closes on zooming out until it fills less than
+ * the share it holds at, on Esc, on a click on open ground, or once the view
+ * has left it altogether. A click on one of its files, where it has floated,
+ * keeps it open, and a click on another cell that would hold open at this
+ * view opens that one instead. A cell that holds no files of its own, a
+ * package whose files all sit in the cells it holds, never opens: its slide
+ * would be holes and nothing else, so the world never names it under the
+ * centre, never says it holds, and reads its ground as open ground. A cell
+ * closed by hand stays closed while the
+ * view's centre is still in it, so it does not spring back open on the next
+ * frame. The exploded view and the wiring overlay (step 41) are toggles on the
+ * open cell, and both go when the cell closes or another opens. Pure, so a
+ * test walks it event by event; the world measures the shares (`fillOf`).
  */
 
 import type { Lod, Pick } from 'scene';
 
 import type { Stop } from './walk.js';
 
-/** The level of detail a cell opens at: §6's LOD2, the cell. */
-export const CELL_LOD: Lod = 2;
+/** The level of detail a cell may open from: §6's LOD1, the surface; the far field withholds the cells (§5.6). */
+export const OPEN_LOD: Lod = 1;
 
 /** What the chrome hears of the open cell: which, whether its exploded view is spread, and whether its wiring is drawn. */
 export type Opened = { readonly cell: string; readonly exploded: boolean; readonly wired: boolean };
@@ -27,11 +34,11 @@ export type OpenState = { readonly open?: string; readonly exploded: boolean; re
 export const CLOSED: OpenState = { exploded: false, wired: false };
 
 export type OpenEvent =
-  /** A frame: the level the camera is at, the cell under the view's centre, and whether a cell still shows in the view. */
-  | { readonly kind: 'frame'; readonly lod: Lod; readonly under: string | undefined; readonly shows: (cell: string) => boolean }
+  /** A frame: the level the camera is at, the cell to open under the view's centre, the innermost there once its skin fills the gate's share, and whether a cell holds open at this view, still in it and filling at least the share it holds at. */
+  | { readonly kind: 'frame'; readonly lod: Lod; readonly under: string | undefined; readonly holds: (cell: string) => boolean }
   | { readonly kind: 'escape' }
-  /** A click on the canvas: what lay under it at the camera's level. */
-  | { readonly kind: 'click'; readonly lod: Lod; readonly pick: Pick | undefined }
+  /** A click on the canvas: what lay under it at the camera's level, a file of the open cell where it has floated, and whether a cell would hold open at this view. */
+  | { readonly kind: 'click'; readonly lod: Lod; readonly pick: Pick | undefined; readonly holds: (cell: string) => boolean }
   | { readonly kind: 'explode' }
   | { readonly kind: 'wire' };
 
@@ -50,23 +57,25 @@ const openCell = (cell: string): OpenState => ({ ...CLOSED, open: cell });
 export const openedBy = (state: OpenState, event: OpenEvent): OpenState => {
   switch (event.kind) {
     case 'frame': {
-      if (event.lod < CELL_LOD) return CLOSED;
+      if (event.lod < OPEN_LOD) return CLOSED;
       // A dismissed cell is free to reopen once the centre has left it.
       const dismissed = state.dismissed !== undefined && event.under === state.dismissed ? state.dismissed : undefined;
       if (state.open === undefined) {
         if (event.under !== undefined && event.under !== dismissed) return openCell(event.under);
         return { ...CLOSED, ...(dismissed === undefined ? {} : { dismissed }) };
       }
-      if (event.shows(state.open)) return state;
-      // The view has left the open cell altogether: whatever lies under the centre now opens, or nothing.
+      if (event.holds(state.open)) return state;
+      // Zoomed out past the open cell, or the view has left it: whatever opens under the centre now opens, or nothing.
       return event.under === undefined ? CLOSED : openCell(event.under);
     }
     case 'escape':
       return dismiss(state);
     case 'click': {
-      if (event.lod < CELL_LOD) return state;
+      if (event.lod < OPEN_LOD) return state;
       if (event.pick === undefined) return dismiss(state);
-      return event.pick.cell === state.open ? state : openCell(event.pick.cell);
+      if (event.pick.cell === state.open) return state;
+      // Another cell opens on a click only where it would hold open, so a cell too small to read as a slide leaves the open one be.
+      return event.holds(event.pick.cell) ? openCell(event.pick.cell) : state;
     }
     case 'explode':
       return state.open === undefined ? state : { ...state, exploded: !state.exploded };

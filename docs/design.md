@@ -417,6 +417,9 @@ the change's stains and the notices light the dark (§5.6).
 | Token | Value | Use |
 | --- | --- | --- |
 | `LEVELS.gates` | `[{ enter: 1.7, exit: 1.45 }, { enter: 6, exit: 5 }, { enter: 24, exit: 20 }, { enter: 80, exit: 66 }]` | the zoom over the fit at which each of LOD1 to LOD4 is entered and left (§6); LOD1's where the spike left it, the deeper ones an order of magnitude apart, each left at about five sixths of where it is entered |
+| `LEVELS.cellOpen` | `0.6` | the share of the free screen, in whichever of its width and height it fills first, at which the cell under the view's centre opens as a slide, from the surface on, so the whole cell is seen as it opens (D165) |
+| `LEVELS.cellClose` | `0.45` | the share it holds open at while the view stays on it, and closes under as the view zooms out |
+| `LEVELS.cellHome` | `0.15` | the share at which a closed cell's files are home: the surface draws them where they last floated down to `LEVELS.cellClose`, and eases them home between the two |
 | `CAMERA.smooth` | `0.1` | how long, in seconds, the camera settles on an input: a wheel's steps read as one continuous zoom, and nothing coasts once the pointer stops; reduced motion settles at once |
 | `CAMERA.dragSmooth` | `0.05` | the shorter settle a drag takes |
 
@@ -478,12 +481,14 @@ in `libs/scene/src/motion.ts`, on an injected clock and a seeded source of chanc
 reviewer who looked away is pulled back without the map ever twinkling. Inside an
 opened cell motion also means conformance: each file's shape pulses and turns by
 the rules it breaks, faster and further as the level climbs, and a file within
-every threshold stays still (D147). And it means looseness: each file drifts
+every threshold stays still (D147). And it means looseness: each file floats
 about its place by the share of its import ties that leave the cell, a hub held
-by its cellmates sitting still and a file tied to none of them floating across
-the cell, bumping the membrane and its neighbours (D157). That lifted §5.5's one
-continuous mover; the primary's breathing is no longer the only thing that
-moves.
+by its cellmates sitting still and a file tied to none of them wandering
+furthest, pushed off the membrane and its neighbours (D157). The float is slow
+and on the screen's scale: no file leaves its membrane or jumps, and none moves
+more than a small share of the screen a second at any zoom (D165). That lifted
+§5.5's one continuous mover; the primary's breathing is no longer the only thing
+that moves.
 
 These tokens sit where [the materials spike](#phase-1b-the-materials-spike) left
 them. Where §5.5 gives a number, the token stands at it, as §5.5's starting
@@ -522,11 +527,12 @@ bound changes §5.5 itself, and moves the bound in the test with it.
 | `SHAPE_PULSE_HZ` | `0, 0.25, 0.4, 0.6, 0.85, 1.15, 1.5` | 0 at 0 rules, climbing, at most 2: a pulse, never a flicker | how fast a shape's arms pulse inside an opened cell, by rule count (D147) |
 | `SHAPE_PULSE` | `0, 0.25, 0.3, 0.32, 0.35, 0.38, 0.42` | 0 at 0 rules, climbing, below 1: an arm never turns inside out | how far they pulse, as a share of their reach |
 | `SHAPE_TURN` | `0, 0.03, 0.05, 0.08, 0.11, 0.15, 0.2` | 0 at 0 rules, climbing, at most 0.5 rad/s | how fast the shape's body turns, in radians a second; its wobble drifts three times as fast |
-| `DRIFT_HZ_MIN` | `0.03` | above 0, at most 0.25, and no more than the max: a slow float | the slowest a file's wander runs inside an opened cell (D157), in Hz; each file draws its rates between the two from its path and the seed |
+| `DRIFT_HZ_MIN` | `0.03` | above 0, at most 0.25, and no more than the max: a slow float | the slowest a file's wander runs inside an opened cell (D157), in Hz, at the zoom the cell opens at; each file draws its rates between the two from its path and the seed |
 | `DRIFT_HZ_MAX` | `0.08` | above 0, at most 0.25 | the fastest |
-| `DRIFT_REACH` | `1` | above 0, at most 1 | how far a wholly loose file wanders, as a share of its cell's radius; a file wanders its looseness times this, so a hub held by its cellmates stays put |
-| `DRIFT_GAP` | `1` | at least 0 | how far a drifting file keeps off its neighbours and the membrane, in layout units |
-| `DRIFT_EASE_MS` | `600` | above 0, at most 600: a transient | how long the drift takes to ease in as a cell opens |
+| `DRIFT_REACH` | `0.15` | above 0, at most 0.5: about its place, never across its cell (D165) | how far a wholly loose file wanders from its place, as a share of its cell's radius; a file wanders its looseness times this, so a hub held by its cellmates stays put, and a push may carry it twice this and no further |
+| `DRIFT_SPEED` | `0.02` | above 0, at most 0.05: a slow float, twenty seconds or more to cross the screen (D165) | the most the float moves a file in a second, as a share of the free screen's shorter side, at every zoom: zoomed in, the wander's clock slows to keep to it |
+| `DRIFT_GAP` | `1` | at least 0 | how far a floating file keeps off its neighbours and the membrane, in layout units, or as far as it rests if that is nearer |
+| `DRIFT_EASE_MS` | `600` | above 0, at most 600: a transient | how long the float takes to ease in as a cell opens |
 
 The curves are shapes rather than tokens, and the spike drew them this way, so
 the scheduler that owns them draws what Rob judged. A flare rises over
@@ -538,12 +544,21 @@ the time it fell due, not the frame that noticed, so the same seed flares at the
 same times at any frame rate. The settle is an underdamped spring that lands
 inside `SETTLE_MS`; a fly-to eases slow out and slow in; a hover and the level
 fades ease at a fixed rate. The scheduler's tests replay a minute of seeded time
-and hold every one of these rules. The drift is a function of the time alone:
-two slow sines per file, eased in as the cell opens, then a dozen rounds pushing
-bodies apart, the looser giving way more, and pulling each moved one back inside
-the membrane; a file alone in its cell, a deleted file and a file with no `ties`
-stay still, as every file does while its cell is closed (`driftOf` in
-`libs/scene/src/drift.ts`).
+and hold every one of these rules. The float (`stepFloat` in
+`libs/scene/src/drift.ts`) is stepped sixty times a second whatever the frame
+rate, from rest or from wherever the surface last drew the cell's files, so one
+seed, one start and one run of zooms give one frame. Each step every loose file
+heads for its wander, two slow sines about its place eased in as the cell opens,
+then is pushed off its neighbours, the looser giving way more, and off the
+membrane and the cells its cell holds, never nearer them than it rests. No step
+moves a file more than `DRIFT_SPEED` of the screen a second, and a step that
+would cross the membrane, or into a held cell, leaves the file where it was, so
+no file leaves its membrane or jumps. A file alone in its cell, a deleted file
+and a file with no `ties` stay still, and so does every file under reduced
+motion. Once a cell closes, the surface draws its files where they last floated,
+still, until the cell fills less of the screen than it closes at, and eases them
+home as it shrinks on to `LEVELS.cellHome`; a cell opened again floats on from
+wherever the surface draws them (D165).
 
 Measured from the spike's own scheduler on `retake-3`:
 
@@ -573,6 +588,11 @@ its old and new value, and what was seen that called for it.
 - **2026-10-24, D157.** The `DRIFT_` tokens join the table at starting values, a
   wander of 12 to 33 s reaching a wholly loose file across its cell, for Rob to
   tune in the world at step 40.
+- **2026-10-25, D165.** `DRIFT_REACH` from `1` to `0.15`, and `DRIFT_SPEED` joins
+  at `0.02`: at range 14's stop the float raced across the screen once zoomed in,
+  and a body left its membrane at the bottom and came back at the top. A loose
+  file now wanders a seventh of its cell's radius about its place, and nothing in
+  the float moves it more than a fiftieth of the screen a second at any zoom.
 
 ## Fixed geometry that carries no token
 

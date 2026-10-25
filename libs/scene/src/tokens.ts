@@ -368,16 +368,20 @@ export const SHAPE_PULSE: readonly number[] = [0, 0.25, 0.3, 0.32, 0.35, 0.38, 0
 export const SHAPE_TURN: readonly number[] = [0, 0.03, 0.05, 0.08, 0.11, 0.15, 0.2];
 
 /**
- * Looseness in motion, inside an opened cell (D157): each file wanders about
- * its place by the share of its import ties that leave the cell, a hub held
- * by its cellmates barely moving and a file tied to none of them floating
- * across the whole cell. Its wander runs at a seeded rate between these two
- * (Hz), reaches this share of the cell's radius when it is wholly loose, keeps
- * this far off its neighbours and the membrane, and eases in over this long
- * when the cell opens.
+ * Looseness in motion, inside an opened cell (D157), slow and on the screen's
+ * scale (D165): each file wanders about its place by the share of its import
+ * ties that leave the cell, a hub held by its cellmates barely moving and a
+ * file tied to none of them wandering furthest. Its wander runs along two
+ * sines at seeded rates between these two (Hz), reaches this share of its
+ * cell's radius when it is wholly loose, keeps this far off its neighbours and
+ * the membrane, and eases in over this long when the cell opens. Nothing in
+ * the float moves a file more than this share of the screen's shorter side a
+ * second: zoomed in, the wander's clock slows until it keeps to that, so the
+ * float reads as slow at every zoom.
  */
 export const DRIFT_HZ_MIN = 0.03;
 export const DRIFT_HZ_MAX = 0.08;
-export const DRIFT_REACH = 1;
+export const DRIFT_REACH = 0.15;
+export const DRIFT_SPEED = 0.02;
 export const DRIFT_GAP = 1;
 export const DRIFT_EASE_MS = 600;

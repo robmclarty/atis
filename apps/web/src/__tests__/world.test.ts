@@ -5,10 +5,13 @@
  * path in the installed Chrome, else a Chromium on the PATH (D145), and fails
  * on a console error or a blank frame. It looks at the lit surface, past
  * LOD1's gate, since the far field is dark by design until the weather lights
- * it (D151). A second frame opens on one cell past LOD2's gate, where the
- * cell opens as a stained slide (step 40): the canvas names the open cell,
- * the slide tags each of its files, `x` spreads the exploded view, and `w`
- * lays the cell's wiring out on a plate in the chrome (step 41). A third
+ * it (D151). A second frame opens on one cell where it fills the screen, and
+ * the cell opens as a stained slide (step 40, D165): the canvas names the
+ * open cell, the slide tags each of its files, a click on a floating file
+ * keeps it open, `x` spreads the exploded view, and `w` lays the cell's wiring
+ * out on a plate in the chrome (step 41); Esc closes it, the surface holds its
+ * files where they floated, and zooming out toward the field brings them
+ * home. A third
  * emulates `prefers-reduced-motion` and holds the frames still after load, in
  * an opened cell and across a fly-to, beside a page with motion on whose
  * frames move (step 42).
@@ -153,7 +156,7 @@ const middleOf = (cell: string): readonly [number, number] => {
   return [contour.reduce((total, [x]) => total + x, 0) / contour.length, contour.reduce((total, [, y]) => total + y, 0) / contour.length];
 };
 
-test('framed on one cell past the cell\'s gate, the world opens it as a slide that tags each of its files, x spreads the exploded view and w lays its wiring out, with a clean console', { timeout: 120_000 }, async () => {
+test("framed on one cell where it fills the screen, the world opens it as a slide that tags each of its files and holds open on a click on one, x spreads the exploded view and w lays its wiring out, and closed, the surface holds its files where they floated until the view climbs on, with a clean console", { timeout: 120_000 }, async () => {
   const { server, url } = await serve();
   const browser = await launch();
   try {
@@ -174,6 +177,21 @@ test('framed on one cell past the cell\'s gate, the world opens it as a slide th
     const tags = await page.$$eval('[data-interior-tag]', (elements) => elements.map((element) => element.textContent));
     expect(tags.toSorted()).toEqual(['+tools.ts · 2', 'index.ts', 'legacy.ts', 'slots.ts']);
     expect(await page.textContent('[data-interior-exports]')).toBe('index.ts · 3 exports\nlistSlots  resolveSlot  resolveTool');
+    // A click on a file of the open cell, where it has floated, keeps the cell open (D165): just inside a body's rim, past its leader's end, where the canvas takes the pointer.
+    const onBody = await page.$$eval('[data-interior-leader]', (lines) =>
+      lines
+        .map((line) => {
+          const [x1, y1, x2, y2] = ['x1', 'y1', 'x2', 'y2'].map((name) => Number(line.getAttribute(name)));
+          const length = Math.hypot((x2 ?? 0) - (x1 ?? 0), (y2 ?? 0) - (y1 ?? 0)) || 1;
+          return [(x2 ?? 0) + (((x2 ?? 0) - (x1 ?? 0)) / length) * 4, (y2 ?? 0) + (((y2 ?? 0) - (y1 ?? 0)) / length) * 4] as const;
+        })
+        .find(([px, py]) => document.elementFromPoint(px, py)?.id === 'world'),
+    );
+    if (onBody === undefined) throw new Error('no floating file of the open cell lies where the canvas takes the pointer');
+    await page.mouse.click(onBody[0], onBody[1]);
+    await page.waitForTimeout(500);
+    expect(await page.getAttribute('#world', 'data-open')).toBe(cell);
+    expect(await page.$$eval('[data-interior-tag]', (elements) => elements.length)).toBe(4);
     expect(await page.textContent('[data-explode]')).toBe('explode');
     // The exploded view spreads on x, and the breadcrumb's button reads so.
     await page.keyboard.press('x');
@@ -191,9 +209,20 @@ test('framed on one cell past the cell\'s gate, the world opens it as a slide th
     expect(await page.$$eval('[data-wiring-line]', (elements) => elements.length)).toBe(7);
     await page.keyboard.press('w');
     await page.waitForSelector('[data-wiring]', { state: 'detached', timeout: 30_000 });
-    // Escape closes the cell.
+    // Escape closes the cell, and the surface draws its loose files where they last floated while the view stays at it.
     await page.keyboard.press('Escape');
     await page.waitForSelector('#world:not([data-open])', { timeout: 30_000 });
+    await page.waitForFunction(() => Number(document.querySelector('#world')?.getAttribute('data-floated') ?? '0') > 0, undefined, { timeout: 30_000 });
+    // Zoomed out on toward the field, a wheel step at a time, they come home.
+    await page.mouse.move(onBody[0], onBody[1]);
+    const climb = async (turns: number): Promise<void> => {
+      if (turns === 0 || (await page.getAttribute('#world', 'data-floated')) === '0') return;
+      await page.mouse.wheel(0, 240);
+      await page.waitForTimeout(100);
+      await climb(turns - 1);
+    };
+    await climb(60);
+    expect(await page.getAttribute('#world', 'data-floated')).toBe('0');
     expect(complaints).toEqual([]);
   } finally {
     await browser.close();

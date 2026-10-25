@@ -30,17 +30,25 @@
  * and moves the camera where the minimap asks (D154). A notice's row, the
  * arrows, Enter and Escape fly the camera to a stop along the scheduler's
  * fly-to, and the skin swings as it lands; the stop goes back over the line
- * for the HUD's breadcrumb (step 39). At the cell's level the cell under the
- * view's centre opens as a stained slide (step 40, D155): the scene lays it
- * and its bodies, the surface's files and marks in it give way beneath, the
- * labels leave its files to the slide's own tags, and the pointer picks its
- * bodies where they have drifted; it holds while the view stays inside it
- * and closes on zooming out, Esc, a click on open ground or leaving it, with
+ * for the HUD's breadcrumb (step 39). From the surface on, the innermost cell
+ * under the view's centre opens as a stained slide once its skin fills the
+ * cell gate's share of the free screen, if it holds files of its own (step
+ * 40, D155, D165): the scene lays it and
+ * its bodies, which float where the scheduler floats them, slowly and on the
+ * screen's scale, the surface's files and marks in it give way beneath, the
+ * labels leave its files to the slide's own tags, and the pointer picks and
+ * clicks its bodies where they have floated, a click on one keeping the cell
+ * open; it holds while the view stays inside it and closes on zooming out
+ * past the gate's lesser share, Esc, a click on open ground or leaving it.
+ * Once a cell has closed, the surface draws its files, and the marks on them,
+ * where they last floated, and the scheduler eases them home only as the view
+ * climbs on toward the field, so the slide and the surface read as one. With
  * `x`, or the breadcrumb's button, spreading its exploded view, and `w`, or
  * the breadcrumb's other button, laying its wiring out on a plate in the
  * chrome (step 41). The canvas says which backend drew it, when the skin has
- * settled, which cell is open and whether its wiring is drawn, for the smoke
- * test and a screenshot to wait on. Under `prefers-reduced-motion` the
+ * settled, which cell is open and whether its wiring is drawn, and how many
+ * files the surface draws where they floated, for the smoke test and a
+ * screenshot to wait on. Under `prefers-reduced-motion` the
  * scheduler stills the world (§5.5, C12): the primary keeps a static halo for
  * its load flare, nothing settles, breathes, flares or jiggles, the shapes and
  * the drift hold still, and a fly-to, a slide and the exploded view cut; the
@@ -55,8 +63,8 @@
 import { AgXToneMapping, AmbientLight, Color, DataUtils, DirectionalLight, RenderPipeline, Scene, Vector3, WebGPUCoordinateSystem, WebGPURenderer } from 'three/webgpu';
 import { emissive, mrt, output, pass } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
-import { FIELD_FILL, MOTION_TOKENS, REACH_ORIGIN_OPACITY, RELIEF, cellSlide, cellWiring, createPicker, createScheduler, gridFor, interiorOf, surfacePoint } from 'scene';
-import type { Lod, Point, Slide } from 'scene';
+import { FIELD_FILL, MOTION_TOKENS, REACH_ORIGIN_OPACITY, RELIEF, cellSlide, cellWiring, createPicker, createScheduler, fillOf, gridFor, instances, interiorOf, surfacePoint } from 'scene';
+import type { Lod, Pick, Point, Slide } from 'scene';
 import type { MapJson } from 'core';
 
 import { RAIL_WIDTH, zoomFor } from '../fit.js';
@@ -66,7 +74,7 @@ import { marksOf } from '../marks.js';
 import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, NOTICE, SKIN, SKY, WALK, WEATHER } from '../materials.js';
 import type { Nav } from '../nav.js';
 import { runsOf } from '../notices.js';
-import { CELL_LOD, CLOSED, cellOf, openedBy, openedOf } from '../opened.js';
+import { CLOSED, OPEN_LOD, openedBy, openedOf } from '../opened.js';
 import type { OpenState } from '../opened.js';
 import type { Registry } from '../registry.js';
 import type { View } from '../view.js';
@@ -225,26 +233,50 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     const box = canvas.getBoundingClientRect();
     return surfacePoint(...rayAt(camera, ((at.x - box.left) / box.width) * 2 - 1, 1 - ((at.y - box.top) / box.height) * 2), heightAt, top);
   };
-  /** The thing under a point of the page at a level of detail, picked with the hover's reach past a file's edge; inside an opened cell, its bodies where they have drifted. */
+  // Each placed file's cell and radius, for a file the surface draws where it last floated.
+  const placed = new Map(instances(map).map((file) => [file.id, file] as const));
+  // The files of a closed cell the surface draws where they last floated (D165), as the scheduler last said.
+  let floatedOnSurface: ReadonlyMap<string, Point> = new Map();
+  /** The body of the opened cell under a layout point, where it has floated, a file reaching `slop` past its edge. */
+  const bodyAt = (ground: Point, slop: number): (typeof bodies)[number] | undefined => {
+    if (slide === undefined || opening.open !== slide.cell) return undefined;
+    let hit: { readonly body: (typeof bodies)[number]; readonly gap: number } | undefined;
+    for (const body of interior.bodies()) {
+      const gap = Math.hypot(ground[0] - body.x, ground[1] - body.y) - body.r;
+      if (gap <= slop && (hit === undefined || gap < hit.gap)) hit = { body, gap };
+    }
+    return hit?.body;
+  };
+  /** A file the surface draws where it last floated, under a layout point, a file reaching `slop` past its edge. */
+  const floatedAt = (ground: Point, slop: number): Pick | undefined => {
+    let hit: { readonly pick: Pick; readonly gap: number } | undefined;
+    for (const [path, [x, y]] of floatedOnSurface) {
+      const file = placed.get(path);
+      const gap = file === undefined ? Number.POSITIVE_INFINITY : Math.hypot(ground[0] - x, ground[1] - y) - file.r;
+      if (file !== undefined && gap <= slop && (hit === undefined || gap < hit.gap)) hit = { pick: { kind: 'organelle', path, cell: file.cell, x, y, r: file.r }, gap };
+    }
+    return hit?.pick;
+  };
+  /** What lies under a layout point at a level of detail, as the world draws it: the opened cell's bodies and the surface's floated files where they float, else what the picker finds where the layout put it. */
+  const pickAt = (ground: Point, lod: Lod, slop: number): Pick | undefined => {
+    const body = bodyAt(ground, slop);
+    if (body !== undefined && slide !== undefined) return { kind: 'organelle', path: body.id, cell: slide.cell, x: body.x, y: body.y, r: body.r };
+    const floated = lod === 0 ? undefined : floatedAt(ground, slop);
+    if (floated !== undefined) return floated;
+    const pick = picker.pick(ground, lod, slop);
+    // A file drawn where it floated has left where the layout put it, so the picker's place for it answers as its cell.
+    const away = pick?.kind === 'organelle' && ((slide !== undefined && opening.open === slide.cell && pick.cell === slide.cell) || floatedOnSurface.has(pick.path));
+    return away && pick !== undefined ? { kind: 'membrane', cell: pick.cell } : pick;
+  };
+  /** The thing under a point of the page at a level of detail, picked with the hover's reach past a file's edge; a floated file where it has floated. */
   const hoveredAt = (at: { readonly x: number; readonly y: number }, lod: Lod): Hovered | undefined => {
     const ground = groundAt(at);
     if (ground === undefined) return undefined;
-    const slop = hoverLook.slop / pixelsPerUnit(camera, canvas.clientWidth);
-    if (slide !== undefined && opening.open === slide.cell) {
-      let hit: { readonly body: (typeof bodies)[number]; readonly gap: number } | undefined;
-      for (const body of interior.bodies()) {
-        const gap = Math.hypot(ground[0] - body.x, ground[1] - body.y) - body.r;
-        if (gap <= slop && (hit === undefined || gap < hit.gap)) hit = { body, gap };
-      }
-      if (hit !== undefined) {
-        const hovered = hoverOf(map, { kind: 'organelle', path: hit.body.id, cell: slide.cell, x: hit.body.x, y: hit.body.y, r: hit.body.r });
-        return hovered === undefined ? undefined : { ...hovered, ring: hit.body.outline.ring };
-      }
-    }
-    const pick = picker.pick(ground, lod, slop);
-    // A file of the opened cell has left where the layout put it, so the picker's place for it answers nothing.
-    if (pick?.kind === 'organelle' && slide !== undefined && opening.open === slide.cell && pick.cell === slide.cell) return undefined;
-    return pick === undefined ? undefined : hoverOf(map, pick);
+    const pick = pickAt(ground, lod, hoverLook.slop / pixelsPerUnit(camera, canvas.clientWidth));
+    // Inside the opened cell a file is hovered in the outline it is drawn in, pulsing as the scheduler moves it.
+    const body = pick?.kind === 'organelle' && slide !== undefined && pick.cell === slide.cell ? interior.bodies().find((each) => each.id === pick.path) : undefined;
+    const hovered = pick === undefined ? undefined : hoverOf(map, pick);
+    return hovered === undefined || body === undefined ? hovered : { ...hovered, ring: body.outline.ring };
   };
   let bodies: ReturnType<typeof interiorOf> = [];
   let lastFrame = performance.now();
@@ -293,7 +325,10 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     pressed = undefined;
     if (press === undefined || Math.hypot(event.clientX - press.x, event.clientY - press.y) > CLICK_SLOP || performance.now() - press.at > CLICK_MS) return;
     const ground = groundAt({ x: event.clientX, y: event.clientY });
-    apply(openedBy(opening, { kind: 'click', lod: lastLod, pick: ground === undefined ? undefined : picker.pick(ground, lastLod, 0) }));
+    // A file of the opened cell answers the click where it has floated, so a click on it keeps its cell open (D165); a cell with no files of its own answers as open ground.
+    const picked = ground === undefined ? undefined : pickAt(ground, lastLod, 0);
+    const pick = picked?.kind === 'membrane' && !withFiles.has(picked.cell) ? undefined : picked;
+    apply(openedBy(opening, { kind: 'click', lod: lastLod, pick, holds: holdsIn(boxOf(outlineOf(camera, canvas.clientWidth, chrome))) }));
   });
 
   // The walk (step 39): the stop the view stands at, and the flight under way to the next one, eased by the scheduler's fly-to.
@@ -301,6 +336,32 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   const walkLook = registry.view(WALK, 'WALK');
   const layout = map.terrain.layout ?? { width: 1, height: 1 };
   const chrome = { right: RAIL_WIDTH };
+
+  // The cell's gate (D165): a cell's box, the share of the free screen its skin fills at the camera's zoom, the cell to open under a point, and whether a cell holds open.
+  const cellBoxes = new Map<string, Box | undefined>();
+  const cellBox = (cell: string): Box | undefined => {
+    if (!cellBoxes.has(cell)) cellBoxes.set(cell, walk.box({ kind: 'cell', cell }, 1));
+    return cellBoxes.get(cell);
+  };
+  const fillOfCell = (cell: string): number => {
+    const box = cellBox(cell);
+    const screen = { width: Math.max(1, canvas.clientWidth - RAIL_WIDTH), height: canvas.clientHeight, pixelsPerUnit: pixelsPerUnit(camera, canvas.clientWidth) };
+    return box === undefined ? 0 : fillOf({ width: box.x1 - box.x0, height: box.y1 - box.y0 }, screen);
+  };
+  // A cell with no placed files of its own, a package whose files all sit in the cells it holds, has nothing to show as a slide but holes, so it never opens and its ground is open ground.
+  const withFiles = new Set([...placed.values()].map((file) => file.cell));
+  /** The innermost cell under a layout point, once its skin fills the gate's share of the free screen and it holds files of its own: the cell that opens there. A cell that holds it never opens in its stead, so zooming in on a folder opens the folder. */
+  const openableAt = (point: Point): string | undefined => {
+    const cell = picker.pick(point, 1, 0)?.cell;
+    return cell !== undefined && withFiles.has(cell) && fillOfCell(cell) >= levels.cellOpen ? cell : undefined;
+  };
+  /** Whether a cell holds open with the view on this stretch of the ground: some of it in view, and filling at least the share it holds at. */
+  const holdsIn =
+    (seen: Box | undefined) =>
+    (cell: string): boolean => {
+      const box = cellBox(cell);
+      return withFiles.has(cell) && box !== undefined && seen !== undefined && overlaps(box, seen) && fillOfCell(cell) >= levels.cellClose;
+    };
   let stop: Stop = FIELD;
   let flight: { readonly from: Stand; readonly to: Point; readonly zoom: number } | undefined;
   // A hand on the camera ends any flight, and the stop is read back off the view once it rests; the opening frame is read so too.
@@ -374,6 +435,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   // The loop's passes so far: the first draws the first complete frame, and the second finds it on the screen.
   let passes = 0;
   let shownLod: Lod | undefined;
+  let floatedShown: number | undefined;
   await renderer.setAnimationLoop(() => {
     if (passes === 1) {
       performance.mark('atis:ready');
@@ -409,20 +471,9 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       canvas.dataset['lod'] = String(lod);
     }
     const middle = standOf(controls, camera, canvas.clientWidth, chrome)?.centre;
-    // The opened cell (D155): at the cell's level the innermost cell under the view's centre opens, and holds while any of it stays in view.
-    const under = middle === undefined || lod < CELL_LOD ? undefined : cellOf(walk.stopAt(middle, lod));
-    const viewBox = boxOf(outline);
-    apply(
-      openedBy(opening, {
-        kind: 'frame',
-        lod,
-        under,
-        shows: (cell) => {
-          const box = walk.box({ kind: 'cell', cell }, 1);
-          return box !== undefined && viewBox !== undefined && overlaps(box, viewBox);
-        },
-      }),
-    );
+    // The opened cell (D155, D165): from the surface on, the innermost cell under the view's centre opens once it fills the gate's share, and holds while any of it stays in view at the share it holds at.
+    const under = middle === undefined || lod < OPEN_LOD ? undefined : openableAt(middle);
+    apply(openedBy(opening, { kind: 'frame', lod, under, holds: holdsIn(boxOf(outline)) }));
     // A flight moves the view along the scheduler's ease, centre straight across and zoom by its ratio, and the skin swings once it lands.
     if (flight !== undefined) {
       const progress = frame.fly ?? 1;
@@ -446,7 +497,17 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       interior.slide(slide);
       placeLabels = true;
     }
-    bodies = slide === undefined || open.shown <= 0 ? [] : interiorOf(map, slide, { ...(open.since === undefined ? {} : { t: open.since }), seed: view.seed, reduced, explode: open.exploded, shape: scheduler.shape, drift: tokens });
+    // The float (D165): measured on the free screen's shorter side, and a closed cell's files held where they floated until the view climbs on.
+    const free = Math.max(1, canvas.clientWidth - RAIL_WIDTH);
+    const floated = scheduler.float(map, { screen: Math.min(free, canvas.clientHeight) / pixelsPerUnit(camera, canvas.clientWidth), fill: fillOfCell, gate: { open: levels.cellOpen, close: levels.cellClose, home: levels.cellHome } });
+    floatedOnSurface = floated.surface;
+    if (floated.surface.size !== floatedShown) {
+      floatedShown = floated.surface.size;
+      canvas.dataset['floated'] = String(floatedShown);
+    }
+    organelles.move(floated.surface);
+    sectors.move(floated.surface);
+    bodies = slide === undefined || open.shown <= 0 ? [] : interiorOf(slide, { drifted: floated.open, reduced, explode: open.exploded, shape: scheduler.shape });
     interior.show(bodies, open.shown, (id) => {
       const light = lightOf.get(id);
       return light === undefined ? 1 : (frame.notices[light]?.gain ?? 1);
@@ -488,7 +549,8 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     }
     labels.render(camera, canvas.clientWidth, canvas.clientHeight, surface);
     interior.render(camera, canvas.clientWidth, canvas.clientHeight, canvas.clientWidth - RAIL_WIDTH, pixelsPerUnit(camera, canvas.clientWidth), open.exploded);
-    if (pickAgain || lod !== pickedLod) {
+    // A slide's files float under a still pointer, so the hover follows them each frame while one shows.
+    if (pickAgain || lod !== pickedLod || (bodies.length > 0 && !reduced)) {
       const hovered = pointer === undefined ? undefined : hoveredAt(pointer, lod);
       hover.show(hovered, pointer);
       scheduler.hover(hovered !== undefined);

@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 
 import type { Lod } from '../labels.js';
-import { LOD_GATES, levelAt, lodPlan } from '../lod.js';
+import { CELL_GATE, LOD_GATES, fillOf, homewardAt, levelAt, lodPlan } from '../lod.js';
 import type { LodPlan } from '../lod.js';
 import { LOD_FADE_MS } from '../tokens.js';
 
@@ -105,4 +105,33 @@ test('one zoom path and one clock give one plan (C3, D94)', () => {
   expect(run(path)).toEqual(run(path));
   const levels: readonly Lod[] = run(path).map((plan) => plan.lod);
   expect(levels).toEqual([0, 0, 1, 1, 2, 2, 1, 0]);
+});
+
+test("a cell's gate opens it filling most of the free screen, holds it a little smaller, and brings its files home smaller still (D165)", () => {
+  expect(CELL_GATE.open).toBeLessThanOrEqual(1);
+  expect(CELL_GATE.close).toBeLessThan(CELL_GATE.open);
+  expect(CELL_GATE.home).toBeLessThan(CELL_GATE.close);
+  expect(CELL_GATE.home).toBeGreaterThan(0);
+});
+
+test('a stretch of ground fills the free screen in whichever of its width and height fills it first', () => {
+  const screen = { width: 800, height: 600, pixelsPerUnit: 2 };
+  expect(fillOf({ width: 200, height: 100 }, screen)).toBe(0.5);
+  expect(fillOf({ width: 100, height: 240 }, screen)).toBe(0.8);
+  expect(fillOf({ width: 100, height: 240 }, { ...screen, pixelsPerUnit: 4 })).toBe(1.6);
+});
+
+test("a closed cell's files stay where they floated while it fills the share it closes under or more, and come home eased as it shrinks to its home", () => {
+  expect(homewardAt(1)).toBe(0);
+  expect(homewardAt(CELL_GATE.close)).toBe(0);
+  expect(homewardAt((CELL_GATE.close + CELL_GATE.home) / 2)).toBeCloseTo(0.5, 9);
+  expect(homewardAt(CELL_GATE.home)).toBe(1);
+  expect(homewardAt(0)).toBe(1);
+  // Eased: it leaves and reaches home slowly.
+  const step = (CELL_GATE.close - CELL_GATE.home) / 100;
+  expect(homewardAt(CELL_GATE.close - step)).toBeLessThan(0.001);
+  expect(1 - homewardAt(CELL_GATE.home + step)).toBeLessThan(0.001);
+  // A gate with no span between its close and its home brings them home as it closes.
+  expect(homewardAt(0.3, { open: 0.6, close: 0.4, home: 0.4 })).toBe(1);
+  expect(homewardAt(0.5, { open: 0.6, close: 0.4, home: 0.4 })).toBe(0);
 });

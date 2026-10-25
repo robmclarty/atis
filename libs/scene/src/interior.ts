@@ -7,8 +7,8 @@
  * names the map records under their count, a few to a line and the rest
  * counted past a dozen, or the count alone where the map records no names
  * (D162, C2). Each file is a body in
- * its morphed outline (D146), moved by the rules it breaks (D147) and drifting
- * by its looseness (D157) through the scheduler, and stained by what the
+ * its morphed outline (D146), moved by the rules it breaks (D147) and floating
+ * by its looseness (D157, D165) through the scheduler, and stained by what the
  * change did to it (hue is state, C11): added and modified through, the share
  * of its changed lines no test ran left unstained from the top clockwise, as
  * the evidence ring lights its gap (D71); a file nobody measured unstained
@@ -19,17 +19,17 @@
  * left and right of the slide however it is framed, each with its rule count
  * (D155), joined to their bodies by dotted leaders.
  *
- * Pure (C1): no three and no DOM. The world hands in the clock's reading, the
- * seed, how far the exploded view has spread, and a projection to the screen,
- * and one input gives one layout (C3).
+ * Pure (C1): no three and no DOM. The world hands in where the scheduler's
+ * float has the files, how far the exploded view has spread, and a projection
+ * to the screen, and one input gives one layout (C3).
  */
 
 import earcut from 'earcut';
 import { membraneThickness } from 'core';
 import type { ChangeKind, MapJson, Position } from 'core';
 
-import { DRIFT_TOKENS, driftOf, loosenessOf } from './drift.js';
-import type { DriftTokens } from './drift.js';
+import { loosenessOf } from './drift.js';
+import type { Drifted } from './drift.js';
 import { LABELING } from './labels.js';
 import type { LabelBox, Labeling } from './labels.js';
 import { dentedRing } from './membranes.js';
@@ -99,14 +99,12 @@ export type Slide = {
 /** A file on the slide this frame: where it is, in its outline as the scheduler moves it. */
 export type Body = SlideFile & { readonly x: number; readonly y: number; readonly r: number; readonly outline: Outline };
 
-/** How the slide moves this frame: the time since the cell opened (none while it rests), the seed, reduced motion, how far the exploded view has spread, 0 to 1, how each rule count moves a shape, and the drift's tokens. */
+/** How the slide moves this frame: where the float has the cell's files (none while it rests), reduced motion, how far the exploded view has spread, 0 to 1, and how each rule count moves a shape. */
 export type InteriorMotion = {
-  readonly t?: number;
-  readonly seed: number;
+  readonly drifted?: readonly Drifted[];
   readonly reduced?: boolean;
   readonly explode?: number;
   readonly shape?: (rules: number) => ShapeMotion;
-  readonly drift?: DriftTokens;
 };
 
 /** One file's tag in a column beside the slide: its words, its rule count, which column, its box on the screen, and the dotted leader from its edge to the body's rim. */
@@ -311,13 +309,14 @@ export function cellSlide(map: MapJson, cell: string, layout: InteriorLayout = I
 }
 
 /**
- * The bodies on a slide this frame: each file where the drift has it (D157),
- * drawn toward its exploded spot by how far the view has spread, in the
- * outline its rule count moves (D147). At rest, closed or under reduced
- * motion, every body sits where the layout put it, still.
+ * The bodies on a slide this frame: each file where the float has it (D157,
+ * D165), drawn toward its exploded spot by how far the view has spread, in
+ * the outline its rule count moves (D147). At rest, and under reduced motion,
+ * every body sits where the layout put it, still; so does a file the float
+ * leaves out.
  */
-export function interiorOf(map: MapJson, slide: Slide, motion: InteriorMotion = { seed: 0 }): readonly Body[] {
-  const drifted = new Map(driftOf(map, slide.cell, motion.t, motion.seed, motion.reduced ?? false, motion.drift ?? DRIFT_TOKENS).map((file) => [file.id, file] as const));
+export function interiorOf(slide: Slide, motion: InteriorMotion = {}): readonly Body[] {
+  const drifted = new Map(motion.reduced === true ? [] : (motion.drifted ?? []).map((file) => [file.id, file] as const));
   const spread = clamp01(motion.explode ?? 0);
   const shape = motion.reduced === true ? still : (motion.shape ?? still);
   return slide.files.map((file): Body => {

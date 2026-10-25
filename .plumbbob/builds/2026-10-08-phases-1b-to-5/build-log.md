@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 47 — chore(glance): read glance round two in the world
+**Current step:** 103 — fix(web): float an opened cell's files slowly, open it where it fits the screen, and hold them where they floated
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -75,7 +75,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 45. chore(fixtures): select five fresh outside PRs for glance round two
 - ☑ 46. chore(fixtures): generate the round-two maps
 - ☑ 102. fix(core): keep a rules folder's source on the terrain and count every line of a changed statement
-- ☐ 47. chore(glance): read glance round two in the world
+- ☑ 47. chore(glance): read glance round two in the world
 - ☐ 103. fix(web): float an opened cell's files slowly, open it where it fits the screen, and hold them where they floated
 - ☑ 88. refactor(svg): draw the still map's weather from the scene's derivations
 - ☑ 93. feat(web): draw a minimap that moves the camera
@@ -171,9 +171,14 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] zoom 6's static surface and zoom 7's moving cell do not connect, so the switch is jarring and it is hard to tell what moved: let the surface draw each file where it last floated, static in its last known place, so the two levels read as one (Rob, at range 14's stop)
 - [x] Rob liked the materials spike's individual cell shapes and their animation (the morph and its pulse, not the floating) better than the world's: set the world's opened cell beside the spike's frames and bring its look back
 - [x] patch coverage counts a blank or comment line inside a multi-line statement as executable (30 of the 149 lines D163's span reading added on the round-two maps, 12 blank and 18 comments, all on statements that ran), and a comment inside a callback no test called takes the hits of the call around it; the scan could hand core the lines that hold code, so only those count
-- [ ] round two, not read: ten seconds in the world's opening frame with input off leaves only the far field's points of light and the chrome; Rob could judge none of the three maps he saw ("couldn't zoom in"), so D95's protocol needs a reading the world can carry (the reader's own zoom, a longer window, a map the reader knows) or round two deferred until atis works on Rob's repos
-- [ ] round two: at LOD0 the world withholds the tissue, the cells and every mark the inset keys (§5.6), so a change's opening frame is a few dots on black; Rob: "each map started at max zoom and i could only see dots, with hardly any information"
-- [ ] round two: the notice list takes at most half the column (LIST_SHARE, apps/web/src/chrome/notices.tsx) and scrolls, so the opening frame at 1512 by 982 shows 1 to 4 of a map's six rows whole
+- [x] round two, not read: ten seconds in the world's opening frame with input off leaves only the far field's points of light and the chrome; Rob could judge none of the three maps he saw ("couldn't zoom in"), so D95's protocol needs a reading the world can carry (the reader's own zoom, a longer window, a map the reader knows) or round two deferred until atis works on Rob's repos
+- [x] round two: at LOD0 the world withholds the tissue, the cells and every mark the inset keys (§5.6), so a change's opening frame is a few dots on black; Rob: "each map started at max zoom and i could only see dots, with hardly any information"
+- [x] round two: the notice list takes at most half the column (LIST_SHARE, apps/web/src/chrome/notices.tsx) and scrolls, so the opening frame at 1512 by 982 shows 1 to 4 of a map's six rows whole
+- [ ] the world smoke test's reduced-motion frame compare (two frames 1.5 s apart in an opened cell) failed once under the full check's coverage run at step 103, and passed in four solo runs, three full suite runs and the next check; nothing in the frame was saved, so what differed is unknown
+- [ ] Rob at step 103's pause, on atis's own map: 'i honestly don't know what i'm looking at; the whole thing feels broken' — the opening frame is three dots on black, the surface a blurred mass with white reach pools over 51 cells, cells overlap (apps/atis's skin crosses apps/web/src/world), other cells' labels and the legend sit over the opened slide, and the slowed float barely reads as motion
+- [ ] guided read of atis's own map at step 103's pause: the 19 brightest marks are reach crossings the legend never keys, the legend covers the world's left third and one of the three changed files, apps/atis's skin overlaps apps/web/src/world, the bloom blurs the surface, three tertiary notices flag plumbbob build logs, Size counts fixture JSON lines, and the frame Rob was sent to held none of the change
+- [ ] core makes every file directly in apps/web/src its own single-file cell (19 of them, beside 4 folders), so the apps/web package holds no file of its own and its opened slide is a cream sheet of 23 holes with nothing on it; a package's loose source files might share one cell
+- [ ] modules float inside their package: on checkride-shaped repos most cells are single-file modules (56 of 69 on atis's map), so an opened package is its barrel and a sheet of holes and no module ever floats; let a package's slide draw the files of the single-file cells it holds as bodies, with looseness measured against the package, which needs core to record each file's ties within its package (a schema bump) and reshapes D157 and step 40's holes
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -239,6 +244,10 @@ Harvest results this boundary:
 - **tangent**: park 37 · Rob liked the materials spike's individual cell shapes and their animation (the morph and its pulse, not the floating) better than the world's: set the world's opened cell beside the spike's frames and bring its look back → a look to match against the spike's frames when the world is tuned, unless you want it in P34's step
 - 2026-10-25, at range 25 of 26's stop: 1 parked idea, classified.
 - **tangent**: park 38 · patch coverage counts a blank or comment line inside a multi-line statement as executable (30 of the 149 lines D163's span reading added on the round-two maps, 12 blank and 18 comments, all on statements that ran), and a comment inside a callback no test called takes the hits of the call around it; the scan could hand core the lines that hold code, so only those count → all 30 lines read covered on statements that ran, 29 on maps covered whole, so a covered share moves by one line on one map, and the fix is the scan's
+- 2026-10-25, at the step 47 boundary: 3 parked ideas, classified.
+- **tangent**: park 39 · round two, not read: ten seconds in the world's opening frame with input off leaves only the far field's points of light and the chrome; Rob could judge none of the three maps he saw ("couldn't zoom in"), so D95's protocol needs a reading the world can carry (the reader's own zoom, a longer window, a map the reader knows) or round two deferred until atis works on Rob's repos → no step ahead builds on round two's verdict, so D95's rewrite or a deferral can wait for the refine you choose to run, with the lean to defer until atis works on your repos
+- **tangent**: park 40 · round two: at LOD0 the world withholds the tissue, the cells and every mark the inset keys (§5.6), so a change's opening frame is a few dots on black; Rob: "each map started at max zoom and i could only see dots, with hardly any information" → the withholding far field is §5.6's settled look, and changing it is tuning the encodings before the system works end to end
+- **tangent**: park 41 · round two: the notice list takes at most half the column (LIST_SHARE, apps/web/src/chrome/notices.tsx) and scrolls, so the opening frame at 1512 by 982 shows 1 to 4 of a map's six rows whole → a chrome share to tune once you use the world on code you know, and the list scrolls whenever input is on
 
 ## Log
 
@@ -1445,3 +1454,52 @@ folder, so it rides the branch into the PR.)*
   **4.** The reruns matched step 46's slots, with mutants on changed lines equal on three maps and one apart on two.
 
   Each fixture ran its README's commands from step 1 on the clone step 46 kept, with the same toolchain. Each left out only the mutation attempt or dry run on its own. One map's harness ran twice, because sharing the machine with two other mutation runs timed out 84 of its mutants against step 46's 23. Each README's Generation section records the rerun and its figures. Each map passes `assertMap`, and a second write is byte-identical.
+
+- 2026-10-25 — step 47 checkpointed · cbc3919c4 — chore(glance): read glance round two in the world (28m)
+
+  **Summary**: `docs/glance-test.md` now records round two as not read. The world's opening frame, with input off, showed a few points of light, so you could judge none of the three maps you saw. The fail line parks three things for the refine at range 15's stop: the protocol, the far field and the notice list. Criterion 5 stays unscored, so the five fixtures stay sealed.
+
+  1. Round two is recorded as not read, and its fail line parks three things for the refine (D38)
+  2. Criterion 5 stays unscored, so the five fixtures stay sealed for a later reading
+  3. The reading page's own faults are on the record
+  4. The subject no longer matches what happened
+
+  **Readout**:
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    drift
+               → not read: no verdicts, and criterion 5 held sealed
+  decisions    honored:
+               - D95 (round-two-reading), D62 (retake-reader-blind)
+               - D66 (legend-briefing), D87 (legend-inset)
+               - D125 (practice-map-current), D38 (glance-is-a-step)
+  constraints  14 of 14 honored
+  seam         held: 1 of 2 declared, no strays
+  diff         +169 -1 across 1 file
+  spent        28 min · 3 turns · 40s gate · green first run
+  ```
+
+  **Verdict**: ✗ Not standing (done-when drifted)
+
+  **Recommendation**: Approve the corrected subject and land step 47 as a recorded not-read. At range 15's stop, have the refine settle P39 first, and I would lean toward deferring round two until atis runs end to end on your own repos. A reading you cannot see into tells us about the protocol, not about the encodings, and the five sealed fixtures will still be there for it.
+
+  **1.** Round two is recorded as not read, and its fail line parks three things for the refine (D38)
+
+  The section is now titled "Round two: not read". It keeps the world's legend as read and adds how the reading ran: the lettered copies with their meta changed, the page on loopback, the practice map still and in the world, and each map shown from its first frame. Under what the maps showed, it records that every map opened at the far field (LOD0): points of light for the changed source files and the primary's halo, with the tissue, cells and marks only coming up from LOD1. Your answers are in a table. A, B and C were shown. A and B are holds that give the map's silence as their reason, C's question would not go on, and D and E were never shown. Your words after the reading are quoted. Three parks carry the fail line:
+
+  - **P39, the protocol.** Ten seconds in the opening frame with input off is not a reading the world can carry. D95 needs the reader's own zoom, a longer window, a map they know, or round two deferred.
+  - **P40, the far field.** At LOD0 the world withholds everything but the change's lights, by design (§5.6), and on these maps that was a few dots.
+  - **P41, the notice list.** It takes at most half the column and scrolls, so 1 to 4 of six rows showed whole.
+
+  **2.** Criterion 5 stays unscored, so the five fixtures stay sealed for a later reading
+
+  The done-when asks for criterion 5 per D65, and that is the drift. Scoring it means unsealing each map's truth in this doc, which would spend the five fixtures. Kept sealed, the refine can still send them to a later reading, with a fresh order, since A to C's opening frames have been seen. If you would rather have criterion 5 now, say so and I'll unseal and score it before the step lands.
+
+  **3.** The reading page's own faults are on the record
+
+  Full screen never took, so the maps drew in a 1159 by 641 window. The Next button looked the same disabled as enabled. If a reason was typed before merge or hold was chosen, the m and h keys went into the text box, which is most likely why map C's question would not go on. The page lived in `/tmp` and was never part of atis. The server is stopped. A later reading needs a fixed page whatever the refine decides.
+
+  **4.** The subject no longer matches what happened
+
+  Nothing was read, so the planned subject overstates the step. Proposed: `chore(glance): read glance round two in the world` → `chore(glance): record glance round two as not read in the world`. On `looks good` I land it with that subject. Say `keep the title` to land it under the planned one.

@@ -91,3 +91,30 @@ export function lodPlan(previous: LodPlan | undefined, zoom: number, elapsedMs: 
   });
   return { lod, opacity };
 }
+
+/**
+ * The cell's gate (D165), beside the levels: the cell under the view's centre
+ * opens where its skin fills `open` of the free screen, in whichever of its
+ * width and height it fills first, so the whole cell is on the screen as it
+ * opens; it holds open while it fills at least `close`; and once it has closed,
+ * its files ease home from where they floated as its share falls from `close`
+ * to `home`, so they reach their places only as the view climbs on toward the
+ * field. The world hands it in each frame from its `LEVELS` material, so the
+ * dev panel moves it live (D156), and `docs/design.md` records it with the
+ * world's tokens.
+ */
+export type CellGate = { readonly open: number; readonly close: number; readonly home: number };
+
+export const CELL_GATE: CellGate = { open: 0.6, close: 0.45, home: 0.15 };
+
+/** The share of the free screen a stretch of the ground fills, in whichever of its width and height fills it first: its size in layout units, the screen's in pixels, and how many pixels one layout unit takes. */
+export function fillOf(size: { readonly width: number; readonly height: number }, screen: { readonly width: number; readonly height: number; readonly pixelsPerUnit: number }): number {
+  return Math.max((size.width * screen.pixelsPerUnit) / Math.max(1, screen.width), (size.height * screen.pixelsPerUnit) / Math.max(1, screen.height));
+}
+
+/** How far home a closed cell's files have come by the share of the free screen it fills: none while it fills `close` or more, all the way at `home` or less, eased between. */
+export function homewardAt(fill: number, gate: CellGate = CELL_GATE): number {
+  const span = gate.close - gate.home;
+  const share = span <= 0 ? (fill < gate.close ? 1 : 0) : Math.min(1, Math.max(0, (gate.close - fill) / span));
+  return share * share * (3 - 2 * share);
+}

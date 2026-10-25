@@ -132,25 +132,29 @@ test('each file is stained by what the change did to it, with the share of its c
   ]);
 });
 
-test('at rest every body sits where the layout put it in its still outline; opened, it drifts as the scheduler drifts it and moves by its rules (D147, D157)', () => {
+test('at rest every body sits where the layout put it in its still outline; opened, it floats where the scheduler floats it and moves by its rules (D147, D157)', () => {
   const slide = slideOf(PM);
-  const rest = interiorOf(DEMO, slide, { seed: 7 });
+  const rest = interiorOf(slide);
   for (const body of rest) {
     expect([body.x, body.y, body.r]).toEqual([body.rest.x, body.rest.y, body.rest.r]);
     expect(body.outline).toEqual(outlineOf(body.id, body.rest, body.rules));
   }
   const scheduler = createScheduler({ clock: () => 9000, seed: 7, tiers: [], reduced: false });
   scheduler.load();
-  const moving = interiorOf(DEMO, slide, { t: 9000, seed: 7, shape: scheduler.shape });
-  const drifted = new Map(driftOf(DEMO, PM, 9000, 7).map((file) => [file.id, file] as const));
+  const floated = driftOf(DEMO, PM, 9000, { seed: 7, screen: 400 });
+  const moving = interiorOf(slide, { drifted: floated, shape: scheduler.shape });
+  const drifted = new Map(floated.map((file) => [file.id, file] as const));
   for (const body of moving) expect([body.x, body.y]).toEqual([drifted.get(body.id)?.x, drifted.get(body.id)?.y]);
+  expect(moving.some((body) => body.x !== body.rest.x || body.y !== body.rest.y)).toBe(true);
+  // A file the float leaves out sits where the layout put it.
+  expect(interiorOf(slide, { drifted: floated.filter((file) => file.id !== TOOLS) }).find((body) => body.id === TOOLS)).toMatchObject({ x: bodyOf(rest, TOOLS).rest.x, y: bodyOf(rest, TOOLS).rest.y });
   // A file within every threshold keeps its still outline; one breaking rules is pulsing and turned.
   expect(bodyOf(moving, SLOTS).outline).toEqual(outlineOf(SLOTS, bodyOf(moving, SLOTS), 0));
   expect(bodyOf(moving, TOOLS).outline).not.toEqual(outlineOf(TOOLS, bodyOf(moving, TOOLS), 2, AT_REST));
   expect(bodyOf(moving, TOOLS).outline).toEqual(outlineOf(TOOLS, bodyOf(moving, TOOLS), 2, scheduler.shape(2)));
   // Under reduced motion nothing moves, and one seed and one time give one frame (C3).
-  for (const body of interiorOf(DEMO, slide, { t: 9000, seed: 7, reduced: true, shape: scheduler.shape })) expect(body).toEqual(bodyOf(rest, body.id));
-  expect(interiorOf(DEMO, slide, { t: 9000, seed: 7, shape: scheduler.shape })).toEqual(moving);
+  for (const body of interiorOf(slide, { drifted: floated, reduced: true, shape: scheduler.shape })) expect(body).toEqual(bodyOf(rest, body.id));
+  expect(interiorOf(slide, { drifted: floated, shape: scheduler.shape })).toEqual(moving);
 });
 
 test('the exploded view spreads every body out from the middle along its leader, clear of the others, and gathers them back by how far it has spread', () => {
@@ -162,10 +166,11 @@ test('the exploded view spreads every body out from the middle along its leader,
       expect(Math.hypot(a.exploded[0] - b.exploded[0], a.exploded[1] - b.exploded[1]), `${a.id} and ${b.id}`).toBeGreaterThanOrEqual(a.rest.r + b.rest.r + INTERIOR_LAYOUT.explodeGap - 1e-6);
     }
   });
-  const spread = interiorOf(DEMO, slide, { t: 9000, seed: 7, explode: 1 });
+  const drifted = driftOf(DEMO, PM, 9000, { seed: 7, screen: 400 });
+  const spread = interiorOf(slide, { drifted, explode: 1 });
   for (const body of spread) expect([body.x, body.y]).toEqual(body.exploded);
-  const half = interiorOf(DEMO, slide, { t: 9000, seed: 7, explode: 0.5 });
-  const moving = interiorOf(DEMO, slide, { t: 9000, seed: 7 });
+  const half = interiorOf(slide, { drifted, explode: 0.5 });
+  const moving = interiorOf(slide, { drifted });
   for (const body of half) {
     const from = bodyOf(moving, body.id);
     expect(body.x).toBeCloseTo((from.x + body.exploded[0]) / 2, 9);
@@ -178,7 +183,7 @@ test('the exploded view spreads every body out from the middle along its leader,
 
 test('the tags stand in two columns beside the slide, each on its body\'s side, stacked down the column clear of one another, with a leader to the body\'s rim', () => {
   const slide = slideOf(PM);
-  const bodies = interiorOf(DEMO, slide, { seed: 7 });
+  const bodies = interiorOf(slide);
   const tags = tagsOf(slide, bodies, project, SCREEN);
   expect(tags.map((tag) => tag.text).toSorted()).toEqual(['+tools.ts · 2', 'index.ts', 'legacy.ts', 'slots.ts']);
   const onScreen = slide.ring.map(([x, y]) => project(x, y));
@@ -220,7 +225,7 @@ test("the scheduler fades a slide in over the cross-fade's time as a cell opens,
   let now = 0;
   const scheduler = createScheduler({ clock: () => now, seed: 7, tiers: [], reduced: false });
   scheduler.load();
-  expect(scheduler.frame().open).toEqual({ cell: undefined, shown: 0, exploded: 0, since: undefined });
+  expect(scheduler.frame().open).toEqual({ cell: undefined, shown: 0, exploded: 0 });
   now = 1000;
   scheduler.frame();
   scheduler.open(PM);
@@ -228,7 +233,6 @@ test("the scheduler fades a slide in over the cross-fade's time as a cell opens,
   const half = scheduler.frame().open;
   expect(half.cell).toBe(PM);
   expect(half.shown).toBeCloseTo(0.5, 9);
-  expect(half.since).toBe(LOD_FADE_MS / 2);
   now = 1000 + LOD_FADE_MS;
   expect(scheduler.frame().open.shown).toBe(1);
   // The exploded view spreads at the same rate, and gathers.
@@ -240,15 +244,19 @@ test("the scheduler fades a slide in over the cross-fade's time as a cell opens,
   scheduler.explode(false);
   now += LOD_FADE_MS;
   expect(scheduler.frame().open.exploded).toBe(0);
-  // Closing fades the slide out, the cell still named and its bodies held where they were, until it is gone.
+  // Closing fades the slide out, the cell still named, until it is gone; opened again as it fades, it fades back in from there.
   now = 5000;
   scheduler.frame();
   scheduler.open(undefined);
   now = 5000 + LOD_FADE_MS / 2;
   const closing = scheduler.frame().open;
-  expect(closing).toEqual({ cell: PM, shown: 0.5, exploded: 0, since: 4000 });
-  now = 5000 + LOD_FADE_MS;
-  expect(scheduler.frame().open).toEqual({ cell: undefined, shown: 0, exploded: 0, since: undefined });
+  expect(closing).toEqual({ cell: PM, shown: 0.5, exploded: 0 });
+  scheduler.open(PM);
+  now += LOD_FADE_MS / 4;
+  expect(scheduler.frame().open.shown).toBeCloseTo(0.75, 9);
+  scheduler.open(undefined);
+  now += LOD_FADE_MS;
+  expect(scheduler.frame().open).toEqual({ cell: undefined, shown: 0, exploded: 0 });
   // Another cell opening over one fades in from nothing, and the exploded view gathers.
   scheduler.open(PM);
   now += LOD_FADE_MS;
@@ -258,12 +266,12 @@ test("the scheduler fades a slide in over the cross-fade's time as a cell opens,
   expect(scheduler.frame().open.exploded).toBe(1);
   scheduler.open(CORE);
   const switched = scheduler.frame().open;
-  expect(switched).toEqual({ cell: CORE, shown: 0, exploded: 0, since: 0 });
+  expect(switched).toEqual({ cell: CORE, shown: 0, exploded: 0 });
   // Under reduced motion the slide and the exploded view cut.
   const still = createScheduler({ clock: () => now, seed: 7, tiers: [], reduced: true });
   still.open(PM);
   still.explode(true);
-  expect(still.frame().open).toEqual({ cell: PM, shown: 1, exploded: 1, since: 0 });
+  expect(still.frame().open).toEqual({ cell: PM, shown: 1, exploded: 1 });
   still.open(undefined);
-  expect(still.frame().open).toEqual({ cell: undefined, shown: 0, exploded: 0, since: undefined });
+  expect(still.frame().open).toEqual({ cell: undefined, shown: 0, exploded: 0 });
 });

@@ -17,11 +17,14 @@
  * crosses their gates. An opened cell's slide fades in and out at the same
  * rate, and its exploded view spreads and gathers at it too (step 40). Inside
  * an opened cell each file's shape pulses and turns by the rules it breaks
- * (D147), and each file drifts by how loosely its cellmates hold it (D157).
- * The curves are the materials spike's, as `docs/design.md` records them.
+ * (D147), and each file floats by how loosely its cellmates hold it (D157),
+ * slowly and on the screen's scale; once the cell closes, the surface draws
+ * its files where they last floated, and they ease home only as the view
+ * climbs on toward the field (D165). The curves are the materials spike's, as
+ * `docs/design.md` records them.
  *
  * Under reduced motion only a static halo stands for the load flare: no
- * settle, no breathing, no flares, no jiggle, still shapes, no drift, and a
+ * settle, no breathing, no flares, no jiggle, still shapes, no float, and a
  * fly-to, a slide and an exploded view that cut rather than ease.
  *
  * The tokens it is timed from come in as one object, read at the moment each
@@ -32,10 +35,11 @@
 
 import type { MapJson, NoticeTier } from 'core';
 
-import { DRIFT_TOKENS, driftOf } from './drift.js';
-import type { Drifted, DriftTokens } from './drift.js';
-import { lodPlan } from './lod.js';
-import type { LodGate, LodPlan } from './lod.js';
+import { DRIFT_TOKENS, homeFloat, startFloat, stepFloat } from './drift.js';
+import type { Drifted, DriftTokens, Float } from './drift.js';
+import { CELL_GATE, homewardAt, lodPlan } from './lod.js';
+import type { CellGate, LodGate, LodPlan } from './lod.js';
+import type { Point } from './minimap.js';
 import { AT_REST, MAX_RULES } from './shape.js';
 import type { ShapeMotion } from './shape.js';
 import {
@@ -133,12 +137,25 @@ export type NoticeLight = { readonly gain: number; readonly scale: number };
 
 /**
  * The opened cell this frame: which cell its slide shows, while it is open
- * and until it has faded out; how far the slide has faded in, 0 to 1; how far
- * its exploded view has spread, 0 to 1; and the milliseconds since the cell
- * opened, held where they stood once it closes, so the bodies keep their
- * places while the slide fades.
+ * and until it has faded out; how far the slide has faded in, 0 to 1; and how
+ * far its exploded view has spread, 0 to 1.
  */
-export type OpenFrame = { readonly cell: string | undefined; readonly shown: number; readonly exploded: number; readonly since: number | undefined };
+export type OpenFrame = { readonly cell: string | undefined; readonly shown: number; readonly exploded: number };
+
+/**
+ * What the float is measured on this frame (D165): how many layout units the
+ * free screen's shorter side spans at the camera's zoom, the share of the free
+ * screen a cell's skin fills, and the cell's gate, resting when left out.
+ */
+export type FloatView = { readonly screen: number; readonly fill: (cell: string) => number; readonly gate?: CellGate };
+
+/**
+ * Where the float has the files this frame: the slide's cell's, where its
+ * bodies stand, and every file the surface draws off its place, by path:
+ * each closed cell's, where it last floated, eased home by how far the view
+ * has climbed from it.
+ */
+export type Floated = { readonly open: readonly Drifted[]; readonly surface: ReadonlyMap<string, Point> };
 
 /** Everything the world moves this frame. */
 export type MotionFrame = {
@@ -183,8 +200,8 @@ export type Scheduler = {
   readonly open: (cell: string | undefined) => void;
   /** Spread the opened cell's exploded view, or gather it; nothing while no cell is open. */
   readonly explode: (on: boolean) => void;
-  /** Where the opened cell's files have drifted by the clock's time (D157); none while no cell is open. */
-  readonly drift: (map: MapJson) => readonly Drifted[];
+  /** Step the open cell's float to the clock's time, and say where every floated file stands (D157, D165); nothing moves under reduced motion. */
+  readonly float: (map: MapJson, view: FloatView) => Floated;
   /** What happened to every flare asked for, in order: run, queued or dropped, with the time and the rank. */
   readonly log: () => readonly string[];
 };
@@ -238,6 +255,9 @@ function easeInOut(progress: number): number {
 
 type Flare = { readonly index: number; readonly start: number; readonly gain: number };
 
+/** The most of a jump in the clock the float steps through, as when the tab was hidden: it floats on from there rather than racing to catch up. */
+const FLOAT_CATCH_UP_MS = 1000;
+
 /** The scheduler, over its clock and its seed. */
 export function createScheduler({ clock, seed, tiers, reduced, tokens: T = MOTION_TOKENS }: SchedulerOptions): Scheduler {
   const chance = seeded(seed);
@@ -252,13 +272,16 @@ export function createScheduler({ clock, seed, tiers, reduced, tokens: T = MOTIO
   let flyStart: number | undefined;
   let lastFrame: number | undefined;
   let lod: LodPlan | undefined;
-  let opened: { readonly cell: string; readonly at: number } | undefined;
-  // The slide: the cell it shows until it has faded out, how far it has faded in, and the time the closed cell had been open.
+  let opened: string | undefined;
+  let openedAt = 0;
+  // The slide: the cell it shows until it has faded out, and how far it has faded in.
   let shownCell: string | undefined;
   let shown = 0;
-  let held: number | undefined;
   let exploded = 0;
   let explodeTarget = 0;
+  // The open cell's float and the clock reading its time counts from, laid once the world first asks for it; and each closed cell's, held where it last floated.
+  let floating: { readonly float: Float; readonly from: number } | undefined;
+  const resting = new Map<string, Float>();
 
   /** A value eased toward its target at a fixed rate: a cross-fade from anywhere takes at most `LOD_FADE_MS`. */
   const approach = (value: number, target: number, elapsed: number): number => {
@@ -338,11 +361,8 @@ export function createScheduler({ clock, seed, tiers, reduced, tokens: T = MOTIO
     lod = zoom === undefined ? lod : lodPlan(lod, zoom, elapsed, T.LOD_FADE_MS, gates);
     shown = approach(shown, opened === undefined ? 0 : 1, elapsed);
     exploded = approach(exploded, explodeTarget, elapsed);
-    if (shown === 0 && opened === undefined) {
-      shownCell = undefined;
-      held = undefined;
-    }
-    const open: OpenFrame = { cell: shownCell, shown, exploded, since: opened === undefined ? held : now - opened.at };
+    if (shown === 0 && opened === undefined) shownCell = undefined;
+    const open: OpenFrame = { cell: shownCell, shown, exploded };
     const shared = { t: since, hover: hoverValue, fly: flying, open, ...(lod === undefined || zoom === undefined ? {} : { lod }) };
 
     if (reduced || loadAt === undefined) {
@@ -391,16 +411,17 @@ export function createScheduler({ clock, seed, tiers, reduced, tokens: T = MOTIO
     frame,
     shape,
     open: (cell) => {
-      const now = clock();
-      if (cell === undefined) {
-        held = opened === undefined ? held : now - opened.at;
-        opened = undefined;
-      } else {
-        // Another cell opens over the last: its slide fades in from nothing.
-        if (opened?.cell !== cell) shown = 0;
-        opened = { cell, at: now };
+      if (cell !== undefined && opened === cell) return;
+      // The cell that was open keeps its files where they last floated.
+      if (floating !== undefined) resting.set(floating.float.cell, floating.float);
+      floating = undefined;
+      if (cell === undefined) opened = undefined;
+      else {
+        // Another cell opens over the slide: it fades in from nothing. The same one opened again as it fades out fades back in from there.
+        if (shownCell !== cell) shown = 0;
+        opened = cell;
+        openedAt = clock();
         shownCell = cell;
-        held = undefined;
       }
       explodeTarget = 0;
       exploded = 0;
@@ -408,7 +429,35 @@ export function createScheduler({ clock, seed, tiers, reduced, tokens: T = MOTIO
     explode: (on) => {
       explodeTarget = opened !== undefined && on ? 1 : 0;
     },
-    drift: (map) => (opened === undefined ? [] : driftOf(map, opened.cell, clock() - opened.at, seed, reduced, T)),
+    float: (map, view) => {
+      if (reduced) return { open: [], surface: new Map() };
+      const now = clock();
+      const gate = view.gate ?? CELL_GATE;
+      if (opened !== undefined && floating?.float.cell !== opened) {
+        // A cell opened again floats on from where the surface draws its files; any other floats out from rest.
+        const held = resting.get(opened);
+        resting.delete(opened);
+        const float = held === undefined ? startFloat(map, opened) : homeFloat(map, held, homewardAt(view.fill(opened), gate));
+        // Its clock runs from the moment the cell opened, on from where a held float's stood.
+        floating = { float, from: openedAt - float.t };
+      }
+      if (floating !== undefined) {
+        const from = Math.max(floating.from, now - floating.float.t - FLOAT_CATCH_UP_MS);
+        floating = { float: stepFloat(map, floating.float, now - from, { seed, screen: view.screen, tokens: T }), from };
+      }
+      const surface = new Map<string, Point>();
+      const positions = map.terrain.layout?.positions ?? {};
+      let fading: readonly Drifted[] = [];
+      for (const [cell, held] of resting) {
+        const eased = homeFloat(map, held, homewardAt(view.fill(cell), gate));
+        if (cell === shownCell) fading = eased.files;
+        const away = eased.files.filter((file) => file.x !== positions[file.id]?.x || file.y !== positions[file.id]?.y);
+        // Home at last, or never away: the cell's files are where the layout put them, and the surface draws them there.
+        if (away.length === 0 && cell !== shownCell) resting.delete(cell);
+        for (const file of away) surface.set(file.id, [file.x, file.y]);
+      }
+      return { open: floating?.float.files ?? fading, surface };
+    },
     log: () => [...log],
   };
 }

@@ -11,7 +11,7 @@
  * already dress, and an opened cell's slide (step 40).
  */
 
-import { INTERIOR_LAYOUT, LOD_GATES } from 'scene';
+import { CELL_GATE, INTERIOR_LAYOUT, LOD_GATES } from 'scene';
 import type { InteriorLayout, LodGate } from 'scene';
 
 /** The skin's material: the albedos, the membrane line, how rough and how wet it is, the share of its albedo kept at the far field, and the tissue's own faint light. */
@@ -158,10 +158,15 @@ export type CameraLook = {
 
 export const CAMERA: CameraLook = { smooth: 0.1, dragSmooth: 0.05 };
 
-/** The levels of detail's gates (§6): the zoom over the fit each of LOD1 to LOD4 is entered at and left at (`libs/scene/src/lod.ts`). */
-export type LevelsLook = { readonly gates: readonly LodGate[] };
+/**
+ * The levels of detail's gates (§6): the zoom over the fit each of LOD1 to
+ * LOD4 is entered at and left at; and the cell's gate beside them (D165): the
+ * share of the free screen a cell opens at, the share it holds open at, and
+ * the share at which a closed cell's files are home (`libs/scene/src/lod.ts`).
+ */
+export type LevelsLook = { readonly gates: readonly LodGate[]; readonly cellOpen: number; readonly cellClose: number; readonly cellHome: number };
 
-export const LEVELS: LevelsLook = { gates: LOD_GATES };
+export const LEVELS: LevelsLook = { gates: LOD_GATES, cellOpen: CELL_GATE.open, cellClose: CELL_GATE.close, cellHome: CELL_GATE.home };
 
 /**
  * The minimap at the chrome's bottom left (D154): flat chrome, never glowing

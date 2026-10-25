@@ -16,16 +16,18 @@
  * (D148) and a secondary's stain flares rarer and dimmer. The halo's own
  * share of light and bloom are the notice look's, live from the registry.
  * Under an opened cell's slide the marks in that cell give way as the slide
- * fades in, since the slide draws the change its own way (step 40). The
+ * fades in, since the slide draws the change its own way (step 40), and once a
+ * cell has closed, the marks on its files stand with them where they last
+ * floated (D165). The
  * instance's numbers are packed into five buffers beside the strip's two,
  * since WebGPU allows a pipeline eight vertex buffers and no more.
  */
 
-import { BufferAttribute, DataTexture, DoubleSide, InstancedBufferAttribute, InstancedBufferGeometry, Mesh, MeshBasicNodeMaterial } from 'three/webgpu';
+import { BufferAttribute, DataTexture, DoubleSide, DynamicDrawUsage, InstancedBufferAttribute, InstancedBufferGeometry, Mesh, MeshBasicNodeMaterial } from 'three/webgpu';
 import type { UniformNode } from 'three/webgpu';
 import { abs, attribute, cos, float, fract, length, mix, mrt, positionLocal, select, sin, step, texture, uniform, uniformArray, varying, vec2, vec3, vec4 } from 'three/tsl';
 import { HATCH_PITCH, HATCH_WIDTH, STIPPLE_DOT, STIPPLE_PITCH } from 'scene';
-import type { Grid, NoticeLight } from 'scene';
+import type { Grid, NoticeLight, Point } from 'scene';
 
 import { hueIndex } from './palette.js';
 import type { Palette } from './palette.js';
@@ -51,6 +53,8 @@ export type Sectors = {
   readonly light: (lights: readonly NoticeLight[]) => void;
   /** Let the marks in a cell give way under its slide, by how far the slide has faded in; none with no cell open. */
   readonly hide: (cell: string | undefined, fade: number) => void;
+  /** Stand the marks on these files with them, by path, where the float last left them, and every other mark at its place (D165). */
+  readonly move: (moved: ReadonlyMap<string, Point>) => void;
 };
 
 /** A strip of `STEPS` steps along and two rows across: each vertex knows how far along it is and which side it is on, as one `step` of two. */
@@ -98,7 +102,9 @@ export const createSectors = (sectors: readonly Sector[], relief: DataTexture, g
     style.set([hueIndex(sector.hue), sector.opacity, sector.bloom, sector.far ? 1 : 0], i * 4);
     extra.set([PATTERN_INDEX[sector.pattern], sector.notice + 1, sector.kind === 'halo' ? 1 : 0, sector.cell === undefined ? 0 : (cellNumber.get(sector.cell) ?? 0)], i * 4);
   });
-  geometry.setAttribute('centre', new InstancedBufferAttribute(centre, 3));
+  const centreAttribute = new InstancedBufferAttribute(centre, 3);
+  centreAttribute.setUsage(DynamicDrawUsage);
+  geometry.setAttribute('centre', centreAttribute);
   geometry.setAttribute('sweep', new InstancedBufferAttribute(sweep, 4));
   geometry.setAttribute('edges', new InstancedBufferAttribute(edges, 4));
   geometry.setAttribute('style', new InstancedBufferAttribute(style, 4));
@@ -164,6 +170,32 @@ export const createSectors = (sectors: readonly Sector[], relief: DataTexture, g
   // A mark is light; the bloom sees the share it names (D152), and of the halo's the share the notice look gives it.
   material.mrtNode = mrt({ emissive: vec4(colour.mul(alpha).mul(look.z).mul(mix(float(1), haloBloom, halo)).mul(bloom), 1) });
 
+  // Each mark's file, the files' places as the marks rest round them, and the offsets as last laid, so a move reads off the place.
+  const byPath = new Map<string, number[]>();
+  sectors.forEach((sector, i) => byPath.set(sector.path, [...(byPath.get(sector.path) ?? []), i]));
+  const placed = Float32Array.from(centre);
+  let offsets = new Map<string, Point>();
+  const move = (moved: ReadonlyMap<string, Point>): void => {
+    const next = new Map<string, Point>();
+    for (const [path, [px, py]] of moved) {
+      const first = byPath.get(path)?.[0];
+      if (first === undefined) continue;
+      const [rx, ry] = [sectors[first]?.x ?? px, sectors[first]?.y ?? py];
+      if (px !== rx || py !== ry) next.set(path, [px - rx, py - ry]);
+    }
+    const same = next.size === offsets.size && [...next].every(([path, [dx, dy]]) => offsets.get(path)?.[0] === dx && offsets.get(path)?.[1] === dy);
+    if (same) return;
+    for (const path of new Set([...offsets.keys(), ...next.keys()])) {
+      const [dx, dy] = next.get(path) ?? [0, 0];
+      for (const i of byPath.get(path) ?? []) {
+        centre[i * 3] = (placed[i * 3] ?? 0) + dx;
+        centre[i * 3 + 1] = (placed[i * 3 + 1] ?? 0) + dy;
+      }
+    }
+    centreAttribute.needsUpdate = true;
+    offsets = next;
+  };
+
   const mesh = new Mesh(geometry, material);
   mesh.frustumCulled = false;
   mesh.renderOrder = 2;
@@ -182,6 +214,7 @@ export const createSectors = (sectors: readonly Sector[], relief: DataTexture, g
       hidden.value = cell === undefined ? 0 : (cellNumber.get(cell) ?? 0);
       hiddenFade.value = fade;
     },
+    move,
   };
 };
 
