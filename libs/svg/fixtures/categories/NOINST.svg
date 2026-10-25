@@ -285,114 +285,156 @@
       </g>
     </g>
     <g id="legend">
-      <rect x="490" y="484" width="280" height="217" fill="none" stroke="#6b7480" stroke-width="1"/>
-      <text x="496" y="497" font-size="7" font-variant="small-caps" fill="#6b7480">legend</text>
+      <rect x="490" y="412" width="280" height="289" fill="none" stroke="#6b7480" stroke-width="1"/>
+      <text x="496" y="425" font-size="7" font-variant="small-caps" fill="#6b7480">legend</text>
       <g data-mark="category">
         <g data-balloon="1">
-          <circle cx="503" cy="506" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
-          <text x="503" y="508.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">1</text>
+          <circle cx="503" cy="434" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="436.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">1</text>
         </g>
         <g>
-          <rect x="516" y="499" width="19.02" height="14" fill="#4fd37a"/>
-          <text x="519" y="508.45" font-size="7" font-weight="bold" fill="#0a0c0f">VFR</text>
+          <rect x="516" y="427" width="19.02" height="14" fill="#4fd37a"/>
+          <text x="519" y="436.45" font-size="7" font-weight="bold" fill="#0a0c0f">VFR</text>
         </g>
         <g>
-          <rect x="536.02" y="499" width="23.36" height="14" fill="#5b8def"/>
-          <text x="539.02" y="508.45" font-size="7" font-weight="bold" fill="#0a0c0f">MVFR</text>
+          <rect x="536.02" y="427" width="23.36" height="14" fill="#5b8def"/>
+          <text x="539.02" y="436.45" font-size="7" font-weight="bold" fill="#0a0c0f">MVFR</text>
         </g>
         <g>
-          <rect x="560.38" y="499" width="19.02" height="14" fill="#f0546a"/>
-          <text x="563.38" y="508.45" font-size="7" font-weight="bold" fill="#0a0c0f">IFR</text>
+          <rect x="560.38" y="427" width="19.02" height="14" fill="#f0546a"/>
+          <text x="563.38" y="436.45" font-size="7" font-weight="bold" fill="#0a0c0f">IFR</text>
         </g>
         <g>
-          <rect x="580.4" y="499" width="23.36" height="14" fill="#e35ce0"/>
-          <text x="583.4" y="508.45" font-size="7" font-weight="bold" fill="#0a0c0f">LIFR</text>
+          <rect x="580.4" y="427" width="23.36" height="14" fill="#e35ce0"/>
+          <text x="583.4" y="436.45" font-size="7" font-weight="bold" fill="#0a0c0f">LIFR</text>
         </g>
-        <text x="610.76" y="508.45" font-size="7" fill="#e6edf3">category: set by the change alone</text>
+        <text x="610.76" y="436.45" font-size="7" fill="#e6edf3">category: set by the change alone</text>
       </g>
       <g data-mark="lit-arc">
         <g data-balloon="2">
-          <circle cx="503" cy="524" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
-          <text x="503" y="526.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">2</text>
+          <circle cx="503" cy="452" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="454.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">2</text>
         </g>
-        <circle cx="528" cy="524" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-        <circle cx="528" cy="524" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
-        <circle cx="528" cy="524" r="6.25" fill="none" stroke="#e6edf3" stroke-width="2.5" pathLength="1" stroke-dasharray="0.4 1" transform="rotate(-90 528 524)"/>
-        <text x="546" y="526.45" font-size="7" fill="#e6edf3">lit arc: changed lines no test ran</text>
+        <circle cx="528" cy="452" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="528" cy="452" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
+        <circle cx="528" cy="452" r="6.25" fill="none" stroke="#e6edf3" stroke-width="2.5" pathLength="1" stroke-dasharray="0.4 1" transform="rotate(-90 528 452)"/>
+        <text x="546" y="454.45" font-size="7" fill="#e6edf3">lit arc: changed lines no test ran</text>
       </g>
       <g data-mark="hairline">
         <g data-balloon="3">
-          <circle cx="503" cy="542" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
-          <text x="503" y="544.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">3</text>
+          <circle cx="503" cy="470" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="472.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">3</text>
         </g>
-        <circle cx="528" cy="542" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-        <circle cx="528" cy="542" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
-        <text x="546" y="544.45" font-size="7" fill="#e6edf3">hairline: changed lines the tests ran</text>
+        <circle cx="528" cy="470" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="528" cy="470" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
+        <text x="546" y="472.45" font-size="7" fill="#e6edf3">hairline: changed lines the tests ran</text>
       </g>
       <g data-mark="notch">
         <g data-balloon="4">
-          <circle cx="503" cy="560" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
-          <text x="503" y="562.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">4</text>
+          <circle cx="503" cy="488" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="490.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">4</text>
         </g>
-        <circle cx="528" cy="560" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-        <circle cx="528" cy="560" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
-        <path d="M526 552.5L528 557L530 552.5Z" fill="#e6edf3"/>
-        <text x="546" y="562.45" font-size="7" fill="#e6edf3">notch: a mutant no test killed</text>
+        <circle cx="528" cy="488" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="528" cy="488" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
+        <path d="M526 480.5L528 485L530 480.5Z" fill="#e6edf3"/>
+        <text x="546" y="490.45" font-size="7" fill="#e6edf3">notch: a mutant no test killed</text>
       </g>
       <g data-mark="stitches">
         <g data-balloon="5">
-          <circle cx="503" cy="578" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
-          <text x="503" y="580.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">5</text>
+          <circle cx="503" cy="506" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="508.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">5</text>
         </g>
-        <circle cx="528" cy="578" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-        <line x1="528.5" y1="578.87" x2="532.5" y2="585.79" stroke="#e6edf3" stroke-width="2"/>
-        <line x1="528" y1="579" x2="528" y2="587" stroke="#6b7480" stroke-width="2"/>
-        <line x1="527.5" y1="578.87" x2="526" y2="581.46" stroke="#f0546a" stroke-width="2"/>
-        <line x1="525" y1="583.2" x2="523.5" y2="585.79" stroke="#f0546a" stroke-width="2"/>
-        <text x="546" y="580.45" font-size="7" fill="#e6edf3">stitches: its tests passed, not run, failed</text>
+        <circle cx="528" cy="506" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <line x1="528.5" y1="506.87" x2="532.5" y2="513.79" stroke="#e6edf3" stroke-width="2"/>
+        <line x1="528" y1="507" x2="528" y2="515" stroke="#6b7480" stroke-width="2"/>
+        <line x1="527.5" y1="506.87" x2="526" y2="509.46" stroke="#f0546a" stroke-width="2"/>
+        <line x1="525" y1="511.2" x2="523.5" y2="513.79" stroke="#f0546a" stroke-width="2"/>
+        <text x="546" y="508.45" font-size="7" fill="#e6edf3">stitches: its tests passed, not run, failed</text>
       </g>
       <g data-mark="red-bolt">
         <g data-balloon="6">
-          <circle cx="503" cy="596" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
-          <text x="503" y="598.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">6</text>
+          <circle cx="503" cy="524" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="526.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">6</text>
         </g>
-        <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" fill="#f0546a" transform="translate(528 596) scale(1)"/>
-        <text x="546" y="598.45" font-size="7" fill="#e6edf3">red bolt: a failing check names a changed file</text>
+        <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" fill="#f0546a" transform="translate(528 524) scale(1)"/>
+        <text x="546" y="526.45" font-size="7" fill="#e6edf3">red bolt: a failing check names a changed file</text>
       </g>
       <g data-mark="grey-bolt">
         <g data-balloon="7">
-          <circle cx="503" cy="614" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
-          <text x="503" y="616.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">7</text>
+          <circle cx="503" cy="542" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="544.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">7</text>
         </g>
-        <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" fill="#58616b" transform="translate(528 614) scale(0.6)"/>
-        <text x="546" y="616.45" font-size="7" fill="#e6edf3">grey bolt: fails on files the change left alone</text>
+        <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" fill="#58616b" transform="translate(528 542) scale(0.6)"/>
+        <text x="546" y="544.45" font-size="7" fill="#e6edf3">grey bolt: fails on files the change left alone</text>
       </g>
       <g data-mark="ghost">
         <g data-balloon="8">
-          <circle cx="503" cy="632" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
-          <text x="503" y="634.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">8</text>
+          <circle cx="503" cy="560" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="562.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">8</text>
         </g>
-        <circle cx="528" cy="632" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-        <circle cx="528" cy="632" r="8" fill="none" stroke="#7c8590" stroke-dasharray="2 2"/>
-        <text x="546" y="634.45" font-size="7" fill="#e6edf3">ghost: usually changes with these, and did not</text>
+        <circle cx="528" cy="560" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="528" cy="560" r="8" fill="none" stroke="#7c8590" stroke-dasharray="2 2"/>
+        <text x="546" y="562.45" font-size="7" fill="#e6edf3">ghost: usually changes with these, and did not</text>
       </g>
       <g data-mark="stain">
         <g data-balloon="9">
-          <circle cx="503" cy="650" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
-          <text x="503" y="652.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">9</text>
+          <circle cx="503" cy="578" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="580.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">9</text>
         </g>
-        <circle cx="528" cy="650" r="5" fill="#5fd8ea" stroke="#5f6873" stroke-width="1"/>
-        <text x="546" y="652.45" font-size="7" fill="#e6edf3">cyan: a changed file; +path in a row: added</text>
+        <circle cx="528" cy="578" r="5" fill="#5fd8ea" stroke="#5f6873" stroke-width="1"/>
+        <text x="546" y="580.45" font-size="7" fill="#e6edf3">cyan: a changed file; +path in a row: added</text>
       </g>
       <g data-mark="unmeasured">
         <g data-balloon="10">
+          <circle cx="503" cy="596" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="598.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">10</text>
+        </g>
+        <circle cx="528" cy="596" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="528" cy="596" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
+        <circle cx="528" cy="596" r="6.25" fill="none" stroke="#e6edf3" stroke-width="2.5"/>
+        <text x="546" y="598.45" font-size="7" fill="#e6edf3">skin lit whole: no coverage report names it</text>
+      </g>
+      <g data-mark="reach">
+        <g data-balloon="11">
+          <circle cx="503" cy="614" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="616.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">11</text>
+        </g>
+        <rect data-hops="0" x="516" y="609" width="8" height="10" fill="#7d7970"/>
+        <rect data-hops="1" x="524" y="609" width="8" height="10" fill="#555553"/>
+        <rect data-hops="2" x="532" y="609" width="8" height="10" fill="#3e3f41"/>
+        <text x="546" y="616.45" font-size="7" fill="#e6edf3">warm light: the reach, dimmer each module out</text>
+      </g>
+      <g data-mark="crossing">
+        <g data-balloon="12">
+          <circle cx="503" cy="632" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="634.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">12</text>
+        </g>
+        <circle cx="528" cy="632" r="8" fill="#e0d3b9"/>
+        <circle cx="528" cy="632" r="5" fill="none" stroke="#5f6873" stroke-width="1"/>
+        <text x="546" y="634.45" font-size="7" fill="#e6edf3">lit halo: where the reach leaves a module</text>
+      </g>
+      <g data-mark="hatching">
+        <g data-balloon="13">
+          <circle cx="503" cy="650" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="652.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">13</text>
+        </g>
+        <circle cx="528" cy="650" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <line x1="523.53" y1="650.47" x2="528.47" y2="645.53" stroke="#a0a7af" stroke-width="1"/>
+        <line x1="524.82" y1="653.18" x2="531.18" y2="646.82" stroke="#a0a7af" stroke-width="1"/>
+        <line x1="527.53" y1="654.47" x2="532.47" y2="649.53" stroke="#a0a7af" stroke-width="1"/>
+        <text x="546" y="652.45" font-size="7" fill="#e6edf3">hatching: how much of it was rewritten lately</text>
+      </g>
+      <g data-mark="stipple">
+        <g data-balloon="14">
           <circle cx="503" cy="668" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
-          <text x="503" y="670.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">10</text>
+          <text x="503" y="670.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">14</text>
         </g>
         <circle cx="528" cy="668" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-        <circle cx="528" cy="668" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
-        <circle cx="528" cy="668" r="6.25" fill="none" stroke="#e6edf3" stroke-width="2.5"/>
-        <text x="546" y="670.45" font-size="7" fill="#e6edf3">skin lit whole: no coverage report names it</text>
+        <circle cx="526" cy="666" r="0.7" fill="#a0a7af"/>
+        <circle cx="530" cy="666" r="0.7" fill="#a0a7af"/>
+        <circle cx="526" cy="670" r="0.7" fill="#a0a7af"/>
+        <circle cx="530" cy="670" r="0.7" fill="#a0a7af"/>
+        <text x="546" y="670.45" font-size="7" fill="#e6edf3">stipple: how many of its commits fixed bugs</text>
       </g>
       <g data-key="shapes">
         <g data-rules="0">

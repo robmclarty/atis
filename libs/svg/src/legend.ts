@@ -8,8 +8,10 @@
  * small sample of the mark beside a few words on what it measures, never on
  * how to weigh it (D66). The inset is chrome, so it is flat (D12): the
  * samples are the world's own shapes and inks with nothing that glows or
- * fades, and the hairline the world draws at a share of the evidence light
- * is drawn here in that light already laid over the chrome's ground.
+ * fades: each ink the world draws at a share (the hairline, the reach's warm
+ * glow and its crossings, the history's textures) is drawn here already laid
+ * over what it lies on, and a texture as its own lines and dots, never a
+ * pattern.
  *
  * `docs/glance-test.md` lists the same marks under the same numbers, and a
  * test holds the two lists together.
@@ -24,10 +26,14 @@ import {
   CHROME_INK,
   CHROME_MUTED,
   CHROME_STROKE_WIDTH,
+  CROSSING_OPACITY,
+  CROSSING_PAD,
   EVIDENCE_LIGHT,
   GHOST_DASH,
   GHOST_PAD,
   GHOST_STROKE,
+  HATCH_PITCH,
+  HATCH_WIDTH,
   IFR_HUE,
   INTEGRITY_CLOSED_OPACITY,
   INTEGRITY_CLOSED_WIDTH,
@@ -47,12 +53,19 @@ import {
   ORGANELLE_FILL,
   ORGANELLE_STROKE,
   ORGANELLE_STROKE_WIDTH,
+  REACH_GLOW,
+  REACH_ORIGIN_OPACITY,
   STANDING_STORM_FILL,
   STANDING_STORM_SCALE,
+  STIPPLE_DOT,
+  STIPPLE_PITCH,
   STITCH_SPACING,
   STITCH_WIDTH,
+  TEXTURE_INK,
+  TEXTURE_MAX_OPACITY,
   VFR_HUE,
   outlineOf,
+  reachLuminance,
 } from 'scene';
 
 import { el, num } from './el.js';
@@ -67,7 +80,9 @@ export type LegendMark = { readonly id: string; readonly words: string };
  * The marks, numbered from 1 in this order, on the inset, on the practice
  * map's callouts and in `docs/glance-test.md`: the category first, then the
  * evidence on a changed file's skin, the storms, the ghost, and the change
- * itself.
+ * itself; then the reach's light and its crossings, and last the history's
+ * two textures (D166), so every mark that lights or textures the map has a
+ * row.
  */
 export const LEGEND: readonly LegendMark[] = [
   { id: 'category', words: 'category: set by the change alone' },
@@ -80,6 +95,10 @@ export const LEGEND: readonly LegendMark[] = [
   { id: 'ghost', words: 'ghost: usually changes with these, and did not' },
   { id: 'stain', words: 'cyan: a changed file; +path in a row: added' },
   { id: 'unmeasured', words: 'skin lit whole: no coverage report names it' },
+  { id: 'reach', words: 'warm light: the reach, dimmer each module out' },
+  { id: 'crossing', words: 'lit halo: where the reach leaves a module' },
+  { id: 'hatching', words: 'hatching: how much of it was rewritten lately' },
+  { id: 'stipple', words: 'stipple: how many of its commits fixed bugs' },
 ];
 
 /** The category scale the first row draws, each block solid in its hue with its letters on it (C11). */
@@ -96,6 +115,8 @@ const BOTTOM = Math.PI / 2;
 const ARC_SHARE = 0.4;
 /** The stitch sample's three statuses, as the map writes them, left to right. */
 const STITCHES: readonly string[] = ['passed', 'not-run', 'failed'];
+/** The reach sample's three hops, brightest first, one block each across the slot. */
+const HOPS: readonly number[] = [0, 1, 2];
 
 function channel(hex: string, at: number): number {
   return Number.parseInt(hex.slice(at, at + 2), 16);
@@ -111,6 +132,8 @@ function over(top: string, under: string, share: number): string {
 
 /** The world's dim hairline, flat: the evidence light at the hairline's strength over the chrome's ground. */
 const HAIRLINE = over(EVIDENCE_LIGHT, CHROME_GROUND, INTEGRITY_CLOSED_OPACITY);
+/** The history's one ink, flat: the texture at its full strength over the file it is laid on. */
+const TEXTURE = over(TEXTURE_INK, ORGANELLE_FILL, TEXTURE_MAX_OPACITY);
 
 /** The numbered balloon a legend row and its callout share: the number in a ring of the chrome's ink, on its ground. */
 export function drawBalloon(number: number, x: number, y: number): Markup {
@@ -148,6 +171,61 @@ function skin(x: number, y: number, stroke: string, width: number): Markup {
 
 function hairline(x: number, y: number): Markup {
   return skin(x, y, HAIRLINE, INTEGRITY_CLOSED_WIDTH);
+}
+
+/**
+ * The reach's light, flat: one block per hop across the slot, each the warm
+ * glow at the share the world lights a cell entered at that hop, laid over
+ * the chrome's ground, so the row shows the light dimming one module out.
+ */
+function reach(x: number, y: number): readonly Markup[] {
+  const width = LEGEND_SLOT / HOPS.length;
+  return HOPS.map((hops, index) =>
+    el('rect', {
+      'data-hops': hops,
+      x: x - LEGEND_SLOT / 2 + index * width,
+      y: y - LEGEND_SAMPLE_R,
+      width,
+      height: 2 * LEGEND_SAMPLE_R,
+      fill: over(REACH_GLOW, CHROME_GROUND, REACH_ORIGIN_OPACITY * reachLuminance(hops)),
+    }),
+  );
+}
+
+/** A lit crossing, flat: the warm disc past the file's edge at the crossing's strength, the file's outline inside it. */
+function crossing(x: number, y: number): readonly Markup[] {
+  return [
+    el('circle', { cx: x, cy: y, r: LEGEND_SAMPLE_R + CROSSING_PAD, fill: over(REACH_GLOW, CHROME_GROUND, CROSSING_OPACITY) }),
+    el('circle', { cx: x, cy: y, r: LEGEND_SAMPLE_R, fill: 'none', stroke: ORGANELLE_STROKE, 'stroke-width': ORGANELLE_STROKE_WIDTH }),
+  ];
+}
+
+/**
+ * Churn's hatching on a file, drawn as the lines themselves rather than a
+ * pattern: the world's diagonals, `x + y` a multiple of the pitch from the
+ * file's centre, each cut to the file's disc inside its outline.
+ */
+function hatching(x: number, y: number): readonly Markup[] {
+  const r = LEGEND_SAMPLE_R - ORGANELLE_STROKE_WIDTH / 2;
+  const most = Math.floor((r * Math.SQRT2) / HATCH_PITCH);
+  const lines = Array.from({ length: 2 * most + 1 }, (_, index) => (index - most) * HATCH_PITCH).flatMap((sum) => {
+    const off = Math.abs(sum) / Math.SQRT2;
+    if (off >= r) return [];
+    const half = Math.sqrt(r * r - off * off) / Math.SQRT2;
+    return [el('line', { x1: x + sum / 2 - half, y1: y + sum / 2 + half, x2: x + sum / 2 + half, y2: y + sum / 2 - half, stroke: TEXTURE, 'stroke-width': HATCH_WIDTH })];
+  });
+  return [file(x, y), ...lines];
+}
+
+/** Bug-fix rate's stipple on a file, drawn as the dots themselves: the world's grid, a dot in the middle of each pitch, every dot that sits whole inside the file. */
+function stipple(x: number, y: number): readonly Markup[] {
+  const r = LEGEND_SAMPLE_R - ORGANELLE_STROKE_WIDTH / 2;
+  const most = Math.ceil(r / STIPPLE_PITCH);
+  const offsets = Array.from({ length: 2 * most }, (_, index) => (index - most + 0.5) * STIPPLE_PITCH);
+  const dots = offsets.flatMap((dy) =>
+    offsets.flatMap((dx) => (Math.hypot(dx, dy) + STIPPLE_DOT <= r ? [el('circle', { cx: x + dx, cy: y + dy, r: STIPPLE_DOT, fill: TEXTURE })] : [])),
+  );
+  return [file(x, y), ...dots];
 }
 
 function bolt(x: number, y: number, fill: string, scale: number): Markup {
@@ -221,6 +299,14 @@ function sampleOf(id: string, x: number, y: number): Sample {
       return plain([file(x, y, CHANGE_HUE)]);
     case 'unmeasured':
       return plain([file(x, y), hairline(x, y), skin(x, y, EVIDENCE_LIGHT, INTEGRITY_GAP_WIDTH)]);
+    case 'reach':
+      return plain(reach(x, y));
+    case 'crossing':
+      return plain(crossing(x, y));
+    case 'hatching':
+      return plain(hatching(x, y));
+    case 'stipple':
+      return plain(stipple(x, y));
     default:
       return plain([]);
   }

@@ -280,10 +280,23 @@ words. Under them a last row keys the seven shapes (D146): one file at each rule
 count, 0 to 6 from the left, `LEGEND_KEY_PITCH` apart, then their words. It keys
 a scale, as the category row does, so it takes no number and the practice map
 hangs no balloon on it. The samples are the world's own shapes and inks drawn flat (D12): no
-opacity, no blur, no pattern. The one ink the world draws at a share is the
-hairline, and the inset draws it in `EVIDENCE_LIGHT` already laid at
-`INTEGRITY_CLOSED_OPACITY` over `CHROME_GROUND`. When the world is shorter than the
-list and the inset together, the canvas grows to hold them.
+opacity, no blur, no pattern. Each ink the world draws at a share is laid already
+flattened over what it lies on, from the tokens the mark itself is drawn with:
+
+- the hairline, `EVIDENCE_LIGHT` at `INTEGRITY_CLOSED_OPACITY` over `CHROME_GROUND`;
+- the reach's warm light (row 11, D166), three blocks across the slot, one per hop
+  from 0 to 2, each `REACH_GLOW` at `REACH_ORIGIN_OPACITY` times `REACH_DECAY` to
+  that hop over `CHROME_GROUND`, so the row shows the light dimming one module out;
+- the lit crossing (row 12), a disc `CROSSING_PAD` past the file's edge in
+  `REACH_GLOW` at `CROSSING_OPACITY` over `CHROME_GROUND`, the file's outline inside;
+- churn's hatching and bug-fix rate's stipple (rows 13 and 14), `TEXTURE_INK` at
+  `TEXTURE_MAX_OPACITY` over `ORGANELLE_FILL`, drawn as the lines and dots
+  themselves rather than a pattern: the world's diagonals `HATCH_PITCH` apart and
+  `HATCH_WIDTH` wide, and its dots of `STIPPLE_DOT` in the middle of each
+  `STIPPLE_PITCH`, each cut to the file's disc.
+
+With those four rows every mark that lights or textures the map has one. When the
+world is shorter than the list and the inset together, the canvas grows to hold them.
 
 The practice map (`docs/glance-practice.svg`, `pnpm practice-map`) hangs the same
 numbered balloons over a real fixture, `#callouts` over everything else, each
@@ -615,9 +628,9 @@ purpose, not by omission:
 - the number precision and indentation of `el.ts` (`PRECISION`, `INDENT`): how
   the file serialises, not how it reads;
 - the inset's samples (`legend.ts`): the category scale (`CATEGORIES`), the lit
-  arc's share of its sample skin (`ARC_SHARE`) and the three stitch statuses
-  (`STITCHES`), which pick one instance of a mark to show rather than set a
-  look;
+  arc's share of its sample skin (`ARC_SHARE`), the three stitch statuses
+  (`STITCHES`) and the reach sample's three hops (`HOPS`), which pick one
+  instance of a mark to show rather than set a look;
 - the turns a practice balloon tries round its mark (`TURNS` in `practice.ts`),
   an eighth of a turn apart: placement, not a look;
 - the motion's curves (the flare's rise and fall, the breathing's sine, when each

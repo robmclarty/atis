@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 105 — feat(web): float a package's modules inside its opened slide
+**Current step:** 106 — feat(svg): key the reach, its crossings and the history textures in the legend
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -87,7 +87,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 99. feat(scene): drift each file in an opened cell by its looseness
 - ☑ 100. feat(svg): open each touched shore block on a grid of its files
 - ☑ 104. feat(core): record each file's ties within its package
-- ☐ 105. feat(web): float a package's modules inside its opened slide
+- ☑ 105. feat(web): float a package's modules inside its opened slide
 - ☐ 106. feat(svg): key the reach, its crossings and the history textures in the legend
 - ☐ 107. fix(web): keep the legend and other cells' labels off the world
 - ☐ 108. fix(core): keep each package's cells together so no skin crosses another's
@@ -185,8 +185,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] guided read of atis's own map at step 103's pause: the 19 brightest marks are reach crossings the legend never keys, the legend covers the world's left third and one of the three changed files, apps/atis's skin overlaps apps/web/src/world, the bloom blurs the surface, three tertiary notices flag plumbbob build logs, Size counts fixture JSON lines, and the frame Rob was sent to held none of the change
 - [x] core makes every file directly in apps/web/src its own single-file cell (19 of them, beside 4 folders), so the apps/web package holds no file of its own and its opened slide is a cream sheet of 23 holes with nothing on it; a package's loose source files might share one cell
 - [x] modules float inside their package: on checkride-shaped repos most cells are single-file modules (56 of 69 on atis's map), so an opened package is its barrel and a sheet of holes and no module ever floats; let a package's slide draw the files of the single-file cells it holds as bodies, with looseness measured against the package, which needs core to record each file's ties within its package (a schema bump) and reshapes D157 and step 40's holes
-- [ ] the world smoke test's reduced-motion frame flakes about one run in five at HEAD: two frames of the opened pm folder 1.5 s apart differ (`still.equals(later)`), with its layers over the world still shown
-- [ ] an opened package's wiring overlay (`cellWiring`) counts only edges at the package's own files, so a package of modules such as `apps/web` shows none of its modules' wiring (D167)
+- [x] the world smoke test's reduced-motion frame flakes about one run in five at HEAD: two frames of the opened pm folder 1.5 s apart differ (`still.equals(later)`), with its layers over the world still shown
+- [x] an opened package's wiring overlay (`cellWiring`) counts only edges at the package's own files, so a package of modules such as `apps/web` shows none of its modules' wiring (D167)
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -262,6 +262,9 @@ Harvest results this boundary:
 - **blocker**: park 44 · guided read of atis's own map at step 103's pause: the 19 brightest marks are reach crossings the legend never keys, the legend covers the world's left third and one of the three changed files, apps/atis's skin overlaps apps/web/src/world, the bloom blurs the surface, three tertiary notices flag plumbbob build logs, Size counts fixture JSON lines, and the frame Rob was sent to held none of the change → these are the concrete faults behind P43 (an unkeyed loudest mark, the legend over the world, overlapping cells, the bloom, noise notices), and they belong in the same stretch
 - **tangent**: park 45 · core makes every file directly in apps/web/src its own single-file cell (19 of them, beside 4 folders), so the apps/web package holds no file of its own and its opened slide is a cream sheet of 23 holes with nothing on it; a package's loose source files might share one cell → single-file cells are checkride's module convention, which core follows on purpose, and P46 carries the fix without regrouping cells
 - **blocker**: park 46 · modules float inside their package: on checkride-shaped repos most cells are single-file modules (56 of 69 on atis's map), so an opened package is its barrel and a sheet of holes and no module ever floats; let a package's slide draw the files of the single-file cells it holds as bodies, with looseness measured against the package, which needs core to record each file's ties within its package (a schema bump) and reshapes D157 and step 40's holes → the opened interior cannot show a checkride-shaped repo, where most cells are single-file modules, so no module ever floats
+- 2026-10-25, at range 27 of 30's stop: 2 parked ideas, classified.
+- **tangent**: park 47 · the world smoke test's reduced-motion frame flakes about one run in five at HEAD: two frames of the opened pm folder 1.5 s apart differ (`still.equals(later)`), with its layers over the world still shown → it flakes at HEAD without this range, and a rerun clears it, so it blocks nothing ahead
+- **tangent**: park 48 · an opened package's wiring overlay (`cellWiring`) counts only edges at the package's own files, so a package of modules such as `apps/web` shows none of its modules' wiring (D167) → no step names a package's wiring and the stop judges the float, so it waits unless `w` on `apps/web` reads as broken
 
 ## Log
 
@@ -1586,3 +1589,59 @@ folder, so it rides the branch into the PR.)*
   The reduced-motion frame comparison failed once under the full check's coverage run. It then passed in four solo runs, three full-suite runs and three more checks. It is parked as P42, since nothing in the frame was saved. A git integration test also timed out once at 5.8 s while my two CLI servers and a browser ran beside the check; with them stopped, the check was green.
 
 - 2026-10-25 — step 104 checkpointed · a4cee0a5e — feat(core): record each file's ties within its package
+- 2026-10-25 — step 105 checkpointed · c4b76b7a3 — feat(web): float a package's modules inside its opened slide (12m)
+- 2026-10-25 — range 27 of 30's stop recorded — on atis's own map, open `libs/scene` and `apps/web` and judge their modules floating inside the package, tied ones holding together and loose ones wandering ([D167 (modules-in-package)](#d167))
+
+  **Summary**: An opened package now floats its modules. Core records each file's `package_ties` (its import edges inside and outside its package) beside its cell `ties`. The scene puts the file of every single-file cell a package holds on the package's slide as a stained, tagged, floating body, and cuts holes only for the package's folders and directories. In the world, a module opens as its package, so `apps/web`, which holds no file of its own, opens on its modules instead of on a sheet of holes.
+
+  1. Core records each file's ties within its package beside its ties within its cell
+  2. One scene helper decides which slide shows a file, and every layer reads it
+  3. On atis's own map, `apps/web` and `libs/scene` open full and mostly floating
+  4. Tests pin the slide, a minute of float, the still case and the hand-off; the smoke test opens a package
+  5. Two parks: a smoke test flake that was already there, and wiring that misses modules
+
+  **Readout**:
+
+  ```text
+  steps        2 of 2 landed
+               - 104 a4cee0a · 105 c4b76b7
+  check        green: 1 of 1 checks, 2 landings
+  done-when    met
+  decisions    honored:
+               - D167 (modules-in-package), D157 (organelle-drift)
+               - D165 (cell-float), D39 (two-graphs), D4 (tests-not-terrain)
+               - D85 (schema-bumps)
+  constraints  14 of 14 honored
+  seam         held: 2 of 2 steps, no strays
+  diff         +451 -100 across 17 files
+  spent        12 min · green first run at every landing
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Harvested**: 2 of 48 parked ideas open
+
+  - P47 · the world smoke test's reduced-motion frame flakes about one run in five at HEAD: two frames of the opened pm folder 1.5 s apart differ (`still.equals(later)`), with its layers over the world still shown → lean: tangent, it flakes at HEAD without this range, and a rerun clears it, so it blocks nothing ahead
+  - P48 · an opened package's wiring overlay (`cellWiring`) counts only edges at the package's own files, so a package of modules such as `apps/web` shows none of its modules' wiring (D167) → lean: tangent, no step names a package's wiring and the stop judges the float, so it waits unless `w` on `apps/web` reads as broken
+
+  **Recommendation**: Run `pnpm --filter web dev`, open atis's own map, and zoom into `apps/web` and `libs/scene`: the bodies should fill each slide, with hubs still and loosely tied modules wandering, and `libs/core` mostly still because its files are tied inside it. If that reads, confirm both leans as tangents. If `w` on `apps/web` showing nothing bothers you, make P48 a blocker and fold it into range 28 beside the label work.
+
+  **1.** Core records each file's ties within its package beside its ties within its cell
+
+  Step 104 adds `computePackageTies` beside `computeTies` in `libs/core/src/ties.ts`. Both share one counter: head-graph edges in either direction (D39), between terrain files only, so tests and the shore tie nothing (D4). A file's package is its cell when the cell is a package, else its nearest package ancestor. A deleted file and a file in no package get no key rather than a faked count (C2). The key is optional and added under D85, and `assertMap` refuses a negative or fractional count. The demo map gained the keys and nothing else (8 organelles; the deleted `legacy.ts` has none), and every SVG golden stayed byte-identical. On the demo, `doctor.ts` is held once inside `apps/cli` and reaches out twice, so its package looseness is 2/3.
+
+  **2.** One scene helper decides which slide shows a file, and every layer reads it
+
+  Step 105 adds `slideCellOf`, `slideFilesOf` and `heldCellsOf` to `libs/scene/src/drift.ts`. A single-file cell in a package shows on the package's slide; any other cell shows on its own. `cellSlide`, the float, the organelles' and marks' hiding under the slide, the opening gate, picking and clicks all go through those helpers, so stain, tag, drift and the D165 hand-off on close all carry over to modules without a second code path. On a package's slide every file floats by its `package_ties` (D167, "each file's looseness there"), so a barrel tied only to its siblings stays still as a hub. A module's own single-file cell no longer has a slide: it opens as its package.
+
+  **3.** On atis's own map, `apps/web` and `libs/scene` open full and mostly floating
+
+  I generated atis's own map against `HEAD~4` and read the slides through the scene. `package:apps/web` opens with 16 bodies and 4 folder holes, and 13 of the 16 have moved after 30 seconds. `package:libs/scene` opens with 18 bodies, no holes, and 15 moving. `package:libs/core` shows the other side: 11 of its 12 files have every tie inside the package, so they hold still and one wanders. I did not watch it in a browser. That look is the stop's call.
+
+  **4.** Tests pin the slide, a minute of float, the still case and the hand-off; the smoke test opens a package
+
+  Scene tests cover four cases. The demo's `package:apps/cli` slide holds `doctor.ts` beside the barrel with no holes, and `libs/core` keeps holes for its folder and directory. Every body stays inside the package's membrane through a minute of seeded time, within the speed bound. A module with no `package_ties` stays still, and reduced motion stills the package. Closing the package leaves `doctor.ts` on the surface where it floated, and it eases halfway home midway between the gate's close and its home. A new browser smoke frame opens `apps/cli` and finds the tags `doctor.ts` and `index.ts`.
+
+  **5.** Two parks: a smoke test flake that was already there, and wiring that misses modules
+
+  While running the browser tests, the reduced-motion frame failed once. With my change stashed it failed one run in six at HEAD, on the same pixel comparison of the pm folder, which this range doesn't touch. I parked it as P47. Separately, `cellWiring` counts only edges at the open cell's own files. A package of modules therefore wires only its barrel, and `apps/web` has nothing to wire. That sits outside both steps' done-when and seam, so it is parked as P48.

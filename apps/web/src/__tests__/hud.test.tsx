@@ -8,7 +8,24 @@ import type { CheckSlot, FlightCategory, MapJson } from 'core';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
-import { CHROME_MUTED, IFR_HUE, MAX_RULES, MUTED_DASH } from 'scene';
+import {
+  CHROME_GROUND,
+  CHROME_MUTED,
+  CROSSING_OPACITY,
+  CROSSING_PAD,
+  HATCH_WIDTH,
+  IFR_HUE,
+  LEGEND_SAMPLE_R,
+  MAX_RULES,
+  MUTED_DASH,
+  ORGANELLE_FILL,
+  REACH_DECAY,
+  REACH_GLOW,
+  REACH_ORIGIN_OPACITY,
+  STIPPLE_DOT,
+  TEXTURE_INK,
+  TEXTURE_MAX_OPACITY,
+} from 'scene';
 import { LEGEND as SHEET_LEGEND, SHAPE_KEY_WORDS as SHEET_SHAPE_KEY_WORDS, renderSvg } from 'svg';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 
@@ -160,6 +177,59 @@ test('the legend inset draws one numbered row per mark with its words, and the k
   expect(host.innerHTML).not.toMatch(/gradient|shadow|blur|opacity/);
   expect(host.innerHTML).toContain(CHROME_MUTED);
   expect(host.innerHTML).toContain(IFR_HUE);
+});
+
+/** One row of the still sheet's inset on the demo, by its mark's id, to count its marks against the world's. */
+const sheetRow = (id: string): string => {
+  const svg = renderSvg(DEMO);
+  const start = svg.indexOf(`<g data-mark="${id}">`);
+  const next = svg.indexOf('<g data-mark=', start + 1);
+  return svg.slice(start, next === -1 ? svg.indexOf('<g data-key=', start) : next);
+};
+
+test("the reach, its crossings and the history's two textures each draw their sample from the tokens their marks are drawn with, as the sheet's do (D166)", async () => {
+  await act(async () => root.render(<Legend registry={createRegistry()} />));
+  const sample = (id: string): Element => {
+    const found = host.querySelector(`[data-legend] [data-mark="${id}"] svg`);
+    if (found === null) throw new Error(`${id} draws no sample`);
+    return found;
+  };
+
+  // The reach steps down a module at a time, each block the warm glow at its hop's share over the chrome's ground.
+  const blocks = [...sample('reach').querySelectorAll('rect')];
+  expect(blocks.map((block) => block.getAttribute('data-hops'))).toEqual(['0', '1', '2']);
+  expect(blocks.map((block) => block.getAttribute('fill'))).toEqual([0, 1, 2].map((hops) => over(REACH_GLOW, CHROME_GROUND, REACH_ORIGIN_OPACITY * REACH_DECAY ** hops)));
+
+  // The crossing's warm disc past the file's edge, at its strength.
+  const [halo, outline] = [...sample('crossing').querySelectorAll('circle')];
+  expect(halo?.getAttribute('r')).toBe(String(LEGEND_SAMPLE_R + CROSSING_PAD));
+  expect(halo?.getAttribute('fill')).toBe(over(REACH_GLOW, CHROME_GROUND, CROSSING_OPACITY));
+  expect(outline?.getAttribute('fill')).toBe('none');
+
+  // Hatching and stipple in the history's ink over the file, line for line and dot for dot with the sheet's.
+  const ink = over(TEXTURE_INK, ORGANELLE_FILL, TEXTURE_MAX_OPACITY);
+  const lines = [...sample('hatching').querySelectorAll('line')];
+  expect(lines).toHaveLength([...sheetRow('hatching').matchAll(/<line /g)].length);
+  for (const line of lines) {
+    expect(line.getAttribute('stroke')).toBe(ink);
+    expect(line.getAttribute('stroke-width')).toBe(String(HATCH_WIDTH));
+  }
+  const dots = [...sample('stipple').querySelectorAll('circle')].filter((dot) => dot.getAttribute('r') === String(STIPPLE_DOT));
+  expect(dots).toHaveLength([...sheetRow('stipple').matchAll(new RegExp(`r="${String(STIPPLE_DOT)}"`, 'g'))].length);
+  expect(dots.length).toBeGreaterThan(1);
+  for (const dot of dots) expect(dot.getAttribute('fill')).toBe(ink);
+});
+
+test("a new row's sample follows its token live from the registry, as every look the dev panel moves does", async () => {
+  const registry = createRegistry();
+  await act(async () => root.render(<Legend registry={registry} />));
+  await act(async () => {
+    registry.set('REACH_GLOW', '#ff0000');
+    registry.set('TEXTURE_INK', '#00ff00');
+  });
+  const [first] = [...host.querySelectorAll('[data-legend] [data-mark="reach"] svg rect')];
+  expect(first?.getAttribute('fill')).toBe(over('#ff0000', CHROME_GROUND, REACH_ORIGIN_OPACITY));
+  expect(host.querySelector('[data-legend] [data-mark="hatching"] svg line')?.getAttribute('stroke')).toBe(over('#00ff00', ORGANELLE_FILL, TEXTURE_MAX_OPACITY));
 });
 
 test('the chrome carries the HUD over the status line and the legend inset once the map is read, and not before', async () => {

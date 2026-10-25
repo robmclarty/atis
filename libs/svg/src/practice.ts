@@ -16,13 +16,16 @@
  */
 
 import { computeMembranes } from 'core';
-import type { Layout, MapJson, PatchCoverage, Position } from 'core';
+import type { Layout, MapJson, Organelle, PatchCoverage, Position } from 'core';
 import {
+  BUGFIX_FULL_AT,
   CALLOUT_CLEARANCE,
   CALLOUT_R,
   CALLOUT_REACH,
   CHROME_INK,
   CHROME_STROKE_WIDTH,
+  CHURN_FULL_AT,
+  CROSSING_PAD,
   GHOST_PAD,
   INTEGRITY_GAP_WIDTH,
   INTEGRITY_PAD,
@@ -163,6 +166,37 @@ function findUnmeasured(sheet: Sheet): Anchor | undefined {
   return found === undefined ? undefined : onRing(found[1], skin(found[1]) + INTEGRITY_GAP_WIDTH / 2, 0, sheet.chrome.originY);
 }
 
+/** The top of the first changed cell's skin, in path order, which the reach lights brightest: the edge its glow spills over. */
+function findReach({ map, layout, chrome }: Sheet): Anchor | undefined {
+  const [first] = weatherOf(map)
+    .cells.filter((cell) => cell.reach?.hops === 0 && layout.contours?.[cell.cell] !== undefined)
+    .map((cell) => cell.cell)
+    .toSorted(byPath);
+  const ring = first === undefined ? undefined : layout.contours?.[first];
+  const [top] = (ring ?? []).toSorted(([ax, ay], [bx, by]) => ay - by || ax - bx);
+  return top === undefined ? undefined : { at: [top[0], top[1] + chrome.originY], toward: [0, -1] };
+}
+
+/** The upper right of the first lit crossing, in path order. */
+function findCrossing(sheet: Sheet): Anchor | undefined {
+  const via = weatherOf(sheet.map).files.filter((file) => file.crossing === true).map((file) => file.path);
+  const found = firstPlaced(via, sheet.layout, sheet.map);
+  return found === undefined ? undefined : onRing(found[1], found[1].r + CROSSING_PAD, -Math.PI / 4, sheet.chrome.originY);
+}
+
+/**
+ * A point inside the file the map textures most strongly with one history,
+ * by its value up to the one it is full at, ties by path: the instance a
+ * reader can see, since a faint texture is a few lines' worth of ink.
+ */
+function findTexture(sheet: Sheet, value: (organelle: Organelle) => number | undefined, fullAt: number, angle: number): Anchor | undefined {
+  const terrain = new Map(sheet.map.terrain.organelles.map((organelle) => [organelle.id, Math.min(value(organelle) ?? 0, fullAt)]));
+  const strongest = Math.max(0, ...terrain.values());
+  if (strongest === 0) return undefined;
+  const found = firstPlaced([...terrain].filter(([, strength]) => strength === strongest).map(([path]) => path), sheet.layout, sheet.map);
+  return found === undefined ? undefined : onRing(found[1], found[1].r / 2, angle, sheet.chrome.originY);
+}
+
 /**
  * Where each legend mark's first instance is, by the same rules the
  * renderer places it, keyed by the mark's id. A mark with no finder here
@@ -179,6 +213,10 @@ export const FINDERS: Readonly<Record<string, (sheet: Sheet) => Anchor | undefin
   ghost: findGhost,
   stain: findStain,
   unmeasured: findUnmeasured,
+  reach: findReach,
+  crossing: findCrossing,
+  hatching: (sheet) => findTexture(sheet, (organelle) => organelle.churn_ratio, CHURN_FULL_AT, (-3 * Math.PI) / 4),
+  stipple: (sheet) => findTexture(sheet, (organelle) => organelle.bugfix_rate, BUGFIX_FULL_AT, Math.PI / 4),
 };
 
 /** Where a balloon may not stand: on a notice's marks, in the notice column, the HUD strip or the shore's band, or on a balloon already hung. */

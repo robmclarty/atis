@@ -132,7 +132,9 @@ export type LegendMark = { readonly id: string; readonly words: string };
  * The marks the inset keys, numbered from 1 in this order, as the still
  * sheet's inset and the practice map's callouts number them (D87, D125): the
  * category first, then the evidence on a changed file's skin, the storms, the
- * ghost, and the change itself. A test holds the list to `libs/svg`'s.
+ * ghost, and the change itself; then the reach's light and its crossings, and
+ * last the history's two textures (D166). A test holds the list to
+ * `libs/svg`'s.
  */
 export const LEGEND: readonly LegendMark[] = [
   { id: 'category', words: 'category: set by the change alone' },
@@ -145,6 +147,10 @@ export const LEGEND: readonly LegendMark[] = [
   { id: 'ghost', words: 'ghost: usually changes with these, and did not' },
   { id: 'stain', words: 'cyan: a changed file; +path in a row: added' },
   { id: 'unmeasured', words: 'skin lit whole: no coverage report names it' },
+  { id: 'reach', words: 'warm light: the reach, dimmer each module out' },
+  { id: 'crossing', words: 'lit halo: where the reach leaves a module' },
+  { id: 'hatching', words: 'hatching: how much of it was rewritten lately' },
+  { id: 'stipple', words: 'stipple: how many of its commits fixed bugs' },
 ];
 
 /** What the key of the seven shapes says beside them (D146). */

@@ -80,7 +80,9 @@ each mark wave 0 added since. Round two, read in the world, hears
 [the world's own legend](#the-legend-as-read-in-the-world-d66-d87-d95) instead.
 
 - **The legend inset** (D87): every map now carries this key in its chrome, at the foot of
-  the notice column, ten marks by number.
+  the notice column, fourteen marks by number. Marks 11 to 14, the reach's light, its lit
+  crossings and the two history textures, joined it after round two (D166), so every mark
+  that lights or textures the map has a row.
 - **The `+` on an added file's path** (D120): added and modified files share the one change
   colour, so the text tells them apart.
 - **A skin lit all round** (D80): a changed file no coverage report names. The Patch cov
@@ -118,6 +120,14 @@ on it; the inset still keys both.
    or modified.
 10. **skin lit whole: no coverage report names it**. A changed file's skin lit all the way
     round: no test is known to have run it.
+11. **warm light: the reach, dimmer each module out**. The glow over the modules the
+    change reaches: brightest in a changed module, dimmer one module further each hop.
+12. **lit halo: where the reach leaves a module**. A bright disc round a module's interface
+    file, where the reach crosses out of that module into the modules that import it.
+13. **hatching: how much of it was rewritten lately**. Diagonal lines over a file, denser
+    ink the more of its lines recent history changed for its size.
+14. **stipple: how many of its commits fixed bugs**. Dots over a file, denser ink the larger
+    the share of its recent commits that were bug fixes.
 
 Each map is one pull request. The grey field is the repository at the PR's base; everything
 lit is the change.

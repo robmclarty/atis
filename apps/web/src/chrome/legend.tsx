@@ -5,9 +5,11 @@
  * measures, and last the key of the seven shapes (D146). The rows and their
  * words are `hud.ts`'s, the still sheet's row for row, and the samples are
  * the world's own shapes and inks drawn flat (D12): no opacity, no blur, no
- * pattern, the one translucent ink the world draws laid already flattened
- * over the chrome's ground. The samples are drawn in the sheet's units and
- * shown at the scale that makes them read at the words' size.
+ * pattern, each ink the world draws at a share (the hairline, the reach's
+ * glow and its crossings, the history's textures) laid already flattened over
+ * what it lies on, and a texture drawn as its own lines and dots. The samples
+ * are drawn in the sheet's units and shown at the scale that makes them read
+ * at the words' size.
  */
 
 import {
@@ -20,11 +22,15 @@ import {
   CHROME_MUTED,
   CHROME_PAD,
   CHROME_STROKE_WIDTH,
+  CROSSING_OPACITY,
+  CROSSING_PAD,
   EVIDENCE_LIGHT,
   FONT_FAMILY,
   GHOST_DASH,
   GHOST_PAD,
   GHOST_STROKE,
+  HATCH_PITCH,
+  HATCH_WIDTH,
   IFR_HUE,
   INTEGRITY_CLOSED_OPACITY,
   INTEGRITY_CLOSED_WIDTH,
@@ -44,14 +50,21 @@ import {
   ORGANELLE_FILL,
   ORGANELLE_STROKE,
   ORGANELLE_STROKE_WIDTH,
+  REACH_DECAY,
+  REACH_GLOW,
+  REACH_ORIGIN_OPACITY,
   SCREEN_TYPE_UP,
   STANDING_STORM_FILL,
   STANDING_STORM_SCALE,
+  STIPPLE_DOT,
+  STIPPLE_PITCH,
   STITCH_LENGTH,
   STITCH_SPACING,
   STITCH_TEAR,
   STITCH_UNLIT,
   STITCH_WIDTH,
+  TEXTURE_INK,
+  TEXTURE_MAX_OPACITY,
   VFR_HUE,
   outlineOf,
 } from 'scene';
@@ -75,11 +88,15 @@ const LOOK = {
   CHROME_MUTED,
   CHROME_PAD,
   CHROME_STROKE_WIDTH,
+  CROSSING_OPACITY,
+  CROSSING_PAD,
   EVIDENCE_LIGHT,
   FONT_FAMILY,
   GHOST_DASH,
   GHOST_PAD,
   GHOST_STROKE,
+  HATCH_PITCH,
+  HATCH_WIDTH,
   IFR_HUE,
   INTEGRITY_CLOSED_OPACITY,
   INTEGRITY_CLOSED_WIDTH,
@@ -98,14 +115,21 @@ const LOOK = {
   ORGANELLE_FILL,
   ORGANELLE_STROKE,
   ORGANELLE_STROKE_WIDTH,
+  REACH_DECAY,
+  REACH_GLOW,
+  REACH_ORIGIN_OPACITY,
   SCREEN_TYPE_UP,
   STANDING_STORM_FILL,
   STANDING_STORM_SCALE,
+  STIPPLE_DOT,
+  STIPPLE_PITCH,
   STITCH_LENGTH,
   STITCH_SPACING,
   STITCH_TEAR,
   STITCH_UNLIT,
   STITCH_WIDTH,
+  TEXTURE_INK,
+  TEXTURE_MAX_OPACITY,
   VFR_HUE,
 };
 type Look = typeof LOOK;
@@ -124,6 +148,8 @@ const BOTTOM = Math.PI / 2;
 const ARC_SHARE = 0.4;
 /** The stitch sample's three statuses, as the map writes them, left to right. */
 const STITCHES: readonly string[] = ['passed', 'not-run', 'failed'];
+/** The reach sample's three hops, brightest first, one block each across the slot. */
+const HOPS: readonly number[] = [0, 1, 2];
 
 /** A ring of points as a path. */
 const pathOf = (ring: readonly (readonly [number, number])[]): string => {
@@ -174,6 +200,63 @@ const Notch = ({ look }: { readonly look: Look }): ReactElement => {
   const [bx, by] = onRing(TOP, outer);
   const [tx, ty] = [-Math.sin(TOP) * half, Math.cos(TOP) * half];
   return <path d={pathOf([[bx - tx, by - ty], onRing(TOP, look.LEGEND_SAMPLE_R - look.MUTANT_NOTCH_DEPTH), [bx + tx, by + ty]])} fill={look.EVIDENCE_LIGHT} />;
+};
+
+/** The reach's light, flat: one block per hop across the slot, the warm glow at the share the world lights a cell entered at that hop, over the chrome's ground. */
+const Reach = ({ look }: { readonly look: Look }): ReactElement => {
+  const width = look.LEGEND_SLOT / HOPS.length;
+  return (
+    <>
+      {HOPS.map((hops, index) => (
+        <rect
+          key={hops}
+          data-hops={hops}
+          x={-look.LEGEND_SLOT / 2 + index * width}
+          y={-look.LEGEND_SAMPLE_R}
+          width={width}
+          height={2 * look.LEGEND_SAMPLE_R}
+          fill={over(look.REACH_GLOW, look.CHROME_GROUND, look.REACH_ORIGIN_OPACITY * look.REACH_DECAY ** hops)}
+        />
+      ))}
+    </>
+  );
+};
+
+/** The radius a texture keeps inside: the file's disc within its outline. */
+const textureRadius = (look: Look): number => look.LEGEND_SAMPLE_R - look.ORGANELLE_STROKE_WIDTH / 2;
+
+/** The history's one ink, flat: the texture at its full strength over the file it is laid on. */
+const textureInk = (look: Look): string => over(look.TEXTURE_INK, look.ORGANELLE_FILL, look.TEXTURE_MAX_OPACITY);
+
+/** Churn's hatching, drawn as the lines themselves rather than a pattern: the world's diagonals, `x + y` a multiple of the pitch, each cut to the file's disc. */
+const Hatching = ({ look }: { readonly look: Look }): ReactElement => {
+  const r = textureRadius(look);
+  const most = Math.floor((r * Math.SQRT2) / look.HATCH_PITCH);
+  const sums = Array.from({ length: 2 * most + 1 }, (_, index) => (index - most) * look.HATCH_PITCH).filter((sum) => Math.abs(sum) / Math.SQRT2 < r);
+  return (
+    <>
+      {sums.map((sum) => {
+        const off = Math.abs(sum) / Math.SQRT2;
+        const half = Math.sqrt(r * r - off * off) / Math.SQRT2;
+        return <line key={sum} x1={sum / 2 - half} y1={sum / 2 + half} x2={sum / 2 + half} y2={sum / 2 - half} stroke={textureInk(look)} strokeWidth={look.HATCH_WIDTH} />;
+      })}
+    </>
+  );
+};
+
+/** Bug-fix rate's stipple, drawn as the dots themselves: the world's grid, a dot in the middle of each pitch, every dot that sits whole inside the file. */
+const Stipple = ({ look }: { readonly look: Look }): ReactElement => {
+  const r = textureRadius(look);
+  const most = Math.ceil(r / look.STIPPLE_PITCH);
+  const offsets = Array.from({ length: 2 * most }, (_, index) => (index - most + 0.5) * look.STIPPLE_PITCH);
+  const dots = offsets.flatMap((dy) => offsets.flatMap((dx) => (Math.hypot(dx, dy) + look.STIPPLE_DOT <= r ? [[dx, dy] as const] : [])));
+  return (
+    <>
+      {dots.map(([dx, dy]) => (
+        <circle key={`${String(dx)},${String(dy)}`} cx={dx} cy={dy} r={look.STIPPLE_DOT} fill={textureInk(look)} />
+      ))}
+    </>
+  );
 };
 
 /** Each mark's sample, drawn about the origin in the sheet's units; the category's is a scale of flat blocks instead. */
@@ -230,6 +313,29 @@ const sampleOf = (id: string, look: Look): ReactNode => {
           <File look={look} />
           <Hairline look={look} />
           <Skin look={look} stroke={look.EVIDENCE_LIGHT} width={look.INTEGRITY_GAP_WIDTH} />
+        </>
+      );
+    case 'reach':
+      return <Reach look={look} />;
+    case 'crossing':
+      return (
+        <>
+          <circle r={look.LEGEND_SAMPLE_R + look.CROSSING_PAD} fill={over(look.REACH_GLOW, look.CHROME_GROUND, look.CROSSING_OPACITY)} />
+          <circle r={look.LEGEND_SAMPLE_R} fill="none" stroke={look.ORGANELLE_STROKE} strokeWidth={look.ORGANELLE_STROKE_WIDTH} />
+        </>
+      );
+    case 'hatching':
+      return (
+        <>
+          <File look={look} />
+          <Hatching look={look} />
+        </>
+      );
+    case 'stipple':
+      return (
+        <>
+          <File look={look} />
+          <Stipple look={look} />
         </>
       );
     default:
