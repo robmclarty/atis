@@ -202,7 +202,25 @@ test('parseCoverage relativises istanbul\'s absolute-path keys and reads stateme
     '/repo',
   );
   expect(covered).toEqual([
-    { path: 'src/a.ts', statements: [{ line: 5, hits: 2 }, { line: 9, hits: 0 }] },
+    { path: 'src/a.ts', statements: [{ line: 5, end: 5, hits: 2 }, { line: 9, end: 9, hits: 0 }] },
+  ]);
+});
+
+test('parseCoverage carries a multi-line statement\'s end line beside its start, and leaves it off where the map gives none (D163)', () => {
+  const covered = parseCoverage(
+    JSON.stringify({
+      '/repo/src/a.ts': {
+        statementMap: {
+          '0': { start: { line: 12, column: 2 }, end: { line: 16, column: null } },
+          '1': { start: { line: 20 } },
+        },
+        s: { '0': 0, '1': 3 },
+      },
+    }),
+    '/repo',
+  );
+  expect(covered).toEqual([
+    { path: 'src/a.ts', statements: [{ line: 12, end: 16, hits: 0 }, { line: 20, hits: 3 }] },
   ]);
 });
 
@@ -466,7 +484,7 @@ test('a report with no advisories record names none, so nothing in it can be tie
 test('coverage/coverage-final.json and test.json: read because the test slot ran and was not skipped', () => {
   const result = expectCheck(fixtureResult);
   const adapters = result.coverage?.find((file) => file.path.endsWith('src/adapters.ts'));
-  expect(adapters?.statements).toEqual([{ line: 15, hits: 29 }, { line: 127, hits: 29 }, { line: 155, hits: 0 }]);
+  expect(adapters?.statements).toEqual([{ line: 15, end: 15, hits: 29 }, { line: 127, end: 148, hits: 29 }, { line: 155, end: 544, hits: 0 }]);
   expect(result.test?.results).toHaveLength(3);
   expect(result.test?.results.every((entry) => entry.status === 'passed')).toBe(true);
 });

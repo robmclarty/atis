@@ -55,13 +55,22 @@ test('a .ts that configures a tool is shore, not terrain, once the config table 
   // `*.config.*` and the `config` row's other patterns, at the root or nested.
   expect(classifyFile('vitest.config.ts', isConfig)).toBe('other');
   expect(classifyFile('packages/app/vite.config.tsx', isConfig)).toBe('other');
-  expect(classifyFile('rules/no-raw-fetch.ts', isConfig)).toBe('other');
+  expect(classifyFile('.eslintrc.cts', isConfig)).toBe('other');
   // A test under the config row is still evidence: the test read comes first (D4).
   expect(classifyFile('src/theme.config.test.ts', isConfig)).toBe('test');
   // A name that merely contains "config" is ordinary terrain.
   expect(classifyFile('src/config.ts', isConfig)).toBe('source');
   // Without the table, the name-only read leaves it terrain, the fallback the graph sources take.
   expect(classifyFile('vitest.config.ts')).toBe('source');
+});
+
+test('a rules folder\'s TypeScript is terrain at the root and deep in a package (D164)', () => {
+  // An eslint plugin keeps its source in `rules/`, and so does a package's lint layer.
+  expect(classifyFile('rules/sort-enums/build-comparator.ts', isConfig)).toBe('source');
+  expect(classifyFile('packages/eslint-plugin/src/rules/no-raw-fetch.ts', isConfig)).toBe('source');
+  expect(classifyFile('packages/lint/rules/deep/nested/check.mts', isConfig)).toBe('source');
+  // A test beside them is still evidence.
+  expect(classifyFile('rules/sort-enums/build-comparator.test.ts', isConfig)).toBe('test');
 });
 
 test('a .mts or .cts file sorts as a .ts does: an organelle, a test, or tool config (D77)', () => {

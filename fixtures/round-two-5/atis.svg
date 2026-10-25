@@ -443,7 +443,13 @@
         <circle data-id="packages/router/src/unplugin/options.ts" data-bugfix="0.29" cx="544.82" cy="1191.25" r="17.25" fill="url(#stipple)" fill-opacity="0.4"/>
       </g>
       <g id="evidence" stroke-width="2">
-        <g data-id="packages/router/src/unplugin/core/moduleConstants.ts" data-covered="7" data-changed="7">
+        <g data-id="packages/router/src/unplugin/codegen/generateRouteRecords.ts" data-covered="1" data-changed="1">
+          <circle cx="525.77" cy="1023.07" r="13.31" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+        </g>
+        <g data-id="packages/router/src/unplugin/codegen/generateRouteResolver.ts" data-covered="1" data-changed="1">
+          <circle cx="593.63" cy="1053.04" r="18.21" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+        </g>
+        <g data-id="packages/router/src/unplugin/core/moduleConstants.ts" data-covered="8" data-changed="8">
           <circle cx="536.37" cy="995.65" r="8.59" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
         </g>
         <g data-id="packages/router/src/unplugin/index.ts" data-unmeasured="true">

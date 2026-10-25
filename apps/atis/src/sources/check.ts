@@ -204,7 +204,7 @@ export function parseDupes(text: string): FallowParse<Dupes> | undefined {
   return { value: { clone_families: arrayField(value, 'clone_families') }, ...(schemaVersion === undefined ? {} : { schema_version: schemaVersion }) };
 }
 
-/** `coverage/coverage-final.json` (istanbul): absolute-path keys, `statementMap`, `s`. */
+/** `coverage/coverage-final.json` (istanbul): absolute-path keys, `statementMap` start and end lines, `s` (D163). */
 export function parseCoverage(text: string, repo: string): Coverage | undefined {
   const value = parseJson(text);
   if (!isRecord(value)) return undefined;
@@ -220,8 +220,10 @@ export function parseCoverage(text: string, repo: string): Coverage | undefined 
       const start = entry['start'];
       const line = isRecord(start) ? start['line'] : undefined;
       if (typeof line !== 'number') return [];
+      const stop = entry['end'];
+      const end = isRecord(stop) ? stop['line'] : undefined;
       const hitCount = hits[id];
-      return [{ line, hits: typeof hitCount === 'number' ? hitCount : 0 }];
+      return [{ line, ...(typeof end === 'number' ? { end } : {}), hits: typeof hitCount === 'number' ? hitCount : 0 }];
     });
 
     return [{ path: relativeToRepo(repo, absPath), statements }];

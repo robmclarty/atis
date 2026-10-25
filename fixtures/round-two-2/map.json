@@ -1,7 +1,7 @@
 {
   "meta": {
     "schema_version": 1,
-    "generated_at": "2026-10-25T01:46:12.822Z",
+    "generated_at": "2026-10-25T03:32:38.347Z",
     "repo": "typescript-sdk",
     "base": "7015d2129bc91e8cf8f143e2cca3ee2ba92808d3",
     "head": "b2546a17c59f86bf4fb08b913be33c5b3b5179f9",
@@ -202571,8 +202571,8 @@
       "patch_coverage": [
         {
           "path": "packages/client/src/client/streamableHttp.ts",
-          "changed_executable": 3,
-          "covered": 3,
+          "changed_executable": 4,
+          "covered": 4,
           "uncovered_lines": []
         },
         {
@@ -202589,14 +202589,14 @@
         },
         {
           "path": "packages/core-internal/src/shared/mediaType.ts",
-          "changed_executable": 11,
-          "covered": 11,
+          "changed_executable": 20,
+          "covered": 20,
           "uncovered_lines": []
         },
         {
           "path": "packages/middleware/hono/src/hono.ts",
-          "changed_executable": 1,
-          "covered": 1,
+          "changed_executable": 4,
+          "covered": 4,
           "uncovered_lines": []
         },
         {
@@ -202607,8 +202607,8 @@
         },
         {
           "path": "packages/server/src/server/createMcpHandler.ts",
-          "changed_executable": 4,
-          "covered": 4,
+          "changed_executable": 5,
+          "covered": 5,
           "uncovered_lines": []
         },
         {
@@ -202619,8 +202619,8 @@
         },
         {
           "path": "packages/server/src/server/streamableHttp.ts",
-          "changed_executable": 1,
-          "covered": 1,
+          "changed_executable": 7,
+          "covered": 7,
           "uncovered_lines": []
         }
       ],
@@ -203403,7 +203403,7 @@
     "checks": {
       "category": "IFR",
       "checks_run": 10,
-      "timestamp": "2026-10-25T01:45:27.858Z",
+      "timestamp": "2026-10-25T03:32:23.002Z",
       "slots": [
         {
           "name": "attw",

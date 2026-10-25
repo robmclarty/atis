@@ -39,6 +39,17 @@ base.
 
 Step 46 generated `map.json` and `atis.svg` here by the D58 worktree procedure.
 
+Step 102 regenerated both by the same procedure, once atis read every line of a changed
+statement (D163) and kept a `rules/` folder's TypeScript on the terrain (D164). The rerun ran
+the commands below from step 1 on 2026-10-24, from the clone step 46 kept and with the same
+toolchain, and left out only step 6, the mutation attempt on its own, whose one job was to
+decide whether the slot is kept. Its `.check/` matches step 46's slot for slot: the same 11
+slots ran, and the same ones passed and stayed red. The `mutation` slot took 55 seconds and
+scored 69.40%: 480 killed, 3 timed out, 99 survived and 114 with no coverage, one mutant moving
+from killed to survived. Read by step 46's atis, the rerun's `.check/` gives step 46's patch
+coverage line for line and the same mutants on the changed lines, so what moved on the map is
+the two readings. The figures under "Skipped slots" are step 46's run.
+
 ## The toolchain
 
 The tree is historical; the harness is current (D58). checkride and fallow are installed into
@@ -251,8 +262,8 @@ Named per D56. 11 slots ran, of 20.
 - `mutation`: **not** skipped. Stryker 10.1.1 with its vitest runner, scoped to the PR's five
   changed non-test TypeScript source files, instrumented 696 mutants. Its vitest runner runs only
   the tests related to the mutated files: the attempt on its own ran an initial test run of 425
-  tests in 1 second and finished in 41 seconds, inside the 20 minutes allowed. In the run that
-  produced the map the slot took 43 seconds and scored 69.54%: 481 killed, 3 timed out, 98
+  tests in 1 second and finished in 41 seconds, inside the 20 minutes allowed. In step 46's
+  full run the slot took 43 seconds and scored 69.54%: 481 killed, 3 timed out, 98
   survived, 114 with no coverage, no errors. All 74 mutants in `src/unplugin/index.ts` have no
   coverage.
 - `types`: checkride 0.19.0 skips it ("no tool detected for slot"): the repo has no root

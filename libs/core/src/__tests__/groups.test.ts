@@ -151,6 +151,15 @@ test('a root config folder is tool config, but its TypeScript and a nested confi
   expect(groupOf('packages/config/package.json')).toBe('deps');
 });
 
+test('a rules folder\'s TypeScript is terrain at any depth, while its other files stay config (D164)', () => {
+  expect(groupOf('rules/no-default-export.yml')).toBe('config');
+  expect(groupOf('tools/ast-grep/rules/no-raw-fetch.yaml')).toBe('config');
+  expect(groupOf('rules/index.js')).toBe('config');
+  expect(groupOf('rules/sort-enums/build-comparator.ts')).toBeUndefined();
+  expect(groupOf('packages/eslint-plugin/src/rules/no-raw-fetch.ts')).toBeUndefined();
+  expect(groupOf('rules/types.d.mts')).toBeUndefined();
+});
+
 test('a .gitkeep is a git file wherever it sits, even under a folder row below settings', () => {
   expect(groupOf('.gitkeep')).toBe('settings');
   expect(groupOf('test/fixtures/.gitkeep')).toBe('settings');

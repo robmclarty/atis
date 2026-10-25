@@ -1,7 +1,7 @@
 {
   "meta": {
     "schema_version": 1,
-    "generated_at": "2026-10-25T02:05:03.414Z",
+    "generated_at": "2026-10-25T03:29:37.661Z",
     "repo": "js-lingui",
     "base": "5070bcae400a7d457cccc84cb4634e7dea921cda",
     "head": "a5215b97d151212b8584c5d803c59dc1e142bc89",
@@ -113785,20 +113785,20 @@
       "patch_coverage": [
         {
           "path": "packages/cli/src/api/compile.ts",
-          "changed_executable": 2,
-          "covered": 2,
+          "changed_executable": 6,
+          "covered": 6,
           "uncovered_lines": []
         },
         {
           "path": "packages/cli/src/api/compile/compileLocale.ts",
-          "changed_executable": 0,
-          "covered": 0,
+          "changed_executable": 3,
+          "covered": 3,
           "uncovered_lines": []
         },
         {
           "path": "packages/cli/src/api/pseudoLocalize.ts",
-          "changed_executable": 0,
-          "covered": 0,
+          "changed_executable": 2,
+          "covered": 2,
           "uncovered_lines": []
         },
         {
@@ -113815,8 +113815,8 @@
         },
         {
           "path": "packages/conf/src/getPseudoLocale.ts",
-          "changed_executable": 6,
-          "covered": 6,
+          "changed_executable": 10,
+          "covered": 10,
           "uncovered_lines": []
         },
         {
@@ -113827,8 +113827,8 @@
         },
         {
           "path": "packages/conf/src/makeConfig.ts",
-          "changed_executable": 0,
-          "covered": 0,
+          "changed_executable": 8,
+          "covered": 8,
           "uncovered_lines": []
         },
         {
@@ -113839,20 +113839,20 @@
         },
         {
           "path": "packages/loader/src/webpackLoader.ts",
-          "changed_executable": 0,
-          "covered": 0,
+          "changed_executable": 3,
+          "covered": 3,
           "uncovered_lines": []
         },
         {
           "path": "packages/metro-transformer/src/metroTransformer.ts",
-          "changed_executable": 0,
-          "covered": 0,
+          "changed_executable": 2,
+          "covered": 2,
           "uncovered_lines": []
         },
         {
           "path": "packages/vite-plugin/src/index.ts",
-          "changed_executable": 0,
-          "covered": 0,
+          "changed_executable": 3,
+          "covered": 3,
           "uncovered_lines": []
         }
       ],
@@ -114202,7 +114202,7 @@
     "checks": {
       "category": "LIFR",
       "checks_run": 11,
-      "timestamp": "2026-10-25T02:04:06.302Z",
+      "timestamp": "2026-10-25T03:29:19.323Z",
       "slots": [
         {
           "name": "attw",

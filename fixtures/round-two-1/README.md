@@ -51,6 +51,18 @@ one parent is the merge base.
 
 Step 46 generated `map.json` and `atis.svg` here by the D58 worktree procedure.
 
+Step 102 regenerated both by the same procedure, once atis read every line of a changed
+statement (D163) and kept a `rules/` folder's TypeScript on the terrain (D164). The rerun ran
+the commands below from step 1 on 2026-10-24, from the clone step 46 kept and with the same
+toolchain, and left out only step 7, the mutation attempt on its own, whose one job was to
+decide whether the slot is kept. Its `.check/` matches step 46's slot for slot: the same 14
+slots ran, and the same ones passed and stayed red. The `mutation` slot took 9 minutes 10
+seconds and scored 86.12%: 274 killed, 30 timed out, 20 survived and 29 with no coverage, two
+mutants moving from survived to timed out on a loaded machine. Read by step 46's atis, the
+rerun's `.check/` gives step 46's patch coverage line for line, and one survivor fewer on the
+changed lines, so what moved on the map beside that one mutant is the two readings. The figures
+under "Skipped slots" are step 46's run.
+
 ## The toolchain
 
 The tree is historical; the harness is current (D58). checkride and fallow are installed into
@@ -253,7 +265,7 @@ Named per D56. 14 slots ran, of 20.
   changed non-test TypeScript source files, instrumented 353 mutants in eight of them
   (`types/common-options.ts` holds only types). The attempt on its own ran its initial test run
   of 4,015 tests in 50 seconds and finished in 8 minutes 13 seconds, inside the 20 minutes
-  allowed. In the run that produced the map the slot took 6 minutes 26 seconds and scored
+  allowed. In step 46's full run the slot took 6 minutes 26 seconds and scored
   85.55%: 274 killed, 28 timed out, 22 survived, 29 with no coverage, no errors.
 - `struct`, `docs`, `prose`, `publint`, `attw`: checkride 0.19.0 skips these itself ("no tool
   detected for slot"); the repo has none of their detect files, and per the harness policy none

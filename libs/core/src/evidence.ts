@@ -79,7 +79,12 @@ export type Dead = {
 
 export type Dupes = { readonly clone_families: readonly unknown[] };
 
-export type CoverageStatement = { readonly line: number; readonly hits: number };
+/**
+ * One istanbul statement: the line it starts on, the line it ends on, and how
+ * often it ran. `end` is absent for a producer that knows only start lines,
+ * and a statement without one ends on the line it starts (D163).
+ */
+export type CoverageStatement = { readonly line: number; readonly end?: number; readonly hits: number };
 export type CoverageFile = { readonly path: string; readonly statements: readonly CoverageStatement[] };
 export type Coverage = readonly CoverageFile[];
 
@@ -287,19 +292,45 @@ function hunkLines(hunks: readonly Hunk[]): ReadonlySet<number> {
   return lines;
 }
 
+/** The last line of a statement, which is its first when the producer gave no end (D163). */
+function endOf(statement: CoverageStatement): number {
+  return Math.max(statement.line, statement.end ?? statement.line);
+}
+
+/** Whether `inner`'s lines lie inside `outer`'s and are fewer. */
+function nestsIn(inner: CoverageStatement, outer: CoverageStatement): boolean {
+  return outer.line <= inner.line && endOf(inner) <= endOf(outer) && (outer.line < inner.line || endOf(inner) < endOf(outer));
+}
+
 /**
- * Patch coverage for one file: the statements whose start line falls in a
- * head-side hunk, folded onto lines the way istanbul folds them, where a
- * line's hit count is the highest of the statements starting on it. So a line
- * several statements share counts as covered when any of them ran, and
+ * The hit count of one changed line, or undefined where no statement covers
+ * it and the line is not executable. A line statements start on folds them
+ * the way istanbul folds them, to the highest hit count among them, so a line
+ * several statements share counts as covered when any of them ran. A line
+ * inside a statement that starts above it, the continuation of a multi-line
+ * condition or literal, is executable too (D163), and takes the highest hits
+ * among the innermost statements over it: an `if` or a loop that ran spans
+ * the lines of the block inside it, and must not cover a branch that never
+ * did (C2).
+ */
+function lineHits(line: number, statements: readonly CoverageStatement[]): number | undefined {
+  const over = statements.filter((statement) => statement.line <= line && line <= endOf(statement));
+  const starting = over.filter((statement) => statement.line === line);
+  const folded = starting.length > 0 ? starting : over.filter((outer) => !over.some((inner) => nestsIn(inner, outer)));
+  return folded.length === 0 ? undefined : Math.max(...folded.map((statement) => statement.hits));
+}
+
+/**
+ * Patch coverage for one file: every changed line a statement covers, from its
+ * start line to its end line, folded onto lines by `lineHits`.
  * `changed_executable` counts lines rather than statements, which is what the
  * closed fraction of the membrane is drawn from.
  */
 function patchCoverage(path: string, changedLines: ReadonlySet<number>, file: CoverageFile): PatchCoverage {
   const hits = new Map<number, number>();
-  for (const statement of file.statements) {
-    if (!changedLines.has(statement.line)) continue;
-    hits.set(statement.line, Math.max(hits.get(statement.line) ?? 0, statement.hits));
+  for (const line of changedLines) {
+    const count = lineHits(line, file.statements);
+    if (count !== undefined) hits.set(line, count);
   }
   const uncovered = [...hits].filter(([, count]) => count === 0).map(([line]) => line);
   return {

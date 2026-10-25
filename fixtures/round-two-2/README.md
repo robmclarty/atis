@@ -53,6 +53,18 @@ landed on `main` between the approved head and the merge.
 
 Step 46 generated `map.json` and `atis.svg` here by the D58 worktree procedure.
 
+Step 102 regenerated both by the same procedure, once atis read every line of a changed
+statement (D163) and kept a `rules/` folder's TypeScript on the terrain (D164). The rerun ran
+the commands below from step 1 on 2026-10-24, from the clone step 46 kept and with the same
+toolchain, and left out only step 5, stryker's initial test run on its own, whose one job was
+to see the configuration hold. Its `.check/` matches step 46's slot for slot: the same 10
+slots ran, and the same ones passed and stayed red. The run took 20 minutes 22 seconds, 19
+minutes 24 seconds of it the `mutation` slot, which scored 71.23%: 1,518 killed, 7 timed out,
+452 survived, 164 with no test reaching them and 2 runtime errors, against step 46's 1,520, 6,
+451, 164 and 2. Read by step 46's atis, the rerun's `.check/` gives step 46's patch coverage
+line for line and the same mutants on the changed lines, so what moved on the map is the two
+readings. The figures under "Skipped slots" are step 46's run.
+
 ## The toolchain
 
 The tree is historical; the harness is current (D58). checkride and fallow are installed into
@@ -278,7 +290,7 @@ repo.
 
 ## Skipped slots
 
-Named per D56. 10 slots ran, of 20. The run took 18 minutes 39 seconds, 18 minutes 6 seconds
+Named per D56. 10 slots ran, of 20. Step 46's run took 18 minutes 39 seconds, 18 minutes 6 seconds
 of it the `mutation` slot, on a machine under load from a second agent's suites (load average
 between 8 and 58).
 

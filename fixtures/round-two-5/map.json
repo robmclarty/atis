@@ -1,7 +1,7 @@
 {
   "meta": {
     "schema_version": 1,
-    "generated_at": "2026-10-25T02:27:06.122Z",
+    "generated_at": "2026-10-25T03:30:46.513Z",
     "repo": "router",
     "base": "596d4816a5d524853dc9785827860ca858e3b799",
     "head": "47f174217a5dc77f6974937c5751e91edccb8c19",
@@ -50751,20 +50751,20 @@
       "patch_coverage": [
         {
           "path": "packages/router/src/unplugin/codegen/generateRouteRecords.ts",
-          "changed_executable": 0,
-          "covered": 0,
+          "changed_executable": 1,
+          "covered": 1,
           "uncovered_lines": []
         },
         {
           "path": "packages/router/src/unplugin/codegen/generateRouteResolver.ts",
-          "changed_executable": 0,
-          "covered": 0,
+          "changed_executable": 1,
+          "covered": 1,
           "uncovered_lines": []
         },
         {
           "path": "packages/router/src/unplugin/core/moduleConstants.ts",
-          "changed_executable": 7,
-          "covered": 7,
+          "changed_executable": 8,
+          "covered": 8,
           "uncovered_lines": []
         },
         {
@@ -50879,7 +50879,7 @@
     "checks": {
       "category": "IFR",
       "checks_run": 11,
-      "timestamp": "2026-10-25T02:26:20.375Z",
+      "timestamp": "2026-10-25T03:30:33.604Z",
       "slots": [
         {
           "name": "attw",

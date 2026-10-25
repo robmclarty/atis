@@ -45,6 +45,17 @@ commit `8aa816a868` (`chore(cli): raise esbuild dependency floor (#2604)`).
 
 Step 46 generated `map.json` and `atis.svg` here by the D58 worktree procedure.
 
+Step 102 regenerated both by the same procedure, once atis read every line of a changed
+statement (D163) and kept a `rules/` folder's TypeScript on the terrain (D164). The rerun ran
+the commands below from step 1 on 2026-10-24, from the clone step 46 kept and with the same
+toolchain, and left out only step 6, stryker's initial test run on its own, whose one job was
+to see the configuration hold. Its `.check/` matches step 46's slot for slot: the same 11
+slots ran, and the same ones passed and stayed red. The run took 1 minute 34 seconds, 1 minute
+18 seconds of it the `mutation` slot, which scored 68.45%: 436 killed, 117 survived and 84 with
+no test reaching them, against step 46's 437 killed, 1 timed out and 115 survived. Read by step 46's atis, the rerun's `.check/` gives step 46's patch coverage line for
+line and the same mutants on the changed lines, so what moved on the map is the two readings.
+The figures under "Skipped slots" are step 46's run.
+
 ## The toolchain
 
 The tree is historical; the harness is current (D58). checkride and fallow are installed into
@@ -285,7 +296,7 @@ repo.
 
 ## Skipped slots
 
-Named per D56. 11 slots ran, of 20. The run took 1 minute 43 seconds, 1 minute 18 seconds of
+Named per D56. 11 slots ran, of 20. Step 46's run took 1 minute 43 seconds, 1 minute 18 seconds of
 it the `mutation` slot, on a machine under load from a second agent's suites (load average
 near 45).
 

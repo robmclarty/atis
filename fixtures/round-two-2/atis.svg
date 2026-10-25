@@ -999,19 +999,19 @@
           <circle cx="502.17" cy="648.76" r="9.32" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
           <circle cx="502.17" cy="648.76" r="9.32" fill="none" stroke="#e6edf3" stroke-width="2.5"/>
         </g>
-        <g data-id="packages/client/src/client/streamableHttp.ts" data-covered="3" data-changed="3">
+        <g data-id="packages/client/src/client/streamableHttp.ts" data-covered="4" data-changed="4">
           <circle cx="643.13" cy="1069.75" r="25.85" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
         </g>
-        <g data-id="packages/core-internal/src/shared/mediaType.ts" data-covered="11" data-changed="11">
+        <g data-id="packages/core-internal/src/shared/mediaType.ts" data-covered="20" data-changed="20">
           <circle cx="679.18" cy="1384.98" r="9.85" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
         </g>
-        <g data-id="packages/middleware/hono/src/hono.ts" data-covered="1" data-changed="1">
+        <g data-id="packages/middleware/hono/src/hono.ts" data-covered="4" data-changed="4">
           <circle cx="863.67" cy="689.12" r="11.42" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
         </g>
-        <g data-id="packages/server/src/server/createMcpHandler.ts" data-covered="4" data-changed="4">
+        <g data-id="packages/server/src/server/createMcpHandler.ts" data-covered="5" data-changed="5">
           <circle cx="719.24" cy="1053.51" r="23.16" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
         </g>
-        <g data-id="packages/server/src/server/streamableHttp.ts" data-covered="1" data-changed="1">
+        <g data-id="packages/server/src/server/streamableHttp.ts" data-covered="7" data-changed="7">
           <circle cx="727.27" cy="1108.91" r="25.34" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
         </g>
         <path data-id="examples/json-response/client.ts" data-line="42" data-status="NoCoverage" d="M497.5 639.07L500.6 642.9L501.37 638.03Z" fill="#e6edf3"/>

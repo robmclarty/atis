@@ -207,6 +207,79 @@ test('patch coverage measures the statements inside the head-side hunks, folded 
   expect(evidence.patch_coverage?.[0]?.uncovered_lines).not.toContain(20);
 });
 
+test('a changed continuation line of a multi-line statement is executable, and uncovered where its statement never ran (D163)', () => {
+  // 18 const pick = (a, b) => {   ran as the module loaded; `pick` was never called
+  // 20   if (                     never ran
+  // 21     a &&
+  // 22     b
+  // 23   ) {
+  // 24     run();
+  // 25   }
+  // 26   return a;
+  // 27 };
+  // 30 const options = {          ran
+  // 31   a: 1,
+  // 32   b: 2,
+  // 33 };
+  const coverage: Channels = {
+    coverage: [
+      {
+        path: 'src/pm/tools.ts',
+        statements: [
+          { line: 18, end: 27, hits: 1 },
+          { line: 20, end: 25, hits: 0 },
+          { line: 24, end: 24, hits: 0 },
+          { line: 26, end: 26, hits: 0 },
+          { line: 30, end: 33, hits: 2 },
+        ],
+      },
+    ],
+  };
+  const hunks: readonly Hunk[] = [
+    { start: 21, count: 2 },
+    { start: 32, count: 1 },
+  ];
+  const { evidence } = evidenceFor(CHAIN, [change('src/pm/tools.ts', hunks)], ran(coverage));
+
+  // Lines 21 and 22 start no statement but sit inside the `if`, the innermost statement over
+  // them, which never ran; the declaration around it ran, and covers none of its lines.
+  // Line 32 sits inside the object literal's statement, which ran.
+  expect(evidence.patch_coverage).toEqual([
+    { path: 'src/pm/tools.ts', changed_executable: 3, covered: 1, uncovered_lines: [21, 22] },
+  ]);
+});
+
+test('a line two statements share takes the higher hit count, and a line inside an if that ran takes its own statement\'s (D163)', () => {
+  // 40 if (ready) return value;   two statements on one line; the `if` ran and the return did not
+  // 44 if (rare) {                ran
+  // 45   escape();                never ran
+  // 46 }
+  const coverage: Channels = {
+    coverage: [
+      {
+        path: 'src/pm/tools.ts',
+        statements: [
+          { line: 40, end: 40, hits: 3 },
+          { line: 40, end: 40, hits: 0 },
+          { line: 44, end: 46, hits: 4 },
+          { line: 45, end: 45, hits: 0 },
+        ],
+      },
+    ],
+  };
+  const hunks: readonly Hunk[] = [
+    { start: 40, count: 1 },
+    { start: 45, count: 2 },
+  ];
+  const { evidence } = evidenceFor(CHAIN, [change('src/pm/tools.ts', hunks)], ran(coverage));
+
+  // Line 46 starts nothing, so it takes the `if` it closes. Line 45 starts a statement of its
+  // own, and the `if` around it does not lend it the hits of a branch it never took (C2).
+  expect(evidence.patch_coverage).toEqual([
+    { path: 'src/pm/tools.ts', changed_executable: 3, covered: 2, uncovered_lines: [45] },
+  ]);
+});
+
 test('a file the coverage report never names has no patch coverage, and a run without coverage has no channel at all', () => {
   const named = evidenceFor(CHAIN, [change('src/pm/tools.ts'), change('src/pm/util.ts')], ran(TOOLS_COVERAGE));
 

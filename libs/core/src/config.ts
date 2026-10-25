@@ -178,8 +178,19 @@ export const DEFAULT_CONFIG: Config = {
       // A root `config/` holds a tool's settings beside the build code that reads them, and
       // this row is also what makes a `.ts` file tool config rather than terrain (D57). So the
       // row is anchored, leaving a `src/config/` module or a package named `config` alone, and
-      // its TypeScript stays terrain, as it does under `scripts/**`.
-      except: ['/config/**/*.ts', '/config/**/*.tsx', '/config/**/*.mts', '/config/**/*.cts'],
+      // its TypeScript stays terrain, as it does under `scripts/**`. A `rules/` folder holds a
+      // linter's rules, but an eslint plugin's source is a `rules/` folder too, so its
+      // TypeScript stays terrain at any depth while its YAML and JSON stay here (D164).
+      except: [
+        '/config/**/*.ts',
+        '/config/**/*.tsx',
+        '/config/**/*.mts',
+        '/config/**/*.cts',
+        'rules/**/*.ts',
+        'rules/**/*.tsx',
+        'rules/**/*.mts',
+        'rules/**/*.cts',
+      ],
     },
     {
       id: 'settings',

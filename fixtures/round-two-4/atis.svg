@@ -656,8 +656,14 @@
         <circle data-id="packages/vite-plugin/src/index.ts" data-bugfix="0.18" cx="352.61" cy="1057.04" r="10.93" fill="url(#stipple)" fill-opacity="0.25"/>
       </g>
       <g id="evidence" stroke-width="2">
-        <g data-id="packages/cli/src/api/compile.ts" data-covered="2" data-changed="2">
+        <g data-id="packages/cli/src/api/compile.ts" data-covered="6" data-changed="6">
           <circle cx="382.46" cy="1111.72" r="12.97" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+        </g>
+        <g data-id="packages/cli/src/api/compile/compileLocale.ts" data-covered="3" data-changed="3">
+          <circle cx="415.21" cy="1111.07" r="12.32" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+        </g>
+        <g data-id="packages/cli/src/api/pseudoLocalize.ts" data-covered="2" data-changed="2">
+          <circle cx="409.23" cy="1208.91" r="9.72" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
         </g>
         <g data-id="packages/cli/src/api/stats.ts" data-covered="1" data-changed="1">
           <circle cx="395.82" cy="1185.89" r="9.36" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
@@ -669,8 +675,20 @@
           <circle cx="410.65" cy="1653.94" r="11.23" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
           <circle cx="410.65" cy="1653.94" r="11.23" fill="none" stroke="#e6edf3" stroke-width="2.5"/>
         </g>
-        <g data-id="packages/conf/src/getPseudoLocale.ts" data-covered="6" data-changed="6">
+        <g data-id="packages/conf/src/getPseudoLocale.ts" data-covered="10" data-changed="10">
           <circle cx="463.55" cy="1566.28" r="8.02" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+        </g>
+        <g data-id="packages/conf/src/makeConfig.ts" data-covered="8" data-changed="8">
+          <circle cx="439.08" cy="1551.26" r="13.19" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+        </g>
+        <g data-id="packages/loader/src/webpackLoader.ts" data-covered="3" data-changed="3">
+          <circle cx="417.38" cy="1042.46" r="11.23" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+        </g>
+        <g data-id="packages/metro-transformer/src/metroTransformer.ts" data-covered="2" data-changed="2">
+          <circle cx="462.33" cy="1054.64" r="10.47" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+        </g>
+        <g data-id="packages/vite-plugin/src/index.ts" data-covered="3" data-changed="3">
+          <circle cx="352.61" cy="1057.04" r="12.18" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
         </g>
         <path data-id="packages/cli/src/services/translationIO.ts" data-line="27" data-status="Survived" d="M431.34 1638.35L435.94 1640.12L434.17 1635.52Z" fill="#e6edf3"/>
         <path data-id="packages/cli/src/services/translationIO.ts" data-line="27" data-status="Survived" d="M437.87 1633.38L440.97 1637.21L441.73 1632.35Z" fill="#e6edf3"/>

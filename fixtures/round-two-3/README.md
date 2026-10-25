@@ -47,6 +47,21 @@ squash-merged as `a8625f1e77758aacb1daedc4eb628050a797082a`, on top of the later
 
 Step 46 generated `map.json` and `atis.svg` here by the D58 worktree procedure.
 
+Step 102 regenerated both by the same procedure, once atis read every line of a changed
+statement (D163) and kept a `rules/` folder's TypeScript on the terrain (D164). The rerun ran
+the commands below from step 1 on 2026-10-24, from the clone step 46 kept and with the same
+toolchain, and left out only step 6, the mutation attempt on its own, whose one job was to
+decide whether the slot is kept. Its first full run shared the machine with two other
+fixtures' mutation runs, and 84 mutants timed out where step 46's run had 23, so `.check/`
+was cleared and step 7 run again with the machine to itself; that second run is the one the
+map is made from. Its `.check/` matches step 46's slot for slot: the same 12 slots ran, and the
+same ones passed and stayed red. The `mutation` slot took 2 minutes 42 seconds and scored
+81.33%: 161 killed, 22 timed out, 39 survived, 3 with no coverage and 2 errors, one mutant
+moving from timed out to survived. Read by step 46's atis, the rerun's `.check/` gives step
+46's patch coverage line for line, and one more survivor on the changed lines, so what moved
+on the map beside that one mutant is the two readings. The figures under "Skipped slots" are
+step 46's run.
+
 ## The toolchain
 
 The tree is historical; the harness is current (D58). checkride and fallow are installed into
@@ -252,7 +267,7 @@ Named per D56. 12 slots ran, of 20.
 - `mutation`: **not** skipped. Stryker 10.1.1 with its jest runner, scoped to the PR's three
   changed non-test TypeScript source files, instrumented 227 mutants. The attempt on its own ran
   its initial test run of 3,886 tests in 12 seconds and finished in 2 minutes 40 seconds, inside
-  the 20 minutes allowed. In the run that produced the map the slot took 2 minutes 37 seconds
+  the 20 minutes allowed. In step 46's full run the slot took 2 minutes 37 seconds
   and scored 81.78%: 161 killed, 23 timed out, 38 survived, 3 with no coverage, 2 errors.
 - `struct`, `docs`, `spell`, `prose`, `publint`, `attw`: checkride 0.19.0 skips these itself
   ("no tool detected for slot"); the repo has none of their detect files, and per the harness

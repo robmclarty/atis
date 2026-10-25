@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 46 — chore(fixtures): generate the round-two maps
+**Current step:** 102 — fix(core): keep a rules folder's source on the terrain and count every line of a changed statement
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -73,8 +73,10 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 43. perf(web): hold 60 fps at 5,000 files and a 2 s first frame
 - ☑ 44. docs(design): record the world's material tokens and sources
 - ☑ 45. chore(fixtures): select five fresh outside PRs for glance round two
-- ☐ 46. chore(fixtures): generate the round-two maps
+- ☑ 46. chore(fixtures): generate the round-two maps
+- ☐ 102. fix(core): keep a rules folder's source on the terrain and count every line of a changed statement
 - ☐ 47. chore(glance): read glance round two in the world
+- ☐ 103. fix(web): float an opened cell's files slowly, open it where it fits the screen, and hold them where they floated
 - ☑ 88. refactor(svg): draw the still map's weather from the scene's derivations
 - ☑ 93. feat(web): draw a minimap that moves the camera
 - ☑ 94. feat(svg): morph a file's outline by the rules it breaks
@@ -156,14 +158,19 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] Under an opened cell's slide the surface's evidence marks on its files (the gap ring, mutant notches, stitches, ghosts) give way with the stains, and the slide redraws only the stain with its unstained share; weigh drawing the evidence round each body on the slide, in apps/web/src/world/interior.ts from the scene's weatherOf
 - [x] LOD2's gate at 6x the fit zoom opens a cell only once it is framed closer than a screen can hold on a small map: the demo's pm folder spans 151 of the layout's 660 units, so at the gate it stands over two screens tall and Enter's 80% framing never reaches the gate; weigh gating the cell level by the cell's size on screen rather than the zoom alone, or lowering the gate, when step 44 records the world's tokens (LOD_GATES in libs/scene/src/lod.ts)
 - [x] An opened cell's tag columns pull in to the screen's edges when the slide is wider than the screen, where the legend and the minimap already stand at the bottom left and the HUD at the top left, so a left tag can land under them; weigh keeping the columns clear of the chrome's corner, in tagsOf (libs/scene/src/interior.ts) or by passing the chrome's claims as the screen's margins
-- [ ] the opened pm cell writes index.ts four times round its barrel at LOD2 (zoom 8 centred on it, 1280x800): the slide's tag and what look like one label per notice on that target, where D148 gives a target one label and a run of boxes (.playwright-mcp/101/demo-pm-barrel-slide.png)
-- [ ] core's buildMap takes 274 s on step 43's 5,000-file synthetic map (1.8 s at 500, 32 s at 2,000, worse than n²), most of it in bubblesets-js's outline routing (outcode, intersectsLine) under the membranes pass: a first, uncached run of atis on a repo that size waits minutes, which wave 3's cache (steps 48 to 50) hides from the second run only
-- [ ] on step 43's 5,000-file map the zoom sweep keeps one frame of 40 to 50 ms where the first cell opens at LOD2 (114 fps over the sweep, both backends); warming the slide's materials before the first frame left it at 34 to 42 ms, so it is not their shader compile; the long-animation-frame entry names no script over 5 ms
-- [ ] classifyFile reads a *.tst.ts type-test file (tstyche's naming) as source, since it matches neither *.test.* nor *.spec.*, so such a file lands on the terrain as a cell's organelle; one round-two fixture's change carries one
-- [ ] patch coverage counts a changed line as executable only where a coverage statement starts, so an edit on the continuation lines of a multi-line condition or object literal counts as nothing: on one round-two map six changed files read 0 changed executable lines though several carry logic edits, and the mutants disagree, placing six survivors on one of those files' changed lines
-- [ ] a changed package.json lands in weather.evidence.patch_coverage (0 executable lines) on one round-two map, because the istanbul file carries keys for JSON files a test imported; patch coverage could keep to source files as classifyFile reads them
-- [ ] checkride's format slot runs yarn prettier --check . under yarn, and yarn runs a repo's own root script named prettier when there is one; with --write in that script prettier 3.8 rewrites the tree and exits 0, so the slot reformats the worktree mid-run and passes (a checkride fix, found generating a round-two fixture)
-- [ ] the default config shore row's rules/** matches a source folder named rules at any depth, so changed TypeScript source lands on the shore: on two round-two maps 3 of 3 and 4 of 9 changed source files sit there, and the first map's terrain is 4 files in 2 cells; corpus-12 already lost one file to it. Anchor the row (to the repo or member root, or to non-source files) and regenerate those two maps before step 47's reading
+- [x] the opened pm cell writes index.ts four times round its barrel at LOD2 (zoom 8 centred on it, 1280x800): the slide's tag and what look like one label per notice on that target, where D148 gives a target one label and a run of boxes (.playwright-mcp/101/demo-pm-barrel-slide.png)
+- [x] core's buildMap takes 274 s on step 43's 5,000-file synthetic map (1.8 s at 500, 32 s at 2,000, worse than n²), most of it in bubblesets-js's outline routing (outcode, intersectsLine) under the membranes pass: a first, uncached run of atis on a repo that size waits minutes, which wave 3's cache (steps 48 to 50) hides from the second run only
+- [x] on step 43's 5,000-file map the zoom sweep keeps one frame of 40 to 50 ms where the first cell opens at LOD2 (114 fps over the sweep, both backends); warming the slide's materials before the first frame left it at 34 to 42 ms, so it is not their shader compile; the long-animation-frame entry names no script over 5 ms
+- [x] classifyFile reads a *.tst.ts type-test file (tstyche's naming) as source, since it matches neither *.test.* nor *.spec.*, so such a file lands on the terrain as a cell's organelle; one round-two fixture's change carries one
+- [x] patch coverage counts a changed line as executable only where a coverage statement starts, so an edit on the continuation lines of a multi-line condition or object literal counts as nothing: on one round-two map six changed files read 0 changed executable lines though several carry logic edits, and the mutants disagree, placing six survivors on one of those files' changed lines
+- [x] a changed package.json lands in weather.evidence.patch_coverage (0 executable lines) on one round-two map, because the istanbul file carries keys for JSON files a test imported; patch coverage could keep to source files as classifyFile reads them
+- [x] checkride's format slot runs yarn prettier --check . under yarn, and yarn runs a repo's own root script named prettier when there is one; with --write in that script prettier 3.8 rewrites the tree and exits 0, so the slot reformats the worktree mid-run and passes (a checkride fix, found generating a round-two fixture)
+- [x] the default config shore row's rules/** matches a source folder named rules at any depth, so changed TypeScript source lands on the shore: on two round-two maps 3 of 3 and 4 of 9 changed source files sit there, and the first map's terrain is 4 files in 2 cells; corpus-12 already lost one file to it. Anchor the row (to the repo or member root, or to non-source files) and regenerate those two maps before step 47's reading
+- [x] inside an opened cell the wander glitches (Rob, at range 14's stop): a body vanishes at the bottom and reappears at the top, a click on a body makes bodies vanish (the pointer seems to act on them), and they move too fast; the float should be gradual and ethereal
+- [x] an opened cell moves only from about zoom 7, already close, so a whole cell is never seen moving, and the wander, measured in the cell's radius, races across the screen when zoomed further: open a cell where it fits the screen and scale its motion to the screen (Rob, at range 14's stop)
+- [x] zoom 6's static surface and zoom 7's moving cell do not connect, so the switch is jarring and it is hard to tell what moved: let the surface draw each file where it last floated, static in its last known place, so the two levels read as one (Rob, at range 14's stop)
+- [x] Rob liked the materials spike's individual cell shapes and their animation (the morph and its pulse, not the floating) better than the world's: set the world's opened cell beside the spike's frames and bring its look back
+- [ ] patch coverage counts a blank or comment line inside a multi-line statement as executable (30 of the 149 lines D163's span reading added on the round-two maps, 12 blank and 18 comments, all on statements that ran), and a comment inside a callback no test called takes the hits of the call around it; the scan could hand core the lines that hold code, so only those count
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -214,6 +221,19 @@ Harvest results this boundary:
 - **tangent**: park 23 · Under an opened cell's slide the surface's evidence marks on its files (the gap ring, mutant notches, stitches, ghosts) give way with the stains, and the slide redraws only the stain with its unstained share; weigh drawing the evidence round each body on the slide, in apps/web/src/world/interior.ts from the scene's weatherOf → the done-when asked for the stains alone, and round two's blind reading in the world will say whether the evidence is missed inside a cell before anything is redrawn there
 - **tangent**: park 24 · LOD2's gate at 6x the fit zoom opens a cell only once it is framed closer than a screen can hold on a small map: the demo's pm folder spans 151 of the layout's 660 units, so at the gate it stands over two screens tall and Enter's 80% framing never reaches the gate; weigh gating the cell level by the cell's size on screen rather than the zoom alone, or lowering the gate, when step 44 records the world's tokens (LOD_GATES in libs/scene/src/lod.ts) → the cell level's gate is a token step 44 records and the dev panel moves, so its size on a small map is tuned there, not fixed now
 - **tangent**: park 25 · An opened cell's tag columns pull in to the screen's edges when the slide is wider than the screen, where the legend and the minimap already stand at the bottom left and the HUD at the top left, so a left tag can land under them; weigh keeping the columns clear of the chrome's corner, in tagsOf (libs/scene/src/interior.ts) or by passing the chrome's claims as the screen's margins → a chrome layout polish the blind reading can judge, since the columns only meet the corner when a slide is wider than the screen
+- 2026-10-25, at range 14 of 26's stop: 12 parked ideas, classified.
+- **tangent**: park 26 · the opened pm cell writes index.ts four times round its barrel at LOD2 (zoom 8 centred on it, 1280x800): the slide's tag and what look like one label per notice on that target, where D148 gives a target one label and a run of boxes (.playwright-mcp/101/demo-pm-barrel-slide.png) → the repeated label shows at LOD2 only, and the reading sees the opening frame
+- **tangent**: park 27 · core's buildMap takes 274 s on step 43's 5,000-file synthetic map (1.8 s at 500, 32 s at 2,000, worse than n²), most of it in bubblesets-js's outline routing (outcode, intersectsLine) under the membranes pass: a first, uncached run of atis on a repo that size waits minutes, which wave 3's cache (steps 48 to 50) hides from the second run only → a first uncached run's cost on a very large repo, for wave 3's refine beside the cache
+- **tangent**: park 28 · on step 43's 5,000-file map the zoom sweep keeps one frame of 40 to 50 ms where the first cell opens at LOD2 (114 fps over the sweep, both backends); warming the slide's materials before the first frame left it at 34 to 42 ms, so it is not their shader compile; the long-animation-frame entry names no script over 5 ms → one frame a session; the sweep's rate holds
+- **tangent**: park 29 · classifyFile reads a *.tst.ts type-test file (tstyche's naming) as source, since it matches neither *.test.* nor *.spec.*, so such a file lands on the terrain as a cell's organelle; one round-two fixture's change carries one → one type-test file on one map, cheap to add to `classifyFile` when the rules are next opened
+- **blocker**: park 30 · patch coverage counts a changed line as executable only where a coverage statement starts, so an edit on the continuation lines of a multi-line condition or object literal counts as nothing: on one round-two map six changed files read 0 changed executable lines though several carry logic edits, and the mutants disagree, placing six survivors on one of those files' changed lines → a gap on a multi-line statement reads as no gap, a false calm (C2) the round-two maps carry
+- **tangent**: park 31 · a changed package.json lands in weather.evidence.patch_coverage (0 executable lines) on one round-two map, because the istanbul file carries keys for JSON files a test imported; patch coverage could keep to source files as classifyFile reads them → a JSON file with no executable line draws nothing, and it can ride with P30's fix
+- **tangent**: park 32 · checkride's format slot runs yarn prettier --check . under yarn, and yarn runs a repo's own root script named prettier when there is one; with --write in that script prettier 3.8 rewrites the tree and exits 0, so the slot reformats the worktree mid-run and passes (a checkride fix, found generating a round-two fixture) → checkride's fix, not atis's, and the fixture procedure now works round it
+- **blocker**: park 33 · the default config shore row's rules/** matches a source folder named rules at any depth, so changed TypeScript source lands on the shore: on two round-two maps 3 of 3 and 4 of 9 changed source files sit there, and the first map's terrain is 4 files in 2 cells; corpus-12 already lost one file to it. Anchor the row (to the repo or member root, or to non-source files) and regenerate those two maps before step 47's reading → a reading of two maps whose change sits on the shore measures the classifier, not the encodings
+- **blocker**: park 34 · inside an opened cell the wander glitches (Rob, at range 14's stop): a body vanishes at the bottom and reappears at the top, a click on a body makes bodies vanish (the pointer seems to act on them), and they move too fast; the float should be gradual and ethereal → the float glitches and races, so an opened cell cannot be read; one step after step 47 fixes it
+- **blocker**: park 35 · an opened cell moves only from about zoom 7, already close, so a whole cell is never seen moving, and the wander, measured in the cell's radius, races across the screen when zoomed further: open a cell where it fits the screen and scale its motion to the screen (Rob, at range 14's stop) → a cell seen moving only when already close is half the feature; it rides in P34's step
+- **blocker**: park 36 · zoom 6's static surface and zoom 7's moving cell do not connect, so the switch is jarring and it is hard to tell what moved: let the surface draw each file where it last floated, static in its last known place, so the two levels read as one (Rob, at range 14's stop) → holding each file where it last floated joins the two levels; it rides in P34's step
+- **tangent**: park 37 · Rob liked the materials spike's individual cell shapes and their animation (the morph and its pulse, not the floating) better than the world's: set the world's opened cell beside the spike's frames and bring its look back → a look to match against the spike's frames when the world is tuned, unless you want it in P34's step
 
 ## Log
 
@@ -1247,3 +1267,77 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-25 — step 43 checkpointed · 1a18f99bd — perf(web): hold 60 fps at 5,000 files and a 2 s first frame (1 drift, 25m)
 - 2026-10-25 — step 44 checkpointed · 8112faf13 — docs(design): record the world's material tokens and sources (6m)
 - 2026-10-25 — step 45 checkpointed · 2c23e4911 — chore(fixtures): select five fresh outside PRs for glance round two (27m)
+- 2026-10-25 — step 46 checkpointed · ff88d8e7a — chore(fixtures): generate the round-two maps (73m)
+- 2026-10-25 — range 14 of 26's stop recorded — review the finished world before your blind reading in it: the wiring overlay, reduced motion, the 60 fps and 2 s measurements in `docs/design.md`, the material tokens, and the round-two fixtures by their counts alone
+
+  **Summary**: The world is finished for the reading. A changed cell opens onto its wiring as a technical-drawing plate. The membrane writes the barrel's export names. Reduced motion stills every frame. A seeded 5,000-file map now draws its first frame in under 2 s on both backends, and the world's material tokens are recorded and live. Five round-two fixtures are chosen and their maps generated, but a shore rule puts two of those maps' changes on the shore.
+
+  1. Two steps strayed outside their seams, both on purpose
+  2. A changed cell opens onto its wiring, and its membrane names its exports
+  3. The first frame fell from 13 s to under 2 s; one frame still catches
+  4. Reduced motion stills the world, and every material is a live token
+  5. Round two, by counts: five fixtures, but two maps lose their change to the shore
+
+  **Readout**:
+
+  ```text
+  steps        7 of 7 landed
+               - 41 e462f47 · 101 0bf7e2c · 42 27e040b · 43 1a18f99 · 44 8112faf
+               - 45 2c23e49 · 46 ff88d8e
+  check        green: 1 of 1 checks, 7 landings
+  done-when    met
+  decisions    honored:
+               - D85 (schema-bumps)
+               - D162 (export-names)
+               - D34 (layout-deps)
+               - D150 (first-frame-target)
+               - D156 (dev-panel)
+               - D58 (fixtures-current-toolchain)
+               - D62 (retake-reader-blind)
+  constraints  bent: C14 (world-budget)
+               → one 42 to 51 ms frame as the first cell opens; the sweep holds 114 fps
+  seam         strayed: 4 paths outside 2 steps' seams
+               - step 101: apps/web/src/__tests__/world.test.ts
+               - step 43: fallow.toml, libs/scene/src/raster.ts, tsconfig.json
+  diff         +424371 -184 across 67 files
+  spent        2h 32m · green first run at every landing · 2 drift warnings
+  ```
+
+  **Verdict**: ○ Out of plumb (constraints bent)
+
+  **Harvested**: 12 of 37 parked ideas open
+
+  - P26 · the opened pm cell writes index.ts four times round its barrel at LOD2 (zoom 8 centred on it, 1280x800): the slide's tag and what look like one label per notice on that target, where D148 gives a target one label and a run of boxes (.playwright-mcp/101/demo-pm-barrel-slide.png) → lean: tangent, the repeated label shows at LOD2 only, and the reading sees the opening frame
+  - P27 · core's buildMap takes 274 s on step 43's 5,000-file synthetic map (1.8 s at 500, 32 s at 2,000, worse than n²), most of it in bubblesets-js's outline routing (outcode, intersectsLine) under the membranes pass: a first, uncached run of atis on a repo that size waits minutes, which wave 3's cache (steps 48 to 50) hides from the second run only → lean: tangent, a first uncached run's cost on a very large repo, for wave 3's refine beside the cache
+  - P28 · on step 43's 5,000-file map the zoom sweep keeps one frame of 40 to 50 ms where the first cell opens at LOD2 (114 fps over the sweep, both backends); warming the slide's materials before the first frame left it at 34 to 42 ms, so it is not their shader compile; the long-animation-frame entry names no script over 5 ms → lean: tangent, one frame a session; the sweep's rate holds
+  - P29 · classifyFile reads a *.tst.ts type-test file (tstyche's naming) as source, since it matches neither *.test.* nor *.spec.*, so such a file lands on the terrain as a cell's organelle; one round-two fixture's change carries one → lean: tangent, one type-test file on one map, cheap to add to `classifyFile` when the rules are next opened
+  - P30 · patch coverage counts a changed line as executable only where a coverage statement starts, so an edit on the continuation lines of a multi-line condition or object literal counts as nothing: on one round-two map six changed files read 0 changed executable lines though several carry logic edits, and the mutants disagree, placing six survivors on one of those files' changed lines → lean: blocker, a gap on a multi-line statement reads as no gap, a false calm (C2) the round-two maps carry
+  - P31 · a changed package.json lands in weather.evidence.patch_coverage (0 executable lines) on one round-two map, because the istanbul file carries keys for JSON files a test imported; patch coverage could keep to source files as classifyFile reads them → lean: tangent, a JSON file with no executable line draws nothing, and it can ride with P30's fix
+  - P32 · checkride's format slot runs yarn prettier --check . under yarn, and yarn runs a repo's own root script named prettier when there is one; with --write in that script prettier 3.8 rewrites the tree and exits 0, so the slot reformats the worktree mid-run and passes (a checkride fix, found generating a round-two fixture) → lean: tangent, checkride's fix, not atis's, and the fixture procedure now works round it
+  - P33 · the default config shore row's rules/** matches a source folder named rules at any depth, so changed TypeScript source lands on the shore: on two round-two maps 3 of 3 and 4 of 9 changed source files sit there, and the first map's terrain is 4 files in 2 cells; corpus-12 already lost one file to it. Anchor the row (to the repo or member root, or to non-source files) and regenerate those two maps before step 47's reading → lean: blocker, a reading of two maps whose change sits on the shore measures the classifier, not the encodings
+  - P34 · inside an opened cell the wander glitches (Rob, at range 14's stop): a body vanishes at the bottom and reappears at the top, a click on a body makes bodies vanish (the pointer seems to act on them), and they move too fast; the float should be gradual and ethereal → lean: blocker, the float glitches and races, so an opened cell cannot be read; one step after step 47 fixes it
+  - P35 · an opened cell moves only from about zoom 7, already close, so a whole cell is never seen moving, and the wander, measured in the cell's radius, races across the screen when zoomed further: open a cell where it fits the screen and scale its motion to the screen (Rob, at range 14's stop) → lean: blocker, a cell seen moving only when already close is half the feature; it rides in P34's step
+  - P36 · zoom 6's static surface and zoom 7's moving cell do not connect, so the switch is jarring and it is hard to tell what moved: let the surface draw each file where it last floated, static in its last known place, so the two levels read as one (Rob, at range 14's stop) → lean: blocker, holding each file where it last floated joins the two levels; it rides in P34's step
+  - P37 · Rob liked the materials spike's individual cell shapes and their animation (the morph and its pulse, not the floating) better than the world's: set the world's opened cell beside the spike's frames and bring its look back → lean: tangent, a look to match against the spike's frames when the world is tuned, unless you want it in P34's step
+
+  **Recommendation**: Confirm P30 and P33 as one step before step 47, and P34 to P36 as one step after it. Before the reading: anchor the shore row, count every line of a changed statement, and regenerate the five maps. After it: float an opened cell's files slowly and on the screen's scale, open the cell where it fits the screen, and hold each file where it last floated. The reading looks at the opening frame with input off, so the opened cell can wait one step without touching it, while two of the five maps cannot be read fairly until their change is back on the terrain.
+
+  **1.** Two steps strayed outside their seams, both on purpose
+
+  Step 101 changed the browser smoke test's expected text for the exports tag, which now carries the names under the count. Step 43's first-frame fix lives in `libs/scene/src/raster.ts`, not the web app the seam named, because the scene's scanline was the slow part. One line each in `tsconfig.json` and `fallow.toml` makes the budget script type-checked and an entry. One correction for the record: step 45's commit body says two repos run vitest and three run jest or vitest projects. By the selection it is four on vitest and one on jest.
+
+  **2.** A changed cell opens onto its wiring, and its membrane names its exports
+
+  `map.json` gains `weather.wiring`: every head-scan import edge with a changed file at either end, tests included as importers. `layWiring` in `libs/scene/src/wiring.ts` lays one cell's share out with elkjs, importers left of importees, each file in a frame for its home. It is laid across rather than down, because ELK sizes nested frames wrongly when laid down, and columns keep many names legible. The breadcrumb's `wire` button, or `w`, draws it as a flat plate: the opened cell's frame in ink, other frames dotted, changed files in the change hue. elkjs loads on first use, as its own chunk. Each cell also carries `exports`, the head's names on its interface, which the membrane writes three to a line under its count, up to a dozen.
+
+  **3.** The first frame fell from 13 s to under 2 s; one frame still catches
+
+  The first budget run on the seeded 5,000-file map drew its first frame in 13.4 s on WebGPU and 11.8 s on WebGL 2. The scanline that lays the reach and the tissue tested every contour edge against every row. It now lays each edge into its rows, proven to visit the same samples on 5,394 contours, 44 times faster. The record in `docs/design.md` is 1.87 s on WebGPU and 1.92 s on WebGL 2. Idle holds 120 fps on both. The zoom sweep to LOD2 runs at 114 to 115 fps, with one frame of 42 or 51 ms where the first cell opens. It is not the slide's shader compile (P28). Core took 291 s to lay that map out (P27).
+
+  **4.** Reduced motion stills the world, and every material is a live token
+
+  The scheduler already stilled flares, breathing, the settle, the jiggle, shapes and drift, and cut a fly-to. The one mover left was the camera's own smoothing, which now cuts too. A browser test with the media emulated finds two frames 1.5 s apart identical to the pixel, beside a full-motion page whose frames differ. `docs/design.md`'s "World materials" records all 80 material fields with their sources, and the registry now takes its heading from it. The camera's give, the level gates and the chrome's on-screen type offset were baked; they are now live tokens.
+
+  **5.** Round two, by counts: five fixtures, but two maps lose their change to the shore
+
+  Five pull requests from five fresh repos, three of one verdict and two of the other, in a shuffled order (D60, D95). All five maps are in check mode, with coverage and mutation, and six notices each. They read one MVFR, three IFR and one LIFR, with terrains of 2 to 146 cells. The default shore row `rules/**` matches a source folder of that name at any depth. On one map, all 3 changed source files sit on the shore and the terrain is 4 files. On another, 4 of 9 do. Generation also showed that patch coverage misses edits on a multi-line statement's continuation lines, which reads as calm where the mutants disagree.
