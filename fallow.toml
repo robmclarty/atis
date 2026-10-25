@@ -12,6 +12,7 @@ entry = [
   "libs/*/test/**/*.test.ts",
   "test/**/*.test.ts",
   "scripts/*.ts",
+  "apps/web/scripts/*.ts",
 ]
 
 # CLI/tooling deps used via command line or config files, not imported from source.

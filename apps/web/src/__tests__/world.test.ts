@@ -108,6 +108,10 @@ test('the world draws the demo map headless on WebGL 2, lit at the surface, with
     await page.goto(`${url}/?backend=webgl&zoom=2`);
     await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
     expect(await page.getAttribute('#world', 'data-backend')).toBe('webgl');
+    // The ready flag a capture waits on is up, and the page marked when its first complete frame was on the screen (step 43, D105).
+    expect(await page.getAttribute('#world', 'data-ready')).toBe('true');
+    expect(await page.evaluate(() => performance.getEntriesByName('atis:ready').length)).toBe(1);
+    expect(await page.getAttribute('#world', 'data-lod')).toBe('1');
 
     // The chrome's status line sits over the canvas; the frame judged is the world's alone.
     await page.evaluate(() => document.querySelector<HTMLElement>('#chrome')?.style.setProperty('visibility', 'hidden'));

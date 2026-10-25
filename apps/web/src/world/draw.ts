@@ -45,7 +45,11 @@
  * its load flare, nothing settles, breathes, flares or jiggles, the shapes and
  * the drift hold still, and a fly-to, a slide and the exploded view cut; the
  * camera's controls smooth nothing either, and the canvas says the motion is
- * reduced (step 42). It is read once, as the world is drawn.
+ * reduced (step 42). It is read once, as the world is drawn. Once the first
+ * complete frame, every layer drawn once, is on the screen, the canvas raises
+ * its ready flag and the page marks the moment `atis:ready`, which the budget
+ * script times the first frame by and a capture waits on (step 43, D105); the
+ * canvas also says which level of detail it draws at.
  */
 
 import { AgXToneMapping, AmbientLight, Color, DataUtils, DirectionalLight, RenderPipeline, Scene, Vector3, WebGPUCoordinateSystem, WebGPURenderer } from 'three/webgpu';
@@ -365,7 +369,15 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     visit(next);
   });
 
+  // The loop's passes so far: the first draws the first complete frame, and the second finds it on the screen.
+  let passes = 0;
+  let shownLod: Lod | undefined;
   await renderer.setAnimationLoop(() => {
+    if (passes === 1) {
+      performance.mark('atis:ready');
+      canvas.dataset['ready'] = 'true';
+    }
+    passes = Math.min(passes + 1, 2);
     if (reliefMoved) {
       skin.relayer();
       top = highest();
@@ -389,6 +401,10 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     const surface = frame.lod?.opacity[1] ?? 0;
     const lod = frame.lod?.lod ?? 0;
     lastLod = lod;
+    if (lod !== shownLod) {
+      shownLod = lod;
+      canvas.dataset['lod'] = String(lod);
+    }
     const middle = standOf(controls, camera, canvas.clientWidth, chrome)?.centre;
     // The opened cell (D155): at the cell's level the innermost cell under the view's centre opens, and holds while any of it stays in view.
     const under = middle === undefined || lod < CELL_LOD ? undefined : cellOf(walk.stopAt(middle, lod));

@@ -17,25 +17,46 @@ export function openRing(contour: Ring): Ring {
     : contour;
 }
 
-/** Visit the index of every sample inside a ring, a row at a time, by the even-odd rule. */
+/**
+ * Visit the index of every sample inside a ring, a row at a time, by the
+ * even-odd rule. Each edge is laid once into the rows it crosses, rather than
+ * every edge tested against every row, since a membrane's contour can carry
+ * hundreds of points over hundreds of rows; each candidate row is still held
+ * to the crossing rule exactly, so the samples visited are the same.
+ */
 export function scanRing(grid: Grid, ring: Ring, visit: (index: number) => void): void {
-  if (ring.length < 3) return;
-  const ys = ring.map(([, y]) => y);
-  const r0 = Math.max(0, Math.ceil(Math.min(...ys) / grid.resolution));
-  const r1 = Math.min(grid.rows - 1, Math.floor(Math.max(...ys) / grid.resolution));
-  for (let row = r0; row <= r1; row += 1) {
-    const y = row * grid.resolution;
-    const crossings: number[] = [];
-    ring.forEach(([ax, ay], index) => {
-      const [bx, by] = ring[(index + 1) % ring.length] ?? [ax, ay];
-      if (ay <= y === by <= y) return;
-      crossings.push(ax + ((y - ay) / (by - ay)) * (bx - ax));
-    });
-    crossings.sort((a, b) => a - b);
-    for (let pair = 0; pair + 1 < crossings.length; pair += 2) {
-      const c0 = Math.max(0, Math.ceil((crossings[pair] ?? 0) / grid.resolution));
-      const c1 = Math.min(grid.columns - 1, Math.floor((crossings[pair + 1] ?? 0) / grid.resolution));
-      for (let column = c0; column <= c1; column += 1) visit(row * grid.columns + column);
+  const n = ring.length;
+  if (n < 3) return;
+  let top = Number.POSITIVE_INFINITY;
+  let bottom = Number.NEGATIVE_INFINITY;
+  for (const [, y] of ring) {
+    if (y < top) top = y;
+    if (y > bottom) bottom = y;
+  }
+  const r0 = Math.max(0, Math.ceil(top / grid.resolution));
+  const r1 = Math.min(grid.rows - 1, Math.floor(bottom / grid.resolution));
+  if (r1 < r0) return;
+  const crossings: number[][] = Array.from({ length: r1 - r0 + 1 }, () => []);
+  for (let index = 0; index < n; index += 1) {
+    const [ax, ay] = ring[index] ?? [0, 0];
+    const [bx, by] = ring[(index + 1) % n] ?? [ax, ay];
+    if (ay === by) continue;
+    // An edge crosses the rows whose y lies in [low, high); a row either side is held to the rule too, so rounding never drops one.
+    const first = Math.max(r0, Math.ceil(Math.min(ay, by) / grid.resolution) - 1);
+    const last = Math.min(r1, Math.floor(Math.max(ay, by) / grid.resolution) + 1);
+    for (let row = first; row <= last; row += 1) {
+      const y = row * grid.resolution;
+      if (ay <= y === by <= y) continue;
+      crossings[row - r0]?.push(ax + ((y - ay) / (by - ay)) * (bx - ax));
     }
   }
+  crossings.forEach((xs, offset) => {
+    const row = r0 + offset;
+    xs.sort((a, b) => a - b);
+    for (let pair = 0; pair + 1 < xs.length; pair += 2) {
+      const c0 = Math.max(0, Math.ceil((xs[pair] ?? 0) / grid.resolution));
+      const c1 = Math.min(grid.columns - 1, Math.floor((xs[pair + 1] ?? 0) / grid.resolution));
+      for (let column = c0; column <= c1; column += 1) visit(row * grid.columns + column);
+    }
+  });
 }

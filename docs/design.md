@@ -580,3 +580,49 @@ The verdict leaves five rulings for the refine before wave 2:
   keep shapes still;
 - an unplaced primary: `retake-1`'s primary targets a test file the layout never
   placed, so the one notice that breathes has no light, in the world or the SVG.
+
+## The world's budget
+
+C14 holds the world to 60 fps at 5,000 files and to a first frame about 2 s after
+the map arrives; the frame rates are held, and a first frame a little over 2 s
+passes (D150). `apps/web/scripts/budget.ts` measures both on a seeded 5,000-file
+map, `syntheticMap({ files: 5000, seed: 1 })` in `libs/scene/src/synthetic.ts`,
+which core builds from a made-up repo of seventeen workspace packages: 5,006
+placed files in 618 cells over seven terraces, a 59-file change, six notices and
+an IFR category, 9.7 MB of `map.json`. The script builds the app as atis serves it,
+serves the map beside it on loopback, and drives Chrome headed, since headless
+Chrome has no WebGPU here and paces its frames by no display:
+
+```sh
+pnpm exec tsc --build && node apps/web/scripts/budget.ts
+```
+
+The first frame is the page's `atis:ready` mark, which the world sets once its
+first complete frame is on the screen (the flag a capture waits on, D105), less
+the moment the map's bytes arrived, its resource timing's `responseEnd`. The idle
+reading is ten seconds of the settled opening frame; the sweep zooms in from the
+far field a wheel step at a time until the canvas reaches LOD2 and the cell under
+the centre opens. Each rate is read from the page's own animation frames.
+
+Measured on 2026-10-24 on an Apple M1 Pro with 32 GB, macOS (Darwin 25.6.0),
+Chrome 155 at 1,440 by 900 on the laptop's 120 Hz display:
+
+| backend | first frame | idle, ten seconds | zoom sweep, LOD0 to LOD2 |
+| --- | --- | --- | --- |
+| WebGPU | 1.87 s | 120 fps; p95 frame 9.1 ms, worst 9.4 ms | 115 fps; p95 frame 9.1 ms; one frame over 16.7 ms, 42 ms, where the first cell opens |
+| WebGL 2 | 1.92 s | 120 fps; p95 frame 9.0 ms, worst 9.4 ms | 114 fps; p95 frame 9.2 ms; one frame over 16.7 ms, 51 ms, where the first cell opens |
+
+The first run drew its first frame in 13.4 s on WebGPU and 11.8 s on WebGL 2,
+nearly all of it laying the reach and the base tissue into the skin's grids: the
+scanline tested every edge of a contour against every row it spans, and a
+membrane's contour carries hundreds of points. `scanRing` in
+`libs/scene/src/raster.ts` now lays each edge into the rows it crosses, which
+visits the same samples on every contour of the fixtures and of this map, 44
+times faster.
+
+Two things stand outside the table. The one long frame where the first cell
+opens is not the slide's shader compile, since drawing the slide's materials
+before the first frame left it at 34 to 42 ms; it is parked. And core takes
+291 s to lay this map out, mostly in the membranes' outline routing: a cost the
+CLI pays before the map arrives, outside the world's budget, and parked for wave
+3's cache beside it.

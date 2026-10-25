@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 42 — feat(web): honour reduced motion
+**Current step:** 43 — perf(web): hold 60 fps at 5,000 files and a 2 s first frame
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -69,7 +69,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 40. feat(web): open a cell into its stained interior
 - ☑ 41. feat(web): overlay a changed cell's wiring
 - ☑ 101. feat(core): write the barrel's export names on the membrane
-- ☐ 42. feat(web): honour reduced motion
+- ☑ 42. feat(web): honour reduced motion
 - ☐ 43. perf(web): hold 60 fps at 5,000 files and a 2 s first frame
 - ☐ 44. docs(design): record the world's material tokens and sources
 - ☐ 45. chore(fixtures): select five fresh outside PRs for glance round two
@@ -157,6 +157,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] LOD2's gate at 6x the fit zoom opens a cell only once it is framed closer than a screen can hold on a small map: the demo's pm folder spans 151 of the layout's 660 units, so at the gate it stands over two screens tall and Enter's 80% framing never reaches the gate; weigh gating the cell level by the cell's size on screen rather than the zoom alone, or lowering the gate, when step 44 records the world's tokens (LOD_GATES in libs/scene/src/lod.ts)
 - [x] An opened cell's tag columns pull in to the screen's edges when the slide is wider than the screen, where the legend and the minimap already stand at the bottom left and the HUD at the top left, so a left tag can land under them; weigh keeping the columns clear of the chrome's corner, in tagsOf (libs/scene/src/interior.ts) or by passing the chrome's claims as the screen's margins
 - [ ] the opened pm cell writes index.ts four times round its barrel at LOD2 (zoom 8 centred on it, 1280x800): the slide's tag and what look like one label per notice on that target, where D148 gives a target one label and a run of boxes (.playwright-mcp/101/demo-pm-barrel-slide.png)
+- [ ] core's buildMap takes 274 s on step 43's 5,000-file synthetic map (1.8 s at 500, 32 s at 2,000, worse than n²), most of it in bubblesets-js's outline routing (outcode, intersectsLine) under the membranes pass: a first, uncached run of atis on a repo that size waits minutes, which wave 3's cache (steps 48 to 50) hides from the second run only
+- [ ] on step 43's 5,000-file map the zoom sweep keeps one frame of 40 to 50 ms where the first cell opens at LOD2 (114 fps over the sweep, both backends); warming the slide's materials before the first frame left it at 34 to 42 ms, so it is not their shader compile; the long-animation-frame entry names no script over 5 ms
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -1236,3 +1238,4 @@ folder, so it rides the branch into the PR.)*
 
 - 2026-10-24 — step 41 checkpointed · e462f476c — feat(web): overlay a changed cell's wiring (<1m)
 - 2026-10-25 — step 101 checkpointed · 0bf7e2c0a — feat(core): write the barrel's export names on the membrane (1 drift, 5m)
+- 2026-10-25 — step 42 checkpointed · 27e040b97 — feat(web): honour reduced motion (7m)
