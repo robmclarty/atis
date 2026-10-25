@@ -299,6 +299,18 @@ test('accepts the wiring, a group file at one end included, and rejects an end t
   expect(() => assertMap(withWiring({}))).toThrow(/weather\.wiring: expected an array/);
 });
 
+test("accepts a cell's export names, none included, and rejects a list that is not one of names (D162)", () => {
+  const withExports = (exports: unknown): unknown => {
+    const map = minimalMap();
+    const [cell] = map.terrain.cells;
+    return { ...map, terrain: { ...map.terrain, cells: [{ ...cell, exports }] } };
+  };
+  expect(() => assertMap(withExports(['listSlots', 'resolveSlot']))).not.toThrow();
+  expect(() => assertMap(withExports([]))).not.toThrow();
+  expect(() => assertMap(withExports('listSlots'))).toThrow(/terrain\.cells\[0\]\.exports: expected an array/);
+  expect(() => assertMap(withExports(['listSlots', 7]))).toThrow(/terrain\.cells\[0\]\.exports\[1\]: expected a string/);
+});
+
 test('rejects a changed entry naming an unknown group', () => {
   const map = minimalMap();
   const withUnknownGroup = {

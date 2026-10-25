@@ -3,8 +3,10 @@
  * laid out for the world and tested here. The slide is the cell's membrane,
  * teeth and all (D159), cut into triangles with a hole for each cell it holds,
  * so a package's slide never covers the folders inside it; the membrane is
- * the frame round the files, and the barrel's exports are written on it, as
- * many as the map counts (C2: it carries no names). Each file is a body in
+ * the frame round the files, and the barrel's exports are written on it, the
+ * names the map records under their count, a few to a line and the rest
+ * counted past a dozen, or the count alone where the map records no names
+ * (D162, C2). Each file is a body in
  * its morphed outline (D146), moved by the rules it breaks (D147) and drifting
  * by its looseness (D157) through the scheduler, and stained by what the
  * change did to it (hue is state, C11): added and modified through, the share
@@ -43,16 +45,20 @@ import { weatherOf } from './weather.js';
  * How the exploded view spreads the bodies: each moves out from the cell's
  * middle to this many times its distance from it, plus this share of the
  * cell's radius, and keeps this much clear ground off its neighbours, in
- * layout units. One object, handed in, so the dev panel can move it live
- * (D156); `INTERIOR_LAYOUT` is where it rests.
+ * layout units; and how the membrane writes the exports: this many names to a
+ * line, and this many before the rest are only counted. One object, handed
+ * in, so the dev panel can move it live (D156); `INTERIOR_LAYOUT` is where it
+ * rests.
  */
 export type InteriorLayout = {
   readonly explodeSpread: number;
   readonly explodePush: number;
   readonly explodeGap: number;
+  readonly exportsPerLine: number;
+  readonly exportsShown: number;
 };
 
-export const INTERIOR_LAYOUT: InteriorLayout = { explodeSpread: 1.6, explodePush: 0.35, explodeGap: 3 };
+export const INTERIOR_LAYOUT: InteriorLayout = { explodeSpread: 1.6, explodePush: 0.35, explodeGap: 3, exportsPerLine: 3, exportsShown: 12 };
 
 /** What the change did to a file, and the share of its body left unstained: its changed lines no test ran, or all of it when nobody measured (D80). */
 export type Stain = { readonly kind: ChangeKind; readonly from?: string; readonly open: number };
@@ -68,8 +74,8 @@ export type SlideFile = {
   readonly exploded: Point;
 };
 
-/** The barrel's exports as the membrane writes them: how many, the barrel's name when the cell has one, and the point of the membrane they sit at. */
-export type Exports = { readonly count: number; readonly barrel?: string; readonly x: number; readonly y: number };
+/** The barrel's exports as the membrane writes them: how many, their names where the map records them (D162), the barrel's name when the cell has one, and the point of the membrane they sit at. */
+export type Exports = { readonly count: number; readonly names?: readonly string[]; readonly barrel?: string; readonly x: number; readonly y: number };
 
 /** An opened cell at rest, laid once when it opens. */
 export type Slide = {
@@ -280,7 +286,14 @@ export function cellSlide(map: MapJson, cell: string, layout: InteriorLayout = I
 
   const barrel = found.barrel === undefined ? undefined : files.find((file) => file.id === found.barrel);
   const [ex, ey] = barrel === undefined ? topOf(ring) : nearestOn(ring, barrel.rest.x, barrel.rest.y);
-  const exports: Exports = { count: found.interface_size, ...(found.barrel === undefined ? {} : { barrel: nameOf(found.barrel, false) }), x: ex, y: ey };
+  // The names are the head's, so they are counted as they stand there; the count alone is the terrain's (D162).
+  const exports: Exports = {
+    count: found.exports?.length ?? found.interface_size,
+    ...(found.exports === undefined ? {} : { names: found.exports }),
+    ...(found.barrel === undefined ? {} : { barrel: nameOf(found.barrel, false) }),
+    x: ex,
+    y: ey,
+  };
 
   return {
     cell,
@@ -376,8 +389,22 @@ export function tagsOf(slide: Slide, bodies: readonly Body[], project: Projectio
   });
 }
 
-/** The words the membrane writes for a cell's exports: the barrel's name and the count, `index.ts · 3 exports`, or the count alone for a cell with no barrel. */
-export function exportsWords(exports: Exports): string {
+/**
+ * The lines the membrane writes for a cell's exports (D162): first the
+ * barrel's name and the count, `index.ts · 3 exports`, or the count alone for
+ * a cell with no barrel; then the names, a few to a line in columns as wide
+ * as their longest name, the chrome's monospace table; and past the names
+ * shown, how many more there are, `and 8 more`.
+ */
+export function exportsWords(exports: Exports, layout: InteriorLayout = INTERIOR_LAYOUT): readonly string[] {
   const count = `${String(exports.count)} ${exports.count === 1 ? 'export' : 'exports'}`;
-  return exports.barrel === undefined ? count : `${exports.barrel} · ${count}`;
+  const head = exports.barrel === undefined ? count : `${exports.barrel} · ${count}`;
+  const names = exports.names ?? [];
+  const perLine = Math.max(1, Math.floor(layout.exportsPerLine));
+  const shown = names.slice(0, Math.max(0, Math.floor(layout.exportsShown)));
+  const rows = Array.from({ length: Math.ceil(shown.length / perLine) }, (_, row) => shown.slice(row * perLine, (row + 1) * perLine));
+  const widths = Array.from({ length: perLine }, (_, column) => Math.max(0, ...rows.map((row) => row[column]?.length ?? 0)));
+  const lines = rows.map((row) => row.map((name, column) => (column === row.length - 1 ? name : name.padEnd(widths[column] ?? 0))).join('  '));
+  const rest = names.length - shown.length;
+  return [head, ...lines, ...(rest > 0 ? [`and ${String(rest)} more`] : [])];
 }

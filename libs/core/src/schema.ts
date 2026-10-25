@@ -27,6 +27,13 @@ export type Cell = {
   readonly organelles: readonly string[];
   readonly band: number;
   readonly interface_size: number;
+  /**
+   * The names its interface exports at head (D162): the barrel's for a
+   * package or a folder module, the file's own for a single-file module, and
+   * the entrance files' for a directory, sorted. Absent where the head scan
+   * read none of those files (C2); `interface_size` still counts the terrain's.
+   */
+  readonly exports?: readonly string[];
   readonly body_loc: number;
   readonly function_count?: number;
   readonly fan_in?: number;
@@ -358,6 +365,9 @@ function assertShape(value: unknown): asserts value is MapJson {
   cells.forEach((raw, index) => {
     const cell = expectRecord(raw, `terrain.cells[${String(index)}]`);
     cellIds.add(expectString(cell['id'], `terrain.cells[${String(index)}].id`));
+    if (cell['exports'] !== undefined) {
+      expectArray(cell['exports'], `terrain.cells[${String(index)}].exports`).forEach((name, at) => expectString(name, `terrain.cells[${String(index)}].exports[${String(at)}]`));
+    }
   });
 
   const groups = expectArray(terrain['groups'], 'terrain.groups');

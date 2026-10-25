@@ -30,6 +30,9 @@
         ],
         "band": 5,
         "interface_size": 1,
+        "exports": [
+          "formatSlot"
+        ],
         "body_loc": 89,
         "function_count": 9,
         "fan_in": 2,
@@ -52,6 +55,11 @@
         ],
         "band": 3,
         "interface_size": 3,
+        "exports": [
+          "listSlots",
+          "resolveSlot",
+          "resolveTool"
+        ],
         "body_loc": 260,
         "function_count": 18,
         "fan_in": 2,
@@ -72,6 +80,9 @@
         ],
         "band": 0,
         "interface_size": 1,
+        "exports": [
+          "main"
+        ],
         "body_loc": 236,
         "function_count": 21,
         "fan_in": 0,
@@ -88,6 +99,11 @@
         ],
         "band": 2,
         "interface_size": 3,
+        "exports": [
+          "legacyResolve",
+          "listSlots",
+          "resolveSlot"
+        ],
         "body_loc": 363,
         "function_count": 27,
         "fan_in": 1,
@@ -109,6 +125,9 @@
         ],
         "band": 1,
         "interface_size": 1,
+        "exports": [
+          "runDoctor"
+        ],
         "body_loc": 212,
         "function_count": 19,
         "fan_in": 1,

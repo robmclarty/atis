@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 41 — feat(web): overlay a changed cell's wiring
+**Current step:** 101 — feat(core): write the barrel's export names on the membrane
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -67,7 +67,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 38. feat(web): pick and hover at every level of detail
 - ☑ 39. feat(web): fly to a notice and walk the map from the keyboard
 - ☑ 40. feat(web): open a cell into its stained interior
-- ☐ 41. feat(web): overlay a changed cell's wiring
+- ☑ 41. feat(web): overlay a changed cell's wiring
 - ☐ 101. feat(core): write the barrel's export names on the membrane
 - ☐ 42. feat(web): honour reduced motion
 - ☐ 43. perf(web): hold 60 fps at 5,000 files and a 2 s first frame
@@ -156,6 +156,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] Under an opened cell's slide the surface's evidence marks on its files (the gap ring, mutant notches, stitches, ghosts) give way with the stains, and the slide redraws only the stain with its unstained share; weigh drawing the evidence round each body on the slide, in apps/web/src/world/interior.ts from the scene's weatherOf
 - [x] LOD2's gate at 6x the fit zoom opens a cell only once it is framed closer than a screen can hold on a small map: the demo's pm folder spans 151 of the layout's 660 units, so at the gate it stands over two screens tall and Enter's 80% framing never reaches the gate; weigh gating the cell level by the cell's size on screen rather than the zoom alone, or lowering the gate, when step 44 records the world's tokens (LOD_GATES in libs/scene/src/lod.ts)
 - [x] An opened cell's tag columns pull in to the screen's edges when the slide is wider than the screen, where the legend and the minimap already stand at the bottom left and the HUD at the top left, so a left tag can land under them; weigh keeping the columns clear of the chrome's corner, in tagsOf (libs/scene/src/interior.ts) or by passing the chrome's claims as the screen's margins
+- [ ] the opened pm cell writes index.ts four times round its barrel at LOD2 (zoom 8 centred on it, 1280x800): the slide's tag and what look like one label per notice on that target, where D148 gives a target one label and a run of boxes (.playwright-mcp/101/demo-pm-barrel-slide.png)
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -1232,3 +1233,5 @@ folder, so it rides the branch into the PR.)*
   **5.** The frames match the sheets, and two things to see at the pause are parked rather than fixed
 
   On retake-3's `internals` the slide shows the same eight bodies in the same places as the sheet, six stained and two plain, with the primary's uncovered share unstained where the sheet lights its arc; corpus-11's `sandbox` morphs its two dented files and holds a tilt. The slide's cream reads grey-beige under AgX where the spike's was warmer; `INTERIOR.slide` in the panel moves it. The demo's pm folder is over two screens tall at LOD2's gate, so its index.ts sits under the HUD until you pan, and the tag columns pull in to the screen's edges, where the legend already stands; both are parked for step 44's tokens.
+
+- 2026-10-24 — step 41 checkpointed · e462f476c — feat(web): overlay a changed cell's wiring (<1m)

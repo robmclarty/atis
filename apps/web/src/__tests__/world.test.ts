@@ -166,7 +166,7 @@ test('framed on one cell past the cell\'s gate, the world opens it as a slide th
     await page.waitForSelector('[data-interior-tag]', { timeout: 30_000 });
     const tags = await page.$$eval('[data-interior-tag]', (elements) => elements.map((element) => element.textContent));
     expect(tags.toSorted()).toEqual(['+tools.ts · 2', 'index.ts', 'legacy.ts', 'slots.ts']);
-    expect(await page.textContent('[data-interior-exports]')).toBe('index.ts · 3 exports');
+    expect(await page.textContent('[data-interior-exports]')).toBe('index.ts · 3 exports\nlistSlots  resolveSlot  resolveTool');
     expect(await page.textContent('[data-explode]')).toBe('explode');
     // The exploded view spreads on x, and the breadcrumb's button reads so.
     await page.keyboard.press('x');

@@ -60,14 +60,15 @@ test("a cell's slide is its dented membrane with the barrel's exports on it, its
   expect(slide.thickness).toBe(membraneThickness(cell.interface_size));
   expect(slide.files.map((file) => file.id)).toEqual([INDEX, LEGACY, SLOTS, TOOLS]);
   for (const file of slide.files) expect(file.rest).toEqual(DEMO.terrain.layout?.positions[file.id]);
-  // The barrel's exports sit on the membrane nearest the barrel's own body, as many as the map counts.
+  // The barrel's exports sit on the membrane nearest the barrel's own body, the head's names under their count (D162).
   expect(slide.exports.count).toBe(cell.interface_size);
+  expect(slide.exports.names).toEqual(['listSlots', 'resolveSlot', 'resolveTool']);
   expect(slide.exports.barrel).toBe('index.ts');
   const index = slide.files.find((file) => file.id === INDEX);
   const nearest = Math.min(...slide.ring.map(([x, y]) => Math.hypot(x - (index?.rest.x ?? 0), y - (index?.rest.y ?? 0))));
   expect(Math.hypot(slide.exports.x - (index?.rest.x ?? 0), slide.exports.y - (index?.rest.y ?? 0))).toBeLessThanOrEqual(nearest + 1e-9);
-  expect(exportsWords(slide.exports)).toBe('index.ts · 3 exports');
-  expect(exportsWords({ count: 1, x: 0, y: 0 })).toBe('1 export');
+  expect(exportsWords(slide.exports)).toEqual(['index.ts · 3 exports', 'listSlots  resolveSlot  resolveTool']);
+  expect(exportsWords({ count: 1, x: 0, y: 0 })).toEqual(['1 export']);
   // The slide is cut into triangles over every point of its ring.
   expect(slide.vertices.length).toBe(slide.ring.length * 2);
   expect(slide.triangles.length).toBeGreaterThanOrEqual((slide.ring.length - 2) * 3);
@@ -78,11 +79,37 @@ test("a cell's slide is its dented membrane with the barrel's exports on it, its
   expect(core.holes.map((hole) => hole.length)).toEqual(['directory:libs/core/src/util', PM].map((held) => openRing(DEMO.terrain.layout?.contours?.[held] ?? []).length));
   expect(core.vertices.length).toBe((core.ring.length + core.holes.reduce((total, hole) => total + hole.length, 0)) * 2);
   expect(core.files.map((file) => file.id)).toEqual(['libs/core/src/index.ts']);
-  // A cell with no barrel writes its count alone, at the membrane's top.
+  // A cell with no barrel writes its count and its entrance's names, at the membrane's top.
   const util = slideOf('directory:libs/core/src/util');
   expect(util.exports.barrel).toBeUndefined();
+  expect(exportsWords(util.exports)).toEqual(['1 export', 'formatSlot']);
   expect([util.exports.x, util.exports.y]).toEqual(util.ring.toSorted((a, b) => a[1] - b[1] || a[0] - b[0])[0]);
   expect(cellSlide(DEMO, 'folder:nowhere')).toBeUndefined();
+});
+
+test("the membrane writes the names a few to a line in columns as wide as their longest, the rest counted past a dozen, and the count alone where the map records no names (D162, C2)", () => {
+  const names = Array.from({ length: 14 }, (_, index) => `name${'x'.repeat(index % 3)}${String(index).padStart(2, '0')}`);
+  expect(exportsWords({ count: names.length, names, barrel: 'index.ts', x: 0, y: 0 })).toEqual([
+    'index.ts · 14 exports',
+    'name00  namex01  namexx02',
+    'name03  namex04  namexx05',
+    'name06  namex07  namexx08',
+    'name09  namex10  namexx11',
+    'and 2 more',
+  ]);
+  // A dozen exactly is written whole; the last line holds what is left, its columns still aligned.
+  expect(exportsWords({ count: 4, names: ['a', 'bbbb', 'cc', 'ddd'], x: 0, y: 0 })).toEqual(['4 exports', 'a    bbbb  cc', 'ddd']);
+  expect(exportsWords({ count: 12, names: names.slice(0, 12), x: 0, y: 0 }).at(-1)).toBe('name09  namex10  namexx11');
+  // The panel's tokens move the lines: two to a line, four shown.
+  expect(exportsWords({ count: 5, names: ['a', 'b', 'c', 'd', 'e'], x: 0, y: 0 }, { ...INTERIOR_LAYOUT, exportsPerLine: 2, exportsShown: 4 })).toEqual(['5 exports', 'a  b', 'c  d', 'and 1 more']);
+  // A map with no names on the cell writes the count the terrain holds, and no names at all.
+  const cells = DEMO.terrain.cells.map((cell) => {
+    const { exports: _, ...bare } = cell;
+    return bare;
+  });
+  const bare = slideOf(PM, { ...DEMO, terrain: { ...DEMO.terrain, cells } });
+  expect(bare.exports.names).toBeUndefined();
+  expect(exportsWords(bare.exports)).toEqual(['index.ts · 3 exports']);
 });
 
 test('each file is stained by what the change did to it, with the share of its changed lines no test ran unstained, a file nobody measured unstained whole (C11, D71, D80)', () => {

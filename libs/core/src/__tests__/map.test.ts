@@ -258,6 +258,27 @@ test('the wiring keeps an edge once, drops a self-import, and drops an end the m
   expect(map.weather.wiring?.filter((edge) => edge.from === 'libs/core/src/pm/tools.ts')).toEqual([{ from: 'libs/core/src/pm/tools.ts', to: 'libs/core/src/util/format.ts' }]);
 });
 
+test("each demo cell carries the names its interface exports at head: a folder's barrel, a single-file module's own, and a directory's entrance (D162)", () => {
+  const map = buildMap(inputsFor('demo'), DEFAULT_CONFIG);
+  const cells = new Map(map.terrain.cells.map((cell) => [cell.id, cell] as const));
+  // The pm barrel at head: the change dropped legacyResolve and added resolveTool, and the count stays the terrain's.
+  expect(cells.get('folder:libs/core/src/pm')?.exports).toEqual(['listSlots', 'resolveSlot', 'resolveTool']);
+  expect(cells.get('folder:libs/core/src/pm')?.interface_size).toBe(3);
+  expect(cells.get('single:apps/cli/src/doctor.ts')?.exports).toEqual(['runDoctor']);
+  // The util directory is entered through format.ts alone; text.ts is read only from inside it.
+  expect(cells.get('directory:libs/core/src/util')?.exports).toEqual(['formatSlot']);
+  expect(cells.get('package:libs/core')?.exports).toEqual(['legacyResolve', 'listSlots', 'resolveSlot']);
+});
+
+test('a cell whose interface files the head scan never read carries no export names, rather than none at all (C2)', () => {
+  const inputs = inputsFor('demo');
+  const head = { ...inputs.head, files: inputs.head.files.filter((file) => file.path !== 'apps/cli/src/doctor.ts') };
+  const map = buildMap({ ...inputs, head }, DEFAULT_CONFIG);
+  const doctor = map.terrain.cells.find((cell) => cell.id === 'single:apps/cli/src/doctor.ts');
+  expect(doctor).toBeDefined();
+  expect(doctor).not.toHaveProperty('exports');
+});
+
 test('the demo map dents the cells that break a rule and marks the clone family', () => {
   const map = buildMap(inputsFor('demo'), DEFAULT_CONFIG);
   const cells = new Map(map.terrain.cells.map((cell) => [cell.id, cell]));

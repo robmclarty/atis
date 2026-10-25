@@ -6,7 +6,7 @@
  * bodies on it never fight the skin: warm and clinical ground where the
  * surface is dark, unlit, and never blooming. Its membrane is drawn round it
  * as the frame, as thick as the cell's interface, with the barrel's exports
- * written on it as a tag. Each file is a body laid again every frame where
+ * written on it as a tag: the count, then the names a few to a line (D162). Each file is a body laid again every frame where
  * the scene has it, in its morphed outline as the scheduler moves it (D146,
  * D147), drifting by its looseness (D157): filled in the body's colour, the
  * change hue where the change stained it with the share no test ran left
@@ -395,11 +395,14 @@ export const createInterior = (heightAt: (x: number, y: number) => number, step:
       held.spread.setAttribute('y2', String(distance <= rim ? by : by - (dy / distance) * rim));
     }
     const [ex, ey] = project(slide.exports.x, slide.exports.y);
-    exportsTag.textContent = exportsWords(slide.exports);
+    exportsTag.textContent = exportsWords(slide.exports, look).join('\n');
     Object.assign(exportsTag.style, {
+      whiteSpace: 'pre',
       transform: `translate(${String(ex)}px, ${String(ey)}px) translate(-50%, -50%)`,
       padding: `${String(LABELING.pad)}px`,
       font,
+      // After the font, whose shorthand sets the line's height to the tags' single row.
+      lineHeight: `${String(LABELING.fontSize + LABELING.pad)}px`,
       background: chrome.CHROME_GROUND,
       color: chrome.CHROME_MUTED,
       border: `${String(chrome.CHROME_STROKE_WIDTH)}px solid ${chrome.CHROME_MUTED}`,

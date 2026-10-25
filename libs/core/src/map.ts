@@ -360,9 +360,11 @@ function fanOf(inside: ReadonlySet<string>, edges: readonly ImportEdge[], terrai
   return { fan_in: readers.size, fan_out: read.size };
 }
 
-/** What `.check/` and the terrain graph know about every file, joined by path. */
+/** What `.check/`, the terrain graph and the head scan know about every file, joined by path. */
 type Signals = {
   readonly depth: ReadonlyMap<string, FileDepth>;
+  /** The names each file the head scan read exports (D162). */
+  readonly exports: ReadonlyMap<string, readonly string[]>;
   readonly dents: ReadonlyMap<string, readonly string[]>;
   readonly family: ReadonlyMap<string, string>;
   readonly functions: ReadonlyMap<string, number>;
@@ -376,10 +378,25 @@ function shallowest(files: readonly string[], depth: ReadonlyMap<string, FileDep
 }
 
 /**
+ * The names a cell's interface exports at head (D162): every name the head
+ * scan read on the files module identification found it is entered through.
+ * None where the head scan read none of them, as when the change deleted the
+ * barrel, rather than an empty list that would say the cell exports nothing (C2).
+ */
+function exportsOf(cell: ModuleCell, exports: ReadonlyMap<string, readonly string[]>): readonly string[] | undefined {
+  const read = cell.interface_files.flatMap((path) => {
+    const names = exports.get(path);
+    return names === undefined ? [] : [names];
+  });
+  return read.length === 0 ? undefined : sortUnique(read.flat());
+}
+
+/**
  * A cell's own numbers on top of what module identification found: the terrace
  * it is entered at (the shallowest its files reach, since that is where a
- * reader arrives), how many files read it and how many it reads, and the mass,
- * rules and duplication of everything inside its contour.
+ * reader arrives), the names its interface exports, how many files read it and
+ * how many it reads, and the mass, rules and duplication of everything inside
+ * its contour.
  */
 function assembleCells(modules: Modules, edges: readonly ImportEdge[], signals: Signals): readonly Cell[] {
   const terrain = new Set(modules.organelles.map((organelle) => organelle.path));
@@ -397,6 +414,7 @@ function assembleCells(modules: Modules, edges: readonly ImportEdge[], signals: 
       }),
     );
     const band = shallowest(files, signals.depth);
+    const exports = exportsOf(cell, signals.exports);
     return {
       id: cell.id,
       path: cell.path,
@@ -406,6 +424,7 @@ function assembleCells(modules: Modules, edges: readonly ImportEdge[], signals: 
       organelles: [...cell.organelles].toSorted(byPath),
       band: Number.isFinite(band) ? band : 0,
       interface_size: cell.interface_size,
+      ...(exports === undefined ? {} : { exports }),
       body_loc: cell.body_loc,
       ...(counted.length === 0 ? {} : { function_count: counted.reduce((total, count) => total + count, 0) }),
       ...fanOf(new Set(files), edges, terrain),
@@ -540,6 +559,7 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
   const ran = check.mode === 'check' ? check : undefined;
   const signals: Signals = {
     depth: new Map(depths.files.map((file) => [file.path, file] as const)),
+    exports: new Map(head.files.map((file) => [file.path, file.exports] as const)),
     dents: dentsOf(check),
     family: cloneFamilies(ran?.dupes),
     functions: functionCounts(ran?.health),
