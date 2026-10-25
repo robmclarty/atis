@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 103 — fix(web): float an opened cell's files slowly, open it where it fits the screen, and hold them where they floated
+**Current step:** none (at the boundary)
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -76,7 +76,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 46. chore(fixtures): generate the round-two maps
 - ☑ 102. fix(core): keep a rules folder's source on the terrain and count every line of a changed statement
 - ☑ 47. chore(glance): read glance round two in the world
-- ☐ 103. fix(web): float an opened cell's files slowly, open it where it fits the screen, and hold them where they floated
+- ☑ 103. fix(web): float an opened cell's files slowly, open it where it fits the screen, and hold them where they floated
 - ☑ 88. refactor(svg): draw the still map's weather from the scene's derivations
 - ☑ 93. feat(web): draw a minimap that moves the camera
 - ☑ 94. feat(svg): morph a file's outline by the rules it breaks
@@ -174,11 +174,11 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] round two, not read: ten seconds in the world's opening frame with input off leaves only the far field's points of light and the chrome; Rob could judge none of the three maps he saw ("couldn't zoom in"), so D95's protocol needs a reading the world can carry (the reader's own zoom, a longer window, a map the reader knows) or round two deferred until atis works on Rob's repos
 - [x] round two: at LOD0 the world withholds the tissue, the cells and every mark the inset keys (§5.6), so a change's opening frame is a few dots on black; Rob: "each map started at max zoom and i could only see dots, with hardly any information"
 - [x] round two: the notice list takes at most half the column (LIST_SHARE, apps/web/src/chrome/notices.tsx) and scrolls, so the opening frame at 1512 by 982 shows 1 to 4 of a map's six rows whole
-- [ ] the world smoke test's reduced-motion frame compare (two frames 1.5 s apart in an opened cell) failed once under the full check's coverage run at step 103, and passed in four solo runs, three full suite runs and the next check; nothing in the frame was saved, so what differed is unknown
-- [ ] Rob at step 103's pause, on atis's own map: 'i honestly don't know what i'm looking at; the whole thing feels broken' — the opening frame is three dots on black, the surface a blurred mass with white reach pools over 51 cells, cells overlap (apps/atis's skin crosses apps/web/src/world), other cells' labels and the legend sit over the opened slide, and the slowed float barely reads as motion
-- [ ] guided read of atis's own map at step 103's pause: the 19 brightest marks are reach crossings the legend never keys, the legend covers the world's left third and one of the three changed files, apps/atis's skin overlaps apps/web/src/world, the bloom blurs the surface, three tertiary notices flag plumbbob build logs, Size counts fixture JSON lines, and the frame Rob was sent to held none of the change
-- [ ] core makes every file directly in apps/web/src its own single-file cell (19 of them, beside 4 folders), so the apps/web package holds no file of its own and its opened slide is a cream sheet of 23 holes with nothing on it; a package's loose source files might share one cell
-- [ ] modules float inside their package: on checkride-shaped repos most cells are single-file modules (56 of 69 on atis's map), so an opened package is its barrel and a sheet of holes and no module ever floats; let a package's slide draw the files of the single-file cells it holds as bodies, with looseness measured against the package, which needs core to record each file's ties within its package (a schema bump) and reshapes D157 and step 40's holes
+- [x] the world smoke test's reduced-motion frame compare (two frames 1.5 s apart in an opened cell) failed once under the full check's coverage run at step 103, and passed in four solo runs, three full suite runs and the next check; nothing in the frame was saved, so what differed is unknown
+- [x] Rob at step 103's pause, on atis's own map: 'i honestly don't know what i'm looking at; the whole thing feels broken' — the opening frame is three dots on black, the surface a blurred mass with white reach pools over 51 cells, cells overlap (apps/atis's skin crosses apps/web/src/world), other cells' labels and the legend sit over the opened slide, and the slowed float barely reads as motion
+- [x] guided read of atis's own map at step 103's pause: the 19 brightest marks are reach crossings the legend never keys, the legend covers the world's left third and one of the three changed files, apps/atis's skin overlaps apps/web/src/world, the bloom blurs the surface, three tertiary notices flag plumbbob build logs, Size counts fixture JSON lines, and the frame Rob was sent to held none of the change
+- [x] core makes every file directly in apps/web/src its own single-file cell (19 of them, beside 4 folders), so the apps/web package holds no file of its own and its opened slide is a cream sheet of 23 holes with nothing on it; a package's loose source files might share one cell
+- [x] modules float inside their package: on checkride-shaped repos most cells are single-file modules (56 of 69 on atis's map), so an opened package is its barrel and a sheet of holes and no module ever floats; let a package's slide draw the files of the single-file cells it holds as bodies, with looseness measured against the package, which needs core to record each file's ties within its package (a schema bump) and reshapes D157 and step 40's holes
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -248,6 +248,12 @@ Harvest results this boundary:
 - **tangent**: park 39 · round two, not read: ten seconds in the world's opening frame with input off leaves only the far field's points of light and the chrome; Rob could judge none of the three maps he saw ("couldn't zoom in"), so D95's protocol needs a reading the world can carry (the reader's own zoom, a longer window, a map the reader knows) or round two deferred until atis works on Rob's repos → no step ahead builds on round two's verdict, so D95's rewrite or a deferral can wait for the refine you choose to run, with the lean to defer until atis works on your repos
 - **tangent**: park 40 · round two: at LOD0 the world withholds the tissue, the cells and every mark the inset keys (§5.6), so a change's opening frame is a few dots on black; Rob: "each map started at max zoom and i could only see dots, with hardly any information" → the withholding far field is §5.6's settled look, and changing it is tuning the encodings before the system works end to end
 - **tangent**: park 41 · round two: the notice list takes at most half the column (LIST_SHARE, apps/web/src/chrome/notices.tsx) and scrolls, so the opening frame at 1512 by 982 shows 1 to 4 of a map's six rows whole → a chrome share to tune once you use the world on code you know, and the list scrolls whenever input is on
+- 2026-10-25, at the step 103 boundary: 5 parked ideas, classified.
+- **tangent**: park 42 · the world smoke test's reduced-motion frame compare (two frames 1.5 s apart in an opened cell) failed once under the full check's coverage run at step 103, and passed in four solo runs, three full suite runs and the next check; nothing in the frame was saved, so what differed is unknown → one failure in about ten runs, never reproduced, and nothing ahead builds on it
+- **blocker**: park 43 · Rob at step 103's pause, on atis's own map: 'i honestly don't know what i'm looking at; the whole thing feels broken' — the opening frame is three dots on black, the surface a blurred mass with white reach pools over 51 cells, cells overlap (apps/atis's skin crosses apps/web/src/world), other cells' labels and the legend sit over the opened slide, and the slowed float barely reads as motion → the world does not read on a map Rob knows, and every range ahead builds on it, so a legibility stretch goes ahead of range 16
+- **blocker**: park 44 · guided read of atis's own map at step 103's pause: the 19 brightest marks are reach crossings the legend never keys, the legend covers the world's left third and one of the three changed files, apps/atis's skin overlaps apps/web/src/world, the bloom blurs the surface, three tertiary notices flag plumbbob build logs, Size counts fixture JSON lines, and the frame Rob was sent to held none of the change → these are the concrete faults behind P43 (an unkeyed loudest mark, the legend over the world, overlapping cells, the bloom, noise notices), and they belong in the same stretch
+- **tangent**: park 45 · core makes every file directly in apps/web/src its own single-file cell (19 of them, beside 4 folders), so the apps/web package holds no file of its own and its opened slide is a cream sheet of 23 holes with nothing on it; a package's loose source files might share one cell → single-file cells are checkride's module convention, which core follows on purpose, and P46 carries the fix without regrouping cells
+- **blocker**: park 46 · modules float inside their package: on checkride-shaped repos most cells are single-file modules (56 of 69 on atis's map), so an opened package is its barrel and a sheet of holes and no module ever floats; let a package's slide draw the files of the single-file cells it holds as bodies, with looseness measured against the package, which needs core to record each file's ties within its package (a schema bump) and reshapes D157 and step 40's holes → the opened interior cannot show a checkride-shaped repo, where most cells are single-file modules, so no module ever floats
 
 ## Log
 
@@ -1503,3 +1509,70 @@ folder, so it rides the branch into the PR.)*
   **4.** The subject no longer matches what happened
 
   Nothing was read, so the planned subject overstates the step. Proposed: `chore(glance): read glance round two in the world` → `chore(glance): record glance round two as not read in the world`. On `looks good` I land it with that subject. Say `keep the title` to land it under the planned one.
+
+- 2026-10-25 — step 103 checkpointed · 8dae3ed3f — fix(web): float an opened cell's files slowly, open it where it fits the screen, and hold them where they floated (98m)
+
+  **Summary**: An opened cell's files now float slowly and stay inside their membrane: no body can jump or cross it, and none moves faster than 2% of the screen a second at any zoom. A cell opens once its skin fills 60% of the free screen, so you see the whole cell move, and only if it holds files of its own, so a package like `apps/web` no longer opens as an empty sheet of holes. When it closes, the surface keeps each file where it last floated and eases them home only as you zoom out toward the field.
+
+  1. The glitch came from snapping a far-off wander onto a concave membrane; the float is now stepped, so a body can't jump or leave
+  2. The float is slow on the screen at every zoom: a seventh of the cell's radius, at most 2% of the screen a second
+  3. A cell opens once its skin fills 60% of the free screen, if it holds files of its own, and holds open down to 45%
+  4. The hand-off keeps a closed cell's files, and the marks on them, where they floated until the view climbs on
+  5. A click or a hover finds a floating body where it is drawn, and a click on one keeps the cell open
+
+  **Readout**:
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    bent: D155 (open-cell-holds)
+               → a cell with no files of its own never opens (your call)
+  constraints  14 of 14 honored
+  seam         held: 8 of 8 declared, no strays
+  diff         +1244 -385 across 18 files
+  spent        98 min · 8 turns · 41s gate · green first run
+  ```
+
+  **Verdict**: ○ Out of plumb (decisions bent)
+
+  **Recommendation**: Reload your `--base HEAD~` map (the build is fresh) and zoom into `apps/web` the way you did, adding `&zoom=2.9&centre=169,522` to the URL the CLI prints to land on `src/chrome` just as it opens. Then judge the float, the zoom it opens at and the hand-off as you zoom back out. The far field will still be black on that map, since its change touches no source file (P40); a `--base HEAD~4` map has a change on the terrain if you want the reach and the notices in view too.
+
+  **1.** The glitch came from snapping a far-off wander onto a concave membrane; the float is now stepped, so a body can't jump or leave
+
+  The old drift was a function of time alone. It swung each loose file's target up to a whole cell's radius away, then snapped it onto the nearest point of the membrane. On a concave membrane that nearest point jumps from one side to the other. Replayed on round-two-1, a body moved 185 layout units in a single frame, more than its cell's radius, and loose bodies sat outside the membrane on thousands of frames.
+
+  The float (`stepFloat` in `libs/scene/src/drift.ts`) now advances in fixed 1/60 s steps, whatever the frame rate. Each step, a loose file heads for a small seeded wander about its place. It is then pushed off its neighbours (the looser one gives way more) and off the membrane and any cells its cell holds, never closer than it rests. A step is capped at the speed limit, and a step that would cross the membrane is refused, so the file stays where it was.
+
+  Replayed again, the worst step equals the cap exactly and no body that rests inside its membrane ever leaves it. One seed, one start and one run of zooms give one frame, at 30 or 60 fps or in one go (C3). Each body checks only the membrane edges near its own place. That keeps the heaviest cell I found at 0.64 ms a step (59 files, a 634-point membrane), and the 5,000-file synthetic map's biggest cells at 0.26 ms.
+
+  **2.** The float is slow on the screen at every zoom: a seventh of the cell's radius, at most 2% of the screen a second
+
+  A wholly loose file wanders up to `DRIFT_REACH` of its cell's radius about its place. That was `1`, the whole cell; it is now `0.15`. The new `DRIFT_SPEED` (`0.02`) is the most anything in the float moves a file in a second, as a share of the free screen's shorter side. When you zoom in, the wander's clock slows just enough to keep to that. So the path stays the same on the ground, and on the screen it keeps the same gentle pace. Tied files still barely move and hubs still sit still (D157).
+
+  On atis's own map, loose files in the opened world folder drifted 2 to 5% of the screen over a minute: visible, but slow. Both tokens, the existing rates and the cell gate below are live in the dev panel (Ctrl+Alt+Shift+T), logged in `docs/design.md`'s motion table and patch log.
+
+  **3.** A cell opens once its skin fills 60% of the free screen, if it holds files of its own, and holds open down to 45%
+
+  Opening no longer waits for LOD2's gate. From LOD1 on, the innermost cell under the view's centre opens once its skin's box fills `LEVELS.cellOpen` (`0.6`) of the free screen, so the whole cell is on screen as it starts to move. It holds open while you pan and zoom inside it, and closes once it fills less than `LEVELS.cellClose` (`0.45`) (D155's hold).
+
+  Only the innermost cell under the centre is a candidate. My first version walked up to the package when a folder was still small, and the package then held open, so the folder never opened on its own. A click on another cell opens it only if it is big enough to hold open; otherwise the open cell stays.
+
+  At the pause you found the `apps/web` package opening as a cream sheet full of holes with nothing on it. It holds no files of its own: core gives each file directly in `apps/web/src` its own single-file cell (19 of them, beside 4 folders), and the slide cuts a hole for every cell it holds. The fill rule made it worse, because the package's huge box filled 60% of the screen almost as soon as the surface showed, and the hold kept it open as you zoomed in.
+
+  Now a cell with no placed files of its own never opens, and a click on its ground counts as a click on open ground. This narrows D155's "the cell under the view's centre opens", at your call. On your `--base HEAD~` map, the package's ground stays plain surface at zoom 2.4. `src/chrome` opens at about zoom 2.9 and `src/world` at about 4.5, each with its bodies and tags. Why core makes 19 single-file cells is parked as P45.
+
+  On atis's own map, the `apps/atis` package's thin skin runs right across `apps/web/src/world`; with the centre on it, that package opens instead of the folder.
+
+  **4.** The hand-off keeps a closed cell's files, and the marks on them, where they floated until the view climbs on
+
+  When a cell closes, the scheduler keeps its float. The surface's organelles, their bulbs and the weather marks on them (stains, rings, notches) are drawn where the files last floated, and stay still while the cell still fills at least 45% of the free screen, as after Esc. As you zoom out further they ease home, and by the time it fills 15% (`LEVELS.cellHome`) they are back in place.
+
+  Opening the cell again picks up the float from where the surface drew the files, so neither direction jumps. On atis's own map, closing the world folder by zooming out held 12 files where they floated, and they were home by the far field. Ribbons, storm bolts and notice labels still point at each file's resting place; the offset is at most a few percent of the screen and fades as the files come home.
+
+  **5.** A click or a hover finds a floating body where it is drawn, and a click on one keeps the cell open
+
+  The world picks the opened cell's bodies, and the surface's held files, where they are drawn, before falling back to the layout's picker. That fixes the click that closed or switched cells: a body that had drifted over another cell or a hole used to be picked as that cell. The hover outline now follows a floating body under a still pointer.
+
+  The browser smoke test opens the demo's pm cell. It clicks a floating body where the canvas takes the pointer and checks the cell stays open. Then it closes the cell with Esc, waits for the surface to hold the moved files, and zooms out until they are home.
+
+  The reduced-motion frame comparison failed once under the full check's coverage run. It then passed in four solo runs, three full-suite runs and three more checks. It is parked as P42, since nothing in the frame was saved. A git integration test also timed out once at 5.8 s while my two CLI servers and a browser ran beside the check; with them stopped, the check was green.

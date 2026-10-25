@@ -225,6 +225,33 @@ test("the demo map ties each file to its cell on the head graph, with the test's
   expect(legacy).not.toHaveProperty('ties');
 });
 
+test("the demo map ties each file to its package beside its cell, so a single-file module is held by its package's siblings (D167)", () => {
+  const map = buildMap(inputsFor('demo'), DEFAULT_CONFIG);
+  const ties = new Map(map.terrain.organelles.map((organelle) => [organelle.id, organelle.package_ties]));
+
+  // doctor.ts is alone in its cell, but the CLI's barrel reads it from inside its package; its two imports leave for libs/core.
+  expect(ties.get('apps/cli/src/doctor.ts')).toEqual({ inside: 1, outside: 2 });
+  // The barrel's cell is the package itself, and its one tie is to doctor.ts beside it.
+  expect(ties.get('apps/cli/src/index.ts')).toEqual({ inside: 1, outside: 0 });
+  // pm's barrel is held by its package's barrel and its siblings, and read by the CLI from outside.
+  expect(ties.get('libs/core/src/pm/index.ts')).toEqual({ inside: 3, outside: 1 });
+  // format.ts reaches out of its directory cell to pm, but never out of libs/core.
+  expect(ties.get('libs/core/src/util/format.ts')).toEqual({ inside: 4, outside: 0 });
+  const legacy = map.terrain.organelles.find((organelle) => organelle.id === 'libs/core/src/pm/legacy.ts');
+  expect(legacy).not.toHaveProperty('package_ties');
+});
+
+test('assertMap accepts package ties and refuses a count that is negative or fractional (D85)', () => {
+  const map = buildMap(inputsFor('demo'), DEFAULT_CONFIG);
+  const withPackageTies = (package_ties: unknown): unknown => ({
+    ...map,
+    terrain: { ...map.terrain, organelles: map.terrain.organelles.map((organelle) => ({ ...organelle, package_ties })) },
+  });
+  expect(() => assertMap(withPackageTies({ inside: 0, outside: 0 }))).not.toThrow();
+  expect(() => assertMap(withPackageTies({ inside: -1, outside: 0 }))).toThrow(/package_ties\.inside/);
+  expect(() => assertMap(withPackageTies({ inside: 1, outside: 0.5 }))).toThrow(/package_ties\.outside/);
+});
+
 test("the demo map's wiring is every head import edge with a changed file at either end, the test's included and the deleted file's none (step 41)", () => {
   const map = buildMap(inputsFor('demo'), DEFAULT_CONFIG);
   expect(map.weather.wiring).toEqual([

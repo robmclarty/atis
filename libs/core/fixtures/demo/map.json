@@ -155,6 +155,10 @@
         "ties": {
           "inside": 0,
           "outside": 3
+        },
+        "package_ties": {
+          "inside": 1,
+          "outside": 2
         }
       },
       {
@@ -173,6 +177,10 @@
         "ties": {
           "inside": 0,
           "outside": 1
+        },
+        "package_ties": {
+          "inside": 1,
+          "outside": 0
         }
       },
       {
@@ -191,6 +199,10 @@
         "ties": {
           "inside": 0,
           "outside": 2
+        },
+        "package_ties": {
+          "inside": 1,
+          "outside": 1
         }
       },
       {
@@ -212,6 +224,10 @@
         "ties": {
           "inside": 2,
           "outside": 2
+        },
+        "package_ties": {
+          "inside": 3,
+          "outside": 1
         }
       },
       {
@@ -245,6 +261,10 @@
           "inside": 1,
           "outside": 1
         },
+        "package_ties": {
+          "inside": 2,
+          "outside": 0
+        },
         "clone_family": "family-1"
       },
       {
@@ -270,6 +290,10 @@
           "inside": 1,
           "outside": 1
         },
+        "package_ties": {
+          "inside": 2,
+          "outside": 0
+        },
         "clone_family": "family-1"
       },
       {
@@ -290,6 +314,10 @@
         "ties": {
           "inside": 2,
           "outside": 2
+        },
+        "package_ties": {
+          "inside": 4,
+          "outside": 0
         }
       },
       {
@@ -308,6 +336,10 @@
           "churn_ratio": 0.4864864864864865
         },
         "ties": {
+          "inside": 2,
+          "outside": 0
+        },
+        "package_ties": {
           "inside": 2,
           "outside": 0
         }

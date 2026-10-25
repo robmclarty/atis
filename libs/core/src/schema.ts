@@ -73,6 +73,12 @@ export type Organelle = {
   readonly stability?: Stability;
   /** Set on every file the head holds, a file with no ties included; a deleted file has none (D157). */
   readonly ties?: Ties;
+  /**
+   * The same edges counted with its package for home (D167): to terrain files
+   * in the package its cell is or sits in, and to terrain files outside it.
+   * Absent on a deleted file and on a file in no package.
+   */
+  readonly package_ties?: Ties;
   readonly clone_family?: string;
 };
 
@@ -390,6 +396,9 @@ function assertShape(value: unknown): asserts value is MapJson {
     organelleIds.add(expectString(organelle['id'], `terrain.organelles[${String(index)}].id`));
     if (organelle['stability'] !== undefined) assertStability(organelle['stability'], `terrain.organelles[${String(index)}].stability`);
     if (organelle['ties'] !== undefined) assertTies(organelle['ties'], `terrain.organelles[${String(index)}].ties`);
+    if (organelle['package_ties'] !== undefined) {
+      assertTies(organelle['package_ties'], `terrain.organelles[${String(index)}].package_ties`);
+    }
   });
 
   const weather = expectRecord(root['weather'], 'weather');
