@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 45 — chore(fixtures): select five fresh outside PRs for glance round two
+**Current step:** 46 — chore(fixtures): generate the round-two maps
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -72,7 +72,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 42. feat(web): honour reduced motion
 - ☑ 43. perf(web): hold 60 fps at 5,000 files and a 2 s first frame
 - ☑ 44. docs(design): record the world's material tokens and sources
-- ☐ 45. chore(fixtures): select five fresh outside PRs for glance round two
+- ☑ 45. chore(fixtures): select five fresh outside PRs for glance round two
 - ☐ 46. chore(fixtures): generate the round-two maps
 - ☐ 47. chore(glance): read glance round two in the world
 - ☑ 88. refactor(svg): draw the still map's weather from the scene's derivations
@@ -160,6 +160,10 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [ ] core's buildMap takes 274 s on step 43's 5,000-file synthetic map (1.8 s at 500, 32 s at 2,000, worse than n²), most of it in bubblesets-js's outline routing (outcode, intersectsLine) under the membranes pass: a first, uncached run of atis on a repo that size waits minutes, which wave 3's cache (steps 48 to 50) hides from the second run only
 - [ ] on step 43's 5,000-file map the zoom sweep keeps one frame of 40 to 50 ms where the first cell opens at LOD2 (114 fps over the sweep, both backends); warming the slide's materials before the first frame left it at 34 to 42 ms, so it is not their shader compile; the long-animation-frame entry names no script over 5 ms
 - [ ] classifyFile reads a *.tst.ts type-test file (tstyche's naming) as source, since it matches neither *.test.* nor *.spec.*, so such a file lands on the terrain as a cell's organelle; one round-two fixture's change carries one
+- [ ] patch coverage counts a changed line as executable only where a coverage statement starts, so an edit on the continuation lines of a multi-line condition or object literal counts as nothing: on one round-two map six changed files read 0 changed executable lines though several carry logic edits, and the mutants disagree, placing six survivors on one of those files' changed lines
+- [ ] a changed package.json lands in weather.evidence.patch_coverage (0 executable lines) on one round-two map, because the istanbul file carries keys for JSON files a test imported; patch coverage could keep to source files as classifyFile reads them
+- [ ] checkride's format slot runs yarn prettier --check . under yarn, and yarn runs a repo's own root script named prettier when there is one; with --write in that script prettier 3.8 rewrites the tree and exits 0, so the slot reformats the worktree mid-run and passes (a checkride fix, found generating a round-two fixture)
+- [ ] the default config shore row's rules/** matches a source folder named rules at any depth, so changed TypeScript source lands on the shore: on two round-two maps 3 of 3 and 4 of 9 changed source files sit there, and the first map's terrain is 4 files in 2 cells; corpus-12 already lost one file to it. Anchor the row (to the repo or member root, or to non-source files) and regenerate those two maps before step 47's reading
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -1242,3 +1246,4 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-25 — step 42 checkpointed · 27e040b97 — feat(web): honour reduced motion (7m)
 - 2026-10-25 — step 43 checkpointed · 1a18f99bd — perf(web): hold 60 fps at 5,000 files and a 2 s first frame (1 drift, 25m)
 - 2026-10-25 — step 44 checkpointed · 8112faf13 — docs(design): record the world's material tokens and sources (6m)
+- 2026-10-25 — step 45 checkpointed · 2c23e4911 — chore(fixtures): select five fresh outside PRs for glance round two (27m)

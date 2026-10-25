@@ -1,0 +1,738 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 653" width="780" height="653" font-family="ui-monospace, Menlo, Consolas, monospace">
+  <rect id="ground" x="0" y="0" width="780" height="653" fill="#1a1f27"/>
+  <g id="world" transform="translate(0 -347)">
+    <rect id="field" x="0" y="406" width="480" height="106" fill="#0a0c0f"/>
+    <g id="terraces">
+      <g data-band="0">
+        <rect x="0" y="416" width="480" height="96" fill="#10141a"/>
+        <line x1="0" y1="416" x2="480" y2="416" stroke="#222831" stroke-width="1"/>
+      </g>
+    </g>
+    <g id="membranes" fill="#7a838e" fill-opacity="0.08" stroke="#4b535e" stroke-linejoin="round">
+      <path data-id="package:." data-kind="package" stroke-width="2" d="M40.67 516.67L45.46 518.94L50.1 520.62L54 522L56.81 523.31L59.19 524.47L62 525.33L65.85 525.78L70.15 525.78L74 525.33L76.79 524.49L78.99 523.51L81.33 522.67L84.37 522.15L87.85 521.63L91.33 520.67L94.49 518.91L97.51 516.42L100.67 513.33L104.15 509.85L107.63 506.37L110.67 503.33L112.99 501.06L115.01 499.38L117.33 498L120.35 496.67L123.65 495.33L126.67 494L129.04 492.69L131.41 491.53L134.67 490.67L139.36 490.17L144.64 489.83L149.33 489.33L152.59 488.49L154.96 487.51L157.33 486.67L160.35 486.22L163.65 486.22L166.67 486.67L169.01 487.51L171.21 488.49L174 489.33L177.85 489.83L182.15 490.17L186 490.67L188.81 491.53L191.19 492.69L194 494L197.9 495.31L202.54 496.47L207.33 497.33L211.75 497.78L215.58 497.78L218.67 497.33L220.94 496.47L222.62 495.31L224 494L225.33 492.59L226.67 490.74L228 488L229.31 484.1L230.47 479.46L231.33 474.67L231.78 470.25L231.78 466.42L231.33 463.33L230.47 461.06L229.31 459.38L228 458L226.59 456.67L224.74 455.33L222 454L218.1 452.69L213.46 451.53L208.67 450.67L204.22 450.25L200.22 450.42L196.67 451.33L193.48 453.04L190.3 455.19L186.67 457.33L182.35 459.14L177.88 460.64L174 462L171.19 463.31L168.81 464.47L166 465.33L162.15 465.83L157.85 466.17L154 466.67L151.16 467.51L148.62 468.49L145.33 469.33L140.64 469.78L135.36 469.78L130.67 469.33L127.41 468.49L125.04 467.51L122.67 466.67L119.65 466.17L116.35 465.83L113.33 465.33L110.99 464.47L108.79 463.31L106 462L101.95 460.69L96.27 459.53L88.67 458.67L79.21 458.22L69.46 458.22L61.33 458.67L56.22 459.51L53.33 460.49L51.33 461.33L49.16 461.83L46.84 462.17L44.67 462.67L42.79 463.6L40.77 465.28L38 468L34.17 471.98L30.05 477.14L26.67 483.33L24.81 490.25L24.3 496.86L24.67 502L25.58 504.89L27.09 506.44L29.33 508L32.42 510.54L36.25 513.68L40.67 516.67Z"/>
+      <path data-id="directory:." data-kind="directory" stroke-width="1.5" d="M42.67 518.33L46.25 520.23L49.09 521.1L51.33 521.67L53.26 522.51L55.63 523.49L59.33 524.33L64.86 524.78L71.14 524.78L76.67 524.33L80.37 523.49L82.74 522.51L84.67 521.67L86.84 521.17L89.16 520.83L91.33 520.33L93.23 519.37L95.43 517.52L98.67 514.33L103.33 509.62L108.44 504.16L112.67 499L115.04 494.95L116.07 491.94L116.67 489.67L117.48 487.79L118.3 485.77L118.67 483L118.22 479.12L116.89 474.65L114.67 470.33L111.58 466.75L107.75 463.91L103.33 461.67L98.4 459.89L92.72 458.56L86 457.67L78.22 457.22L70.44 457.22L64 457.67L59.83 458.51L57.28 459.49L55.33 460.33L53.16 460.83L50.84 461.17L48.67 461.67L46.84 462.51L45.16 463.49L43.33 464.33L41.11 464.9L38.44 465.77L35.33 467.67L31.88 471.17L28.57 476.16L26 482.33L24.62 489.25L24.27 495.86L24.67 501L25.6 503.91L27.28 505.64L30 507.67L33.88 511.02L38.35 514.98L42.67 518.33Z"/>
+    </g>
+    <g id="organelles" fill="#333a43" stroke="#5f6873" stroke-width="1">
+      <circle data-id="dangerfile.ts" cx="49.19" cy="492.94" r="9.19"/>
+      <circle data-id="index.d.ts" cx="96.12" cy="484.22" r="7.16"/>
+      <circle data-id="src/index.ts" cx="210.91" cy="475.78" r="10.14"/>
+      <circle data-id="types.d.ts" data-reachable="false" cx="75.51" cy="497.98" r="7.62"/>
+    </g>
+    <g id="weather">
+      <defs>
+        <pattern id="hatch" patternUnits="userSpaceOnUse" width="4" height="4">
+          <path d="M0 4L4 0" stroke="#cfd6de" stroke-width="1"/>
+        </pattern>
+        <pattern id="stipple" patternUnits="userSpaceOnUse" width="4" height="4">
+          <circle cx="2" cy="2" r="0.7" fill="#cfd6de"/>
+        </pattern>
+        <filter id="glow" x="-25%" y="-25%" width="150%" height="150%">
+          <feGaussianBlur stdDeviation="6"/>
+        </filter>
+        <marker id="arrow-boundary" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto" fill="#e35ce0">
+          <path d="M0 0L6 3L0 6Z"/>
+        </marker>
+        <marker id="arrow-cycle" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto" fill="#e35ce0">
+          <path d="M0 0L6 3L0 6Z"/>
+        </marker>
+        <marker id="arrow-new-cross-module" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto" fill="#5fd8ea">
+          <path d="M0 0L6 3L0 6Z"/>
+        </marker>
+      </defs>
+    </g>
+  </g>
+  <g id="chrome">
+    <g id="hud">
+      <g data-block="category" data-category="IFR">
+        <rect x="10" y="8" width="36.18" height="20" fill="#f0546a"/>
+        <text x="16" y="22.55" font-size="13" fill="#0a0c0f"><tspan font-weight="bold">IFR</tspan></text>
+      </g>
+      <g data-block="patch-cov">
+        <rect x="49.18" y="8" width="90.12" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="55.18" y="21.15" font-size="9" fill="#e6edf3"><tspan>Patch cov </tspan><tspan font-weight="bold">100%</tspan></text>
+      </g>
+      <g data-block="mutants">
+        <rect x="142.3" y="8" width="184.98" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="148.3" y="21.15" font-size="9" fill="#e6edf3"><tspan>Mutants </tspan><tspan font-weight="bold">18</tspan><tspan> survived, 3 untested</tspan></text>
+      </g>
+      <g data-block="reach">
+        <rect x="330.28" y="8" width="84.54" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="336.28" y="21.15" font-size="9" fill="#e6edf3"><tspan>Reach </tspan><tspan font-weight="bold">0</tspan><tspan> cells</tspan></text>
+      </g>
+      <g data-block="size">
+        <rect x="417.82" y="8" width="140.34" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="423.82" y="21.15" font-size="9" fill="#e6edf3"><tspan>Size </tspan><tspan font-weight="bold">+243 −14</tspan><tspan>, 14 files</tspan></text>
+      </g>
+      <g data-block="gate">
+        <rect x="561.16" y="8" width="67.8" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="567.16" y="21.15" font-size="9" fill="#e6edf3"><tspan>Gate </tspan><tspan font-weight="bold">1</tspan><tspan> red</tspan></text>
+      </g>
+      <g data-block="standing">
+        <rect x="10" y="31" width="190.56" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="16" y="44.15" font-size="9" fill="#e6edf3"><tspan>Standing </tspan><tspan font-weight="bold">3</tspan><tspan> red, global: snippets</tspan></text>
+      </g>
+      <g data-block="health" data-muted="true" data-reason="head-only">
+        <rect x="203.56" y="31" width="67.8" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="209.56" y="44.15" font-size="9" fill="#6b7480"><tspan>Health Δ </tspan><tspan font-weight="bold">—</tspan></text>
+      </g>
+      <g data-block="notices">
+        <rect x="274.36" y="31" width="84.54" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="280.36" y="44.15" font-size="9" fill="#e6edf3"><tspan>Notices </tspan><tspan font-weight="bold">1·2·3</tspan></text>
+      </g>
+      <g data-block="other">
+        <rect x="361.9" y="31" width="51.06" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="367.9" y="44.15" font-size="9" fill="#e6edf3"><tspan>Other </tspan><tspan font-weight="bold">7</tspan></text>
+      </g>
+    </g>
+    <g id="rules" stroke="#2b333d" stroke-width="1">
+      <line x1="0" y1="59" x2="780" y2="59"/>
+      <line x1="480" y1="59" x2="480" y2="653"/>
+      <line x1="0" y1="165" x2="480" y2="165"/>
+    </g>
+    <g id="leaders" stroke="#9aa5b1" stroke-width="1" stroke-dasharray="0.1 3" stroke-linecap="round" fill="none">
+      <line data-notice="1" x1="495" y1="74" x2="175" y2="185.5"/>
+      <line data-notice="2" x1="495" y1="123" x2="175" y2="185.5"/>
+      <line data-notice="3" x1="495" y1="182.4" x2="188" y2="185.5"/>
+      <line data-notice="4" x1="495" y1="252.2" x2="175" y2="185.5"/>
+      <line data-notice="5" x1="495" y1="311.6" x2="175" y2="185.5"/>
+      <line data-notice="6" x1="495" y1="371" x2="175" y2="185.5"/>
+    </g>
+    <g id="notices">
+      <g data-notice="1" data-tier="primary" data-kind="survived-mutants" data-target="src/rules/utils/misc.ts">
+        <g data-mark="1" data-tier="primary">
+          <rect x="490" y="69" width="10" height="10" fill="#f0546a"/>
+          <text x="495" y="76.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#0a0c0f">1</text>
+        </g>
+        <text x="505" y="77" font-size="8" font-weight="bold" fill="#e6edf3">src/rules/utils/misc.ts</text>
+        <text x="505" y="86.4" font-size="7" font-variant="small-caps" fill="#e6edf3">survived-mutants</text>
+        <text x="505" y="96.5" font-size="8" fill="#e6edf3">2 mutants survived on the changed lines</text>
+        <text x="505" y="105.9" font-size="7" fill="#6b7480">severity 6</text>
+      </g>
+      <g data-notice="2" data-tier="secondary" data-kind="survived-mutants" data-target="src/rules/valid-mocked-module-path.ts">
+        <g data-mark="2" data-tier="secondary">
+          <rect x="490" y="118" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
+          <text x="495" y="125.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">2</text>
+        </g>
+        <text x="505" y="126" font-size="8" font-weight="bold" fill="#e6edf3">+src/rules/valid-mocked-module-path.ts</text>
+        <text x="505" y="135.4" font-size="7" font-variant="small-caps" fill="#e6edf3">survived-mutants</text>
+        <text x="505" y="145.5" font-size="8" fill="#e6edf3">16 mutants survived and 3 mutants no test reached on</text>
+        <text x="505" y="155.9" font-size="8" fill="#e6edf3">the changed lines</text>
+        <text x="505" y="165.3" font-size="7" fill="#6b7480">severity 6</text>
+      </g>
+      <g data-notice="3" data-tier="secondary" data-kind="threshold-breached" data-target="src/rules/valid-mocked-module-path.ts">
+        <g data-mark="3" data-tier="secondary">
+          <rect x="490" y="177.4" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
+          <text x="495" y="184.85" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">3</text>
+        </g>
+        <text x="505" y="185.4" font-size="8" font-weight="bold" fill="#e6edf3">+src/rules/valid-mocked-module-path.ts</text>
+        <text x="505" y="194.8" font-size="7" font-variant="small-caps" fill="#e6edf3">threshold-breached</text>
+        <text x="505" y="204.9" font-size="8" fill="#e6edf3">crap over threshold in a function this change</text>
+        <text x="505" y="215.3" font-size="8" fill="#e6edf3">touched; present at head, not measured as introduced</text>
+        <text x="505" y="225.7" font-size="8" fill="#e6edf3">by this change (.check/ is read at head only)</text>
+        <text x="505" y="235.1" font-size="7" fill="#6b7480">severity 5</text>
+      </g>
+      <g data-notice="4" data-tier="tertiary" data-kind="missing-cochange" data-target="src/rules/no-conditional-expect.ts">
+        <g data-mark="4" data-tier="tertiary">
+          <rect x="490" y="247.2" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="495" y="254.65" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">4</text>
+        </g>
+        <text x="505" y="255.2" font-size="8" font-weight="bold" fill="#e6edf3">src/rules/no-conditional-expect.ts</text>
+        <text x="505" y="264.6" font-size="7" font-variant="small-caps" fill="#e6edf3">missing-cochange</text>
+        <text x="505" y="274.7" font-size="8" fill="#e6edf3">usually changes with `src/rules/utils/misc.ts` (6</text>
+        <text x="505" y="285.1" font-size="8" fill="#e6edf3">commits, rate 0.5) and did not</text>
+        <text x="505" y="294.5" font-size="7" fill="#6b7480">severity 2 · cochange_rate 0.5 · cochange_support 3</text>
+      </g>
+      <g data-notice="5" data-tier="tertiary" data-kind="missing-cochange" data-target="src/rules/no-done-callback.ts">
+        <g data-mark="5" data-tier="tertiary">
+          <rect x="490" y="306.6" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="495" y="314.05" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">5</text>
+        </g>
+        <text x="505" y="314.6" font-size="8" font-weight="bold" fill="#e6edf3">src/rules/no-done-callback.ts</text>
+        <text x="505" y="324" font-size="7" font-variant="small-caps" fill="#e6edf3">missing-cochange</text>
+        <text x="505" y="334.1" font-size="8" fill="#e6edf3">usually changes with `src/rules/utils/misc.ts` (6</text>
+        <text x="505" y="344.5" font-size="8" fill="#e6edf3">commits, rate 0.5) and did not</text>
+        <text x="505" y="353.9" font-size="7" fill="#6b7480">severity 2 · cochange_rate 0.5 · cochange_support 3</text>
+      </g>
+      <g data-notice="6" data-tier="tertiary" data-kind="missing-cochange" data-target="src/rules/utils/parseJestFnCall.ts">
+        <g data-mark="6" data-tier="tertiary">
+          <rect x="490" y="366" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="495" y="373.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">6</text>
+        </g>
+        <text x="505" y="374" font-size="8" font-weight="bold" fill="#e6edf3">src/rules/utils/parseJestFnCall.ts</text>
+        <text x="505" y="383.4" font-size="7" font-variant="small-caps" fill="#e6edf3">missing-cochange</text>
+        <text x="505" y="393.5" font-size="8" fill="#e6edf3">usually changes with `src/rules/utils/misc.ts` (6</text>
+        <text x="505" y="403.9" font-size="8" fill="#e6edf3">commits, rate 0.5) and did not</text>
+        <text x="505" y="413.3" font-size="7" fill="#6b7480">severity 2 · cochange_rate 0.5 · cochange_support 3</text>
+      </g>
+    </g>
+    <g id="shore">
+      <g data-group="config" data-touched="true">
+        <rect x="10" y="175" width="240" height="113" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="15" y="188.3" font-size="8" font-variant="small-caps" fill="#e6edf3">config<tspan fill="#6b7480"> 84</tspan></text>
+        <path data-slot="health" data-change="true" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" fill="#f0546a" transform="translate(69.64 185.5) scale(0.67)"/>
+        <text x="76.64" y="188.3" font-size="8" font-variant="small-caps" fill="#f0546a">health</text>
+        <path data-slot="dead" data-change="false" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" fill="#58616b" transform="translate(116.4 185.5) scale(0.4)"/>
+        <path data-slot="dupes" data-change="false" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" fill="#58616b" transform="translate(130.4 185.5) scale(0.4)"/>
+        <g data-grid="config">
+          <rect x="15" y="191" width="4" height="4" data-file="src/rules/__tests__/fixtures/module/foo.js" data-kind="added" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <rect x="20" y="191" width="4" height="4" data-file="src/rules/no-untyped-mock-factory.ts" data-kind="modified" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <rect x="25" y="191" width="4" height="4" data-file="src/rules/utils/misc.ts" data-kind="modified" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <rect x="30" y="191" width="4" height="4" data-file="src/rules/valid-mocked-module-path.ts" data-kind="added" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <rect x="35" y="191" width="4" height="4" data-file="src/rules/expect-expect.ts" data-kind="ghost" stroke-width="1" fill="none" stroke="#7c8590" stroke-dasharray="2 2"/>
+          <rect x="40" y="191" width="4" height="4" data-file="src/rules/no-conditional-expect.ts" data-kind="ghost" stroke-width="1" fill="none" stroke="#7c8590" stroke-dasharray="2 2"/>
+          <rect x="45" y="191" width="4" height="4" data-file="src/rules/no-done-callback.ts" data-kind="ghost" stroke-width="1" fill="none" stroke="#7c8590" stroke-dasharray="2 2"/>
+          <rect x="50" y="191" width="4" height="4" data-file="src/rules/no-test-return-statement.ts" data-kind="ghost" stroke-width="1" fill="none" stroke="#7c8590" stroke-dasharray="2 2"/>
+          <rect x="55" y="191" width="4" height="4" data-file="src/rules/prefer-spy-on.ts" data-kind="ghost" stroke-width="1" fill="none" stroke="#7c8590" stroke-dasharray="2 2"/>
+          <rect x="60" y="191" width="4" height="4" data-file="src/rules/utils/parseJestFnCall.ts" data-kind="ghost" stroke-width="1" fill="none" stroke="#7c8590" stroke-dasharray="2 2"/>
+          <rect x="65" y="191" width="4" height="4" data-file=".prettierignore" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="70" y="191" width="4" height="4" data-file="babel.config.js" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="75" y="191" width="4" height="4" data-file="eslint-remote-tester.config.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="80" y="191" width="4" height="4" data-file="eslint.config.js" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="85" y="191" width="4" height="4" data-file="jest.config.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="90" y="191" width="4" height="4" data-file="src/rules/__tests__/fixtures/indent/indent-invalid-fixture-1.js" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="95" y="191" width="4" height="4" data-file="src/rules/__tests__/fixtures/indent/indent-valid-fixture-1.js" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="100" y="191" width="4" height="4" data-file="src/rules/__tests__/fixtures/tsconfig-withmeta.json" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="105" y="191" width="4" height="4" data-file="src/rules/__tests__/fixtures/tsconfig.json" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="110" y="191" width="4" height="4" data-file="src/rules/__tests__/fixtures/unstrict/tsconfig.json" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="115" y="191" width="4" height="4" data-file="src/rules/consistent-test-it.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="120" y="191" width="4" height="4" data-file="src/rules/max-expects.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="125" y="191" width="4" height="4" data-file="src/rules/max-nested-describe.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="130" y="191" width="4" height="4" data-file="src/rules/no-alias-methods.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="135" y="191" width="4" height="4" data-file="src/rules/no-commented-out-tests.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="140" y="191" width="4" height="4" data-file="src/rules/no-conditional-in-test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="145" y="191" width="4" height="4" data-file="src/rules/no-confusing-set-timeout.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="150" y="191" width="4" height="4" data-file="src/rules/no-deprecated-functions.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="155" y="191" width="4" height="4" data-file="src/rules/no-disabled-tests.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="160" y="191" width="4" height="4" data-file="src/rules/no-duplicate-hooks.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="165" y="191" width="4" height="4" data-file="src/rules/no-export.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="170" y="191" width="4" height="4" data-file="src/rules/no-focused-tests.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="175" y="191" width="4" height="4" data-file="src/rules/no-hooks.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="180" y="191" width="4" height="4" data-file="src/rules/no-identical-title.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="185" y="191" width="4" height="4" data-file="src/rules/no-interpolation-in-snapshots.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="190" y="191" width="4" height="4" data-file="src/rules/no-jasmine-globals.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="195" y="191" width="4" height="4" data-file="src/rules/no-large-snapshots.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="200" y="191" width="4" height="4" data-file="src/rules/no-mocks-import.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="205" y="191" width="4" height="4" data-file="src/rules/no-restricted-jest-methods.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="210" y="191" width="4" height="4" data-file="src/rules/no-restricted-matchers.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="215" y="191" width="4" height="4" data-file="src/rules/no-standalone-expect.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="220" y="191" width="4" height="4" data-file="src/rules/no-test-prefixes.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="225" y="191" width="4" height="4" data-file="src/rules/padding-around-after-all-blocks.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="230" y="191" width="4" height="4" data-file="src/rules/padding-around-after-each-blocks.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="235" y="191" width="4" height="4" data-file="src/rules/padding-around-all.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="240" y="191" width="4" height="4" data-file="src/rules/padding-around-before-all-blocks.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="15" y="196" width="4" height="4" data-file="src/rules/padding-around-before-each-blocks.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="20" y="196" width="4" height="4" data-file="src/rules/padding-around-describe-blocks.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="25" y="196" width="4" height="4" data-file="src/rules/padding-around-expect-groups.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="30" y="196" width="4" height="4" data-file="src/rules/padding-around-test-blocks.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="35" y="196" width="4" height="4" data-file="src/rules/prefer-called-with.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="40" y="196" width="4" height="4" data-file="src/rules/prefer-comparison-matcher.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="45" y="196" width="4" height="4" data-file="src/rules/prefer-each.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="50" y="196" width="4" height="4" data-file="src/rules/prefer-ending-with-an-expect.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="55" y="196" width="4" height="4" data-file="src/rules/prefer-equality-matcher.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="60" y="196" width="4" height="4" data-file="src/rules/prefer-expect-assertions.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="65" y="196" width="4" height="4" data-file="src/rules/prefer-expect-resolves.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="70" y="196" width="4" height="4" data-file="src/rules/prefer-hooks-in-order.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="75" y="196" width="4" height="4" data-file="src/rules/prefer-hooks-on-top.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="80" y="196" width="4" height="4" data-file="src/rules/prefer-importing-jest-globals.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="85" y="196" width="4" height="4" data-file="src/rules/prefer-jest-mocked.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="90" y="196" width="4" height="4" data-file="src/rules/prefer-lowercase-title.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="95" y="196" width="4" height="4" data-file="src/rules/prefer-mock-promise-shorthand.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="100" y="196" width="4" height="4" data-file="src/rules/prefer-snapshot-hint.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="105" y="196" width="4" height="4" data-file="src/rules/prefer-strict-equal.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="110" y="196" width="4" height="4" data-file="src/rules/prefer-to-be.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="115" y="196" width="4" height="4" data-file="src/rules/prefer-to-contain.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="120" y="196" width="4" height="4" data-file="src/rules/prefer-to-have-length.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="125" y="196" width="4" height="4" data-file="src/rules/prefer-todo.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="130" y="196" width="4" height="4" data-file="src/rules/require-hook.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="135" y="196" width="4" height="4" data-file="src/rules/require-to-throw-message.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="140" y="196" width="4" height="4" data-file="src/rules/require-top-level-describe.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="145" y="196" width="4" height="4" data-file="src/rules/unbound-method.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="150" y="196" width="4" height="4" data-file="src/rules/utils/accessors.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="155" y="196" width="4" height="4" data-file="src/rules/utils/ast-utils.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="160" y="196" width="4" height="4" data-file="src/rules/utils/detectJestVersion.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="165" y="196" width="4" height="4" data-file="src/rules/utils/followTypeAssertionChain.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="170" y="196" width="4" height="4" data-file="src/rules/utils/index.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="175" y="196" width="4" height="4" data-file="src/rules/utils/padding.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="180" y="196" width="4" height="4" data-file="src/rules/valid-describe-callback.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="185" y="196" width="4" height="4" data-file="src/rules/valid-expect-in-promise.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="190" y="196" width="4" height="4" data-file="src/rules/valid-expect.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="195" y="196" width="4" height="4" data-file="src/rules/valid-title.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="200" y="196" width="4" height="4" data-file="tsconfig.json" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+        </g>
+        <g data-id="src/rules/__tests__/fixtures/module/foo.js" data-kind="added">
+          <circle cx="17.5" cy="211.5" r="2.5" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <text x="23" y="214.3" font-size="8" fill="#e6edf3">+src/rules/__tests__/fixtures/module/foo.js</text>
+        </g>
+        <g data-id="src/rules/no-untyped-mock-factory.ts" data-kind="modified">
+          <circle cx="17.5" cy="222.5" r="2.5" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <text x="23" y="225.3" font-size="8" fill="#e6edf3">src/rules/no-untyped-mock-factory.ts</text>
+        </g>
+        <g data-id="src/rules/utils/misc.ts" data-kind="modified">
+          <circle cx="17.5" cy="233.5" r="2.5" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <text x="23" y="236.3" font-size="8" fill="#e6edf3">src/rules/utils/misc.ts</text>
+        </g>
+        <g data-id="src/rules/valid-mocked-module-path.ts" data-kind="added">
+          <circle cx="17.5" cy="244.5" r="2.5" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <text x="23" y="247.3" font-size="8" fill="#e6edf3">+src/rules/valid-mocked-module-path.ts</text>
+        </g>
+        <g data-id="src/rules/expect-expect.ts" data-kind="ghost">
+          <circle cx="17.5" cy="255.5" r="2.5" stroke-width="1" fill="none" stroke="#7c8590" stroke-dasharray="2 2"/>
+          <text x="23" y="258.3" font-size="8" fill="#e6edf3">src/rules/expect-expect.ts</text>
+        </g>
+        <g data-id="src/rules/no-conditional-expect.ts" data-kind="ghost">
+          <circle cx="17.5" cy="266.5" r="2.5" stroke-width="1" fill="none" stroke="#7c8590" stroke-dasharray="2 2"/>
+          <text x="23" y="269.3" font-size="8" fill="#e6edf3">src/rules/no-conditional-expect.ts</text>
+        </g>
+        <text x="15" y="280.3" font-size="8" fill="#6b7480">and 4 more</text>
+      </g>
+      <g data-group="data" data-touched="true">
+        <rect x="10" y="294" width="240" height="42" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="15" y="307.3" font-size="8" font-variant="small-caps" fill="#e6edf3">data<tspan fill="#6b7480"> 1</tspan></text>
+        <g data-grid="data">
+          <rect x="15" y="310" width="4" height="4" data-file="src/__tests__/__snapshots__/rules.test.ts.snap" data-kind="modified" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+        </g>
+        <g data-id="src/__tests__/__snapshots__/rules.test.ts.snap" data-kind="modified">
+          <circle cx="17.5" cy="325.5" r="2.5" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <text x="23" y="328.3" font-size="8" fill="#e6edf3">…/__tests__/__snapshots__/rules.test.ts.snap</text>
+        </g>
+      </g>
+      <g data-group="deps" data-touched="true">
+        <rect x="256" y="294" width="77.52" height="53" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="261" y="307.3" font-size="8" font-variant="small-caps" fill="#e6edf3">deps<tspan fill="#6b7480"> 4</tspan></text>
+        <g data-grid="deps">
+          <rect x="261" y="310" width="4" height="4" data-file="package.json" data-kind="modified" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <rect x="266" y="310" width="4" height="4" data-file="yarn.lock" data-kind="modified" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <rect x="271" y="310" width="4" height="4" data-file=".github/renovate.json" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="276" y="310" width="4" height="4" data-file=".npmignore" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+        </g>
+        <g data-id="package.json" data-kind="modified">
+          <circle cx="263.5" cy="325.5" r="2.5" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <text x="269" y="328.3" font-size="8" fill="#e6edf3">package.json</text>
+        </g>
+        <g data-id="yarn.lock" data-kind="modified">
+          <circle cx="263.5" cy="336.5" r="2.5" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <text x="269" y="339.3" font-size="8" fill="#e6edf3">yarn.lock</text>
+        </g>
+      </g>
+      <g data-group="docs" data-touched="true">
+        <rect x="10" y="353" width="240" height="58" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="15" y="366.3" font-size="8" font-variant="small-caps" fill="#e6edf3">docs<tspan fill="#6b7480"> 67</tspan></text>
+        <g data-grid="docs">
+          <rect x="15" y="369" width="4" height="4" data-file="README.md" data-kind="modified" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <rect x="20" y="369" width="4" height="4" data-file="docs/rules/valid-mocked-module-path.md" data-kind="added" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <rect x="25" y="369" width="4" height="4" data-file="CHANGELOG.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="30" y="369" width="4" height="4" data-file="LICENSE" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="35" y="369" width="4" height="4" data-file="docs/rules/consistent-test-it.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="40" y="369" width="4" height="4" data-file="docs/rules/expect-expect.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="45" y="369" width="4" height="4" data-file="docs/rules/max-expects.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="50" y="369" width="4" height="4" data-file="docs/rules/max-nested-describe.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="55" y="369" width="4" height="4" data-file="docs/rules/no-alias-methods.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="60" y="369" width="4" height="4" data-file="docs/rules/no-commented-out-tests.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="65" y="369" width="4" height="4" data-file="docs/rules/no-conditional-expect.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="70" y="369" width="4" height="4" data-file="docs/rules/no-conditional-in-test.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="75" y="369" width="4" height="4" data-file="docs/rules/no-confusing-set-timeout.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="80" y="369" width="4" height="4" data-file="docs/rules/no-deprecated-functions.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="85" y="369" width="4" height="4" data-file="docs/rules/no-disabled-tests.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="90" y="369" width="4" height="4" data-file="docs/rules/no-done-callback.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="95" y="369" width="4" height="4" data-file="docs/rules/no-duplicate-hooks.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="100" y="369" width="4" height="4" data-file="docs/rules/no-export.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="105" y="369" width="4" height="4" data-file="docs/rules/no-focused-tests.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="110" y="369" width="4" height="4" data-file="docs/rules/no-hooks.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="115" y="369" width="4" height="4" data-file="docs/rules/no-identical-title.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="120" y="369" width="4" height="4" data-file="docs/rules/no-interpolation-in-snapshots.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="125" y="369" width="4" height="4" data-file="docs/rules/no-jasmine-globals.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="130" y="369" width="4" height="4" data-file="docs/rules/no-large-snapshots.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="135" y="369" width="4" height="4" data-file="docs/rules/no-mocks-import.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="140" y="369" width="4" height="4" data-file="docs/rules/no-restricted-jest-methods.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="145" y="369" width="4" height="4" data-file="docs/rules/no-restricted-matchers.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="150" y="369" width="4" height="4" data-file="docs/rules/no-standalone-expect.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="155" y="369" width="4" height="4" data-file="docs/rules/no-test-prefixes.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="160" y="369" width="4" height="4" data-file="docs/rules/no-test-return-statement.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="165" y="369" width="4" height="4" data-file="docs/rules/no-untyped-mock-factory.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="170" y="369" width="4" height="4" data-file="docs/rules/padding-around-after-all-blocks.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="175" y="369" width="4" height="4" data-file="docs/rules/padding-around-after-each-blocks.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="180" y="369" width="4" height="4" data-file="docs/rules/padding-around-all.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="185" y="369" width="4" height="4" data-file="docs/rules/padding-around-before-all-blocks.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="190" y="369" width="4" height="4" data-file="docs/rules/padding-around-before-each-blocks.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="195" y="369" width="4" height="4" data-file="docs/rules/padding-around-describe-blocks.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="200" y="369" width="4" height="4" data-file="docs/rules/padding-around-expect-groups.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="205" y="369" width="4" height="4" data-file="docs/rules/padding-around-test-blocks.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="210" y="369" width="4" height="4" data-file="docs/rules/prefer-called-with.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="215" y="369" width="4" height="4" data-file="docs/rules/prefer-comparison-matcher.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="220" y="369" width="4" height="4" data-file="docs/rules/prefer-each.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="225" y="369" width="4" height="4" data-file="docs/rules/prefer-ending-with-an-expect.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="230" y="369" width="4" height="4" data-file="docs/rules/prefer-equality-matcher.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="235" y="369" width="4" height="4" data-file="docs/rules/prefer-expect-assertions.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="240" y="369" width="4" height="4" data-file="docs/rules/prefer-expect-resolves.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="15" y="374" width="4" height="4" data-file="docs/rules/prefer-hooks-in-order.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="20" y="374" width="4" height="4" data-file="docs/rules/prefer-hooks-on-top.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="25" y="374" width="4" height="4" data-file="docs/rules/prefer-importing-jest-globals.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="30" y="374" width="4" height="4" data-file="docs/rules/prefer-jest-mocked.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="35" y="374" width="4" height="4" data-file="docs/rules/prefer-lowercase-title.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="40" y="374" width="4" height="4" data-file="docs/rules/prefer-mock-promise-shorthand.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="45" y="374" width="4" height="4" data-file="docs/rules/prefer-snapshot-hint.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="50" y="374" width="4" height="4" data-file="docs/rules/prefer-spy-on.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="55" y="374" width="4" height="4" data-file="docs/rules/prefer-strict-equal.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="60" y="374" width="4" height="4" data-file="docs/rules/prefer-to-be.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="65" y="374" width="4" height="4" data-file="docs/rules/prefer-to-contain.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="70" y="374" width="4" height="4" data-file="docs/rules/prefer-to-have-length.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="75" y="374" width="4" height="4" data-file="docs/rules/prefer-todo.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="80" y="374" width="4" height="4" data-file="docs/rules/require-hook.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="85" y="374" width="4" height="4" data-file="docs/rules/require-to-throw-message.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="90" y="374" width="4" height="4" data-file="docs/rules/require-top-level-describe.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="95" y="374" width="4" height="4" data-file="docs/rules/unbound-method.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="100" y="374" width="4" height="4" data-file="docs/rules/valid-describe-callback.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="105" y="374" width="4" height="4" data-file="docs/rules/valid-expect-in-promise.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="110" y="374" width="4" height="4" data-file="docs/rules/valid-expect.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="115" y="374" width="4" height="4" data-file="docs/rules/valid-title.md" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+        </g>
+        <g data-id="README.md" data-kind="modified">
+          <circle cx="17.5" cy="389.5" r="2.5" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <text x="23" y="392.3" font-size="8" fill="#e6edf3">README.md</text>
+        </g>
+        <g data-id="docs/rules/valid-mocked-module-path.md" data-kind="added">
+          <circle cx="17.5" cy="400.5" r="2.5" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <text x="23" y="403.3" font-size="8" fill="#e6edf3">+docs/rules/valid-mocked-module-path.md</text>
+        </g>
+      </g>
+      <g data-group="tests" data-touched="true">
+        <rect x="10" y="417" width="240" height="91" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="15" y="430.3" font-size="8" font-variant="small-caps" fill="#e6edf3">tests<tspan fill="#6b7480"> 77</tspan></text>
+        <path data-slot="health" data-change="false" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" fill="#58616b" transform="translate(64.68 427.5) scale(0.4)"/>
+        <g data-grid="tests">
+          <rect x="15" y="433" width="4" height="4" data-file="src/__tests__/rules.test.ts" data-kind="modified" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <rect x="20" y="433" width="4" height="4" data-file="src/rules/__tests__/fixtures/module/foo.ts" data-kind="added" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <rect x="25" y="433" width="4" height="4" data-file="src/rules/__tests__/fixtures/module/index.ts" data-kind="added" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <rect x="30" y="433" width="4" height="4" data-file="src/rules/__tests__/valid-mocked-module-path.test.ts" data-kind="added" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <rect x="35" y="433" width="4" height="4" data-file="src/rules/__tests__/unbound-method.test.ts" data-kind="ghost" stroke-width="1" fill="none" stroke="#7c8590" stroke-dasharray="2 2"/>
+          <rect x="40" y="433" width="4" height="4" data-file="src/rules/__tests__/consistent-test-it.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="45" y="433" width="4" height="4" data-file="src/rules/__tests__/expect-expect.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="50" y="433" width="4" height="4" data-file="src/rules/__tests__/fixtures/class.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="55" y="433" width="4" height="4" data-file="src/rules/__tests__/fixtures/file.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="60" y="433" width="4" height="4" data-file="src/rules/__tests__/fixtures/foo.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="65" y="433" width="4" height="4" data-file="src/rules/__tests__/fixtures/react.tsx" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="70" y="433" width="4" height="4" data-file="src/rules/__tests__/fixtures/unstrict/file.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="75" y="433" width="4" height="4" data-file="src/rules/__tests__/fixtures/unstrict/react.tsx" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="80" y="433" width="4" height="4" data-file="src/rules/__tests__/max-expects.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="85" y="433" width="4" height="4" data-file="src/rules/__tests__/max-nested-describe.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="90" y="433" width="4" height="4" data-file="src/rules/__tests__/no-alias-methods.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="95" y="433" width="4" height="4" data-file="src/rules/__tests__/no-commented-out-tests.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="100" y="433" width="4" height="4" data-file="src/rules/__tests__/no-conditional-expect.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="105" y="433" width="4" height="4" data-file="src/rules/__tests__/no-conditional-in-test.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="110" y="433" width="4" height="4" data-file="src/rules/__tests__/no-confusing-set-timeout.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="115" y="433" width="4" height="4" data-file="src/rules/__tests__/no-deprecated-functions.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="120" y="433" width="4" height="4" data-file="src/rules/__tests__/no-disabled-tests.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="125" y="433" width="4" height="4" data-file="src/rules/__tests__/no-done-callback.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="130" y="433" width="4" height="4" data-file="src/rules/__tests__/no-duplicate-hooks.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="135" y="433" width="4" height="4" data-file="src/rules/__tests__/no-export.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="140" y="433" width="4" height="4" data-file="src/rules/__tests__/no-focused-tests.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="145" y="433" width="4" height="4" data-file="src/rules/__tests__/no-hooks.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="150" y="433" width="4" height="4" data-file="src/rules/__tests__/no-identical-title.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="155" y="433" width="4" height="4" data-file="src/rules/__tests__/no-interpolation-in-snapshots.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="160" y="433" width="4" height="4" data-file="src/rules/__tests__/no-jasmine-globals.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="165" y="433" width="4" height="4" data-file="src/rules/__tests__/no-large-snapshots.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="170" y="433" width="4" height="4" data-file="src/rules/__tests__/no-mocks-import.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="175" y="433" width="4" height="4" data-file="src/rules/__tests__/no-restricted-jest-methods.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="180" y="433" width="4" height="4" data-file="src/rules/__tests__/no-restricted-matchers.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="185" y="433" width="4" height="4" data-file="src/rules/__tests__/no-standalone-expect.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="190" y="433" width="4" height="4" data-file="src/rules/__tests__/no-test-prefixes.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="195" y="433" width="4" height="4" data-file="src/rules/__tests__/no-test-return-statement.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="200" y="433" width="4" height="4" data-file="src/rules/__tests__/no-untyped-mock-factory.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="205" y="433" width="4" height="4" data-file="src/rules/__tests__/padding-around-after-all-blocks.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="210" y="433" width="4" height="4" data-file="src/rules/__tests__/padding-around-after-each-blocks.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="215" y="433" width="4" height="4" data-file="src/rules/__tests__/padding-around-all.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="220" y="433" width="4" height="4" data-file="src/rules/__tests__/padding-around-before-all-blocks.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="225" y="433" width="4" height="4" data-file="src/rules/__tests__/padding-around-before-each-blocks.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="230" y="433" width="4" height="4" data-file="src/rules/__tests__/padding-around-describe-blocks.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="235" y="433" width="4" height="4" data-file="src/rules/__tests__/padding-around-expect-groups.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="240" y="433" width="4" height="4" data-file="src/rules/__tests__/padding-around-test-blocks.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="15" y="438" width="4" height="4" data-file="src/rules/__tests__/prefer-called-with.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="20" y="438" width="4" height="4" data-file="src/rules/__tests__/prefer-comparison-matcher.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="25" y="438" width="4" height="4" data-file="src/rules/__tests__/prefer-each.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="30" y="438" width="4" height="4" data-file="src/rules/__tests__/prefer-ending-with-an-expect.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="35" y="438" width="4" height="4" data-file="src/rules/__tests__/prefer-equality-matcher.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="40" y="438" width="4" height="4" data-file="src/rules/__tests__/prefer-expect-assertions.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="45" y="438" width="4" height="4" data-file="src/rules/__tests__/prefer-expect-resolves.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="50" y="438" width="4" height="4" data-file="src/rules/__tests__/prefer-hooks-in-order.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="55" y="438" width="4" height="4" data-file="src/rules/__tests__/prefer-hooks-on-top.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="60" y="438" width="4" height="4" data-file="src/rules/__tests__/prefer-importing-jest-globals.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="65" y="438" width="4" height="4" data-file="src/rules/__tests__/prefer-jest-mocked.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="70" y="438" width="4" height="4" data-file="src/rules/__tests__/prefer-lowercase-title.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="75" y="438" width="4" height="4" data-file="src/rules/__tests__/prefer-mock-promise-shorthand.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="80" y="438" width="4" height="4" data-file="src/rules/__tests__/prefer-snapshot-hint.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="85" y="438" width="4" height="4" data-file="src/rules/__tests__/prefer-spy-on.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="90" y="438" width="4" height="4" data-file="src/rules/__tests__/prefer-strict-equal.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="95" y="438" width="4" height="4" data-file="src/rules/__tests__/prefer-to-be.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="100" y="438" width="4" height="4" data-file="src/rules/__tests__/prefer-to-contain.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="105" y="438" width="4" height="4" data-file="src/rules/__tests__/prefer-to-have-length.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="110" y="438" width="4" height="4" data-file="src/rules/__tests__/prefer-todo.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="115" y="438" width="4" height="4" data-file="src/rules/__tests__/require-hook.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="120" y="438" width="4" height="4" data-file="src/rules/__tests__/require-to-throw-message.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="125" y="438" width="4" height="4" data-file="src/rules/__tests__/require-top-level-describe.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="130" y="438" width="4" height="4" data-file="src/rules/__tests__/test-utils.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="135" y="438" width="4" height="4" data-file="src/rules/__tests__/valid-describe-callback.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="140" y="438" width="4" height="4" data-file="src/rules/__tests__/valid-expect-in-promise.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="145" y="438" width="4" height="4" data-file="src/rules/__tests__/valid-expect.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="150" y="438" width="4" height="4" data-file="src/rules/__tests__/valid-title.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="155" y="438" width="4" height="4" data-file="src/rules/utils/__tests__/ast-utils.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="160" y="438" width="4" height="4" data-file="src/rules/utils/__tests__/detectJestVersion.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="165" y="438" width="4" height="4" data-file="src/rules/utils/__tests__/parseJestFnCall.test.ts" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+        </g>
+        <g data-id="src/__tests__/rules.test.ts" data-kind="modified">
+          <circle cx="17.5" cy="453.5" r="2.5" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <text x="23" y="456.3" font-size="8" fill="#e6edf3">src/__tests__/rules.test.ts</text>
+        </g>
+        <g data-id="src/rules/__tests__/fixtures/module/foo.ts" data-kind="added">
+          <circle cx="17.5" cy="464.5" r="2.5" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <text x="23" y="467.3" font-size="8" fill="#e6edf3">+src/rules/__tests__/fixtures/module/foo.ts</text>
+        </g>
+        <g data-id="src/rules/__tests__/fixtures/module/index.ts" data-kind="added">
+          <circle cx="17.5" cy="475.5" r="2.5" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <text x="23" y="478.3" font-size="8" fill="#e6edf3">…rc/rules/__tests__/fixtures/module/index.ts</text>
+        </g>
+        <g data-id="src/rules/__tests__/valid-mocked-module-path.test.ts" data-kind="added">
+          <circle cx="17.5" cy="486.5" r="2.5" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <text x="23" y="489.3" font-size="8" fill="#e6edf3">…/__tests__/valid-mocked-module-path.test.ts</text>
+        </g>
+        <g data-id="src/rules/__tests__/unbound-method.test.ts" data-kind="ghost">
+          <circle cx="17.5" cy="497.5" r="2.5" stroke-width="1" fill="none" stroke="#7c8590" stroke-dasharray="2 2"/>
+          <text x="23" y="500.3" font-size="8" fill="#e6edf3">src/rules/__tests__/unbound-method.test.ts</text>
+        </g>
+      </g>
+      <g data-group="other" data-touched="true" data-loud="true">
+        <rect x="256" y="417" width="171.76" height="42" fill="none" stroke="#e6edf3" stroke-width="2"/>
+        <text x="261" y="430.3" font-size="8" font-variant="small-caps" fill="#e6edf3">other<tspan fill="#6b7480"> 7</tspan></text>
+        <g data-grid="other">
+          <rect x="261" y="433" width="4" height="4" data-file="markdown_link_check_config.json" data-kind="modified" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <rect x="266" y="433" width="4" height="4" data-file=".codecov.yml" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="271" y="433" width="4" height="4" data-file=".eslint-doc-generatorrc.js" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="276" y="433" width="4" height="4" data-file=".yarn/releases/yarn-4.10.3.cjs" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="281" y="433" width="4" height="4" data-file=".yarnrc" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="286" y="433" width="4" height="4" data-file=".yarnrc.yml" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="291" y="433" width="4" height="4" data-file="src/globals.json" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+        </g>
+        <g data-id="markdown_link_check_config.json" data-kind="modified">
+          <circle cx="263.5" cy="448.5" r="2.5" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <text x="269" y="451.3" font-size="8" fill="#e6edf3">markdown_link_check_config.json</text>
+        </g>
+      </g>
+      <g data-group="ci">
+        <rect x="433.76" y="417" width="29.84" height="21" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="438.76" y="430.3" font-size="8" font-variant="small-caps" fill="#e6edf3">ci<tspan fill="#6b7480"> 6</tspan></text>
+      </g>
+      <g data-group="scripts">
+        <rect x="10" y="514" width="54.64" height="21" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="15" y="527.3" font-size="8" font-variant="small-caps" fill="#e6edf3">scripts<tspan fill="#6b7480"> 2</tspan></text>
+      </g>
+      <g data-group="settings">
+        <rect x="70.64" y="514" width="59.6" height="21" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="75.64" y="527.3" font-size="8" font-variant="small-caps" fill="#e6edf3">settings<tspan fill="#6b7480"> 2</tspan></text>
+      </g>
+    </g>
+    <g id="legend">
+      <rect x="490" y="425.4" width="280" height="217" fill="none" stroke="#6b7480" stroke-width="1"/>
+      <text x="496" y="438.4" font-size="7" font-variant="small-caps" fill="#6b7480">legend</text>
+      <g data-mark="category">
+        <g data-balloon="1">
+          <circle cx="503" cy="447.4" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="449.85" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">1</text>
+        </g>
+        <g>
+          <rect x="516" y="440.4" width="19.02" height="14" fill="#4fd37a"/>
+          <text x="519" y="449.85" font-size="7" font-weight="bold" fill="#0a0c0f">VFR</text>
+        </g>
+        <g>
+          <rect x="536.02" y="440.4" width="23.36" height="14" fill="#5b8def"/>
+          <text x="539.02" y="449.85" font-size="7" font-weight="bold" fill="#0a0c0f">MVFR</text>
+        </g>
+        <g>
+          <rect x="560.38" y="440.4" width="19.02" height="14" fill="#f0546a"/>
+          <text x="563.38" y="449.85" font-size="7" font-weight="bold" fill="#0a0c0f">IFR</text>
+        </g>
+        <g>
+          <rect x="580.4" y="440.4" width="23.36" height="14" fill="#e35ce0"/>
+          <text x="583.4" y="449.85" font-size="7" font-weight="bold" fill="#0a0c0f">LIFR</text>
+        </g>
+        <text x="610.76" y="449.85" font-size="7" fill="#e6edf3">category: set by the change alone</text>
+      </g>
+      <g data-mark="lit-arc">
+        <g data-balloon="2">
+          <circle cx="503" cy="465.4" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="467.85" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">2</text>
+        </g>
+        <circle cx="528" cy="465.4" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="528" cy="465.4" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
+        <circle cx="528" cy="465.4" r="6.25" fill="none" stroke="#e6edf3" stroke-width="2.5" pathLength="1" stroke-dasharray="0.4 1" transform="rotate(-90 528 465.4)"/>
+        <text x="546" y="467.85" font-size="7" fill="#e6edf3">lit arc: changed lines no test ran</text>
+      </g>
+      <g data-mark="hairline">
+        <g data-balloon="3">
+          <circle cx="503" cy="483.4" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="485.85" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">3</text>
+        </g>
+        <circle cx="528" cy="483.4" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="528" cy="483.4" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
+        <text x="546" y="485.85" font-size="7" fill="#e6edf3">hairline: changed lines the tests ran</text>
+      </g>
+      <g data-mark="notch">
+        <g data-balloon="4">
+          <circle cx="503" cy="501.4" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="503.85" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">4</text>
+        </g>
+        <circle cx="528" cy="501.4" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="528" cy="501.4" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
+        <path d="M526 493.9L528 498.4L530 493.9Z" fill="#e6edf3"/>
+        <text x="546" y="503.85" font-size="7" fill="#e6edf3">notch: a mutant no test killed</text>
+      </g>
+      <g data-mark="stitches">
+        <g data-balloon="5">
+          <circle cx="503" cy="519.4" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="521.85" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">5</text>
+        </g>
+        <circle cx="528" cy="519.4" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <line x1="528.5" y1="520.27" x2="532.5" y2="527.19" stroke="#e6edf3" stroke-width="2"/>
+        <line x1="528" y1="520.4" x2="528" y2="528.4" stroke="#6b7480" stroke-width="2"/>
+        <line x1="527.5" y1="520.27" x2="526" y2="522.86" stroke="#f0546a" stroke-width="2"/>
+        <line x1="525" y1="524.6" x2="523.5" y2="527.19" stroke="#f0546a" stroke-width="2"/>
+        <text x="546" y="521.85" font-size="7" fill="#e6edf3">stitches: its tests passed, not run, failed</text>
+      </g>
+      <g data-mark="red-bolt">
+        <g data-balloon="6">
+          <circle cx="503" cy="537.4" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="539.85" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">6</text>
+        </g>
+        <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" fill="#f0546a" transform="translate(528 537.4) scale(1)"/>
+        <text x="546" y="539.85" font-size="7" fill="#e6edf3">red bolt: a failing check names a changed file</text>
+      </g>
+      <g data-mark="grey-bolt">
+        <g data-balloon="7">
+          <circle cx="503" cy="555.4" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="557.85" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">7</text>
+        </g>
+        <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" fill="#58616b" transform="translate(528 555.4) scale(0.6)"/>
+        <text x="546" y="557.85" font-size="7" fill="#e6edf3">grey bolt: fails on files the change left alone</text>
+      </g>
+      <g data-mark="ghost">
+        <g data-balloon="8">
+          <circle cx="503" cy="573.4" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="575.85" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">8</text>
+        </g>
+        <circle cx="528" cy="573.4" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="528" cy="573.4" r="8" fill="none" stroke="#7c8590" stroke-dasharray="2 2"/>
+        <text x="546" y="575.85" font-size="7" fill="#e6edf3">ghost: usually changes with these, and did not</text>
+      </g>
+      <g data-mark="stain">
+        <g data-balloon="9">
+          <circle cx="503" cy="591.4" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="593.85" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">9</text>
+        </g>
+        <circle cx="528" cy="591.4" r="5" fill="#5fd8ea" stroke="#5f6873" stroke-width="1"/>
+        <text x="546" y="593.85" font-size="7" fill="#e6edf3">cyan: a changed file; +path in a row: added</text>
+      </g>
+      <g data-mark="unmeasured">
+        <g data-balloon="10">
+          <circle cx="503" cy="609.4" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="611.85" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">10</text>
+        </g>
+        <circle cx="528" cy="609.4" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="528" cy="609.4" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
+        <circle cx="528" cy="609.4" r="6.25" fill="none" stroke="#e6edf3" stroke-width="2.5"/>
+        <text x="546" y="611.85" font-size="7" fill="#e6edf3">skin lit whole: no coverage report names it</text>
+      </g>
+      <g data-key="shapes">
+        <g data-rules="0">
+          <circle cx="505" cy="627.4" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        </g>
+        <g data-rules="1">
+          <path d="M527.87 627.4L527.85 628.04L527.77 628.68L527.63 629.32L527.42 629.95L527.11 630.56L526.72 631.12L526.24 631.63L525.69 632.05L525.06 632.37L524.39 632.58L523.69 632.67L523 632.64L522.33 632.5L521.7 632.27L521.11 631.96L520.58 631.59L520.1 631.18L519.66 630.74L519.26 630.27L518.9 629.77L518.58 629.23L518.31 628.66L518.1 628.04L517.97 627.4L517.93 626.73L517.99 626.06L518.16 625.39L518.43 624.76L518.81 624.18L519.27 623.67L519.8 623.23L520.39 622.88L521.02 622.61L521.67 622.42L522.33 622.31L523 622.28L523.67 622.33L524.33 622.45L524.96 622.66L525.56 622.96L526.11 623.35L526.59 623.81L527 624.33L527.32 624.9L527.57 625.51L527.73 626.13L527.83 626.76Z" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        </g>
+        <g data-rules="2">
+          <path d="M546.44 627.4L546.5 627.94L546.46 628.49L546.31 629.01L546.05 629.49L545.69 629.91L545.27 630.25L544.82 630.53L544.36 630.76L543.93 630.97L543.53 631.18L543.14 631.39L542.74 631.6L542.34 631.8L541.92 632.02L541.48 632.25L541 632.46L540.49 632.62L539.94 632.7L539.4 632.68L538.87 632.55L538.38 632.3L537.95 631.97L537.57 631.58L537.23 631.17L536.93 630.74L536.66 630.3L536.4 629.86L536.19 629.39L536.02 628.91L535.87 628.42L535.76 627.92L535.69 627.4L535.69 626.88L535.76 626.36L535.92 625.86L536.17 625.4L536.49 624.99L536.87 624.64L537.27 624.34L537.68 624.08L538.08 623.85L538.48 623.62L538.86 623.41L539.26 623.2L539.67 623L540.08 622.79L540.52 622.56L541 622.36L541.51 622.2L542.05 622.12L542.59 622.14L543.12 622.28L543.61 622.52L544.04 622.84L544.43 623.23L544.76 623.64L545.06 624.07L545.34 624.5L545.6 624.94L545.81 625.41L546 625.88L546.17 626.37L546.32 626.88Z" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        </g>
+        <g data-rules="3">
+          <path d="M563.94 627.4L563.88 627.83L563.79 628.25L563.69 628.66L563.67 629.1L563.8 629.64L563.97 630.27L563.91 630.84L563.49 631.17L562.82 631.22L562.16 631.17L561.66 631.19L561.27 631.33L560.91 631.5L560.55 631.65L560.18 631.79L559.81 632L559.43 632.35L559 632.75L558.51 632.99L558.03 632.88L557.63 632.51L557.29 632.09L556.96 631.78L556.59 631.57L556.22 631.38L555.86 631.15L555.5 630.9L555.08 630.69L554.51 630.54L553.85 630.37L553.35 630.03L553.23 629.5L553.46 628.89L553.78 628.32L553.98 627.84L554.06 627.4L554.12 626.97L554.21 626.55L554.31 626.14L554.34 625.71L554.24 625.18L554.1 624.57L554.17 624.02L554.58 623.69L555.22 623.62L555.86 623.65L556.35 623.61L556.73 623.47L557.09 623.3L557.45 623.15L557.82 623L558.18 622.77L558.56 622.36L559 621.89L559.51 621.61L560 621.73L560.4 622.17L560.73 622.66L561.05 623.01L561.41 623.23L561.78 623.42L562.14 623.65L562.5 623.9L562.93 624.1L563.54 624.22L564.24 624.38L564.77 624.71L564.89 625.26L564.62 625.89L564.25 626.47L564.02 626.96Z" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        </g>
+        <g data-rules="4">
+          <path d="M582.1 627.4L581.73 627.71L581.67 628.01L581.6 628.32L581.52 628.61L581.42 628.9L581.33 629.2L581.52 629.63L582.04 630.31L582.01 630.75L581.19 630.61L580.52 630.49L580.22 630.62L579.99 630.8L579.75 630.98L579.5 631.14L579.25 631.29L579.05 631.56L579.08 632.42L579.11 633.6L578.63 633.5L578 632.42L577.59 631.9L577.29 631.86L577 631.87L576.71 631.87L576.41 631.85L576.12 631.84L575.76 632.03L575.17 632.8L574.54 633.33L574.43 632.6L574.55 631.64L574.43 631.25L574.19 631.07L573.94 630.89L573.71 630.69L573.49 630.48L573.24 630.28L572.71 630.27L571.72 630.45L571.29 630.22L571.89 629.52L572.38 628.97L572.42 628.63L572.35 628.32L572.3 628.02L572.28 627.71L572.27 627.4L572.17 627.08L571.61 626.69L570.86 626.18L571.13 625.83L572.11 625.74L572.65 625.6L572.84 625.35L573 625.09L573.18 624.85L573.37 624.61L573.56 624.38L573.61 624.01L573.33 623.21L573.24 622.5L573.89 622.74L574.62 623.27L575.01 623.37L575.29 623.27L575.56 623.17L575.84 623.09L576.13 623.02L576.41 622.91L576.67 622.31L577 621.05L577.44 620.71L577.73 621.87L577.92 622.8L578.17 623.03L578.46 623.11L578.74 623.2L579.02 623.3L579.3 623.42L579.65 623.44L580.43 622.93L581.5 622.26L581.67 622.73L581.03 623.86L580.78 624.5L580.91 624.79L581.08 625.04L581.23 625.31L581.37 625.59L581.5 625.87L581.9 626.09L583.04 626.2L583.93 626.49L583.21 626.99Z" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        </g>
+        <g data-rules="5">
+          <path d="M599.48 627.4L600.05 627.65L601.88 628.08L600.45 628.21L599.4 628.28L599.31 628.48L599.25 628.69L599.18 628.89L599.09 629.09L599 629.29L598.91 629.49L599.53 630.12L600.79 631.27L599.14 630.47L598.4 630.19L598.24 630.34L598.08 630.48L597.92 630.63L597.76 630.76L597.58 630.88L597.44 631.05L597.95 632.32L598.4 633.76L597.1 631.84L596.65 631.39L596.45 631.45L596.25 631.51L596.04 631.57L595.84 631.61L595.63 631.65L595.43 631.76L595.28 633.15L595 633.81L594.77 632L594.58 631.68L594.37 631.66L594.16 631.62L593.95 631.58L593.75 631.53L593.54 631.47L593.26 631.59L592.21 633.31L591.89 633.21L592.65 631.33L592.58 631.03L592.4 630.91L592.22 630.79L592.05 630.65L591.89 630.51L591.73 630.36L591.41 630.35L590.09 631.04L590.31 630.54L591.13 629.72L591.08 629.49L590.98 629.3L590.89 629.1L590.8 628.9L590.73 628.69L590.66 628.49L590.18 628.36L588.35 628.39L589.41 627.95L590.49 627.62L590.53 627.4L590.54 627.18L590.56 626.96L590.59 626.75L590.63 626.53L590.67 626.32L590.07 625.91L588.5 625.08L590.1 625.37L590.98 625.5L591.11 625.32L591.22 625.14L591.34 624.96L591.48 624.79L591.61 624.62L591.73 624.44L591.02 623.42L589.99 621.88L591.75 623.44L592.41 623.9L592.59 623.8L592.78 623.69L592.96 623.59L593.16 623.5L593.35 623.42L593.53 623.29L593.42 622.18L593.47 621.3L594.09 622.85L594.37 623.15L594.58 623.13L594.79 623.11L595 623.11L595.21 623.11L595.42 623.12L595.65 623.03L596.13 621.71L596.49 621.46L596.32 623.06L596.46 623.33L596.66 623.4L596.86 623.48L597.05 623.57L597.24 623.66L597.43 623.77L597.76 623.68L599.22 622.26L599.26 622.7L598.22 624.18L598.26 624.44L598.41 624.6L598.55 624.77L598.68 624.94L598.8 625.12L598.92 625.3L599.42 625.31L601.57 624.68L600.71 625.36L599.35 626.08L599.33 626.32L599.38 626.53L599.42 626.74L599.45 626.96L599.46 627.18Z" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="596.47" cy="620.99" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="599.67" cy="621.94" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="601.76" cy="624.71" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="601.84" cy="628.12" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="600.78" cy="631.25" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="598.54" cy="633.88" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="595.11" cy="634.18" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="591.7" cy="633.94" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="589.85" cy="631.08" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="588.32" cy="628.32" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="588.56" cy="625.08" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="589.92" cy="621.85" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="593.33" cy="621.09" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        </g>
+        <g data-rules="6">
+          <path d="M617.24 627.4L617.22 627.57L617.21 627.73L617.19 627.9L617.16 628.06L617.13 628.22L617.12 628.39L619.56 629.25L618.32 629.13L616.93 628.85L616.87 629L616.79 629.15L616.72 629.29L616.63 629.44L616.55 629.57L616.51 629.74L619.27 631.96L617.12 630.65L616.14 630.08L616.03 630.2L615.91 630.31L615.79 630.42L615.67 630.52L615.54 630.62L615.47 630.8L616.97 633.34L615.41 631.34L615 630.96L614.85 631.04L614.71 631.1L614.56 631.16L614.41 631.22L614.26 631.27L614.17 631.54L614.81 634.95L613.86 631.74L613.64 631.42L613.48 631.44L613.32 631.46L613.16 631.47L613 631.47L612.84 631.47L612.66 631.76L612.21 634.12L612.34 631.58L612.2 631.41L612.04 631.38L611.89 631.35L611.73 631.3L611.58 631.26L611.42 631.2L611.06 631.61L609.93 633.42L610.94 631.08L610.84 630.93L610.7 630.85L610.56 630.76L610.42 630.67L610.29 630.57L610.17 630.47L609.49 630.91L608.26 631.78L609.78 630.15L609.7 630L609.6 629.87L609.5 629.74L609.41 629.6L609.32 629.46L609.24 629.32L607.65 629.87L606.55 630.07L609.01 628.87L608.98 628.71L608.93 628.55L608.88 628.39L608.85 628.23L608.82 628.06L608.79 627.9L606.64 627.9L606.75 627.65L608.76 627.4L608.78 627.23L608.79 627.07L608.81 626.9L608.84 626.74L608.87 626.58L608.89 626.41L607.18 625.76L608.07 625.8L609.07 625.95L609.13 625.8L609.21 625.65L609.28 625.51L609.37 625.36L609.45 625.23L609.51 625.07L607.73 623.57L609.18 624.39L609.86 624.72L609.97 624.6L610.09 624.49L610.21 624.38L610.33 624.28L610.46 624.18L610.52 623.99L608.8 621.11L610.55 623.4L611 623.84L611.15 623.76L611.29 623.7L611.44 623.64L611.59 623.58L611.74 623.53L611.84 623.29L611.28 620.23L612.14 623.09L612.36 623.38L612.52 623.36L612.68 623.34L612.84 623.33L613 623.33L613.16 623.33L613.36 622.89L613.96 619.31L613.67 623.14L613.8 623.39L613.96 623.42L614.11 623.45L614.27 623.5L614.42 623.54L614.58 623.6L615.04 622.98L616.6 620.33L615.08 623.69L615.16 623.87L615.3 623.95L615.44 624.04L615.58 624.13L615.71 624.23L615.83 624.33L616.55 623.85L617.86 622.91L616.22 624.65L616.3 624.8L616.4 624.93L616.5 625.06L616.59 625.2L616.68 625.34L616.76 625.48L617.91 625.13L618.72 625.03L616.98 625.93L617.02 626.09L617.07 626.25L617.12 626.41L617.15 626.57L617.18 626.74L617.21 626.9L619.19 626.91L619.09 627.16Z" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="611.27" cy="620.13" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="613.95" cy="619.19" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="616.7" cy="620" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="618.2" cy="622.48" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="619.5" cy="624.59" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="620.73" cy="626.94" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="620.55" cy="629.65" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="619.79" cy="632.44" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="617.07" cy="633.57" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="614.82" cy="635.05" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="612.21" cy="634.22" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="609.87" cy="633.66" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="607.95" cy="632.18" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="605.41" cy="630.68" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="604.95" cy="627.88" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="606.49" cy="625.46" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="607.4" cy="623.24" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="608.69" cy="620.86" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        </g>
+        <text x="628" y="629.85" font-size="7" fill="#e6edf3">shape: rules it breaks, 0 to 6</text>
+      </g>
+    </g>
+    <g id="marks">
+      <g data-target="src/rules/utils/misc.ts">
+        <rect data-target="src/rules/utils/misc.ts" data-tier="primary" fill="none" stroke="#f0546a" stroke-width="1.5" x="7" y="172" width="246" height="119"/>
+        <g data-mark="1" data-tier="primary">
+          <rect x="170" y="180.5" width="10" height="10" fill="#f0546a"/>
+          <text x="175" y="187.95" font-size="7" font-weight="bold" text-anchor="middle" fill="#0a0c0f">1</text>
+        </g>
+        <text data-target="src/rules/utils/misc.ts" x="170" y="200.5" font-size="7" font-variant="small-caps" fill="#f0546a">survived-mutants</text>
+      </g>
+      <g data-target="src/rules/valid-mocked-module-path.ts">
+        <rect data-target="src/rules/valid-mocked-module-path.ts" data-tier="secondary" fill="none" stroke="#9aa5b1" stroke-width="3" x="7" y="172" width="246" height="119"/>
+        <g data-mark="2" data-tier="secondary">
+          <rect x="170" y="180.5" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
+          <text x="175" y="187.95" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">2</text>
+        </g>
+        <g data-mark="3" data-tier="secondary">
+          <rect x="183" y="180.5" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
+          <text x="188" y="187.95" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">3</text>
+        </g>
+      </g>
+      <g data-target="src/rules/no-conditional-expect.ts">
+        <g data-mark="4" data-tier="tertiary">
+          <rect x="170" y="180.5" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="175" y="187.95" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">4</text>
+        </g>
+      </g>
+      <g data-target="src/rules/no-done-callback.ts">
+        <g data-mark="5" data-tier="tertiary">
+          <rect x="170" y="180.5" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="175" y="187.95" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">5</text>
+        </g>
+      </g>
+      <g data-target="src/rules/utils/parseJestFnCall.ts">
+        <g data-mark="6" data-tier="tertiary">
+          <rect x="170" y="180.5" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="175" y="187.95" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">6</text>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>
