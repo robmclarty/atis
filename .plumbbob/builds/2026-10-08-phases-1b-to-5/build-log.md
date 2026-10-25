@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 102 — fix(core): keep a rules folder's source on the terrain and count every line of a changed statement
+**Current step:** 47 — chore(glance): read glance round two in the world
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -74,7 +74,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 44. docs(design): record the world's material tokens and sources
 - ☑ 45. chore(fixtures): select five fresh outside PRs for glance round two
 - ☑ 46. chore(fixtures): generate the round-two maps
-- ☐ 102. fix(core): keep a rules folder's source on the terrain and count every line of a changed statement
+- ☑ 102. fix(core): keep a rules folder's source on the terrain and count every line of a changed statement
 - ☐ 47. chore(glance): read glance round two in the world
 - ☐ 103. fix(web): float an opened cell's files slowly, open it where it fits the screen, and hold them where they floated
 - ☑ 88. refactor(svg): draw the still map's weather from the scene's derivations
@@ -170,7 +170,10 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] an opened cell moves only from about zoom 7, already close, so a whole cell is never seen moving, and the wander, measured in the cell's radius, races across the screen when zoomed further: open a cell where it fits the screen and scale its motion to the screen (Rob, at range 14's stop)
 - [x] zoom 6's static surface and zoom 7's moving cell do not connect, so the switch is jarring and it is hard to tell what moved: let the surface draw each file where it last floated, static in its last known place, so the two levels read as one (Rob, at range 14's stop)
 - [x] Rob liked the materials spike's individual cell shapes and their animation (the morph and its pulse, not the floating) better than the world's: set the world's opened cell beside the spike's frames and bring its look back
-- [ ] patch coverage counts a blank or comment line inside a multi-line statement as executable (30 of the 149 lines D163's span reading added on the round-two maps, 12 blank and 18 comments, all on statements that ran), and a comment inside a callback no test called takes the hits of the call around it; the scan could hand core the lines that hold code, so only those count
+- [x] patch coverage counts a blank or comment line inside a multi-line statement as executable (30 of the 149 lines D163's span reading added on the round-two maps, 12 blank and 18 comments, all on statements that ran), and a comment inside a callback no test called takes the hits of the call around it; the scan could hand core the lines that hold code, so only those count
+- [ ] round two, not read: ten seconds in the world's opening frame with input off leaves only the far field's points of light and the chrome; Rob could judge none of the three maps he saw ("couldn't zoom in"), so D95's protocol needs a reading the world can carry (the reader's own zoom, a longer window, a map the reader knows) or round two deferred until atis works on Rob's repos
+- [ ] round two: at LOD0 the world withholds the tissue, the cells and every mark the inset keys (§5.6), so a change's opening frame is a few dots on black; Rob: "each map started at max zoom and i could only see dots, with hardly any information"
+- [ ] round two: the notice list takes at most half the column (LIST_SHARE, apps/web/src/chrome/notices.tsx) and scrolls, so the opening frame at 1512 by 982 shows 1 to 4 of a map's six rows whole
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -234,6 +237,8 @@ Harvest results this boundary:
 - **blocker**: park 35 · an opened cell moves only from about zoom 7, already close, so a whole cell is never seen moving, and the wander, measured in the cell's radius, races across the screen when zoomed further: open a cell where it fits the screen and scale its motion to the screen (Rob, at range 14's stop) → a cell seen moving only when already close is half the feature; it rides in P34's step
 - **blocker**: park 36 · zoom 6's static surface and zoom 7's moving cell do not connect, so the switch is jarring and it is hard to tell what moved: let the surface draw each file where it last floated, static in its last known place, so the two levels read as one (Rob, at range 14's stop) → holding each file where it last floated joins the two levels; it rides in P34's step
 - **tangent**: park 37 · Rob liked the materials spike's individual cell shapes and their animation (the morph and its pulse, not the floating) better than the world's: set the world's opened cell beside the spike's frames and bring its look back → a look to match against the spike's frames when the world is tuned, unless you want it in P34's step
+- 2026-10-25, at range 25 of 26's stop: 1 parked idea, classified.
+- **tangent**: park 38 · patch coverage counts a blank or comment line inside a multi-line statement as executable (30 of the 149 lines D163's span reading added on the round-two maps, 12 blank and 18 comments, all on statements that ran), and a comment inside a callback no test called takes the hits of the call around it; the scan could hand core the lines that hold code, so only those count → all 30 lines read covered on statements that ran, 29 on maps covered whole, so a covered share moves by one line on one map, and the fix is the scan's
 
 ## Log
 
@@ -1341,3 +1346,102 @@ folder, so it rides the branch into the PR.)*
   **5.** Round two, by counts: five fixtures, but two maps lose their change to the shore
 
   Five pull requests from five fresh repos, three of one verdict and two of the other, in a shuffled order (D60, D95). All five maps are in check mode, with coverage and mutation, and six notices each. They read one MVFR, three IFR and one LIFR, with terrains of 2 to 146 cells. The default shore row `rules/**` matches a source folder of that name at any depth. On one map, all 3 changed source files sit on the shore and the terrain is 4 files. On another, 4 of 9 do. Generation also showed that patch coverage misses edits on a multi-line statement's continuation lines, which reads as calm where the mutants disagree.
+
+- 2026-10-25 — step 102 checkpointed · 380c21622 — fix(core): keep a rules folder's source on the terrain and count every line of a changed statement (95m)
+
+  **Summary**: atis now reads every line of a changed istanbul statement as executable and keeps a `rules/` folder's TypeScript on the terrain. On the five regenerated round-two maps every changed TypeScript source file is on the terrain (39 of 39, up from 32), and patch coverage reads 241 changed executable lines where it read 92. One bend held the step at its pause: where statements nest, a line takes the hits of the innermost statement over it, not the highest hits over it, because an `if` that ran spans the untaken branch inside it.
+
+  1. Where statements nest, a line takes its innermost statement's hits, which bends D163's "highest hits among them".
+  2. Every changed TypeScript source file on the five round-two maps is now on the terrain: 39 of 39, up from 32.
+  3. Patch coverage now reads 241 changed executable lines across the five maps where it read 92, 16 of them uncovered where 4 were.
+  4. The reruns followed step 46's procedure, except the standalone mutation attempts, and one map's harness ran twice because load timed out its mutants.
+  5. Blank and comment lines inside a statement now count as executable: 30 of the 149 lines the span reading added, parked as P38.
+
+  **Readout**:
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    drift
+               → nested statements: a line takes its innermost statement's hits
+  decisions    bent
+               → D163 (statement-spans): highest hits over a line, now innermost
+  constraints  14 of 14 honored
+  seam         held: 8 of 14 declared, no strays
+  diff         +27660 -10973 across 22 files
+  spent        95 min · 1 turn · 41s gate · green first run
+  ```
+
+  **Verdict**: ✗ Not standing (done-when drifted)
+
+  **Recommendation**: Approve the bend and land step 102. The innermost rule is the only reading of D163 that does not cover an untaken branch through the `if` around it, and the five maps now meet the range's stop by count: 39 of 39 changed source files on the terrain, and patch coverage read on whole statements.
+
+  **1.** Where statements nest, a line takes its innermost statement's hits, which bends D163's "highest hits among them".
+
+  Real istanbul output nests statements: an `if`, a loop or a `const f = () => {…}` declaration is a statement spanning every line of the block inside it. In atis's own coverage of `evidence.ts`, 30 of the 36 multi-line statements contain other statements. Read literally, D163's rule would give `escape();` inside an `if (rare) {…}` that ran the `if`'s hits, so an untaken branch would read covered. That is a worse false calm than the one D163 fixes (C2 (never-fake)), and a regression on start lines atis already measures correctly.
+
+  So `lineHits` in `libs/core/src/evidence.ts` reads two cases. A line that statements start on keeps istanbul's own fold, the highest hits among those statements, so every line atis measured before reads exactly as it did. A line inside a statement that starts above it (a continuation line) takes the highest hits among the innermost statements over it. Two statements on one line still fold to the higher. The new evidence tests pin both cases: a multi-line condition's continuation lines read uncovered inside a declaration that ran, and a branch inside an `if` that ran reads uncovered. The CLI's reader carries `end` beside `line`. `end` is optional in core's type, so a producer that knows only start lines (the scene's synthetic maps, the demo inputs) reads as before, and no golden moved.
+
+  **2.** Every changed TypeScript source file on the five round-two maps is now on the terrain: 39 of 39, up from 32.
+
+  Two maps moved: one from 5 of 9 to 9 of 9, the other from 0 of 3 to 3 of 3. The other three were already whole. On those two maps the terrain grew from 17 cells and 103 files to 38 and 181, and from 2 cells and 4 files to 4 and 76. The fix carves `rules/**/*.ts`, `.tsx`, `.mts` and `.cts` out of the default `config` row, the same shape as the existing carve-out for TypeScript under a root `config/` folder. A `rules/` folder's YAML, JSON and JavaScript stay in `config`. One cost: a `*.config.ts` under a `rules/` folder now reads as terrain, the trade the root `config/` carve-out already makes. The old test that pinned `rules/no-raw-fetch.ts` as shore now pins `.eslintrc.cts` instead, and new tests in `modules.test.ts` and `groups.test.ts` pin `rules/` TypeScript as terrain at the root and deep in a package, and YAML under `rules/` as shore.
+
+  **3.** Patch coverage now reads 241 changed executable lines across the five maps where it read 92, 16 of them uncovered where 4 were.
+
+  Per map, executable changed lines went from 27, 20, 28, 10 and 7 to 71, 40, 81, 39 and 10. Measured files with no executable changed line fell from 17 to 8. Step 46's atis, run on the rerun's `.check/`, gives step 46's patch coverage line for line on all five maps, so this movement is the new reading and not the rerun. On the map that gained uncovered lines, they are the argument lines of calls whose first line was already uncovered. On one map of the five the flight category and the notice list moved; the other four kept both.
+
+  **4.** The reruns followed step 46's procedure, except the standalone mutation attempts, and one map's harness ran twice because load timed out its mutants.
+
+  Each fixture ran its README's commands from step 1 on the clone step 46 kept, with the same toolchain (checkride 0.19.0, fallow 3.35.0, Stryker 10.1.1, node 24.15.0). Each left out only the mutation attempt or dry run on its own, whose one job was to decide whether to keep the slot. Every `.check/` matched step 46's slots, red and green alike. The mutants on changed lines are identical on three maps and differ by one on two, which is Stryker timeout noise. One map's first run shared the machine with two other mutation runs: 84 mutants timed out where step 46 had 23. So its `checkride` ran again with the machine to itself, which came back to 22. Each README's Generation section records the rerun and its figures, and the old "run that produced the map" lines now say step 46's run. The worktrees were removed, the clones kept, and no hook was left in any clone. Each map passes `assertMap`, and a second write is byte-identical.
+
+  **5.** Blank and comment lines inside a statement now count as executable: 30 of the 149 lines the span reading added, parked as P38.
+
+  D163 makes every line from a statement's start to its end executable, comments and blank lines included: 12 blank lines and 18 comments on these maps, all inside statements that ran, so all read covered. The sharper case is a comment inside a callback no test called: it takes the hits of the call around it and reads covered, which dilutes the uncovered share of a change. Core has no per-line view of the source, so the fix belongs to the scan: hand core the lines that hold code, and count only those. It is outside this step's seam.
+
+- 2026-10-25 — range 25 of 26's stop recorded — review the five regenerated round-two maps by their counts alone before your blind reading: every changed TypeScript source file on the terrain, and patch coverage read on whole statements
+
+  **Summary**: Range 25 landed step 102 alone. The CLI's coverage reader carries each statement's end line, core's patch coverage counts every changed line of a statement, and a `rules/` folder's TypeScript is terrain at any depth while its other files stay in `config`. The five round-two maps were regenerated by step 46's procedure. By count alone, all 39 changed TypeScript source files are on the terrain (32 before), and patch coverage reads 241 changed executable lines where it read 92.
+
+  1. Step 102 bent D163: where statements nest, a line takes its innermost statement's hits, and you approved that at its pause.
+  2. Every changed TypeScript source file on the five maps is on the terrain: 39 of 39, up from 32.
+  3. Patch coverage reads 241 changed executable lines across the five maps where it read 92, 16 of them uncovered where 4 were.
+  4. The reruns matched step 46's slots, with mutants on changed lines equal on three maps and one apart on two.
+
+  **Readout**:
+
+  ```text
+  steps        1 of 1 landed
+               - 102 380c216
+  check        green: 1 of 1 checks, 1 landing
+  done-when    drift
+               → step 102: a nested line takes its innermost statement's hits
+  decisions    bent
+               → D163 (statement-spans): the bend approved at step 102's pause
+  constraints  14 of 14 honored
+  seam         held: 1 of 1 steps, no strays
+  diff         +27660 -10973 across 22 files
+  spent        95 min · green first run at every landing
+  ```
+
+  **Verdict**: ✗ Not standing (done-when drifted)
+
+  **Harvested**: 1 of 38 parked ideas open
+
+  - P38 · patch coverage counts a blank or comment line inside a multi-line statement as executable (30 of the 149 lines D163's span reading added on the round-two maps, 12 blank and 18 comments, all on statements that ran), and a comment inside a callback no test called takes the hits of the call around it; the scan could hand core the lines that hold code, so only those count → lean: tangent, all 30 lines read covered on statements that ran, 29 on maps covered whole, so a covered share moves by one line on one map, and the fix is the scan's
+
+  **Recommendation**: Take the counts as meeting the stop, confirm P38 as a tangent, and run range 15's blind reading next. Every changed TypeScript source file on the five maps is on the terrain and patch coverage reads whole statements. The one park moves one map's covered share by a single line, too little to change what a reader sees.
+
+  **1.** Step 102 bent D163: where statements nest, a line takes its innermost statement's hits, and you approved that at its pause.
+
+  Istanbul nests statements: an `if`, a loop or a `const f = () => {…}` declaration spans every line of the block inside it. Read literally, D163's "highest hits among them" would give an untaken branch the hits of the `if` around it, so the branch would read covered. A line that statements start on keeps istanbul's own fold, so every line atis measured before reads as it did. A continuation line takes the highest hits among the innermost statements over it. The plan's text still says "highest". `/plumbbob:refine` can amend D163's last clause to "innermost" when it next sharpens the plan.
+
+  **2.** Every changed TypeScript source file on the five maps is on the terrain: 39 of 39, up from 32.
+
+  Two maps moved: one from 5 of 9 to 9 of 9, the other from 0 of 3 to 3 of 3. Their terrain grew from 17 cells and 103 files to 38 and 181, and from 2 cells and 4 files to 4 and 76. The other three maps were already whole. A `rules/` folder's YAML, JSON and JavaScript stay in `config`.
+
+  **3.** Patch coverage reads 241 changed executable lines across the five maps where it read 92, 16 of them uncovered where 4 were.
+
+  Per map, executable changed lines went from 27, 20, 28, 10 and 7 to 71, 40, 81, 39 and 10. Measured files with no executable changed line fell from 17 to 8. Step 46's atis, run on the rerun's `.check/`, gives step 46's patch coverage line for line on all five maps, so this movement is the new reading and not the rerun. On one map of the five the flight category and the notice list moved; the other four kept both.
+
+  **4.** The reruns matched step 46's slots, with mutants on changed lines equal on three maps and one apart on two.
+
+  Each fixture ran its README's commands from step 1 on the clone step 46 kept, with the same toolchain. Each left out only the mutation attempt or dry run on its own. One map's harness ran twice, because sharing the machine with two other mutation runs timed out 84 of its mutants against step 46's 23. Each README's Generation section records the rerun and its figures. Each map passes `assertMap`, and a second write is byte-identical.

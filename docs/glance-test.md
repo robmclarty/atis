@@ -76,7 +76,8 @@ Fail means the encodings change, not the test.
 Every reader in every reading from the second retake on hears this, word for word, before
 the practice map and the first map. It says what each mark measures and never how to weigh
 it. It is [the retake's legend](#the-legend-d66), which stays below as it was read then, with
-each mark wave 0 added since:
+each mark wave 0 added since. Round two, read in the world, hears
+[the world's own legend](#the-legend-as-read-in-the-world-d66-d87-d95) instead.
 
 - **The legend inset** (D87): every map now carries this key in its chrome, at the foot of
   the notice column, ten marks by number.
@@ -942,3 +943,170 @@ parked for the refine D119 runs before wave 1 (D38):
 4. **Files under `test/` that are not reported tests draw as tests not run.** So does vitest's
    `focused` status. That is 57 of D's 87 stitches, on an approved merge Rob held partly on
    "stitches".
+
+## Round two: not read (2026-10-25)
+
+§11's phase-2 reading (D63, D95): five fresh outside pull requests, `fixtures/round-two-1` to
+`fixtures/round-two-5` (see [`fixtures/round-two.md`](../fixtures/round-two.md)), to be read
+blind (D62) in the world's opening frame, ten seconds each with motion on and input off, after
+the legend below and an unscored practice map in the world (D66, D87).
+
+It was not read. The opening frame is the far field, where the world lights only the change's
+points and the primary's halo, and with the controls off nothing nearer could be reached. Rob saw
+three maps and could judge none of them. The five stay sealed, and criteria 4 and 5 are unscored.
+
+### The legend, as read in the world (D66, D87, D95)
+
+Read word for word before the practice map and the first map. It says what each mark and block
+measures, never how to weigh it.
+
+Each map is one pull request, drawn in the world as atis opens it: the whole repository in view,
+from far off. Each map shows for ten seconds with its motion running and the controls off: the
+camera stays where it opened, and nothing answers the pointer or the keys. Then: "Merge or hold?
+And one reason."
+
+**The field.** The repository at the PR's base is a dark body on a near-black ground. From this
+far off its tissue barely shows: its cells and files come up only as the camera zooms in, which
+the reading does not do. What lights the dark is the change:
+
+- A point of light in the change's colour is a file the change added or modified, at its place
+  in the repository.
+- A halo in the category's colour round one of those points is the primary notice's file, the
+  notice ranked first. It flares once as the map opens, then breathes, and may flare again.
+  Nothing else on the field moves.
+
+**The category**, the coloured block at the top left, is set by the change alone:
+
+- **VFR**, green, "glance-mergeable": nothing below applies.
+- **MVFR**, blue, "mergeable with a look": a changed line no test ran, or a changed module
+  interface that is used from outside its module; nothing red.
+- **IFR**, red, "needs instrument review": a failing check names a changed file, or a file
+  with changed lines no test ran reaches three or more modules.
+- **LIFR**, magenta, "do not approach": the checks ran nothing, or a cycle or a boundary
+  violation touches a changed file.
+- **NOINST**, grey: there were no check results to read.
+
+**The HUD blocks**, left to right after the category:
+
+- **Patch cov**: the share of the change's executable lines that the tests ran, and how many
+  changed files no coverage report names.
+- **Mutants**: mutants that survived the tests on the changed lines, and, counted apart as
+  `untested`, those no test reached.
+- **Reach**: how many modules the changed files and the files importing them span.
+- **Size**: lines added and removed, and files changed.
+- **Gate**: failing checks that name a changed file, or `pass` when none do. A security
+  advisory counts here only when the change added or moved the package that brings it.
+- **Standing**: failing checks that name only files the change did not touch, with the
+  repo-wide ones listed after `global`; absent when there are none.
+- **Health Δ**: not measured in this build.
+- **Notices**: how many notices sit in each tier, primary · secondary · tertiary.
+- **Other**, when shown: files the map could not sort onto the shore.
+
+A dash where a number would be means the input is missing, never zero. Under the blocks, a line
+names the map, and the breadcrumb says where the camera stands: `field`.
+
+**The notices**, the column on the right: up to six, ranked. Each row gives its numbered box, its
+target (with a leading `+` when the change added it), its kind, why, and the thresholds that
+fired. The column shows the rows that fit its height; the rest scroll, which the reading does not
+do.
+
+**The shore**, under the notices: the files that are not code, grouped by kind, each group with
+its count. A group the change touched comes first and opens on a grid of one square per file, the
+changed ones lit in the change's colour, then names its changed files.
+
+**The bottom left**: the legend inset, and under it the minimap. The minimap draws the whole
+repository small: the changed files as dots in the change's colour, each notice's numbered box
+at its target, and the frame the view shows.
+
+**The legend inset** keys ten marks by number, and the shapes. Apart from the category, these
+marks are drawn on and round a file at the surface, nearer in than the reading's frame; the
+practice map lets you zoom to them.
+
+1. **category: set by the change alone**. The coloured block at the top left.
+2. **lit arc: changed lines no test ran**. A bright arc on a changed file's skin, clockwise
+   from the top, as long as the share no test ran.
+3. **hairline: changed lines the tests ran**. The dim rest of that skin.
+4. **notch: a mutant no test killed**. A bright notch cut into the top of the skin, one per
+   mutant: one that survived the tests, or one no test reached.
+5. **stitches: its tests passed, not run, failed**. Short strokes across the bottom of the
+   skin, one per test file that imports it: bright, grey, or red and broken.
+6. **red bolt: a failing check names a changed file**. With the check's name beside it,
+   over the module that file sits in.
+7. **grey bolt: fails on files the change left alone**. Smaller, with no name, over a
+   module the change did not touch.
+8. **ghost: usually changes with these, and did not**. A dashed grey outline round a file.
+9. **cyan: a changed file; +path in a row: added**. The fill of every file the change added
+   or modified.
+10. **skin lit whole: no coverage report names it**. A changed file's skin lit all the way
+    round: no test is known to have run it.
+
+**The shapes**: a file drawn with points instead of round breaks a complexity or size rule, one
+point per rule, 0 to 6.
+
+Then, for each map: "Merge or hold? And one reason." Ten seconds, then the map goes.
+
+### How round two ran
+
+- **One reader, blind.** Rob read alone (D62). The five maps came from repos no earlier reading
+  or corpus used (D95), and step 45's and step 46's pauses gave counts only.
+- **Copies by letter.** A fresh shuffle put the five into the letters A to E and printed nothing
+  about the draw. Each copy was its fixture's `map.json` with four fields of `meta` changed,
+  because the world's status line writes the repo's name and the base commit: the repo read
+  `copy A` to `copy E`, and the commits `its base` and `its head`. All five still passed
+  `assertMap`. The key was held outside the served folder.
+- **One page, on loopback.** It served the world as `pnpm build` makes it, with the lettered copies
+  beside it. It showed the legend above, fetched from this file so it read word for word, then
+  `docs/glance-practice.svg` with its balloons. That map re-rendered byte for byte, so it was
+  current (D125). Then it showed the same fixture, `retake-5`, in the world, untimed and with
+  full input.
+- **Each map from its first frame.** A map drew behind a curtain that lifted at the world's first
+  complete frame, so the load flare fell inside the window. The map's frame took no input, and a
+  shield over it hid the pointer. Ten seconds later the map went, and the page asked "Merge or
+  hold? And one reason."
+- **What the page got wrong.** Its full screen did not take, so the maps drew in a 1159 by 641
+  window instead. And its Next button looked the same disabled as enabled. It waited on a merge
+  or hold chosen by key or click, and a reason typed first took those keys as text. That is most
+  likely why the third map's question would not go on. Rob closed the tab there.
+
+### What round two's maps showed
+
+Every map opened at the far field (LOD0, §5.6): a near-black field, a point of light for each
+changed source file, and the primary's halo in the category's colour. The tissue, the cells, the
+files and every mark the legend inset keys come up only from the surface (LOD1), so none of them
+could be seen. Beside the field, the chrome showed the HUD's blocks, the notices, the shore, the
+inset and the minimap. But the notice list takes at most half the column and scrolls, and without
+input it showed 1, 4, 3, 4 and 2 of A to E's six rows whole, with one more cut off below.
+
+| copy | reader | what Rob gave |
+| --- | --- | --- |
+| A | Rob | hold: "couldn't zoom in" |
+| B | Rob | hold: "idk, can't zoom in. maybe ifr?" |
+| C | Rob | shown; its question would not go on, and Rob stopped there |
+| D | Rob | not shown |
+| E | Rob | not shown |
+
+Rob, after: "i had no mouse controls, cursor didn't even render, and i couldn't zoom in. each
+map started at max zoom and i could only see dots, with hardly any information. couldn't make
+any judgements."
+
+### Round two result
+
+One reader, Rob, blind per D62 and briefed per D66 and D87.
+
+- **Criterion 4, verdicts:** none. A and B's holds give the map's silence as their reason, not a
+  reading of the change, and the other three have no verdict.
+- **Criterion 5, notice precision:** not scored. Scoring it unseals each map's truth, and the five
+  stay sealed so a later reading can still use them. A to C's opening frames have been seen, so a
+  later reading draws a fresh order.
+
+**Fail line: not read.** The world's opening frame with the controls off carries too little to
+judge a change by. What to change is parked for the refine that range 15's stop runs (D38):
+
+1. **The protocol.** Ten seconds in the opening frame with input off leaves the reader the far
+   field's points of light and whatever the chrome shows in that window. D95 needs a reading the
+   world can carry: the reader's own zoom, a longer window, a map they know, or round two
+   deferred until atis works end to end on Rob's repos.
+2. **The far field.** At LOD0 the world withholds the tissue, the cells and every mark, by
+   design (§5.6). On these maps that left a few dots.
+3. **The notice list.** It takes at most half the column and scrolls, so the opening frame shows
+   1 to 4 of six rows whole.
