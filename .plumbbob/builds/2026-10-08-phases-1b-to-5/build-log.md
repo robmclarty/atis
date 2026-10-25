@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 101 — feat(core): write the barrel's export names on the membrane
+**Current step:** 42 — feat(web): honour reduced motion
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -68,7 +68,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 39. feat(web): fly to a notice and walk the map from the keyboard
 - ☑ 40. feat(web): open a cell into its stained interior
 - ☑ 41. feat(web): overlay a changed cell's wiring
-- ☐ 101. feat(core): write the barrel's export names on the membrane
+- ☑ 101. feat(core): write the barrel's export names on the membrane
 - ☐ 42. feat(web): honour reduced motion
 - ☐ 43. perf(web): hold 60 fps at 5,000 files and a 2 s first frame
 - ☐ 44. docs(design): record the world's material tokens and sources
@@ -1235,3 +1235,4 @@ folder, so it rides the branch into the PR.)*
   On retake-3's `internals` the slide shows the same eight bodies in the same places as the sheet, six stained and two plain, with the primary's uncovered share unstained where the sheet lights its arc; corpus-11's `sandbox` morphs its two dented files and holds a tilt. The slide's cream reads grey-beige under AgX where the spike's was warmer; `INTERIOR.slide` in the panel moves it. The demo's pm folder is over two screens tall at LOD2's gate, so its index.ts sits under the HUD until you pan, and the tag columns pull in to the screen's edges, where the legend already stands; both are parked for step 44's tokens.
 
 - 2026-10-24 — step 41 checkpointed · e462f476c — feat(web): overlay a changed cell's wiring (<1m)
+- 2026-10-25 — step 101 checkpointed · 0bf7e2c0a — feat(core): write the barrel's export names on the membrane (1 drift, 5m)

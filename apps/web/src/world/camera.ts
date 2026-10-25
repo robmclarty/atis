@@ -5,7 +5,9 @@
  * pinch zoom continuously toward the cursor, a drag pans, the right button or
  * three fingers tilt and rotate, and the tilt stops at the view's bound (§5.6);
  * nothing moves on its own (§5.5): no inertia, only a short smoothing so a
- * wheel's steps read as one continuous zoom. At zoom 1 the frustum fits the
+ * wheel's steps read as one continuous zoom, and none at all under reduced
+ * motion, where every input and the minimap's move cut straight to where they
+ * land (§5.5, step 42). At zoom 1 the frustum fits the
  * layout inside the free screen beside the chrome (`fit.ts`), the far field,
  * and the camera's zoom over that is the one scalar the levels of detail read
  * (`lod.ts`). The page's `?zoom=`, `?tilt=` and `?centre=` set the opening
@@ -150,8 +152,9 @@ const bind = (controls: CameraControls): void => {
  * and apply them once so the first frame is framed. The target stands right of
  * the centre by the fit's shift, which the zoom shrinks on the ground, so the
  * centre opens in the middle of the free screen left of the chrome (`fit.ts`).
+ * Under reduced motion the controls smooth nothing.
  */
-export const createControls = (camera: OrthographicCamera, canvas: HTMLCanvasElement, map: MapJson, view: View, chrome: Chrome): CameraControls => {
+export const createControls = (camera: OrthographicCamera, canvas: HTMLCanvasElement, map: MapJson, view: View, chrome: Chrome, reduced = false): CameraControls => {
   const layout = map.terrain.layout ?? UNLAID;
   const { shift } = fitFrame(layout, canvas.clientWidth, canvas.clientHeight, chrome);
   const [x, y] = view.centre ?? [layout.width / 2, layout.height / 2];
@@ -163,8 +166,8 @@ export const createControls = (camera: OrthographicCamera, canvas: HTMLCanvasEle
   controls.minZoom = MIN_ZOOM;
   controls.maxZoom = MAX_ZOOM;
   controls.dollyToCursor = true;
-  controls.smoothTime = SMOOTH_S;
-  controls.draggingSmoothTime = DRAG_SMOOTH_S;
+  controls.smoothTime = reduced ? 0 : SMOOTH_S;
+  controls.draggingSmoothTime = reduced ? 0 : DRAG_SMOOTH_S;
   bind(controls);
   void controls.setLookAt(cx, CAMERA_DISTANCE, cz, cx, 0, cz, false);
   void controls.rotateTo(view.tilt > 0 ? TILT_AZIMUTH : 0, (view.tilt * Math.PI) / 180, false);

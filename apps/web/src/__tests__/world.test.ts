@@ -8,7 +8,10 @@
  * it (D151). A second frame opens on one cell past LOD2's gate, where the
  * cell opens as a stained slide (step 40): the canvas names the open cell,
  * the slide tags each of its files, `x` spreads the exploded view, and `w`
- * lays the cell's wiring out on a plate in the chrome (step 41).
+ * lays the cell's wiring out on a plate in the chrome (step 41). A third
+ * emulates `prefers-reduced-motion` and holds the frames still after load, in
+ * an opened cell and across a fly-to, beside a page with motion on whose
+ * frames move (step 42).
  */
 
 import { accessSync, constants, readFileSync } from 'node:fs';
@@ -16,7 +19,7 @@ import { delimiter, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { chromium } from 'playwright-core';
-import type { Browser } from 'playwright-core';
+import type { Browser, Page } from 'playwright-core';
 import { createServer } from 'vite';
 import type { Plugin, ViteDevServer } from 'vite';
 import { expect, test } from 'vitest';
@@ -187,6 +190,64 @@ test('framed on one cell past the cell\'s gate, the world opens it as a slide th
     // Escape closes the cell.
     await page.keyboard.press('Escape');
     await page.waitForSelector('#world:not([data-open])', { timeout: 30_000 });
+    expect(complaints).toEqual([]);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+/** A page on the world framed on a cell past the cell's gate, opened, with its console's complaints collected. */
+const openedOn = async (browser: Browser, url: string, cell: string, reducedMotion: 'reduce' | 'no-preference'): Promise<{ readonly page: Page; readonly complaints: readonly string[] }> => {
+  const page = await browser.newPage({ viewport: { width: 960, height: 720 }, reducedMotion });
+  const complaints: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error' || message.type() === 'warning') complaints.push(`${message.type()}: ${message.text()}`);
+  });
+  page.on('pageerror', (error) => complaints.push(`pageerror: ${error.message}`));
+  const [x, y] = middleOf(cell);
+  await page.goto(`${url}/?backend=webgl&zoom=8&centre=${String(x)},${String(y)}`);
+  await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
+  await page.waitForSelector(`#world[data-open="${cell}"]`, { timeout: 30_000 });
+  await page.waitForSelector('[data-interior-tag]', { timeout: 30_000 });
+  return { page, complaints };
+};
+
+/** Two frames of a page, `apart` milliseconds apart. */
+const twoFrames = async (page: Page, apart: number): Promise<readonly [Buffer, Buffer]> => {
+  const first = await page.screenshot({ type: 'png' });
+  await page.waitForTimeout(apart);
+  return [first, await page.screenshot({ type: 'png' })];
+};
+
+test('under reduced motion nothing changes from frame to frame after load, in an opened cell or across a fly-to, while with motion on the same frames move, with a clean console', { timeout: 120_000 }, async () => {
+  const { server, url } = await serve();
+  const browser = await launch();
+  try {
+    const cell = 'folder:libs/core/src/pm';
+    // With motion on, the opened cell's breaking shapes pulse and its loose files drift, so two frames differ: the check can see motion.
+    const moving = await openedOn(browser, url, cell, 'no-preference');
+    expect(await moving.page.getAttribute('#world', 'data-motion')).toBe('full');
+    const [before, after] = await twoFrames(moving.page, 1000);
+    expect(before.equals(after)).toBe(false);
+    await moving.page.close();
+
+    // Reduced: the slide cut in, nothing settles, breathes, flares, pulses or drifts, so the frames are the same to the pixel.
+    const { page, complaints } = await openedOn(browser, url, cell, 'reduce');
+    expect(await page.getAttribute('#world', 'data-motion')).toBe('reduced');
+    const [still, later] = await twoFrames(page, 1500);
+    expect(still.equals(later)).toBe(true);
+    // A fly-to cuts: a frame just after the notice's row is clicked is already where the view lands, and the landing
+    // does not swing. The world's own frame is judged, the layers over it hidden, since Chrome sharpens the text of a
+    // tag that has just moved a moment after it stops, which is the browser's raster and no motion of the world's.
+    await page.click('[data-notices] [data-notice="1"]');
+    await page.evaluate(() => {
+      for (const element of document.body.children) if (element instanceof HTMLElement && element.id !== 'world') element.style.visibility = 'hidden';
+    });
+    await page.waitForTimeout(150);
+    const [landed, rested] = await twoFrames(page, 1000);
+    expect(landed.equals(rested)).toBe(true);
+    expect(landed.equals(still)).toBe(false);
     expect(complaints).toEqual([]);
   } finally {
     await browser.close();

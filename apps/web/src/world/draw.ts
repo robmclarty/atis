@@ -40,7 +40,12 @@
  * the breadcrumb's other button, laying its wiring out on a plate in the
  * chrome (step 41). The canvas says which backend drew it, when the skin has
  * settled, which cell is open and whether its wiring is drawn, for the smoke
- * test and a screenshot to wait on.
+ * test and a screenshot to wait on. Under `prefers-reduced-motion` the
+ * scheduler stills the world (§5.5, C12): the primary keeps a static halo for
+ * its load flare, nothing settles, breathes, flares or jiggles, the shapes and
+ * the drift hold still, and a fly-to, a slide and the exploded view cut; the
+ * camera's controls smooth nothing either, and the canvas says the motion is
+ * reduced (step 42). It is read once, as the world is drawn.
  */
 
 import { AgXToneMapping, AmbientLight, Color, DataUtils, DirectionalLight, RenderPipeline, Scene, Vector3, WebGPUCoordinateSystem, WebGPURenderer } from 'three/webgpu';
@@ -185,7 +190,9 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   };
   fit();
   globalThis.addEventListener('resize', fit);
-  const controls = createControls(camera, canvas, map, view, { right: RAIL_WIDTH });
+  const reduced = globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  canvas.dataset['motion'] = reduced ? 'reduced' : 'full';
+  const controls = createControls(camera, canvas, map, view, { right: RAIL_WIDTH }, reduced);
   // The labels ride their anchors while the camera moves and are laid out afresh once it rests.
   controls.addEventListener('rest', () => {
     placeLabels = true;
@@ -245,7 +252,6 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     placeLabels = true;
   });
 
-  const reduced = globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const scheduler = createScheduler({
     clock: () => performance.now(),
     seed: view.seed,
