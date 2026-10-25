@@ -410,9 +410,9 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     explode: () => apply(openedBy(opening, { kind: 'explode' })),
     wire,
   });
-  // The arrows walk to a sibling, Enter descends and Escape ascends, unless the key is the focused element's own; with a cell open, Escape closes it first, x spreads or gathers its exploded view (D155), and w draws or takes away its wiring.
+  // The arrows walk to a sibling, Enter descends and Escape ascends, unless the key is the focused element's own or the chrome already took it (an open legend folds away on Escape); with a cell open, Escape closes it first, x spreads or gathers its exploded view (D155), and w draws or takes away its wiring.
   globalThis.addEventListener('keydown', (event) => {
-    if (event.altKey || event.ctrlKey || event.metaKey || ownsKey(event.target, event.key)) return;
+    if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || ownsKey(event.target, event.key)) return;
     if (event.key === 'Escape' && opening.open !== undefined) {
       event.preventDefault();
       apply(openedBy(opening, { kind: 'escape' }));
@@ -548,7 +548,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     glow.threshold.value = bloomLook.threshold;
     post.render();
     if (placeLabels || lod !== placedLod) {
-      labels.place(viewportOf(camera, canvas.clientWidth), lod, new Set(slide === undefined ? [] : slide.files.map((file) => file.id)));
+      labels.place(viewportOf(camera, canvas.clientWidth), lod, slide);
       placeLabels = false;
       placedLod = lod;
     }

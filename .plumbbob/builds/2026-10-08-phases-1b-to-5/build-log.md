@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 106 — feat(svg): key the reach, its crossings and the history textures in the legend
+**Current step:** 107 — fix(web): keep the legend and other cells' labels off the world
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -88,7 +88,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 100. feat(svg): open each touched shore block on a grid of its files
 - ☑ 104. feat(core): record each file's ties within its package
 - ☑ 105. feat(web): float a package's modules inside its opened slide
-- ☐ 106. feat(svg): key the reach, its crossings and the history textures in the legend
+- ☑ 106. feat(svg): key the reach, its crossings and the history textures in the legend
 - ☐ 107. fix(web): keep the legend and other cells' labels off the world
 - ☐ 108. fix(core): keep each package's cells together so no skin crosses another's
 - ☐ 109. fix(core): keep the shore's docs and data out of co-change notices and the HUD's size
@@ -187,6 +187,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] modules float inside their package: on checkride-shaped repos most cells are single-file modules (56 of 69 on atis's map), so an opened package is its barrel and a sheet of holes and no module ever floats; let a package's slide draw the files of the single-file cells it holds as bodies, with looseness measured against the package, which needs core to record each file's ties within its package (a schema bump) and reshapes D157 and step 40's holes
 - [x] the world smoke test's reduced-motion frame flakes about one run in five at HEAD: two frames of the opened pm folder 1.5 s apart differ (`still.equals(later)`), with its layers over the world still shown
 - [x] an opened package's wiring overlay (`cellWiring`) counts only edges at the package's own files, so a package of modules such as `apps/web` shows none of its modules' wiring (D167)
+- [ ] on atis's own map a noticed file on an opened package's slide wears its notice label beside the slide as well as its tag in the column (apps/web's registry.ts and materials.ts): weigh letting the tag carry the notice's rank and dropping the label while the slide is open (libs/scene/src/labels.ts, apps/web/src/world/labels.ts)
+- [ ] apps/web's opened slide on atis's own map draws the hole for apps/web/src/world as a wedge with a straight edge across the slide, where that folder's skin runs outside its package's: check it is gone once step 108 keeps a package's cells together
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -1645,3 +1647,5 @@ folder, so it rides the branch into the PR.)*
   **5.** Two parks: a smoke test flake that was already there, and wiring that misses modules
 
   While running the browser tests, the reduced-motion frame failed once. With my change stashed it failed one run in six at HEAD, on the same pixel comparison of the pm folder, which this range doesn't touch. I parked it as P47. Separately, `cellWiring` counts only edges at the open cell's own files. A package of modules therefore wires only its barrel, and `apps/web` has nothing to wire. That sits outside both steps' done-when and seam, so it is parked as P48.
+
+- 2026-10-25 — step 106 checkpointed · 0f8c5eaea — feat(svg): key the reach, its crossings and the history textures in the legend (1 drift, 11m)

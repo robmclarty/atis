@@ -298,6 +298,12 @@ flattened over what it lies on, from the tokens the mark itself is drawn with:
 With those four rows every mark that lights or textures the map has one. When the
 world is shorter than the list and the inset together, the canvas grows to hold them.
 
+The world draws the same inset, row for row, but folds it into the HUD's `key`
+block, last in the row (D166): closed at load, so it never covers the world
+unasked, it opens beneath the row where a block's parts open, and a second
+click or Esc folds it away, Esc taken before the world reads it so an opened
+cell stays open. The bottom-left corner holds the minimap alone.
+
 The practice map (`docs/glance-practice.svg`, `pnpm practice-map`) hangs the same
 numbered balloons over a real fixture, `#callouts` over everything else, each
 joined to the first instance of its mark by a solid line in `CHROME_INK`. A

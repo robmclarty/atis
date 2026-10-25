@@ -17,12 +17,15 @@
  * notice tier on the file, then whether the change touched it, then how few
  * hops the reach took to get there), nearest the view's centre first. Each
  * label tries eight spots round its anchor, and a notice's keeps stepping
- * out until one is clear, so no two boxes ever overlap. One input gives one
- * placement (C3).
+ * out until one is clear, so no two boxes ever overlap. Ground the caller
+ * keeps off, an opened cell's slide (D166), takes no label either: a box that
+ * would fall on it is not clear, so the slide's own tags stand alone there.
+ * One input gives one placement (C3).
  */
 
 import type { MapJson, Notice, NoticeTier } from 'core';
 
+import type { Ring } from './raster.js';
 import { MONO_ADVANCE } from './tokens.js';
 import { weatherOf } from './weather.js';
 
@@ -144,6 +147,54 @@ function overlaps(a: LabelBox, b: LabelBox): boolean {
   return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
 }
 
+/** Whether the point lies inside the ring, by the even-odd rule. */
+function within(x: number, y: number, ring: Ring): boolean {
+  let odd = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
+    const [ax, ay] = ring[i] ?? [0, 0];
+    const [bx, by] = ring[j] ?? [0, 0];
+    if (ay > y !== by > y && x < ((bx - ax) * (y - ay)) / (by - ay) + ax) odd = !odd;
+  }
+  return odd;
+}
+
+/** Which side of the line through `p` and `q` the point `r` lies on: -1, 0 or 1. */
+function sideOf(p: readonly [number, number], q: readonly [number, number], r: readonly [number, number]): number {
+  return Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]));
+}
+
+/** Whether the segment from `a` to `b` crosses the segment from `c` to `d`. */
+function crosses(a: readonly [number, number], b: readonly [number, number], c: readonly [number, number], d: readonly [number, number]): boolean {
+  return sideOf(a, b, c) !== sideOf(a, b, d) && sideOf(c, d, a) !== sideOf(c, d, b);
+}
+
+/** Whether a box falls on the ground a ring bounds: a corner of the box inside it, a point of it inside the box, or an edge of each crossing. */
+function onRing(box: LabelBox, ring: Ring): boolean {
+  const corners: readonly (readonly [number, number])[] = [
+    [box.x, box.y],
+    [box.x + box.width, box.y],
+    [box.x + box.width, box.y + box.height],
+    [box.x, box.y + box.height],
+  ];
+  if (corners.some(([x, y]) => within(x, y, ring))) return true;
+  if (ring.some(([x, y]) => x > box.x && x < box.x + box.width && y > box.y && y < box.y + box.height)) return true;
+  return ring.some((a, index) => {
+    const b = ring[(index + 1) % ring.length] ?? a;
+    return corners.some((c, side) => crosses(a, b, c, corners[(side + 1) % corners.length] ?? c));
+  });
+}
+
+/** A ring on the screen, in the viewport's pixels, with the box that bounds it, so a label far off it is cleared without walking its edges. */
+type Keep = { readonly ring: Ring; readonly bounds: LabelBox };
+
+function keepOf(ring: Ring, viewport: Viewport): Keep {
+  const screen: Ring = ring.map(([x, y]) => [(x - viewport.x) * viewport.pixelsPerUnit, (y - viewport.y) * viewport.pixelsPerUnit]);
+  const xs = screen.map(([x]) => x);
+  const ys = screen.map(([, y]) => y);
+  const [x, y] = [Math.min(...xs), Math.min(...ys)];
+  return { ring: screen, bounds: { x, y, width: Math.max(...xs) - x, height: Math.max(...ys) - y } };
+}
+
 function inside(box: LabelBox, viewport: Viewport): boolean {
   return box.x >= 0 && box.y >= 0 && box.x + box.width <= viewport.width * viewport.pixelsPerUnit && box.y + box.height <= viewport.height * viewport.pixelsPerUnit;
 }
@@ -165,9 +216,11 @@ function spotOf(anchor: NoticeAnchor | undefined, map: MapJson): Spot | undefine
 /**
  * The labels at one level of detail over one viewport: none at LOD0; from
  * LOD1 every notice anchored on the field, then the level's budget of files
- * by importance and nearness, none overlapping another.
+ * by importance and nearness, none overlapping another, and none falling on
+ * the ground `off` bounds, rings in layout units: an opened cell's slide,
+ * whose own tags name its files (D166).
  */
-export function labelsFor(map: MapJson, lod: Lod, viewport: Viewport, labeling: Labeling = LABELING): readonly Label[] {
+export function labelsFor(map: MapJson, lod: Lod, viewport: Viewport, labeling: Labeling = LABELING, off: readonly Ring[] = []): readonly Label[] {
   if (lod === 0) return [];
   const positions = map.terrain.layout?.positions ?? {};
   const added = new Set(map.weather.changed.filter((file) => file.kind === 'added').map((file) => file.path));
@@ -197,6 +250,8 @@ export function labelsFor(map: MapJson, lod: Lod, viewport: Viewport, labeling: 
     .map(({ file }) => file);
 
   const height = labeling.fontSize + 2 * labeling.pad;
+  const kept = off.filter((ring) => ring.length >= 3).map((ring) => keepOf(ring, viewport));
+  const clear = (box: LabelBox): boolean => kept.every((keep) => !overlaps(keep.bounds, box) || !onRing(box, keep.ring));
   const placed: Label[] = [];
   const place = (wanted: Wanted, rings: number): boolean => {
     const width = wanted.text.length * labeling.fontSize * MONO_ADVANCE + 2 * labeling.pad;
@@ -205,7 +260,7 @@ export function labelsFor(map: MapJson, lod: Lod, viewport: Viewport, labeling: 
     const base = wanted.r * viewport.pixelsPerUnit + labeling.gap;
     for (let ring = 0; ring < rings; ring += 1) {
       const free = spotsAround(px, py, base + ring * height, width, height).find(
-        (box) => (wanted.rank !== undefined || inside(box, viewport)) && placed.every((label) => !overlaps(label.box, box)),
+        (box) => (wanted.rank !== undefined || inside(box, viewport)) && clear(box) && placed.every((label) => !overlaps(label.box, box)),
       );
       if (free === undefined) continue;
       placed.push({ target: wanted.target, text: wanted.text, ...(wanted.rank === undefined ? {} : { rank: wanted.rank }), anchor: { x: wanted.x, y: wanted.y }, box: free });

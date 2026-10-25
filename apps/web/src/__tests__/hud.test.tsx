@@ -232,15 +232,66 @@ test("a new row's sample follows its token live from the registry, as every look
   expect(host.querySelector('[data-legend] [data-mark="hatching"] svg line')?.getAttribute('stroke')).toBe(over('#00ff00', ORGANELLE_FILL, TEXTURE_MAX_OPACITY));
 });
 
-test('the chrome carries the HUD over the status line and the legend inset once the map is read, and not before', async () => {
+test('the chrome carries the HUD over the status line once the map is read, and not before, with the legend folded into its key block, closed', async () => {
   const registry = createRegistry();
   await act(async () => root.render(<Chrome state={{ status: 'loading', url: '/map.json' }} registry={registry} dev={false} />));
   expect(host.querySelector('[data-hud]')).toBeNull();
-  expect(host.querySelector('[data-legend]')).toBeNull();
+  expect(host.querySelector('[data-hud-key]')).toBeNull();
   await act(async () => root.render(<Chrome state={{ status: 'ready', url: '/map.json', map: DEMO }} registry={registry} dev={false} />));
   // The row and the panel it opens share a wrapper, and the status line follows it.
   const hud = element('[data-hud]');
   expect(hud.parentElement?.nextElementSibling?.getAttribute('role')).toBe('status');
   expect(all('[data-hud] [data-block]')).toHaveLength(HUD_ORDER.length);
+  // The key block stands last in the row, and the legend it folds is not drawn until it is opened (D166).
+  const key = element('[data-hud] [data-hud-key]');
+  expect(hud.lastElementChild).toBe(key);
+  expect(key.textContent).toBe('key');
+  expect(key.getAttribute('aria-expanded')).toBe('false');
+  expect(host.querySelector('[data-legend]')).toBeNull();
+});
+
+/** A key pressed on the page, as the world hears it, with whether something before it took it. */
+const press = (key: string): KeyboardEvent => {
+  const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true });
+  globalThis.dispatchEvent(event);
+  return event;
+};
+
+test('the key block opens the legend beneath the row and a second click folds it away, one panel at a time with the blocks\' parts', async () => {
+  await act(async () => root.render(<Hud map={DEMO} registry={createRegistry()} />));
+  const key = element('[data-hud-key]');
+  await act(async () => key.click());
+  expect(key.getAttribute('aria-expanded')).toBe('true');
+  const legend = element('[data-legend]');
+  expect(all('[data-legend] [data-mark]').map((row) => row.getAttribute('data-mark'))).toEqual(LEGEND.map((mark) => mark.id));
+  // Beneath the row, in the panel's place, and not in the row itself.
+  expect(element('[data-hud]').contains(legend)).toBe(false);
+  expect(host.querySelector('[data-parts]')).toBeNull();
+  // A grade block's parts take the panel's place, and the legend folds away.
+  await act(async () => element('[data-block="gate"]').click());
+  expect(host.querySelector('[data-legend]')).toBeNull();
+  expect(host.querySelector('[data-parts]')).not.toBeNull();
+  await act(async () => key.click());
+  expect(host.querySelector('[data-parts]')).toBeNull();
+  await act(async () => key.click());
+  expect(host.querySelector('[data-legend]')).toBeNull();
+  expect(key.getAttribute('aria-expanded')).toBe('false');
+});
+
+test('Esc folds an open legend away and marks the key taken, so an open cell beneath stays open; with the legend closed, Esc passes to the world', async () => {
+  await act(async () => root.render(<Hud map={DEMO} registry={createRegistry()} />));
+  expect(press('Escape').defaultPrevented).toBe(false);
+  await act(async () => element('[data-hud-key]').click());
   expect(host.querySelector('[data-legend]')).not.toBeNull();
+  // Another key leaves it open and untaken.
+  expect(press('x').defaultPrevented).toBe(false);
+  expect(host.querySelector('[data-legend]')).not.toBeNull();
+  let escape: KeyboardEvent | undefined;
+  await act(async () => {
+    escape = press('Escape');
+  });
+  expect(escape?.defaultPrevented).toBe(true);
+  expect(host.querySelector('[data-legend]')).toBeNull();
+  expect(element('[data-hud-key]').getAttribute('aria-expanded')).toBe('false');
+  expect(press('Escape').defaultPrevented).toBe(false);
 });

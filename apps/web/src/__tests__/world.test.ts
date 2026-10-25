@@ -12,7 +12,9 @@
  * out on a plate in the chrome (step 41); Esc closes it, the surface holds its
  * files where they floated, and zooming out toward the field brings them
  * home. Framed on a package, the world opens it on its modules, the file of
- * the single-file cell it holds tagged beside its barrel (D167). A fourth
+ * the single-file cell it holds tagged beside its barrel (D167), and there the
+ * legend, closed at load, opens from the HUD's `key` block and folds away on
+ * Esc while the cell stays open (D166). A fourth
  * emulates `prefers-reduced-motion` and holds the frames still after load, in
  * an opened cell and across a fly-to, beside a page with motion on whose
  * frames move (step 42).
@@ -254,7 +256,7 @@ const twoFrames = async (page: Page, apart: number): Promise<readonly [Buffer, B
   return [first, await page.screenshot({ type: 'png' })];
 };
 
-test('framed on a package, the world opens it on its modules, tagging the file of the single-file cell it holds beside its barrel, with a clean console (D167)', { timeout: 120_000 }, async () => {
+test('framed on a package, the world opens it on its modules, tagging the file of the single-file cell it holds beside its barrel, and the key block opens the legend over it until Esc, with a clean console (D167, D166)', { timeout: 120_000 }, async () => {
   const { server, url } = await serve();
   const browser = await launch();
   try {
@@ -262,6 +264,22 @@ test('framed on a package, the world opens it on its modules, tagging the file o
     const { page, complaints } = await openedOn(browser, url, cell, 'no-preference');
     const tags = await page.$$eval('[data-interior-tag]', (elements) => elements.map((element) => element.textContent));
     expect(tags.toSorted()).toEqual(['doctor.ts', 'index.ts']);
+    // No surface label lies on the slide's own tags, which stand alone beside it (D166).
+    const crowded = await page.evaluate(() => {
+      const tagBoxes = [...document.querySelectorAll('[data-interior-tag]')].map((element) => element.getBoundingClientRect()).filter((box) => box.width > 0);
+      return [...document.querySelectorAll('[data-labels] [data-target] > div')]
+        .map((element) => element.getBoundingClientRect())
+        .filter((label) => label.width > 0 && tagBoxes.some((tag) => label.left < tag.right && tag.left < label.right && label.top < tag.bottom && tag.top < label.bottom)).length;
+    });
+    expect(crowded).toBe(0);
+    // The legend never covers the world unasked: closed at load, opened by the key block, folded away by Esc before Esc reaches the open cell (D166).
+    expect(await page.$$eval('[data-legend]', (elements) => elements.length)).toBe(0);
+    await page.click('[data-hud-key]');
+    await page.waitForSelector('[data-legend]', { timeout: 30_000 });
+    expect(await page.$$eval('[data-legend] [data-mark]', (elements) => elements.length)).toBe(14);
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('[data-legend]', { state: 'detached', timeout: 30_000 });
+    expect(await page.getAttribute('#world', 'data-open')).toBe(cell);
     expect(complaints).toEqual([]);
   } finally {
     await browser.close();

@@ -156,3 +156,63 @@ test('one map and one viewport give one placement, whatever order the files arri
   expect(labelsFor(shuffled, 2, WHOLE)).toEqual(labelsFor(map, 2, WHOLE));
   expect(labelsFor(map, 2, WHOLE)).toEqual(labelsFor(map, 2, WHOLE));
 });
+
+/** How far a box's nearest point lies from a point, in the box's pixels. */
+function distanceFrom(box: Label['box'], x: number, y: number): number {
+  const dx = Math.max(box.x - x, 0, x - (box.x + box.width));
+  const dy = Math.max(box.y - y, 0, y - (box.y + box.height));
+  return Math.hypot(dx, dy);
+}
+
+/** A box's corners, edges and inside on a six-by-six grid of points. */
+function samples(box: Label['box']): readonly (readonly [number, number])[] {
+  return Array.from({ length: 36 }, (_, index) => [box.x + ((index % 6) / 5) * box.width, box.y + (Math.floor(index / 6) / 5) * box.height] as const);
+}
+
+/** A ring of `sides` points round a centre, in layout units: an opened slide's skin, near enough round. */
+function roundRing(cx: number, cy: number, r: number, sides: number): readonly (readonly [number, number])[] {
+  return Array.from({ length: sides }, (_, index) => [cx + r * Math.cos((2 * Math.PI * index) / sides), cy + r * Math.sin((2 * Math.PI * index) / sides)] as const);
+}
+
+test("no label falls on an opened slide's ground: every notice's steps out past it, and the files round it keep the rest of the budget (D166)", () => {
+  const map = dense();
+  // A slide over the middle of the grid, holding all six noticed files.
+  const [cx, cy, r, sides] = [220, 220, 60, 64];
+  const ring = roundRing(cx, cy, r, sides);
+  // The ring holds the circle its sides' midpoints lie on, so a box that far off the centre is off the ring.
+  const held = r * Math.cos(Math.PI / sides) * WHOLE.pixelsPerUnit;
+  const centre = [(cx - WHOLE.x) * WHOLE.pixelsPerUnit, (cy - WHOLE.y) * WHOLE.pixelsPerUnit] as const;
+  // Without the slide, labels land on its ground, so the test bites.
+  expect(labelsFor(map, 2, WHOLE).some((label) => distanceFrom(label.box, ...centre) < held)).toBe(true);
+  for (const lod of [1, 2, 3, 4] as const) {
+    const labels = labelsFor(map, lod, WHOLE, LABELING, [ring]);
+    for (const label of labels) expect(distanceFrom(label.box, ...centre), `LOD${String(lod)}: ${label.target}`).toBeGreaterThanOrEqual(held - 1e-9);
+    expect(labels.filter((label) => label.rank !== undefined).map((label) => label.rank)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(overlapping(labels)).toEqual([]);
+    expect(labels.length, `LOD${String(lod)} keeps labelling round the slide`).toBeGreaterThan(6);
+  }
+});
+
+test("labels laid round the demo's opened folder keep off its toothed skin, and a ring too small to bound ground keeps nothing off", () => {
+  const map = withNotices([notice('libs/core/src/pm/tools.ts', 'primary'), notice('libs/core/src/pm/index.ts', 'secondary'), notice('apps/cli/src/doctor.ts', 'tertiary')]);
+  const ring = map.terrain.layout?.contours?.['folder:libs/core/src/pm'] ?? [];
+  expect(ring.length).toBeGreaterThan(3);
+  const xs = ring.map(([x]) => x);
+  const ys = ring.map(([, y]) => y);
+  const [minX, maxX, minY, maxY] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  const viewport: Viewport = { x: minX - 60, y: minY - 60, width: maxX - minX + 120, height: maxY - minY + 120, pixelsPerUnit: 4 };
+  const toScreen = ([x, y]: readonly [number, number]): readonly [number, number] => [(x - viewport.x) * viewport.pixelsPerUnit, (y - viewport.y) * viewport.pixelsPerUnit];
+  const screen = ring.map(toScreen);
+  /** Whether a screen point lies inside the folder's skin, by the even-odd rule. */
+  const insideSkin = (px: number, py: number): boolean =>
+    screen.reduce((odd, [ax, ay], index) => {
+      const [bx, by] = screen[(index + screen.length - 1) % screen.length] ?? [ax, ay];
+      return ay > py !== by > py && px < ((bx - ax) * (py - ay)) / (by - ay) + ax ? !odd : odd;
+    }, false);
+  const free = labelsFor(map, 2, viewport);
+  expect(free.some((label) => samples(label.box).some(([x, y]) => insideSkin(x, y)))).toBe(true);
+  const kept = labelsFor(map, 2, viewport, LABELING, [ring]);
+  for (const label of kept) expect(samples(label.box).some(([x, y]) => insideSkin(x, y)), label.target).toBe(false);
+  expect(kept.filter((label) => label.rank !== undefined)).toHaveLength(3);
+  expect(labelsFor(map, 2, viewport, LABELING, [ring.slice(0, 2)])).toEqual(free);
+});

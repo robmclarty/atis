@@ -162,13 +162,15 @@ test('the inset takes its size and its inks live from the registry (D156)', asyn
   expect(element('[data-silhouette]').getAttribute('fill')).toBe('#445566');
 });
 
-test("a map with no layout draws no inset, and the chrome's corner holds the legend over the minimap once the map is read", async () => {
+test("a map with no layout draws no inset, and the chrome's corner holds the minimap alone once the map is read, the legend folded into the HUD (D166)", async () => {
   const { layout: _layout, ...terrain } = DEMO.terrain;
   await act(async () => root.render(<Minimap map={{ ...DEMO, terrain }} registry={createRegistry()} nav={createNav()} />));
   expect(host.querySelector('[data-minimap]')).toBeNull();
   await act(async () => root.render(<Chrome state={{ status: 'loading', url: '/map.json' }} registry={createRegistry()} dev={false} />));
   expect(host.querySelector('[data-minimap]')).toBeNull();
   await act(async () => root.render(<Chrome state={{ status: 'ready', url: '/map.json', map: DEMO }} registry={createRegistry()} dev={false} />));
-  const legend = element('[data-legend]');
-  expect(legend.nextElementSibling?.hasAttribute('data-minimap')).toBe(true);
+  expect(host.querySelector('[data-legend]')).toBeNull();
+  const minimap = element('[data-minimap]');
+  expect(minimap.previousElementSibling).toBeNull();
+  expect(minimap.nextElementSibling).toBeNull();
 });

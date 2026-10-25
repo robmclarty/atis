@@ -1,8 +1,8 @@
 /**
  * frame: the chrome's root, the flat DOM the world is framed by (§7, D12),
  * drawn with React (D91). It holds the status line, and once the map is read
- * the HUD's grade blocks over it (§7) and the breadcrumb under it (§6), the legend inset at the bottom left
- * (D87) over the minimap in the corner (D154), and the right-hand column, the ranked notices over the shore rail
+ * the HUD's grade blocks over it (§7), with the legend folded into its `key` block (D87, D166), and the breadcrumb
+ * under it (§6), the minimap in the bottom-left corner (D154), and the right-hand column, the ranked notices over the shore rail
  * (§5.4, D153); over them all, the open cell's wiring plate while it is toggled on (step 41); and, behind a switch, the dev panel (D156): off and absent by
  * default, its code fetched only when it is first opened. A development build shows a toggle for it; a published
  * build opens it only through a key combination, which the docs never name.
@@ -21,7 +21,6 @@ import type { Registry } from '../registry.js';
 import { Column } from './column.js';
 import { Crumbs } from './crumbs.js';
 import { Hud } from './hud.js';
-import { Legend } from './legend.js';
 import { useLive } from './live.js';
 import { Minimap } from './minimap.js';
 import { Status } from './status.js';
@@ -52,7 +51,7 @@ const TOGGLE: CSSProperties = {
   cursor: 'pointer',
 };
 
-/** The chrome's bottom-left corner: the legend over the minimap, a pad apart and a pad in from the edges. It takes no pointer events of its own. */
+/** The chrome's bottom-left corner: the minimap, a pad in from the edges. It takes no pointer events of its own. */
 const Corner = ({ registry, children }: { readonly registry: Registry; readonly children: ReactNode }): ReactElement => {
   useLive(registry);
   const { CHROME_PAD: pad } = registry.view({ CHROME_PAD });
@@ -102,7 +101,6 @@ export const Chrome = ({ state, registry, nav: given, dev, token, load = loadPan
       {state.status === 'ready' && <Column map={state.map} registry={registry} nav={nav} />}
       {state.status === 'ready' && (
         <Corner registry={registry}>
-          <Legend registry={registry} />
           <Minimap map={state.map} registry={registry} nav={nav} />
         </Corner>
       )}

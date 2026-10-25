@@ -1,6 +1,7 @@
 /**
- * legend: the key every map carries in its chrome (D87), an inset at the
- * world's bottom left, over the minimap (D154): a hairline frame, a small-caps title, one numbered row
+ * legend: the key every map carries in its chrome (D87), folded into the
+ * HUD's `key` block and opened beneath its row, so it never covers the world
+ * unasked (D166): a hairline frame, a small-caps title, one numbered row
  * per mark with a small sample of the mark beside a few words on what it
  * measures, and last the key of the seven shapes (D146). The rows and their
  * words are `hud.ts`'s, the still sheet's row for row, and the samples are

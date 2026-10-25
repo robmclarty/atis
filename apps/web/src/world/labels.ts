@@ -46,11 +46,14 @@ import {
   SECONDARY_BOX_WIDTH,
   STORM_LABEL_SIZE,
   VFR_HUE,
+  interiorOf,
   labelsFor,
+  tagsOf,
 } from 'scene';
-import type { Lod, Viewport } from 'scene';
+import type { Lod, Point, Slide, Viewport } from 'scene';
 import type { MapJson } from 'core';
 
+import { RAIL_WIDTH } from '../fit.js';
 import { boxStyle, categoryHue, runsOf } from '../notices.js';
 import type { Run } from '../notices.js';
 import { screenType } from '../screen.js';
@@ -88,8 +91,8 @@ export type LabelLook = typeof LABEL_LOOK;
 export type Labels = {
   /** The layers over the canvas, in the order they stack: the leaders, then the text. */
   readonly elements: readonly Element[];
-  /** Lay the labels out again for what the camera shows at this level of detail: every notice's label and the level's budget of file names, clear of each other (step 27), but for the files an opened cell's slide tags in its own columns (step 40). */
-  readonly place: (viewport: Viewport, lod: Lod, onSlide?: ReadonlySet<string>) => void;
+  /** Lay the labels out again for what the camera shows at this level of detail: every notice's label and the level's budget of file names, clear of each other (step 27), but for the files an opened cell's slide tags in its own columns (step 40), and none on the slide or its tag columns, where its own tags stand alone (D166). */
+  readonly place: (viewport: Viewport, lod: Lod, slide?: Slide) => void;
   /** Keep every label over its point for this camera and canvas, and draw the leaders, with the surface's layer as the layers' opacity. */
   readonly render: (camera: Camera, width: number, height: number, surface: number) => void;
 };
@@ -159,6 +162,32 @@ export const viewportOf = (camera: OrthographicCamera, width: number): Viewport 
   return { x: centre.x - spanX / 2, y: centre.z - spanY / 2, width: spanX, height: spanY, pixelsPerUnit: width / spanX };
 };
 
+/**
+ * The ground an opened slide holds on the screen, which no surface label may
+ * fall on (D166): its skin, and each column of its tags as the scene lays
+ * them with the bodies at rest, run the whole height of the skin as well as
+ * the column's, since the tags slide up and down with the bodies they name.
+ * Worked in the viewport's pixels the labels are placed in, and handed back
+ * as rings of layout units.
+ */
+const slideGround = (slide: Slide, viewport: Viewport): readonly (readonly Point[])[] => {
+  const ppu = viewport.pixelsPerUnit;
+  const project = (x: number, y: number): Point => [(x - viewport.x) * ppu, (y - viewport.y) * ppu];
+  const back = (px: number, py: number): Point => [px / ppu + viewport.x, py / ppu + viewport.y];
+  const tags = tagsOf(slide, interiorOf(slide), project, { width: viewport.width * ppu - RAIL_WIDTH, height: viewport.height * ppu, pixelsPerUnit: ppu });
+  const skin = slide.ring.map(([, y]) => (y - viewport.y) * ppu);
+  const columns = (['left', 'right'] as const).flatMap((side) => {
+    const boxes = tags.filter((tag) => tag.side === side).map((tag) => tag.box);
+    if (boxes.length === 0) return [];
+    const x0 = Math.min(...boxes.map((box) => box.x));
+    const x1 = Math.max(...boxes.map((box) => box.x + box.width));
+    const y0 = Math.min(...skin, ...boxes.map((box) => box.y));
+    const y1 = Math.max(...skin, ...boxes.map((box) => box.y + box.height));
+    return [[back(x0, y0), back(x1, y0), back(x1, y1), back(x0, y1)]];
+  });
+  return [slide.ring, ...columns];
+};
+
 /** The labels of a map over the canvas, each at its point's resting height as the caller reads it off the skin. */
 export const createLabels = (map: MapJson, tags: readonly Label[], heightAt: Height, palette: Palette, look: LabelLook): Labels => {
   const scene = new Scene();
@@ -226,7 +255,7 @@ export const createLabels = (map: MapJson, tags: readonly Label[], heightAt: Hei
     }
   };
 
-  const place = (viewport: Viewport, lod: Lod, onSlide: ReadonlySet<string> = new Set()): void => {
+  const place = (viewport: Viewport, lod: Lod, slide?: Slide): void => {
     const ppu = viewport.pixelsPerUnit;
     layRuns(ppu);
     for (const { tag, label } of tagged) {
@@ -240,7 +269,8 @@ export const createLabels = (map: MapJson, tags: readonly Label[], heightAt: Hei
     strokes.setAttribute('stroke-linecap', 'round');
     strokes.setAttribute('fill', 'none');
     const byTarget = new Map(runs.map((marks) => [marks.run.target, marks] as const));
-    placed = labelsFor(map, lod, viewport)
+    const onSlide = new Set(slide?.files.map((file) => file.id));
+    placed = labelsFor(map, lod, viewport, LABELING, slide === undefined ? [] : slideGround(slide, viewport))
       .filter((label) => label.rank !== undefined || !onSlide.has(label.target))
       .map((label): Pinned => {
       const { outer, inner } = hanger();
