@@ -126,6 +126,15 @@ test("the world's blocks are the sheet's, block for block, on the demo, its four
   expect(blockText(demo[0] ?? { id: '', label: '', value: '', tail: '' })).toBe('IFR');
 });
 
+test("the world's Size counts the terrain alone, as the sheet's does, so a change of source and fixtures reads as its source (D166)", () => {
+  const fixture = { path: 'libs/core/fixtures/demo/map.json', kind: 'modified' as const, group: 'data', is_barrel: false, added: 2000, deleted: 1800, hunks: [] };
+  const changed = [...DEMO.weather.changed.filter((file) => file.path === 'libs/core/src/pm/index.ts'), fixture];
+  const map: MapJson = { ...DEMO, weather: { ...DEMO.weather, changed } };
+  const size = blocksOf(map).find((block) => block.id === 'size');
+  expect(size === undefined ? '' : blockText(size)).toBe('Size +18 −9, 1 files');
+  expect(blocksOf(map).map(blockText)).toEqual(sheetBlocks(map).map((block) => block.text));
+});
+
 test('the legend keys the same marks in the same words as the sheet, and the shape key says the same', () => {
   expect(LEGEND).toEqual(SHEET_LEGEND);
   expect(SHAPE_KEY_WORDS).toBe(SHEET_SHAPE_KEY_WORDS);

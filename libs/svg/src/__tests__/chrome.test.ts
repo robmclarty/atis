@@ -240,12 +240,21 @@ test('every HUD number is read from the map', () => {
   // One mutant survived the tests and one no test reached, counted apart (D143).
   expect(read('mutants')).toBe('Mutants 1 survived, 1 untested');
   expect(read('reach')).toBe('Reach 4 cells');
-  expect(read('size')).toBe('Size +243 −102, 8 files');
+  // The size is the terrain's four files; the shore's README, test, manifest and stray are named apart (D166).
+  expect(read('size')).toBe('Size +210 −94, 4 files');
   expect(read('health')).toBe(`Health Δ ${MUTED_DASH}`);
   expect(read('notices')).toBe('Notices 1·2·3');
   expect(read('other')).toBe('Other 1');
   // The value is the big numeral: bold, after a plain label.
   expect(blockOf(chrome, 'gate')).toMatch(/<tspan>Gate <\/tspan><tspan font-weight="bold">1<\/tspan><tspan> red<\/tspan>/);
+});
+
+test("the Size block counts the terrain's lines and files alone, so a change of source and fixtures reads as its source (D166)", () => {
+  const map = demo();
+  const fixture = { path: 'libs/core/fixtures/demo/map.json', kind: 'modified' as const, group: 'data', is_barrel: false, added: 2000, deleted: 1800, hunks: [] };
+  const changed = [...map.weather.changed.filter((file) => file.path === 'libs/core/src/pm/index.ts'), fixture];
+  const read = textOf(blockOf(chromeOf(renderSvg({ ...map, weather: { ...map.weather, changed } })), 'size') ?? '');
+  expect(read).toBe('Size +18 −9, 1 files');
 });
 
 /** The demo with its live mutants on `tools.ts` given these statuses, one per changed line. */

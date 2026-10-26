@@ -8,11 +8,11 @@ import { identifyGroups } from '../groups.js';
 import type { FileHistory } from '../history.js';
 import { identifyModules } from '../modules.js';
 import type { Modules, ScannedFile } from '../modules.js';
-import { HEAD_ONLY, findGhosts, findPublicNames, rankNotices } from '../notices.js';
+import { HEAD_ONLY, changeSize, findGhosts, findPublicNames, rankNotices } from '../notices.js';
 import type { ExportShapes, NamedEdge, NoticeInputs, PassedName, PublishingMember, ScanFile } from '../notices.js';
 import { computeReach } from '../reach.js';
 import type { DiffFile } from '../reach.js';
-import type { Cell, CheckSlot, Checks, Cochange, DepAdded, DepMoved, Hunk, Notice } from '../schema.js';
+import type { Cell, ChangedFile, CheckSlot, Checks, Cochange, DepAdded, DepMoved, Hunk, Notice } from '../schema.js';
 
 /**
  * One repository for every scenario: the chain of §5.2, where `pm` is entered
@@ -1283,6 +1283,34 @@ test('a ghost is the file that usually comes along, named by what expected it', 
   expect(notice?.why).toContain('src/pm/util.ts');
   // A file this change already touches is not absent, however often the two travel together.
   expect(findGhosts(cochange, ['src/pm/util.ts', 'src/doctor.ts'], DEFAULT_CONFIG.notices)).toEqual([]);
+});
+
+test('a missing co-change is heard only with source in the pair: two docs or two build logs raise none, a source and a doc raise one (D166)', () => {
+  const docs: readonly Cochange[] = [
+    { a: 'README.md', b: 'docs/guide.md', rate: 0.9, support: 8 },
+    { a: '.plumbbob/builds/x/build-log.md', b: '.plumbbob/builds/x/checkpoints', rate: 1, support: 40 },
+  ];
+  const quiet = noticesFor({ files: ['docs/guide.md', '.plumbbob/builds/x/build-log.md', '.plumbbob/builds/x/checkpoints'], changed: [change('README.md'), change('.plumbbob/builds/x/build-log.md')], cochange: docs });
+  expect(quiet.filter((notice) => notice.kind === 'missing-cochange')).toEqual([]);
+  // The map still draws those ghosts; only the notices leave them out.
+  expect(findGhosts(docs, ['README.md', '.plumbbob/builds/x/build-log.md'], DEFAULT_CONFIG.notices).map((ghost) => ghost.path)).toEqual(['.plumbbob/builds/x/checkpoints', 'docs/guide.md']);
+
+  // Source on either side of the pair is heard: the doc a changed source file usually brings, and the source a changed doc usually brings.
+  const fromSource = noticesFor({ files: ['docs/guide.md'], cochange: [{ a: 'src/pm/util.ts', b: 'docs/guide.md', rate: 0.8, support: 4 }] });
+  expect(fromSource.filter((notice) => notice.kind === 'missing-cochange').map((notice) => notice.target)).toEqual(['docs/guide.md']);
+  const fromDoc = noticesFor({ files: ['docs/guide.md'], changed: [change('docs/guide.md')], cochange: [{ a: 'docs/guide.md', b: 'src/doctor.ts', rate: 0.8, support: 4 }] });
+  expect(fromDoc.filter((notice) => notice.kind === 'missing-cochange').map((notice) => notice.target)).toEqual(['src/doctor.ts']);
+});
+
+test("the change's size is the terrain's, the shore's apart, so a change of source and fixtures counts its source alone (D166)", () => {
+  const changed: readonly ChangedFile[] = [
+    { path: 'src/pm/util.ts', kind: 'modified', cell: 'folder:src/pm', is_barrel: false, added: 12, deleted: 3, hunks: [] },
+    { path: 'src/doctor.ts', kind: 'added', cell: 'single:src/doctor.ts', is_barrel: false, added: 40, deleted: 0, hunks: [] },
+    { path: 'fixtures/demo/map.json', kind: 'modified', group: 'data', is_barrel: false, added: 2000, deleted: 1800, hunks: [] },
+    { path: 'docs/guide.md', kind: 'modified', group: 'docs', is_barrel: false, added: 5, deleted: 1, hunks: [] },
+  ];
+  expect(changeSize(changed)).toEqual({ terrain: { added: 52, deleted: 3, files: 2 }, shore: { added: 2005, deleted: 1801, files: 2 } });
+  expect(changeSize([])).toEqual({ terrain: { added: 0, deleted: 0, files: 0 }, shore: { added: 0, deleted: 0, files: 0 } });
 });
 
 test('a ghost is ranked by its rate and support, so the path alphabet no longer decides (D55)', () => {

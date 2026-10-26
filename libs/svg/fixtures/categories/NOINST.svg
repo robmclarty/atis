@@ -121,24 +121,24 @@
         <text x="220.96" y="21.15" font-size="9" fill="#e6edf3"><tspan>Reach </tspan><tspan font-weight="bold">4</tspan><tspan> cells</tspan></text>
       </g>
       <g data-block="size">
-        <rect x="302.5" y="8" width="140.34" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="308.5" y="21.15" font-size="9" fill="#e6edf3"><tspan>Size </tspan><tspan font-weight="bold">+243 −102</tspan><tspan>, 8 files</tspan></text>
+        <rect x="302.5" y="8" width="134.76" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="308.5" y="21.15" font-size="9" fill="#e6edf3"><tspan>Size </tspan><tspan font-weight="bold">+210 −94</tspan><tspan>, 4 files</tspan></text>
       </g>
       <g data-block="gate" data-muted="true" data-reason="absent">
-        <rect x="445.84" y="8" width="45.48" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
-        <text x="451.84" y="21.15" font-size="9" fill="#6b7480"><tspan>Gate </tspan><tspan font-weight="bold">—</tspan></text>
+        <rect x="440.26" y="8" width="45.48" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="446.26" y="21.15" font-size="9" fill="#6b7480"><tspan>Gate </tspan><tspan font-weight="bold">—</tspan></text>
       </g>
       <g data-block="health" data-muted="true" data-reason="head-only">
-        <rect x="494.32" y="8" width="67.8" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
-        <text x="500.32" y="21.15" font-size="9" fill="#6b7480"><tspan>Health Δ </tspan><tspan font-weight="bold">—</tspan></text>
+        <rect x="488.74" y="8" width="67.8" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="494.74" y="21.15" font-size="9" fill="#6b7480"><tspan>Health Δ </tspan><tspan font-weight="bold">—</tspan></text>
       </g>
       <g data-block="notices">
-        <rect x="565.12" y="8" width="84.54" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="571.12" y="21.15" font-size="9" fill="#e6edf3"><tspan>Notices </tspan><tspan font-weight="bold">1·2·3</tspan></text>
+        <rect x="559.54" y="8" width="84.54" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="565.54" y="21.15" font-size="9" fill="#e6edf3"><tspan>Notices </tspan><tspan font-weight="bold">1·2·3</tspan></text>
       </g>
       <g data-block="other">
-        <rect x="652.66" y="8" width="51.06" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="658.66" y="21.15" font-size="9" fill="#e6edf3"><tspan>Other </tspan><tspan font-weight="bold">1</tspan></text>
+        <rect x="647.08" y="8" width="51.06" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="653.08" y="21.15" font-size="9" fill="#e6edf3"><tspan>Other </tspan><tspan font-weight="bold">1</tspan></text>
       </g>
     </g>
     <g id="rules" stroke="#2b333d" stroke-width="1">

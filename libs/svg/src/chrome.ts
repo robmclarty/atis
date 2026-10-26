@@ -26,7 +26,7 @@
  * list draws at most six rows, in the map's rank order, and pads nothing.
  */
 
-import { OTHER_GROUP, mutantOutcomes, readRedSplit } from 'core';
+import { OTHER_GROUP, changeSize, mutantOutcomes, readRedSplit } from 'core';
 import type { Contour, FlightCategory, Layout, MapJson, Notice, NoticeTier, Position } from 'core';
 import {
   CATEGORY_FONT_SIZE,
@@ -290,8 +290,8 @@ function tierCounts(notices: readonly Notice[]): Readonly<Record<NoticeTier, num
 function blocksOf(map: MapJson, notices: readonly Notice[]): readonly Block[] {
   const { changed, reach, checks } = map.weather;
   const cells = new Set(reach.map((entry) => entry.cell)).size;
-  const added = changed.reduce((total, file) => total + file.added, 0);
-  const deleted = changed.reduce((total, file) => total + file.deleted, 0);
+  // The size is the terrain's: the shore's docs, data and tests are named apart, in the block's parts (D166).
+  const size = changeSize(changed).terrain;
   const tiers = tierCounts(notices);
   const other = map.terrain.groups.find((group) => group.id === OTHER_GROUP);
   const blocks: readonly Block[] = [
@@ -299,7 +299,7 @@ function blocksOf(map: MapJson, notices: readonly Notice[]): readonly Block[] {
     coverageBlock(map),
     mutantBlock(map),
     block('reach', 'Reach', String(cells), ' cells'),
-    block('size', 'Size', `+${String(added)} ${MINUS}${String(deleted)}`, `, ${String(changed.length)} files`),
+    block('size', 'Size', `+${String(size.added)} ${MINUS}${String(size.deleted)}`, `, ${String(size.files)} files`),
     ...gateBlocks(map),
     muted('health', 'Health Δ', 'head-only'),
     block('notices', 'Notices', [tiers.primary, tiers.secondary, tiers.tertiary].map(String).join(DOT)),

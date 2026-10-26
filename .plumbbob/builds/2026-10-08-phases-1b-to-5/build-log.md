@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 111 — fix(web): set the world in space and rule its depth bands faintly
+**Current step:** 109 — fix(core): keep the shore's docs and data out of co-change notices and the HUD's size
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -93,7 +93,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 108. fix(core): keep each package's cells together so no skin crosses another's
 - ☐ 109. fix(core): keep the shore's docs and data out of co-change notices and the HUD's size
 - ☑ 110. fix(web): write the world's labels only on hover or in an exploded cell
-- ☐ 111. fix(web): set the world in space and rule its depth bands faintly
+- ☑ 111. fix(web): set the world in space and rule its depth bands faintly
 - ☐ 112. feat(core): record the outside packages the terrain uses, with their health
 - ☐ 113. feat(web): draw the far zoom as a dark planet under its dependencies' stars
 - ☑ 114. fix(core): keep a package's sibling cells apart so no two skins cross
@@ -1806,3 +1806,4 @@ folder, so it rides the branch into the PR.)*
 
 - 2026-10-26 — step 114 checkpointed · 6e46bac30 — fix(core): keep a package's sibling cells apart so no two skins cross (41m)
 - 2026-10-26 — step 110 checkpointed · c96ebc3ba — fix(web): write the world's labels only on hover or in an exploded cell (14m)
+- 2026-10-26 — step 111 checkpointed · 0b6bb31a5 — fix(web): set the world in space and rule its depth bands faintly (11m)

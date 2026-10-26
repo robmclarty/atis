@@ -140,16 +140,16 @@
         <text x="403.24" y="21.15" font-size="9" fill="#e6edf3"><tspan>Reach </tspan><tspan font-weight="bold">4</tspan><tspan> cells</tspan></text>
       </g>
       <g data-block="size">
-        <rect x="484.78" y="8" width="140.34" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="490.78" y="21.15" font-size="9" fill="#e6edf3"><tspan>Size </tspan><tspan font-weight="bold">+243 −102</tspan><tspan>, 8 files</tspan></text>
+        <rect x="484.78" y="8" width="134.76" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="490.78" y="21.15" font-size="9" fill="#e6edf3"><tspan>Size </tspan><tspan font-weight="bold">+210 −94</tspan><tspan>, 4 files</tspan></text>
       </g>
       <g data-block="gate">
-        <rect x="628.12" y="8" width="62.22" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="634.12" y="21.15" font-size="9" fill="#e6edf3"><tspan>Gate </tspan><tspan font-weight="bold">pass</tspan></text>
+        <rect x="622.54" y="8" width="62.22" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="628.54" y="21.15" font-size="9" fill="#e6edf3"><tspan>Gate </tspan><tspan font-weight="bold">pass</tspan></text>
       </g>
       <g data-block="health" data-muted="true" data-reason="head-only">
-        <rect x="693.34" y="8" width="67.8" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
-        <text x="699.34" y="21.15" font-size="9" fill="#6b7480"><tspan>Health Δ </tspan><tspan font-weight="bold">—</tspan></text>
+        <rect x="687.76" y="8" width="67.8" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="693.76" y="21.15" font-size="9" fill="#6b7480"><tspan>Health Δ </tspan><tspan font-weight="bold">—</tspan></text>
       </g>
       <g data-block="notices">
         <rect x="10" y="31" width="84.54" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>

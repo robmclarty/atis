@@ -767,6 +767,30 @@ export function mutantOutcomes(mutants: readonly Mutant[]): MutantOutcomes {
   return { survived: mutants.length - untested, untested };
 }
 
+/** A stretch of the change: its lines added and deleted, and how many files. */
+export type Tally = { readonly added: number; readonly deleted: number; readonly files: number };
+
+/** The change's size, the terrain's apart from the shore's (D166). */
+export type ChangeSize = { readonly terrain: Tally; readonly shore: Tally };
+
+function tallyOf(files: readonly ChangedFile[]): Tally {
+  return {
+    added: files.reduce((total, file) => total + file.added, 0),
+    deleted: files.reduce((total, file) => total + file.deleted, 0),
+    files: files.length,
+  };
+}
+
+/**
+ * The change's size as the HUD counts it (D166): the terrain's lines and
+ * files, those on a cell, apart from the shore's, its docs, data, tests and
+ * the rest, so a change that regenerates a fixture or rewrites a build log
+ * does not read as a big one; the shore's are named apart, not counted in.
+ */
+export function changeSize(changed: readonly ChangedFile[]): ChangeSize {
+  return { terrain: tallyOf(changed.filter((file) => file.cell !== undefined)), shore: tallyOf(changed.filter((file) => file.cell === undefined)) };
+}
+
 /** `1 mutant`, `2 mutants`. */
 function mutantsOf(count: number): string {
   return `${String(count)} ${count === 1 ? 'mutant' : 'mutants'}`;
@@ -851,7 +875,8 @@ function bedrockCandidates(inputs: NoticeInputs, history: ReadonlyMap<string, Fi
 /**
  * The files that usually come along and did not (CHID eq. 3). The notice
  * points at the absent file, which is where §5.2 draws its ghost, and the
- * `why` names the changed file that expected it.
+ * `why` names the changed file that expected it. The map draws every ghost;
+ * `rankNotices` hears only the pairs with source in them (D166).
  */
 export function findGhosts(
   cochange: readonly Cochange[],
@@ -1033,7 +1058,10 @@ function failingTestFirst(ranked: readonly Ranked[], failing: ReadonlySet<string
 export function rankNotices(inputs: NoticeInputs): readonly Notice[] {
   const evidence = new Map(inputs.files.map((file) => [file.path, file] as const));
   const history = new Map(inputs.history.map((file) => [file.path, file] as const));
-  const ghosts = findGhosts(inputs.cochange, inputs.changed.map((file) => file.path), inputs.config.notices);
+  // A missing co-change is noise between two shore files, two docs or two build logs, so a pair is only heard when source is in it (D166).
+  const terrain = new Set(inputs.cells.flatMap((cell) => cell.organelles));
+  const sourced = inputs.cochange.filter((pair) => terrain.has(pair.a) || terrain.has(pair.b));
+  const ghosts = findGhosts(sourced, inputs.changed.map((file) => file.path), inputs.config.notices);
   const red = readRedSplit(inputs.checks.slots);
   const { severity } = inputs.config.notices;
 

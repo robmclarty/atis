@@ -90,9 +90,11 @@ test('the reach opens by cell, nearest first, each file with its hops and the in
 
 test('size opens every changed file with its kind and lines, the category its slots, the notices their ranks, other its files, and health the line it waits on', () => {
   const size = partsOf(DEMO, 'size');
-  expect(size.parts[0]?.heading).toBe('8 files');
+  // The terrain's files, which the block counts, then the shore's, named with their own tally and not counted in (D166).
+  expect(size.parts.map((part) => part.heading)).toEqual(['4 files', 'the shore, not counted · 4 files · +33 −8']);
   expect(size.parts[0]?.lines).toContain('modified libs/core/src/pm/index.ts · +18 −9');
   expect(size.parts[0]?.lines).toContain('deleted libs/core/src/pm/legacy.ts · +0 −' + String(DEMO.weather.changed.find((file) => file.path === 'libs/core/src/pm/legacy.ts')?.deleted ?? 0));
+  expect(size.parts[1]?.lines).toEqual(['modified README.md · +6 −2', 'modified libs/core/src/__tests__/pm.test.ts · +22 −5', 'modified notes.xyz · +3 −1', 'modified package.json · +2 −0']);
   const category = partsOf(DEMO, 'category');
   expect(category.parts[0]?.heading).toBe('IFR, set by the change alone');
   expect(category.parts[0]?.lines).toEqual(DEMO.weather.checks.slots.map((slot) => `${slot.name} · ${slot.skipped ? 'skipped' : slot.ok ? 'green' : 'red'}`));

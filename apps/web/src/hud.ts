@@ -11,7 +11,7 @@
  * DOM, so a test reads the blocks straight.
  */
 
-import { OTHER_GROUP, mutantOutcomes, readRedSplit } from 'core';
+import { OTHER_GROUP, changeSize, mutantOutcomes, readRedSplit } from 'core';
 import type { MapJson } from 'core';
 import { MUTED_DASH } from 'scene';
 
@@ -101,15 +101,15 @@ const mutantBlock = (map: MapJson): Block => {
 export const blocksOf = (map: MapJson): readonly Block[] => {
   const { changed, reach, checks } = map.weather;
   const cells = new Set(reach.map((entry) => entry.cell)).size;
-  const added = changed.reduce((total, file) => total + file.added, 0);
-  const deleted = changed.reduce((total, file) => total + file.deleted, 0);
+  // The size is the terrain's: the shore's docs, data and tests are named apart, in the block's parts (D166).
+  const size = changeSize(changed).terrain;
   const other = map.terrain.groups.find((group) => group.id === OTHER_GROUP);
   const blocks: readonly Block[] = [
     block('category', '', checks.category),
     coverageBlock(map),
     mutantBlock(map),
     block('reach', 'Reach', String(cells), ' cells'),
-    block('size', 'Size', `+${String(added)} ${MINUS}${String(deleted)}`, `, ${String(changed.length)} files`),
+    block('size', 'Size', `+${String(size.added)} ${MINUS}${String(size.deleted)}`, `, ${String(size.files)} files`),
     ...gateBlocks(map),
     muted('health', 'Health Δ', 'head-only'),
     block('notices', 'Notices', tallyOf(map)),

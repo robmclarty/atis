@@ -10,7 +10,7 @@
  * server shows the parts without it. Pure: no React, no DOM.
  */
 
-import { OTHER_GROUP, readRedSplit } from 'core';
+import { OTHER_GROUP, changeSize, readRedSplit } from 'core';
 import type { CheckSlot, MapJson } from 'core';
 
 import { rowsOf, tallyOf } from './notices.js';
@@ -97,14 +97,24 @@ const reachParts = (map: MapJson): Parts => {
   return { block, parts };
 };
 
-/** Every changed file with its kind and its lines added and deleted (D40, D120). */
+/**
+ * Every changed file with its kind and its lines added and deleted (D40,
+ * D120): the terrain's, which the block counts, and the shore's apart,
+ * named with its own tally and not counted in (D166).
+ */
 const sizeParts = (map: MapJson): Parts => {
   const { changed } = map.weather;
   if (changed.length === 0) return { block: 'size', parts: [], empty: 'no file changed' };
-  const lines = [...changed]
-    .toSorted((a, b) => byPath(a.path, b.path))
-    .map((file) => `${file.kind} ${file.from === undefined ? file.path : `${file.from} → ${file.path}`} ${DOT} +${String(file.added)} ${MINUS}${String(file.deleted)}`);
-  return { block: 'size', parts: [{ heading: `${String(changed.length)} files`, lines }] };
+  const linesOf = (onTerrain: boolean): readonly string[] =>
+    changed
+      .filter((file) => (file.cell !== undefined) === onTerrain)
+      .toSorted((a, b) => byPath(a.path, b.path))
+      .map((file) => `${file.kind} ${file.from === undefined ? file.path : `${file.from} → ${file.path}`} ${DOT} +${String(file.added)} ${MINUS}${String(file.deleted)}`);
+  const { terrain, shore } = changeSize(changed);
+  const parts: Part[] = [];
+  if (terrain.files > 0) parts.push({ heading: `${String(terrain.files)} files`, lines: linesOf(true) });
+  if (shore.files > 0) parts.push({ heading: `the shore, not counted ${DOT} ${String(shore.files)} files ${DOT} +${String(shore.added)} ${MINUS}${String(shore.deleted)}`, lines: linesOf(false) });
+  return { block: 'size', parts };
 };
 
 /** What a block opens, by its id. */

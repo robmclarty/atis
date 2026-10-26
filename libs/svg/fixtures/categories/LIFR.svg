@@ -153,12 +153,12 @@
         <text x="411.3" y="21.15" font-size="9" fill="#e6edf3"><tspan>Reach </tspan><tspan font-weight="bold">4</tspan><tspan> cells</tspan></text>
       </g>
       <g data-block="size">
-        <rect x="492.84" y="8" width="140.34" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="498.84" y="21.15" font-size="9" fill="#e6edf3"><tspan>Size </tspan><tspan font-weight="bold">+243 −102</tspan><tspan>, 8 files</tspan></text>
+        <rect x="492.84" y="8" width="134.76" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="498.84" y="21.15" font-size="9" fill="#e6edf3"><tspan>Size </tspan><tspan font-weight="bold">+210 −94</tspan><tspan>, 4 files</tspan></text>
       </g>
       <g data-block="gate">
-        <rect x="636.18" y="8" width="67.8" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="642.18" y="21.15" font-size="9" fill="#e6edf3"><tspan>Gate </tspan><tspan font-weight="bold">1</tspan><tspan> red</tspan></text>
+        <rect x="630.6" y="8" width="67.8" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="636.6" y="21.15" font-size="9" fill="#e6edf3"><tspan>Gate </tspan><tspan font-weight="bold">1</tspan><tspan> red</tspan></text>
       </g>
       <g data-block="standing">
         <rect x="10" y="31" width="90.12" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
