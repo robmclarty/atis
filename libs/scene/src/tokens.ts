@@ -184,6 +184,17 @@ export const STIPPLE_PITCH = 4;
 export const STIPPLE_DOT = 0.7;
 
 /**
+ * The whole-repo overlays (D101), each in the channel its measure owns (C11):
+ * a dead file is lit full and each dead export a share of it, a clone family
+ * echoes a file's outline in rings this far apart, and a baselined finding
+ * is drawn in the standing state's graphite, muted (D49).
+ */
+export const OVERLAY_DEAD_EXPORT_LEVEL = 0.25;
+export const OVERLAY_ECHO_GAP = 2.5;
+export const OVERLAY_ECHO_WIDTH = 1;
+export const OVERLAY_MUTED_STROKE = STANDING_STORM_FILL;
+
+/**
  * The chrome (§7, D12) is the other material: flat blocks, hard edges, high
  * contrast, one monospace face, and technical-drawing annotations. Nothing
  * here glows, blurs or grades. It frames the world on its own flat ground,

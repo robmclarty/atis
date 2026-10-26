@@ -15,6 +15,7 @@ export * from './lod.js';
 export * from './membranes.js';
 export * from './minimap.js';
 export * from './motion.js';
+export * from './overlays.js';
 export * from './picking.js';
 export * from './planet.js';
 export * from './shape.js';

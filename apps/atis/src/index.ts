@@ -46,6 +46,10 @@ opens it in a tab, and runs until interrupted.
                   coverage gaps, dead code, duplication, cycles, recent heat
                   and the findings a committed checkride.baseline.json
                   grandfathers; an overlay whose source is missing says why
+  --overlay <name>
+                  the one overlay --svg draws of the whole repo: trouble-spots
+                  (the default), ugly-spots, coverage-gaps, dead-code,
+                  duplication, cycles, recent-heat or baselined
   --out <file>    write the map to <file> and exit (default with --svg: map.json)
   --svg <file>    render the map as a static SVG at <file> and exit
   --open          open the rendered SVG in the platform viewer (needs --svg)

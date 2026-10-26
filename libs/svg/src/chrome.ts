@@ -27,7 +27,7 @@
  */
 
 import { OTHER_GROUP, changeSize, mutantOutcomes, readRedSplit } from 'core';
-import type { Contour, FlightCategory, Layout, MapJson, Notice, NoticeTier, Position } from 'core';
+import type { Contour, FlightCategory, Layout, MapJson, Notice, NoticeTier, OverlayName, Position } from 'core';
 import {
   CATEGORY_FONT_SIZE,
   CATEGORY_LETTERS,
@@ -68,10 +68,11 @@ import {
   VFR_HUE,
   healthDeltaOf,
   noticeAnchors,
+  overlayOf,
   shoreRail,
   weatherOf,
 } from 'scene';
-import type { NoticeAnchor } from 'scene';
+import type { NoticeAnchor, OverlayUnit } from 'scene';
 
 import { el, num } from './el.js';
 import type { Attrs, Markup } from './el.js';
@@ -124,6 +125,8 @@ export const CATEGORY_HUES: Readonly<Partial<Record<FlightCategory, string>>> = 
 /** The HUD blocks of §7, by their `data-block`, in the order the row draws them: the change's own evidence beside the category, then the red slots (D70). */
 export const HUD_ORDER: readonly string[] = [
   'category',
+  'repo',
+  'overlay',
   'patch-cov',
   'mutants',
   'reach',
@@ -293,15 +296,43 @@ function tierCounts(notices: readonly Notice[]): Readonly<Record<NoticeTier, num
   return counts;
 }
 
-/** The HUD row of §7 in `HUD_ORDER`; `Standing` only when some red is wholly standing (D70), `Other` only when the shore's `other` group is non-empty (D48). */
-function blocksOf(map: MapJson, notices: readonly Notice[]): readonly Block[] {
+/** How the HUD counts an overlay's entries, by its unit. */
+const UNITS: Readonly<Record<OverlayUnit, readonly [string, string]>> = {
+  file: ['file', 'files'],
+  finding: ['finding', 'findings'],
+  family: ['family', 'families'],
+  cycle: ['cycle', 'cycles'],
+};
+
+/**
+ * A `repo` map's own blocks (D101): the whole terrain's size, and the overlay
+ * the sheet draws, named and counted, or muted with the map's reason for
+ * holding none of it (C2).
+ */
+function repoBlocks(map: MapJson, overlay: OverlayName): readonly Block[] {
+  const view = overlayOf(map, overlay);
+  const files = map.terrain.organelles.length;
+  const repo = block('repo', 'Whole repo', String(files), files === 1 ? ' file' : ' files');
+  if (view === undefined || 'reason' in view) return [repo, muted('overlay', view?.title ?? overlay, view?.reason ?? 'absent')];
+  const [one, many] = UNITS[view.unit];
+  return [repo, block('overlay', view.title, String(view.count), ` ${view.count === 1 ? one : many}`)];
+}
+
+/**
+ * The HUD row of §7 in `HUD_ORDER`; `Standing` only when some red is wholly
+ * standing (D70), `Other` only when the shore's `other` group is non-empty
+ * (D48). A `repo` map changes nothing, so in place of the change's blocks it
+ * names its terrain and the overlay drawn over it (D101).
+ */
+function blocksOf(map: MapJson, notices: readonly Notice[], overlay?: OverlayName): readonly Block[] {
   const { changed, reach, checks } = map.weather;
   const cells = new Set(reach.map((entry) => entry.cell)).size;
   // The size is the terrain's: the shore's docs, data and tests are named apart, in the block's parts (D166).
   const size = changeSize(changed).terrain;
   const tiers = tierCounts(notices);
   const other = map.terrain.groups.find((group) => group.id === OTHER_GROUP);
-  const blocks: readonly Block[] = [
+  const others = other === undefined || other.files.length === 0 ? [] : [block('other', 'Other', String(other.files.length))];
+  const blocks: readonly Block[] = overlay !== undefined ? [block('category', '', checks.category), ...repoBlocks(map, overlay), ...gateBlocks(map), ...others] : [
     block('category', '', checks.category),
     coverageBlock(map),
     mutantBlock(map),
@@ -310,7 +341,7 @@ function blocksOf(map: MapJson, notices: readonly Notice[]): readonly Block[] {
     ...gateBlocks(map),
     healthBlock(map),
     block('notices', 'Notices', [tiers.primary, tiers.secondary, tiers.tertiary].map(String).join(DOT)),
-    ...(other === undefined || other.files.length === 0 ? [] : [block('other', 'Other', String(other.files.length))]),
+    ...others,
   ];
   const byId = new Map(blocks.map((entry) => [entry.id, entry] as const));
   return HUD_ORDER.flatMap((id) => {
@@ -756,12 +787,13 @@ function worldTopOf(map: MapJson, layout: Layout): number {
  * The canvas is the world plus the strip above it, the band below it and the
  * column beside it, as tall as the taller of the world with its band and the
  * list with the inset under it. The inset sits at the foot of the column,
- * below the last row, so it covers neither the world nor a notice (D87).
+ * below the last row, so it covers neither the world nor a notice (D87). A
+ * `repo` map's HUD names the overlay the sheet draws over it (D101).
  */
-export function drawChrome(map: MapJson, layout: Layout): Chrome {
+export function drawChrome(map: MapJson, layout: Layout, overlay?: OverlayName): Chrome {
   const width = layout.width + NOTICE_COLUMN;
   const ranked = noticesInBudget(map, layout);
-  const hud = layOutHud(blocksOf(map, ranked.map((entry) => entry.notice)), width);
+  const hud = layOutHud(blocksOf(map, ranked.map((entry) => entry.notice), overlay), width);
   const worldY = hud.height;
   const worldTop = worldTopOf(map, layout);
   const worldBottom = worldY + layout.height - worldTop;

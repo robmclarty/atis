@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 59 — feat(core): compute the whole-repo overlays
+**Current step:** 60 — feat(svg): render the whole-repo overlays in the still map
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -109,7 +109,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 56. feat(cli): map the working tree's uncommitted weather
 - ☑ 57. feat(core): build one weather frame per commit of a range
 - ☑ 58. feat(web): scrub a range's weather over one terrain
-- ☐ 59. feat(core): compute the whole-repo overlays
+- ☑ 59. feat(core): compute the whole-repo overlays
 - ☐ 60. feat(svg): render the whole-repo overlays in the still map
 - ☐ 61. feat(web): toggle overlays and switch bases from the HUD
 - ☐ 62. feat(core): record each file's functions for the file level
@@ -214,6 +214,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] actual's world takes 1.1 s from the map's arrival to its first frame (C14 world-budget), so the command keeps only 0.9 s of a 2 s first frame; actual's last second is on the page side, in apps/web
 - [x] A long range has no cap: `--range` writes a whole weather frame per commit and runs the reviewed repo's fallow on each commit's extraction once (cached after), so a hundred-commit range is a hundred frames in map.json and a slow first run; decide whether to cap or thin long ranges
 - [ ] the world's range-scrubber test (step 58) read 6 notice boxes for frame 0 once under the full suite's load and passed alone and on rerun: it counts [data-labels] marks as soon as data-scrub reads settled, so the labels may redraw a beat after the frame settles
+- [ ] on a repo map the still map's legend still keys a change's marks: its hatching row reads 'how much of it was rewritten lately' while hatching there means the drawn overlay (trouble spots or recent heat), and no row keys an overlay's ring or echo
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -2245,3 +2246,5 @@ folder, so it rides the branch into the PR.)*
   **5.** The scrubber cross-fades the world's weather at the motion budget's own rate; I checked it on this repo's range
 
   Each tick is one commit, filled in its frame's category hue, with the frame shown outlined in ink. The arrows, a click on a tick, or `,` and `.` step it. Every chrome block (grades, notices, rail, minimap, wiring) reads the frame it stands at. In the world each frame's weather is a layer of its own that fades in as the last fades out. The skin's reach and the planet's lights mix in place, all at `LOD_FADE_MS` (300 ms), and the step cuts under reduced motion (C12 (motion-budget)). I wrote `atis --range 8fa79cb..HEAD` of this run's first three commits (8.5 s cold, three frames) and opened it in Chrome. It opened on frame 3/3 at MVFR. Two `,` presses stepped it to 1/3 at NOINST with its own notices, over the same terrain, with one label layer left and a clean console. One visual is baked rather than a token: a tick is half the HUD font wide, and the arrows reuse the breadcrumb's 6 px padding.
+
+- 2026-10-26 — step 59 checkpointed · 20a0c0b90 — feat(core): compute the whole-repo overlays (1 drift, 27m)

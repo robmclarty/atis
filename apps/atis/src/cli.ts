@@ -9,6 +9,9 @@
 import { parseArgs } from 'node:util';
 import { fileURLToPath } from 'node:url';
 
+import { OVERLAY_NAMES } from 'core';
+import type { OverlayName } from 'core';
+
 import { USAGE, VERSION } from './index.js';
 import { run, serveRun } from './run.js';
 import type { HeadAsked, Outcome, RangeAsked } from './run.js';
@@ -23,6 +26,7 @@ const FLAGS = {
   'working-tree': { type: 'boolean' },
   range: { type: 'string' },
   'whole-repo': { type: 'boolean' },
+  overlay: { type: 'string' },
   out: { type: 'string' },
   svg: { type: 'string' },
   open: { type: 'boolean' },
@@ -44,6 +48,8 @@ type Flags = {
   readonly range?: string | undefined;
   /** `--whole-repo`: the repository at the head, with its overlays, rather than a change (D101). */
   readonly 'whole-repo'?: boolean | undefined;
+  /** `--overlay <name>`, as typed: the one overlay the still map of the whole repo draws (D101). */
+  readonly overlay?: string | undefined;
   readonly out?: string | undefined;
   readonly svg?: string | undefined;
   /** `--open` is true, `--no-open` false, and neither leaves it undefined. */
@@ -142,6 +148,26 @@ function wholeRepoOf(flags: Flags): { readonly wholeRepo: boolean } | { readonly
   return { wholeRepo: true };
 }
 
+/** An overlay as the command line names it: `trouble-spots` for the map's `trouble_spots`. */
+function flagName(name: OverlayName): string {
+  return name.replaceAll('_', '-');
+}
+
+/**
+ * The overlay the flags ask the still map to draw (D101): `--overlay <name>`
+ * draws one overlay of the whole repo's map, so it needs `--whole-repo` and
+ * `--svg` beside it, and a name the map knows (C4); none takes the renderer's
+ * default, trouble spots.
+ */
+function overlayOf(flags: Flags, wholeRepo: boolean): { readonly overlay: OverlayName | undefined } | { readonly reason: string } {
+  if (flags.overlay === undefined) return { overlay: undefined };
+  if (!wholeRepo) return { reason: '--overlay draws one overlay of the whole repo; it needs --whole-repo' };
+  if (flags.svg === undefined) return { reason: '--overlay names what the still map draws; it needs --svg <file>' };
+  const overlay = OVERLAY_NAMES.find((name) => flagName(name) === flags.overlay);
+  if (overlay === undefined) return { reason: `--overlay takes one of ${OVERLAY_NAMES.map(flagName).join(', ')}` };
+  return { overlay };
+}
+
 async function main(argv: readonly string[]): Promise<Outcome> {
   const parsed = parseFlags(argv);
   if ('reason' in parsed) return misuse(parsed.reason);
@@ -152,6 +178,9 @@ async function main(argv: readonly string[]): Promise<Outcome> {
   const whole = wholeRepoOf(flags);
   if ('reason' in whole) return misuse(whole.reason);
   const { wholeRepo } = whole;
+  const drawn = overlayOf(flags, wholeRepo);
+  if ('reason' in drawn) return misuse(drawn.reason);
+  const { overlay } = drawn;
   const ranged = rangeOf(flags);
   if ('reason' in ranged) return misuse(ranged.reason);
   const { range } = ranged;
@@ -173,7 +202,7 @@ async function main(argv: readonly string[]): Promise<Outcome> {
   if (serves) return serveRun({ repo, base, head, range, wholeRepo, assets: webDir(), open: flags.open !== false, verbose, cache, history });
 
   if (flags.open === true && flags.svg === undefined) return misuse('--open needs --svg <file>');
-  return run({ repo, base, head, range, wholeRepo, out: flags.out ?? DEFAULT_OUT, svg: flags.svg, open: flags.open === true, verbose, cache, history });
+  return run({ repo, base, head, range, wholeRepo, out: flags.out ?? DEFAULT_OUT, svg: flags.svg, overlay, open: flags.open === true, verbose, cache, history });
 }
 
 const outcome = await main(process.argv.slice(2));

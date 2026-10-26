@@ -581,3 +581,25 @@ test('--whole-repo beside a flag that names a base, a range or the working tree 
     expect(result.stderr).toContain(reason);
   }
 }, MINUTE);
+
+test('--overlay names the one overlay the still map of the whole repo draws, and its HUD names it too (D101)', () => {
+  const { repo } = featureClone('overlay');
+  const dir = temp('overlay-maps');
+  writeCheck(repo, { 'dead.json': { unused_exports: [{ path: 'src/shapes.ts', export_name: 'area', line: 1 }] } });
+
+  const svg = join(dir, 'dead.svg');
+  expect(run({ repo, wholeRepo: true, out: join(dir, 'map.json'), svg, overlay: 'dead_code', verbose: false }).exitCode).toBe(0);
+  const drawn = readFileSync(svg, 'utf8');
+  expect(drawn).toContain('<g id="overlay" data-overlay="dead_code" data-channel="luminance"');
+  expect(drawn).toContain('<tspan>Dead code </tspan><tspan font-weight="bold">1</tspan><tspan> finding</tspan>');
+
+  for (const [args, reason] of [
+    [['--base', 'HEAD~1', '--svg', svg, '--overlay', 'cycles'], '--overlay draws one overlay of the whole repo; it needs --whole-repo'],
+    [['--whole-repo', '--out', join(dir, 'm.json'), '--overlay', 'cycles'], '--overlay names what the still map draws; it needs --svg <file>'],
+    [['--whole-repo', '--svg', svg, '--overlay', 'dead_code'], '--overlay takes one of trouble-spots, ugly-spots, coverage-gaps, dead-code, duplication, cycles, recent-heat, baselined'],
+  ] as const) {
+    const result = atis(['--repo', repo, ...args]);
+    expect(result.status, args.join(' ')).toBe(2);
+    expect(result.stderr).toContain(reason);
+  }
+}, MINUTE);

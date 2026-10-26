@@ -193,6 +193,25 @@ global red slot names no cell and hangs no storm.
 | `STANDING_STORM_FILL` | `#58616b` | `#standing-storms`: the graphite bolt of a red slot over a cell the change did not touch |
 | `STANDING_STORM_SCALE` | `0.6` | how much smaller that bolt is than a change storm's |
 
+## The whole repo's overlays
+
+A `repo` map has no change, so in place of weather the still map draws one of
+its overlays at a time (D101), in the channel its measure owns (C11). Trouble
+spots and recent heat are history, so they are the churn hatching, at
+`TEXTURE_MAX_OPACITY` times the file's level. Ugly spots, coverage gaps and dead
+code are what the checks found, so each is a ring of `EVIDENCE_LIGHT` just past
+the file's edge, as a skin's gap is, lit at its level. Duplication echoes a
+clone family's files in two rings, a cycle rings its files in `LIFR_HUE`, and a
+finding checkride's committed baseline grandfathers is ringed in the standing
+state's graphite, muted (D49). The HUD names the overlay drawn and counts it.
+
+| Token | Value | Where it appears |
+| --- | --- | --- |
+| `OVERLAY_DEAD_EXPORT_LEVEL` | `0.25` | `#overlay`: the share of full light each dead export lights its file with; a dead file is lit full |
+| `OVERLAY_ECHO_GAP` | `2.5` | how far apart a clone family's two echo rings sit past the file's edge |
+| `OVERLAY_ECHO_WIDTH` | `1` | each echo ring's stroke, in `GLYPH_STROKE` |
+| `OVERLAY_MUTED_STROKE` | `#58616b` | the graphite ring of a baselined finding, `STANDING_STORM_FILL`'s |
+
 ## Chrome (the brutalist frame)
 
 The chrome frames the world rather than covering it (§7, §5.4, D12): a strip of

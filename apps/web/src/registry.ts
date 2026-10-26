@@ -122,6 +122,10 @@ export const SECTIONS: readonly Section[] = [
     names: ['GHOST_STROKE', 'GHOST_DASH', 'GHOST_PAD', 'STORM_LABEL_SIZE', 'STORM_LABEL_GAP', 'STORM_LIFT', 'STORM_ROW', 'STANDING_STORM_FILL', 'STANDING_STORM_SCALE'],
   },
   {
+    title: "The whole repo's overlays",
+    names: ['OVERLAY_DEAD_EXPORT_LEVEL', 'OVERLAY_ECHO_GAP', 'OVERLAY_ECHO_WIDTH', 'OVERLAY_MUTED_STROKE'],
+  },
+  {
     title: 'Chrome (the brutalist frame)',
     names: [
       'CHROME_GROUND',

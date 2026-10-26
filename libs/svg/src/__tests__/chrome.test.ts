@@ -216,17 +216,19 @@ function slotsSet(map: MapJson, red: Readonly<Record<string, RedScope>>, green: 
 
 test('the HUD draws the blocks of §7 in order, with Standing only when some red is standing and Other only when the other group has files', () => {
   // The change's own evidence sits beside the category; the gate and the standing state follow it (D70).
-  expect(HUD_ORDER).toEqual(['category', 'patch-cov', 'mutants', 'reach', 'size', 'gate', 'standing', 'health', 'notices', 'other']);
+  // A repo map's own two blocks take the change's place, so a change map draws neither (D101).
+  expect(HUD_ORDER).toEqual(['category', 'repo', 'overlay', 'patch-cov', 'mutants', 'reach', 'size', 'gate', 'standing', 'health', 'notices', 'other']);
   const map = demo();
-  expect(blockIds(chromeOf(renderSvg(map)))).toEqual(HUD_ORDER);
+  const changeOrder = HUD_ORDER.filter((id) => id !== 'repo' && id !== 'overlay');
+  expect(blockIds(chromeOf(renderSvg(map)))).toEqual(changeOrder);
 
   const groups = map.terrain.groups.filter((entry) => entry.id !== 'other');
   const without = chromeOf(renderSvg({ ...map, terrain: { ...map.terrain, groups } }));
-  expect(blockIds(without)).toEqual(HUD_ORDER.filter((id) => id !== 'other'));
+  expect(blockIds(without)).toEqual(changeOrder.filter((id) => id !== 'other'));
 
   // `dead` names only untouched files; green, nothing is standing and the block is not drawn.
   const clear = chromeOf(renderSvg(slotsSet(map, {}, ['dead'])));
-  expect(blockIds(clear)).toEqual(HUD_ORDER.filter((id) => id !== 'standing'));
+  expect(blockIds(clear)).toEqual(changeOrder.filter((id) => id !== 'standing'));
 });
 
 test('every HUD number is read from the map', () => {

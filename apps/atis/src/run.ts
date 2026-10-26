@@ -52,7 +52,7 @@ import { platform, tmpdir } from 'node:os';
 import { basename, join, relative, resolve } from 'node:path';
 
 import { DEFAULT_CONFIG, OVERLAY_NAMES, buildMap, buildRepoMap, layOutTerrain } from 'core';
-import type { CheckBaseline, Commit, FrameInputs, Layout, MapJson, Structure } from 'core';
+import type { CheckBaseline, Commit, FrameInputs, Layout, MapJson, OverlayName, Structure } from 'core';
 import { renderSvg } from 'svg';
 
 import {
@@ -118,6 +118,8 @@ export type Options = {
   readonly out: string;
   /** Where to write the still SVG (D33); when absent, only `map.json` is written. */
   readonly svg?: string | undefined;
+  /** The overlay the still SVG of the whole repo draws, trouble spots when absent (D101). */
+  readonly overlay?: OverlayName | undefined;
   /** Hand the SVG to the platform opener once written; a no-op under a test run. */
   readonly open?: boolean | undefined;
   /** Print the per-source timings D50 asks for on stderr, and whether the terrain cache hit. */
@@ -642,7 +644,7 @@ export function run(options: Options): Outcome {
 
     if (options.svg !== undefined) {
       const svgOut = resolve(options.svg);
-      const svg = timed(timings, 'render', () => renderSvg(map));
+      const svg = timed(timings, 'render', () => renderSvg(map, { overlay: options.overlay }));
       timed(timings, 'write svg', () => {
         writeAtomic(svgOut, svg);
       });
