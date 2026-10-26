@@ -16,6 +16,7 @@ export * from './minimap.js';
 export * from './notices.js';
 export * from './overlays.js';
 export * from './parts.js';
+export * from './radar.js';
 export * from './rail.js';
 export * from './scrubber.js';
 export * from './status.js';

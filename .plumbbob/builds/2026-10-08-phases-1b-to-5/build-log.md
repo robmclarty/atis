@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 64 — feat(web): show a changed file's diff or open it in the editor
+**Current step:** 65 — feat(web): open the health radar from the HUD
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -114,7 +114,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 61. feat(web): toggle overlays and switch bases from the HUD
 - ☑ 62. feat(core): record each file's functions for the file level
 - ☑ 63. feat(web): open a file into its functions, hunks and coverage strip
-- ☐ 64. feat(web): show a changed file's diff or open it in the editor
+- ☑ 64. feat(web): show a changed file's diff or open it in the editor
 - ☐ 65. feat(web): open the health radar from the HUD
 - ☐ 66. perf(web): collapse cells into composites past 5,000 files
 - ☐ 67. refactor(cli): give atis subcommands beside its map flags
@@ -217,6 +217,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [ ] on a repo map the still map's legend still keys a change's marks: its hatching row reads 'how much of it was rewritten lately' while hatching there means the drawn overlay (trouble spots or recent heat), and no row keys an overlay's ring or echo
 - [ ] the world smoke test's range scrubber case flaked once under the full suite's load (6 label marks at frame 0, expected 0) and passed alone three times
 - [ ] the served run tells the page the branch's PR, so the diff sheet's PR link shows without a ?pr= parameter (step 71's gh lookup knows it)
+- [ ] record each changed file's raw cyclomatic, cognitive and CRAP (its functions' worst) in the map, so the health radar's raw view stops muting its three complexity spokes
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -2254,3 +2255,4 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-26 — step 61 checkpointed · bc8c7200a — feat(web): toggle overlays and switch bases from the HUD (1 drift, 21m)
 - 2026-10-26 — step 62 checkpointed · 3e7093def — feat(core): record each file's functions for the file level (1 drift, 10m)
 - 2026-10-26 — step 63 checkpointed · 73447abce — feat(web): open a file into its functions, hunks and coverage strip (1 drift, 9m)
+- 2026-10-26 — step 64 checkpointed · e5fbe48de — feat(web): show a changed file's diff or open it in the editor (77m)

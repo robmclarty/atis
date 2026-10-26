@@ -8,7 +8,8 @@
  * would be (C2, D41). The words are `hud.ts`'s, the still sheet's block for
  * block. The blocks wrap when the screen is narrow, and each opens its parts
  * beneath the row on click, one block at a time, a second click closing it
- * (step 36). Last in the row stands the `key` block, which the world's legend
+ * (step 36); the Health Δ block opens the health radar beneath its parts
+ * (D103). Last in the row stands the `key` block, which the world's legend
  * inset folds into (D87, D166): closed at load, so it never covers the world
  * unasked, it opens the legend beneath the row as a block opens its parts,
  * and a second click or Esc folds it away again. Every token is read live
@@ -48,6 +49,7 @@ import { hudType } from '../screen.js';
 import { Legend } from './legend.js';
 import { useLive } from './live.js';
 import { PartsPanel } from './parts.js';
+import { HealthRadar } from './radar.js';
 
 /** The tokens the row is drawn with, at rest: the shape its live view takes. */
 const LOOK = {
@@ -172,6 +174,7 @@ export const Hud = ({ map, registry, token, overlay }: { readonly map: MapJson; 
         </button>
       </nav>
       {parts !== undefined && <PartsPanel parts={parts} token={token} size={type.text} registry={registry} />}
+      {open === 'health' && <HealthRadar map={map} registry={registry} size={type.text} />}
       {keyOpen && (
         <div style={{ margin: `0 ${String(look.CHROME_PAD)}px`, display: 'flex' }}>
           <Legend registry={registry} />
