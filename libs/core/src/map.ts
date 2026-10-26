@@ -23,8 +23,8 @@ import type { Config } from './config.js';
 import { computeDependencies } from './dependencies.js';
 import { computeDepth } from './depth.js';
 import type { Depths, FileDepth } from './depth.js';
-import { compareStructure, computeCategory, computeEvidence, dentsFrom, trustCoverage } from './evidence.js';
-import type { CheckArtifacts, Dupes, Health, Structure } from './evidence.js';
+import { compareStructure, computeCategory, computeEvidence, dentsFrom, rulesOf, trustCoverage } from './evidence.js';
+import type { CheckArtifacts, Dupes, Health, HealthFinding, Structure } from './evidence.js';
 import { OTHER_GROUP, identifyGroups, shoreMatcher } from './groups.js';
 import { computeHistory } from './history.js';
 import type { Commit, CommitFile, FileHistory } from './history.js';
@@ -44,6 +44,7 @@ import type {
   DepAdded,
   DepMoved,
   ExceptionalEdge,
+  FileFunction,
   Frame,
   Group,
   Instruments,
@@ -69,6 +70,12 @@ export type ScanMember = PublishingMember & { readonly dir: string; readonly ent
 /** How a scan's entry points were looked up: through the reviewed repo's fallow (D22), or the manifests alone and why (C2). */
 export type EntryPointLookup = { readonly source: 'fallow' } | { readonly source: 'manifests'; readonly reason: string };
 
+/** One named function of a scanned file (D102): its name, the line it starts on and how many lines it spans. */
+export type ScanFunction = { readonly name: string; readonly line: number; readonly line_count: number };
+
+/** A scanned file, with the functions the scan read in it where it read them (D102). */
+export type ScanFileOf = ScanFile & { readonly functions?: readonly ScanFunction[] };
+
 /**
  * One extracted commit, as the CLI's import scan read it (D21). The shape is
  * declared here rather than beside the scanner because core cannot import the
@@ -76,7 +83,7 @@ export type EntryPointLookup = { readonly source: 'fallow' } | { readonly source
  * `history.ts` owns `Commit` and `evidence.ts` owns `CheckArtifacts`.
  */
 export type Scan = {
-  readonly files: readonly ScanFile[];
+  readonly files: readonly ScanFileOf[];
   readonly edges: readonly NamedEdge[];
   readonly members: readonly ScanMember[];
   readonly entry_points: EntryPointLookup;
@@ -331,6 +338,53 @@ function cloneFamilies(dupes: Dupes | undefined): ReadonlyMap<string, string> {
   return of;
 }
 
+/** What a function fallow names but the scan bound to no name is called when fallow names it nothing either. */
+const ANONYMOUS = '<anonymous>';
+
+/**
+ * One file's functions with what fallow found in them (D102): each finding
+ * joins the function that starts on its line, the one of its name on that
+ * line first, else the one of its name whose lines hold it; a finding no
+ * scanned function takes, a callback the scan bound to no name, stands as a
+ * function of its own under fallow's name for it. With no findings read, no
+ * function carries breaches, since none were looked for (C2).
+ */
+function joinFunctions(scanned: readonly ScanFunction[], findings: readonly HealthFinding[] | undefined): readonly FileFunction[] {
+  const byLine = (a: FileFunction, b: FileFunction): number => a.line - b.line || byPath(a.name, b.name);
+  if (findings === undefined) return scanned.map(({ name, line, line_count }): FileFunction => ({ name, line, line_count })).toSorted(byLine);
+  const rules = new Map<ScanFunction, Set<string>>(scanned.map((fn) => [fn, new Set<string>()] as const));
+  const alone = new Map<string, { readonly fn: FileFunction; readonly rules: Set<string> }>();
+  for (const finding of findings) {
+    const within = (fn: ScanFunction): boolean => finding.line >= fn.line && finding.line < fn.line + fn.line_count;
+    const joined =
+      scanned.find((fn) => fn.line === finding.line && fn.name === finding.name) ??
+      scanned.find((fn) => fn.line === finding.line) ??
+      scanned.find((fn) => fn.name === finding.name && within(fn));
+    if (joined !== undefined) {
+      for (const rule of rulesOf(finding.exceeded)) rules.get(joined)?.add(rule);
+      continue;
+    }
+    const name = finding.name ?? ANONYMOUS;
+    const key = `${String(finding.line)}\n${name}`;
+    const own = alone.get(key) ?? { fn: { name, line: finding.line, line_count: finding.line_count }, rules: new Set<string>() };
+    for (const rule of rulesOf(finding.exceeded)) own.rules.add(rule);
+    alone.set(key, own);
+  }
+  return [
+    ...scanned.map((fn): FileFunction => ({ name: fn.name, line: fn.line, line_count: fn.line_count, breaches: sortUnique(rules.get(fn) ?? []) })),
+    ...[...alone.values()].map(({ fn, rules: own }): FileFunction => ({ ...fn, breaches: sortUnique(own) })),
+  ].toSorted(byLine);
+}
+
+/** Each head file's functions, by path, where the head scan read them (D102); a file it read none in is left out (C2). */
+function fileFunctions(files: readonly ScanFileOf[], health: Health | undefined): ReadonlyMap<string, readonly FileFunction[]> {
+  const findings = new Map<string, HealthFinding[]>();
+  for (const finding of health?.findings ?? []) findings.set(finding.path, [...(findings.get(finding.path) ?? []), finding]);
+  return new Map(
+    files.flatMap((file) => (file.functions === undefined ? [] : [[file.path, joinFunctions(file.functions, health === undefined ? undefined : (findings.get(file.path) ?? []))] as const])),
+  );
+}
+
 function functionCounts(health: Health | undefined): ReadonlyMap<string, number> {
   return new Map((health?.file_scores ?? []).map((score) => [score.path, score.function_count] as const));
 }
@@ -458,6 +512,8 @@ type Signals = {
   readonly dents: ReadonlyMap<string, readonly string[]>;
   readonly family: ReadonlyMap<string, string>;
   readonly functions: ReadonlyMap<string, number>;
+  /** Each head file's functions with fallow's findings joined to them (D102). */
+  readonly bodies: ReadonlyMap<string, readonly FileFunction[]>;
   readonly history: ReadonlyMap<string, FileHistory>;
   readonly stability: ReadonlyMap<string, Stability>;
   readonly ties: ReadonlyMap<string, Ties>;
@@ -537,6 +593,7 @@ function assembleOrganelles(modules: Modules, signals: Signals): readonly Organe
       const ties = signals.ties.get(organelle.path);
       const packageTies = signals.packageTies.get(organelle.path);
       const functions = signals.functions.get(organelle.path);
+      const bodies = signals.bodies.get(organelle.path);
       const family = signals.family.get(organelle.path);
       return {
         id: organelle.id,
@@ -554,6 +611,7 @@ function assembleOrganelles(modules: Modules, signals: Signals): readonly Organe
         ...(ties === undefined ? {} : { ties }),
         ...(packageTies === undefined ? {} : { package_ties: packageTies }),
         ...(family === undefined ? {} : { clone_family: family }),
+        ...(bodies === undefined ? {} : { functions: bodies }),
       };
     })
     .toSorted((a, b) => byPath(a.id, b.id));
@@ -697,6 +755,7 @@ function assemble(inputs: BuildInputs, config: Config): Assembled {
     dents: dentsOf(check),
     family: cloneFamilies(ran?.dupes),
     functions: functionCounts(ran?.health),
+    bodies: fileFunctions(head.files.filter((file) => !deleted.has(file.path)), ran?.health),
     history: new Map(history.files.map((file) => [file.path, file] as const)),
     stability: new Map(history.stability.map(({ path, ...settled }) => [path, settled] as const)),
     ties: computeTies(modules.organelles, head.edges, deleted),

@@ -46,7 +46,7 @@ const KEY: TerrainKey = { code: 'c'.repeat(64), config: configKey(DEFAULT_CONFIG
 
 const TERRAIN: BaseTerrain = {
   scan: { files: [], edges: [], members: [], entry_points: { source: 'manifests', reason: 'no fallow in the tree' } },
-  parsed: { 'src/a.ts': { loc: 3, code: [{ start: 1, end: 3 }], exports: ['a'], shapes: { a: 'const a: number;' }, inferred: [], references: [], stars: [] } },
+  parsed: { 'src/a.ts': { loc: 3, code: [{ start: 1, end: 3 }], exports: ['a'], shapes: { a: 'const a: number;' }, inferred: [], references: [], stars: [], functions: [] } },
   commits: [{ sha: SHA, time: 1_700_000_000, subject: 'feat: the first', files: [{ path: 'src/a.ts', added: 3, deleted: 0 }] }],
   layout: { width: 480, height: 96, shore: { y0: 0, y1: 0 }, bands: [{ index: 0, y0: 0, y1: 96 }], positions: { 'src/a.ts': { x: 60, y: 48, r: 6 } } },
 };

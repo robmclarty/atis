@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 61 — feat(web): toggle overlays and switch bases from the HUD
+**Current step:** 62 — feat(core): record each file's functions for the file level
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -111,7 +111,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 58. feat(web): scrub a range's weather over one terrain
 - ☑ 59. feat(core): compute the whole-repo overlays
 - ☑ 60. feat(svg): render the whole-repo overlays in the still map
-- ☐ 61. feat(web): toggle overlays and switch bases from the HUD
+- ☑ 61. feat(web): toggle overlays and switch bases from the HUD
 - ☐ 62. feat(core): record each file's functions for the file level
 - ☐ 63. feat(web): open a file into its functions, hunks and coverage strip
 - ☐ 64. feat(web): show a changed file's diff or open it in the editor
@@ -2249,3 +2249,4 @@ folder, so it rides the branch into the PR.)*
 
 - 2026-10-26 — step 59 checkpointed · 20a0c0b90 — feat(core): compute the whole-repo overlays (1 drift, 27m)
 - 2026-10-26 — step 60 checkpointed · 1f789705e — feat(svg): render the whole-repo overlays in the still map (1 drift, 14m)
+- 2026-10-26 — step 61 checkpointed · bc8c7200a — feat(web): toggle overlays and switch bases from the HUD (1 drift, 21m)

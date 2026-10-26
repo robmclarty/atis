@@ -56,6 +56,16 @@ export type Stability = { readonly age_days: number; readonly churn_ratio?: numb
  */
 export type Ties = { readonly inside: number; readonly outside: number };
 
+/**
+ * One function of a file at head, for the file level (D102): its name, the
+ * line it starts on and how many lines it spans, and, where `health.json`
+ * was read, every one of fallow's thresholds it breaks, none for one within
+ * them; absent with no health read, which is no evidence rather than no
+ * breach (C2). A function fallow names that the scan bound to no name, a
+ * callback, carries fallow's name for it.
+ */
+export type FileFunction = { readonly name: string; readonly line: number; readonly line_count: number; readonly breaches?: readonly string[] };
+
 /** A file inside a cell. `id` is the head path; a deleted file keeps its base path (D40). */
 export type Organelle = {
   readonly id: string;
@@ -80,6 +90,12 @@ export type Organelle = {
    */
   readonly package_ties?: Ties;
   readonly clone_family?: string;
+  /**
+   * Every function the head scan read in it, by the line it starts on
+   * (D102); an added key (D85), absent on a deleted file and on a file the
+   * head scan read no functions in.
+   */
+  readonly functions?: readonly FileFunction[];
 };
 
 export type Band = { readonly index: number; readonly depth_min: number; readonly depth_max: number };
@@ -515,6 +531,23 @@ function assertStability(value: unknown, path: string): void {
   if (churn !== undefined && !isCount(churn)) fail(`${path}.churn_ratio`, 'expected a non-negative number');
 }
 
+/** A file's functions are named, each starts on a line and spans at least one, sorted by line, and a breach names a rule. */
+function assertFunctions(value: unknown, path: string): void {
+  let previous = 0;
+  expectArray(value, path).forEach((raw, index) => {
+    const at = `${path}[${String(index)}]`;
+    const fn = expectRecord(raw, at);
+    expectString(fn['name'], `${at}.name`);
+    const line = fn['line'];
+    if (!isWholeCount(line) || line < 1) fail(`${at}.line`, 'expected a line of at least 1');
+    if (line < previous) fail(`${at}.line`, `expected the functions sorted by line, got ${String(line)} after ${String(previous)}`);
+    previous = line;
+    const count = fn['line_count'];
+    if (!isWholeCount(count) || count < 1) fail(`${at}.line_count`, 'expected at least one line');
+    if (fn['breaches'] !== undefined) expectArray(fn['breaches'], `${at}.breaches`).forEach((rule, n) => expectString(rule, `${at}.breaches[${String(n)}]`));
+  });
+}
+
 /** Ties are two counts of edges, whole and never negative. */
 function assertTies(value: unknown, path: string): void {
   const ties = expectRecord(value, path);
@@ -668,6 +701,7 @@ function assertShape(value: unknown): asserts value is MapJson {
     if (organelle['package_ties'] !== undefined) {
       assertTies(organelle['package_ties'], `terrain.organelles[${String(index)}].package_ties`);
     }
+    if (organelle['functions'] !== undefined) assertFunctions(organelle['functions'], `terrain.organelles[${String(index)}].functions`);
   });
 
   const layout = terrain['layout'];

@@ -6,12 +6,12 @@ import { expect, test } from 'vitest';
 
 import { DEFAULT_CONFIG } from '../config.js';
 import { COVERAGE_UNNAMED } from '../evidence.js';
-import type { CheckArtifacts, Dead, Structure } from '../evidence.js';
+import type { CheckArtifacts, Dead, Health, Structure } from '../evidence.js';
 import { buildMap } from '../map.js';
 import type { BuildInputs, EntryPointLookup, FrameInputs } from '../map.js';
 import type { ExportShapes } from '../notices.js';
 import { assertMap } from '../schema.js';
-import type { Instruments } from '../schema.js';
+import type { Instruments, Organelle } from '../schema.js';
 
 /**
  * The fixtures are committed JSON rather than a built object, so the golden is
@@ -635,4 +635,71 @@ test('a file only an earlier commit had keeps its changed entry, is named unplac
   expect(frame?.weather.changed.find((file) => file.path === gone)?.kind).toBe('added');
   expect(frame?.weather.wiring?.some((edge) => edge.from === gone || edge.to === gone)).toBe(false);
   expect(map.terrain.organelles.some((organelle) => organelle.id === gone)).toBe(false);
+});
+
+const TOOLS = 'libs/core/src/pm/tools.ts';
+
+/** The demo with fallow's health findings swapped for `findings`, its other channels as they were. */
+function withFindings(findings: Health['findings']): BuildInputs {
+  const inputs = inputsFor('demo');
+  const { check } = inputs;
+  if (check.mode !== 'check' || check.health === undefined) throw new Error("the demo's .check/ holds health.json");
+  return { ...inputs, check: { ...check, health: { ...check.health, findings } } };
+}
+
+function functionsOf(map: ReturnType<typeof buildMap>, path: string): Organelle['functions'] {
+  return map.terrain.organelles.find((organelle) => organelle.path === path)?.functions;
+}
+
+test("each file carries the functions the head scan read, each with the thresholds fallow found it break, and a deleted file none (D102)", () => {
+  const map = buildMap(inputsFor('demo'), DEFAULT_CONFIG);
+
+  // The one finding, on `resolveTool`'s first line, joins it; a compound `exceeded` is split one rule per threshold.
+  expect(functionsOf(map, TOOLS)).toEqual([
+    { name: 'localBin', line: 4, line_count: 30, breaches: [] },
+    { name: 'resolveTool', line: 41, line_count: 38, breaches: ['crap', 'cyclomatic'] },
+    { name: 'toolName', line: 82, line_count: 10, breaches: [] },
+  ]);
+  // A barrel the scan read no function in carries an empty list, and the deleted file nothing at all (C2).
+  expect(functionsOf(map, 'libs/core/src/index.ts')).toEqual([]);
+  expect(functionsOf(map, 'libs/core/src/pm/legacy.ts')).toBeUndefined();
+});
+
+test('a finding joins the function of its name whose lines hold it, and one the scan bound to no name stands as a function of its own (D102)', () => {
+  const map = buildMap(
+    withFindings([
+      { path: TOOLS, exceeded: 'cognitive', line: 10, line_count: 3, name: 'localBin' },
+      { path: TOOLS, exceeded: 'both', line: 50, line_count: 12, name: '<arrow>' },
+      { path: TOOLS, exceeded: 'crap', line: 50, line_count: 12, name: '<arrow>' },
+    ]),
+    DEFAULT_CONFIG,
+  );
+
+  expect(functionsOf(map, TOOLS)).toEqual([
+    { name: 'localBin', line: 4, line_count: 30, breaches: ['cognitive'] },
+    { name: 'resolveTool', line: 41, line_count: 38, breaches: [] },
+    { name: '<arrow>', line: 50, line_count: 12, breaches: ['cognitive', 'crap', 'cyclomatic'] },
+    { name: 'toolName', line: 82, line_count: 10, breaches: [] },
+  ]);
+});
+
+test('with no health.json read, a function carries no breaches, since none were looked for (C2)', () => {
+  const map = buildMap({ ...inputsFor('demo'), check: { mode: 'git-only', reason: '.check/ is absent' } }, DEFAULT_CONFIG);
+
+  expect(functionsOf(map, TOOLS)).toEqual([
+    { name: 'localBin', line: 4, line_count: 30 },
+    { name: 'resolveTool', line: 41, line_count: 38 },
+    { name: 'toolName', line: 82, line_count: 10 },
+  ]);
+  expect(() => assertMap(map)).not.toThrow();
+});
+
+test('assertMap refuses a function out of line order or spanning no line', () => {
+  const map = buildMap(inputsFor('demo'), DEFAULT_CONFIG);
+  const swap = (functions: unknown): unknown => ({
+    ...map,
+    terrain: { ...map.terrain, organelles: map.terrain.organelles.map((organelle) => (organelle.path === TOOLS ? { ...organelle, functions } : organelle)) },
+  });
+  expect(() => assertMap(swap([{ name: 'b', line: 9, line_count: 1 }, { name: 'a', line: 2, line_count: 1 }]))).toThrow(/sorted by line/);
+  expect(() => assertMap(swap([{ name: 'a', line: 2, line_count: 0 }]))).toThrow(/at least one line/);
 });

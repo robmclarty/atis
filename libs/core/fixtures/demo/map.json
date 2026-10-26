@@ -167,7 +167,27 @@
         "package_ties": {
           "inside": 1,
           "outside": 2
-        }
+        },
+        "functions": [
+          {
+            "name": "runDoctor",
+            "line": 12,
+            "line_count": 64,
+            "breaches": []
+          },
+          {
+            "name": "checkSlot",
+            "line": 80,
+            "line_count": 42,
+            "breaches": []
+          },
+          {
+            "name": "report",
+            "line": 130,
+            "line_count": 36,
+            "breaches": []
+          }
+        ]
       },
       {
         "id": "apps/cli/src/index.ts",
@@ -189,7 +209,15 @@
         "package_ties": {
           "inside": 1,
           "outside": 0
-        }
+        },
+        "functions": [
+          {
+            "name": "main",
+            "line": 5,
+            "line_count": 18,
+            "breaches": []
+          }
+        ]
       },
       {
         "id": "libs/core/src/index.ts",
@@ -211,7 +239,8 @@
         "package_ties": {
           "inside": 1,
           "outside": 1
-        }
+        },
+        "functions": []
       },
       {
         "id": "libs/core/src/pm/index.ts",
@@ -236,7 +265,21 @@
         "package_ties": {
           "inside": 3,
           "outside": 1
-        }
+        },
+        "functions": [
+          {
+            "name": "resolveSlot",
+            "line": 6,
+            "line_count": 20,
+            "breaches": []
+          },
+          {
+            "name": "listSlots",
+            "line": 28,
+            "line_count": 10,
+            "breaches": []
+          }
+        ]
       },
       {
         "id": "libs/core/src/pm/legacy.ts",
@@ -273,7 +316,21 @@
           "inside": 2,
           "outside": 0
         },
-        "clone_family": "family-1"
+        "clone_family": "family-1",
+        "functions": [
+          {
+            "name": "slotOf",
+            "line": 4,
+            "line_count": 30,
+            "breaches": []
+          },
+          {
+            "name": "orderSlots",
+            "line": 40,
+            "line_count": 25,
+            "breaches": []
+          }
+        ]
       },
       {
         "id": "libs/core/src/pm/tools.ts",
@@ -302,7 +359,30 @@
           "inside": 2,
           "outside": 0
         },
-        "clone_family": "family-1"
+        "clone_family": "family-1",
+        "functions": [
+          {
+            "name": "localBin",
+            "line": 4,
+            "line_count": 30,
+            "breaches": []
+          },
+          {
+            "name": "resolveTool",
+            "line": 41,
+            "line_count": 38,
+            "breaches": [
+              "crap",
+              "cyclomatic"
+            ]
+          },
+          {
+            "name": "toolName",
+            "line": 82,
+            "line_count": 10,
+            "breaches": []
+          }
+        ]
       },
       {
         "id": "libs/core/src/util/format.ts",
@@ -326,7 +406,21 @@
         "package_ties": {
           "inside": 4,
           "outside": 0
-        }
+        },
+        "functions": [
+          {
+            "name": "formatSlot",
+            "line": 3,
+            "line_count": 20,
+            "breaches": []
+          },
+          {
+            "name": "pad",
+            "line": 30,
+            "line_count": 8,
+            "breaches": []
+          }
+        ]
       },
       {
         "id": "libs/core/src/util/text.ts",
@@ -350,7 +444,15 @@
         "package_ties": {
           "inside": 2,
           "outside": 0
-        }
+        },
+        "functions": [
+          {
+            "name": "indent",
+            "line": 2,
+            "line_count": 12,
+            "breaches": []
+          }
+        ]
       }
     ],
     "bands": [

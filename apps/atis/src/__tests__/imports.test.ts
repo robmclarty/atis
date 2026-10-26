@@ -9,6 +9,7 @@ import { afterAll, beforeAll, expect, test, vi } from 'vitest';
 
 import {
   parseCodeSpans,
+  parseFunctions,
   parseExportShapes,
   parseFallowEntryPoints,
   parseManifestWorkspaces,
@@ -407,7 +408,7 @@ test('every tracked file is listed, classified and sorted, whether it is parsed 
     ['pnpm-workspace.yaml', 'other'],
   ]);
   expect(fileIn(scan, 'libs/shared/src/greet.ts').loc).toBe(4);
-  expect(fileIn(scan, 'README.md')).toEqual({ path: 'README.md', loc: 0, kind: 'other', exports: [], shapes: {}, inferred: [], code: [], packages: [] });
+  expect(fileIn(scan, 'README.md')).toEqual({ path: 'README.md', loc: 0, kind: 'other', exports: [], shapes: {}, inferred: [], code: [], packages: [], functions: [] });
 });
 
 test('a file holds code only where a statement survives type stripping, so a barrel of re-exports holds none (D80, D141)', () => {
@@ -1097,4 +1098,46 @@ test('a commit read from git\'s own objects scans as its extraction does, whatev
   // Over an earlier read that names every file, only what the diff touched is drawn out of git again.
   const touched = new Set(['libs/shared/src/greet.ts']);
   expect(readCommit(sha, { repo, prior: { parsed: whole.parsed, touched }, extracted: () => tree }).scan).toEqual(whole.scan);
+});
+
+test('the scan records every named function at any depth, by the line it starts on and the lines it spans, and no overload or nameless callback (D102)', () => {
+  const source = [
+    "import { tool } from './tool.js';", // 1
+    '', // 2
+    'export function resolve(name: string): string;', // 3: an overload, no body
+    'export function resolve(name: string): string {', // 4
+    '  const inner = (value: string): string => value.trim();', // 5
+    '  return [name].map((each) => inner(each)).join();', // 6: the callback is bound to no name
+    '}', // 7
+    '', // 8
+    'export const later = async function (): Promise<void> {', // 9
+    '  await Promise.resolve();', // 10
+    '};', // 11
+    '', // 12
+    'class Slot {', // 13
+    '  constructor(readonly name: string) {}', // 14
+    '  get label(): string {', // 15
+    '    return this.name;', // 16
+    '  }', // 17
+    '  run = (): number => 1;', // 18
+    '  #hidden(): void {}', // 19
+    '}', // 20
+    '', // 21
+    "export const table = { 'odd key': () => 2, plain() { return 3; } };", // 22
+  ].join('\n');
+
+  expect(parseFunctions('src/slot.ts', source)).toEqual([
+    { name: 'resolve', line: 4, line_count: 4 },
+    { name: 'inner', line: 5, line_count: 1 },
+    { name: 'later', line: 9, line_count: 3 },
+    { name: 'constructor', line: 14, line_count: 1 },
+    { name: 'label', line: 15, line_count: 3 },
+    { name: 'run', line: 18, line_count: 1 },
+    { name: '#hidden', line: 19, line_count: 1 },
+    { name: "'odd key'", line: 22, line_count: 1 },
+    { name: 'plain', line: 22, line_count: 1 },
+  ]);
+  // Types alone, or a declaration file, hold no function to record.
+  expect(parseFunctions('src/types.ts', 'export type Run = () => void;\nexport interface Slot { run(): void }\n')).toEqual([]);
+  expect(parseFunctions('src/index.d.ts', 'export declare function run(): void;\n')).toEqual([]);
 });

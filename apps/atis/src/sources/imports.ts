@@ -38,7 +38,7 @@ import { isBuiltin } from 'node:module';
 import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 import { classifyFile, memberOf } from 'core';
-import type { CodeSpan, EntryPointLookup, ExportShapes, FileKind, PassedName } from 'core';
+import type { CodeSpan, EntryPointLookup, ExportShapes, FileKind, PassedName, ScanFunction } from 'core';
 import ts from 'typescript';
 
 /** A tracked file of the scanned commit. `loc` counts the non-blank lines the scan parsed. */
@@ -55,6 +55,8 @@ export type ScannedFile = {
   readonly code: readonly CodeSpan[];
   /** The outside packages it imports, by package name and sorted: never a workspace member or a Node built-in (D170). */
   readonly packages: readonly string[];
+  /** Every named function it holds, at any depth, by the line it starts on (D102); none for a file the scan does not parse. */
+  readonly functions: readonly ScanFunction[];
 };
 
 /**
@@ -404,6 +406,8 @@ export type ParsedFile = {
   readonly references: readonly Reference[];
   /** The file's `export * from …`, whose names it passes on. */
   readonly stars: readonly Star[];
+  /** Every named function in it, by the line it starts on (D102). */
+  readonly functions: readonly ScanFunction[];
 };
 
 function lineOf(source: ts.SourceFile, node: ts.Node): number {
@@ -771,6 +775,46 @@ function passedThrough(statement: ts.ImportDeclaration, exported: ReadonlyMap<st
   return importBindings(statement).flatMap(([local, bound]) => (exported.get(local) ?? []).map((as) => ({ name: bound.name, as })));
 }
 
+/** What a function-like node is called where it is declared, or nothing for one bound to no name. */
+function nameOfFunction(node: ts.Node, source: ts.SourceFile): string | undefined {
+  if (ts.isFunctionDeclaration(node) || ts.isFunctionExpression(node)) return node.name?.text ?? boundName(node, source);
+  if (ts.isConstructorDeclaration(node)) return 'constructor';
+  if (ts.isMethodDeclaration(node) || ts.isGetAccessorDeclaration(node) || ts.isSetAccessorDeclaration(node)) return node.name.getText(source);
+  if (ts.isArrowFunction(node)) return boundName(node, source);
+  return undefined;
+}
+
+/** The name a function expression or an arrow is bound to: the variable, the property or the class field it initialises. */
+function boundName(node: ts.Node, source: ts.SourceFile): string | undefined {
+  const { parent } = node;
+  if ((ts.isVariableDeclaration(parent) || ts.isPropertyAssignment(parent) || ts.isPropertyDeclaration(parent)) && parent.initializer === node) {
+    return ts.isIdentifier(parent.name) || ts.isPrivateIdentifier(parent.name) ? parent.name.text : parent.name.getText(source);
+  }
+  return undefined;
+}
+
+/**
+ * Every named function in a file, at any depth (D102): a declaration, a
+ * method, an accessor or a constructor, and a function expression or an
+ * arrow bound to a variable, a property or a class field, each by the line it
+ * starts on and the lines it spans. An overload with no body is no function,
+ * and a callback bound to no name is not recorded here; fallow names one that
+ * breaks a threshold, and core adds it from there.
+ */
+function functionsOf(source: ts.SourceFile): readonly ScanFunction[] {
+  const found: ScanFunction[] = [];
+  const visit = (node: ts.Node): void => {
+    const name = ts.isFunctionLike(node) && 'body' in node && node.body !== undefined ? nameOfFunction(node, source) : undefined;
+    if (name !== undefined) {
+      const { start, end } = spanOf(source, node);
+      found.push({ name, line: start, line_count: end - start + 1 });
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return found.toSorted((a, b) => a.line - b.line || byPath(a.name, b.name));
+}
+
 function parseSource(path: string, content: string): ParsedFile {
   // The compiler gives `.mts` and `.cts` no kind of their own: they parse as
   // `.ts` does, and a `.d.mts` or `.d.cts` is a declaration file by its name (D77).
@@ -817,6 +861,7 @@ function parseSource(path: string, content: string): ParsedFile {
     inferred,
     references: [...references, ...dynamicImports(source)],
     stars,
+    functions: source.isDeclarationFile ? [] : functionsOf(source),
   };
 }
 
@@ -837,6 +882,14 @@ export function parseExportShapes(path: string, content: string): ExportShapes {
  */
 export function parseCodeSpans(path: string, content: string): readonly CodeSpan[] {
   return parseSource(path, content).code;
+}
+
+/**
+ * Every named function in a TypeScript file, read from its source alone
+ * (D30, D102): its name, the line it starts on and how many lines it spans.
+ */
+export function parseFunctions(path: string, content: string): readonly ScanFunction[] {
+  return parseSource(path, content).functions;
 }
 
 /**
@@ -1395,6 +1448,7 @@ function scanTree(tree: Tree, prior: ScanOptions['prior'], entryPoints: () => En
       inferred: parsed.get(path)?.inferred ?? [],
       code: parsed.get(path)?.code ?? [],
       packages: packages.get(path) ?? [],
+      functions: parsed.get(path)?.functions ?? [],
     };
   });
   const fallow = entryPoints();
