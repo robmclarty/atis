@@ -1,10 +1,13 @@
 /**
  * run: everything impure between the flags and the map.
  *
- * `measure` extracts the merge-base tree and the `HEAD` tree with `git archive`
- * into temp directories and scans each one, so the terrain comes from the base
- * and the weather from the head (D32) and both sides describe commits rather
- * than a working tree (D46). The diff, the manifest delta and the log window
+ * `measure` scans the merge-base tree and the `HEAD` tree, so the terrain
+ * comes from the base and the weather from the head (D32) and both sides
+ * describe commits rather than a working tree (D46). The base is extracted
+ * with `git archive` into a temp directory when the cache does not hold it;
+ * the head is read from git's own objects over the base's reads, parsing
+ * only what the diff touched, and is extracted only when the checker or the
+ * reviewed repo's fallow has to read it from disk (D136, D172). The diff, the manifest delta and the log window
  * come from the repository itself; only `.check/` is read from the working
  * tree, since artifacts are not committed. The base side (its scan, the
  * history window at it and its terrain's layout) is kept per base commit in
@@ -12,8 +15,9 @@
  * extracting and scanning it again, and reads only its change's own commits on
  * top of the window (D8, D96); `--no-cache` measures it afresh and keeps
  * nothing. A base the cache has not seen is laid out relaxed from the
- * nearest ancestor it has, and the map relaxes from the base's own layout,
- * so the ground holds still across bases and under the change (D97). The
+ * nearest ancestor it has (D97), and the map holds the base's own layout
+ * wherever the change left the ground alone (D172), so the ground holds
+ * still across bases and under the change. The
  * reviewed repo's own fallow measures both extractions' health, duplication
  * and structure, each kept per commit beside the terrain, so a second run on
  * one change runs it on neither side (D98, D136). The extractions are removed
@@ -40,12 +44,15 @@ import { renderSvg } from 'svg';
 import {
   codeKey,
   configKey,
+  entriesPath,
   nearestTerrain,
+  readEntries,
   readStructure,
   readTerrain,
   structurePath,
   terrainPath,
   writeAtomic,
+  writeEntries,
   writeStructure,
   writeTerrain,
 } from './cache.js';
@@ -60,11 +67,12 @@ import {
   readCheck,
   readDiff,
   readLog,
+  readCommit,
   readManifests,
   readTree,
   shapePaths,
 } from './sources/index.js';
-import type { LocalFallow, ParsedFiles, Scan, ScanOptions } from './sources/index.js';
+import type { EntryPoints, LocalFallow, ParsedFiles, Scan, ScanOptions, ScannedTree } from './sources/index.js';
 
 /** The flags for a run that writes files, already parsed: `cli.ts` owns the parsing, `run` owns the work. */
 export type Options = {
@@ -143,7 +151,7 @@ function headOf(repo: string): { readonly sha: string; readonly time: number } {
 /** One extracted commit: `tree` is the extraction the scanner reads, `root` the temp directory holding it. */
 type Extraction = { readonly tree: string; readonly root: string };
 
-/** One side of the change: its extraction, which the checker reads again, the scan of it, and what the scan read from each file. */
+/** The base side, extracted: the extraction the checker and fallow read again, the scan of it, and what the scan read from each file. */
 type Side = { readonly tree: string; readonly scan: Scan; readonly parsed: ParsedFiles };
 
 /** `git archive <sha> | tar -x` into a temp directory of its own (D32), the archive kept beside the tree, not in it. */
@@ -167,12 +175,17 @@ function timed<T>(timings: Timing[], source: string, work: () => T): T {
   return value;
 }
 
-/** What `--verbose` prints: whether the terrain cache and each side's structure hit, then each source's time. */
+/** What `--verbose` prints: whether the terrain cache, each side's structure and the head's entry points hit, then each source's time. */
 function report(measured: Measured): string {
   const { timings, structure } = measured;
   const width = timings.reduce((widest, timing) => Math.max(widest, timing.source.length), 0);
   const lines = timings.map((timing) => `  ${timing.source.padEnd(width)}  ${String(timing.ms)} ms\n`);
-  const kept = [`  terrain cache ${measured.cache}\n`, `  structure base ${structure.base}\n`, `  structure head ${structure.head}\n`];
+  const kept = [
+    `  terrain cache ${measured.cache}\n`,
+    `  structure base ${structure.base}\n`,
+    `  structure head ${structure.head}\n`,
+    `  entry points head ${measured.entries}\n`,
+  ];
   return [...kept, ...lines].join('');
 }
 
@@ -209,12 +222,13 @@ function summary(map: MapJson): string {
   return `${map.weather.checks.category}, ${counted(map.weather.changed.length, 'file')} changed, ${counted(map.notices.length, 'notice')}`;
 }
 
-/** The map built, the timings so far, which the caller adds its own to, and what the terrain cache and each side's structure did. */
+/** The map built, the timings so far, which the caller adds its own to, and what the terrain cache, each side's structure and the head's entry points did. */
 type Measured = {
   readonly map: MapJson;
   readonly timings: Timing[];
   readonly cache: string;
   readonly structure: { readonly base: string; readonly head: string };
+  readonly entries: string;
 };
 
 /** The config every run measures with: core's defaults, since no `atis.config.json` is read yet. */
@@ -238,7 +252,7 @@ type Ground = {
 type Reader = {
   readonly repo: string;
   readonly timings: Timing[];
-  readonly scanAt: (source: string, sha: string, prior?: ScanOptions['prior']) => Side;
+  readonly scanAt: (source: string, sha: string) => Side;
   /** How many commits of history to read (D50). */
   readonly history: number;
 };
@@ -301,6 +315,37 @@ function structureAt(repo: string, sha: string, tree: () => string, fallow: Loca
   }
 }
 
+/** The files of `among` with a name only the checker can print (D118). */
+function inferredIn(scan: Scan, among: ReadonlySet<string>): ReadonlySet<string> {
+  return new Set(scan.files.filter((file) => among.has(file.path) && file.inferred.length > 0).map((file) => file.path));
+}
+
+/** The head's scan, and what the cache did with the entry points fallow listed for it, for `--verbose` to say. */
+type HeadRead = { readonly side: ScannedTree; readonly entries: string };
+
+/**
+ * The head, read from git's own objects over the base's reads, parsing only
+ * the files the diff touched (D136, D172). The entry points the reviewed
+ * repo's fallow lists for it are kept per head commit, so a second run on one
+ * change extracts the head for nothing; a cache that will not write leaves
+ * the run as it was (C4).
+ */
+function headAt(repo: string, sha: string, prior: NonNullable<ScanOptions['prior']>, tree: () => string, fallow: LocalFallow | undefined, cache: boolean): HeadRead {
+  const key = cache && fallow?.version !== undefined ? { code: codeKey(), fallow: fallow.version } : undefined;
+  const kept: EntryPoints | undefined = key === undefined ? undefined : readEntries(repo, sha, key);
+  const side = readCommit(sha, { repo, prior, entryPoints: kept, extracted: tree });
+  if (fallow === undefined) return { side, entries: 'none (no local fallow)' };
+  if (kept !== undefined) return { side, entries: `hit, ${relative(repo, entriesPath(repo, sha))}` };
+  if (!cache) return { side, entries: 'off (--no-cache)' };
+  if (key === undefined) return { side, entries: 'listed, not kept: fallow names no version to key it by' };
+  try {
+    const path = writeEntries(repo, sha, key, side.entryPoints);
+    return { side, entries: path === undefined ? 'listed, not kept: fallow listed none' : `miss, listed, wrote ${relative(repo, path)}` };
+  } catch (error) {
+    return { side, entries: `listed, not written: ${messageOf(error)}` };
+  }
+}
+
 /** Read the repository and build the map; throws on a repository it cannot read, with the extractions removed either way. */
 function measure(repoPath: string, base: string, cache: boolean, history: number = HISTORY_WINDOW): Measured {
   const repo = resolve(repoPath);
@@ -312,35 +357,40 @@ function measure(repoPath: string, base: string, cache: boolean, history: number
     extractions.push(extraction);
     return extraction.tree;
   };
-  const scanAt = (source: string, sha: string, prior?: ScanOptions['prior']): Side =>
+  const scanAt = (source: string, sha: string): Side =>
     timed(timings, source, () => {
       const tree = treeAt(sha);
-      return { tree, ...readTree(tree, prior === undefined ? { repo } : { repo, prior }) };
+      return { tree, ...readTree(tree, { repo }) };
     });
 
   try {
     const head = headOf(repo);
     const diff = timed(timings, 'diff', () => readDiff(repo, base));
     const ground = groundAt({ repo, timings, scanAt, history }, diff.merge_base, cache);
-    // The head reads only what the diff touched; every other file holds the base's bytes (D136).
-    const headSide = scanAt('scan head', head.sha, { parsed: ground.parsed, touched: new Set(diff.changed.map((file) => file.path)) });
-    // The names only the checker can print, in the changed interface files alone, each side timed (D118).
-    // A base read from the cache has no tree, so it is extracted only when one of those files has such a name.
-    // A base read from the cache has no tree, so it is extracted once, and only when something reads it.
+    // Neither side is extracted unless something reads it from disk: the checker, or the reviewed repo's fallow.
     let baseTree = ground.tree;
     const baseTreeOf = (): string => (baseTree ??= treeAt(diff.merge_base));
-    const paths = shapePaths(diff.changed, ground.scan, headSide.scan);
-    const inferred = new Set(ground.scan.files.filter((file) => paths.base.has(file.path) && file.inferred.length > 0).map((file) => file.path));
-    const baseScan = timed(timings, 'shapes base', () =>
-      inferred.size === 0 ? ground.scan : checkInferredShapes(baseTreeOf(), ground.scan, inferred),
-    );
-    const headScan = timed(timings, 'shapes head', () => checkInferredShapes(headSide.tree, headSide.scan, paths.head));
-    // Both sides by the same fallow, the base's beside its terrain and the head's per head commit (D98, D136).
+    let headTree: string | undefined;
+    const headTreeOf = (): string => (headTree ??= treeAt(head.sha));
     const fallow = localFallow(repo);
+    // The head reads only what the diff touched; every other file holds the base's bytes (D136).
+    const touched = new Set(diff.changed.map((file) => file.path));
+    const headRead = timed(timings, 'scan head', () => headAt(repo, head.sha, { parsed: ground.parsed, touched }, headTreeOf, fallow, cache));
+    const headSide = headRead.side;
+    // The names only the checker can print, in the changed interface files alone, each side timed (D118).
+    const paths = shapePaths(diff.changed, ground.scan, headSide.scan);
+    const inferred = { base: inferredIn(ground.scan, paths.base), head: inferredIn(headSide.scan, paths.head) };
+    const baseScan = timed(timings, 'shapes base', () =>
+      inferred.base.size === 0 ? ground.scan : checkInferredShapes(baseTreeOf(), ground.scan, inferred.base),
+    );
+    const headScan = timed(timings, 'shapes head', () =>
+      inferred.head.size === 0 ? headSide.scan : checkInferredShapes(headTreeOf(), headSide.scan, inferred.head),
+    );
+    // Both sides by the same fallow, the base's beside its terrain and the head's per head commit (D98, D136).
     const baseStructure = timed(timings, 'structure base', () => structureAt(repo, diff.merge_base, baseTreeOf, fallow, cache));
-    const headStructure = timed(timings, 'structure head', () => structureAt(repo, head.sha, () => headSide.tree, fallow, cache));
-    const touched = diff.changed.flatMap((file) => (file.from === undefined ? [file.path] : [file.path, file.from]));
-    const { deps_added, deps_moved } = timed(timings, 'manifests', () => readManifests(repo, diff.merge_base, touched));
+    const headStructure = timed(timings, 'structure head', () => structureAt(repo, head.sha, headTreeOf, fallow, cache));
+    const manifests = diff.changed.flatMap((file) => (file.from === undefined ? [file.path] : [file.path, file.from]));
+    const { deps_added, deps_moved } = timed(timings, 'manifests', () => readManifests(repo, diff.merge_base, manifests));
     // The window at the base, with the change's own commits on top, newest first (D8).
     const commits = timed(timings, 'log', () =>
       [...readLog(repo, `${diff.merge_base}..${HEAD}`, history), ...ground.commits].slice(0, history),
@@ -364,12 +414,12 @@ function measure(repoPath: string, base: string, cache: boolean, history: number
         commits,
         head_time: head.time,
         check,
-        // The map relaxes from the base's own layout, so the change never moves the ground under it (D32, D97).
-        prior: ground.layout,
+        // The map holds the base's own layout wherever the change left the ground alone (D32, D172).
+        ground: ground.layout,
         structure: { base: baseStructure.structure, head: headStructure.structure },
       }, CONFIG),
     );
-    return { map, timings, cache: ground.cache, structure: { base: baseStructure.cache, head: headStructure.cache } };
+    return { map, timings, cache: ground.cache, structure: { base: baseStructure.cache, head: headStructure.cache }, entries: headRead.entries };
   } finally {
     for (const extraction of extractions) rmSync(extraction.root, { recursive: true, force: true });
   }

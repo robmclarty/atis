@@ -18,14 +18,14 @@ import { DEFAULT_CONFIG } from './config.js';
 import type { Config } from './config.js';
 import { computeDependencies } from './dependencies.js';
 import { computeDepth } from './depth.js';
-import type { FileDepth } from './depth.js';
+import type { Depths, FileDepth } from './depth.js';
 import { compareStructure, computeCategory, computeEvidence, dentsFrom, pathsOf, trustCoverage } from './evidence.js';
 import type { CheckArtifacts, Dupes, Health, Structure } from './evidence.js';
 import { OTHER_GROUP, identifyGroups, shoreMatcher } from './groups.js';
 import { computeHistory } from './history.js';
 import type { Commit, CommitFile, FileHistory } from './history.js';
 import { computeLayout } from './layout/index.js';
-import type { Prior } from './layout/index.js';
+import type { Ground, Prior } from './layout/index.js';
 import { classifyFile, identifyModules } from './modules.js';
 import type { ImportEdge, ModuleCell, Modules, ScannedFile } from './modules.js';
 import { findGhosts, findPublicNames, rankNotices } from './notices.js';
@@ -99,8 +99,15 @@ export type BuildInputs = {
   readonly head_time: number;
   /** The `.check/` artifacts, or the reason there are none to trust (D41). */
   readonly check: CheckArtifacts;
-  /** The layout to relax from, keyed by path: the base terrain's own, which the CLI keeps per base (D96, D97); absent, the field settles from nothing. */
+  /** A layout to relax from, keyed by path: a nearest cached ancestor's, as `layOutTerrain` is handed one (D97); absent, the field settles from nothing. */
   readonly prior?: Prior;
+  /**
+   * The base terrain's own layout, which the CLI keeps per base (D96): the
+   * map holds it wherever the change left the ground alone and lays out only
+   * the rest (D172), and relaxes from it where the base's field cannot hold
+   * the change (D97). It outranks `prior`.
+   */
+  readonly ground?: Layout;
   /** fallow's measure of the base and the head extractions (D98); absent, the map says nothing of either. */
   readonly structure?: { readonly base: Structure; readonly head: Structure };
 };
@@ -174,6 +181,57 @@ function rekeyCommits(commits: readonly Commit[], renames: ReadonlyMap<string, s
     }
     return { ...commit, files: [...files.values()] };
   });
+}
+
+/** What the terrain is made of: its files and graph, its cells and shore, and the terraces its files stand on (D32, D39). */
+type Standing = {
+  readonly files: readonly ScannedFile[];
+  readonly edges: readonly ImportEdge[];
+  readonly roots: readonly string[];
+  readonly isShore: (path: string) => boolean;
+  readonly modules: Modules;
+  readonly groups: readonly Group[];
+  readonly depths: Depths;
+};
+
+/**
+ * The terrain a change stands on: the base tree with the change's added files
+ * (D32), its cells and shore, and the terraces of its files. A `.ts`/`.tsx`
+ * that configures a tool (D57), or that a build committed (D84), is shore, not
+ * terrain: it founds no cell above and never sits on a terrace or ties one
+ * below, so depth is handed neither the file nor an edge that touches it.
+ */
+function standingOf(base: Scan, head: Scan, added: ReadonlySet<string>, config: Config): Standing {
+  const files = terrainFiles(base, head, added);
+  const edges = terrainEdges(base, head, added);
+  const roots = sortUnique([...base.members, ...head.members].map((member) => member.dir));
+  const isShore = shoreMatcher(config.groups, roots);
+  const modules = identifyModules(files, edges, roots, isShore);
+  const groups = shoreGroups(files, roots, config);
+  const depths = computeDepth(
+    edges.filter((edge) => !isShore(edge.from) && !isShore(edge.to)),
+    entryPoints(base, head, added),
+    files.filter((file) => !isShore(file.path)).map((file) => file.path),
+  );
+  return { files, edges, roots, isShore, modules, groups, depths };
+}
+
+/**
+ * The base's own field as its layout was laid out (D172): the terrain
+ * `layOutTerrain` stands on for the base tree alone, which is what a file of
+ * the change is compared with to say whether it still stands where the base
+ * put it.
+ */
+function groundOf(layout: Layout, base: Scan, config: Config): Ground {
+  const { modules, groups, depths } = standingOf(base, base, new Set(), config);
+  const bandOf = new Map(depths.files.map((file) => [file.path, file.band] as const));
+  return {
+    layout,
+    cells: modules.cells,
+    organelles: modules.organelles.map((organelle) => ({ id: organelle.id, cell: organelle.cell, band: bandOf.get(organelle.path) ?? 0, loc: organelle.loc })),
+    bands: depths.bands,
+    groups,
+  };
 }
 
 /** The terrain's files: the base tree, plus the files this change added, which the base has never seen (D32). */
@@ -345,19 +403,32 @@ function filesInside(modules: Modules): ReadonlyMap<string, readonly string[]> {
   return inside;
 }
 
-/** How many terrain files outside a cell read into it, and how many it reads out; a test is evidence, not a reader (D4). */
-function fanOf(inside: ReadonlySet<string>, edges: readonly ImportEdge[], terrain: ReadonlySet<string>): {
-  readonly fan_in: number;
-  readonly fan_out: number;
-} {
-  const readers = new Set<string>();
-  const read = new Set<string>();
+type Fan = { readonly fan_in: number; readonly fan_out: number };
+
+function addTo(sets: Map<string, Set<string>>, cell: string, file: string): void {
+  sets.set(cell, (sets.get(cell) ?? new Set<string>()).add(file));
+}
+
+/**
+ * How many terrain files outside each cell read into it, and how many it
+ * reads out; a test is evidence, not a reader (D4). One walk of the graph
+ * serves every cell: an edge counts for each cell holding one end and not
+ * the other.
+ */
+function fansOf(inside: ReadonlyMap<string, readonly string[]>, edges: readonly ImportEdge[], terrain: ReadonlySet<string>): ReadonlyMap<string, Fan> {
+  const holders = new Map<string, string[]>();
+  for (const [cell, files] of inside) {
+    for (const file of files) holders.set(file, [...(holders.get(file) ?? []), cell]);
+  }
+  const readers = new Map<string, Set<string>>();
+  const read = new Map<string, Set<string>>();
   for (const { from, to } of edges) {
     if (!terrain.has(from) || !terrain.has(to)) continue;
-    if (!inside.has(from) && inside.has(to)) readers.add(from);
-    if (inside.has(from) && !inside.has(to)) read.add(to);
+    const [out, into] = [holders.get(from) ?? [], holders.get(to) ?? []];
+    for (const cell of into) if (!out.includes(cell)) addTo(readers, cell, from);
+    for (const cell of out) if (!into.includes(cell)) addTo(read, cell, to);
   }
-  return { fan_in: readers.size, fan_out: read.size };
+  return new Map([...inside.keys()].map((cell) => [cell, { fan_in: readers.get(cell)?.size ?? 0, fan_out: read.get(cell)?.size ?? 0 }] as const));
 }
 
 /** What `.check/`, the terrain graph and the head scan know about every file, joined by path. */
@@ -402,6 +473,7 @@ function exportsOf(cell: ModuleCell, exports: ReadonlyMap<string, readonly strin
 function assembleCells(modules: Modules, edges: readonly ImportEdge[], signals: Signals): readonly Cell[] {
   const terrain = new Set(modules.organelles.map((organelle) => organelle.path));
   const inside = filesInside(modules);
+  const fans = fansOf(inside, edges, terrain);
   return modules.cells.map((cell): Cell => {
     const files = inside.get(cell.id) ?? [];
     const counted = files.flatMap((path) => {
@@ -428,7 +500,7 @@ function assembleCells(modules: Modules, edges: readonly ImportEdge[], signals: 
       ...(exports === undefined ? {} : { exports }),
       body_loc: cell.body_loc,
       ...(counted.length === 0 ? {} : { function_count: counted.reduce((total, count) => total + count, 0) }),
-      ...fanOf(new Set(files), edges, terrain),
+      ...(fans.get(cell.id) ?? { fan_in: 0, fan_out: 0 }),
       dents: sortUnique(files.flatMap((path) => signals.dents.get(path) ?? [])),
       ...(family === undefined ? {} : { clone_family: family }),
     };
@@ -523,21 +595,7 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
   const { head } = inputs;
   const added = new Set(inputs.diff.filter((file) => file.kind === 'added').map((file) => file.path));
 
-  const files = terrainFiles(base, head, added);
-  const edges = terrainEdges(base, head, added);
-  const roots = sortUnique([...base.members, ...head.members].map((member) => member.dir));
-  const isShore = shoreMatcher(config.groups, roots);
-  const modules = identifyModules(files, edges, roots, isShore);
-  const groups = shoreGroups(files, roots, config);
-
-  // A `.ts`/`.tsx` that configures a tool (D57), or that a build committed (D84),
-  // is shore, not terrain: it founds no cell above and never sits on a terrace
-  // or ties one below, so depth is handed neither the file nor an edge that touches it.
-  const depths = computeDepth(
-    edges.filter((edge) => !isShore(edge.from) && !isShore(edge.to)),
-    entryPoints(base, head, added),
-    files.filter((file) => !isShore(file.path)).map((file) => file.path),
-  );
+  const { edges, isShore, modules, groups, depths } = standingOf(base, head, added, config);
   const history = computeHistory(
     rekeyCommits(inputs.commits, renames),
     new Map(head.files.map((file) => [file.path, file.loc] as const)),
@@ -599,9 +657,11 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
   // settles from the base alone and the added files find their place after
   // it, so the weather never moves the ground (D32).
   // A renamed file's old place is read from the prior under its base path (D40, D97).
-  const { prior } = inputs;
+  // Over its base's own layout, the map holds the ground the change left alone (D172).
+  const { prior, ground } = inputs;
   const renamed = new Map([...renames].map(([from, path]) => [path, from] as const));
-  const layout = computeLayout({ cells, organelles, edges, bands: depths.bands, groups, added, renames: renamed, ...(prior === undefined ? {} : { prior }) });
+  const before = ground === undefined ? (prior === undefined ? {} : { prior }) : { ground: groundOf(ground, inputs.base, config) };
+  const layout = computeLayout({ cells, organelles, edges, bands: depths.bands, groups, added, renames: renamed, ...before });
 
   return {
     meta: {

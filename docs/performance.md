@@ -2,10 +2,11 @@
 
 What a run of atis costs, leg by leg, on this repository and on the precision corpus's
 tuning repositories: the terrain cache that keeps a base's side between runs (D96, D137),
-the bound the relaxed layout holds across bases (D97), the per-source timings `--verbose`
-prints (D50), and a cached run's first frame, timed from the command (D136, C14). The
-world's own budget from the map's arrival, its frame rates and its first frame on a
-5,000-file map, is in [`design.md`](./design.md#the-worlds-budget).
+the bound the relaxed layout holds across bases (D97), the ground a change's map holds
+where its base put it (D172), the per-source timings `--verbose` prints (D50), and a cached
+run's first frame, timed from the command (D136, C14). The world's own budget from the
+map's arrival, its frame rates and its first frame on a 5,000-file map, is in
+[`design.md`](./design.md#the-worlds-budget).
 
 Every number here was measured on 2026-10-26 on an Apple M1 Pro with 32 GB, macOS (Darwin
 25.6.0), Node 24, and Chrome 155 at 1,440 by 900 on the laptop's display.
@@ -25,15 +26,20 @@ the hit or the miss, and why.
 
 A run then reads only what its change touched over the cached base:
 
-- the head's scan reads the files the diff names and keeps every other file's reads, then
-  links the head tree as a full scan does, so its scan is the full scan's (a test pins it,
-  on a tree of strings and on two consecutive commits of this repository);
+- the head is read from git's own objects rather than an extraction (D172): its files and
+  directories are listed from the commit, the ones `export-ignore` leaves out of an
+  archive left out here too, and only the files the diff names and the manifests are
+  drawn out, by `git archive` of those files alone, so each holds the bytes an extraction
+  would; every other file keeps the base's reads, and the head tree is linked as a full
+  scan links it, so its scan is the full scan's (tests pin it on a commit with
+  `export-ignore`, `export-subst`, a link, a committed `node_modules` and a path too long
+  for a tar header, and on two consecutive commits of this repository);
 - the history is the change's own commits on top of the cached window, capped at the
   window;
 - the dependency delta reads only the manifests the diff touched, and nothing when it
   touched none;
 - the base tree is extracted again only when the type checker has a changed interface
-  file with an inferred name to read there (D118).
+  file with an inferred name to read there (D118), and the head tree likewise.
 
 An entry is 0.5 MB on `inspector`'s 164 files and 11.5 MB on `actual`'s 4,207.
 
@@ -45,13 +51,16 @@ head's is kept per head commit, so a second run on one change runs fallow on nei
 a moved pin measures both sides again over the terrain as it was, and an entry with an
 analysis fallow could not read is never kept. On this repository, measuring a side costs
 0.9 to 1.0 s (three fallow runs on its extraction), and reading it back 1 ms.
+`.atis/entries/<sha>.json` keeps, under the same key, the entry points that fallow listed
+for a head commit, so the head's scan never extracts the head for fallow on a second run
+either.
 
 ## The relayout's bound
 
 A base the cache has not seen is laid out relaxed from the nearest ancestor the cache
-holds, and the map of a change relaxes from its base's own layout (D97). On step 112's
-commit of this repository and step 113's after it, fourteen files apart, the files neither
-changed move by these means from the first commit's layout to the second's:
+holds (D97). On step 112's commit of this repository and step 113's after it, fourteen
+files apart, the files neither changed move by these means from the first commit's layout
+to the second's:
 
 | the second commit laid out | mean displacement of unchanged files |
 | --- | --- |
@@ -60,32 +69,61 @@ changed move by these means from the first commit's layout to the second's:
 
 The test pins the bound between them at 4, in the field's units.
 
+## The ground a change holds
+
+The map of a change does not relax from its base's own layout: it holds it (D172). A file
+the change did not add or rename, in the same cell under the same cells, on the same
+terrace at the same size, stands exactly where the base put it, edited or not, since the
+terrain is the base's (D32). Every other file is placed as the second pass places an added
+one, around the held files of its lane and inside the room the base's lane kept; a lane
+the base never had stands after its last. A new shore mark takes the next free place of
+its group's block, as low as its row of blocks reaches and one row into the gap below, and
+what the block cannot take stands at the end of the row, widening the field rather than
+pushing the terraces down. The terraces are the base's.
+
+A skin is cut from its members' places and every other file's within its reach, so a
+skin whose members are the ones it held, with nothing placed or vacated within its reach,
+is the base's skin, kept uncut; that includes a skin the base could not cut a ring for,
+which stays without one. Every other skin is cut again, and the tests pin the result equal
+to cutting every skin over the held field.
+
+A change the base's field cannot hold relaxes from it instead: one that deepens the abyss
+past the seven terraces a map draws, so a terrace spans other depths, or one that brings
+the first shore file to a base with none. On every corpus change measured below the
+ground held, and only the change's added files were placed: two of `actual`'s 3,939 places
+and five of its 283 skins changed. A run with nothing kept holds the same cold base, so
+`--no-cache`, a first run and a cached run draw one map.
+
 ## What each source costs
 
-Each repository was run twice against its fixture's base: once on an empty cache (a miss)
-and once on what that run kept (a hit). The corpus worktrees hold no `node_modules` and no
-`.check/`, so their entry points come from the manifests and their maps are NOINST; this
-repository's run has both. Milliseconds, from `--verbose`; `wall` is the whole command.
+Each repository was run twice against its fixture's base, this one against `HEAD~1`: once
+on a cache its code no longer keyed (a miss) and once on what that run kept (a hit). The
+corpus worktrees hold no `node_modules` and no `.check/`, so their entry points come from
+the manifests and their maps are NOINST; this repository's run has both. Milliseconds,
+from `--verbose`; `wall` is the whole command.
 
 | repository | files | commits | run | scan base | log base | layout base | scan head | shapes base | build | wall |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| atis | 376 | 137 | miss | 1,220 | 1,735 | 218 | 538 | 0 | 135 | |
-| | | | hit | | | | 695 | 0 | 184 | |
-| inspector | 164 | 1,820 | miss | 487 | 490 | 134 | 112 | 368 | 155 | 2,410 |
-| | | | hit | | | | 208 | 494 | 192 | 1,513 |
-| changesets | 291 | 810 | miss | 476 | 468 | 131 | 130 | 320 | 162 | 2,449 |
-| | | | hit | | | | 212 | 473 | 158 | 1,588 |
-| discord.js | 1,313 | 8,407 | miss | 1,567 | 3,818 | 650 | 353 | 262 | 906 | 8,402 |
-| | | | hit | | | | 452 | 587 | 953 | 2,840 |
-| mermaid | 1,172 | 13,910 | miss | 1,557 | 2,687 | 788 | 389 | 628 | 737 | 7,918 |
-| | | | hit | | | | 549 | 1,005 | 741 | 3,393 |
-| matrix-js-sdk | 466 | 10,726 | miss | 1,503 | 3,906 | 680 | 282 | 863 | 510 | 8,916 |
-| | | | hit | | | | 463 | 1,203 | 534 | 3,412 |
-| actual | 4,207 | 5,472 | miss | 5,893 | 6,040 | 6,591 | 1,400 | 0 | 5,446 | 26,775 |
-| | | | hit | | | | 1,433 | 0 | 5,688 | 8,131 |
+| atis | 384 | 141 | miss | 1,036 | 1,194 | 167 | 507 | 266 | 26 | 5,309 |
+| | | | hit | | | | 225 | 609 | 34 | 1,767 |
+| inspector | 164 | 1,820 | miss | 387 | 365 | 107 | 90 | 301 | 67 | 1,921 |
+| | | | hit | | | | 178 | 408 | 87 | 1,265 |
+| changesets | 291 | 810 | miss | 386 | 406 | 103 | 85 | 259 | 72 | 2,028 |
+| | | | hit | | | | 161 | 392 | 90 | 1,364 |
+| discord.js | 1,313 | 8,407 | miss | 1,267 | 3,198 | 569 | 113 | 221 | 417 | 6,760 |
+| | | | hit | | | | 204 | 514 | 408 | 2,108 |
+| mermaid | 1,172 | 13,910 | miss | 1,187 | 2,191 | 703 | 143 | 534 | 172 | 6,114 |
+| | | | hit | | | | 264 | 796 | 194 | 2,448 |
+| matrix-js-sdk | 466 | 10,726 | miss | 1,198 | 3,360 | 623 | 170 | 725 | 44 | 7,254 |
+| | | | hit | | | | 287 | 917 | 50 | 2,379 |
+| actual | 4,207 | 5,472 | miss | 4,466 | 4,766 | 5,897 | 184 | 0 | 868 | 17,085 |
+| | | | hit | | | | 302 | 0 | 937 | 1,756 |
 
-The diff costs about 90 ms everywhere, the change's own log about 30 ms, and the cache's
-read up to 71 ms on `actual`.
+The diff costs about 90 ms everywhere, the change's own log about 25 ms, and the cache's
+read up to 60 ms on `actual`. A head scan on a hit pays about 120 ms the miss does not,
+warming the compiler for the touched files' declarations, which the base's scan has
+already done on a miss. This repository's miss lists the head's entry points with fallow
+on an extraction of the head, which its hit reads back.
 
 Four repositories' `git log` passes two seconds over the 5,000-commit window, all of them
 on a miss alone, since a hit reads only the change's commits. So `--history <n>` landed
@@ -98,13 +136,21 @@ given.
   Bubble Sets library tests every pair of a skin's members against every one of them as it
   routes the ways between them. On `actual` that was 91 s of a 99 s layout. A skin is now
   cut against the files within its region's reach alone, and every skin of `actual`, of
-  the demo map and of every golden came out byte for byte as before; the layout takes 6.4 s.
+  the demo map and of every golden came out byte for byte as before; the layout takes 6 s.
 - **Reach for the evidence.** Each changed file's cells reached, D27's *high reach*, was a
   whole reach walk per changed file; it is now one walk of each graph for the change,
   equal on the demo inputs and on a forty-file chain.
 - **The head's scan, the history and the manifests**, as the cache section says.
+- **The held ground.** A change's map laid every lane out again from its base's layout
+  and cut every skin again: 5.1 s of `actual`'s build. Holding the ground it left alone
+  and cutting only the skins near what it placed takes 0.9 s, of which 0.3 s is the docs
+  group's skin, which the change's release note joins. Every cell's fan in and out is now
+  counted on one walk of the graph, and each part of a lane outlined once rather than once
+  per file.
+- **The head read from git.** Extracting the head tree and removing it again was 1.3 s
+  of `actual`'s head scan; listing it and drawing out the files the diff names is 0.3 s.
 
-On `actual`, a cached run went from 95 s to 8.1 s.
+On `actual`, a cached run went from 95 s to 8.1 s at step 50, and to 1.8 s now.
 
 ## A cached run's first frame
 
@@ -120,16 +166,20 @@ pnpm build && node apps/web/scripts/first-frame.ts [repo=base ...]
 
 | repository | backend | served | map arrived | first frame | after the map |
 | --- | --- | --- | --- | --- | --- |
-| atis, against `HEAD~1` | WebGPU | 1.37 s | 1.46 s | 1.72 s | 0.26 s |
-| | WebGL 2 | 1.86 s | 1.94 s | 2.24 s | 0.29 s |
-| actual, against its fixture's base | WebGPU | 9.65 s | 9.76 s | 11.18 s | 1.42 s |
-| | WebGL 2 | 9.36 s | 9.51 s | 10.79 s | 1.28 s |
+| atis, against `HEAD~1` | WebGPU | 1.90 s | 2.02 s | 2.22 s | 0.21 s |
+| | WebGL 2 | 1.94 s | 2.02 s | 2.28 s | 0.26 s |
+| actual, against its fixture's base | WebGPU | 1.71 s | 1.81 s | 2.93 s | 1.12 s |
+| | WebGL 2 | 1.81 s | 1.92 s | 3.03 s | 1.11 s |
 
-A first run of the script on a machine whose browser had not drawn the world yet took
-2.86 s and 2.76 s on this repository, 1.34 s and 0.89 s of it after the map arrived.
+At step 50 `actual` drew its first frame 11.18 s and 10.79 s after the command. It now
+draws it about a second past the 2 s. Before the map, the command is about 0.25 s of
+starting Node and loading the compiler, 0.2 s of the diff, the cache's read and the log,
+0.3 s of the head's scan and 0.9 s of the build. Of the build, 0.3 s is the docs group's
+skin, which no renderer draws since the shore moved to a rail (D153), and 0.2 s is placing
+the one added file, the second pass's forces over its lane. After the map, the world's own
+first frame on 4,207 files takes 1.1 s, inside its budget from the map's arrival (C14).
 
-This repository draws its first frame about 2 s after the command, a little over on WebGL
-2 (D150). `actual` does not: 6.8 s of its 9.7 s before serving is the map's build, which
-lays every lane out again from the base's layout and cuts every skin again, and 1.7 s is
-the head's scan, which extracts the whole head tree and links it, though it reads only
-the files the diff touched.
+This repository draws its first frame a little over 2 s after the command. Its change
+against `HEAD~1` edits interface files whose names only the checker can print, so 1.1 s
+of its 1.9 s before serving is the checker's, extracting both commits and reading the
+changed files' programs there (D118).

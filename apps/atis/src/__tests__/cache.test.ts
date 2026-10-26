@@ -4,14 +4,14 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { DEFAULT_CONFIG, assertMap, layOutTerrain } from 'core';
+import { DEFAULT_CONFIG, assertMap, computeMembranes, layOutTerrain } from 'core';
 import type { Layout } from 'core';
 import { afterAll, expect, test } from 'vitest';
 
-import { codeKey, configKey, hashCode, readTerrain, terrainPath, writeTerrain } from '../cache.js';
-import type { BaseTerrain, TerrainKey } from '../cache.js';
+import { codeKey, configKey, entriesPath, hashCode, readEntries, readTerrain, terrainPath, writeEntries, writeTerrain } from '../cache.js';
+import type { BaseTerrain, StructureKey, TerrainKey } from '../cache.js';
 import { run } from '../run.js';
-import { HISTORY_WINDOW, readTree, scanImports } from '../sources/index.js';
+import { HISTORY_WINDOW, readCommit, readTree, scanImports } from '../sources/index.js';
 import type { Scan } from '../sources/index.js';
 
 /**
@@ -213,7 +213,7 @@ test('a second run on the same base reads the cache, and writes the map the firs
   expect(existsSync(join(repo, '.gitignore'))).toBe(false);
 }, MINUTE);
 
-test('the kept layout is the one a change that changes nothing relaxes from, and barely moves (D97)', () => {
+test('a change that changes nothing holds its base\'s kept layout exactly (D172)', () => {
   const { repo, git } = twoCommits();
   const out = join(temp('still'), 'map.json');
 
@@ -226,8 +226,30 @@ test('the kept layout is the one a change that changes nothing relaxes from, and
   expect(kept.hit).toBe(true);
   const layout = kept.hit ? kept.terrain.layout : undefined;
   expect(Object.keys(layout?.positions ?? {})).toEqual(['package.json', 'src/index.ts', 'src/shapes.ts', 'src/square.ts']);
-  expect(Object.keys(map.terrain.layout?.positions ?? {})).toEqual(Object.keys(layout?.positions ?? {}));
-  expect(meanDisplacement(layout, map.terrain.layout)).toBeLessThan(1);
+  expect(map.terrain.layout).toEqual(layout);
+}, MINUTE);
+
+test('a cached run keeps every file and skin the change left alone where the base\'s kept layout has them, as a run with nothing kept does (D172)', () => {
+  const { repo, git } = twoCommits();
+  const out = temp('held');
+  const base = git('rev-parse', 'HEAD~1');
+
+  const cold = run({ repo, base: 'HEAD~1', out: join(out, 'cold.json'), verbose: false, cache: false });
+  const first = run({ repo, base: 'HEAD~1', out: join(out, 'first.json'), verbose: false });
+  const cached = run({ repo, base: 'HEAD~1', out: join(out, 'cached.json'), verbose: true });
+  for (const one of [cold, first, cached]) expect(one.exitCode, one.stderr).toBe(0);
+  expect(cached.stderr).toContain('terrain cache hit');
+  // Nothing kept, a first run on an empty cache and a cached run draw one map.
+  for (const one of ['first.json', 'cached.json']) expect(bytesBesideTheClock(join(out, one)), one).toBe(bytesBesideTheClock(join(out, 'cold.json')));
+
+  const kept = readTerrain(repo, base, { code: codeKey(), config: configKey(DEFAULT_CONFIG, HISTORY_WINDOW) });
+  const ground = kept.hit ? kept.terrain.layout : undefined;
+  const map = assertMap(JSON.parse(readFileSync(join(out, 'cached.json'), 'utf8')));
+  const layout = map.terrain.layout;
+  // The edited file and the untouched ones stand where the base put them; only the added file is new.
+  const moved = Object.keys(layout?.positions ?? {}).filter((id) => JSON.stringify(layout?.positions[id]) !== JSON.stringify(ground?.positions[id]));
+  expect(moved).toEqual(['src/square.ts']);
+  expect(layout?.contours).toEqual(computeMembranes({ cells: map.terrain.cells, groups: map.terrain.groups, positions: layout?.positions ?? {} }));
 }, MINUTE);
 
 test('a base the cache has not seen relaxes from the nearest ancestor it has, and never from a descendant (D97)', () => {
@@ -254,6 +276,30 @@ test('a base the cache has not seen relaxes from the nearest ancestor it has, an
   expect(off.stderr).toContain('terrain cache off (--no-cache)');
   expect(off.stderr).not.toMatch(/cache near/);
 }, MINUTE);
+
+test('the entry points fallow listed for a head commit read back under the key they were kept by, and a fallback is never kept (D136, D172)', () => {
+  const repo = temp('entries');
+  const key: StructureKey = { code: 'c'.repeat(64), fallow: '3.22.0' };
+  const listed = { entries: [{ path: 'src/index.ts', tag: 'package.json main' }], lookup: { source: 'fallow' } } as const;
+
+  expect(readEntries(repo, SHA, key)).toBeUndefined();
+  expect(writeEntries(repo, SHA, key, listed)).toBe(entriesPath(repo, SHA));
+  expect(readEntries(repo, SHA, key)).toEqual(listed);
+  expect(readEntries(repo, SHA, { ...key, fallow: '3.23.0' })).toBeUndefined();
+  expect(readEntries(repo, SHA, { ...key, code: 'd'.repeat(64) })).toBeUndefined();
+  expect(readEntries(repo, OTHER_SHA, key)).toBeUndefined();
+  writeFileSync(entriesPath(repo, SHA), '{ not json');
+  expect(readEntries(repo, SHA, key)).toBeUndefined();
+
+  // The manifests standing in for a fallow that would not run say nothing of the next run's.
+  expect(writeEntries(repo, OTHER_SHA, key, { entries: [], lookup: { source: 'manifests', reason: 'fallow list timed out after 60 s' } })).toBeUndefined();
+  expect(existsSync(entriesPath(repo, OTHER_SHA))).toBe(false);
+});
+
+/** A commit's extraction that must never be made. */
+function neverExtracted(): string {
+  throw new Error('the commit was extracted');
+}
 
 /** The mean distance the files both layouts place moved from the first to the second, over those `kept` keeps. */
 function meanDisplacement(from: Layout | undefined, to: Layout | undefined, kept: (path: string) => boolean = () => true): number {
@@ -291,8 +337,12 @@ test('on two consecutive commits of this repo, unchanged files move less than th
   const before = layOutTerrain(first.scan, DEFAULT_CONFIG);
   const after: Scan = scanImports(afterTree, { repo });
 
-  // The second commit's scan, reading only the files the diff touched over the first's reads, is the full scan (D136).
+  // The second commit's scan, reading only the files the diff touched over the first's reads, is the full scan (D136),
+  // and so is the one read from git's own objects, which never extracts the commit when the entry points are kept (D172).
   expect(readTree(afterTree, { repo, prior: { parsed: first.parsed, touched: changed } }).scan).toEqual(after);
+  const fromGit = readCommit(AFTER, { repo, prior: { parsed: first.parsed, touched: changed }, extracted: () => afterTree });
+  expect(fromGit.scan).toEqual(after);
+  expect(readCommit(AFTER, { repo, prior: { parsed: first.parsed, touched: changed }, entryPoints: fromGit.entryPoints, extracted: neverExtracted }).scan).toEqual(after);
 
   const relaxed = layOutTerrain(after, DEFAULT_CONFIG, before);
   const cold = layOutTerrain(after, DEFAULT_CONFIG);

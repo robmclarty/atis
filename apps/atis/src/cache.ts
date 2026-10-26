@@ -22,6 +22,11 @@
  * that read it and the fallow that measured it, since a repository that moves
  * its fallow pin would otherwise compare a base measured by one version with
  * a head measured by another, while its terrain stands as it was.
+ *
+ * Beside them, at `.atis/entries/<sha>.json`, sit the entry points that
+ * fallow listed for a head commit, under the same key, so the head's scan,
+ * read from git's own objects, needs no extraction of the head on a second
+ * run either (D136, D172).
  */
 
 import { execFileSync } from 'node:child_process';
@@ -33,7 +38,7 @@ import { fileURLToPath } from 'node:url';
 import type { Commit, Config, Layout, Structure } from 'core';
 import ts from 'typescript';
 
-import type { ParsedFiles, Scan } from './sources/index.js';
+import type { EntryPoints, ParsedFiles, Scan } from './sources/index.js';
 
 /** One base commit's terrain: what a run would otherwise extract, scan and walk the log for. */
 export type BaseTerrain = {
@@ -75,6 +80,7 @@ export type StructureRead = { readonly hit: true; readonly structure: MeasuredSt
 const DIRECTORY = '.atis';
 const TERRAIN = 'terrain';
 const STRUCTURE = 'structure';
+const ENTRIES = 'entries';
 const ENTRY = '.json';
 /** How many commits back from a base the cache looks for an ancestor's terrain to relax from (D97). */
 const ANCESTRY = 1000;
@@ -109,6 +115,11 @@ export function terrainPath(repo: string, sha: string): string {
 /** Where a commit's structure is kept, beside the terrains (D98). */
 export function structurePath(repo: string, sha: string): string {
   return join(repo, DIRECTORY, STRUCTURE, `${sha}${ENTRY}`);
+}
+
+/** Where the entry points fallow listed for a head commit are kept, beside the structures (D136). */
+export function entriesPath(repo: string, sha: string): string {
+  return join(repo, DIRECTORY, ENTRIES, `${sha}${ENTRY}`);
 }
 
 /** Write an entry under `.atis/`, which ignores itself in git, so atis never edits the repository's own ignores. */
@@ -261,6 +272,26 @@ export function readStructure(repo: string, sha: string, key: StructureKey): Str
 /** Keep the structure of `sha` for the next run, atomically, beside the terrains. Returns where it went. */
 export function writeStructure(repo: string, sha: string, key: StructureKey, structure: MeasuredStructure): string {
   return keep(repo, structurePath(repo, sha), { sha, key, structure });
+}
+
+function isEntryList(value: unknown): value is EntryPoints['entries'] {
+  return Array.isArray(value) && value.every((entry) => isRecord(entry) && typeof entry['path'] === 'string' && typeof entry['tag'] === 'string');
+}
+
+/** Read the entry points fallow listed for `sha`, a hit only when this code kept them as this fallow listed them. */
+export function readEntries(repo: string, sha: string, key: StructureKey): EntryPoints | undefined {
+  const read = entryAt(entriesPath(repo, sha));
+  if (!read.found) return undefined;
+  const { entry } = read;
+  if (!isRecord(entry) || entry['sha'] !== sha || !isRecord(entry['key'])) return undefined;
+  if (entry['key']['code'] !== key.code || entry['key']['fallow'] !== key.fallow || !isEntryList(entry['entries'])) return undefined;
+  return { entries: entry['entries'], lookup: { source: 'fallow' } };
+}
+
+/** Keep the entry points fallow listed for `sha`, atomically; a lookup that fell back to the manifests is never kept, since fallow may read the next time. Returns where it went. */
+export function writeEntries(repo: string, sha: string, key: StructureKey, entryPoints: EntryPoints): string | undefined {
+  if (entryPoints.lookup.source !== 'fallow') return undefined;
+  return keep(repo, entriesPath(repo, sha), { sha, key, entries: entryPoints.entries });
 }
 
 /** The commits the cache holds an entry for, by the names of its files. */

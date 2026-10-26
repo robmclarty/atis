@@ -22,6 +22,11 @@
  * membrane (D24). How thick to draw it is the cell's `interface_size`, which
  * `membraneThickness` turns into a stroke width: a deep module is a big body
  * with a thin skin (§5.1).
+ *
+ * A skin is a function of its members' places and of every other file's within
+ * its reach, so a field that holds a layout before it keeps that layout's skin
+ * wherever neither moved, and cuts again only the skins near what the change
+ * placed or moved (D172).
  */
 
 import { BubbleSets, circle } from 'bubblesets-js';
@@ -41,6 +46,21 @@ export type MembraneInput = {
   readonly groups: readonly Group[];
   /** Every placed organelle and shore mark; whatever has no position has no membrane. */
   readonly positions: Readonly<Record<string, Position>>;
+};
+
+/**
+ * The skins a layout before this one cut, and where the field has changed
+ * since (D172): a skin whose placed members are the ones it held, with no
+ * change within its reach, is cut exactly as it was, so it is kept uncut,
+ * and a skin that layout could not cut stays uncut too.
+ */
+export type KeptSkins = {
+  /** The contours that layout cut, by cell or group id; a skin it could not cut has none. */
+  readonly contours: Readonly<Record<string, Contour>>;
+  /** The ids each skin of that layout held that it placed, in path order, whether or not it could cut a ring round them. */
+  readonly members: ReadonlyMap<string, readonly string[]>;
+  /** Every place the field changed at: where a file now stands that it did not, and where one stood that it has left. */
+  readonly changed: readonly Position[];
 };
 
 /** How a skin is cut: the energy field, and how far the ring may be thinned before it is smoothed. */
@@ -183,6 +203,24 @@ function subtreeOf(cells: readonly MembraneCell[]): ReadonlyMap<string, readonly
       return [cell.id, below] as const;
     }),
   );
+}
+
+/** Every organelle a cell's skin holds: its own, and every cell's beneath it (D45). */
+function membersOf(cell: MembraneCell, subtree: ReadonlyMap<string, readonly MembraneCell[]>): readonly string[] {
+  return (subtree.get(cell.id) ?? [cell]).flatMap((held) => held.organelles);
+}
+
+/**
+ * The ids each skin of a field holds that it places, in path order, by cell
+ * or group id: what a later field compares its own skins' members with (D172).
+ */
+export function skinMembers(input: MembraneInput): ReadonlyMap<string, readonly string[]> {
+  const subtree = subtreeOf(input.cells);
+  const placed = (ids: readonly string[]): readonly string[] => [...new Set(ids)].filter((id) => input.positions[id] !== undefined).toSorted(byPath);
+  return new Map([
+    ...input.cells.map((cell) => [cell.id, placed(membersOf(cell, subtree))] as const),
+    ...input.groups.map((group) => [group.id, placed(group.files)] as const),
+  ]);
 }
 
 /**
@@ -402,21 +440,27 @@ function carve(contour: Contour, members: readonly Position[], others: readonly 
  * membrane, which is not true either (C2). Members are raised in path order
  * so the field is the same every time (C3). Ids with no position are neither
  * members nor obstacles: a file the layout did not place is not on the field
- * at all.
+ * at all. A skin a layout before this one cut is kept as it was when it holds
+ * the same members and nothing within its reach has moved since (D172).
  */
 function membraneOf(
+  key: string,
   ids: readonly string[],
-  placed: readonly (readonly [string, Position])[],
+  over: Placed,
   fields: readonly Field[],
 ): Contour | undefined {
   const inside = new Set(ids);
-  const members = placed.flatMap(([id, at]) => (inside.has(id) ? [at] : []));
+  const held = [...inside].filter((id) => over.at.has(id)).toSorted(byPath);
+  const members = held.flatMap((id) => {
+    const at = over.at.get(id);
+    return at === undefined ? [] : [at];
+  });
   if (members.length === 0) return undefined;
-  const others = withinReach(
-    members,
-    placed.flatMap(([id, at]) => (inside.has(id) ? [] : [at])),
-    fields.reduce((most, field) => Math.max(most, reachOf(field.options)), 0),
-  );
+  const near = reachBox(members, fields.reduce((most, field) => Math.max(most, reachOf(field.options)), 0));
+  // The same members with nothing moved near them cut the same ring, or the same none.
+  const { kept } = over;
+  if (kept !== undefined && sameIds(kept.members.get(key), held) && !kept.changed.some(near)) return kept.contours[key];
+  const others = over.placed.flatMap(([id, at]) => (inside.has(id) || !near(at) ? [] : [at]));
 
   let best: { readonly contour: Contour; readonly tally: Tally } | undefined;
   for (const field of fields) {
@@ -453,20 +497,32 @@ function reachOf(options: IBubbleSetOptions): number {
 
 
 /**
- * The other files within `reach` of the members' box, in the order given.
- * The library tests every member against every other file on the field as
- * it routes the ways between them, which on a field of thousands was nearly
- * all of the time a layout took (91 of 99 s on a 4,000-file repository); a
- * file farther off is outside the region the field is cut in, so it changes
- * nothing but the cost.
+ * Whether a file lies within `reach` of the members' box: the files a skin is
+ * cut against. The library tests every member against every other file on
+ * the field as it routes the ways between them, which on a field of thousands
+ * was nearly all of the time a layout took (91 of 99 s on a 4,000-file
+ * repository); a file farther off is outside the region the field is cut in,
+ * so it changes nothing but the cost, and a change farther off leaves the
+ * skin as it was (D172).
  */
-function withinReach(members: readonly Position[], others: readonly Position[], reach: number): readonly Position[] {
+function reachBox(members: readonly Position[], reach: number): (at: Position) => boolean {
   const x0 = Math.min(...members.map((at) => at.x - at.r)) - reach;
   const x1 = Math.max(...members.map((at) => at.x + at.r)) + reach;
   const y0 = Math.min(...members.map((at) => at.y - at.r)) - reach;
   const y1 = Math.max(...members.map((at) => at.y + at.r)) + reach;
-  return others.filter((at) => at.x + at.r >= x0 && at.x - at.r <= x1 && at.y + at.r >= y0 && at.y - at.r <= y1);
+  return (at) => at.x + at.r >= x0 && at.x - at.r <= x1 && at.y + at.r >= y0 && at.y - at.r <= y1;
 }
+
+function sameIds(one: readonly string[] | undefined, other: readonly string[]): boolean {
+  return one !== undefined && one.length === other.length && one.every((id, index) => id === other[index]);
+}
+
+/** What every skin is cut over: each placed file in path order, the same by id, and the skins a layout before it cut. */
+type Placed = {
+  readonly placed: readonly (readonly [string, Position])[];
+  readonly at: ReadonlyMap<string, Position>;
+  readonly kept?: KeptSkins | undefined;
+};
 
 /**
  * One contour per cell and per shore group that has a mark on the field,
@@ -476,18 +532,18 @@ function withinReach(members: readonly Position[], others: readonly Position[], 
  * a neighbour's file outside it; a package's skin holds every organelle of
  * every cell beneath it (D45).
  */
-export function computeMembranes(input: MembraneInput): Readonly<Record<string, Contour>> {
+export function computeMembranes(input: MembraneInput, kept?: KeptSkins): Readonly<Record<string, Contour>> {
   const subtree = subtreeOf(input.cells);
   const drawn: (readonly [string, Contour])[] = [];
   const placed = Object.entries(input.positions).toSorted(([a], [b]) => byPath(a, b));
+  const over: Placed = { placed, at: new Map(placed), kept };
 
   for (const cell of input.cells) {
-    const ids = (subtree.get(cell.id) ?? [cell]).flatMap((held) => held.organelles);
-    const contour = membraneOf(ids, placed, CELL_FIELDS);
+    const contour = membraneOf(cell.id, membersOf(cell, subtree), over, CELL_FIELDS);
     if (contour !== undefined) drawn.push([cell.id, contour]);
   }
   for (const group of input.groups) {
-    const contour = membraneOf(group.files, placed, SHORE_FIELDS);
+    const contour = membraneOf(group.id, group.files, over, SHORE_FIELDS);
     if (contour !== undefined) drawn.push([group.id, contour]);
   }
 

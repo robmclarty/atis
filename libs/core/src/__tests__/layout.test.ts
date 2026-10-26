@@ -5,8 +5,8 @@ import { fileURLToPath } from 'node:url';
 import { expect, test } from 'vitest';
 
 import { DEFAULT_CONFIG } from '../config.js';
-import { LAYOUT_SEED, computeLayout, radiusOf, seededRandom, simulate } from '../layout/index.js';
-import type { LayoutInput } from '../layout/index.js';
+import { LAYOUT_SEED, computeLayout, computeMembranes, radiusOf, seededRandom, simulate } from '../layout/index.js';
+import type { Ground, LayoutInput } from '../layout/index.js';
 import { buildMap, layOutTerrain } from '../map.js';
 import type { BuildInputs } from '../map.js';
 import { assertMap } from '../schema.js';
@@ -287,4 +287,143 @@ test('a renamed file keeps where it stood before, carried beside the file neares
   // And a second position for a file the map does not place is refused.
   const stray = { ...map, terrain: { ...map.terrain, layout: { ...map.terrain.layout, renamed_from: { 'src/gone.ts': { x: 1, y: 1, r: 4 } } } } };
   expect(() => assertMap(stray)).toThrow(/renamed_from/);
+});
+
+/** The fixture's own field as a change over it holds it (D172): its layout and the terrain it laid out. */
+const GROUND: Ground = {
+  layout: FIELD,
+  cells: INPUT.cells,
+  organelles: INPUT.organelles.map(({ id, cell, band, loc }) => ({ id, cell, band, loc })),
+  bands: INPUT.bands,
+  groups: INPUT.groups,
+};
+
+const ADDED = 'libs/p03/src/f06.ts';
+const RENAMED = { from: 'libs/p05/src/f02.ts', to: 'libs/p05/src/g02.ts' } as const;
+
+/**
+ * A change over the fixture: a file added to the fourth cell, a file of the
+ * sixth renamed within it, and a page added to the docs.
+ */
+function changed(docs: readonly string[] = ['docs/page-14.md']): LayoutInput {
+  const rename = (id: string): string => (id === RENAMED.from ? RENAMED.to : id);
+  const organelles = [
+    ...INPUT.organelles.map((organelle) => (organelle.id === RENAMED.from ? { ...organelle, id: RENAMED.to, path: RENAMED.to } : organelle)),
+    { ...organelleAt(3, 0), id: ADDED, path: ADDED },
+  ];
+  return {
+    ...INPUT,
+    organelles,
+    cells: INPUT.cells.map((cell) => ({ ...cell, organelles: [...cell.organelles.map(rename), ...(cell.id === cellOf(3) ? [ADDED] : [])] })),
+    groups: INPUT.groups.map((group) => (group.id === 'docs' ? { ...group, files: [...group.files, ...docs] } : group)),
+    added: new Set([ADDED, ...docs]),
+    renames: new Map([[RENAMED.to, RENAMED.from]]),
+  };
+}
+
+test('over its base, a change holds every file and skin it left alone exactly where the base had them (D172)', () => {
+  const input = changed();
+  const held = computeLayout({ ...input, ground: GROUND });
+  const moved = new Set([ADDED, RENAMED.to, 'docs/page-14.md']);
+
+  // Every file the change did not add or rename stands where the base put it, shore marks with the rest.
+  for (const [id, position] of Object.entries(held.positions)) {
+    if (!moved.has(id)) expect(position, id).toEqual(FIELD.positions[id]);
+  }
+  // The change's own files have places, the new page in its block's next free one, and the renamed file's old place is its base place (D40).
+  for (const id of moved) expect(held.positions[id], id).toBeDefined();
+  expect(held.positions['docs/page-14.md']?.y).toBeLessThan(FIELD.shore.y1);
+  expect(held.renamed_from).toEqual({ [RENAMED.to]: FIELD.positions[RENAMED.from] });
+  // The terraces, the shore and the field's size are the base's.
+  expect({ ...held, positions: {}, contours: {}, renamed_from: {} }).toEqual({ ...FIELD, positions: {}, contours: {}, renamed_from: {} });
+
+  // Every skin is the one a full cut over the held field gives, and the skins far from the change are the base's own.
+  expect(held.contours).toEqual(computeMembranes({ cells: input.cells, groups: input.groups, positions: held.positions }));
+  for (const far of [cellOf(0), cellOf(1)]) expect(held.contours?.[far], far).toEqual(FIELD.contours?.[far]);
+  // One base and one change hold one field.
+  expect(JSON.stringify(computeLayout({ ...input, ground: GROUND }))).toBe(JSON.stringify(held));
+});
+
+test('a change that changes nothing holds its base exactly (D172)', () => {
+  expect(computeLayout({ ...INPUT, ground: GROUND })).toEqual(FIELD);
+});
+
+test('a file the change moves to another terrace, and a lane the base never had, are laid out around the held ground (D172)', () => {
+  const lifted = organelleAt(2, 0);
+  const fresh = ['libs/p08/src/f00.ts', 'libs/p08/src/f01.ts'];
+  const input: LayoutInput = {
+    ...INPUT,
+    organelles: [
+      ...INPUT.organelles.map((organelle) => (organelle.id === lifted.id ? { ...organelle, band: organelle.band + 1 } : organelle)),
+      ...fresh.map((id, index) => ({ ...organelleAt(0, index), id, path: id, cell: 'folder:libs/p08/src' })),
+    ],
+    cells: [...INPUT.cells, { id: 'folder:libs/p08/src', organelles: fresh }],
+    added: new Set(fresh),
+  };
+  const held = computeLayout({ ...input, ground: GROUND });
+  const strip = held.bands.find((band) => band.index === lifted.band + 1);
+
+  // The lifted file left its old place for its new terrace; everything else of the base stayed.
+  expect(held.positions[lifted.id]).not.toEqual(FIELD.positions[lifted.id]);
+  expect(held.positions[lifted.id]?.y).toBeGreaterThan(strip?.y0 ?? Number.POSITIVE_INFINITY);
+  expect(held.positions[lifted.id]?.y).toBeLessThan(strip?.y1 ?? 0);
+  for (const id of Object.keys(FIELD.positions).filter((path) => path !== lifted.id)) expect(held.positions[id], id).toEqual(FIELD.positions[id]);
+  // The new lane stands right of every lane the base had.
+  const right = Math.max(...INPUT.organelles.map((organelle) => positionOf(FIELD, organelle.id).x));
+  for (const id of fresh) expect(positionOf(held, id).x).toBeGreaterThan(right);
+  expect(held.contours).toEqual(computeMembranes({ cells: input.cells, groups: input.groups, positions: held.positions }));
+});
+
+test('pages a full block cannot take grow it a row into the gap below, then stand at the end of its row, and the ground holds (D172)', () => {
+  const pages = Array.from({ length: 10 }, (_unused, index) => `docs/page-${String(14 + index)}.md`);
+  const input = changed(pages);
+  const held = computeLayout({ ...input, ground: GROUND });
+
+  for (const [id, position] of Object.entries(FIELD.positions)) {
+    if (id !== RENAMED.from) expect(held.positions[id], id).toEqual(position);
+  }
+  // The docs block, four columns of four rows, takes two pages in its last row and four in the row below it.
+  const shore = Object.values(FIELD.positions).filter((position) => position.y < FIELD.shore.y1);
+  const docs = (INPUT.groups[0]?.files ?? []).map((file) => positionOf(FIELD, file));
+  for (const page of pages.slice(0, 6)) {
+    expect(positionOf(held, page).x).toBeLessThanOrEqual(Math.max(...docs.map((at) => at.x)));
+    expect(positionOf(held, page).y).toBeGreaterThan(Math.max(...docs.map((at) => at.y)) - 20);
+  }
+  // The rest stand in a block of their own past every block of the row; the shore and the terraces never moved.
+  for (const page of pages.slice(6)) expect(positionOf(held, page).x).toBeGreaterThan(Math.max(...shore.map((at) => at.x)));
+  for (const page of pages) expect(positionOf(held, page).y).toBeLessThan(FIELD.shore.y1);
+  expect({ shore: held.shore, bands: held.bands, height: held.height }).toEqual({ shore: FIELD.shore, bands: FIELD.bands, height: FIELD.height });
+  expect(held.contours).toEqual(computeMembranes({ cells: input.cells, groups: input.groups, positions: held.positions }));
+});
+
+test('a change its base cannot hold relaxes from it instead (D97, D172)', () => {
+  // A terrace that spans other depths now means something else.
+  const deeper = { ...changed(), bands: INPUT.bands.map((band) => (band.index === 6 ? { ...band, depth_max: 9 } : band)) };
+  expect(computeLayout({ ...deeper, ground: GROUND })).toEqual(computeLayout({ ...deeper, prior: FIELD }));
+
+  // A base with no shore has none for a new page to join without pushing the terraces down.
+  const bare = { ...INPUT, groups: [] };
+  const ashore = { ...bare, groups: [{ id: 'docs', files: ['README.md'] }], added: new Set(['README.md']) };
+  const field = computeLayout(bare);
+  const ground = { ...GROUND, layout: field, groups: [] };
+  expect(computeLayout({ ...ashore, ground })).toEqual(computeLayout({ ...ashore, prior: field }));
+});
+
+test('a map over its base keeps what the base laid out where the change left it, and a change of nothing keeps it all (D172)', () => {
+  const inputs = JSON.parse(readFileSync(join(FIXTURES, 'rename', 'inputs.json'), 'utf8')) as BuildInputs;
+  const ground = layOutTerrain(inputs.base, DEFAULT_CONFIG);
+  const map = buildMap({ ...inputs, ground }, DEFAULT_CONFIG);
+  expect(() => assertMap(map)).not.toThrow();
+  const layout = map.terrain.layout;
+  const touched = new Set(inputs.diff.flatMap((file) => [file.path, ...(file.from === undefined ? [] : [file.from])]));
+
+  const kept = Object.keys(layout.positions).filter((id) => !touched.has(id) && ground.positions[id] !== undefined);
+  expect(kept).not.toHaveLength(0);
+  for (const id of kept) expect(layout.positions[id], id).toEqual(ground.positions[id]);
+  // The renamed file's leader runs from exactly where it stood (D40).
+  expect(layout.renamed_from).toEqual({ 'src/new-name.ts': ground.positions['src/old-name.ts'] });
+  expect(layout.contours).toEqual(computeMembranes({ cells: map.terrain.cells, groups: map.terrain.groups, positions: layout.positions }));
+
+  const still = { ...inputs, head: inputs.base, diff: [], deps_added: [], deps_moved: [] };
+  expect(buildMap({ ...still, ground }, DEFAULT_CONFIG).terrain.layout).toEqual(ground);
 });

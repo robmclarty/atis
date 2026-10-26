@@ -25,13 +25,17 @@
  * that declares it.
  *
  * One process reads the whole tree, so the graph that feeds depth, layout,
- * reach and stitches is scanned once, not once per file.
+ * reach and stitches is scanned once, not once per file. A commit whose
+ * earlier reads it reuses is read from git's own objects instead of an
+ * extraction (D172): its files are listed from the commit, and only the ones
+ * it parses again and the manifests are drawn out, by `git archive`, so they
+ * hold the bytes an extraction would.
  */
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
 import { isBuiltin } from 'node:module';
-import { isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 import { classifyFile, memberOf } from 'core';
 import type { CodeSpan, EntryPointLookup, ExportShapes, FileKind, PassedName } from 'core';
@@ -107,8 +111,22 @@ export type ScanOptions = {
 /** What a scan read from each TypeScript file of a tree, by path: what a later scan of a later commit reuses (D136). */
 export type ParsedFiles = Readonly<Record<string, ParsedFile>>;
 
-/** A scan, and what it read from each file to make it. */
-export type ScannedTree = { readonly scan: Scan; readonly parsed: ParsedFiles };
+/** A scan, what it read from each file to make it, and the entry points fallow named for it, or why the manifests named them alone. */
+export type ScannedTree = { readonly scan: Scan; readonly parsed: ParsedFiles; readonly entryPoints: EntryPoints };
+
+/** fallow's entry points for a tree, and whether it was read at all (C2): what a later run on the same commit reuses (D136). */
+export type EntryPoints = { readonly entries: readonly FallowEntry[]; readonly lookup: EntryPointLookup };
+
+/** How a commit is read from git's objects (D172). */
+export type CommitOptions = {
+  /** The reviewed repository, which holds the commit's objects and its own fallow (D22). */
+  readonly repo: string;
+  readonly prior?: ScanOptions['prior'];
+  /** fallow's entry points for this commit, kept from an earlier run (D136); fallow lists them afresh when absent. */
+  readonly entryPoints?: EntryPoints | undefined;
+  /** The commit extracted whole, made only when the reviewed repo's fallow has to list its entry points from one. */
+  readonly extracted: () => string;
+};
 
 /** The name a namespace import takes, and the one `export * from` takes. */
 const STAR = '*';
@@ -120,6 +138,13 @@ const WORKSPACE_FILE = 'pnpm-workspace.yaml';
 const FALLOW_BIN = 'node_modules/.bin/fallow';
 const FALLOW_TIMEOUT_MS = 60_000;
 const SKIPPED_DIRECTORIES = new Set(['.git', 'node_modules']);
+/** How much `git` may print in one go: a whole commit's listing, or the files a scan draws out of it. */
+const GIT_BYTES = 1024 * 1024 * 1024;
+/** How many paths one `git archive` is handed, so its command line stays well inside the system's limit. */
+const ARCHIVE_PATHS = 500;
+/** The tar block, and the git modes of a symbolic link and of a submodule. */
+const TAR_BLOCK = 512;
+const SYMLINK_MODE = '120000';
 
 /** A package name npm would take, scoped or not, as a bare specifier opens with it. */
 const PACKAGE_NAME = /^(?:@[a-z0-9][\w.~-]*\/)?[a-z0-9][\w.~-]*$/i;
@@ -176,7 +201,19 @@ function relativeTo(root: string, name: string): string | undefined {
   return path.split(sep).join('/');
 }
 
-type Tree = { readonly files: readonly string[]; readonly directories: ReadonlySet<string> };
+/**
+ * A commit's files as the scan reads them: every file in path order, every
+ * directory, a file's text by its path, and a way to draw out many files at
+ * once before they are read. `root` is where the compiler is told the files
+ * stand; it reads none of them but through `read`.
+ */
+type Tree = {
+  readonly root: string;
+  readonly files: readonly string[];
+  readonly directories: ReadonlySet<string>;
+  readonly read: (path: string) => string;
+  readonly want?: (paths: readonly string[]) => void;
+};
 
 /** Every file of the extraction, sorted; an archive holds exactly the tracked ones (D43). */
 function walk(root: string): Tree {
@@ -193,7 +230,128 @@ function walk(root: string): Tree {
       } else if (entry.isFile()) files.push(path);
     }
   }
-  return { files: files.toSorted(byPath), directories };
+  return { root, files: files.toSorted(byPath), directories, read: (path) => readFileSync(join(root, path), 'utf8') };
+}
+
+function gitBytes(repo: string, args: readonly string[], input?: string): Buffer {
+  return execFileSync('git', ['--literal-pathspecs', ...args], {
+    cwd: repo,
+    maxBuffer: GIT_BYTES,
+    stdio: ['pipe', 'pipe', 'pipe'],
+    ...(input === undefined ? {} : { input }),
+  });
+}
+
+/** The text of a NUL-terminated field of a tar header. */
+function tarField(header: Buffer, start: number, length: number): string {
+  const raw = header.subarray(start, start + length);
+  const end = raw.indexOf(0);
+  return raw.subarray(0, end === -1 ? length : end).toString('utf8');
+}
+
+/** The `path` a pax extended header gives the entry after it: records of `<length> <key>=<value>\n`. */
+function paxPath(body: Buffer): string | undefined {
+  let path: string | undefined;
+  for (let at = 0; at < body.length; ) {
+    const space = body.indexOf(0x20, at);
+    const length = Number(body.subarray(at, space).toString('utf8'));
+    if (space === -1 || !Number.isInteger(length) || length <= 0) break;
+    const record = body.subarray(space + 1, at + length - 1).toString('utf8');
+    const equals = record.indexOf('=');
+    if (record.slice(0, equals) === 'path') path = record.slice(equals + 1);
+    at += length;
+  }
+  return path;
+}
+
+/** The regular files of a tar archive by path, as `git archive` writes one: ustar headers, a long path in a pax header before its entry. */
+function untar(tar: Buffer): ReadonlyMap<string, string> {
+  const files = new Map<string, string>();
+  let long: string | undefined;
+  for (let at = 0; at + TAR_BLOCK <= tar.length; ) {
+    const header = tar.subarray(at, at + TAR_BLOCK);
+    if (header.every((byte) => byte === 0)) break;
+    const size = Number.parseInt(tarField(header, 124, 12).trim() || '0', 8);
+    const type = String.fromCodePoint(header[156] ?? 0);
+    const body = tar.subarray(at + TAR_BLOCK, at + TAR_BLOCK + size);
+    at += TAR_BLOCK + Math.ceil(size / TAR_BLOCK) * TAR_BLOCK;
+    if (type === 'x') {
+      long = paxPath(body);
+      continue;
+    }
+    if (type === 'g') continue;
+    const prefix = tarField(header, 345, 155);
+    const name = tarField(header, 0, 100);
+    const path = long ?? (prefix === '' ? name : `${prefix}/${name}`);
+    long = undefined;
+    if (type === '0' || type === '\0') files.set(path, body.toString('utf8'));
+  }
+  return files;
+}
+
+/** Whether a path lies under a directory an extraction's walk never enters. */
+function skipped(path: string, directory: boolean): boolean {
+  const parts = path.split('/');
+  return (directory ? parts : parts.slice(0, -1)).some((part) => SKIPPED_DIRECTORIES.has(part));
+}
+
+/**
+ * The paths `git archive` leaves out of `sha`: every one whose
+ * `export-ignore` attribute is set, read from the commit's own attributes as
+ * the archive reads them, and everything beneath a directory that is.
+ */
+function exportIgnored(repo: string, sha: string, paths: readonly string[]): (path: string) => boolean {
+  const said = gitBytes(repo, ['check-attr', `--source=${sha}`, '-z', '--stdin', 'export-ignore'], `${paths.join('\0')}\0`).toString('utf8').split('\0');
+  const ignored = new Set<string>();
+  for (let at = 0; at + 2 < said.length; at += 3) {
+    if (said[at + 2] === 'set') ignored.add(said[at] ?? '');
+  }
+  if (ignored.size === 0) return () => false;
+  return (path) => {
+    for (let at = path; at !== ''; at = at.slice(0, Math.max(at.lastIndexOf('/'), 0))) {
+      if (ignored.has(at)) return true;
+    }
+    return false;
+  };
+}
+
+/**
+ * A commit read from git's own objects rather than an extraction (D172): the
+ * files and directories the archive of `sha` would hold, listed from the
+ * commit, and each file the scan reads drawn out of `git archive` of that file
+ * alone, so its bytes are the ones an extraction holds, every attribute the
+ * archive applies applied. `want` draws out many at once.
+ */
+function gitTree(repo: string, sha: string): Tree {
+  const listed = gitBytes(repo, ['ls-tree', '-r', '-t', '-z', '--full-tree', sha])
+    .toString('utf8')
+    .split('\0')
+    .filter((line) => line !== '')
+    .map((line) => {
+      const tab = line.indexOf('\t');
+      const [mode = '', type = ''] = line.slice(0, tab).split(' ');
+      return { mode, type, path: line.slice(tab + 1) };
+    });
+  const ignored = exportIgnored(repo, sha, listed.map((entry) => entry.path));
+  const kept = listed.filter((entry) => !ignored(entry.path));
+  const files = kept.filter((entry) => entry.type === 'blob' && entry.mode !== SYMLINK_MODE && !skipped(entry.path, false)).map((entry) => entry.path);
+  const directories = new Set(['', ...kept.filter((entry) => entry.type !== 'blob' && !skipped(entry.path, true)).map((entry) => entry.path)]);
+
+  const drawn = new Map<string, string>();
+  const want = (paths: readonly string[]): void => {
+    const missing = [...new Set(paths)].filter((path) => !drawn.has(path));
+    for (let at = 0; at < missing.length; at += ARCHIVE_PATHS) {
+      const chunk = missing.slice(at, at + ARCHIVE_PATHS);
+      for (const [path, content] of untar(gitBytes(repo, ['archive', '--format=tar', sha, '--', ...chunk]))) drawn.set(path, content);
+    }
+  };
+  const read = (path: string): string => {
+    if (!drawn.has(path)) want([path]);
+    const content = drawn.get(path);
+    if (content === undefined) throw new Error(`${path} is not a file of ${sha}`);
+    return content;
+  };
+  return { root: resolve(repo), files: files.toSorted(byPath), directories, read, want };
 }
 
 /**
@@ -202,19 +360,22 @@ function walk(root: string): Tree {
  * does not resolve. Symbolic links are left alone, so every resolved path stays
  * under the directory the caller named.
  */
-function resolutionHost(root: string, tree: Tree, paths: ReadonlySet<string>): ts.ModuleResolutionHost {
+function resolutionHost(tree: Tree, paths: ReadonlySet<string>): ts.ModuleResolutionHost {
   const known = (name: string): string | undefined => {
-    const path = relativeTo(root, name);
+    const path = relativeTo(tree.root, name);
     return path !== undefined && paths.has(path) ? path : undefined;
   };
   return {
     fileExists: (name) => known(name) !== undefined,
-    readFile: (name) => (known(name) === undefined ? undefined : readFileSync(name, 'utf8')),
+    readFile: (name) => {
+      const path = known(name);
+      return path === undefined ? undefined : tree.read(path);
+    },
     directoryExists: (name) => {
-      const path = relativeTo(root, name);
+      const path = relativeTo(tree.root, name);
       return path !== undefined && tree.directories.has(path);
     },
-    getCurrentDirectory: () => root,
+    getCurrentDirectory: () => tree.root,
     useCaseSensitiveFileNames: true,
   };
 }
@@ -750,11 +911,11 @@ export function globToRegExp(glob: string): RegExp {
 
 type Member = { readonly name: string; readonly dir: string; readonly manifest: Readonly<Record<string, unknown>> };
 
-function readManifest(root: string, dir: string, paths: ReadonlySet<string>): Readonly<Record<string, unknown>> | undefined {
+function readManifest(tree: Tree, dir: string, paths: ReadonlySet<string>): Readonly<Record<string, unknown>> | undefined {
   const path = dir === '.' ? MANIFEST : `${dir}/${MANIFEST}`;
   if (!paths.has(path)) return undefined;
   try {
-    const value: unknown = JSON.parse(readFileSync(join(root, path), 'utf8'));
+    const value: unknown = JSON.parse(tree.read(path));
     return isRecord(value) ? value : undefined;
   } catch {
     // A manifest that will not parse names no package: the directory is terrain
@@ -767,22 +928,22 @@ function readManifest(root: string, dir: string, paths: ReadonlySet<string>): Re
  * The workspace globs: `pnpm-workspace.yaml`'s when the file exists, since pnpm
  * never reads `workspaces`, else the root manifest's `workspaces` (D43, D64).
  */
-function workspaceGlobs(root: string, paths: ReadonlySet<string>): readonly string[] {
-  if (paths.has(WORKSPACE_FILE)) return parseWorkspaceGlobs(readFileSync(join(root, WORKSPACE_FILE), 'utf8'));
-  if (paths.has(MANIFEST)) return parseManifestWorkspaces(readFileSync(join(root, MANIFEST), 'utf8'));
+function workspaceGlobs(tree: Tree, paths: ReadonlySet<string>): readonly string[] {
+  if (paths.has(WORKSPACE_FILE)) return parseWorkspaceGlobs(tree.read(WORKSPACE_FILE));
+  if (paths.has(MANIFEST)) return parseManifestWorkspaces(tree.read(MANIFEST));
   return [];
 }
 
 /** The workspace members: the root, plus every directory the workspace globs match (D43, D64). */
-function readMembers(root: string, tree: Tree, paths: ReadonlySet<string>): readonly Member[] {
-  const globs = workspaceGlobs(root, paths);
+function readMembers(tree: Tree, paths: ReadonlySet<string>): readonly Member[] {
+  const globs = workspaceGlobs(tree, paths);
   const include = globs.filter((glob) => !glob.startsWith('!')).map(globToRegExp);
   const exclude = globs.filter((glob) => glob.startsWith('!')).map((glob) => globToRegExp(glob.slice(1)));
   const matched = [...tree.directories].filter(
     (dir) => dir !== '' && include.some((rule) => rule.test(dir)) && !exclude.some((rule) => rule.test(dir)),
   );
   return ['.', ...matched.toSorted(byPath)].flatMap((dir) => {
-    const manifest = readManifest(root, dir, paths);
+    const manifest = readManifest(tree, dir, paths);
     if (manifest === undefined) return [];
     return [{ name: text(manifest['name']) ?? dir, dir, manifest }];
   });
@@ -953,14 +1114,14 @@ function outsidePackage(specifier: string, context: Context): string | undefined
   return name;
 }
 
-function contextOf(root: string, tree: Tree): Context {
+function contextOf(tree: Tree): Context {
   const paths = new Set(tree.files);
   return {
-    root,
+    root: tree.root,
     paths,
-    members: readMembers(root, tree, paths),
-    host: resolutionHost(root, tree, paths),
-    cache: ts.createModuleResolutionCache(root, (name) => name, RESOLUTION),
+    members: readMembers(tree, paths),
+    host: resolutionHost(tree, paths),
+    cache: ts.createModuleResolutionCache(tree.root, (name) => name, RESOLUTION),
   };
 }
 
@@ -974,8 +1135,7 @@ export type TreeResolver = (specifier: string, from: string) => string | undefin
  * in-tree imports and an npm package stays unresolved.
  */
 export function treeResolver(dir: string): TreeResolver {
-  const root = resolve(dir);
-  const context = contextOf(root, walk(root));
+  const context = contextOf(walk(resolve(dir)));
   return (specifier, from) => resolveSpecifier(specifier, from, context);
 }
 
@@ -1054,10 +1214,7 @@ export function parseFallowEntryPoints(stdout: string): readonly FallowEntry[] {
   return [...entries.values()].toSorted((a, b) => byPath(a.path, b.path) || byPath(a.tag, b.tag));
 }
 
-/** What the fallow lookup found: the entry points it named, and whether it was read at all (C2). */
-type FallowRead = { readonly entries: readonly FallowEntry[]; readonly lookup: EntryPointLookup };
-
-function manifestsOnly(reason: string): FallowRead {
+function manifestsOnly(reason: string): EntryPoints {
   return { entries: [], lookup: { source: 'manifests', reason } };
 }
 
@@ -1106,9 +1263,10 @@ function runFailure(error: unknown): string {
  * the JSON on stdout. No local fallow, or a run or a parse that fails, leaves
  * the manifests to name the entry points alone, and the lookup says why (C2).
  */
-function fallowEntryPoints(root: string, repo: string): FallowRead {
+function fallowEntryPoints(tree: () => string, repo: string): EntryPoints {
   const bin = resolve(repo, FALLOW_BIN);
   if (!existsSync(bin)) return manifestsOnly(`no local fallow at ${FALLOW_BIN}`);
+  const root = tree();
   let stdout: string;
   try {
     stdout = execFileSync(bin, ['list', '--entry-points', '--format', 'json', '--root', root], {
@@ -1172,12 +1330,26 @@ export function scanImports(dir: string, options: ScanOptions = {}): Scan {
  */
 export function readTree(dir: string, options: ScanOptions = {}): ScannedTree {
   const root = resolve(dir);
-  const tree = walk(root);
-  const context = contextOf(root, tree);
-  const { members } = context;
-  const { prior } = options;
+  return scanTree(walk(root), options.prior, () => fallowEntryPoints(() => root, options.repo ?? dir));
+}
+
+/**
+ * `readTree` of a commit read from git's own objects rather than an
+ * extraction of it (D172). Its scan is the one an extraction's would be: the
+ * same files and directories, and the bytes of each it reads.
+ */
+export function readCommit(sha: string, options: CommitOptions): ScannedTree {
+  const { repo, entryPoints } = options;
+  return scanTree(gitTree(repo, sha), options.prior, () => entryPoints ?? fallowEntryPoints(options.extracted, repo));
+}
+
+function scanTree(tree: Tree, prior: ScanOptions['prior'], entryPoints: () => EntryPoints): ScannedTree {
   const kept = (path: string): ParsedFile | undefined =>
     prior === undefined || prior.touched.has(path) || !Object.hasOwn(prior.parsed, path) ? undefined : prior.parsed[path];
+  // Everything the scan will read, drawn out at once: the manifests and the files it parses again.
+  tree.want?.(tree.files.filter((path) => basename(path) === MANIFEST || path === WORKSPACE_FILE || (TYPESCRIPT.test(path) && kept(path) === undefined)));
+  const context = contextOf(tree);
+  const { members } = context;
 
   const parsed = new Map<string, ParsedFile>();
   const edges: ScannedEdge[] = [];
@@ -1185,7 +1357,7 @@ export function readTree(dir: string, options: ScanOptions = {}): ScannedTree {
   const packages = new Map<string, readonly string[]>();
   for (const path of tree.files) {
     if (!TYPESCRIPT.test(path)) continue;
-    const file = kept(path) ?? parseSource(path, readFileSync(join(root, path), 'utf8'));
+    const file = kept(path) ?? parseSource(path, tree.read(path));
     parsed.set(path, file);
     const outside: string[] = [];
     for (const { specifier, names, line, reexports } of file.references) {
@@ -1225,7 +1397,7 @@ export function readTree(dir: string, options: ScanOptions = {}): ScannedTree {
       packages: packages.get(path) ?? [],
     };
   });
-  const fallow = fallowEntryPoints(root, options.repo ?? dir);
+  const fallow = entryPoints();
   const entries = memberEntries(context, fallow.entries);
   const scan: Scan = {
     files,
@@ -1239,5 +1411,5 @@ export function readTree(dir: string, options: ScanOptions = {}): ScannedTree {
     })),
     entry_points: fallow.lookup,
   };
-  return { scan, parsed: Object.fromEntries(parsed) };
+  return { scan, parsed: Object.fromEntries(parsed), entryPoints: fallow };
 }

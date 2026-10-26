@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 54 — feat(web): draw improvements, Health Δ and the rename leader
+**Current step:** 115 — perf(core): reuse a cached base's layout for the ground the change did not touch
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -103,7 +103,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 51. feat(cli): measure health, duplication and structure at the base
 - ☑ 52. feat(core): compute health deltas, introduced findings and improvements
 - ☑ 53. feat(svg): draw improvements, the live Health Δ and the rename leader
-- ☐ 54. feat(web): draw improvements, Health Δ and the rename leader
+- ☑ 54. feat(web): draw improvements, Health Δ and the rename leader
 - ☐ 115. perf(core): reuse a cached base's layout for the ground the change did not touch
 - ☐ 55. feat(cli): resolve the trunk and the named bases
 - ☐ 56. feat(cli): map the working tree's uncommitted weather
@@ -206,8 +206,12 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] hover on the planet: name a city light's file, or a star's package with its importers and health; the far zoom hovers nothing on the flat ground under it now (planet-far-field, step 113)
 - [x] the readLog test on this repo (git.test.ts) takes 4-5 s under the full check, against vitest's 5 s default timeout, and flaked once in step 48's run; git log --numstat over 135 commits costs ~1.8 s alone, which step 50's log timings and D50's --history cap should look at
 - [x] a cached run reuses its base's layout: pin the ground the change did not touch where the base put it, place only the change's files, recut only the skins near them, and scan the head without extracting the whole tree, so actual's cached first frame (11.2 s, 6.8 s of it the map's build) reaches about 2 s (C14 world-budget, D136 first-frame-clock); trades step 49's relaxed ground for a pinned one
-- [ ] key the calm-positive stain of an improved file and a renamed file's leader in both legends: steps 53 and 54 draw both marks, and neither legend keys them yet, as neither keys the rename's dashed outline
-- [ ] git.ts's showFile runs git show without piping stderr, so a manifest the change added prints git's 'fatal: path … exists on disk, but not in <sha>' to the terminal on every run; seen mapping d80907b at step 54
+- [x] key the calm-positive stain of an improved file and a renamed file's leader in both legends: steps 53 and 54 draw both marks, and neither legend keys them yet, as neither keys the rename's dashed outline
+- [x] git.ts's showFile runs git show without piping stderr, so a manifest the change added prints git's 'fatal: path … exists on disk, but not in <sha>' to the terminal on every run; seen mapping d80907b at step 54
+- [ ] core still cuts a skin per shore group though no renderer has drawn one since the shore moved to a rail (D153 shore-rail): 1.7 s of actual's cold layout, and 0.3 s of every change that adds a doc to a big docs block
+- [ ] actual's package:packages/desktop-client has no skin at all: Bubble Sets finds no ring round its 877 files, so the world draws that package without a membrane
+- [ ] the checker's extractions (D118 inferred-shapes) cost 0.4 to 0.9 s of every cached corpus run and 1.1 s of atis's own; reading its program from git's objects, as the head scan now does, would drop them
+- [ ] actual's world takes 1.1 s from the map's arrival to its first frame (C14 world-budget), so the command keeps only 0.9 s of a 2 s first frame; actual's last second is on the page side, in apps/web
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -304,6 +308,9 @@ Harvest results this boundary:
 - 2026-10-26, at the step 50 boundary: 2 parked ideas, classified.
 - **tangent**: park 60 · the readLog test on this repo (git.test.ts) takes 4-5 s under the full check, against vitest's 5 s default timeout, and flaked once in step 48's run; git log --numstat over 135 commits costs ~1.8 s alone, which step 50's log timings and D50's --history cap should look at → step 49 gave the test a minute and step 50's cache and `--history` took the log's cost off cached runs, so nothing is left to plan
 - **blocker**: park 61 · a cached run reuses its base's layout: pin the ground the change did not touch where the base put it, place only the change's files, recut only the skins near them, and scan the head without extracting the whole tree, so actual's cached first frame (11.2 s, 6.8 s of it the map's build) reaches about 2 s (C14 world-budget, D136 first-frame-clock); trades step 49's relaxed ground for a pinned one → wave 3's own outcome is a cached first frame within 2 s, and `actual` sits at 11.2 s until a cached run reuses its base's layout; it becomes step 115, a bare range of its own after range 16, since its pause holds the pinned-or-relaxed ground call
+- 2026-10-26, at range 16 of 32's stop: 2 parked ideas, classified.
+- **tangent**: park 62 · key the calm-positive stain of an improved file and a renamed file's leader in both legends: steps 53 and 54 draw both marks, and neither legend keys them yet, as neither keys the rename's dashed outline → keying marks in the legend is look work for later tuning, and no legend keys the rename's dashed outline either
+- **tangent**: park 63 · git.ts's showFile runs git show without piping stderr, so a manifest the change added prints git's 'fatal: path … exists on disk, but not in <sha>' to the terminal on every run; seen mapping d80907b at step 54 → stderr noise that existed before this range; the map is right, so a small fix can come whenever
 
 ## Log
 
@@ -2007,3 +2014,69 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-26 — step 51 checkpointed · f00c9f376 — feat(cli): measure health, duplication and structure at the base (1 drift, 11m)
 - 2026-10-26 — step 52 checkpointed · d423968d1 — feat(core): compute health deltas, introduced findings and improvements (1 drift, 16m)
 - 2026-10-26 — step 53 checkpointed · dd7cdba67 — feat(svg): draw improvements, the live Health Δ and the rename leader (1 red, 1 drift, 12m)
+- 2026-10-26 — step 54 checkpointed · 8350549c1 — feat(web): draw improvements, Health Δ and the rename leader (1 drift, 10m)
+- 2026-10-26 — range 16 of 32's stop recorded — review the base side in both renderers, side by side (step 54's check): improvements, the live Health Δ and the rename leader, with the cache, the relayout's bound and the cached first frame recorded in `docs/performance.md`
+
+  **Summary**: The base side is live. Earlier in the range, steps 48 to 50 cached the terrain per base commit, relaxed a new base's layout from the nearest cached one, and recorded the cache, the 4 px relayout bound and the cached first frame (1.72 s on WebGPU for this repo, and still 11.2 s for `actual`) in `docs/performance.md`. This run added the rest. The reviewed repo's own fallow now measures health, duplication and dead code on both extractions, each kept per commit. Core compares the two sides, so a finding is the change's when the change made it, new or worse, and a cycle when the base had none. The map carries `weather.improvements` and `weather.health_delta`, absent with no base side. Both renderers read one derivation in the scene: an improved file wears a calm mint, the Health Δ block shows a signed total (+1.9 on the demo), and a renamed file draws a dashed leader from where its base put it. Steps 51 to 54 each landed a hair off, for files outside their seams.
+
+  1. The base side is kept per commit beside the terrain, not inside its entry
+  2. What counts as the change's, and why `improvements` changed shape without a schema bump
+  3. Health Δ is fallow's maintainability index over the changed terrain files
+  4. An improved file's stain turns mint, rather than gaining a ring beside it
+  5. Steps 53 and 54 strayed to keep the gate green, and the world's leader is baked dashes
+
+  **Readout**:
+
+  ```text
+  steps        7 of 7 landed
+               - 48 c80af1d · 49 2950c4f · 50 1b5743c · 51 f00c9f3 · 52 d423968
+               - 53 dd7cdba · 54 8350549
+  check        green: 1 of 1 checks, 7 landings
+  done-when    met
+  decisions    honored:
+               - D96 (terrain-cache), D137 (cache-key)
+               - D97 (incremental-relayout), D136 (first-frame-clock)
+               - D22 (local-fallow), D98 (base-side-structure)
+               - D73 (touched-file-breach), D23 (head-only-check)
+               - D40 (rename-identity), D90 (scene-lib), D85 (schema-bumps)
+  constraints  14 of 14 honored
+  seam         strayed: 28 paths outside 7 steps' seams
+               - step 48: apps/atis/src/__tests__/cli.test.ts and 1 other
+               - step 49: apps/atis/src/__tests__/cache.test.ts and 1 other
+               - step 50: apps/atis/src/__tests__/cache.test.ts and 7 others
+               - step 51: apps/atis/src/index.ts, docs/performance.md
+               - step 52: apps/atis/src/__tests__/check.test.ts and 2 others
+               - step 53: apps/web/src/__tests__/hud.test.tsx and 9 others
+               - step 54: libs/svg/src/weather.ts
+  diff         +4495 -503 across 62 files
+  spent        2h 15m · 2 red runs · 7 drift warnings
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Harvested**: 2 of 63 parked ideas open
+
+  - P62 · key the calm-positive stain of an improved file and a renamed file's leader in both legends: steps 53 and 54 draw both marks, and neither legend keys them yet, as neither keys the rename's dashed outline → lean: tangent, keying marks in the legend is look work for later tuning, and no legend keys the rename's dashed outline either
+  - P63 · git.ts's showFile runs git show without piping stderr, so a manifest the change added prints git's 'fatal: path … exists on disk, but not in <sha>' to the terminal on every run; seen mapping d80907b at step 54 → lean: tangent, stderr noise that existed before this range; the map is right, so a small fix can come whenever
+
+  **Recommendation**: Review the three marks side by side, then reply `looks good` with both leans. To review: open `libs/svg/fixtures/demo/renamed.svg` beside the world on the demo (`pnpm --filter web dev`, then `?map=/@fs/<repo>/libs/core/fixtures/demo/map.json`). For a real change, open `.playwright-mcp/54/d80907b.map.json` and its `.svg`. Both renderers read the scene's one derivation and agree on all three marks. The calls worth your eye are what Health Δ measures (highlight 3) and the mint replacing the change hue on improved files (highlight 4); both are one-line changes if you see them differently.
+
+  **1.** The base side is kept per commit beside the terrain, not inside its entry
+
+  Step 51 (measuring health, duplication and structure at the base) puts each side's measure in `.atis/structure/<sha>.json`, beside `.atis/terrain/<sha>.json`. One code path serves both sides. The base's entry is read on every run that reads its terrain. Each entry is keyed by atis's code and by the version the repo's `node_modules/fallow/package.json` names. So a moved fallow pin measures both sides again while the terrain still hits, instead of comparing a base from one version with a head from another. That is my reading of D98 (base-side-structure)'s "cached with the terrain": same cache, same commit key, read on the same hit. A literal reading would put it inside the terrain entry. fallow runs as the binary itself, with checkride's flags, and `--root` set to the extraction, so it reads the commit's own `fallow.toml` and keeps its cache in the temp tree. Its exit code means "found something", so the report on stdout is what's read. A run with no report mutes its analysis by name, with the temp path cut out of the reason, and a side with a muted analysis is never kept. On this repo a side costs about 0.95 s cold and 1 ms cached. A second run on the same change pays nothing, but a new head commit pays its own side again. `meta.instruments.structure` records each side's fallow version or why it is absent. Strays: the help text for `--no-cache` and `--verbose`, and a paragraph in `docs/performance.md`.
+
+  **2.** What counts as the change's, and why `improvements` changed shape without a schema bump
+
+  Step 52 (health deltas, introduced findings and improvements) compares the head fallow measured with the base it measured, base paths renamed to head paths, and only when one fallow version measured both. A function over a threshold is matched by its file, its name, and its place among same-named functions, since fallow names every anonymous arrow alike. It is the change's when it is new, breaks a rule it did not, or rose in cyclomatic, cognitive or crap. A clone family is matched by its file set, or else by the smallest base family that held all its files, so dropping one copy is neither new nor dissolved. A cycle is matched by its files, and a boundary violation by its two ends. These feed the red-slot split, the LIFR rung and the two notice kinds in place of the line rule. The line rule stays wherever there is no base side, and unused exports always keep it. `weather.improvements` went from a typed empty array to an optional list. D23 (head-only-check) said wave 3 would fill it, and its meaning holds, so I treated it as filled in under D85 (schema-bumps) rather than bumped. The corpus maps' `[]` still read. A real run on this repo flagged `schema.ts`, rightly, as "worse than at the base": step 52 grew `assertShape`. Strays: `parseHealth` in the CLI now keeps each finding's name and measures, since the comparison needs them.
+
+  **3.** Health Δ is fallow's maintainability index over the changed terrain files
+
+  `weather.health_delta` is each changed file's maintainability index, head less base, plus their sum. It counts only files both sides scored, so an added or a deleted file has no other self to move from. The real run first counted test files. I narrowed it to terrain files, because tests are no terrain (D4) and the Size block beside it already counts terrain alone (D166). fallow also writes a repo-wide `health_score` that atis does not read yet. If you'd rather Health Δ meant that score, or included tests, it's a small change in `healthDelta`. A real run over commit `d80907b` (adding the scene library) reads +7.3 over 7 files. The demo reads +1.9: the doctor up 3.4, the pm barrel down 1.5.
+
+  **4.** An improved file's stain turns mint, rather than gaining a ring beside it
+
+  The scene's C11 guard test pins each weather attribute to one channel and meaning, and forbids two attributes sharing hue-as-state. So the improvement is the file's one state. A changed file the change made healthier wears `IMPROVED_HUE` (`#8be0b4`) in place of the change cyan, and its fill or outline still says the change kind. A file an improvement names that the change never touched stays as it is, such as the other copy of a dissolved family. The token is in `docs/design.md` and the web registry, so the dev panel moves it live. The demo golden can't hold the leader, because the demo has no rename and no prior layout. A second golden, `libs/svg/fixtures/demo/renamed.svg` (the demo with its pm barrel renamed), pins it.
+
+  **5.** Steps 53 and 54 strayed to keep the gate green, and the world's leader is baked dashes
+
+  Two web tests tie the renderers together: one holds the HUD block for block, and one ties the registry to `docs/design.md`'s tables. So step 53 had to touch the scene's derivations and tokens, the web registry, and the web HUD's Health Δ, and step 54 moved the leader's geometry into the scene (`renameLeaderOf`) for both renderers. The world draws the leader as `RENAME_DASH` dashes on the ribbon mesh with no arrowhead. Like the edges, its widths are baked into geometry when the world is built, so a moved width shows on the next map. The Health Δ block now opens on each file's movement and what got better. I checked both renderers side by side on the demo and on the real `d80907b` map, where `tokens.ts` moved from `libs/svg` to `libs/scene`. The screenshots, that map and its SVG are in `.playwright-mcp/54/`, which git excludes.

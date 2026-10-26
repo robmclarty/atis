@@ -1,4 +1,5 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { delimiter, dirname, join } from 'node:path';
 
@@ -12,6 +13,7 @@ import {
   parseFallowEntryPoints,
   parseManifestWorkspaces,
   parseWorkspaceGlobs,
+  readCommit,
   readTree,
   scanImports,
 } from '../sources/index.js';
@@ -1052,4 +1054,47 @@ test('a later commit read over the reads of an earlier one, reading only what th
   const kept = readTree(later, { prior: { parsed: earlier.parsed, touched: new Set() } }).scan;
   expect(kept.files.find((file) => file.path === 'libs/shared/src/greet.ts')?.exports).toEqual(['HELLO', 'greet']);
   expect(full.files.find((file) => file.path === 'libs/shared/src/greet.ts')?.exports).toEqual(['BYE', 'HELLO', 'greet']);
+});
+
+test('a commit read from git\'s own objects scans as its extraction does, whatever the archive leaves out or rewrites (D172)', () => {
+  const repo = mkdtempSync(join(tmpdir(), 'atis-git-'));
+  scratch.push(repo);
+  const git = (...args: readonly string[]): string =>
+    execFileSync('git', ['-c', 'user.name=atis', '-c', 'user.email=atis@example.invalid', '-c', 'commit.gpgsign=false', ...args], { cwd: repo, encoding: 'utf8' }).trim();
+  git('init', '--quiet');
+  // A path too long for a tar header's name, which the archive carries in an extended header.
+  const deep = `libs/${'a'.repeat(40)}/${'b'.repeat(40)}/${'c'.repeat(30)}/deep.ts`;
+  writeTree(repo, {
+    ...WORKSPACE,
+    '.gitattributes': 'fixtures export-ignore\nlibs/shared/src/ignored.ts export-ignore\nlibs/shared/src/version.ts export-subst\n',
+    'fixtures/sample.ts': 'export const SAMPLE = 1;\n',
+    'libs/shared/src/ignored.ts': 'export const IGNORED = 1;\n',
+    'libs/shared/src/version.ts': "export const VERSION = '$Format:%H$';\n",
+    [deep]: "import { greet } from 'shared';\n\nexport const DEEP = greet('deep');\n",
+    'vendor/node_modules/pkg/index.ts': 'export const PKG = 1;\n',
+  });
+  symlinkSync('shared/src/greet.ts', join(repo, 'libs', 'link.ts'));
+  git('add', '.');
+  git('commit', '--quiet', '-m', 'feat: everything an archive treats on its own terms');
+  const sha = git('rev-parse', 'HEAD');
+  const root = mkdtempSync(join(tmpdir(), 'atis-extracted-'));
+  scratch.push(root);
+  const tree = join(root, 'tree');
+  mkdirSync(tree);
+  execFileSync('git', ['archive', '--format=tar', '-o', join(root, 'commit.tar'), sha], { cwd: repo });
+  execFileSync('tar', ['-xf', join(root, 'commit.tar'), '-C', tree]);
+
+  const whole = readTree(tree, { repo });
+  const read = readCommit(sha, { repo, extracted: () => tree });
+  expect(read.scan).toEqual(whole.scan);
+  expect(read.parsed).toEqual(whole.parsed);
+  const paths = read.scan.files.map((file) => file.path);
+  expect(paths).toContain(deep);
+  for (const gone of ['fixtures/sample.ts', 'libs/shared/src/ignored.ts', 'libs/link.ts', 'vendor/node_modules/pkg/index.ts']) expect(paths).not.toContain(gone);
+  // The archive's substitution reaches the shape, as it reaches the extracted file.
+  expect(read.scan.files.find((file) => file.path === 'libs/shared/src/version.ts')?.shapes['VERSION']).toContain(sha);
+
+  // Over an earlier read that names every file, only what the diff touched is drawn out of git again.
+  const touched = new Set(['libs/shared/src/greet.ts']);
+  expect(readCommit(sha, { repo, prior: { parsed: whole.parsed, touched }, extracted: () => tree }).scan).toEqual(whole.scan);
 });

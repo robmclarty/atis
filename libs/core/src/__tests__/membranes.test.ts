@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { expect, test } from 'vitest';
 
 import { DEFAULT_CONFIG } from '../config.js';
-import { computeLayout, computeMembranes, membraneThickness, seededRandom, withinContour } from '../layout/index.js';
+import { computeLayout, computeMembranes, membraneThickness, seededRandom, skinMembers, withinContour } from '../layout/index.js';
 import type { LayoutInput, MembraneCell } from '../layout/index.js';
 import { buildMap } from '../map.js';
 import type { BuildInputs } from '../map.js';
@@ -142,6 +142,30 @@ test('the same field cuts the same membranes, byte for byte, twice', () => {
   const input = { cells: INPUT.cells, groups: INPUT.groups, positions: FIELD.positions };
   expect(JSON.stringify(computeMembranes(input))).toBe(JSON.stringify(computeMembranes(input)));
   expect(JSON.stringify(computeLayout(INPUT).contours)).toBe(JSON.stringify(CONTOURS));
+});
+
+test('a skin whose members and neighbourhood did not move is kept uncut, and one near a change is cut again (D172)', () => {
+  const input = { cells: INPUT.cells, groups: INPUT.groups, positions: FIELD.positions };
+  const members = skinMembers(input);
+  const marked: Readonly<Record<string, readonly (readonly [number, number])[]>> = Object.fromEntries(
+    Object.keys(CONTOURS).map((key) => [key, [[0, 0], [1, 0], [0, 1], [0, 0]]] as const),
+  );
+  const docs = FIELD.positions['docs/a.md'];
+  const far = { x: -10_000, y: -10_000, r: 4 };
+
+  // Nothing moved: every skin is the one handed in, uncut, and a skin with no ring handed in has none.
+  expect(computeMembranes(input, { contours: marked, members, changed: [far] })).toEqual(marked);
+  const { docs: _unringed, ...rest } = marked;
+  expect(computeMembranes(input, { contours: rest, members, changed: [] })).toEqual(rest);
+
+  // A change within the docs block's reach cuts its skin again, and leaves the cells' marked ones.
+  const near = computeMembranes(input, { contours: marked, members, changed: docs === undefined ? [] : [docs] });
+  expect(near['docs']).toEqual(CONTOURS['docs']);
+  expect(near['folder:libs/c']).toEqual(marked['folder:libs/c']);
+
+  // Another member is another skin, cut again wherever it stands.
+  const fewer = new Map([...members].map(([key, ids]) => [key, key === 'folder:libs/b/src' ? ids.slice(1) : ids] as const));
+  expect(computeMembranes(input, { contours: marked, members: fewer, changed: [] })['folder:libs/b/src']).toEqual(CONTOURS['folder:libs/b/src']);
 });
 
 test('a skin routes around another cell standing between two of its own files', () => {

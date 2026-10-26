@@ -299,15 +299,23 @@ type Part = { readonly held: readonly Placement[]; readonly shape: Shape };
  */
 export function placeAdded(input: AddedInput): readonly Placement[] {
   const parts = new Map<string, Map<string, Part>>();
-  const hold = (file: Held): void => {
-    for (const [at, part] of input.levels(file.cell)) {
+  const hold = (files: readonly Held[]): void => {
+    const joined = new Map<string, Map<string, Placement[]>>();
+    for (const file of files) {
+      for (const [at, part] of input.levels(file.cell)) {
+        const level = joined.get(at) ?? new Map<string, Placement[]>();
+        level.set(part, [...(level.get(part) ?? parts.get(at)?.get(part)?.held ?? []), file]);
+        joined.set(at, level);
+      }
+    }
+    for (const [at, joining] of joined) {
       const level = parts.get(at) ?? new Map<string, Part>();
-      const held = [...(level.get(part)?.held ?? []), file];
-      level.set(part, { held, shape: shapeOf(outlineOf(held)) });
+      for (const [part, held] of joining) level.set(part, { held, shape: shapeOf(outlineOf(held)) });
       parts.set(at, level);
     }
   };
-  input.terrain.forEach(hold);
+  // Each part's outline is drawn once over the terrain, then again only as an added file joins it.
+  hold(input.terrain);
 
   const placed: Placement[] = [...input.terrain];
   return input.added
@@ -342,7 +350,7 @@ export function placeAdded(input: AddedInput): readonly Placement[] {
       }
       const at = chosen ?? fallback ?? disc([file.x, file.y]);
       placed.push(at);
-      hold({ ...at, cell: file.cell });
+      hold([{ ...at, cell: file.cell }]);
       return at;
     });
 }
