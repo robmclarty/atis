@@ -21,7 +21,9 @@
  * Esc while the cell stays open (D166). A fourth
  * emulates `prefers-reduced-motion` and holds the frames still after load, in
  * an opened cell and across a fly-to, beside a page with motion on whose
- * frames move (step 42).
+ * frames move (step 42). And at the opening frame the world is a dark planet
+ * under one star per outside package the map records, which the wheel zooms
+ * through LOD1's gate to the flat world (D170).
  */
 
 import { accessSync, constants, readFileSync } from 'node:fs';
@@ -181,6 +183,66 @@ test('the world draws the demo map headless on WebGL 2, lit at the surface, with
     await page.mouse.move(2, 715);
     await page.waitForSelector(`[data-labels] [data-target="${hovered.target}"]`, { state: 'detached', timeout: 30_000 });
     expect(await written()).toEqual([]);
+    expect(complaints).toEqual([]);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+test("the world opens on a dark planet under its dependencies' stars, lit where the far field lights, and zooms through LOD1's gate to the flat world, with a clean console (D170)", { timeout: 120_000 }, async () => {
+  const { server, url } = await serve();
+  const browser = await launch();
+  try {
+    const page = await browser.newPage({ viewport: { width: 960, height: 720 } });
+    const complaints: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error' || message.type() === 'warning') complaints.push(`${message.type()}: ${message.text()}`);
+    });
+    page.on('pageerror', (error) => complaints.push(`pageerror: ${error.message}`));
+
+    await page.goto(`${url}/?backend=webgl`);
+    await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
+    expect(await page.getAttribute('#world', 'data-lod')).toBe('0');
+    expect(await page.getAttribute('#world', 'data-planet')).toBe('on');
+    // One star per outside package the demo's map records.
+    const dependencies = (JSON.parse(readFileSync(DEMO, 'utf8')) as { weather: { dependencies: readonly unknown[] } }).weather.dependencies.length;
+    expect(await page.getAttribute('[data-planet-layer]', 'data-stars')).toBe(String(dependencies));
+    expect(await page.$eval('[data-planet-layer]', (element) => element instanceof HTMLElement && element.style.display !== 'none')).toBe(true);
+
+    // The planet's own canvas: dark, with points of light on it and round it, never blank.
+    const reading = await page.$eval('[data-planet-layer]', (element): FrameReading => {
+      if (!(element instanceof HTMLCanvasElement)) throw new Error('the planet is not a canvas');
+      const context = element.getContext('2d');
+      if (context === null) throw new Error('the planet has no 2d context');
+      const { data } = context.getImageData(0, 0, element.width, element.height);
+      const shades = new Set<number>();
+      let lit = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        const r = data[i] ?? 0;
+        const g = data[i + 1] ?? 0;
+        const b = data[i + 2] ?? 0;
+        shades.add((r << 16) | (g << 8) | b);
+        if (Math.max(r, g, b) > 96) lit += 1;
+      }
+      return { lit, shades: shades.size, pixels: data.length / 4 };
+    });
+    expect(reading.lit).toBeGreaterThan(0);
+    expect(reading.lit / reading.pixels).toBeLessThan(0.05);
+    expect(reading.shades).toBeGreaterThan(32);
+
+    // A wheel step at a time toward the middle of the free screen, the planet grows past LOD1's gate and hands off to the world.
+    await page.mouse.move(350, 360);
+    const descend = async (turns: number): Promise<void> => {
+      if (turns === 0 || (await page.getAttribute('#world', 'data-lod')) !== '0') return;
+      await page.mouse.wheel(0, -60);
+      await page.waitForTimeout(100);
+      await descend(turns - 1);
+    };
+    await descend(60);
+    expect(await page.getAttribute('#world', 'data-lod')).not.toBe('0');
+    await page.waitForSelector('#world[data-planet="off"]', { timeout: 30_000 });
+    expect(await page.$eval('[data-planet-layer]', (element) => element instanceof HTMLElement && element.style.display === 'none')).toBe(true);
     expect(complaints).toEqual([]);
   } finally {
     await browser.close();

@@ -9,8 +9,11 @@
  * mesh on it; and one render loop, which asks the scheduler for every frame
  * (step 29, C12): the settle's amplitude and lift, and the levels of detail,
  * which keep the key light and the sky off at the far field and bring them,
- * the organelles and the weather's surface marks up as the surface resolves,
- * the change's stains alone lighting the far field (§5.6). The weather is
+ * the organelles and the weather's surface marks up as the surface resolves.
+ * The far zoom is a dark planet under its dependencies' stars, on a canvas of
+ * its own over the world's (D170): it grows as the view comes in until it
+ * fills the frame, and LOD1's cross-fade hands it to the flat world; while it
+ * shows, the pointer hovers nothing on the flat ground beneath it. The weather is
  * step 26's derivation drawn: the reach in the skin, every mark on a file as
  * one instanced mesh, the storms as bolts, the exceptional edges as ribbons,
  * and the slot names and old paths as flat tags over the canvas (step 33).
@@ -70,7 +73,7 @@
 import { AgXToneMapping, AmbientLight, Color, DataUtils, DirectionalLight, RenderPipeline, Scene, Vector3, WebGPUCoordinateSystem, WebGPURenderer } from 'three/webgpu';
 import { emissive, mrt, output, pass } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
-import { FIELD_FILL, MOTION_TOKENS, REACH_ORIGIN_OPACITY, RELIEF, cellSlide, cellWiring, createPicker, createScheduler, fillOf, gridFor, instances, interiorOf, slideCellOf, surfacePoint } from 'scene';
+import { FIELD_FILL, LOD_GATES, MOTION_TOKENS, REACH_ORIGIN_OPACITY, RELIEF, cellSlide, cellWiring, createPicker, createScheduler, fillOf, gridFor, instances, interiorOf, planetShown, slideCellOf, surfacePoint } from 'scene';
 import type { Lod, Pick, Point, Slide } from 'scene';
 import type { MapJson } from 'core';
 
@@ -79,9 +82,9 @@ import { askedOf, slideWords } from '../asked.js';
 import { hoverOf } from '../hover.js';
 import type { Hovered } from '../hover.js';
 import { marksOf } from '../marks.js';
-import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, NOTICE, SKIN, SKY, SPACE, WALK, WEATHER } from '../materials.js';
+import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, NOTICE, PLANET, SKIN, SKY, SPACE, WALK, WEATHER } from '../materials.js';
 import type { Nav } from '../nav.js';
-import { runsOf } from '../notices.js';
+import { categoryHue, runsOf } from '../notices.js';
 import { CLOSED, OPEN_LOD, openedBy, openedOf } from '../opened.js';
 import type { OpenState } from '../opened.js';
 import type { Registry } from '../registry.js';
@@ -96,6 +99,7 @@ import { SLIDE_CHROME, createInterior } from './interior.js';
 import { LABEL_LOOK, createLabels, viewportOf } from './labels.js';
 import { ORGANELLE_LOOK, createOrganelles } from './organelles.js';
 import { PALETTE_LOOK, createPalette } from './palette.js';
+import { createPlanet } from './planet.js';
 import { createRibbons } from './ribbons.js';
 import { createSectors } from './sectors.js';
 import { RESOLUTION, createSkin } from './skin.js';
@@ -178,7 +182,10 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   const interiorLook = registry.view(INTERIOR, 'INTERIOR');
   const interior = createInterior(heightAt, RESOLUTION, interiorLook, registry.view(SLIDE_CHROME));
   scene.add(...interior.meshes);
-  canvas.after(space.rules, ...interior.elements, hover.outline, ...labels.elements, hover.tag);
+  // The far zoom's planet (D170): over the rules, which are the flat world's, and under everything else.
+  const category = map.weather.checks.category;
+  const planet = createPlanet(map, registry.view(PLANET, 'PLANET'), () => ({ change: tokens.CHANGE_HUE, ifr: tokens.IFR_HUE, category: categoryHue(category, tokens), field: tokens.FIELD_FILL }));
+  canvas.after(space.rules, planet.element, ...interior.elements, hover.outline, ...labels.elements, hover.tag);
   // Which cell is open, the slide laid for it, and the level the last frame was drawn at, which a click is read against.
   let opening: OpenState = CLOSED;
   let slide: Slide | undefined;
@@ -461,6 +468,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   let passes = 0;
   let shownLod: Lod | undefined;
   let floatedShown: number | undefined;
+  let planetOn: boolean | undefined;
   await renderer.setAnimationLoop(() => {
     if (passes === 1) {
       performance.mark('atis:ready');
@@ -569,6 +577,17 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     glow.threshold.value = bloomLook.threshold;
     post.render();
     space.render(camera, canvas.clientWidth, canvas.clientHeight);
+    // The planet is LOD0's layer: whole at the far zoom, and faded out as the surface fades in past LOD1's gate.
+    const planetLayer = frame.lod === undefined ? 1 : planetShown(frame.lod);
+    planet.render(
+      { camera, width: canvas.clientWidth, height: canvas.clientHeight, free, pixelsPerUnit: pixelsPerUnit(camera, canvas.clientWidth), centre: middle, zoom: camera.zoom, gate: levels.gates[0] ?? LOD_GATES[0] ?? { enter: 1.7, exit: 1.45 } },
+      planetLayer,
+      frame.notices.map((notice) => notice.gain),
+    );
+    if (planetLayer > 0 !== planetOn) {
+      planetOn = planetLayer > 0;
+      canvas.dataset['planet'] = planetOn ? 'on' : 'off';
+    }
     if (placeLabels || lod !== placedLod) {
       labels.place(viewportOf(camera, canvas.clientWidth), lod, slide, askedOf(fieldTarget, rowTarget));
       placeLabels = false;
@@ -579,7 +598,8 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     interior.render(camera, canvas.clientWidth, canvas.clientHeight, canvas.clientWidth - RAIL_WIDTH, pixelsPerUnit(camera, canvas.clientWidth), open.exploded, words);
     // A slide's files float under a still pointer, so the hover follows them each frame while one shows.
     if (pickAgain || lod !== pickedLod || (bodies.length > 0 && !reduced)) {
-      const hovered = pointer === undefined ? undefined : hoveredAt(pointer, lod);
+      // On the planet the flat ground lies under it, so nothing there answers the pointer (D170).
+      const hovered = pointer === undefined || lod === 0 ? undefined : hoveredAt(pointer, lod);
       hover.show(hovered, pointer);
       if (hovered?.target !== fieldTarget) {
         fieldTarget = hovered?.target;

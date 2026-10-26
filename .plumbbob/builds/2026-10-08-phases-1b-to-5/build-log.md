@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 112 — feat(core): record the outside packages the terrain uses, with their health
+**Current step:** 113 — feat(web): draw the far zoom as a dark planet under its dependencies' stars
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -94,7 +94,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 109. fix(core): keep the shore's docs and data out of co-change notices and the HUD's size
 - ☑ 110. fix(web): write the world's labels only on hover or in an exploded cell
 - ☑ 111. fix(web): set the world in space and rule its depth bands faintly
-- ☐ 112. feat(core): record the outside packages the terrain uses, with their health
+- ☑ 112. feat(core): record the outside packages the terrain uses, with their health
 - ☐ 113. feat(web): draw the far zoom as a dark planet under its dependencies' stars
 - ☑ 114. fix(core): keep a package's sibling cells apart so no two skins cross
 - ☐ 48. feat(cli): cache the terrain per base commit
@@ -202,6 +202,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] step 49's relaxation from a cached layout now runs lane by lane, and a package whose terrain grows slides every lane to its right; its displacement bound should hold lane places, or measure within lanes
 - [x] world.test.ts's reduced-motion browser test is flaky before step 114 too (2 of 8 runs red on HEAD 245e5ad): two frames 1.5 s apart in an opened cell differ under reduced motion; find what still moves, or what Chrome re-rasters
 - [x] an added file whose folder's room is spent still lands beside its own and can cross a sibling's skin (1 of 80 seeded layouts, fields seed 30); D32 pins the terrain, so more growth room or a relayout of the ground D32 forbids are the ways out
+- [ ] hover on the planet: name a city light's file, or a star's package with its importers and health; the far zoom hovers nothing on the flat ground under it now (planet-far-field, step 113)
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -1872,3 +1873,5 @@ folder, so it rides the branch into the PR.)*
   **5.** Notices and Size: no shore-only pair raises a co-change, and Size counts source; three source-and-test notices remain on `HEAD~`
 
   Against `HEAD~` (step 109's own change), Size reads `+54 −16, 4 files`. The shore's `+92 −38` across 13 files is listed separately in the block's parts. Against `HEAD~4` it reads `+1009 −155, 23 files`, where every changed file would have counted 51. No co-change notice pairs two shore files on either map. Three of `HEAD~`'s four notices still say that `chrome/frame.tsx`, `hud.tsx` and `legend.tsx` usually change with `hud.test.tsx` and did not. Each pairs a source file with its test, so the rule keeps them. If they read as noise to you, a test-only partner could be dropped too, and that would be a new call.
+
+- 2026-10-26 — step 112 checkpointed · 3af7b74d1 — feat(core): record the outside packages the terrain uses, with their health (8m)

@@ -8,11 +8,12 @@
  * `docs/design.md` records every field under "World materials". The levels of
  * detail's gates and the camera's give ride with them (step 44), and so do the
  * minimap's look (D154), the one piece of chrome the scene's tokens do not
- * already dress, and an opened cell's slide (step 40).
+ * already dress, an opened cell's slide (step 40), and the planet the far
+ * zoom draws (D170).
  */
 
-import { CELL_GATE, INTERIOR_LAYOUT, LOD_GATES } from 'scene';
-import type { InteriorLayout, LodGate } from 'scene';
+import { CELL_GATE, INTERIOR_LAYOUT, LOD_GATES, PLANET_LAYOUT } from 'scene';
+import type { InteriorLayout, LodGate, PlanetLayout } from 'scene';
 
 /** The skin's material: the albedos, the membrane line, how rough and how wet it is, the share of its albedo kept at the far field, and the tissue's own faint light. */
 export type SkinLook = {
@@ -80,6 +81,62 @@ export const SPACE: SpaceLook = {
   ruleInk: '#8796a8',
   ruleOpacity: 0.16,
   ruleWidth: 1,
+};
+
+/**
+ * The far zoom's planet (D170), beside its shape from the scene
+ * (`PLANET_LAYOUT`): its dark body, a hair lighter at its middle than at its
+ * limb; each light on it, at least this radius in pixels and else the file's
+ * own disc on the sphere, its glow this many times as wide, this bright, and
+ * dimming toward the limb until it faces the camera this much; the share of a
+ * light's or a star's brightness its glow starts at past its core; each
+ * star's radius in pixels for the fewest importers and the most, its glow
+ * this many times as wide, this bright; the hues a star takes beside the
+ * state hues it shares with the sheet, amber for a lesser advisory, dim white
+ * with no finding, and muted grey with no audit read; and the rim the stars
+ * light, reaching this share of the radius in from the limb and this share
+ * out past it as a haze, this bright. None of it blooms: a light's glow is
+ * its own.
+ */
+export type PlanetLook = PlanetLayout & {
+  readonly body: string;
+  readonly bodyCore: string;
+  readonly lightMin: number;
+  readonly lightGlow: number;
+  readonly lightGain: number;
+  readonly limbFade: number;
+  readonly glowShare: number;
+  readonly starMin: number;
+  readonly starMax: number;
+  readonly starGlow: number;
+  readonly starGain: number;
+  readonly amber: string;
+  readonly clean: string;
+  readonly unread: string;
+  readonly rimDepth: number;
+  readonly rimHaze: number;
+  readonly rimGain: number;
+};
+
+export const PLANET: PlanetLook = {
+  ...PLANET_LAYOUT,
+  body: '#05070a',
+  bodyCore: '#0e131a',
+  lightMin: 1.4,
+  lightGlow: 3.5,
+  lightGain: 0.9,
+  limbFade: 0.2,
+  glowShare: 0.28,
+  starMin: 1.2,
+  starMax: 4.5,
+  starGlow: 4,
+  starGain: 0.9,
+  amber: '#e9a93c',
+  clean: '#c6d0dc',
+  unread: '#58616c',
+  rimDepth: 0.12,
+  rimHaze: 0.02,
+  rimGain: 0.7,
 };
 
 /** The bloom on the emissive target alone (D11, D12): how strong, how wide, and the light below which nothing blooms. */

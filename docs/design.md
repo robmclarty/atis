@@ -326,13 +326,14 @@ leader's dots.
 ## World materials
 
 The world's own look, beside the sheet's tokens above: the skin, the space
-ground it lies on and its lights, the sky its sheen mirrors, the bloom, the weather's and the notices' light in
+ground it lies on, the planet the far zoom draws and its lights, the sky its sheen mirrors, the bloom, the weather's and the notices' light in
 the world, the relief, the levels of detail and the camera, and the chrome the
 world alone draws (the hover, the walk's framing, the minimap, an opened cell's
 slide and its wiring plate). Each is a field of one object, defined once: the
-skin, the space ground, lights, sky, bloom, weather, notices, levels, camera,
+skin, the space ground, the planet, lights, sky, bloom, weather, notices, levels, camera,
 hover, walk, minimap and slide in `apps/web/src/materials.ts`, the relief in
-`libs/scene/src/heightfield.ts` (`RELIEF`), the slide's layout in
+`libs/scene/src/heightfield.ts` (`RELIEF`), the planet's shape in
+`libs/scene/src/planet.ts` (`PLANET_LAYOUT`), the slide's layout in
 `libs/scene/src/interior.ts` (`INTERIOR_LAYOUT`) and the wiring plate's spacing
 in `libs/scene/src/wiring.ts` (`WIRING_SPACING`). The world reads every one
 through the registry, `OBJECT.field` by name, so the dev panel moves it on the
@@ -349,7 +350,8 @@ threshold at 0, since only the emissive target blooms at all (D152). Nothing in
 the base tissue blooms. Its faint rim and each cell's own light are emissive
 only in the colour pass. The skin's light is graded by the levels of detail: at
 the far field the key light, the sky and most of the ambient are off, so only
-the change's stains and the notices light the dark (§5.6).
+the change's stains and the notices light the dark (§5.6), and at the far zoom
+the planet stands over it all (D170).
 
 ### The skin
 
@@ -389,6 +391,55 @@ SVG keeps its bands (the terraces above).
 | `SPACE.ruleInk` | `#8796a8` | the ink of the rule at each band's boundary |
 | `SPACE.ruleOpacity` | `0.16` | how much of the rule shows: just enough to register, so it sits back from every mark |
 | `SPACE.ruleWidth` | `1` | the rule's width in screen pixels |
+
+### The planet at the far zoom
+
+At the far zoom the world draws the repository as a dark planet (D170), on a
+canvas of its own over the world's, under the labels and above the rules: the
+field's space, then one star per outside package the terrain imports, then the
+sphere, its pole touching the ground where the view faces, so a tilt or a turn
+tips it as it tips the ground. Each file the far field lights is a light where
+it sits on the sphere, in the change hue or, for the primary's file, the
+category hue, breathing with its notice; the rest of the sphere is dark. A
+star is sized by how many terrain files import its package and lit by its
+health: `IFR_HUE` for an advisory at high or critical, `PLANET.amber` for a
+lower one, `CHANGE_HUE` where the change added or moved it, `PLANET.clean` with
+no finding, and `PLANET.unread` where no audit was read (C2). Each star's light
+catches the rim facing it. The planet is a share of the free screen's
+half-diagonal, `PLANET.farFill` at the opening frame, growing as a power of the
+zoom to `PLANET.handFill` where LOD1 is left (`LEVELS.gates`), so it covers the
+frame on both sides of LOD1's gate and the level's cross-fade hands it to the
+flat world with no blink. The stars hang in the screen's plane in planet radii
+and grow apart with it, so coming in they leave the frame. While the planet
+shows, the pointer hovers nothing on the ground beneath it. Nothing on it
+moves of its own, and under reduced motion the primary's light holds (C12).
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `PLANET.farFill` | `0.3` | the planet's radius at the opening frame, as a share of the free screen's half-diagonal |
+| `PLANET.handFill` | `2.5` | its radius where LOD1 is left, past 1 so it reaches beyond the frame's corners, and the layout keeps its arc length round it there |
+| `PLANET.cap` | `1.2` | the widest angle, in radians, the layout wraps to from the pole while the planet is small: the rest of the sphere stays dark |
+| `PLANET.starNear` | `1.45` | the nearest a star hangs to the planet's centre at the opening frame, in planet radii |
+| `PLANET.starGap` | `0.3` | the least room between two stars, in planet radii |
+| `PLANET.starSeed` | `1` | the seed each star draws its place from beside its package's name, so a package keeps its place from map to map (C3) |
+| `PLANET.rimSpread` | `6` | how narrowly a star's light falls on the rim: a power over the cosine of the angle off it |
+| `PLANET.body` | `#05070a` | the planet's body at its limb: near-black |
+| `PLANET.bodyCore` | `#0e131a` | its body at its middle, a hair lighter, so the disc reads as a sphere |
+| `PLANET.lightMin` | `1.4` | the least radius of a light on the planet, in pixels; else the file's own disc on the sphere |
+| `PLANET.lightGlow` | `3.5` | a light's glow, as a multiple of its radius |
+| `PLANET.lightGain` | `0.9` | how bright a light is |
+| `PLANET.limbFade` | `0.2` | how much a light must face the camera to shine whole: past the limb it dims to nothing, so a light rounds the sphere rather than sitting on its edge |
+| `PLANET.glowShare` | `0.28` | the share of a light's or a star's brightness its glow starts at, past the edge of its crisp core |
+| `PLANET.starMin` | `1.2` | a star's radius in pixels for the package the fewest files import |
+| `PLANET.starMax` | `4.5` | a star's radius for the package the most files import, under a square root between |
+| `PLANET.starGlow` | `4` | a star's glow, as a multiple of its radius |
+| `PLANET.starGain` | `0.9` | how bright a star is |
+| `PLANET.amber` | `#e9a93c` | a star whose package an advisory names below high |
+| `PLANET.clean` | `#c6d0dc` | a star whose package the audit read and named in no advisory: a dim white |
+| `PLANET.unread` | `#58616c` | a star with no audit read: muted grey, no evidence rather than a clean one (C2) |
+| `PLANET.rimDepth` | `0.12` | how far in from the limb the stars' light reaches, as a share of the planet's radius |
+| `PLANET.rimHaze` | `0.02` | how far past the limb it hazes, as a share of the radius |
+| `PLANET.rimGain` | `0.7` | how bright the rim's light is |
 
 ### The lights
 
@@ -671,7 +722,13 @@ purpose, not by omission:
   and how its brightness is spread (`STAR_FALLOFF`, `STAR_FLOOR`), and the
   stars' plane, 0.3 above the level field and eight times the layout's longer
   side across (`STAR_LIFT`, `STAR_REACH` in `apps/web/src/world/space.ts`):
-  geometry the seed and the tokens above draw on, not a look.
+  geometry the seed and the tokens above draw on, not a look;
+- the planet's placing of its stars (`STAR_MARGIN`, the share of the free
+  screen a star may reach so its glow stays on it, and `STAR_TRIES`, the places
+  one draws before it takes the clearest, in `libs/scene/src/planet.ts`), the
+  light the least-imported package still casts on the rim (`RIM_FLOOR`), and the
+  samples round the rim it is laid at (`RIM_SAMPLES` in
+  `apps/web/src/world/planet.ts`): placement and resolution, not a look.
 
 ## Phase 1b: the materials spike
 
