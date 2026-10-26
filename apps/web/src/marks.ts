@@ -109,7 +109,8 @@ export type Ribbon = {
 };
 
 /** Words the world writes beside a mark: a change storm's slot, a renamed file's old path (D40). */
-export type Label = { readonly kind: 'storm' | 'rename'; readonly text: string; readonly x: number; readonly y: number; readonly hue: Hue };
+/** A tag over the field: a storm's slot or a renamed file's old path, what it belongs to (the storm's place, the renamed file), its words, where it hangs and its hue. */
+export type Label = { readonly kind: 'storm' | 'rename'; readonly target: string; readonly text: string; readonly x: number; readonly y: number; readonly hue: Hue };
 
 export type Marks = {
   readonly sectors: readonly Sector[];
@@ -298,7 +299,7 @@ const sectorsOf = (map: MapJson, weather: SceneWeather): readonly Sector[] => {
 /** Every storm as a bolt where the scene hangs it; a change's labelled with its slot beside it. */
 const boltsOf = (storms: readonly Storm[]): { readonly bolts: readonly Bolt[]; readonly labels: readonly Label[] } => ({
   bolts: storms.map((storm) => ({ slot: storm.slot, place: storm.place, x: storm.x, y: storm.y, scale: storm.change ? 1 : STANDING_STORM_SCALE, hue: storm.change ? 'ifr' : 'standing' })),
-  labels: storms.filter((storm) => storm.change).map((storm) => ({ kind: 'storm', text: storm.slot, x: storm.x + STORM_LABEL_GAP, y: storm.y, hue: 'ifr' })),
+  labels: storms.filter((storm) => storm.change).map((storm) => ({ kind: 'storm', target: storm.place, text: storm.slot, x: storm.x + STORM_LABEL_GAP, y: storm.y, hue: 'ifr' })),
 });
 
 /** The point `distance` out from `from` toward `to`. */
@@ -336,7 +337,7 @@ const renamesOf = (map: MapJson, weather: SceneWeather): readonly Label[] => {
   return weather.files.flatMap((file): Label[] => {
     const at = positions[file.path];
     if (at === undefined || file.change?.kind !== 'renamed' || file.change.from === undefined) return [];
-    return [{ kind: 'rename', text: file.change.from, x: at.x + at.r + RENAME_LABEL_GAP, y: at.y, hue: 'change' }];
+    return [{ kind: 'rename', target: file.path, text: file.change.from, x: at.x + at.r + RENAME_LABEL_GAP, y: at.y, hue: 'change' }];
   });
 };
 

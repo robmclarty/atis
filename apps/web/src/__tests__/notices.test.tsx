@@ -9,9 +9,10 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
 import { IFR_HUE, SECONDARY_BOX_WIDTH, STITCH_LENGTH } from 'scene';
-import { afterEach, beforeEach, expect, test } from 'vitest';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 
 import { Chrome, Column, Notices, Rail } from '../chrome/index.js';
+import { createNav } from '../nav.js';
 import { boxStyle, categoryHue, marksOnShore, rowsOf, runsOf, tallyOf, thresholdsOf } from '../notices.js';
 import { createRegistry } from '../registry.js';
 import { screenType } from '../screen.js';
@@ -147,6 +148,21 @@ test('the list draws every row with its box, kind, target, why and thresholds, n
   expect(element('[data-notice="2"] [data-mark]').style.borderWidth).toBe('2px');
   expect(element('[data-notice="3"] [data-mark]').style.borderWidth).toBe('1px');
   expect(host.querySelector('[data-notices]')?.textContent).not.toMatch(/shadow|blur|gradient/);
+});
+
+test("while the pointer is over a row the world is asked to write its target's labels, and once it leaves, none (D168)", async () => {
+  const nav = createNav();
+  const asked: (string | undefined)[] = [];
+  nav.steer({ lookAt: vi.fn(), visit: vi.fn(), hover: (target) => asked.push(target) });
+  await act(async () => root.render(<Notices map={DEMO} registry={createRegistry()} nav={nav} />));
+  const row = element('[data-notice="1"]');
+  await act(async () => {
+    row.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+  });
+  await act(async () => {
+    row.dispatchEvent(new MouseEvent('mouseout', { bubbles: true, relatedTarget: document.body }));
+  });
+  expect(asked).toEqual([DEMO.notices[0]?.target, undefined]);
 });
 
 test('the list holds no rows and a tally of nought when the map has no notices (C7: never padded)', async () => {

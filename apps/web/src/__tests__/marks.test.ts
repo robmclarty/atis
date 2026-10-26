@@ -59,7 +59,7 @@ test('a deleted file is its outline alone and a renamed one a dashed outline wit
     expect(outline.far).toBe(false);
   }
   const at = DEMO.terrain.layout?.positions['libs/core/src/pm/tools.ts'];
-  expect(labels.filter((label) => label.kind === 'rename')).toEqual([{ kind: 'rename', text: 'libs/core/src/pm/old-tools.ts', x: (at?.x ?? 0) + (at?.r ?? 0) + 4, y: at?.y, hue: 'change' }]);
+  expect(labels.filter((label) => label.kind === 'rename')).toEqual([{ kind: 'rename', target: 'libs/core/src/pm/tools.ts', text: 'libs/core/src/pm/old-tools.ts', x: (at?.x ?? 0) + (at?.r ?? 0) + 4, y: at?.y, hue: 'change' }]);
 });
 
 test("a changed file's skin is a dim hairline and a lit gap from the top for its open share; an unmeasured one is lit whole (D71, D80)", () => {
@@ -155,7 +155,7 @@ test("every storm is a bolt where the scene hangs it: the change's full size in 
   const named = labels.filter((label) => label.kind === 'storm');
   expect(named).toHaveLength(storms.filter((storm) => storm.change).length);
   for (const label of named) {
-    const storm = storms.find((each) => each.change && each.slot === label.text && each.x + STORM_LABEL_GAP === label.x && each.y === label.y);
+    const storm = storms.find((each) => each.change && each.slot === label.text && each.place === label.target && each.x + STORM_LABEL_GAP === label.x && each.y === label.y);
     expect(storm, label.text).toBeDefined();
   }
 });

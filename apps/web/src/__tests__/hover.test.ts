@@ -27,7 +27,7 @@ const placed = (map: MapJson, path: string): { readonly kind: 'organelle'; reado
 test('a file shows its own outline, rules and all, and its path, `+` before an added one (D146, D120)', () => {
   const index = placed(DEMO, 'libs/core/src/pm/index.ts');
   const organelle = DEMO.terrain.organelles.find((each) => each.id === index.path);
-  expect(hoverOf(DEMO, index)).toEqual({ key: 'organelle:libs/core/src/pm/index.ts', text: 'libs/core/src/pm/index.ts', ring: outlineOf(index.path, index, rulesOf(organelle?.dents ?? [])).ring });
+  expect(hoverOf(DEMO, index)).toEqual({ key: 'organelle:libs/core/src/pm/index.ts', target: 'libs/core/src/pm/index.ts', text: 'libs/core/src/pm/index.ts', ring: outlineOf(index.path, index, rulesOf(organelle?.dents ?? [])).ring });
   expect(hoverOf(DEMO, placed(DEMO, 'libs/core/src/pm/tools.ts'))?.text).toBe('+libs/core/src/pm/tools.ts');
 });
 
@@ -43,6 +43,6 @@ test('a cell shows its membrane with its teeth and its folder, and one the layou
   const cell = DEMO.terrain.cells.find((each) => each.id === 'folder:libs/core/src/pm');
   const contour = DEMO.terrain.layout?.contours?.['folder:libs/core/src/pm'];
   if (cell === undefined || contour === undefined) throw new Error('the demo lost its pm folder');
-  expect(hoverOf(DEMO, { kind: 'membrane', cell: cell.id })).toEqual({ key: 'membrane:folder:libs/core/src/pm', text: 'libs/core/src/pm', ring: dentedRing(contour, cell.dents.length) });
+  expect(hoverOf(DEMO, { kind: 'membrane', cell: cell.id })).toEqual({ key: 'membrane:folder:libs/core/src/pm', target: 'folder:libs/core/src/pm', text: 'libs/core/src/pm', ring: dentedRing(contour, cell.dents.length) });
   expect(hoverOf(DEMO, { kind: 'membrane', cell: 'folder:nowhere' })).toBeUndefined();
 });

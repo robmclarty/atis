@@ -216,3 +216,19 @@ test("labels laid round the demo's opened folder keep off its toothed skin, and 
   expect(kept.filter((label) => label.rank !== undefined)).toHaveLength(3);
   expect(labelsFor(map, 2, viewport, LABELING, [ring.slice(0, 2)])).toEqual(free);
 });
+
+test('asked about targets, only theirs are written: a noticed file its notices, a quiet file its name, and asked about nothing, nothing (D168)', () => {
+  const map = dense();
+  const noticed = map.notices[0]?.target ?? '';
+  const quiet = map.terrain.organelles.find((organelle) => !map.notices.some((each) => each.target === organelle.id))?.id ?? '';
+  for (const lod of [1, 2, 3] as const satisfies readonly Lod[]) {
+    expect(labelsFor(map, lod, WHOLE, LABELING, [], new Set()), `LOD${String(lod)}`).toEqual([]);
+    expect(labelsFor(map, lod, WHOLE, LABELING, [], new Set([noticed])).map((label) => [label.target, label.rank])).toEqual([[noticed, 1]]);
+    expect(labelsFor(map, lod, WHOLE, LABELING, [], new Set([quiet])).map((label) => [label.target, label.rank])).toEqual([[quiet, undefined]]);
+  }
+  const both = labelsFor(map, 1, WHOLE, LABELING, [], new Set([noticed, quiet]));
+  expect(both.map((label) => label.target).toSorted()).toEqual([noticed, quiet].toSorted());
+  expect(overlapping(both)).toEqual([]);
+  // A target asked about at the far zoom still writes nothing there.
+  expect(labelsFor(map, 0, WHOLE, LABELING, [], new Set([noticed]))).toEqual([]);
+});

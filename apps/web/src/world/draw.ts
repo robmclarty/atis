@@ -16,8 +16,11 @@
  * every noticed file's stain follow the scheduler's light for their notice,
  * so the primary breathes and flares at its anchor (D148), and the labels
  * layer writes each notice's label with its leader and its run of boxes at
- * step 27's placements, laid again whenever the view, the level of detail
- * or a token changes. The frame goes through one
+ * step 27's placements, laid again whenever the view, the level of detail,
+ * a token or what it is asked for changes: it writes no word unasked, only
+ * the labels and tags of the file or cell under the pointer and of the
+ * target of the notice row the pointer is over, the boxes always (D168). The
+ * frame goes through one
  * post-processing pass whose bloom reads the emissive target alone, so base
  * tissue never blooms and only a state's light does (D11, D12, D152). Every
  * material and the scheduler read their tokens through the registry (D156):
@@ -37,7 +40,8 @@
  * (D167): the scene lays it and
  * its bodies, which float where the scheduler floats them, slowly and on the
  * screen's scale, the surface's files and marks in it give way beneath, the
- * labels leave its files to the slide's own tags, and the pointer picks and
+ * labels leave its files to the slide's own tags, which show in its exploded
+ * view or one at a time under the pointer (D168), and the pointer picks and
  * clicks its bodies where they have floated, a click on one keeping the cell
  * open; it holds while the view stays inside it and closes on zooming out
  * past the gate's lesser share, Esc, a click on open ground or leaving it.
@@ -69,6 +73,7 @@ import type { Lod, Pick, Point, Slide } from 'scene';
 import type { MapJson } from 'core';
 
 import { RAIL_WIDTH, zoomFor } from '../fit.js';
+import { askedOf, slideWords } from '../asked.js';
 import { hoverOf } from '../hover.js';
 import type { Hovered } from '../hover.js';
 import { marksOf } from '../marks.js';
@@ -191,8 +196,12 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   const glow = bloom(scenePass.getTextureNode('emissive'), bloomLook.strength, bloomLook.radius, bloomLook.threshold);
   post.outputNode = scenePass.getTextureNode('output').add(glow);
 
-  // The labels are placed again on the next frame after the view, the level of detail or a token changes.
+  // The labels are placed again on the next frame after the view, the level of detail, a token or what they are asked for changes:
+  // the file or cell under the pointer on the field, and the target of the notice row it is over (D168).
   let placeLabels = true;
+  let fieldTarget: string | undefined;
+  let rowTarget: string | undefined;
+  const barrelOf = new Map(map.terrain.cells.map((cell) => [cell.id, cell.barrel] as const));
   let placedLod: number | undefined;
   const fit = (): void => {
     const { clientWidth, clientHeight } = canvas;
@@ -409,6 +418,11 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     visit,
     explode: () => apply(openedBy(opening, { kind: 'explode' })),
     wire,
+    hover: (target) => {
+      if (target === rowTarget) return;
+      rowTarget = target;
+      placeLabels = true;
+    },
   });
   // The arrows walk to a sibling, Enter descends and Escape ascends, unless the key is the focused element's own or the chrome already took it (an open legend folds away on Escape); with a cell open, Escape closes it first, x spreads or gathers its exploded view (D155), and w draws or takes away its wiring.
   globalThis.addEventListener('keydown', (event) => {
@@ -548,16 +562,21 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     glow.threshold.value = bloomLook.threshold;
     post.render();
     if (placeLabels || lod !== placedLod) {
-      labels.place(viewportOf(camera, canvas.clientWidth), lod, slide);
+      labels.place(viewportOf(camera, canvas.clientWidth), lod, slide, askedOf(fieldTarget, rowTarget));
       placeLabels = false;
       placedLod = lod;
     }
     labels.render(camera, canvas.clientWidth, canvas.clientHeight, surface);
-    interior.render(camera, canvas.clientWidth, canvas.clientHeight, canvas.clientWidth - RAIL_WIDTH, pixelsPerUnit(camera, canvas.clientWidth), open.exploded);
+    const words = slideWords(open.exploded, fieldTarget, slide === undefined ? undefined : barrelOf.get(slide.cell));
+    interior.render(camera, canvas.clientWidth, canvas.clientHeight, canvas.clientWidth - RAIL_WIDTH, pixelsPerUnit(camera, canvas.clientWidth), open.exploded, words);
     // A slide's files float under a still pointer, so the hover follows them each frame while one shows.
     if (pickAgain || lod !== pickedLod || (bodies.length > 0 && !reduced)) {
       const hovered = pointer === undefined ? undefined : hoveredAt(pointer, lod);
       hover.show(hovered, pointer);
+      if (hovered?.target !== fieldTarget) {
+        fieldTarget = hovered?.target;
+        placeLabels = true;
+      }
       scheduler.hover(hovered !== undefined);
       pickAgain = false;
       pickedLod = lod;

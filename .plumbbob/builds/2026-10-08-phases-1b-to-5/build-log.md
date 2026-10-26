@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 114 — fix(core): keep a package's sibling cells apart so no two skins cross
+**Current step:** 110 — fix(web): write the world's labels only on hover or in an exploded cell
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -96,7 +96,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☐ 111. fix(web): set the world in space and rule its depth bands faintly
 - ☐ 112. feat(core): record the outside packages the terrain uses, with their health
 - ☐ 113. feat(web): draw the far zoom as a dark planet under its dependencies' stars
-- ☐ 114. fix(core): keep a package's sibling cells apart so no two skins cross
+- ☑ 114. fix(core): keep a package's sibling cells apart so no two skins cross
 - ☐ 48. feat(cli): cache the terrain per base commit
 - ☐ 49. feat(core): relax a new base's layout from the nearest cached one
 - ☐ 50. perf(cli): draw a cached run's first frame within two seconds
@@ -1803,3 +1803,5 @@ folder, so it rides the branch into the PR.)*
   **5.** A flag: I deleted the `.playwright-mcp/` scratch folder without looking first
 
   While viewing the SVG I took one Playwright screenshot, which landed in `.playwright-mcp/`, and I removed the whole folder rather than just that file. The folder is excluded locally (`.git/info/exclude`) and only ever holds Playwright's screenshots and console logs, but it may have held captures from earlier sessions, and those are gone.
+
+- 2026-10-26 — step 114 checkpointed · 6e46bac30 — fix(core): keep a package's sibling cells apart so no two skins cross (41m)

@@ -18,7 +18,10 @@
  * The chrome over it is flat (D12): each file's tag in its column beside the
  * slide with its rule count, joined to its body by a dotted leader, and, in
  * the exploded view, a dotted leader from each body's socket, its place at
- * rest, to where it has spread. The look comes through the registry (D156).
+ * rest, to where it has spread. The tags and the exports are written only
+ * when asked (D168): in the exploded view, as it spreads, or a tag at a time
+ * while the pointer is over its body. The look comes through the registry
+ * (D156).
  */
 
 import { BufferAttribute, BufferGeometry, Color, DoubleSide, DynamicDrawUsage, Mesh, MeshBasicNodeMaterial, Vector3 } from 'three/webgpu';
@@ -27,6 +30,7 @@ import { attribute, mrt, uniform, vec4 } from 'three/tsl';
 import { CHANGE_HUE, CHROME_GROUND, CHROME_INK, CHROME_MUTED, CHROME_STROKE_WIDTH, FONT_FAMILY, LABELING, LEADER_DASH, LEADER_INK, LEADER_WIDTH, RENAME_DASH, SHAPE_LEVELS, exportsWords, tagsOf } from 'scene';
 import type { Body, Point, Slide } from 'scene';
 
+import type { SlideWords } from '../asked.js';
 import type { InteriorLook } from '../materials.js';
 
 /** The scene's tokens the slide's chrome and stains read live, at rest: the shape the registry's view takes (D156). */
@@ -42,8 +46,8 @@ export type Interior = {
   readonly slide: (slide: Slide | undefined) => void;
   /** Lay the bodies where the scene has them this frame, at the slide's fade, each stain lit by its notice's gain. */
   readonly show: (bodies: readonly Body[], shown: number, gainOf: (id: string) => number) => void;
-  /** Place the tags, the leaders, the exports and the exploded view's sockets on the screen for this camera, the free screen `free` wide. */
-  readonly render: (camera: Camera, width: number, height: number, free: number, pixelsPerUnit: number, spread: number) => void;
+  /** Place the tags, the leaders, the exports and the exploded view's sockets on the screen for this camera, the free screen `free` wide, the words as strongly as they are asked for. */
+  readonly render: (camera: Camera, width: number, height: number, free: number, pixelsPerUnit: number, spread: number, words: SlideWords) => void;
   /** The bodies as last laid, for the pointer to pick against. */
   readonly bodies: () => readonly Body[];
 };
@@ -330,7 +334,7 @@ export const createInterior = (heightAt: (x: number, y: number) => number, step:
   };
 
   const projected = new Vector3();
-  const render = (camera: Camera, width: number, height: number, free: number, pixelsPerUnit: number, spread: number): void => {
+  const render = (camera: Camera, width: number, height: number, free: number, pixelsPerUnit: number, spread: number, words: SlideWords): void => {
     const visible = slide !== undefined && shown.value > 0;
     layer.style.display = visible ? '' : 'none';
     leaders.style.display = visible ? '' : 'none';
@@ -358,7 +362,13 @@ export const createInterior = (heightAt: (x: number, y: number) => number, step:
       const held = tagged.get(tag.id);
       if (held === undefined) continue;
       held.tag.textContent = tag.text;
+      // A tag and its leader are laid whether or not they are asked for, so they stand where they belong the moment they are.
+      const asked = words.tag(tag.id);
+      held.tag.style.display = asked > 0 ? '' : 'none';
+      held.leader.style.display = asked > 0 ? '' : 'none';
+      held.leader.style.opacity = String(asked);
       Object.assign(held.tag.style, {
+        opacity: String(asked),
         transform: `translate(${String(tag.box.x)}px, ${String(tag.box.y)}px)`,
         width: `${String(tag.box.width)}px`,
         height: `${String(tag.box.height)}px`,
@@ -397,6 +407,8 @@ export const createInterior = (heightAt: (x: number, y: number) => number, step:
     const [ex, ey] = project(slide.exports.x, slide.exports.y);
     exportsTag.textContent = exportsWords(slide.exports, look).join('\n');
     Object.assign(exportsTag.style, {
+      display: words.exports > 0 ? '' : 'none',
+      opacity: String(words.exports),
       whiteSpace: 'pre',
       transform: `translate(${String(ex)}px, ${String(ey)}px) translate(-50%, -50%)`,
       padding: `${String(LABELING.pad)}px`,

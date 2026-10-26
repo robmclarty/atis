@@ -20,6 +20,9 @@
  * out until one is clear, so no two boxes ever overlap. Ground the caller
  * keeps off, an opened cell's slide (D166), takes no label either: a box that
  * would fall on it is not clear, so the slide's own tags stand alone there.
+ * The world writes no word over the field unasked (D168), so a caller may
+ * name the targets it is asked about, the file or cell under the pointer and
+ * the target of the notice row it is over, and only their labels are placed.
  * One input gives one placement (C3).
  */
 
@@ -218,16 +221,19 @@ function spotOf(anchor: NoticeAnchor | undefined, map: MapJson): Spot | undefine
  * LOD1 every notice anchored on the field, then the level's budget of files
  * by importance and nearness, none overlapping another, and none falling on
  * the ground `off` bounds, rings in layout units: an opened cell's slide,
- * whose own tags name its files (D166).
+ * whose own tags name its files (D166). Given the targets `asked` about, only
+ * theirs: each asked target's notices and, for a file no notice names, its
+ * name (D168).
  */
-export function labelsFor(map: MapJson, lod: Lod, viewport: Viewport, labeling: Labeling = LABELING, off: readonly Ring[] = []): readonly Label[] {
+export function labelsFor(map: MapJson, lod: Lod, viewport: Viewport, labeling: Labeling = LABELING, off: readonly Ring[] = [], asked?: ReadonlySet<string>): readonly Label[] {
   if (lod === 0) return [];
+  const isAsked = (target: string): boolean => asked === undefined || asked.has(target);
   const positions = map.terrain.layout?.positions ?? {};
   const added = new Set(map.weather.changed.filter((file) => file.kind === 'added').map((file) => file.path));
   const anchored = noticeAnchors(map);
   const notices = anchored.flatMap(({ rank, notice, anchor }): Wanted[] => {
     const spot = spotOf(anchor, map);
-    return spot === undefined ? [] : [{ target: notice.target, text: nameOf(notice.target, added.has(notice.target)), rank, ...spot }];
+    return spot === undefined || !isAsked(notice.target) ? [] : [{ target: notice.target, text: nameOf(notice.target, added.has(notice.target)), rank, ...spot }];
   });
 
   const tierOf = new Map<string, number>();
@@ -240,7 +246,7 @@ export function labelsFor(map: MapJson, lod: Lod, viewport: Viewport, labeling: 
   const files = map.terrain.organelles
     .flatMap((organelle) => {
       const at = positions[organelle.id];
-      return at === undefined || labelled.has(organelle.id) ? [] : [{ target: organelle.id, text: nameOf(organelle.id, added.has(organelle.id)), ...at }];
+      return at === undefined || labelled.has(organelle.id) || !isAsked(organelle.id) ? [] : [{ target: organelle.id, text: nameOf(organelle.id, added.has(organelle.id)), ...at }];
     })
     .map((file) => ({
       file,

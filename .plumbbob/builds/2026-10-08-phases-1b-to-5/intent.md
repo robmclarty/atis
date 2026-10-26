@@ -514,7 +514,7 @@ go, py, tf, sh (w5) ──────┘                                   .ati
     - seam: `libs/scene/src/`, `libs/scene/src/__tests__/`, `apps/web/src/`, `docs/design.md`
     - model: opus
 
-114. [ ] fix(core): keep a package's sibling cells apart so no two skins cross, **done when:** per [D171 (sibling-cells-apart)](#d171) and [D166 (legibility-first)](#d166), no two cells of which neither holds the other draw skins that cross or nest, and no placed file's centre lies under the skin of a cell it is not in, on atis's own map against `HEAD~` as `folder:apps/web/src/world` crossed `single:apps/web/src/nav.ts`, while step 108's package lanes hold. Tests hold it on the demo and on seeded synthetic packages of folder and single-file cells; the demo map and the SVG goldens are regenerated where they move, with the scene and web tests that read the demo's geometry
+114. [x] fix(core): keep a package's sibling cells apart so no two skins cross, **done when:** per [D171 (sibling-cells-apart)](#d171) and [D166 (legibility-first)](#d166), no two cells of which neither holds the other draw skins that cross or nest, and no placed file's centre lies under the skin of a cell it is not in, on atis's own map against `HEAD~` as `folder:apps/web/src/world` crossed `single:apps/web/src/nav.ts`, while step 108's package lanes hold. Tests hold it on the demo and on seeded synthetic packages of folder and single-file cells; the demo map and the SVG goldens are regenerated where they move, with the scene and web tests that read the demo's geometry
     - seam: `libs/core/src/layout/`, `libs/core/src/__tests__/`, `libs/core/fixtures/demo/`, `libs/svg/fixtures/`, `libs/scene/src/__tests__/`, `apps/web/src/__tests__/`
     - model: opus
 

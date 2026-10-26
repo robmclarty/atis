@@ -5,9 +5,12 @@
  * path in the installed Chrome, else a Chromium on the PATH (D145), and fails
  * on a console error or a blank frame. It looks at the lit surface, past
  * LOD1's gate, since the far field is dark by design until the weather lights
- * it (D151). A second frame opens on one cell where it fills the screen, and
+ * it (D151); there it writes no label at load, and the pointer over a file
+ * writes that file's and takes it away on leaving (D168). A second frame
+ * opens on one cell where it fills the screen, and
  * the cell opens as a stained slide (step 40, D165): the canvas names the
- * open cell, the slide tags each of its files, a click on a floating file
+ * open cell, the slide tags each of its files but shows a tag only for the
+ * pointer on its body or in the exploded view (D168), a click on a floating file
  * keeps it open, `x` spreads the exploded view, and `w` lays the cell's wiring
  * out on a plate in the chrome (step 41); Esc closes it, the surface holds its
  * files where they floated, and zooming out toward the field brings them
@@ -142,10 +145,37 @@ test('the world draws the demo map headless on WebGL 2, lit at the surface, with
       return { lit, shades: shades.size, pixels: data.length / 4 };
     }, png);
 
-    expect(complaints).toEqual([]);
     // A blank frame is the field alone: nothing clear of it, in one shade. The lit skin covers the frame in hundreds.
     expect(reading.lit / reading.pixels).toBeGreaterThan(0.2);
     expect(reading.shades).toBeGreaterThan(64);
+
+    // The world writes no word unasked (D168): at load no label and no storm's slot, only the numbered boxes; the pointer
+    // over a file writes its labels, and leaving it takes them away again. A target's run of boxes hangs from its point,
+    // so the file hovered is a noticed one whose point lies on the canvas.
+    const written = async (): Promise<readonly (string | null)[]> =>
+      page.$$eval('[data-labels] [data-target], [data-labels] [data-label="storm"], [data-labels] [data-label="rename"]', (elements) =>
+        elements.filter((element) => element instanceof HTMLElement && element.style.display !== 'none').map((element) => element.getAttribute('data-target') ?? element.textContent),
+      );
+    expect(await written()).toEqual([]);
+    expect(await page.$$eval('[data-labels] [data-mark]', (elements) => elements.length)).toBe(6);
+    const hovered = await page.$$eval('[data-run]', (runs) =>
+      runs
+        .map((run) => {
+          const box = run.getBoundingClientRect();
+          return { target: run.getAttribute('data-run') ?? '', x: box.left, y: box.top };
+        })
+        .find(({ x, y }) => document.elementFromPoint(x, y)?.id === 'world'),
+    );
+    if (hovered === undefined) throw new Error('no noticed file of the demo lies on the canvas at the surface');
+    await page.mouse.move(hovered.x, hovered.y);
+    // A label hangs from a hanger of no size, so it is waited on as there rather than as seen.
+    await page.waitForSelector(`[data-labels] [data-target="${hovered.target}"]`, { state: 'attached', timeout: 30_000 });
+    expect(new Set(await page.$$eval('[data-labels] [data-target]', (elements) => elements.map((element) => element.getAttribute('data-target'))))).toEqual(new Set([hovered.target]));
+    expect(await page.getAttribute(`[data-labels] [data-target="${hovered.target}"]`, 'data-label')).toBe('notice');
+    await page.mouse.move(2, 715);
+    await page.waitForSelector(`[data-labels] [data-target="${hovered.target}"]`, { state: 'detached', timeout: 30_000 });
+    expect(await written()).toEqual([]);
+    expect(complaints).toEqual([]);
   } finally {
     await browser.close();
     await server.close();
@@ -175,11 +205,15 @@ test("framed on one cell where it fills the screen, the world opens it as a slid
     await page.goto(`${url}/?backend=webgl&zoom=8&centre=${String(x)},${String(y)}`);
     await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
     await page.waitForSelector(`#world[data-open="${cell}"]`, { timeout: 30_000 });
-    // The slide tags every file the layout placed in the cell, each with its rule count, and writes the barrel's exports on the membrane.
-    await page.waitForSelector('[data-interior-tag]', { timeout: 30_000 });
+    // The slide tags every file the layout placed in the cell, each with its rule count, and writes the barrel's exports on the membrane,
+    // but shows none of it unasked (D168): the tags and the exports wait for the exploded view, or a tag for the pointer on its body.
+    await page.waitForSelector('[data-interior-tag]', { state: 'attached', timeout: 30_000 });
     const tags = await page.$$eval('[data-interior-tag]', (elements) => elements.map((element) => element.textContent));
     expect(tags.toSorted()).toEqual(['+tools.ts · 2', 'index.ts', 'legacy.ts', 'slots.ts']);
     expect(await page.textContent('[data-interior-exports]')).toBe('index.ts · 3 exports\nlistSlots  resolveSlot  resolveTool');
+    const shownTags = async (): Promise<readonly (string | null)[]> =>
+      page.$$eval('[data-interior-tag], [data-interior-exports]', (elements) => elements.filter((element) => element instanceof HTMLElement && element.style.display !== 'none').map((element) => element.textContent));
+    expect(await shownTags()).toEqual([]);
     // A click on a file of the open cell, where it has floated, keeps the cell open (D165): just inside a body's rim, past its leader's end, where the canvas takes the pointer.
     const onBody = await page.$$eval('[data-interior-leader]', (lines) =>
       lines
@@ -191,6 +225,10 @@ test("framed on one cell where it fills the screen, the world opens it as a slid
         .find(([px, py]) => document.elementFromPoint(px, py)?.id === 'world'),
     );
     if (onBody === undefined) throw new Error('no floating file of the open cell lies where the canvas takes the pointer');
+    // The pointer on a body writes that body's tag alone.
+    await page.mouse.move(onBody[0], onBody[1]);
+    await page.waitForFunction(() => [...document.querySelectorAll('[data-interior-tag]')].some((element) => element instanceof HTMLElement && element.style.display !== 'none'), undefined, { timeout: 30_000 });
+    expect(await shownTags()).toHaveLength(1);
     await page.mouse.click(onBody[0], onBody[1]);
     await page.waitForTimeout(500);
     expect(await page.getAttribute('#world', 'data-open')).toBe(cell);
@@ -200,6 +238,8 @@ test("framed on one cell where it fills the screen, the world opens it as a slid
     await page.keyboard.press('x');
     await page.waitForSelector('#world[data-exploded="on"]', { timeout: 30_000 });
     expect(await page.textContent('[data-explode]')).toBe('gather');
+    // Spread, the slide writes every tag and the exports.
+    expect(new Set(await shownTags())).toEqual(new Set(['+tools.ts · 2', 'index.ts', 'index.ts · 3 exports\nlistSlots  resolveSlot  resolveTool', 'legacy.ts', 'slots.ts']));
     const sockets = await page.$$eval('[data-interior-socket]', (elements) => elements.filter((element) => element instanceof SVGElement && element.style.display !== 'none').length);
     expect(sockets).toBe(4);
     // The wiring is laid on w, its plate drawing a box per wired file and a line per wire, and taken away on w again.
@@ -245,7 +285,7 @@ const openedOn = async (browser: Browser, url: string, cell: string, reducedMoti
   await page.goto(`${url}/?backend=webgl&zoom=8&centre=${String(x)},${String(y)}`);
   await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
   await page.waitForSelector(`#world[data-open="${cell}"]`, { timeout: 30_000 });
-  await page.waitForSelector('[data-interior-tag]', { timeout: 30_000 });
+  await page.waitForSelector('[data-interior-tag]', { state: 'attached', timeout: 30_000 });
   return { page, complaints };
 };
 

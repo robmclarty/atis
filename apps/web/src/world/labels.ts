@@ -12,7 +12,11 @@
  * hung off its lower right past the tier ring as the still sheet hangs
  * them, with the primary's kind written under its run in the category hue
  * (§5.4). The layer shows from LOD1, fading with the surface, and is placed
- * again whenever the view or the level of detail changes. The addons import
+ * again whenever the view, the level of detail or what it is asked for
+ * changes. It writes no word unasked (D168): a tag or a label shows only for
+ * a target the pointer is over, on the field or in the notice column, a
+ * storm's slot for the cell it hangs over or a file in it; the numbered
+ * boxes stay as they are. The addons import
  * three's core build by its bare name; the app's Vite config resolves that
  * name to the WebGPU build the world draws with, so one copy of three loads
  * and the console stays clean.
@@ -53,6 +57,7 @@ import {
 import type { Lod, Point, Slide, Viewport } from 'scene';
 import type { MapJson } from 'core';
 
+import { asksFor } from '../asked.js';
 import { RAIL_WIDTH } from '../fit.js';
 import { boxStyle, categoryHue, runsOf } from '../notices.js';
 import type { Run } from '../notices.js';
@@ -91,8 +96,8 @@ export type LabelLook = typeof LABEL_LOOK;
 export type Labels = {
   /** The layers over the canvas, in the order they stack: the leaders, then the text. */
   readonly elements: readonly Element[];
-  /** Lay the labels out again for what the camera shows at this level of detail: every notice's label and the level's budget of file names, clear of each other (step 27), but for the files an opened cell's slide tags in its own columns (step 40), and none on the slide or its tag columns, where its own tags stand alone (D166). */
-  readonly place: (viewport: Viewport, lod: Lod, slide?: Slide) => void;
+  /** Lay the labels out again for what the camera shows at this level of detail and the targets it is asked about (D168): their notices' labels and file names, clear of each other (step 27), but for the files an opened cell's slide tags in its own columns (step 40), and none on the slide or its tag columns, where its own tags stand alone (D166); and their storm slots and old paths. */
+  readonly place: (viewport: Viewport, lod: Lod, slide: Slide | undefined, asked: ReadonlySet<string>) => void;
   /** Keep every label over its point for this camera and canvas, and draw the leaders, with the surface's layer as the layers' opacity. */
   readonly render: (camera: Camera, width: number, height: number, surface: number) => void;
 };
@@ -208,8 +213,8 @@ export const createLabels = (map: MapJson, tags: readonly Label[], heightAt: Hei
     tag.textContent = label.text;
     tag.style.whiteSpace = 'nowrap';
     // The tag hangs from its left edge, level with the point, as the SVG writes it to the right of its mark.
-    pin(scene, tag, new Vector3(label.x, heightAt(label.x, label.y), label.y), [0, 0.5]);
-    return { tag, label };
+    const object = pin(scene, tag, new Vector3(label.x, heightAt(label.x, label.y), label.y), [0, 0.5]);
+    return { tag, label, object };
   });
 
   const hue = categoryHue(map.weather.checks.category, look);
@@ -255,11 +260,18 @@ export const createLabels = (map: MapJson, tags: readonly Label[], heightAt: Hei
     }
   };
 
-  const place = (viewport: Viewport, lod: Lod, slide?: Slide): void => {
+  const place = (viewport: Viewport, lod: Lod, slide: Slide | undefined, asked: ReadonlySet<string>): void => {
     const ppu = viewport.pixelsPerUnit;
     layRuns(ppu);
-    for (const { tag, label } of tagged) {
-      Object.assign(tag.style, { fontFamily: look.FONT_FAMILY, fontSize: `${String(label.kind === 'storm' ? look.STORM_LABEL_SIZE : look.RENAME_LABEL_SIZE)}px`, fontVariant: label.kind === 'storm' ? 'small-caps' : 'normal' });
+    const asks = asksFor(map, asked);
+    for (const { tag, label, object } of tagged) {
+      // The renderer writes a hidden object's element out of the layout itself, every frame.
+      object.visible = asks(label.target);
+      Object.assign(tag.style, {
+        fontFamily: look.FONT_FAMILY,
+        fontSize: `${String(label.kind === 'storm' ? look.STORM_LABEL_SIZE : look.RENAME_LABEL_SIZE)}px`,
+        fontVariant: label.kind === 'storm' ? 'small-caps' : 'normal',
+      });
     }
     for (const old of placed) scene.remove(old.object);
     strokes.replaceChildren();
@@ -270,7 +282,7 @@ export const createLabels = (map: MapJson, tags: readonly Label[], heightAt: Hei
     strokes.setAttribute('fill', 'none');
     const byTarget = new Map(runs.map((marks) => [marks.run.target, marks] as const));
     const onSlide = new Set(slide?.files.map((file) => file.id));
-    placed = labelsFor(map, lod, viewport, LABELING, slide === undefined ? [] : slideGround(slide, viewport))
+    placed = labelsFor(map, lod, viewport, LABELING, slide === undefined ? [] : slideGround(slide, viewport), asked)
       .filter((label) => label.rank !== undefined || !onSlide.has(label.target))
       .map((label): Pinned => {
       const { outer, inner } = hanger();

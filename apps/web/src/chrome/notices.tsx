@@ -9,7 +9,8 @@
  * edges, nothing that glows, in the shared tokens read live through the
  * registry (D156). A click on a row flies the camera to where its target is
  * drawn, or, for a target on the shore, brings its group's block in the rail
- * into view (step 39, D153).
+ * into view (step 39, D153), and while the pointer is over a row the world
+ * writes its target's labels, which it writes for nothing unasked (D168).
  */
 
 import {
@@ -117,6 +118,8 @@ export const Notices = ({ map, registry, nav }: { readonly map: MapJson; readonl
             data-target={row.target}
             data-unplaced={row.placed ? undefined : 'true'}
             onClick={row.placed ? () => go(map, row.rank, nav) : undefined}
+            onMouseEnter={() => nav?.hover(row.target)}
+            onMouseLeave={() => nav?.hover(undefined)}
             style={{ display: 'flex', alignItems: 'flex-start', gap: look.NOTICE_TEXT_GAP, cursor: row.placed ? 'pointer' : 'default' }}
           >
             <NoticeBox rank={row.rank} tier={row.tier} look={look} hue={hue} side={type.box} numeral={type.numeral} />

@@ -12,8 +12,8 @@ import { dentedRing, outlineOf, rulesOf } from 'scene';
 import type { Pick, Point } from 'scene';
 import type { MapJson } from 'core';
 
-/** The thing under the pointer as the world shows it: who it is, the words its tag writes, and the outline it highlights, in layout units. */
-export type Hovered = { readonly key: string; readonly text: string; readonly ring: readonly Point[] };
+/** The thing under the pointer as the world shows it: who it is, the file or cell it is, the words its tag writes, and the outline it highlights, in layout units. */
+export type Hovered = { readonly key: string; readonly target: string; readonly text: string; readonly ring: readonly Point[] };
 
 /** The words a file's tag writes, as the rail writes a changed file. */
 const wordsOf = (map: MapJson, path: string): string => {
@@ -28,10 +28,10 @@ export const hoverOf = (map: MapJson, pick: Pick): Hovered | undefined => {
   if (pick.kind === 'organelle') {
     const organelle = map.terrain.organelles.find((each) => each.id === pick.path);
     const { ring } = outlineOf(pick.path, pick, rulesOf(organelle?.dents ?? []));
-    return { key: `organelle:${pick.path}`, text: wordsOf(map, pick.path), ring };
+    return { key: `organelle:${pick.path}`, target: pick.path, text: wordsOf(map, pick.path), ring };
   }
   const cell = map.terrain.cells.find((each) => each.id === pick.cell);
   const contour = map.terrain.layout?.contours?.[pick.cell];
   if (cell === undefined || contour === undefined) return undefined;
-  return { key: `membrane:${pick.cell}`, text: cell.path, ring: dentedRing(contour, cell.dents.length) };
+  return { key: `membrane:${pick.cell}`, target: pick.cell, text: cell.path, ring: dentedRing(contour, cell.dents.length) };
 };
