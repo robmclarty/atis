@@ -25,7 +25,9 @@ import { run, serveRun } from '../run.js';
  * types itself; `--conditions=source` resolves the workspace packages to
  * their `src/index.ts` (D20), and the hook below maps the `.js` specifiers
  * the sources import by to the `.ts` files beside them, and refuses any file
- * under a workspace `dist/`, so the race cannot creep back in.
+ * under a workspace `dist/`, so the race cannot creep back in. A run against
+ * this repository passes `--no-cache`, so the suite never keeps a terrain in
+ * the working copy it reads (D96); the copies keep theirs and are removed.
  */
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PACKAGE = join(HERE, '..', '..');
@@ -102,7 +104,7 @@ function copyOfThisRepo(prefix: string): string {
 
 test('the command writes a map of this repository that passes assertMap', () => {
   const out = join(temp('here'), 'map.json');
-  const result = atis(['--repo', REPO, '--base', 'HEAD~1', '--out', out, '--verbose']);
+  const result = atis(['--repo', REPO, '--base', 'HEAD~1', '--no-cache', '--out', out, '--verbose']);
   expect(result.status).toBe(0);
 
   const map = mapAt(out);
@@ -133,7 +135,7 @@ test('--svg writes the still render beside the map in one run', () => {
   const dir = temp('svg');
   const out = join(dir, 'map.json');
   const svg = join(dir, 'atis.svg');
-  const result = atis(['--repo', REPO, '--base', 'HEAD~1', '--out', out, '--svg', svg]);
+  const result = atis(['--repo', REPO, '--base', 'HEAD~1', '--no-cache', '--out', out, '--svg', svg]);
   expect(result.status).toBe(0);
 
   // The map is still written, and passes assertMap.
@@ -154,7 +156,7 @@ test('--svg writes the still render beside the map in one run', () => {
 
 test('with no --out or --svg the command serves the world, prints its URL, and exits 0 on interrupt (D92, C4)', async () => {
   const web = stubWeb('served');
-  const child = spawn(process.execPath, [...NODE_FLAGS, CLI, '--repo', REPO, '--base', 'HEAD~1', '--no-open'], {
+  const child = spawn(process.execPath, [...NODE_FLAGS, CLI, '--repo', REPO, '--base', 'HEAD~1', '--no-cache', '--no-open'], {
     cwd: REPO,
     env: { ...process.env, ATIS_WEB: web },
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -209,7 +211,7 @@ test('--open is a no-op under a test run, and needs --svg', () => {
   const svg = join(dir, 'atis.svg');
 
   // With --svg it writes both and exits 0; the opener never launches here.
-  const opened = atis(['--repo', REPO, '--base', 'HEAD~1', '--out', out, '--svg', svg, '--open']);
+  const opened = atis(['--repo', REPO, '--base', 'HEAD~1', '--no-cache', '--out', out, '--svg', svg, '--open']);
   expect(opened.status).toBe(0);
   expect(existsSync(svg)).toBe(true);
 

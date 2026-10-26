@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 113 — feat(web): draw the far zoom as a dark planet under its dependencies' stars
+**Current step:** 48 — feat(cli): cache the terrain per base commit
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -95,7 +95,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 110. fix(web): write the world's labels only on hover or in an exploded cell
 - ☑ 111. fix(web): set the world in space and rule its depth bands faintly
 - ☑ 112. feat(core): record the outside packages the terrain uses, with their health
-- ☐ 113. feat(web): draw the far zoom as a dark planet under its dependencies' stars
+- ☑ 113. feat(web): draw the far zoom as a dark planet under its dependencies' stars
 - ☑ 114. fix(core): keep a package's sibling cells apart so no two skins cross
 - ☐ 48. feat(cli): cache the terrain per base commit
 - ☐ 49. feat(core): relax a new base's layout from the nearest cached one
@@ -202,7 +202,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] step 49's relaxation from a cached layout now runs lane by lane, and a package whose terrain grows slides every lane to its right; its displacement bound should hold lane places, or measure within lanes
 - [x] world.test.ts's reduced-motion browser test is flaky before step 114 too (2 of 8 runs red on HEAD 245e5ad): two frames 1.5 s apart in an opened cell differ under reduced motion; find what still moves, or what Chrome re-rasters
 - [x] an added file whose folder's room is spent still lands beside its own and can cross a sibling's skin (1 of 80 seeded layouts, fields seed 30); D32 pins the terrain, so more growth room or a relayout of the ground D32 forbids are the ways out
-- [ ] hover on the planet: name a city light's file, or a star's package with its importers and health; the far zoom hovers nothing on the flat ground under it now (planet-far-field, step 113)
+- [x] hover on the planet: name a city light's file, or a star's package with its importers and health; the far zoom hovers nothing on the flat ground under it now (planet-far-field, step 113)
+- [ ] the readLog test on this repo (git.test.ts) takes 4-5 s under the full check, against vitest's 5 s default timeout, and flaked once in step 48's run; git log --numstat over 135 commits costs ~1.8 s alone, which step 50's log timings and D50's --history cap should look at
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -294,6 +295,8 @@ Harvest results this boundary:
 - 2026-10-26, at range 30 of 31's stop: 2 parked ideas, classified.
 - **tangent**: park 57 · world.test.ts's reduced-motion browser test is flaky before step 114 too (2 of 8 runs red on HEAD 245e5ad): two frames 1.5 s apart in an opened cell differ under reduced motion; find what still moves, or what Chrome re-rasters → step 114 made the first frame pair judge the world's own canvas, which removes the flake's cause, and the test has passed every run since
 - **tangent**: park 58 · an added file whose folder's room is spent still lands beside its own and can cross a sibling's skin (1 of 80 seeded layouts, fields seed 30); D32 pins the terrain, so more growth room or a relayout of the ground D32 forbids are the ways out → one seeded layout in eighty and none on atis's own maps, and D32 pins the terrain; worth a step only if a real change shows it
+- 2026-10-26, at range 31 of 31's stop: 1 parked idea, classified.
+- **tangent**: park 59 · hover on the planet: name a city light's file, or a star's package with its importers and health; the far zoom hovers nothing on the flat ground under it now (planet-far-field, step 113) → a hover on the planet is new reach for the far zoom, nothing in this range needs it, and the far zoom works without it
 
 ## Log
 
@@ -1875,3 +1878,55 @@ folder, so it rides the branch into the PR.)*
   Against `HEAD~` (step 109's own change), Size reads `+54 −16, 4 files`. The shore's `+92 −38` across 13 files is listed separately in the block's parts. Against `HEAD~4` it reads `+1009 −155, 23 files`, where every changed file would have counted 51. No co-change notice pairs two shore files on either map. Three of `HEAD~`'s four notices still say that `chrome/frame.tsx`, `hud.tsx` and `legend.tsx` usually change with `hud.test.tsx` and did not. Each pairs a source file with its test, so the rule keeps them. If they read as noise to you, a test-only partner could be dropped too, and that would be a new call.
 
 - 2026-10-26 — step 112 checkpointed · 3af7b74d1 — feat(core): record the outside packages the terrain uses, with their health (8m)
+- 2026-10-26 — step 113 checkpointed · f4f44ba4e — feat(web): draw the far zoom as a dark planet under its dependencies' stars (20m)
+- 2026-10-26 — range 31 of 31's stop recorded — on atis's own map at the far zoom, judge the dark planet, its files' lights, the dependencies' stars lit by health catching its rim, and the zoom that hands it to the world ([D170 (planet-far-field)](#d170))
+
+  **Summary**: The map now records the outside packages the terrain imports, each with its importers, what the change did to it and its audit health, and the world's far zoom draws the repository as a dark planet: the far field's lit files as points of light on it, one seeded star per package round it, hued by health and lighting the rim facing it, growing as the view comes in until it fills the frame and LOD1's cross-fade hands it to the flat world.
+
+  1. On atis's own map every star is muted grey, because atis runs no security slot, so health can't be judged there alone
+  2. The planet grows steeply: the whole approach fits between the opening zoom and LOD1's exit, so the stars are gone by about 1.2
+  3. The map gains `weather.dependencies`: per package, its terrain importers, `change`, and an advisory count beside the worst severity
+  4. The planet is drawn in 2D over the world, its pole on the ground where the view faces, keeping arc length so the lights land on the world's own stains
+  5. While the planet shows, the pointer hovers nothing on the flat ground under it
+
+  **Readout**:
+
+  ```text
+  steps        2 of 2 landed
+               - 112 3af7b74 · 113 f4f44ba
+  check        green: 1 of 1 checks, 2 landings
+  done-when    met
+  decisions    5 of 5 honored
+  constraints  14 of 14 honored
+  seam         held: 2 of 2 steps, no strays
+  diff         +1264 -58 across 23 files
+  spent        28 min · green first run at every landing
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Harvested**: 1 of 59 parked ideas open
+
+  - P59 · hover on the planet: name a city light's file, or a star's package with its importers and health; the far zoom hovers nothing on the flat ground under it now (planet-far-field, step 113) → lean: tangent, a hover on the planet is new reach for the far zoom, nothing in this range needs it, and the far zoom works without it
+
+  **Recommendation**: Judge the planet on atis's own map at the far zoom, then judge the health hues on the injected variant, since atis's own stars can only be grey; if the approach feels rushed, pull `PLANET.handFill` toward 2 or move LOD1's gates in the panel before calling it. Confirm P59 as a tangent: it adds to the far zoom and blocks nothing in range 16's base-side work.
+
+  **1.** On atis's own map every star is muted grey, because atis runs no security slot, so health can't be judged there alone
+
+  checkride's config here runs types, lint, struct, dead, test, docs, links and spell, and no `security`. Without an audit, every entry in `weather.dependencies` carries no `advisories` count, and step 113 lights such a star in `PLANET.unread`, the muted grey that says "no evidence" rather than "clean" (C2 (never-fake)). On `atis --base HEAD~` that gives eleven grey stars (react and three the biggest, with 15 and 13 importers) and a grey rim. To see the health hues I made a copy of that map with advisories written in, at `.playwright-mcp/113/health.json`: `three` at high (IFR red), `react` at moderate (amber), `typescript` moved and `elkjs` added (the change hue), and the rest clean (dim white). There the rim catches red on the right, amber toward the top right and cyan below. Open it in the dev server with `?map=/@fs/<abs path>`.
+
+  **2.** The planet grows steeply: the whole approach fits between the opening zoom and LOD1's exit, so the stars are gone by about 1.2
+
+  The planet has to cover the frame on both sides of LOD1's gate for the hand-off to show no blink, and the gate is left at 1.45. So its radius goes from `PLANET.farFill` (0.3 of the free screen's half-diagonal) at zoom 1 to `PLANET.handFill` (2.5) at 1.45: eight times bigger over a zoom of 1.45, a power of about 5.7. On atis's map it nearly fills the frame by 1.2, and the stars, which scale with it, have left by then. The wheel's smallest step overshoots well past the gate, so in practice it reads as two or three notches of rushing in and then the world. All three settings are live in the panel: `PLANET.farFill`, `PLANET.handFill` and `LEVELS.gates`. A lower `handFill` (2 still covers the corners) slows it a little, at the cost of the lights landing a few percent off the world's discs at the corners during the fade.
+
+  **3.** The map gains `weather.dependencies`: per package, its terrain importers, `change`, and an advisory count beside the worst severity
+
+  The head scan now records on every file the packages it imports by name: never a workspace member, a Node built-in (`fs`, `fs/promises`, `node:fs`), a path, a `#` subpath import or a URL. Core counts terrain files only, so a test's `vitest` and a shore file's `vite` count for nothing. The done-when named only the severity. I added an `advisories` count beside it so step 113 could tell a clean audit (`advisories: 0`, dim white) from no audit (no key, muted grey). `assertMap` requires the severity exactly when that count is above zero. An advisory names a package as its module or on a path through it, so a transitive `qs` advisory lights `express`. The key sits under `weather` because, like the rest of the weather, it is read from HEAD (D32 (terrain-from-base)). The demo map gained only that key, and every SVG golden is byte-identical.
+
+  **4.** The planet is drawn in 2D over the world, its pole on the ground where the view faces, keeping arc length so the lights land on the world's own stains
+
+  `libs/scene/src/planet.ts` is the tested model. A layout point keeps its distance from the facing point as arc length round the sphere. While the planet is small, the whole layout is pressed into a 1.2-radian cap, so every light stays on the visible face and the limb stays dark. The world draws on a 2D canvas laid over its own, under the labels. Lights go through the main camera, so tilting and turning tip the planet's lit cap the way they tip the ground. Panning at the far zoom turns the planet under the view. In the browser, the change discs just past the gate sat where the planet's lights had been. Every look is a `PLANET` token in the registry and in design.md. The structural constants are listed under design.md's fixed geometry.
+
+  **5.** While the planet shows, the pointer hovers nothing on the flat ground under it
+
+  At LOD0 the picker used to answer for the far field's lit files at their flat places. Under the planet those places no longer match what is drawn, and a tag there would point at empty sky, so hover now stands down at LOD0. Naming a light's file or a star's package on hover would need the planet's own picking. I parked that (P59).

@@ -19,6 +19,7 @@ const FLAGS = {
   out: { type: 'string' },
   svg: { type: 'string' },
   open: { type: 'boolean' },
+  cache: { type: 'boolean' },
   verbose: { type: 'boolean' },
   version: { type: 'boolean', short: 'V' },
   help: { type: 'boolean', short: 'h' },
@@ -31,6 +32,8 @@ type Flags = {
   readonly svg?: string | undefined;
   /** `--open` is true, `--no-open` false, and neither leaves it undefined. */
   readonly open?: boolean | undefined;
+  /** Only `--no-cache` sets it, to false: the terrain cache is on unless told otherwise (D96). */
+  readonly cache?: boolean | undefined;
   readonly verbose?: boolean | undefined;
   readonly version?: boolean | undefined;
   readonly help?: boolean | undefined;
@@ -51,7 +54,7 @@ function misuse(reason: string): Outcome {
   return { exitCode: 2, stdout: '', stderr: `atis: ${reason}\n\n${USAGE}` };
 }
 
-/** `parseArgs` in its strict mode, with `--no-open` allowed, and the throw an unknown flag or a stray positional earns turned into a message. */
+/** `parseArgs` in its strict mode, with `--no-open` and `--no-cache` allowed, and the throw an unknown flag or a stray positional earns turned into a message. */
 function parseFlags(argv: readonly string[]): { readonly flags: Flags } | { readonly reason: string } {
   try {
     const { values } = parseArgs({ args: [...argv], options: FLAGS, allowPositionals: false, allowNegative: true });
@@ -72,11 +75,12 @@ async function main(argv: readonly string[]): Promise<Outcome> {
 
   const repo = flags.repo ?? process.cwd();
   const verbose = flags.verbose === true;
+  const cache = flags.cache !== false;
   const serves = flags.out === undefined && flags.svg === undefined;
-  if (serves) return serveRun({ repo, base: flags.base, assets: webDir(), open: flags.open !== false, verbose });
+  if (serves) return serveRun({ repo, base: flags.base, assets: webDir(), open: flags.open !== false, verbose, cache });
 
   if (flags.open === true && flags.svg === undefined) return misuse('--open needs --svg <file>');
-  return run({ repo, base: flags.base, out: flags.out ?? DEFAULT_OUT, svg: flags.svg, open: flags.open === true, verbose });
+  return run({ repo, base: flags.base, out: flags.out ?? DEFAULT_OUT, svg: flags.svg, open: flags.open === true, verbose, cache });
 }
 
 const outcome = await main(process.argv.slice(2));

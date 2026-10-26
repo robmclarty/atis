@@ -1,0 +1,220 @@
+import { execFileSync } from 'node:child_process';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
+
+import { DEFAULT_CONFIG, assertMap } from 'core';
+import { afterAll, expect, test } from 'vitest';
+
+import { codeKey, configKey, hashCode, readTerrain, terrainPath, writeTerrain } from '../cache.js';
+import type { BaseTerrain, TerrainKey } from '../cache.js';
+import { run } from '../run.js';
+
+/**
+ * The terrain cache (D96, D137): an entry read back whole, a miss for each
+ * reason an entry stops being this run's, and the command end to end on a
+ * throwaway repository, where a second run reads what the first kept and
+ * writes the same map.
+ */
+
+const MINUTE = 60_000;
+const SHA = 'a'.repeat(40);
+const OTHER_SHA = 'b'.repeat(40);
+
+const workspaces: string[] = [];
+
+afterAll(() => {
+  for (const dir of workspaces) rmSync(dir, { recursive: true, force: true });
+});
+
+function temp(prefix: string): string {
+  const dir = mkdtempSync(join(tmpdir(), `atis-cache-${prefix}-`));
+  workspaces.push(dir);
+  return dir;
+}
+
+function write(path: string, text: string): void {
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, text);
+}
+
+const KEY: TerrainKey = { code: 'c'.repeat(64), config: configKey(DEFAULT_CONFIG) };
+
+const TERRAIN: BaseTerrain = {
+  scan: { files: [], edges: [], members: [], entry_points: { source: 'manifests', reason: 'no fallow in the tree' } },
+  commits: [{ sha: SHA, time: 1_700_000_000, subject: 'feat: the first', files: [{ path: 'src/a.ts', added: 3, deleted: 0 }] }],
+  layout: { width: 480, height: 96, shore: { y0: 0, y1: 0 }, bands: [{ index: 0, y0: 0, y1: 96 }], positions: { 'src/a.ts': { x: 60, y: 48, r: 6 } } },
+};
+
+test('a terrain kept for a commit reads back whole, under an .atis/ that ignores itself (D96)', () => {
+  const repo = temp('kept');
+  const path = writeTerrain(repo, SHA, KEY, TERRAIN);
+
+  expect(path).toBe(terrainPath(repo, SHA));
+  expect(path).toBe(join(repo, '.atis', 'terrain', `${SHA}.json`));
+  expect(readFileSync(join(repo, '.atis', '.gitignore'), 'utf8')).toBe('*\n');
+  expect(readTerrain(repo, SHA, KEY)).toEqual({ hit: true, terrain: TERRAIN });
+
+  // Another commit has no entry until a run keeps one.
+  expect(readTerrain(repo, OTHER_SHA, KEY)).toEqual({ hit: false, reason: 'no entry' });
+});
+
+test('an entry misses on a changed config, and says so', () => {
+  const repo = temp('config');
+  writeTerrain(repo, SHA, KEY, TERRAIN);
+
+  const moved = { ...DEFAULT_CONFIG, notices: { ...DEFAULT_CONFIG.notices, large_lines: DEFAULT_CONFIG.notices.large_lines + 1 } };
+  expect(configKey(DEFAULT_CONFIG)).toBe(configKey({ ...DEFAULT_CONFIG }));
+  expect(configKey(moved)).not.toBe(configKey(DEFAULT_CONFIG));
+  expect(readTerrain(repo, SHA, { ...KEY, config: configKey(moved) })).toEqual({ hit: false, reason: 'config changed' });
+});
+
+test('an entry misses on changed code: a byte, a file or the compiler, never a test or a declaration (D137)', () => {
+  const code = temp('code');
+  write(join(code, 'run.ts'), 'export const a = 1;\n');
+  write(join(code, 'sources', 'git.js'), 'export const b = 2;\n');
+  write(join(code, 'run.d.ts'), 'export declare const a: number;\n');
+  write(join(code, 'run.js.map'), '{}\n');
+  write(join(code, 'README.md'), '# notes\n');
+  write(join(code, '__tests__', 'run.test.ts'), 'test();\n');
+  const before = hashCode([code]);
+  expect(before).toMatch(/^[0-9a-f]{64}$/);
+
+  // What never builds a terrain moves nothing.
+  write(join(code, '__tests__', 'run.test.ts'), 'test(); test();\n');
+  write(join(code, 'run.d.ts'), 'export declare const a: 1;\n');
+  write(join(code, 'run.js.map'), '{"version":3}\n');
+  write(join(code, 'README.md'), '# other notes\n');
+  expect(hashCode([code])).toBe(before);
+
+  // One changed byte, one added file and another compiler each do.
+  write(join(code, 'sources', 'git.js'), 'export const b = 3;\n');
+  const edited = hashCode([code]);
+  expect(edited).not.toBe(before);
+  write(join(code, 'cache.ts'), 'export const c = 4;\n');
+  expect(hashCode([code])).not.toBe(edited);
+  expect(hashCode([code], ['typescript 6.0.3'])).not.toBe(hashCode([code], ['typescript 6.0.4']));
+
+  // This process's own key is one hash, read once.
+  expect(codeKey()).toMatch(/^[0-9a-f]{64}$/);
+  expect(codeKey()).toBe(codeKey());
+
+  const repo = temp('code-entry');
+  writeTerrain(repo, SHA, KEY, TERRAIN);
+  expect(readTerrain(repo, SHA, { ...KEY, code: before })).toEqual({ hit: false, reason: 'code changed' });
+});
+
+test('a corrupt entry reads as a miss, never an error', () => {
+  const repo = temp('corrupt');
+  const path = writeTerrain(repo, SHA, KEY, TERRAIN);
+  const whole = readFileSync(path, 'utf8');
+  const unreadable = { hit: false, reason: 'unreadable' };
+
+  for (const text of ['not json {', whole.slice(0, whole.length / 2), '[]', 'null', '']) {
+    writeFileSync(path, text);
+    expect(readTerrain(repo, SHA, KEY), text.slice(0, 20)).toEqual(unreadable);
+  }
+
+  // Well-formed JSON with a part of the wrong kind, or another commit's entry under this one's name.
+  const entry: unknown = JSON.parse(whole);
+  writeFileSync(path, JSON.stringify({ ...(entry as object), scan: { files: 'none' } }));
+  expect(readTerrain(repo, SHA, KEY)).toEqual(unreadable);
+  writeFileSync(path, JSON.stringify({ ...(entry as object), layout: [] }));
+  expect(readTerrain(repo, SHA, KEY)).toEqual(unreadable);
+  writeFileSync(path, JSON.stringify({ ...(entry as object), commits: [1, 2] }));
+  expect(readTerrain(repo, SHA, KEY)).toEqual(unreadable);
+  writeFileSync(path, JSON.stringify({ ...(entry as object), sha: OTHER_SHA }));
+  expect(readTerrain(repo, SHA, KEY)).toEqual(unreadable);
+});
+
+/** A throwaway repository of two commits: a package whose second commit edits one file and adds another. */
+function twoCommits(): { readonly repo: string; readonly git: (...args: readonly string[]) => string } {
+  const repo = temp('repo');
+  const git = (...args: readonly string[]): string =>
+    execFileSync('git', ['-c', 'user.name=atis', '-c', 'user.email=atis@example.invalid', '-c', 'commit.gpgsign=false', ...args], {
+      cwd: repo,
+      encoding: 'utf8',
+    }).trim();
+  git('init', '--quiet');
+  write(join(repo, 'package.json'), '{ "name": "demo", "private": true, "type": "module" }\n');
+  write(join(repo, 'src', 'index.ts'), "export { area } from './shapes.js';\n");
+  write(join(repo, 'src', 'shapes.ts'), 'export function area(width: number, height: number): number {\n  return width * height;\n}\n');
+  git('add', '.');
+  git('commit', '--quiet', '-m', 'feat: measure an area');
+  write(join(repo, 'src', 'shapes.ts'), "import { square } from './square.js';\n\nexport function area(width: number, height: number): number {\n  return width === height ? square(width) : width * height;\n}\n");
+  write(join(repo, 'src', 'square.ts'), 'export function square(side: number): number {\n  return side * side;\n}\n');
+  git('add', '.');
+  git('commit', '--quiet', '-m', 'fix: square a square');
+  return { repo, git };
+}
+
+/** The map's bytes with the one line two runs may differ in, the clock, taken out (C3). */
+function bytesBesideTheClock(path: string): string {
+  return readFileSync(path, 'utf8').replace(/"generated_at": "[^"]*"/, '"generated_at": ""');
+}
+
+test('a second run on the same base reads the cache, and writes the map the first wrote but for the clock (C3)', () => {
+  const { repo, git } = twoCommits();
+  const out = temp('maps');
+  const base = git('rev-parse', 'HEAD~1');
+  const entry = terrainPath(repo, base);
+
+  const first = run({ repo, base: 'HEAD~1', out: join(out, 'first.json'), verbose: true });
+  expect(first.exitCode, first.stderr).toBe(0);
+  expect(first.stderr).toContain(`terrain cache miss (no entry), wrote .atis/terrain/${base}.json`);
+  expect(first.stderr).toMatch(/scan base\s+\d+ ms/);
+  expect(existsSync(entry)).toBe(true);
+
+  const second = run({ repo, base: 'HEAD~1', out: join(out, 'second.json'), verbose: true });
+  expect(second.exitCode, second.stderr).toBe(0);
+  expect(second.stderr).toContain(`terrain cache hit, .atis/terrain/${base}.json`);
+  expect(second.stderr).not.toMatch(/scan base/);
+  expect(bytesBesideTheClock(join(out, 'second.json'))).toBe(bytesBesideTheClock(join(out, 'first.json')));
+
+  // --no-cache measures afresh to the same map, and leaves the entry as it found it.
+  writeFileSync(entry, 'kept by hand');
+  const bypassed = run({ repo, base: 'HEAD~1', out: join(out, 'bypassed.json'), verbose: true, cache: false });
+  expect(bypassed.exitCode, bypassed.stderr).toBe(0);
+  expect(bypassed.stderr).toContain('terrain cache off (--no-cache)');
+  expect(bytesBesideTheClock(join(out, 'bypassed.json'))).toBe(bytesBesideTheClock(join(out, 'first.json')));
+  expect(readFileSync(entry, 'utf8')).toBe('kept by hand');
+
+  // A corrupt entry is a miss, measured afresh and written over.
+  const mended = run({ repo, base: 'HEAD~1', out: join(out, 'mended.json'), verbose: true });
+  expect(mended.exitCode, mended.stderr).toBe(0);
+  expect(mended.stderr).toContain('terrain cache miss (unreadable), wrote');
+  expect(bytesBesideTheClock(join(out, 'mended.json'))).toBe(bytesBesideTheClock(join(out, 'first.json')));
+
+  // An entry another build of atis wrote, or one laid out under another config, misses by name.
+  for (const [part, reason] of [
+    ['code', 'code changed'],
+    ['config', 'config changed'],
+  ] as const) {
+    const kept: unknown = JSON.parse(readFileSync(entry, 'utf8'));
+    const { key } = kept as { readonly key: TerrainKey };
+    writeFileSync(entry, JSON.stringify({ ...(kept as object), key: { ...key, [part]: '0'.repeat(64) } }));
+    const missed = run({ repo, base: 'HEAD~1', out: join(out, `${part}.json`), verbose: true });
+    expect(missed.exitCode, missed.stderr).toBe(0);
+    expect(missed.stderr).toContain(`terrain cache miss (${reason}), wrote`);
+    expect(bytesBesideTheClock(join(out, `${part}.json`))).toBe(bytesBesideTheClock(join(out, 'first.json')));
+  }
+
+  // The cache ignores itself: the repository's own status and ignores are untouched.
+  expect(git('status', '--porcelain')).toBe('');
+  expect(existsSync(join(repo, '.gitignore'))).toBe(false);
+}, MINUTE);
+
+test('the kept layout is the one the map draws for a change that changes nothing', () => {
+  const { repo, git } = twoCommits();
+  const out = join(temp('still'), 'map.json');
+
+  const result = run({ repo, base: 'HEAD', out, verbose: false });
+  expect(result.exitCode, result.stderr).toBe(0);
+  const map = assertMap(JSON.parse(readFileSync(out, 'utf8')));
+  expect(map.weather.changed).toEqual([]);
+
+  const kept = readTerrain(repo, git('rev-parse', 'HEAD'), { code: codeKey(), config: configKey(DEFAULT_CONFIG) });
+  expect(kept.hit).toBe(true);
+  expect(kept.hit ? kept.terrain.layout : undefined).toEqual(map.terrain.layout);
+  expect(Object.keys(map.terrain.layout?.positions ?? {})).toEqual(['package.json', 'src/index.ts', 'src/shapes.ts', 'src/square.ts']);
+}, MINUTE);

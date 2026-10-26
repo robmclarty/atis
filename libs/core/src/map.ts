@@ -10,7 +10,8 @@
  * modules, depth, history, reach, evidence and notices in that order, counts
  * the outside packages the terrain imports (D170), and finally lays the
  * terrain out on the field every renderer draws (D24). Every list leaves
- * sorted (C3).
+ * sorted (C3). `layOutTerrain` runs the same assembly over a base commit
+ * alone, for the terrain the CLI caches per base (D96).
  */
 
 import { DEFAULT_CONFIG } from './config.js';
@@ -31,7 +32,7 @@ import type { NamedEdge, PublishingMember, ScanFile } from './notices.js';
 import { TESTS_GROUP, computeReach } from './reach.js';
 import type { DiffFile } from './reach.js';
 import { SCHEMA_VERSION } from './schema.js';
-import type { Cell, DepAdded, DepMoved, ExceptionalEdge, Group, Instruments, MapJson, Organelle, Stability, Ties, WiringEdge } from './schema.js';
+import type { Cell, DepAdded, DepMoved, ExceptionalEdge, Group, Instruments, Layout, MapJson, Organelle, Stability, Ties, WiringEdge } from './schema.js';
 import { computePackageTies, computeTies } from './ties.js';
 
 /**
@@ -510,7 +511,7 @@ function instrumentsOf(check: CheckArtifacts, entries: EntryPointsRead, muted: r
  * each told which graph it runs on (D39). Nothing here reads a clock, a file
  * or a process; two runs over one input set differ in nothing at all (C3).
  */
-export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): MapJson {
+export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): MapJson & { readonly terrain: { readonly layout: Layout } } {
   const renames = renamesOf(inputs.diff);
   const base = rekeyScan(inputs.base, renames);
   const { head } = inputs;
@@ -652,4 +653,21 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
       config,
     }),
   };
+}
+
+/** No `.check/` stands behind a terrain on its own: the layout never reads it, and nothing else of the map is kept. */
+const NO_CHANGE: CheckArtifacts = { mode: 'git-only', reason: 'a terrain alone carries no change' };
+
+/**
+ * A base commit's own terrain, laid out: the field `buildMap` draws for a
+ * change that changes nothing over `scan`. It depends on the commit and the
+ * config alone, which is what lets the CLI keep it per base commit beside the
+ * scan and the history window (D96), for a later layout to start from (D97).
+ * It is `buildMap`'s own pipeline rather than a copy of it, so the two cannot
+ * lay one terrain out two ways.
+ */
+export function layOutTerrain(scan: Scan, config: Config = DEFAULT_CONFIG): Layout {
+  const meta: MapMeta = { repo: '', base: '', head: '', merge_base: '', generated_at: '' };
+  const inputs: BuildInputs = { meta, base: scan, head: scan, diff: [], deps_added: [], commits: [], head_time: 0, check: NO_CHANGE };
+  return buildMap(inputs, config).terrain.layout;
 }

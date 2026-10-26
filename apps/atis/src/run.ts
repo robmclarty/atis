@@ -6,8 +6,13 @@
  * and the weather from the head (D32) and both sides describe commits rather
  * than a working tree (D46). The diff, the manifest delta and the log window
  * come from the repository itself; only `.check/` is read from the working
- * tree, since artifacts are not committed. The extractions are removed and the
- * sources go to the pure `buildMap`.
+ * tree, since artifacts are not committed. The base side (its scan, the
+ * history window at it and its terrain's layout) is kept per base commit in
+ * the terrain cache, so a run on a base it has seen reads it rather than
+ * extracting and scanning it again, and reads only its change's own commits on
+ * top of the window (D8, D96); `--no-cache` measures it afresh and keeps
+ * nothing. The extractions are removed and the sources go to the pure
+ * `buildMap`.
  *
  * The map then goes one of two ways. `run` writes it atomically, and the still
  * SVG beside it, and exits. `serveRun` keeps it in memory and serves it with
@@ -19,17 +24,27 @@
 
 import { execFileSync, spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { existsSync, mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { platform, tmpdir } from 'node:os';
-import { basename, dirname, join, resolve } from 'node:path';
+import { basename, join, relative, resolve } from 'node:path';
 
-import { buildMap } from 'core';
-import type { MapJson } from 'core';
+import { DEFAULT_CONFIG, buildMap, layOutTerrain } from 'core';
+import type { Commit, MapJson } from 'core';
 import { renderSvg } from 'svg';
 
+import { codeKey, configKey, readTerrain, terrainPath, writeAtomic, writeTerrain } from './cache.js';
 import { serve } from './serve.js';
 import type { Served } from './serve.js';
-import { checkInferredShapes, readCheck, readDiff, readLog, readManifests, scanImports, shapePaths } from './sources/index.js';
+import {
+  HISTORY_WINDOW,
+  checkInferredShapes,
+  readCheck,
+  readDiff,
+  readLog,
+  readManifests,
+  scanImports,
+  shapePaths,
+} from './sources/index.js';
 import type { Scan } from './sources/index.js';
 
 /** The flags for a run that writes files, already parsed: `cli.ts` owns the parsing, `run` owns the work. */
@@ -44,8 +59,10 @@ export type Options = {
   readonly svg?: string | undefined;
   /** Hand the SVG to the platform opener once written; a no-op under a test run. */
   readonly open?: boolean | undefined;
-  /** Print the per-source timings D50 asks for on stderr. */
+  /** Print the per-source timings D50 asks for on stderr, and whether the terrain cache hit. */
   readonly verbose: boolean;
+  /** `false` measures the base side afresh and keeps nothing (`--no-cache`); the terrain cache is read and written otherwise (D96). */
+  readonly cache?: boolean | undefined;
 };
 
 /** The flags for the served run (D92, D133). */
@@ -57,6 +74,7 @@ export type ServeRunOptions = {
   /** Open the tab once serving; a no-op under a test run. */
   readonly open: boolean;
   readonly verbose: boolean;
+  readonly cache?: boolean | undefined;
   /** The run's token (D134); drawn at random unless a test names one. */
   readonly token?: string | undefined;
 };
@@ -127,18 +145,12 @@ function timed<T>(timings: Timing[], source: string, work: () => T): T {
   return value;
 }
 
-function report(timings: readonly Timing[]): string {
+/** What `--verbose` prints: whether the terrain cache hit, then each source's time. */
+function report(measured: Measured): string {
+  const { timings } = measured;
   const width = timings.reduce((widest, timing) => Math.max(widest, timing.source.length), 0);
-  return timings.map((timing) => `  ${timing.source.padEnd(width)}  ${String(timing.ms)} ms\n`).join('');
-}
-
-/** Write through a neighbouring temp file and rename, so nothing ever reads half a map. */
-function writeAtomic(path: string, text: string): void {
-  const directory = dirname(path);
-  mkdirSync(directory, { recursive: true });
-  const temp = join(directory, `.${basename(path)}.${String(process.pid)}.tmp`);
-  writeFileSync(temp, text);
-  renameSync(temp, path);
+  const lines = timings.map((timing) => `  ${timing.source.padEnd(width)}  ${String(timing.ms)} ms\n`);
+  return [`  terrain cache ${measured.cache}\n`, ...lines].join('');
 }
 
 /**
@@ -174,33 +186,83 @@ function summary(map: MapJson): string {
   return `${map.weather.checks.category}, ${counted(map.weather.changed.length, 'file')} changed, ${counted(map.notices.length, 'notice')}`;
 }
 
-/** The map built, and the timings so far, which the caller adds its own to. */
-type Measured = { readonly map: MapJson; readonly timings: Timing[] };
+/** The map built, the timings so far, which the caller adds its own to, and what the terrain cache did. */
+type Measured = { readonly map: MapJson; readonly timings: Timing[]; readonly cache: string };
+
+/** The config every run measures with: core's defaults, since no `atis.config.json` is read yet. */
+const CONFIG = DEFAULT_CONFIG;
+
+/**
+ * The base side of a run: the base tree's scan and the history window at it,
+ * the extraction behind the scan when this run made one, and what the terrain
+ * cache did, for `--verbose` to say.
+ */
+type Ground = { readonly scan: Scan; readonly commits: readonly Commit[]; readonly tree?: string; readonly cache: string };
+
+/** How a run reaches the repository: its path, its timings, and the scan of an extracted commit. */
+type Reader = { readonly repo: string; readonly timings: Timing[]; readonly scanAt: (source: string, sha: string) => Side };
+
+/**
+ * The base side, from the terrain cache when it holds this commit for this
+ * code and config, else measured: the tree extracted and scanned, the log
+ * walked from the base, and the terrain laid out alone, all three kept for the
+ * next run (D96). A cache that will not write leaves the run as it was, since
+ * the map never depended on it (C4).
+ */
+function groundAt(reader: Reader, sha: string, cache: boolean): Ground {
+  const { repo, timings } = reader;
+  const key = cache ? { code: codeKey(), config: configKey(CONFIG) } : undefined;
+  const read = key === undefined ? undefined : timed(timings, 'cache read', () => readTerrain(repo, sha, key));
+  if (read?.hit === true) {
+    return { scan: read.terrain.scan, commits: read.terrain.commits, cache: `hit, ${relative(repo, terrainPath(repo, sha))}` };
+  }
+  const side = reader.scanAt('scan base', sha);
+  const commits = timed(timings, 'log base', () => readLog(repo, sha));
+  if (key === undefined || read === undefined) return { ...side, commits, cache: 'off (--no-cache)' };
+  const layout = timed(timings, 'layout base', () => layOutTerrain(side.scan, CONFIG));
+  try {
+    const path = timed(timings, 'cache write', () => writeTerrain(repo, sha, key, { scan: side.scan, commits, layout }));
+    return { ...side, commits, cache: `miss (${read.reason}), wrote ${relative(repo, path)}` };
+  } catch (error) {
+    return { ...side, commits, cache: `miss (${read.reason}), not written: ${messageOf(error)}` };
+  }
+}
 
 /** Read the repository and build the map; throws on a repository it cannot read, with the extractions removed either way. */
-function measure(repoPath: string, base: string): Measured {
+function measure(repoPath: string, base: string, cache: boolean): Measured {
   const repo = resolve(repoPath);
   const timings: Timing[] = [];
   const extractions: Extraction[] = [];
 
-  const scan = (source: string, sha: string): Side =>
+  const treeAt = (sha: string): string => {
+    const extraction = extract(repo, sha);
+    extractions.push(extraction);
+    return extraction.tree;
+  };
+  const scanAt = (source: string, sha: string): Side =>
     timed(timings, source, () => {
-      const extraction = extract(repo, sha);
-      extractions.push(extraction);
-      return { tree: extraction.tree, scan: scanImports(extraction.tree, { repo }) };
+      const tree = treeAt(sha);
+      return { tree, scan: scanImports(tree, { repo }) };
     });
 
   try {
     const head = headOf(repo);
     const diff = timed(timings, 'diff', () => readDiff(repo, base));
-    const baseSide = scan('scan base', diff.merge_base);
-    const headSide = scan('scan head', head.sha);
+    const ground = groundAt({ repo, timings, scanAt }, diff.merge_base, cache);
+    const headSide = scanAt('scan head', head.sha);
     // The names only the checker can print, in the changed interface files alone, each side timed (D118).
-    const paths = shapePaths(diff.changed, baseSide.scan, headSide.scan);
-    const baseScan = timed(timings, 'shapes base', () => checkInferredShapes(baseSide.tree, baseSide.scan, paths.base));
+    // A base read from the cache has no tree, so it is extracted only when one of those files has such a name.
+    const paths = shapePaths(diff.changed, ground.scan, headSide.scan);
+    const inferred = new Set(ground.scan.files.filter((file) => paths.base.has(file.path) && file.inferred.length > 0).map((file) => file.path));
+    const baseScan = timed(timings, 'shapes base', () =>
+      inferred.size === 0 ? ground.scan : checkInferredShapes(ground.tree ?? treeAt(diff.merge_base), ground.scan, inferred),
+    );
     const headScan = timed(timings, 'shapes head', () => checkInferredShapes(headSide.tree, headSide.scan, paths.head));
     const { deps_added, deps_moved } = timed(timings, 'manifests', () => readManifests(repo, diff.merge_base));
-    const commits = timed(timings, 'log', () => readLog(repo, HEAD));
+    // The window at the base, with the change's own commits on top, newest first (D8).
+    const commits = timed(timings, 'log', () =>
+      [...readLog(repo, `${diff.merge_base}..${HEAD}`), ...ground.commits].slice(0, HISTORY_WINDOW),
+    );
     const check = timed(timings, 'check', () => readCheck(repo));
 
     const map = timed(timings, 'build', () =>
@@ -220,9 +282,9 @@ function measure(repoPath: string, base: string): Measured {
         commits,
         head_time: head.time,
         check,
-      }),
+      }, CONFIG),
     );
-    return { map, timings };
+    return { map, timings, cache: ground.cache };
   } finally {
     for (const extraction of extractions) rmSync(extraction.root, { recursive: true, force: true });
   }
@@ -232,7 +294,8 @@ function measure(repoPath: string, base: string): Measured {
 export function run(options: Options): Outcome {
   const out = resolve(options.out);
   try {
-    const { map, timings } = measure(options.repo, options.base);
+    const measured = measure(options.repo, options.base, options.cache !== false);
+    const { map, timings } = measured;
     timed(timings, 'write', () => {
       writeAtomic(out, serialize(map));
     });
@@ -247,7 +310,7 @@ export function run(options: Options): Outcome {
     }
 
     const wrote = options.svg === undefined ? options.out : `${options.out} and ${options.svg}`;
-    return { exitCode: 0, stdout: `${summary(map)}, wrote ${wrote}\n`, stderr: options.verbose ? report(timings) : '' };
+    return { exitCode: 0, stdout: `${summary(map)}, wrote ${wrote}\n`, stderr: options.verbose ? report(measured) : '' };
   } catch (error) {
     return failed(error);
   }
@@ -266,7 +329,8 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
     return { exitCode: 2, stdout: '', stderr: `atis: no built web app at ${assets}; run \`pnpm build\` first\n` };
   }
   try {
-    const { map, timings } = measure(options.repo, options.base);
+    const measured = measure(options.repo, options.base, options.cache !== false);
+    const { map, timings } = measured;
     const token = options.token ?? randomBytes(16).toString('hex');
     const started = performance.now();
     // The raw check output beside the map (D93): the run's `.check/`, for the slots the map holds alone (D134).
@@ -276,7 +340,7 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
     return {
       exitCode: 0,
       stdout: `${summary(map)}, serving at ${served.url} (Ctrl-C to stop)\n`,
-      stderr: options.verbose ? report(timings) : '',
+      stderr: options.verbose ? report(measured) : '',
       served,
     };
   } catch (error) {

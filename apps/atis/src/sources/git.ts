@@ -162,7 +162,8 @@ export function parseDiff(nameStatus: string, numstat: string, unified: string):
     .toSorted((a, b) => byPath(a.path, b.path));
 }
 
-const HISTORY_WINDOW = 5000;
+/** How many commits the history window holds, newest first (D8). */
+export const HISTORY_WINDOW = 5000;
 const LOG_FORMAT = '%H%x00%ct%x00%s';
 const NUL = '\0';
 
@@ -189,7 +190,7 @@ export function parseLog(output: string): readonly Commit[] {
   return commits;
 }
 
-/** The `-n 5000` window of `head`'s log, no author or email field anywhere (C6). */
+/** The `-n 5000` window of `head`'s log, or of a range such as `<base>..HEAD`, no author or email field anywhere (C6). */
 export function readLog(repo: string, head: string): readonly Commit[] {
   return parseLog(git(repo, ['log', '--numstat', '--no-merges', `--format=${LOG_FORMAT}`, '-n', String(HISTORY_WINDOW), head]));
 }

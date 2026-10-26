@@ -27,11 +27,15 @@ opens it in a tab, and runs until interrupted.
   --svg <file>    render the map as a static SVG at <file> and exit
   --open          open the rendered SVG in the platform viewer (needs --svg)
   --no-open       serve without opening the tab
-  --verbose       print per-source timings on stderr
+  --no-cache      measure the base afresh, neither reading nor writing the
+                  terrain kept per base commit in .atis/terrain/
+  --verbose       print per-source timings, and the terrain cache's hit or
+                  miss, on stderr
   --version, -V   print the version
   --help, -h      print this text
 
 The map is written at schema ${SCHEMA_VERSION}: terrain scanned from the merge
 base of <ref> and HEAD, weather from HEAD, and at most six ranked notices.
+The terrain is kept per merge base under .atis/, which ignores itself in git.
 https://github.com/robmclarty/atis
 `;
