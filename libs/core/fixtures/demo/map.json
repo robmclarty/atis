@@ -14,6 +14,14 @@
         "health": 9,
         "dead": 9,
         "dupes": 9
+      },
+      "structure": {
+        "base": {
+          "fallow": "3.22.0"
+        },
+        "head": {
+          "fallow": "3.22.0"
+        }
       }
     }
   },
@@ -3830,7 +3838,58 @@
         "importers": 1
       }
     ],
-    "improvements": []
+    "improvements": [
+      {
+        "kind": "clone-family",
+        "files": [
+          "libs/core/src/pm/legacy.ts",
+          "libs/core/src/pm/slots.ts"
+        ]
+      },
+      {
+        "kind": "dent",
+        "files": [
+          "apps/cli/src/doctor.ts"
+        ],
+        "rule": "cognitive"
+      },
+      {
+        "kind": "dent",
+        "files": [
+          "libs/core/src/pm/legacy.ts"
+        ],
+        "rule": "cyclomatic"
+      },
+      {
+        "kind": "threshold",
+        "files": [
+          "apps/cli/src/doctor.ts"
+        ],
+        "rule": "cognitive",
+        "function": "runChecks"
+      },
+      {
+        "kind": "threshold",
+        "files": [
+          "libs/core/src/pm/legacy.ts"
+        ],
+        "rule": "cyclomatic",
+        "function": "resolveLegacy"
+      }
+    ],
+    "health_delta": {
+      "maintainability": 1.9,
+      "files": [
+        {
+          "path": "apps/cli/src/doctor.ts",
+          "maintainability": 3.4
+        },
+        {
+          "path": "libs/core/src/pm/index.ts",
+          "maintainability": -1.5
+        }
+      ]
+    }
   },
   "notices": [
     {

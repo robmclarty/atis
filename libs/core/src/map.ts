@@ -19,8 +19,8 @@ import type { Config } from './config.js';
 import { computeDependencies } from './dependencies.js';
 import { computeDepth } from './depth.js';
 import type { FileDepth } from './depth.js';
-import { computeCategory, computeEvidence, pathsOf, trustCoverage } from './evidence.js';
-import type { CheckArtifacts, Dead, Dupes, Health } from './evidence.js';
+import { compareStructure, computeCategory, computeEvidence, dentsFrom, pathsOf, trustCoverage } from './evidence.js';
+import type { CheckArtifacts, Dupes, Health, Structure } from './evidence.js';
 import { OTHER_GROUP, identifyGroups, shoreMatcher } from './groups.js';
 import { computeHistory } from './history.js';
 import type { Commit, CommitFile, FileHistory } from './history.js';
@@ -72,23 +72,6 @@ export type Scan = {
   readonly entry_points: EntryPointLookup;
 };
 
-/**
- * One extracted commit's health, duplication and structure, as the reviewed
- * repo's own fallow measured it (D22, D98): the version that ran, each of the
- * three analyses it read, and each it could not as `analysis: reason`; or why
- * it never ran on the commit at all (C2). Its reports are `.check/`'s, read
- * by the same parsers, so the two sides of a change compare like for like.
- */
-export type Structure =
-  | {
-      readonly fallow: string;
-      readonly health?: Health;
-      readonly dupes?: Dupes;
-      readonly dead?: Dead;
-      readonly muted: readonly string[];
-    }
-  | { readonly reason: string };
-
 /** What the map is of: the commits it spans, and the clock a pure `buildMap` cannot read for itself (C3). */
 export type MapMeta = {
   readonly repo: string;
@@ -121,14 +104,6 @@ export type BuildInputs = {
   /** fallow's measure of the base and the head extractions (D98); absent, the map says nothing of either. */
   readonly structure?: { readonly base: Structure; readonly head: Structure };
 };
-
-/** fallow's compound `exceeded` values, split so the count of dents is the count of rules (§5.1). */
-const EXCEEDED_RULES: ReadonlyMap<string, readonly string[]> = new Map([
-  ['both', ['cognitive', 'cyclomatic']],
-  ['cyclomatic_crap', ['crap', 'cyclomatic']],
-  ['cognitive_crap', ['cognitive', 'crap']],
-  ['all', ['cognitive', 'crap', 'cyclomatic']],
-]);
 
 const CYCLE = 'cycle';
 const BOUNDARY = 'boundary';
@@ -256,21 +231,7 @@ function shoreGroups(files: readonly ScannedFile[], roots: readonly string[], co
  * never a round shape faked from silence (C2).
  */
 function dentsOf(check: CheckArtifacts): ReadonlyMap<string, readonly string[]> {
-  const found = new Map<string, Set<string>>();
-  if (check.mode !== 'check') return new Map();
-  const dent = (path: string, rule: string): void => {
-    found.set(path, (found.get(path) ?? new Set<string>()).add(rule));
-  };
-  for (const finding of check.health?.findings ?? []) {
-    for (const rule of EXCEEDED_RULES.get(finding.exceeded) ?? [finding.exceeded]) dent(finding.path, rule);
-  }
-  for (const finding of [...(check.dead?.circular_dependencies ?? []), ...(check.dead?.re_export_cycles ?? [])]) {
-    for (const path of pathsOf(finding)) dent(path, CYCLE);
-  }
-  for (const finding of check.dead?.boundary_violations ?? []) {
-    for (const path of pathsOf(finding)) dent(path, BOUNDARY);
-  }
-  return new Map([...found].map(([path, rules]) => [path, sortUnique(rules)]));
+  return check.mode === 'check' ? dentsFrom(check.health, check.dead) : new Map();
 }
 
 /**
@@ -595,10 +556,14 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
   const reach = computeReach({ ...graphs, changed: inputs.diff });
   const code = new Map(head.files.flatMap((file) => (file.code === undefined ? [] : [[file.path, file.code] as const])));
   const evidence = computeEvidence({ ...graphs, changed: reach.changed, check, code });
+  // What fallow measured the change did against its base, where it measured both sides (D98).
+  const terrain = new Set(modules.organelles.map((organelle) => organelle.path));
+  const structure = inputs.structure === undefined ? {} : compareStructure({ ...inputs.structure, diff: inputs.diff, terrain });
   const deps_added = [...inputs.deps_added].toSorted((a, b) => byPath(a.manifest, b.manifest) || byPath(a.name, b.name));
   const deps_moved = [...(inputs.deps_moved ?? [])].toSorted((a, b) => byPath(a.manifest, b.manifest) || byPath(a.name, b.name));
   const checks = computeCategory({
     check,
+    structure,
     changed: reach.changed,
     files: evidence.files,
     stitches: evidence.evidence.stitches ?? [],
@@ -681,7 +646,8 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
       deps_added,
       deps_moved,
       ...(dependencies === undefined ? {} : { dependencies }),
-      improvements: [],
+      ...(structure.improvements === undefined ? {} : { improvements: structure.improvements }),
+      ...(structure.health_delta === undefined ? {} : { health_delta: structure.health_delta }),
     },
     notices: rankNotices({
       changed: reach.changed,
@@ -699,6 +665,7 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
       baseEdges: base.edges,
       publicNames: findPublicNames([base, head]),
       check,
+      structure,
       config,
     }),
   };

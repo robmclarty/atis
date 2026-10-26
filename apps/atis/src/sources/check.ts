@@ -148,7 +148,9 @@ function envelopeOf(record: Record<string, unknown>): Omit<FallowParse<unknown>,
  * `health.json` (fallow): `file_scores[]`, `findings[]` by path with the
  * exceeded threshold and the function's `line` and `line_count`, which is
  * where a red `health` meets a change or does not (D73), and
- * `target_thresholds.fan_in_p95`.
+ * `target_thresholds.fan_in_p95`. A finding keeps its function's name and its
+ * three measures where fallow gives them, which match it to its base self
+ * and say whether the change made it worse (D98).
  */
 export function parseHealth(text: string): FallowParse<Health> | undefined {
   const value = parseJson(text);
@@ -186,7 +188,12 @@ export function parseHealth(text: string): FallowParse<Health> | undefined {
     const line = numberField(raw, 'line');
     const line_count = numberField(raw, 'line_count');
     if (typeof path !== 'string' || typeof exceeded !== 'string' || line === undefined || line_count === undefined) return [];
-    return [{ path: normalizePath(path), exceeded, line, line_count }];
+    const name = stringField(raw, 'name');
+    const measures = (['cyclomatic', 'cognitive', 'crap'] as const).flatMap((measure) => {
+      const measured = numberField(raw, measure);
+      return measured === undefined ? [] : [[measure, measured] as const];
+    });
+    return [{ path: normalizePath(path), exceeded, line, line_count, ...(name === undefined ? {} : { name }), ...Object.fromEntries(measures) }];
   });
 
   const thresholds = value['target_thresholds'];

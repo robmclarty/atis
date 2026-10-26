@@ -18,7 +18,7 @@ import type { Config } from './config.js';
 import { classifyFile } from './modules.js';
 import type { ImportEdge, Modules } from './modules.js';
 import { computeCellsReached } from './reach.js';
-import type { ReachInputs } from './reach.js';
+import type { DiffFile, ReachInputs } from './reach.js';
 import type {
   ChangedFile,
   CheckSlot,
@@ -27,8 +27,11 @@ import type {
   DepMoved,
   Evidence,
   FallowSchemas,
+  FileHealthDelta,
   FlightCategory,
+  HealthDelta,
   Hunk,
+  Improvement,
   Mutant,
   PatchCoverage,
   Stitch,
@@ -55,12 +58,21 @@ export type HealthFileScore = {
   readonly crap_max: number;
 };
 
-/** One function over a threshold: its file, the rule it broke, and the `line_count` lines it spans from `line` at head (D73). */
+/**
+ * One function over a threshold: its file, the rule it broke, and the
+ * `line_count` lines it spans from `line` at head (D73). Its name and its
+ * measures, where fallow gives them, are what match it to its base self and
+ * tell whether the change made it worse (D98).
+ */
 export type HealthFinding = {
   readonly path: string;
   readonly exceeded: string;
   readonly line: number;
   readonly line_count: number;
+  readonly name?: string;
+  readonly cyclomatic?: number;
+  readonly cognitive?: number;
+  readonly crap?: number;
 };
 
 export type Health = {
@@ -168,6 +180,24 @@ export function broughtAdvisories(
     .filter((brought) => brought.advisories.length > 0)
     .toSorted((a, b) => byPath(a.manifest, b.manifest) || byPath(a.name, b.name));
 }
+
+/**
+ * One extracted commit's health, duplication and structure, as the reviewed
+ * repo's own fallow measured it (D22, D98): the version that ran, each of the
+ * three analyses it read, and each it could not as `analysis: reason`; or why
+ * it never ran on the commit at all (C2). Its reports are `.check/`'s, read
+ * by the same parsers, and its paths its own commit's, so the two sides of a
+ * change compare like for like once the base's are put under head paths.
+ */
+export type Structure =
+  | {
+      readonly fallow: string;
+      readonly health?: Health;
+      readonly dupes?: Dupes;
+      readonly dead?: Dead;
+      readonly muted: readonly string[];
+    }
+  | { readonly reason: string };
 
 /** A channel muted for staleness: its slot ran, but the raw file predates the run window (D41). */
 export type StaleChannel = { readonly slot: string; readonly file: string; readonly age_ms: number };
@@ -501,6 +531,8 @@ export function computeEvidence(inputs: EvidenceInputs): EvidenceResult {
 
 export type CategoryInputs = {
   readonly check: CheckArtifacts;
+  /** What fallow measured the change did against the base; absent or empty, the line rule reads the head alone (D73, D98, D140). */
+  readonly structure?: StructureChange;
   readonly changed: readonly ChangedFile[];
   /** `computeEvidence`'s per-file result: the gaps, the reach and the escaped interfaces D27 counts. */
   readonly files: readonly FileEvidence[];
@@ -652,11 +684,6 @@ export function unusedExportPlaces(dead: Dead | undefined): readonly FindingPlac
   return (dead?.unused_exports ?? []).map((unused) => linePlace(unused, 'path', lineOf));
 }
 
-/** Every `dead` finding's place: the structural ones and the unused exports. */
-function deadPlaces(dead: Dead | undefined): readonly FindingPlace[] {
-  return [...structuralPlaces(dead), ...unusedExportPlaces(dead)];
-}
-
 /**
  * The files a red lint or struct slot names: the ones carrying an error,
  * because an error is what fails the slot. A red slot with no error among its
@@ -728,13 +755,301 @@ function cloneSpans(family: unknown): readonly Span[] {
   });
 }
 
-/** The places of the three line-scoped slots' findings, by slot name (D73, D140). */
-function findingPlaces(check: RanCheck): ReadonlyMap<string, readonly FindingPlace[]> {
+/**
+ * The places of the three line-scoped slots' findings, by slot name (D73,
+ * D140). Where fallow measured both sides, a `health` or `dupes` finding is
+ * placed only when the change made it, new at head or worse than its base
+ * self, and a cycle or boundary violation only when the change introduced it,
+ * each over the whole of every changed file it names, in place of the line
+ * rule (D98); an unused export keeps the line rule either way.
+ */
+function findingPlaces(check: RanCheck, structure: StructureChange): ReadonlyMap<string, readonly FindingPlace[]> {
+  const made = structure.health?.map((fn): FindingPlace => ({ spans: [], files: [fn.path] }));
   return new Map([
-    ['health', (check.health?.findings ?? []).map((finding) => ({ spans: [healthSpan(finding)], files: [] }))],
-    ['dupes', (check.dupes?.clone_families ?? []).map((family) => ({ spans: cloneSpans(family), files: [] }))],
-    ['dead', deadPlaces(check.dead)],
+    ['health', made ?? (check.health?.findings ?? []).map((finding) => ({ spans: [healthSpan(finding)], files: [] }))],
+    ['dupes', structure.dupes ?? (check.dupes?.clone_families ?? []).map((family) => ({ spans: cloneSpans(family), files: [] }))],
+    ['dead', [...(structure.introduced ?? structuralPlaces(check.dead)), ...unusedExportPlaces(check.dead)]],
   ]);
+}
+
+// ---------------------------------------------------------------------------
+// the base side: what the change made, introduced, eased and moved (D98)
+// ---------------------------------------------------------------------------
+
+/** fallow's compound `exceeded` values, split so a function breaks one rule per threshold (§5.1). */
+const EXCEEDED_RULES: ReadonlyMap<string, readonly string[]> = new Map([
+  ['both', ['cognitive', 'cyclomatic']],
+  ['cyclomatic_crap', ['crap', 'cyclomatic']],
+  ['cognitive_crap', ['cognitive', 'crap']],
+  ['all', ['cognitive', 'crap', 'cyclomatic']],
+]);
+
+/** The rules one `exceeded` names, each of fallow's thresholds by itself, so the count of dents is the count of rules (§5.1). */
+export function rulesOf(exceeded: string): readonly string[] {
+  return EXCEEDED_RULES.get(exceeded) ?? [exceeded];
+}
+
+/** The dent a cycle puts in each file it runs through, and the one a boundary violation puts in both its ends. */
+export const CYCLE_RULE = 'cycle';
+export const BOUNDARY_RULE = 'boundary';
+
+/**
+ * Every rule each file breaks, which is the count of vertices its shape has
+ * pulled out (§5.1): fallow's thresholds from its health findings, plus a
+ * cycle or a boundary violation from its dead-code findings naming the file,
+ * each path read through `at`.
+ */
+export function dentsFrom(health: Health | undefined, dead: Dead | undefined, at: (path: string) => string = (path) => path): ReadonlyMap<string, readonly string[]> {
+  const found = new Map<string, Set<string>>();
+  const dent = (path: string, rule: string): void => {
+    found.set(at(path), (found.get(at(path)) ?? new Set<string>()).add(rule));
+  };
+  for (const finding of health?.findings ?? []) {
+    for (const rule of rulesOf(finding.exceeded)) dent(finding.path, rule);
+  }
+  for (const cycle of [...(dead?.circular_dependencies ?? []), ...(dead?.re_export_cycles ?? [])]) {
+    for (const path of pathsOf(cycle)) dent(path, CYCLE_RULE);
+  }
+  for (const violation of dead?.boundary_violations ?? []) {
+    for (const path of pathsOf(violation)) dent(path, BOUNDARY_RULE);
+  }
+  return new Map([...found].map(([path, rules]) => [path, sortUnique([...rules])] as const));
+}
+
+/** A function over a threshold at head on a changed file that the change made: new there, or worse than its base self (D98). */
+export type MadeFunction = {
+  readonly path: string;
+  /** As fallow names it, where it does. */
+  readonly function?: string;
+  readonly rules: readonly string[];
+  readonly change: 'new' | 'worse';
+};
+
+/**
+ * What the change did to health, duplication and structure, read by setting
+ * what fallow measured at head beside what it measured at the base (D98).
+ * Each part is absent where its analysis was not measured on both sides by
+ * one fallow, which leaves the head-only reading of D73 and D140 in its
+ * place; `improvements` is absent only where no analysis was (C2).
+ */
+export type StructureChange = {
+  /** The functions over a threshold at head, on a changed file, new there or worse than at the base. */
+  readonly health?: readonly MadeFunction[];
+  /** The clone families at head that name a changed file and are new there or duplicate more than their base selves did. */
+  readonly dupes?: readonly FindingPlace[];
+  /** The cycles and boundary violations at head that name a changed file and are absent at the base. */
+  readonly introduced?: readonly FindingPlace[];
+  readonly improvements?: readonly Improvement[];
+  readonly health_delta?: HealthDelta;
+};
+
+/** The two sides fallow measured, the diff that renames the base's paths to the head's (D40), and the terrain the health delta is of. */
+export type StructureInputs = {
+  readonly base: Structure;
+  readonly head: Structure;
+  readonly diff: readonly DiffFile[];
+  /** The terrain's files: a test or a shore file is no terrain (D4), so its maintainability moves no Health Δ, as it adds no Size (D166). */
+  readonly terrain: ReadonlySet<string>;
+};
+
+/** fallow's three measures of one function, any of which rising makes it worse. */
+const MEASURES = ['cyclomatic', 'cognitive', 'crap'] as const;
+
+/**
+ * Each function over a threshold, by its identity across the two sides: its
+ * file under head paths, its name, and its place among that file's functions
+ * of the name, top down, since fallow names every anonymous one alike.
+ */
+function functionsByKey(findings: readonly HealthFinding[], at: (path: string) => string): ReadonlyMap<string, HealthFinding> {
+  const seen = new Map<string, number>();
+  const keyed = new Map<string, HealthFinding>();
+  const placed = findings.map((finding) => ({ ...finding, path: at(finding.path) })).toSorted((a, b) => byPath(a.path, b.path) || a.line - b.line);
+  for (const finding of placed) {
+    const name = `${finding.path}\n${finding.name ?? ''}`;
+    const nth = seen.get(name) ?? 0;
+    seen.set(name, nth + 1);
+    keyed.set(`${name}\n${String(nth)}`, finding);
+  }
+  return keyed;
+}
+
+/** Whether a function breaks a rule its base self did not, or rose in a measure both sides carry; a measure one side lacks says nothing (C2). */
+function worseThan(head: HealthFinding, base: HealthFinding): boolean {
+  const before = new Set(rulesOf(base.exceeded));
+  if (rulesOf(head.exceeded).some((rule) => !before.has(rule))) return true;
+  return MEASURES.some((measure) => {
+    const [now, was] = [head[measure], base[measure]];
+    return now !== undefined && was !== undefined && now > was;
+  });
+}
+
+function named(finding: HealthFinding): { readonly function?: string } {
+  return finding.name === undefined ? {} : { function: finding.name };
+}
+
+/** The functions the change made over a threshold, and the rules each base function on a changed file no longer breaks. */
+function healthMoves(base: Health, head: Health, at: (path: string) => string, changed: ReadonlySet<string>): { readonly made: readonly MadeFunction[]; readonly eased: readonly Improvement[] } {
+  const before = functionsByKey(base.findings, at);
+  const after = functionsByKey(head.findings, (path) => path);
+  const made = [...after].flatMap(([key, finding]): readonly MadeFunction[] => {
+    const self = before.get(key);
+    if (!changed.has(finding.path) || (self !== undefined && !worseThan(finding, self))) return [];
+    return [{ path: finding.path, ...named(finding), rules: sortUnique(rulesOf(finding.exceeded)), change: self === undefined ? 'new' : 'worse' }];
+  });
+  const eased = [...before].flatMap(([key, finding]): readonly Improvement[] => {
+    if (!changed.has(finding.path)) return [];
+    const now = after.get(key);
+    const still = new Set(now === undefined ? [] : rulesOf(now.exceeded));
+    return rulesOf(finding.exceeded)
+      .filter((rule) => !still.has(rule))
+      .map((rule): Improvement => ({ kind: 'threshold', files: [finding.path], rule, ...named(finding) }));
+  });
+  return { made, eased };
+}
+
+/** The dents each changed file had at the base and has no longer, by the analyses both sides measured. */
+function dentsGone(base: ReadonlyMap<string, readonly string[]>, head: ReadonlyMap<string, readonly string[]>, changed: ReadonlySet<string>): readonly Improvement[] {
+  return [...base].flatMap(([path, rules]) => {
+    if (!changed.has(path)) return [];
+    const still = new Set(head.get(path) ?? []);
+    return rules.filter((rule) => !still.has(rule)).map((rule): Improvement => ({ kind: 'dent', files: [path], rule }));
+  });
+}
+
+/** One clone family by the files it names, under head paths, and the lines it duplicates. */
+type Family = { readonly files: readonly string[]; readonly lines: number };
+
+/** The lines a family duplicates: fallow's own total where it gives one, else the lines its copies span. */
+function duplicatedLines(family: unknown): number {
+  const total = isRecord(family) ? family['total_duplicated_lines'] : undefined;
+  if (typeof total === 'number') return total;
+  return cloneSpans(family).reduce((lines, span) => lines + span.end - span.start + 1, 0);
+}
+
+function familiesOf(dupes: Dupes, at: (path: string) => string): readonly Family[] {
+  return dupes.clone_families
+    .map((family) => ({ files: sortUnique(pathsOf(family).map(at)), lines: duplicatedLines(family) }))
+    .filter((family) => family.files.length > 0);
+}
+
+/** A head family's base self: the family of the same files, else the smallest that held them all, which a change that drops a copy leaves behind. */
+function baseSelf(family: Family, base: readonly Family[]): Family | undefined {
+  const key = family.files.join('\n');
+  return (
+    base.find((self) => self.files.join('\n') === key) ??
+    base
+      .filter((self) => family.files.every((path) => self.files.includes(path)))
+      .toSorted((a, b) => a.files.length - b.files.length || byPath(a.files.join('\n'), b.files.join('\n')))[0]
+  );
+}
+
+/** The families the change made, new or duplicating more, and the base families on a changed file no head family is left of. */
+function dupesMoves(base: Dupes, head: Dupes, at: (path: string) => string, changed: ReadonlySet<string>): { readonly made: readonly FindingPlace[]; readonly dissolved: readonly Improvement[] } {
+  const before = familiesOf(base, at);
+  const selves = familiesOf(head, (path) => path).map((family) => ({ family, self: baseSelf(family, before) }));
+  const touches = (files: readonly string[]): boolean => files.some((path) => changed.has(path));
+  const made = selves
+    .filter(({ family, self }) => touches(family.files) && (self === undefined || family.lines > self.lines))
+    .map(({ family }): FindingPlace => ({ spans: [], files: family.files }));
+  const left = new Set(selves.flatMap(({ self }) => (self === undefined ? [] : [self])));
+  const dissolved = before.filter((family) => !left.has(family) && touches(family.files)).map((family): Improvement => ({ kind: 'clone-family', files: family.files }));
+  return { made, dissolved };
+}
+
+/** A cycle's or a boundary violation's identity across the two sides: what it is and the files it names, under head paths. */
+type Structural = { readonly key: string; readonly files: readonly string[]; readonly cycle: boolean };
+
+function structuralsOf(dead: Dead, at: (path: string) => string): readonly Structural[] {
+  const of = (kind: string, findings: readonly unknown[], cycle: boolean): readonly Structural[] =>
+    findings.map((finding) => {
+      const files = sortUnique(pathsOf(finding).map(at));
+      const ends = isRecord(finding) ? [finding['from_path'], finding['to_path']].map((end) => (typeof end === 'string' ? at(end) : '')) : [];
+      return { key: [kind, ...(cycle ? files : ends)].join('\n'), files, cycle };
+    });
+  return [...of('cycle', dead.circular_dependencies, true), ...of('re-export', dead.re_export_cycles, true), ...of('boundary', dead.boundary_violations, false)];
+}
+
+/** The cycles and boundary violations the change introduced, and the cycles on a changed file it broke. */
+function deadMoves(base: Dead, head: Dead, at: (path: string) => string, changed: ReadonlySet<string>): { readonly introduced: readonly FindingPlace[]; readonly broken: readonly Improvement[] } {
+  const before = structuralsOf(base, at);
+  const after = structuralsOf(head, (path) => path);
+  const absent = (from: readonly Structural[]) => {
+    const keys = new Set(from.map((finding) => finding.key));
+    return (finding: Structural): boolean => !keys.has(finding.key) && finding.files.some((path) => changed.has(path));
+  };
+  return {
+    introduced: after.filter(absent(before)).map((finding): FindingPlace => ({ spans: [], files: finding.files })),
+    broken: before.filter((finding) => finding.cycle && absent(after)(finding)).map((finding): Improvement => ({ kind: 'cycle', files: finding.files })),
+  };
+}
+
+/** A measure to the tenth fallow gives its maintainability index in, so a sum of differences reads as one and not as a float. */
+function tenths(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
+/**
+ * The change's movement in fallow's maintainability index: each changed
+ * terrain file both sides scored, head less base, a renamed one against its
+ * base path, and their sum. An added or a deleted file has no other self to
+ * move from.
+ */
+function healthDelta(base: Health, head: Health, diff: readonly DiffFile[], terrain: ReadonlySet<string>): HealthDelta {
+  const before = new Map(base.file_scores.map((score) => [score.path, score.maintainability_index] as const));
+  const after = new Map(head.file_scores.map((score) => [score.path, score.maintainability_index] as const));
+  const files = diff
+    .flatMap((file): readonly FileHealthDelta[] => {
+      const was = before.get(file.from ?? file.path);
+      const now = after.get(file.path);
+      if (file.kind === 'added' || file.kind === 'deleted' || !terrain.has(file.path) || was === undefined || now === undefined) return [];
+      return [{ path: file.path, maintainability: tenths(now - was) }];
+    })
+    .toSorted((a, b) => byPath(a.path, b.path));
+  return { maintainability: tenths(files.reduce((total, file) => total + file.maintainability, 0)), files };
+}
+
+/** One analysis on both sides, or none where either side lacks it. */
+function both<T>(was: T | undefined, now: T | undefined): readonly [T, T] | undefined {
+  return was === undefined || now === undefined ? undefined : [was, now];
+}
+
+function improvementKey(improvement: Improvement): string {
+  return [improvement.kind, improvement.files.join('\n'), improvement.rule ?? '', improvement.function ?? ''].join('\t');
+}
+
+/**
+ * Set the head fallow measured beside the base it measured (D98). Only two
+ * sides one fallow measured compare, so a moved pin reads as no base side
+ * rather than as the change; and each analysis compares only where both
+ * sides hold it. A finding the change made, introduced or eased names a
+ * changed file, a deleted one under its base path (D40), so the movement of
+ * ground the change never touched is never its own.
+ */
+export function compareStructure(inputs: StructureInputs): StructureChange {
+  const { base, head } = inputs;
+  if (!('fallow' in base) || !('fallow' in head) || base.fallow !== head.fallow) return {};
+  const renames = new Map(inputs.diff.flatMap((file) => (file.kind === 'renamed' && file.from !== undefined ? [[file.from, file.path] as const] : [])));
+  const at = (path: string): string => renames.get(path) ?? path;
+  const changed = new Set(inputs.diff.map((file) => file.path));
+  const health = both(base.health, head.health);
+  const dupes = both(base.dupes, head.dupes);
+  const dead = both(base.dead, head.dead);
+  if (health === undefined && dupes === undefined && dead === undefined) return {};
+
+  const healthMoved = health === undefined ? undefined : healthMoves(health[0], health[1], at, changed);
+  const dupesMoved = dupes === undefined ? undefined : dupesMoves(dupes[0], dupes[1], at, changed);
+  const deadMoved = dead === undefined ? undefined : deadMoves(dead[0], dead[1], at, changed);
+  const dents = dentsGone(dentsFrom(health?.[0], dead?.[0], at), dentsFrom(health?.[1], dead?.[1]), changed);
+  const improvements = [...(healthMoved?.eased ?? []), ...dents, ...(dupesMoved?.dissolved ?? []), ...(deadMoved?.broken ?? [])]
+    .toSorted((a, b) => byPath(improvementKey(a), improvementKey(b)));
+
+  return {
+    ...(healthMoved === undefined ? {} : { health: healthMoved.made }),
+    ...(dupesMoved === undefined ? {} : { dupes: dupesMoved.made }),
+    ...(deadMoved === undefined ? {} : { introduced: deadMoved.introduced }),
+    improvements,
+    ...(health === undefined ? {} : { health_delta: healthDelta(health[0], health[1], inputs.diff, inputs.terrain) }),
+  };
 }
 
 /**
@@ -785,7 +1100,9 @@ function partition(slots: readonly RedSlot[]): RedSplit {
  * the files it tore on are. `health`, `dupes` and `dead` name lines of a
  * file rather than the file, so each is on the change only through a changed
  * file where one of its findings meets a hunk, or one a finding with no line
- * atis can read names (D140). `security` names the
+ * atis can read names (D140); where fallow measured both sides, through a
+ * changed file a finding the change made or introduced names, which is what
+ * `places` holds then (D98). `security` names the
  * manifests its advisories start from, and is on the change only through a
  * manifest whose own edit added or moved a package one of them runs through
  * (D83). Every other file a slot names,
@@ -854,18 +1171,20 @@ function hasGap(file: FileEvidence): boolean {
  * §5.3's ladder with D27's numbers, worst rung first. A vacuous green (no
  * check ran at all) and a cycle or boundary violation on this change are the
  * two things that make a green summary worse than no summary. A cycle or a
- * violation is on the change by the split's line rule: one whose import
- * lines the change never touched was there before it, so a standing cycle
- * through a changed file is standing state (D140). A red slot is IFR only
- * when it is the change's red (D69): standing state leaves the category to
- * the change's own evidence.
+ * violation is on the change where the change introduced it, absent at the
+ * base fallow measured (D98), and without a base side by the split's line
+ * rule: one whose import lines the change never touched was there before it,
+ * so a standing cycle through a changed file is standing state (D140). A
+ * red slot is IFR only when it is the change's red (D69): standing state
+ * leaves the category to the change's own evidence.
  */
 function categoryOf(inputs: CategoryInputs, check: RanCheck, red: RedSplit): FlightCategory {
   const hunks = new Map(inputs.changed.map((file) => [file.path, file.hunks] as const));
   const highReach = inputs.config.category.high_reach_cells;
 
   if (check.summary.checks_run === 0) return 'LIFR';
-  if (structuralPlaces(check.dead).some((place) => placeOnChange(place, hunks).length > 0)) return 'LIFR';
+  // With both sides measured, only a cycle or a violation the change introduced (D98).
+  if ((inputs.structure?.introduced ?? structuralPlaces(check.dead)).some((place) => placeOnChange(place, hunks).length > 0)) return 'LIFR';
   if (red.change.length > 0) return 'IFR';
   if (inputs.files.some((file) => hasGap(file) && file.cells_reached >= highReach)) return 'IFR';
   if (inputs.files.some((file) => hasGap(file) || file.escaped_interface)) return 'MVFR';
@@ -892,7 +1211,7 @@ export function computeCategory(inputs: CategoryInputs): Checks {
 
   const slots = scopedSlots(check);
   const brought = new Set(broughtAdvisories(check.security, inputs.deps_added, inputs.deps_moved).map((entry) => entry.manifest));
-  const red = splitRedSlots({ slots, changed: inputs.changed, stitches: inputs.stitches, places: findingPlaces(check), brought });
+  const red = splitRedSlots({ slots, changed: inputs.changed, stitches: inputs.stitches, places: findingPlaces(check, inputs.structure ?? {}), brought });
   return {
     category: categoryOf(inputs, check, red),
     checks_run: check.summary.checks_run,

@@ -2,8 +2,8 @@ import { expect, test } from 'vitest';
 
 import { DEFAULT_CONFIG } from '../config.js';
 import type { Config, NoticeKind } from '../config.js';
-import { computeCategory, computeEvidence, readRedSplit } from '../evidence.js';
-import type { CheckArtifacts, CheckSummarySlot, Dead, Health } from '../evidence.js';
+import { compareStructure, computeCategory, computeEvidence, readRedSplit } from '../evidence.js';
+import type { CheckArtifacts, CheckSummarySlot, Dead, Health, Structure } from '../evidence.js';
 import { identifyGroups } from '../groups.js';
 import type { FileHistory } from '../history.js';
 import { identifyModules } from '../modules.js';
@@ -81,6 +81,8 @@ type Scenario = {
   readonly cochange?: readonly Cochange[];
   readonly deps_added?: readonly DepAdded[];
   readonly deps_moved?: readonly DepMoved[];
+  /** The two sides fallow measured, which the structural and threshold candidates read where present (D98). */
+  readonly structure?: { readonly base: Structure; readonly head: Structure };
 };
 
 const NO_CHECK: CheckArtifacts = { mode: 'git-only', reason: '.check/ is absent' };
@@ -190,10 +192,12 @@ function inputsFor(scenario: Scenario): NoticeInputs {
   const code = new Map((scenario.withCode ?? []).map((path) => [path, [{ start: 1, end: 40 }]] as const));
   const { evidence, files } = computeEvidence({ changed: placed.changed, modules, groups, headEdges, baseEdges, check, code });
   const deps = { deps_added: scenario.deps_added ?? [], deps_moved: scenario.deps_moved ?? [] };
+  const terrain = new Set(modules.organelles.map((organelle) => organelle.path));
+  const structure = scenario.structure === undefined ? {} : compareStructure({ ...scenario.structure, diff: changed, terrain });
   const checks =
     scenario.checks ??
     (check.mode === 'check'
-      ? computeCategory({ check, changed: placed.changed, files, stitches: evidence.stitches ?? [], ...deps, config: DEFAULT_CONFIG })
+      ? computeCategory({ check, structure, changed: placed.changed, files, stitches: evidence.stitches ?? [], ...deps, config: DEFAULT_CONFIG })
       : NOINST);
   const members = scenario.members ?? [];
 
@@ -215,6 +219,7 @@ function inputsFor(scenario: Scenario): NoticeInputs {
       { files: headFiles, edges: headEdges, members },
     ]),
     check,
+    structure,
     config: DEFAULT_CONFIG,
   };
 }
@@ -461,6 +466,54 @@ test('a structural notice the file rule kept says fallow gave it no line, and co
     `cycles or boundary violations name this changed file: 1 at import lines this change touched, 1 at no line fallow gives; ${HEAD_ONLY}`,
   );
   expect(both[0]?.inputs['findings']).toBe(2);
+});
+
+/** One side as fallow measured it, every analysis present and nothing muted (D98). */
+function side(parts: { readonly health?: Health; readonly dead?: Dead }): Structure {
+  return { fallow: '3.22.0', health: parts.health ?? NO_HEALTH, dupes: { clone_families: [] }, dead: parts.dead ?? NO_DEAD, muted: [] };
+}
+
+/** `util.ts`'s function, named and measured, as fallow reports it at one side. */
+function breach(cyclomatic: number, exceeded = 'cyclomatic'): Health {
+  return { file_scores: [], findings: [{ ...UTIL_BREACH, exceeded, name: 'resolve', cyclomatic, cognitive: 9 }] };
+}
+
+test('with a base side, a threshold notice is a function the change made new or worse, never one it only touched (D98)', () => {
+  const thresholdOf = (structure: NonNullable<Scenario['structure']>): Notice | undefined =>
+    noticesFor({ check: ran({ health: breach(22) }), structure }).find((notice) => notice.kind === 'threshold-breached');
+
+  // The quiet change's hunk meets the function, but it was as bad at the base: standing state, where the line rule would rank it.
+  expect(noticesFor({ check: ran({ health: breach(22) }) }).map((notice) => notice.kind)).toContain('threshold-breached');
+  expect(thresholdOf({ base: side({ health: breach(22) }), head: side({ health: breach(22) }) })).toBeUndefined();
+
+  const worse = thresholdOf({ base: side({ health: breach(18) }), head: side({ health: breach(22) }) });
+  expect(worse?.why).toBe('cyclomatic over threshold in a function worse than at the base');
+  expect(worse?.inputs['findings']).toBe(1);
+  // Breaking a rule its base self did not is worse too, whatever the measures did.
+  expect(thresholdOf({ base: side({ health: breach(22) }), head: side({ health: breach(22, 'both') }) })?.why).toBe(
+    'cognitive, cyclomatic over threshold in a function worse than at the base',
+  );
+  expect(thresholdOf({ base: side({}), head: side({ health: breach(22) }) })?.why).toBe('cyclomatic over threshold in a function new at head');
+
+  // Two made on one file, one each way, are one notice that counts both.
+  const both: Health = { file_scores: [], findings: [...breach(22).findings, { ...UTIL_BREACH, exceeded: 'cognitive', line: 30, name: 'fresh', cognitive: 20 }] };
+  const mixed = thresholdOf({ base: side({ health: breach(18) }), head: side({ health: both }) });
+  expect(mixed?.why).toBe('cognitive, cyclomatic over threshold in a function new at head and 1 worse than at the base');
+  expect(mixed?.inputs['findings']).toBe(2);
+});
+
+test('with a base side, a structural notice is a cycle the change introduced, wherever its import lines sit (D98)', () => {
+  const cycles: Dead = { ...NO_DEAD, circular_dependencies: [PAIR_CYCLE] };
+  // Neither change touches the cycle's import lines; the head-only rule leaves it standing.
+  const changed = [change(CYCLE_A, 1, 1, [{ start: 6, count: 1 }]), change(CYCLE_B, 1, 1, [{ start: 7, count: 1 }])];
+  const introduced = structuralOf({ ...CYCLES, changed, structure: { base: side({}), head: side({ dead: cycles }) } });
+  expect(introduced.map((notice) => notice.target)).toEqual([CYCLE_A, CYCLE_B]);
+  expect(introduced[0]?.why).toBe('a cycle or boundary violation this change introduced, absent at the base');
+  expect(introduced[0]?.inputs['findings']).toBe(1);
+
+  // One the base had stands, though the change wrote the line it imports on.
+  const wrote = [change(CYCLE_A, 1, 1, [{ start: 6, count: 1 }]), change(CYCLE_B, 1, 1, [{ start: 4, count: 1 }])];
+  expect(structuralOf({ ...CYCLES, changed: wrote, structure: { base: side({ dead: cycles }), head: side({ dead: cycles }) } })).toEqual([]);
 });
 
 test('the two head-only kinds say in their why that they are not measured as introduced', () => {

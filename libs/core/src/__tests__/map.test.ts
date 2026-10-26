@@ -6,7 +6,7 @@ import { expect, test } from 'vitest';
 
 import { DEFAULT_CONFIG } from '../config.js';
 import { COVERAGE_UNNAMED } from '../evidence.js';
-import type { CheckArtifacts } from '../evidence.js';
+import type { CheckArtifacts, Dead, Structure } from '../evidence.js';
 import { buildMap } from '../map.js';
 import type { BuildInputs, EntryPointLookup } from '../map.js';
 import type { ExportShapes } from '../notices.js';
@@ -98,6 +98,8 @@ test('the demo map reads its terrain from the base and its weather from the head
     mode: 'check',
     entry_points: 'fallow',
     fallow_schemas: { health: 9, dead: 9, dupes: 9 },
+    // One fallow measured both extractions (D98).
+    structure: { base: { fallow: '3.22.0' }, head: { fallow: '3.22.0' } },
   });
 });
 
@@ -163,7 +165,41 @@ test('the demo map carries the evidence the check run produced and nothing it di
     skipped: true,
     scope: 'global',
   });
-  expect(map.weather.improvements).toEqual([]);
+  // The base side the demo's fallow measured: the cognitive function the
+  // doctor's edit eased, the deleted legacy file's threshold and clone family,
+  // and the doctor's and the barrel's maintainability moving (D98).
+  expect(map.weather.improvements).toEqual([
+    { kind: 'clone-family', files: ['libs/core/src/pm/legacy.ts', 'libs/core/src/pm/slots.ts'] },
+    { kind: 'dent', files: ['apps/cli/src/doctor.ts'], rule: 'cognitive' },
+    { kind: 'dent', files: ['libs/core/src/pm/legacy.ts'], rule: 'cyclomatic' },
+    { kind: 'threshold', files: ['apps/cli/src/doctor.ts'], rule: 'cognitive', function: 'runChecks' },
+    { kind: 'threshold', files: ['libs/core/src/pm/legacy.ts'], rule: 'cyclomatic', function: 'resolveLegacy' },
+  ]);
+  expect(map.weather.health_delta).toEqual({
+    maintainability: 1.9,
+    files: [
+      { path: 'apps/cli/src/doctor.ts', maintainability: 3.4 },
+      { path: 'libs/core/src/pm/index.ts', maintainability: -1.5 },
+    ],
+  });
+});
+
+test('with no base side, improvements and the health delta are absent, never empty or zero (C2)', () => {
+  const { structure: _measured, ...inputs } = inputsFor('demo');
+  const unmeasured = { reason: 'no local fallow at node_modules/.bin/fallow' };
+
+  for (const map of [
+    buildMap(inputs, DEFAULT_CONFIG),
+    buildMap({ ...inputs, structure: { base: unmeasured, head: unmeasured } }, DEFAULT_CONFIG),
+  ]) {
+    expect(() => assertMap(map)).not.toThrow();
+    expect(map.weather).not.toHaveProperty('improvements');
+    expect(map.weather).not.toHaveProperty('health_delta');
+  }
+  expect(buildMap({ ...inputs, structure: { base: unmeasured, head: unmeasured } }, DEFAULT_CONFIG).meta.instruments.structure).toEqual({
+    base: unmeasured,
+    head: unmeasured,
+  });
 });
 
 test("the demo's doctor.ts, which its coverage report leaves out, is unmeasured, and a report from another checkout is muted (D80, D122)", () => {
@@ -495,25 +531,15 @@ test('the entry points read fallow only when both scans did, and name the side t
 
 /** A boundary violation on a file this change touched: the rung §5.3 calls LIFR. */
 test('a boundary violation is drawn as a line and lands the map in LIFR', () => {
-  const inputs = inputsFor('demo');
+  const { structure: _measured, ...inputs } = inputsFor('demo');
   const check = inputs.check as Extract<CheckArtifacts, { mode: 'check' }>;
-  const map = buildMap(
-    {
-      ...inputs,
-      check: {
-        ...check,
-        dead: {
-          circular_dependencies: [],
-          re_export_cycles: [],
-          boundary_violations: [
-            { from_path: 'apps/cli/src/doctor.ts', to_path: 'libs/core/src/pm/index.ts', from_zone: 'apps', to_zone: 'libs' },
-          ],
-          unused_exports: [],
-        },
-      },
-    },
-    DEFAULT_CONFIG,
-  );
+  const dead: Dead = {
+    circular_dependencies: [],
+    re_export_cycles: [],
+    boundary_violations: [{ from_path: 'apps/cli/src/doctor.ts', to_path: 'libs/core/src/pm/index.ts', from_zone: 'apps', to_zone: 'libs' }],
+    unused_exports: [],
+  };
+  const map = buildMap({ ...inputs, check: { ...check, dead } }, DEFAULT_CONFIG);
 
   expect(map.terrain.edges_exceptional).toContainEqual({
     from: 'apps/cli/src/doctor.ts',
@@ -521,7 +547,19 @@ test('a boundary violation is drawn as a line and lands the map in LIFR', () => 
     kind: 'boundary',
   });
   expect(map.terrain.organelles.find((organelle) => organelle.id === 'apps/cli/src/doctor.ts')?.dents).toEqual(['boundary']);
+  // With no base side, the head-only rule holds it to the changed file it names (D140).
   expect(map.weather.checks.category).toBe('LIFR');
+
+  // With one, it is the change's only where the base had no such violation (D98).
+  const measured = inputsFor('demo').structure;
+  const side = (at: 'base' | 'head', violations: Dead): Structure => ({ ...(measured?.[at] as Extract<Structure, { fallow: string }>), dead: violations });
+  const clean: Dead = { ...dead, boundary_violations: [] };
+  const introduced = buildMap({ ...inputs, check: { ...check, dead }, structure: { base: side('base', clean), head: side('head', dead) } }, DEFAULT_CONFIG);
+  expect(introduced.weather.checks.category).toBe('LIFR');
+  expect(introduced.notices.find((notice) => notice.kind === 'cycle-or-boundary')?.why).toBe('a cycle or boundary violation this change introduced, absent at the base');
+  const standing = buildMap({ ...inputs, check: { ...check, dead }, structure: { base: side('base', dead), head: side('head', dead) } }, DEFAULT_CONFIG);
+  expect(standing.weather.checks.category).toBe('IFR');
+  expect(standing.notices.map((notice) => notice.kind)).not.toContain('cycle-or-boundary');
 });
 
 test('a git-only read fakes no channel at all', () => {

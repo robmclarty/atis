@@ -8,17 +8,21 @@
  * coefficients that produced it, so a reviewer who disagrees can argue with
  * the number rather than with the tool (D9, D28).
  *
- * Two kinds are approximations this build owns up to. `.check/` is read at
- * head only (D23), so "newly breached" and "newly introduced" cannot be
- * measured; the structural candidate fires on a finding present at head whose
- * import lines the change touched, or whose file it touched where fallow
- * gives no line (D140), the threshold candidate on one whose function's lines
- * it touched (D73), and both say so in their `why`.
+ * Two kinds read the base side where fallow measured one (D98): the
+ * structural candidate fires on a cycle or boundary violation the change
+ * introduced, absent at the base, and the threshold candidate on a function
+ * the change made over a threshold, new at head or worse than its base self.
+ * Without a base side they are approximations this build owns up to, since
+ * `.check/` is read at head only (D23): the structural candidate fires on a
+ * finding present at head whose import lines the change touched, or whose
+ * file it touched where fallow gives no line (D140), the threshold candidate
+ * on one whose function's lines it touched (D73), and both say so in their
+ * `why`.
  */
 
 import type { Config, NoticeConfig, NoticeKind } from './config.js';
 import { broughtAdvisories, healthSpan, placeOnChange, readRedSplit, severityRank, spanOnChange, structuralPlaces, unusedExportPlaces } from './evidence.js';
-import type { Advisory, BroughtPackage, CheckArtifacts, CodeSpan, FileEvidence, RedSplit } from './evidence.js';
+import type { Advisory, BroughtPackage, CheckArtifacts, CodeSpan, FileEvidence, FindingPlace, MadeFunction, RedSplit, StructureChange } from './evidence.js';
 import { OTHER_GROUP } from './groups.js';
 import type { FileHistory } from './history.js';
 import { classifyFile } from './modules.js';
@@ -46,8 +50,9 @@ import type {
 const TIERS: readonly NoticeTier[] = ['primary', 'secondary', 'secondary', 'tertiary', 'tertiary', 'tertiary'];
 
 /**
- * What the two head-only kinds say in their `why`. `.check/` is read at head
- * only, so neither can claim this change introduced the finding (D23).
+ * What the two head-only kinds say in their `why` where fallow measured no
+ * base side. `.check/` is read at head only, so neither can claim this change
+ * introduced the finding (D23); with a base side they say what it did (D98).
  */
 export const HEAD_ONLY = 'present at head, not measured as introduced by this change (.check/ is read at head only)';
 
@@ -160,6 +165,8 @@ export type NoticeInputs = {
   readonly publicNames: PublicNames;
   /** The artifacts behind the structural, threshold and security candidates (D41). */
   readonly check: CheckArtifacts;
+  /** What fallow measured the change did against the base: where present, the structural and threshold candidates read it instead of the line rule (D98). */
+  readonly structure?: StructureChange;
   readonly config: Config;
 };
 
@@ -359,6 +366,60 @@ function structuralCandidates(check: RanCheck, hunks: ReadonlyMap<string, readon
     inputs: { findings: count.lined + count.unlined },
     thresholds: {},
     slot: DEAD_SLOT,
+  }));
+}
+
+/**
+ * A cycle or a boundary violation this change introduced, absent at the base
+ * fallow measured (D98): §5.3 calls it LIFR and §5.4 wants it labelled, on
+ * each changed file it names. One that was there at the base is standing
+ * state, whichever lines the change touched.
+ */
+function introducedCandidates(introduced: readonly FindingPlace[], hunks: ReadonlyMap<string, readonly Hunk[]>): readonly Candidate[] {
+  const counts = new Map<string, number>();
+  for (const place of introduced) {
+    for (const path of placeOnChange(place, hunks)) counts.set(path, (counts.get(path) ?? 0) + 1);
+  }
+  return [...counts].map(([path, count]) => ({
+    kind: 'cycle-or-boundary',
+    target: path,
+    why: `${count === 1 ? 'a cycle or boundary violation' : `${String(count)} cycles or boundary violations`} this change introduced, absent at the base`,
+    inputs: { findings: count },
+    thresholds: {},
+    slot: DEAD_SLOT,
+  }));
+}
+
+/** `a function`, `2 functions`. */
+function functionsOf(count: number): string {
+  return count === 1 ? 'a function' : `${String(count)} functions`;
+}
+
+/** `a function new at head`, `2 functions worse than at the base`, or both counts: how the change made a file's functions. */
+function madeWhy(functions: readonly MadeFunction[]): string {
+  const fresh = functions.filter((fn) => fn.change === 'new').length;
+  const worse = functions.length - fresh;
+  if (worse === 0) return `in ${functionsOf(fresh)} new at head`;
+  if (fresh === 0) return `in ${functionsOf(worse)} worse than at the base`;
+  return `in ${functionsOf(fresh)} new at head and ${String(worse)} worse than at the base`;
+}
+
+/**
+ * fallow's four thresholds, breached at head in functions this change made,
+ * new there or worse than their base selves (D9, D98): a function over a
+ * threshold at the base that the change left no worse is standing state,
+ * however many of its lines the change touched.
+ */
+function madeCandidates(made: readonly MadeFunction[]): readonly Candidate[] {
+  const byFile = new Map<string, MadeFunction[]>();
+  for (const fn of made) byFile.set(fn.path, [...(byFile.get(fn.path) ?? []), fn]);
+  return [...byFile].map(([path, functions]) => ({
+    kind: 'threshold-breached',
+    target: path,
+    why: `${[...new Set(functions.flatMap((fn) => fn.rules))].toSorted(byPath).join(', ')} over threshold ${madeWhy(functions)}`,
+    inputs: { findings: functions.length },
+    thresholds: {},
+    slot: 'health',
   }));
 }
 
@@ -1015,7 +1076,12 @@ function candidatesFor(inputs: NoticeInputs, ghosts: readonly Ghost[], red: RedS
   const check = ran(inputs.check);
   const broken = liveConsumers(inputs, changed);
   const hunks = new Map(inputs.changed.map((file) => [file.path, file.hunks] as const));
-  const own = check === undefined ? [] : [...structuralCandidates(check, hunks), ...thresholdCandidates(check, hunks)];
+  // Where fallow measured both sides, the base says what the change made; elsewhere the head's line rule does (D98, D73, D140).
+  const { introduced, health } = inputs.structure ?? {};
+  const own = [
+    ...(introduced === undefined ? (check === undefined ? [] : structuralCandidates(check, hunks)) : introducedCandidates(introduced, hunks)),
+    ...(health === undefined ? (check === undefined ? [] : thresholdCandidates(check, hunks)) : madeCandidates(health)),
+  ];
 
   return [
     ...redSlotCandidates(red, spokenFor(own, check, hunks)),

@@ -134,7 +134,8 @@ test('parseHealth reads file_scores, findings by path with the exceeded threshol
   expect(parsed).toEqual({
     value: {
       file_scores: [{ path: 'src/a.ts', fan_in: 3, fan_out: 1, lines: 10, function_count: 2, maintainability_index: 90, crap_max: 1 }],
-      findings: [{ path: 'src/router.ts', exceeded: 'all', line: 67, line_count: 60 }],
+      // Its name and its measures match it to its base self and say whether a change made it worse (D98).
+      findings: [{ path: 'src/router.ts', exceeded: 'all', line: 67, line_count: 60, name: 'add', cyclomatic: 22, cognitive: 34 }],
       fan_in_p95: 6,
     },
     schema_version: 9,
@@ -432,7 +433,7 @@ test('reads the trimmed checkride fixture: mode check, the summary, and every fa
 test('health.json: file_scores, findings by path with the exceeded threshold and their lines, and fan_in_p95', () => {
   const result = expectCheck(fixtureResult);
   expect(result.health?.file_scores).toHaveLength(3);
-  expect(result.health?.findings).toEqual([{ path: 'src/gate.ts', exceeded: 'cyclomatic', line: 42, line_count: 95 }]);
+  expect(result.health?.findings).toEqual([{ path: 'src/gate.ts', exceeded: 'cyclomatic', line: 42, line_count: 95, name: 'runGate', cyclomatic: 28, cognitive: 22 }]);
   expect(result.health?.fan_in_p95).toBe(6);
 });
 

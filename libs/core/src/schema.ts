@@ -232,6 +232,32 @@ export type Dependency = {
   readonly severity?: string;
 };
 
+/** What got better against the base (D98, §5.1): a function back under a threshold, a file's dent gone, a clone family dissolved, a cycle broken. */
+export type ImprovementKind = 'threshold' | 'dent' | 'clone-family' | 'cycle';
+
+/**
+ * One improvement, on the files it is about: head paths, a deleted file under
+ * its base path (D40), sorted, and at least one of them changed. A threshold
+ * names its rule and, where fallow names one, its function; a dent names its
+ * rule, one of fallow's thresholds, `cycle` or `boundary`.
+ */
+export type Improvement = {
+  readonly kind: ImprovementKind;
+  readonly files: readonly string[];
+  readonly rule?: string;
+  readonly function?: string;
+};
+
+/** One changed file's movement in fallow's maintainability index, head less base, which only a file on both sides has (D98). */
+export type FileHealthDelta = { readonly path: string; readonly maintainability: number };
+
+/**
+ * The change's net movement in fallow's own measure, its maintainability
+ * index, per changed file both sides scored and summed over them; a file
+ * that moved nothing is a measured 0 (D98).
+ */
+export type HealthDelta = { readonly maintainability: number; readonly files: readonly FileHealthDelta[] };
+
 /** An import edge on the head graph with a changed file at one end or both: `from` imports `to` (§6's wiring). */
 export type WiringEdge = { readonly from: string; readonly to: string };
 
@@ -257,8 +283,14 @@ export type Weather = {
    * imports by package (C2).
    */
   readonly dependencies?: readonly Dependency[];
-  // D23: base-side metrics need the terrain cache of phase 3, so this build never populates it.
-  readonly improvements: readonly [];
+  /**
+   * What got better against the base, sorted (C3); absent where fallow did
+   * not measure both sides alike, which is no evidence rather than nothing
+   * improved (D98, C2).
+   */
+  readonly improvements?: readonly Improvement[];
+  /** The change's movement in fallow's own measure, absent where its health was not measured on both sides (D98, C2). */
+  readonly health_delta?: HealthDelta;
 };
 
 /** A ranked notice candidate; `inputs` and `thresholds` echo the numbers that produced it (D28). */
@@ -394,6 +426,44 @@ function assertDependency(value: unknown, path: string): string {
   }
   if (severity !== undefined) expectString(severity, `${path}.severity`);
   return name;
+}
+
+const IMPROVEMENT_KINDS: ReadonlySet<string> = new Set(['threshold', 'dent', 'clone-family', 'cycle']);
+
+/** An improvement names its kind and the files it is about, one of them changed, and a threshold or a dent the rule it no longer breaks. */
+function assertImprovement(value: unknown, path: string, changed: ReadonlySet<string>): void {
+  const improvement = expectRecord(value, path);
+  const kind = improvement['kind'];
+  if (typeof kind !== 'string' || !IMPROVEMENT_KINDS.has(kind)) fail(`${path}.kind`, 'expected threshold, dent, clone-family or cycle');
+  const files = expectArray(improvement['files'], `${path}.files`);
+  if (files.length === 0) fail(`${path}.files`, 'expected at least one file');
+  const named = files.map((file, index) => expectString(file, `${path}.files[${String(index)}]`));
+  if (!named.some((file) => changed.has(file))) fail(`${path}.files`, 'none of them is a changed file');
+  const rule = improvement['rule'];
+  if ((kind === 'threshold' || kind === 'dent') && rule === undefined) fail(`${path}.rule`, `a ${kind} names the rule it no longer breaks`);
+  if (rule !== undefined) expectString(rule, `${path}.rule`);
+  if (improvement['function'] !== undefined) expectString(improvement['function'], `${path}.function`);
+}
+
+function expectFinite(value: unknown, path: string): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) fail(path, 'expected a finite number');
+  return value;
+}
+
+/** A health delta is a finite number in total and per file, each file a changed one and named once. */
+function assertHealthDelta(value: unknown, path: string, changed: ReadonlySet<string>): void {
+  const delta = expectRecord(value, path);
+  expectFinite(delta['maintainability'], `${path}.maintainability`);
+  const seen = new Set<string>();
+  expectArray(delta['files'], `${path}.files`).forEach((raw, index) => {
+    const at = `${path}.files[${String(index)}]`;
+    const file = expectRecord(raw, at);
+    const name = expectString(file['path'], `${at}.path`);
+    if (!changed.has(name)) fail(`${at}.path`, `"${name}" is not a changed file`);
+    if (seen.has(name)) fail(`${at}.path`, `"${name}" is listed twice`);
+    seen.add(name);
+    expectFinite(file['maintainability'], `${at}.maintainability`);
+  });
 }
 
 /**
@@ -547,6 +617,13 @@ function assertShape(value: unknown): asserts value is MapJson {
       if (!changedPaths.has(from) && !changedPaths.has(to)) fail(at, 'neither end is a changed file');
     });
   }
+
+  // What got better, and the health that moved, is the change's own: each names a changed file (D98).
+  const improvements = weather['improvements'];
+  if (improvements !== undefined) {
+    expectArray(improvements, 'weather.improvements').forEach((raw, index) => assertImprovement(raw, `weather.improvements[${String(index)}]`, changedPaths));
+  }
+  if (weather['health_delta'] !== undefined) assertHealthDelta(weather['health_delta'], 'weather.health_delta', changedPaths);
 
   const dependencies = weather['dependencies'];
   if (dependencies !== undefined) {

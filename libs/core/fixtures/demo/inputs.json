@@ -280,5 +280,84 @@
       }
     ],
     "test": { "results": [{ "path": "libs/core/src/__tests__/pm.test.ts", "status": "failed" }] }
+  },
+  "structure": {
+    "base": {
+      "fallow": "3.22.0",
+      "health": {
+        "file_scores": [
+          { "path": "apps/cli/src/doctor.ts", "fan_in": 1, "fan_out": 2, "lines": 212, "function_count": 17, "maintainability_index": 58, "crap_max": 27 },
+          { "path": "apps/cli/src/index.ts", "fan_in": 0, "fan_out": 1, "lines": 24, "function_count": 2, "maintainability_index": 92.1, "crap_max": 2 },
+          { "path": "libs/core/src/index.ts", "fan_in": 1, "fan_out": 1, "lines": 14, "function_count": 0, "maintainability_index": 100, "crap_max": 0 },
+          { "path": "libs/core/src/pm/index.ts", "fan_in": 2, "fan_out": 2, "lines": 31, "function_count": 3, "maintainability_index": 86.1, "crap_max": 5 },
+          { "path": "libs/core/src/pm/legacy.ts", "fan_in": 2, "fan_out": 0, "lines": 45, "function_count": 4, "maintainability_index": 55.2, "crap_max": 36 },
+          { "path": "libs/core/src/pm/slots.ts", "fan_in": 1, "fan_out": 1, "lines": 88, "function_count": 7, "maintainability_index": 78.2, "crap_max": 9.5 },
+          { "path": "libs/core/src/util/format.ts", "fan_in": 2, "fan_out": 1, "lines": 52, "function_count": 5, "maintainability_index": 80.3, "crap_max": 7.5 },
+          { "path": "libs/core/src/util/text.ts", "fan_in": 1, "fan_out": 1, "lines": 37, "function_count": 4, "maintainability_index": 86.7, "crap_max": 4 }
+        ],
+        "findings": [
+          { "path": "apps/cli/src/doctor.ts", "name": "runChecks", "exceeded": "cognitive", "line": 150, "line_count": 40, "cyclomatic": 12, "cognitive": 21, "crap": 27 },
+          { "path": "libs/core/src/pm/legacy.ts", "name": "resolveLegacy", "exceeded": "cyclomatic", "line": 8, "line_count": 30, "cyclomatic": 19, "cognitive": 14, "crap": 36 }
+        ],
+        "fan_in_p95": 2
+      },
+      "dupes": {
+        "clone_families": [
+          {
+            "files": ["libs/core/src/pm/legacy.ts", "libs/core/src/pm/slots.ts"],
+            "groups": [],
+            "total_duplicated_lines": 30,
+            "total_duplicated_tokens": 160
+          }
+        ]
+      },
+      "dead": {
+        "circular_dependencies": [
+          { "files": ["libs/core/src/util/format.ts", "libs/core/src/util/text.ts"], "length": 2, "line": 1, "col": 0 }
+        ],
+        "re_export_cycles": [],
+        "boundary_violations": [],
+        "unused_exports": []
+      },
+      "muted": []
+    },
+    "head": {
+      "fallow": "3.22.0",
+      "health": {
+        "file_scores": [
+          { "path": "apps/cli/src/doctor.ts", "fan_in": 1, "fan_out": 2, "lines": 268, "function_count": 19, "maintainability_index": 61.4, "crap_max": 24.5 },
+          { "path": "apps/cli/src/index.ts", "fan_in": 0, "fan_out": 1, "lines": 24, "function_count": 2, "maintainability_index": 92.1, "crap_max": 2 },
+          { "path": "libs/core/src/index.ts", "fan_in": 1, "fan_out": 1, "lines": 14, "function_count": 0, "maintainability_index": 100, "crap_max": 0 },
+          { "path": "libs/core/src/pm/index.ts", "fan_in": 2, "fan_out": 2, "lines": 38, "function_count": 3, "maintainability_index": 84.6, "crap_max": 6 },
+          { "path": "libs/core/src/pm/slots.ts", "fan_in": 1, "fan_out": 1, "lines": 88, "function_count": 7, "maintainability_index": 78.2, "crap_max": 9.5 },
+          { "path": "libs/core/src/pm/tools.ts", "fan_in": 1, "fan_out": 1, "lines": 96, "function_count": 8, "maintainability_index": 64.9, "crap_max": 31 },
+          { "path": "libs/core/src/util/format.ts", "fan_in": 3, "fan_out": 1, "lines": 52, "function_count": 5, "maintainability_index": 80.3, "crap_max": 7.5 },
+          { "path": "libs/core/src/util/text.ts", "fan_in": 1, "fan_out": 1, "lines": 37, "function_count": 4, "maintainability_index": 86.7, "crap_max": 4 }
+        ],
+        "findings": [
+          { "path": "libs/core/src/pm/tools.ts", "name": "resolveTool", "exceeded": "cyclomatic_crap", "line": 41, "line_count": 38, "cyclomatic": 17, "cognitive": 12, "crap": 31 }
+        ],
+        "fan_in_p95": 2
+      },
+      "dupes": {
+        "clone_families": [
+          {
+            "files": ["libs/core/src/pm/slots.ts", "libs/core/src/pm/tools.ts"],
+            "groups": [],
+            "total_duplicated_lines": 34,
+            "total_duplicated_tokens": 180
+          }
+        ]
+      },
+      "dead": {
+        "circular_dependencies": [
+          { "files": ["libs/core/src/util/format.ts", "libs/core/src/util/text.ts"], "length": 2, "line": 1, "col": 0 }
+        ],
+        "re_export_cycles": [],
+        "boundary_violations": [],
+        "unused_exports": [{ "path": "libs/core/src/index.ts", "name": "legacyResolve", "line": 1 }]
+      },
+      "muted": []
+    }
   }
 }

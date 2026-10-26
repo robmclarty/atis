@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 51 — feat(cli): measure health, duplication and structure at the base
+**Current step:** 52 — feat(core): compute health deltas, introduced findings and improvements
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -100,7 +100,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 48. feat(cli): cache the terrain per base commit
 - ☑ 49. feat(core): relax a new base's layout from the nearest cached one
 - ☑ 50. perf(cli): draw a cached run's first frame within two seconds
-- ☐ 51. feat(cli): measure health, duplication and structure at the base
+- ☑ 51. feat(cli): measure health, duplication and structure at the base
 - ☐ 52. feat(core): compute health deltas, introduced findings and improvements
 - ☐ 53. feat(svg): draw improvements, the live Health Δ and the rename leader
 - ☐ 54. feat(web): draw improvements, Health Δ and the rename leader
@@ -2001,3 +2001,5 @@ folder, so it rides the branch into the PR.)*
   **5.** Every leg per repository is in `docs/performance.md`, with the cache and the relayout's bound
 
   The new doc records the terrain cache (what it keeps, its key, entry sizes from 0.5 MB to 11.5 MB), the relayout's bound (1.7 relaxed against 8.6 cold, pinned at 4), a miss and a hit for this repo and the six tuning repos, and the first frame on both backends for this repo and `actual`. The script that measures the first frame is new at `apps/web/scripts/first-frame.ts`, beside `budget.ts`, outside the seam. The corpus worktrees have no `node_modules` and no `.check/`, which the doc says, so their maps are NOINST and their entry points come from the manifests.
+
+- 2026-10-26 — step 51 checkpointed · f00c9f376 — feat(cli): measure health, duplication and structure at the base (1 drift, 11m)
