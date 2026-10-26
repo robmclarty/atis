@@ -252,12 +252,12 @@ test('a copy with an empty .check/ is NOINST and says which way it was empty', (
   expect(map.meta.instruments.reason).toBe('.check/ is empty');
 }, MINUTE);
 
-test('--version and --help exit 0; an unknown flag, a stray positional and a missing --base are misuse', () => {
+test('--version and --help exit 0; an unknown flag, a stray positional and a --base with no ref are misuse', () => {
   expect(atis(['--version']).stdout).toBe('0.0.0\n');
   expect(atis(['-V']).status).toBe(0);
   expect(atis(['--help']).stdout).toContain('--base <ref>');
 
-  for (const args of [[], ['--nope'], ['--base'], ['main'], ['--base', 'main', 'extra'], ['--base', 'main', '--history', '0'], ['--base', 'main', '--history', '2.5'], ['--base', 'main', '--history', 'all']]) {
+  for (const args of [['--nope'], ['--base'], ['main'], ['--base', 'main', 'extra'], ['--base', 'main', '--history', '0'], ['--base', 'main', '--history', '2.5'], ['--base', 'main', '--history', 'all']]) {
     const result = atis(args);
     expect(result.status).toBe(2);
     expect(result.stdout).toBe('');
@@ -275,3 +275,114 @@ test('a directory that is no repository exits 2 and writes nothing (C4)', () => 
   expect(outcome.stderr).toContain('atis:');
   expect(existsSync(out)).toBe(false);
 });
+
+/** git in `cwd`, with no author config of the machine running the test. */
+function git(cwd: string, ...args: readonly string[]): string {
+  return execFileSync('git', ['-c', 'user.name=atis', '-c', 'user.email=atis@example.invalid', '-c', 'commit.gpgsign=false', ...args], { cwd, encoding: 'utf8' }).trim();
+}
+
+function write(root: string, path: string, text: string): void {
+  mkdirSync(dirname(join(root, path)), { recursive: true });
+  writeFileSync(join(root, path), text);
+}
+
+/**
+ * A clone of a small package whose trunk lives only on `origin/`: `main` holds
+ * two commits, the first tagged `v1`, and the clone is on `feature`, one
+ * commit past `main`, with its local `main` deleted.
+ */
+function featureClone(prefix: string): { readonly repo: string; readonly sha: (ref: string) => string } {
+  const origin = join(temp(`${prefix}-origin`), 'repo');
+  mkdirSync(origin);
+  git(origin, 'init', '--quiet', '--initial-branch=main');
+  write(origin, 'package.json', '{ "name": "demo", "private": true, "type": "module" }\n');
+  write(origin, 'src/index.ts', "export { area } from './shapes.js';\n");
+  write(origin, 'src/shapes.ts', 'export function area(width: number, height: number): number {\n  return width * height;\n}\n');
+  git(origin, 'add', '.');
+  git(origin, 'commit', '--quiet', '-m', 'feat: measure an area');
+  git(origin, 'tag', 'v1');
+  write(origin, 'src/square.ts', 'export function square(side: number): number {\n  return side * side;\n}\n');
+  git(origin, 'add', '.');
+  git(origin, 'commit', '--quiet', '-m', 'feat: square a side');
+
+  const repo = join(temp(`${prefix}-clone`), 'repo');
+  execFileSync('git', ['clone', '--quiet', origin, repo], { stdio: 'ignore' });
+  git(repo, 'checkout', '--quiet', '-b', 'feature');
+  git(repo, 'branch', '--quiet', '-D', 'main');
+  write(repo, 'src/cube.ts', "import { square } from './square.js';\n\nexport function cube(side: number): number {\n  return square(side) * side;\n}\n");
+  git(repo, 'add', '.');
+  git(repo, 'commit', '--quiet', '-m', 'feat: cube a side');
+  return { repo, sha: (ref) => git(repo, 'rev-parse', ref) };
+}
+
+test('with no base named, the run takes the trunk, on origin/ when no local branch holds it, and records it as resolved alone (D99)', () => {
+  const { repo, sha } = featureClone('trunk');
+  const out = join(temp('trunk-map'), 'map.json');
+
+  const result = atis(['--repo', repo, '--out', out]);
+  expect(result.status, result.stderr).toBe(0);
+  const map = mapAt(out);
+  expect(map.meta.base).toBe('origin/main');
+  expect(map.meta.base_typed).toBeUndefined();
+  expect(map.meta.merge_base).toBe(sha('origin/main'));
+  expect(map.meta.head).toBe(sha('HEAD'));
+  expect(map.weather.changed.map((file) => file.path)).toEqual(['src/cube.ts']);
+}, MINUTE);
+
+test('--base, --last-commit and --last-tag each record the base as typed and as resolved (D99)', () => {
+  const { repo, sha } = featureClone('named');
+  const dir = temp('named-maps');
+  const mapOf = (name: string, base: Parameters<typeof run>[0]['base']): MapJson => {
+    const out = join(dir, `${name}.json`);
+    const outcome = run({ repo, base, out, verbose: false });
+    expect(outcome.exitCode, outcome.stderr).toBe(0);
+    return mapAt(out);
+  };
+
+  const typed = mapOf('typed', 'v1');
+  expect([typed.meta.base, typed.meta.base_typed, typed.meta.merge_base]).toEqual(['v1', '--base v1', sha('v1')]);
+  expect(typed.weather.changed.map((file) => file.path)).toEqual(['src/cube.ts', 'src/square.ts']);
+
+  const commit = mapOf('commit', { last: 'commit' });
+  expect([commit.meta.base, commit.meta.base_typed, commit.meta.merge_base]).toEqual(['HEAD~1', '--last-commit', sha('HEAD~1')]);
+  expect(commit.weather.changed.map((file) => file.path)).toEqual(['src/cube.ts']);
+
+  const tag = mapOf('tag', { last: 'tag' });
+  expect([tag.meta.base, tag.meta.base_typed, tag.meta.merge_base]).toEqual(['v1', '--last-tag', sha('v1')]);
+}, MINUTE);
+
+test('a head other than the checked-out HEAD reads git-only and says why; the checked-out one reads .check/ (D99, D135)', () => {
+  const { repo, sha } = featureClone('head');
+  const dir = temp('head-maps');
+
+  const other = join(dir, 'other.json');
+  expect(run({ repo, base: 'v1', head: 'origin/main', out: other, verbose: false }).exitCode).toBe(0);
+  const map = mapAt(other);
+  expect(map.meta.head).toBe(sha('origin/main'));
+  expect(map.weather.changed.map((file) => file.path)).toEqual(['src/square.ts']);
+  expect(map.meta.instruments.mode).toBe('git-only');
+  expect(map.meta.instruments.reason).toBe('the head origin/main is not the checked-out HEAD, so .check/ does not describe it');
+  expect(map.weather.checks.category).toBe('NOINST');
+
+  // The checked-out commit named another way is still HEAD: its .check/ is read, here an absent one.
+  const same = join(dir, 'same.json');
+  expect(run({ repo, base: 'v1', head: 'feature', out: same, verbose: false }).exitCode).toBe(0);
+  expect(mapAt(same).meta.instruments.reason).toBe('.check/ is absent');
+}, MINUTE);
+
+test('two flags that name the base are misuse, and a ref that names no commit exits 2 (C4)', () => {
+  const { repo } = featureClone('misuse');
+  const out = join(temp('misuse-map'), 'map.json');
+  for (const args of [['--base', 'v1', '--last-commit'], ['--base', 'v1', '--last-tag'], ['--last-commit', '--last-tag']]) {
+    const result = atis(['--repo', repo, '--out', out, ...args]);
+    expect(result.status).toBe(2);
+    expect(result.stdout).toBe('');
+    expect(result.stderr).toContain('--base, --last-commit and --last-tag each name the base');
+  }
+  for (const [args, reason] of [[['--base', 'nowhere'], '--base nowhere names no commit'], [['--head', 'nowhere'], '--head nowhere names no commit']] as const) {
+    const result = atis(['--repo', repo, '--out', out, ...args]);
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain(reason);
+  }
+  expect(existsSync(out)).toBe(false);
+}, MINUTE);

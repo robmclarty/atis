@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, expect, test } from 'vitest';
 
-import { diffManifests, parseDiff, parseLog, readDiff, readLog, readManifests } from '../sources/index.js';
+import { commitOf, diffManifests, parseDiff, parseLog, readDiff, readLog, readManifests, resolveBase, resolveTrunk } from '../sources/index.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FIXTURES = join(HERE, '..', '..', 'fixtures', 'diff');
@@ -208,4 +208,95 @@ test('readManifests reads the members of a package.json workspaces repo, with no
   expect(readManifests(dir, base, ['examples/demo/package.json', 'packages/a/package.json'])).toEqual(delta);
   expect(readManifests(dir, base, ['packages/a/src/index.ts'])).toEqual({ deps_added: [], deps_moved: [] });
   expect(readManifests(dir, base, [])).toEqual({ deps_added: [], deps_moved: [] });
+});
+
+/**
+ * An origin repository whose first branch is `first`, with one commit on it
+ * and one more branch at that commit for each of `others`, cloned: the clone
+ * has `first` checked out and every branch on `origin/`.
+ */
+function clonedOrigin(prefix: string, first: string, others: readonly string[] = [], files: Readonly<Record<string, unknown>> = {}): { readonly dir: string; readonly git: (args: readonly string[]) => string } {
+  const origin = tempRepo(`${prefix}-origin`);
+  origin.git(['checkout', '--quiet', '-b', first]);
+  writeJson(origin.dir, 'package.json', { name: prefix });
+  for (const [path, value] of Object.entries(files)) writeJson(origin.dir, path, value);
+  origin.git(['add', '--all']);
+  origin.git(['commit', '--quiet', '--no-verify', '-m', 'first']);
+  for (const branch of others) origin.git(['branch', branch]);
+
+  const clone = tempRepo(`${prefix}-clone`);
+  rmSync(clone.dir, { recursive: true, force: true });
+  execFileSync('git', ['clone', '--quiet', origin.dir, clone.dir], { stdio: 'ignore' });
+  return clone;
+}
+
+test('the trunk is the first of main, master, develop and trunk, local before origin/ (D99)', () => {
+  expect(resolveTrunk(clonedOrigin('main', 'main', ['master', 'develop']).dir)).toBe('main');
+  expect(resolveTrunk(clonedOrigin('develop', 'feature', ['trunk', 'develop']).dir)).toBe('origin/develop');
+
+  // A clone on a feature branch with no local trunk finds it on origin/.
+  const { dir, git } = clonedOrigin('remote', 'master');
+  expect(resolveTrunk(dir)).toBe('master');
+  git(['checkout', '--quiet', '-b', 'feature']);
+  git(['branch', '--quiet', '-D', 'master']);
+  expect(resolveTrunk(dir)).toBe('origin/master');
+
+  expect(() => resolveTrunk(clonedOrigin('none', 'work').dir)).toThrow(/no trunk: none of main, master, develop, trunk is a branch/);
+});
+
+test('a trunk atis.config.json names at the head outranks the candidates; a broken one throws (D28, D99)', () => {
+  expect(resolveTrunk(clonedOrigin('configured', 'main', ['release'], { 'atis.config.json': { trunk: 'release' } }).dir)).toBe('origin/release');
+  expect(resolveTrunk(clonedOrigin('silent', 'main', [], { 'atis.config.json': {} }).dir)).toBe('main');
+  expect(() => resolveTrunk(clonedOrigin('missing', 'main', [], { 'atis.config.json': { trunk: 'gone' } }).dir)).toThrow(/the trunk atis.config.json names, gone, is no branch/);
+  expect(() => resolveTrunk(clonedOrigin('typed', 'main', [], { 'atis.config.json': { trunk: 7 } }).dir)).toThrow(/trunk must name a branch/);
+
+  const broken = clonedOrigin('broken', 'main');
+  writeFileSync(join(broken.dir, 'atis.config.json'), '{ "trunk": ');
+  broken.git(['add', '--all']);
+  broken.git(['commit', '--quiet', '--no-verify', '-m', 'break the config']);
+  expect(() => resolveTrunk(broken.dir)).toThrow(/atis.config.json is not JSON/);
+});
+
+test('resolveBase reads a typed ref, the last commit and the last tag, and says how each was asked (D99)', () => {
+  const { dir, git } = clonedOrigin('bases', 'main');
+  const commit = (message: string): void => {
+    writeJson(dir, 'package.json', { name: message });
+    git(['commit', '--quiet', '--no-verify', '--all', '-m', message]);
+  };
+  expect(() => resolveBase(dir, { last: 'commit' })).toThrow(/--last-commit: HEAD has no parent/);
+  expect(() => resolveBase(dir, { last: 'tag' })).toThrow(/--last-tag: no tag is reachable from HEAD/);
+
+  git(['tag', 'v1']);
+  commit('second');
+  git(['tag', '-a', '-m', 'v2', 'v2']);
+  commit('third');
+
+  expect(resolveBase(dir, undefined)).toEqual({ ref: 'main' });
+  expect(resolveBase(dir, 'v1')).toEqual({ ref: 'v1', typed: '--base v1' });
+  expect(resolveBase(dir, { last: 'commit' })).toEqual({ ref: 'HEAD~1', typed: '--last-commit' });
+  expect(resolveBase(dir, { last: 'tag' })).toEqual({ ref: 'v2', typed: '--last-tag' });
+  // A shortcut counts back from the head it was asked against.
+  expect(resolveBase(dir, { last: 'commit' }, 'v2')).toEqual({ ref: 'v2~1', typed: '--last-commit' });
+  expect(resolveBase(dir, { last: 'tag' }, 'v2~1')).toEqual({ ref: 'v1', typed: '--last-tag' });
+
+  expect(() => resolveBase(dir, 'nowhere')).toThrow(/--base nowhere names no commit/);
+  // A ref that starts with a dash names no commit: git would read it as a flag (D134).
+  expect(commitOf(dir, '--all')).toBeUndefined();
+  expect(() => resolveBase(dir, '--all')).toThrow(/names no commit/);
+});
+
+test('readDiff and readManifests read the change at a head other than HEAD (D99)', () => {
+  const { dir, git } = tempRepo('other-head');
+  writeJson(dir, 'package.json', { name: 'demo' });
+  git(['add', '--all']);
+  git(['commit', '--quiet', '--no-verify', '-m', 'base']);
+  const base = git(['rev-parse', 'HEAD']).trim();
+  writeJson(dir, 'package.json', { name: 'demo', dependencies: { zod: '^3.0.0' } });
+  git(['commit', '--quiet', '--no-verify', '--all', '-m', 'add zod']);
+  const head = git(['rev-parse', 'HEAD']).trim();
+  git(['checkout', '--quiet', base]);
+
+  expect(readDiff(dir, base).changed).toEqual([]);
+  expect(readDiff(dir, base, head).changed.map((change) => change.path)).toEqual(['package.json']);
+  expect(readManifests(dir, base, ['package.json'], head).deps_added).toEqual([{ manifest: 'package.json', name: 'zod', range: '^3.0.0', dev: false }]);
 });

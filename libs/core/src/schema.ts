@@ -331,7 +331,10 @@ export type Meta = {
   readonly schema_version: 1;
   readonly generated_at: string;
   readonly repo: string;
+  /** The base as resolved: the ref the merge-base is taken against, `main`, `origin/main`, `HEAD~1`, a tag, or the ref `--base` named (D99). */
   readonly base: string;
+  /** The base as typed: `--base <ref>`, `--last-commit` or `--last-tag`; absent when none was, and the run took the trunk (D99). */
+  readonly base_typed?: string;
   readonly head: string;
   readonly merge_base: string;
   readonly mode: 'change';
@@ -494,6 +497,8 @@ function assertShape(value: unknown): asserts value is MapJson {
   if (meta['schema_version'] !== SCHEMA_VERSION) {
     fail('meta.schema_version', `expected ${String(SCHEMA_VERSION)}, got ${String(meta['schema_version'])}`);
   }
+  expectString(meta['base'], 'meta.base');
+  if (meta['base_typed'] !== undefined) expectString(meta['base_typed'], 'meta.base_typed');
 
   const instruments = expectRecord(meta['instruments'], 'meta.instruments');
   const entryPoints = instruments['entry_points'];

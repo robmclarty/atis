@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 115 — perf(core): reuse a cached base's layout for the ground the change did not touch
+**Current step:** 55 — feat(cli): resolve the trunk and the named bases
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -104,7 +104,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 52. feat(core): compute health deltas, introduced findings and improvements
 - ☑ 53. feat(svg): draw improvements, the live Health Δ and the rename leader
 - ☑ 54. feat(web): draw improvements, Health Δ and the rename leader
-- ☐ 115. perf(core): reuse a cached base's layout for the ground the change did not touch
+- ☑ 115. perf(core): reuse a cached base's layout for the ground the change did not touch
 - ☐ 55. feat(cli): resolve the trunk and the named bases
 - ☐ 56. feat(cli): map the working tree's uncommitted weather
 - ☐ 57. feat(core): build one weather frame per commit of a range
@@ -208,10 +208,10 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] a cached run reuses its base's layout: pin the ground the change did not touch where the base put it, place only the change's files, recut only the skins near them, and scan the head without extracting the whole tree, so actual's cached first frame (11.2 s, 6.8 s of it the map's build) reaches about 2 s (C14 world-budget, D136 first-frame-clock); trades step 49's relaxed ground for a pinned one
 - [x] key the calm-positive stain of an improved file and a renamed file's leader in both legends: steps 53 and 54 draw both marks, and neither legend keys them yet, as neither keys the rename's dashed outline
 - [x] git.ts's showFile runs git show without piping stderr, so a manifest the change added prints git's 'fatal: path … exists on disk, but not in <sha>' to the terminal on every run; seen mapping d80907b at step 54
-- [ ] core still cuts a skin per shore group though no renderer has drawn one since the shore moved to a rail (D153 shore-rail): 1.7 s of actual's cold layout, and 0.3 s of every change that adds a doc to a big docs block
-- [ ] actual's package:packages/desktop-client has no skin at all: Bubble Sets finds no ring round its 877 files, so the world draws that package without a membrane
-- [ ] the checker's extractions (D118 inferred-shapes) cost 0.4 to 0.9 s of every cached corpus run and 1.1 s of atis's own; reading its program from git's objects, as the head scan now does, would drop them
-- [ ] actual's world takes 1.1 s from the map's arrival to its first frame (C14 world-budget), so the command keeps only 0.9 s of a 2 s first frame; actual's last second is on the page side, in apps/web
+- [x] core still cuts a skin per shore group though no renderer has drawn one since the shore moved to a rail (D153 shore-rail): 1.7 s of actual's cold layout, and 0.3 s of every change that adds a doc to a big docs block
+- [x] actual's package:packages/desktop-client has no skin at all: Bubble Sets finds no ring round its 877 files, so the world draws that package without a membrane
+- [x] the checker's extractions (D118 inferred-shapes) cost 0.4 to 0.9 s of every cached corpus run and 1.1 s of atis's own; reading its program from git's objects, as the head scan now does, would drop them
+- [x] actual's world takes 1.1 s from the map's arrival to its first frame (C14 world-budget), so the command keeps only 0.9 s of a 2 s first frame; actual's last second is on the page side, in apps/web
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -311,6 +311,11 @@ Harvest results this boundary:
 - 2026-10-26, at range 16 of 32's stop: 2 parked ideas, classified.
 - **tangent**: park 62 · key the calm-positive stain of an improved file and a renamed file's leader in both legends: steps 53 and 54 draw both marks, and neither legend keys them yet, as neither keys the rename's dashed outline → keying marks in the legend is look work for later tuning, and no legend keys the rename's dashed outline either
 - **tangent**: park 63 · git.ts's showFile runs git show without piping stderr, so a manifest the change added prints git's 'fatal: path … exists on disk, but not in <sha>' to the terminal on every run; seen mapping d80907b at step 54 → stderr noise that existed before this range; the map is right, so a small fix can come whenever
+- 2026-10-26, at the step 115 boundary: 4 parked ideas, classified.
+- **tangent**: park 64 · core still cuts a skin per shore group though no renderer has drawn one since the shore moved to a rail (D153 shore-rail): 1.7 s of actual's cold layout, and 0.3 s of every change that adds a doc to a big docs block → a perf cut that changes every golden map's contours, and nothing in range 17 needs it
+- **tangent**: park 65 · actual's package:packages/desktop-client has no skin at all: Bubble Sets finds no ring round its 877 files, so the world draws that package without a membrane → it shows only on a corpus repo's 877-file package and predates the hold, not on the maps Rob knows
+- **tangent**: park 66 · the checker's extractions (D118 inferred-shapes) cost 0.4 to 0.9 s of every cached corpus run and 1.1 s of atis's own; reading its program from git's objects, as the head scan now does, would drop them → atis already draws a little over 2 s, and the checker's program is D118's seam, not range 17's
+- **tangent**: park 67 · actual's world takes 1.1 s from the map's arrival to its first frame (C14 world-budget), so the command keeps only 0.9 s of a 2 s first frame; actual's last second is on the page side, in apps/web → C14 holds from the map's arrival and the 2 s from the command is a target (D150), so the page side can wait for a perf pass
 
 ## Log
 
@@ -2080,3 +2085,98 @@ folder, so it rides the branch into the PR.)*
   **5.** Steps 53 and 54 strayed to keep the gate green, and the world's leader is baked dashes
 
   Two web tests tie the renderers together: one holds the HUD block for block, and one ties the registry to `docs/design.md`'s tables. So step 53 had to touch the scene's derivations and tokens, the web registry, and the web HUD's Health Δ, and step 54 moved the leader's geometry into the scene (`renameLeaderOf`) for both renderers. The world draws the leader as `RENAME_DASH` dashes on the ribbon mesh with no arrowhead. Like the edges, its widths are baked into geometry when the world is built, so a moved width shows on the next map. The Health Δ block now opens on each file's movement and what got better. I checked both renderers side by side on the demo and on the real `d80907b` map, where `tokens.ts` moved from `libs/svg` to `libs/scene`. The screenshots, that map and its SVG are in `.playwright-mcp/54/`, which git excludes.
+
+- 2026-10-26 — step 115 checkpointed · 8fa79cb7b — perf(core): reuse a cached base's layout for the ground the change did not touch (60m)
+
+  **Summary**: A change's map now holds its base's cached layout wherever the change left the ground alone, and the head is read from git's objects instead of an extraction. That takes a cached run of `actual` from 11.18 s to 2.93 s on WebGPU and from 10.79 s to 3.03 s on WebGL 2, which is still about a second past the 2 s target. `--no-cache`, a first run and a cached run draw byte-identical maps on every repository measured.
+
+  1. actual draws its cached first frame at 2.93 s and 3.03 s, about a second past the 2 s target
+  2. The map holds every file and skin the change left alone exactly where the base put them
+  3. The head is read from git's objects instead of an extraction, and its scan equals the full one
+  4. New shore marks never push the terraces down
+  5. A skin the base could not cut stays uncut
+
+  **Readout**:
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    not met
+               → actual draws 2.93 s and 3.03 s after the command, not about 2 s
+  decisions    honored
+               - D172 (cached-layout-reuse), built to its lean: hold
+               - D97 (incremental-relayout), D136 (first-frame-clock)
+               - D32 (terrain-from-base), D40 (rename-identity)
+  constraints  bent
+               → C14 (world-budget): actual's cached first frame is ~1 s over
+  seam         held: 8 of 8 declared, no strays
+  diff         +1189 -232 across 12 files
+  spent        60 min · 1 turn · 51s gate · green first run
+  ```
+
+  **Verdict**: ○ Out of plumb (done-when not met)
+
+  **Recommendation**: Hold the ground exactly, as built, and land the step with the 2 s miss on `actual` recorded. Holding is what took `actual`'s build from 5.1 s to 0.9 s and makes a cached run, a first run and `--no-cache` draw one map, while relaxing would lay every lane out and recut every skin again on every change and move ground the change never touched. The last second sits in the page's own first frame and in the shore skins no renderer draws, and both are parked for the harvest to weigh.
+
+  **1.** actual draws its cached first frame at 2.93 s and 3.03 s, about a second past the 2 s target
+
+  `apps/web/scripts/first-frame.ts`, recorded in `docs/performance.md`:
+
+  | repository | backend | served | first frame | after the map | step 50 |
+  | --- | --- | --- | --- | --- | --- |
+  | actual | WebGPU | 1.71 s | 2.93 s | 1.12 s | 11.18 s |
+  | actual | WebGL 2 | 1.81 s | 3.03 s | 1.11 s | 10.79 s |
+  | atis, `HEAD~1` | WebGPU | 1.90 s | 2.22 s | 0.21 s | 1.72 s |
+  | atis, `HEAD~1` | WebGL 2 | 1.94 s | 2.28 s | 0.26 s | 2.24 s |
+
+  Where `actual`'s time goes:
+
+  - 1.1 s is the world's own first frame on 4,207 files after the map arrives. That's inside its own budget from the map's arrival (C14 (world-budget)), and it leaves the command 0.9 s to reach 2 s.
+  - About 0.45 s is starting Node and loading the compiler, plus the diff, the cache read and the log. None of that is layout.
+  - 0.3 s is the head scan.
+  - 0.9 s is the build. 0.3 s of it is the docs group's skin, which the change's release note joins and which no renderer has drawn since the shore moved to a rail (D153 (shore-rail)). Another 0.2 s is placing the one added file.
+
+  So 2 s on `actual` needs the page side to get faster, and that's outside this step's seam. Both levers are parked.
+
+  atis's own row is change-dependent and slower than at step 50. Step 54's change against `HEAD~1` edits interface files whose names only the checker can print, so 1.1 s of its 1.9 s goes to the checker extracting both commits (D118 (inferred-shapes)). That's parked too.
+
+  **2.** The map holds every file and skin the change left alone exactly where the base put them
+
+  A file stands exactly where the base put it when the change didn't add or rename it and left it in the same cell, under the same cells, on the same terrace, at the same size. An edited file counts, since the terrain is the base's (D32 (terrain-from-base)).
+
+  The other files are placed by the existing second pass, the one that places added files. It runs around the held files of their lane, inside the room the base's lane kept. A lane the base never had stands after its last lane. The terraces are the base's.
+
+  A skin is kept uncut when it holds the same members and nothing was placed or vacated within its reach. Cutting it would give the same ring, and the tests pin every skin equal to a full recut over the held field.
+
+  On `actual`, 2 of 3,939 places and 5 of 283 skins changed, and the build went from 5.1 s to 0.9 s. A renamed file's leader now runs from exactly where it stood (D40 (rename-identity)).
+
+  The relaxed layout is still the fallback, and it is the same code step 49 built (D97 (incremental-relayout)). It runs when a terrace would span other depths, or when a base with no shore gets its first shore file. Every corpus change measured held.
+
+  Two more cuts change no output: every cell's fan in and out is counted in one walk of the graph, and each sibling part is outlined once instead of once per file.
+
+  **3.** The head is read from git's objects instead of an extraction, and its scan equals the full one
+
+  The head is listed with `git ls-tree`. Paths `export-ignore` would drop are dropped, via `git check-attr --source`. Only the touched files and the manifests are drawn out, with one `git archive` of just those paths, so their bytes are exactly an extraction's, `export-subst` and line endings included.
+
+  Tests pin the scan equal to an extraction's on two consecutive commits of this repo. They also pin it on a throwaway commit with:
+
+  - an export-ignored folder and file
+  - an `export-subst` version string
+  - a symlink
+  - a committed `node_modules`
+  - a path too long for a tar header
+
+  On `actual` the head scan went from 1.3 s to 0.3 s.
+
+  fallow's entry points for a head commit are now kept in `.atis/entries/<sha>.json`, so a cached run never extracts the head for fallow. The head is extracted only when the checker or a fallow structure miss reads it from disk.
+
+  **4.** New shore marks never push the terraces down
+
+  The first version fell back to relaxing whenever a full shore block gained a mark. That happened on 2 of 5 corpus changes (mermaid's new doc, inspector's new script) and cost a full layout.
+
+  Now a full block grows one row into the gap below its row, which every row has room for. Anything beyond that stands in a block at the end of its row, widening the field to the right. Only a base with no shore at all still falls back.
+
+  **5.** A skin the base could not cut stays uncut
+
+  `actual`'s `package:packages/desktop-client` has no skin: Bubble Sets finds no ring around its 877 files. The kept-skin check first treated "no ring" as "not kept", so it recut that skin on every run, for 554 ms, and got nothing again. Same members with nothing nearby now keeps "no ring" too.
+
+  The missing skin itself is a rendering gap that predates this step. It's parked.

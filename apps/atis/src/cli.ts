@@ -12,10 +12,14 @@ import { fileURLToPath } from 'node:url';
 import { USAGE, VERSION } from './index.js';
 import { run, serveRun } from './run.js';
 import type { Outcome } from './run.js';
+import type { BaseAsked } from './sources/index.js';
 
 const FLAGS = {
   repo: { type: 'string' },
   base: { type: 'string' },
+  'last-commit': { type: 'boolean' },
+  'last-tag': { type: 'boolean' },
+  head: { type: 'string' },
   out: { type: 'string' },
   svg: { type: 'string' },
   open: { type: 'boolean' },
@@ -29,6 +33,9 @@ const FLAGS = {
 type Flags = {
   readonly repo?: string | undefined;
   readonly base?: string | undefined;
+  readonly 'last-commit'?: boolean | undefined;
+  readonly 'last-tag'?: boolean | undefined;
+  readonly head?: string | undefined;
   readonly out?: string | undefined;
   readonly svg?: string | undefined;
   /** `--open` is true, `--no-open` false, and neither leaves it undefined. */
@@ -67,6 +74,21 @@ function parseFlags(argv: readonly string[]): { readonly flags: Flags } | { read
   }
 }
 
+/**
+ * The base the flags ask for (D99): `--base <ref>`, `--last-commit` or
+ * `--last-tag`, or none, which takes the trunk. Each of the three names the
+ * base, so two of them together are misuse (C4).
+ */
+function baseOf(flags: Flags): { readonly base: BaseAsked | undefined } | { readonly reason: string } {
+  const asked: readonly BaseAsked[] = [
+    ...(flags.base === undefined ? [] : [flags.base]),
+    ...(flags['last-commit'] === true ? [{ last: 'commit' } as const] : []),
+    ...(flags['last-tag'] === true ? [{ last: 'tag' } as const] : []),
+  ];
+  if (asked.length > 1) return { reason: '--base, --last-commit and --last-tag each name the base; give one of them' };
+  return { base: asked[0] };
+}
+
 async function main(argv: readonly string[]): Promise<Outcome> {
   const parsed = parseFlags(argv);
   if ('reason' in parsed) return misuse(parsed.reason);
@@ -74,7 +96,10 @@ async function main(argv: readonly string[]): Promise<Outcome> {
   const { flags } = parsed;
   if (flags.version === true) return { exitCode: 0, stdout: `${VERSION}\n`, stderr: '' };
   if (flags.help === true) return { exitCode: 0, stdout: USAGE, stderr: '' };
-  if (flags.base === undefined) return misuse('--base <ref> is required');
+  const asked = baseOf(flags);
+  if ('reason' in asked) return misuse(asked.reason);
+  const { base } = asked;
+  const { head } = flags;
 
   const repo = flags.repo ?? process.cwd();
   const verbose = flags.verbose === true;
@@ -84,10 +109,10 @@ async function main(argv: readonly string[]): Promise<Outcome> {
     return misuse('--history <n> takes a whole number of commits, at least 1');
   }
   const serves = flags.out === undefined && flags.svg === undefined;
-  if (serves) return serveRun({ repo, base: flags.base, assets: webDir(), open: flags.open !== false, verbose, cache, history });
+  if (serves) return serveRun({ repo, base, head, assets: webDir(), open: flags.open !== false, verbose, cache, history });
 
   if (flags.open === true && flags.svg === undefined) return misuse('--open needs --svg <file>');
-  return run({ repo, base: flags.base, out: flags.out ?? DEFAULT_OUT, svg: flags.svg, open: flags.open === true, verbose, cache, history });
+  return run({ repo, base, head, out: flags.out ?? DEFAULT_OUT, svg: flags.svg, open: flags.open === true, verbose, cache, history });
 }
 
 const outcome = await main(process.argv.slice(2));

@@ -16,13 +16,19 @@ export const VERSION = '0.0.0';
 
 export const USAGE = `${NAME} ${VERSION}: a weather map for code changes.
 
-  atis --base <ref> [options]
+  atis [--base <ref> | --last-commit | --last-tag] [--head <ref>] [options]
 
 With no --out or --svg, atis serves the world on 127.0.0.1 at a port of its own,
 opens it in a tab, and runs until interrupted.
 
   --repo <path>   the repository to read (default: the working directory)
-  --base <ref>    the ref the change is measured from (required)
+  --base <ref>    the ref the change is measured from (default: the trunk, the
+                  trunk atis.config.json names, else the first of main, master,
+                  develop and trunk, each local and then on origin/)
+  --last-commit   measure from the head's parent, HEAD~1
+  --last-tag      measure from the newest tag the head reaches
+  --head <ref>    map the change at <ref> rather than at HEAD; .check/ is read
+                  only for the checked-out HEAD, so another head is git-only
   --out <file>    write the map to <file> and exit (default with --svg: map.json)
   --svg <file>    render the map as a static SVG at <file> and exit
   --open          open the rendered SVG in the platform viewer (needs --svg)
@@ -37,7 +43,8 @@ opens it in a tab, and runs until interrupted.
   --help, -h      print this text
 
 The map is written at schema ${SCHEMA_VERSION}: terrain scanned from the merge
-base of <ref> and HEAD, weather from HEAD, and at most six ranked notices.
+base of the base and the head, weather from the head, and at most six ranked
+notices.
 The terrain is kept per merge base under .atis/, which ignores itself in git.
 https://github.com/robmclarty/atis
 `;

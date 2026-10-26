@@ -1,7 +1,10 @@
 /**
  * run: everything impure between the flags and the map.
  *
- * `measure` scans the merge-base tree and the `HEAD` tree, so the terrain
+ * `measure` first resolves what the change is against: the base the
+ * reviewer named, a shortcut counted back from the head, or the trunk when
+ * they named none, and the head, `HEAD` unless `--head` named another (D99).
+ * It scans the merge-base tree and the head's tree, so the terrain
  * comes from the base and the weather from the head (D32) and both sides
  * describe commits rather than a working tree (D46). The base is extracted
  * with `git archive` into a temp directory when the cache does not hold it;
@@ -9,7 +12,8 @@
  * only what the diff touched, and is extracted only when the checker or the
  * reviewed repo's fallow has to read it from disk (D136, D172). The diff, the manifest delta and the log window
  * come from the repository itself; only `.check/` is read from the working
- * tree, since artifacts are not committed. The base side (its scan, the
+ * tree, since artifacts are not committed, and only when the head is the
+ * checked-out `HEAD`, the one commit it can describe (D135). The base side (its scan, the
  * history window at it and its terrain's layout) is kept per base commit in
  * the terrain cache, so a run on a base it has seen reads it rather than
  * extracting and scanning it again, and reads only its change's own commits on
@@ -62,6 +66,7 @@ import {
   HISTORY_WINDOW,
   NO_LOCAL_FALLOW,
   checkInferredShapes,
+  commitOf,
   localFallow,
   measureStructure,
   readCheck,
@@ -70,16 +75,19 @@ import {
   readCommit,
   readManifests,
   readTree,
+  resolveBase,
   shapePaths,
 } from './sources/index.js';
-import type { EntryPoints, LocalFallow, ParsedFiles, Scan, ScanOptions, ScannedTree } from './sources/index.js';
+import type { BaseAsked, CheckInputs, EntryPoints, LocalFallow, ParsedFiles, Scan, ScanOptions, ScannedTree } from './sources/index.js';
 
 /** The flags for a run that writes files, already parsed: `cli.ts` owns the parsing, `run` owns the work. */
 export type Options = {
   /** The repository to read. */
   readonly repo: string;
-  /** The ref the change is measured from; the diff is `merge-base(base, HEAD)..HEAD` (D25). */
-  readonly base: string;
+  /** The base the reviewer asked for, a ref or a shortcut; absent, the trunk (D99). The diff is `merge-base(base, head)..head` (D25). */
+  readonly base?: BaseAsked | undefined;
+  /** The ref the weather is of; `HEAD` when absent (D99). */
+  readonly head?: string | undefined;
   /** Where to write the map, resolved against the working directory. */
   readonly out: string;
   /** Where to write the still SVG (D33); when absent, only `map.json` is written. */
@@ -97,7 +105,8 @@ export type Options = {
 /** The flags for the served run (D92, D133). */
 export type ServeRunOptions = {
   readonly repo: string;
-  readonly base: string;
+  readonly base?: BaseAsked | undefined;
+  readonly head?: string | undefined;
   /** The built web app's directory, `index.html` and its assets; `pnpm build` fills it. */
   readonly assets: string;
   /** Open the tab once serving; a no-op under a test run. */
@@ -137,15 +146,31 @@ function failed(error: unknown): Outcome {
   return { exitCode: 2, stdout: '', stderr: `atis: ${messageOf(error)}\n` };
 }
 
+/** A commit, and its time in unix seconds. */
+type Head = { readonly sha: string; readonly time: number };
+
 /**
- * The commit the weather is of, and the clock every age is measured back from.
- * This is the first thing a run does, so a directory that is not a repository
- * fails here, quietly and by name, before any source has shelled out.
+ * The commit `ref` names, and its time: for the head, the clock every age is
+ * measured back from. The checked-out `HEAD` is the first thing a run reads,
+ * so a directory that is not a repository fails here, quietly and by name,
+ * before any source has shelled out.
  */
-function headOf(repo: string): { readonly sha: string; readonly time: number } {
-  const [sha = '', time = ''] = git(repo, 'show', '-s', '--format=%H%n%ct', HEAD).split('\n');
-  if (!SHA.test(sha) || !UNIX_SECONDS.test(time)) throw new Error(`cannot read ${HEAD} of ${repo}`);
+function commitAt(repo: string, ref: string): Head {
+  const named = ref === HEAD ? HEAD : commitOf(repo, ref);
+  if (named === undefined) throw new Error(`--head ${ref} names no commit`);
+  const [sha = '', time = ''] = git(repo, 'show', '-s', '--format=%H%n%ct', named).split('\n');
+  if (!SHA.test(sha) || !UNIX_SECONDS.test(time)) throw new Error(`cannot read ${ref} of ${repo}`);
   return { sha, time: Number(time) };
+}
+
+/**
+ * `.check/` when the head is the checked-out `HEAD`, the one commit whose
+ * working tree checkride can have run on; any other head reads git-only and
+ * says why (D135, C2).
+ */
+function checkFor(repo: string, ref: string, head: Head, checkedOut: Head): CheckInputs {
+  if (head.sha === checkedOut.sha) return readCheck(repo);
+  return { mode: 'git-only', reason: `the head ${ref} is not the checked-out HEAD, so .check/ does not describe it` };
 }
 
 /** One extracted commit: `tree` is the extraction the scanner reads, `root` the temp directory holding it. */
@@ -346,8 +371,12 @@ function headAt(repo: string, sha: string, prior: NonNullable<ScanOptions['prior
   }
 }
 
+/** What a run reads the repository for: the base and the head the reviewer asked for (D99), the cache switch and the history window. */
+type Asked = { readonly base?: BaseAsked | undefined; readonly head?: string | undefined; readonly cache: boolean; readonly history?: number | undefined };
+
 /** Read the repository and build the map; throws on a repository it cannot read, with the extractions removed either way. */
-function measure(repoPath: string, base: string, cache: boolean, history: number = HISTORY_WINDOW): Measured {
+function measure(repoPath: string, asked: Asked): Measured {
+  const { cache, history = HISTORY_WINDOW } = asked;
   const repo = resolve(repoPath);
   const timings: Timing[] = [];
   const extractions: Extraction[] = [];
@@ -364,8 +393,11 @@ function measure(repoPath: string, base: string, cache: boolean, history: number
     });
 
   try {
-    const head = headOf(repo);
-    const diff = timed(timings, 'diff', () => readDiff(repo, base));
+    const checkedOut = commitAt(repo, HEAD);
+    const headRef = asked.head ?? HEAD;
+    const head = headRef === HEAD ? checkedOut : commitAt(repo, headRef);
+    const base = timed(timings, 'base', () => resolveBase(repo, asked.base, headRef));
+    const diff = timed(timings, 'diff', () => readDiff(repo, base.ref, head.sha));
     const ground = groundAt({ repo, timings, scanAt, history }, diff.merge_base, cache);
     // Neither side is extracted unless something reads it from disk: the checker, or the reviewed repo's fallow.
     let baseTree = ground.tree;
@@ -390,18 +422,19 @@ function measure(repoPath: string, base: string, cache: boolean, history: number
     const baseStructure = timed(timings, 'structure base', () => structureAt(repo, diff.merge_base, baseTreeOf, fallow, cache));
     const headStructure = timed(timings, 'structure head', () => structureAt(repo, head.sha, headTreeOf, fallow, cache));
     const manifests = diff.changed.flatMap((file) => (file.from === undefined ? [file.path] : [file.path, file.from]));
-    const { deps_added, deps_moved } = timed(timings, 'manifests', () => readManifests(repo, diff.merge_base, manifests));
+    const { deps_added, deps_moved } = timed(timings, 'manifests', () => readManifests(repo, diff.merge_base, manifests, head.sha));
     // The window at the base, with the change's own commits on top, newest first (D8).
     const commits = timed(timings, 'log', () =>
-      [...readLog(repo, `${diff.merge_base}..${HEAD}`, history), ...ground.commits].slice(0, history),
+      [...readLog(repo, `${diff.merge_base}..${head.sha}`, history), ...ground.commits].slice(0, history),
     );
-    const check = timed(timings, 'check', () => readCheck(repo));
+    const check = timed(timings, 'check', () => checkFor(repo, headRef, head, checkedOut));
 
     const map = timed(timings, 'build', () =>
       buildMap({
         meta: {
           repo: basename(repo),
-          base,
+          base: base.ref,
+          base_typed: base.typed,
           head: head.sha,
           merge_base: diff.merge_base,
           generated_at: new Date().toISOString(),
@@ -429,7 +462,7 @@ function measure(repoPath: string, base: string, cache: boolean, history: number
 export function run(options: Options): Outcome {
   const out = resolve(options.out);
   try {
-    const measured = measure(options.repo, options.base, options.cache !== false, options.history);
+    const measured = measure(options.repo, { base: options.base, head: options.head, cache: options.cache !== false, history: options.history });
     const { map, timings } = measured;
     timed(timings, 'write', () => {
       writeAtomic(out, serialize(map));
@@ -464,7 +497,7 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
     return { exitCode: 2, stdout: '', stderr: `atis: no built web app at ${assets}; run \`pnpm build\` first\n` };
   }
   try {
-    const measured = measure(options.repo, options.base, options.cache !== false, options.history);
+    const measured = measure(options.repo, { base: options.base, head: options.head, cache: options.cache !== false, history: options.history });
     const { map, timings } = measured;
     const token = options.token ?? randomBytes(16).toString('hex');
     const started = performance.now();

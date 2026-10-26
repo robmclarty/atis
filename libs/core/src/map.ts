@@ -75,7 +75,9 @@ export type Scan = {
 /** What the map is of: the commits it spans, and the clock a pure `buildMap` cannot read for itself (C3). */
 export type MapMeta = {
   readonly repo: string;
+  /** The base as resolved, and as typed when it was (D99). */
   readonly base: string;
+  readonly base_typed?: string | undefined;
   readonly head: string;
   readonly merge_base: string;
   readonly generated_at: string;
@@ -669,6 +671,7 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
       generated_at: inputs.meta.generated_at,
       repo: inputs.meta.repo,
       base: inputs.meta.base,
+      ...(inputs.meta.base_typed === undefined ? {} : { base_typed: inputs.meta.base_typed }),
       head: inputs.meta.head,
       merge_base: inputs.meta.merge_base,
       mode: 'change',

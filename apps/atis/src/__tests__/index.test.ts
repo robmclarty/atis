@@ -17,6 +17,9 @@ test('the usage text names every flag the bin parses', () => {
   for (const flag of [
     '--repo <path>',
     '--base <ref>',
+    '--last-commit',
+    '--last-tag',
+    '--head <ref>',
     '--out <file>',
     '--svg <file>',
     '--open',

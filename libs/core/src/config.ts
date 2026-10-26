@@ -70,6 +70,37 @@ export type Config = {
   readonly notices: NoticeConfig;
 };
 
+/** The file D28 names at the reviewed repo's root; for now atis reads only its `trunk` (D99). */
+export const CONFIG_FILE = 'atis.config.json';
+
+/** The branches tried for the trunk when the repo configures none, in order, each local and then on `origin/` (D99). */
+export const TRUNK_CANDIDATES: readonly string[] = ['main', 'master', 'develop', 'trunk'];
+
+function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * The trunk an `atis.config.json` names (D28, D99), or undefined when there
+ * is no file or it names none. A file that will not parse, or a `trunk` that
+ * is not a branch name, throws: a broken config is misuse, never a quiet
+ * fall back to the candidates (C4).
+ */
+export function configuredTrunk(text: string | undefined): string | undefined {
+  if (text === undefined) return undefined;
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch (error) {
+    throw new Error(`${CONFIG_FILE} is not JSON: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
+  }
+  if (!isRecord(value)) throw new Error(`${CONFIG_FILE} is not a JSON object`);
+  const trunk = value['trunk'];
+  if (trunk === undefined) return undefined;
+  if (typeof trunk !== 'string' || trunk === '' || trunk.startsWith('-')) throw new Error(`${CONFIG_FILE}'s trunk must name a branch`);
+  return trunk;
+}
+
 const IMAGES = ['*.png', '*.jpg', '*.jpeg', '*.gif', '*.webp', '*.avif', '*.ico'];
 const FONTS = ['*.woff', '*.woff2', '*.ttf', '*.otf'];
 const LOCKFILES = ['pnpm-lock.yaml', 'package-lock.json', 'npm-shrinkwrap.json', 'yarn.lock', 'bun.lock', 'bun.lockb'];

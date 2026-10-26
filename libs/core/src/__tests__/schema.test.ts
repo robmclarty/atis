@@ -156,6 +156,13 @@ test('rejects an entry-point source it does not know, and a reason that does not
   ).toThrow(/meta\.instruments\.entry_points_reason/);
 });
 
+test('accepts the base as typed beside the base as resolved, and rejects either when it is not a string (D99)', () => {
+  const typed = { ...minimalMap(), meta: { ...minimalMap().meta, base: 'v1.2.0', base_typed: '--last-tag' } };
+  expect(assertMap(typed)).toEqual(typed);
+  expect(() => assertMap({ ...minimalMap(), meta: { ...minimalMap().meta, base_typed: 1 } })).toThrow(/meta\.base_typed/);
+  expect(() => assertMap({ ...minimalMap(), meta: { ...minimalMap().meta, base: undefined } })).toThrow(/meta\.base:/);
+});
+
 test('rejects a wrong schema_version', () => {
   const map = { ...minimalMap(), meta: { ...minimalMap().meta, schema_version: 2 } };
   expect(() => assertMap(map)).toThrow(/meta\.schema_version/);
