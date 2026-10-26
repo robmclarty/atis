@@ -226,3 +226,92 @@ export function computeReach(inputs: ReachInputs): ReachResult {
     edges_exceptional: newCrossModule(inputs, cells),
   };
 }
+
+/** A set of changed files as bits, one word to every 32: what reaches a file, carried through the walk in one piece. */
+type Bits = Uint32Array;
+
+const WORD = 32;
+
+/** Fold `from` into `into`, saying whether `into` gained a bit. */
+function gain(into: Bits, from: Bits): boolean {
+  let grew = false;
+  for (let word = 0; word < into.length; word += 1) {
+    // `|` works in signed 32 bits; the words are unsigned, so the join is read back as one.
+    const joined = ((into[word] ?? 0) | (from[word] ?? 0)) >>> 0;
+    if (joined !== into[word]) {
+      into[word] = joined;
+      grew = true;
+    }
+  }
+  return grew;
+}
+
+/**
+ * Which of `seeds` reach each terrain file, as bits by the seed's index:
+ * every seed's bit flows out over the reverse edges until nothing grows. A
+ * file is walked again only when a seed it had not heard from reaches it, so
+ * a change walks its graph once, however many files it changed.
+ */
+function reachedBy(seeds: readonly string[], importers: ReadonlyMap<string, readonly string[]>, words: number, at: (seed: number) => number): Map<string, Bits> {
+  const heard = new Map<string, Bits>();
+  const queue: string[] = [];
+  seeds.forEach((seed, index) => {
+    const bits = heard.get(seed) ?? new Uint32Array(words);
+    const bit = at(index);
+    bits[Math.floor(bit / WORD)] = (bits[Math.floor(bit / WORD)] ?? 0) | (1 << (bit % WORD));
+    if (!heard.has(seed)) queue.push(seed);
+    heard.set(seed, bits);
+  });
+  for (let next = 0; next < queue.length; next += 1) {
+    const imported = queue[next] ?? '';
+    const bits = heard.get(imported);
+    if (bits === undefined) continue;
+    for (const importer of importers.get(imported) ?? []) {
+      const known = heard.get(importer);
+      if (known === undefined) {
+        heard.set(importer, Uint32Array.from(bits));
+        queue.push(importer);
+      } else if (gain(known, bits)) {
+        queue.push(importer);
+      }
+    }
+  }
+  return heard;
+}
+
+/**
+ * How many cells each changed file's own reach touches, its own included:
+ * D27's *high reach*, which is measured per file while `weather.reach` is
+ * the union over the whole change. It is the reach `computeReach` walks for
+ * that file alone, on the graph its kind walks (D39), but the whole change is
+ * walked at once, each file carrying the changed files that reached it,
+ * rather than once per changed file. Keyed by head path; a shore or test file
+ * is no terrain and touches none.
+ */
+export function computeCellsReached(inputs: ReachInputs): ReadonlyMap<string, number> {
+  const cells = indexCells(inputs.modules);
+  const counted = new Map<string, number>(inputs.changed.map((file) => [file.path, 0] as const));
+  const seeds = inputs.changed.map((file) => file.path).filter((path) => cells.cellOf.has(path));
+  const kindOf = new Map(inputs.changed.map((file) => [file.path, file.kind] as const));
+  const words = Math.max(1, Math.ceil(seeds.length / WORD));
+  const index = new Map(seeds.map((seed, at) => [seed, at] as const));
+  const touched = seeds.map(() => new Set<string>());
+
+  for (const deleted of [false, true]) {
+    const walked = seeds.filter((seed) => (kindOf.get(seed) === 'deleted') === deleted);
+    if (walked.length === 0) continue;
+    const importers = importersOf(deleted ? inputs.baseEdges : inputs.headEdges, cells);
+    const heard = reachedBy(walked, importers, words, (at) => index.get(walked[at] ?? '') ?? 0);
+    for (const [path, bits] of heard) {
+      const cell = cells.cellOf.get(path);
+      if (cell === undefined) continue;
+      bits.forEach((word, at) => {
+        for (let bit = 0; bit < WORD && word >>> bit !== 0; bit += 1) {
+          if (((word >>> bit) & 1) === 1) touched[at * WORD + bit]?.add(cell);
+        }
+      });
+    }
+  }
+  seeds.forEach((seed, at) => counted.set(seed, touched[at]?.size ?? 0));
+  return counted;
+}

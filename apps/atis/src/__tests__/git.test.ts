@@ -198,8 +198,14 @@ test('readManifests reads the members of a package.json workspaces repo, with no
   writeJson(dir, 'examples/demo/package.json', { name: 'demo', dependencies: { chalk: '^5.0.0' } });
   git(['commit', '--quiet', '--no-verify', '--all', '-m', 'head']);
 
-  expect(readManifests(dir, base)).toEqual({
+  const delta = {
     deps_added: [{ manifest: 'packages/a/package.json', name: 'zod', range: '^3.0.0', dev: false }],
     deps_moved: [{ manifest: 'packages/a/package.json', name: 'left-pad', range: '^1.1.0', from: '^1.0.0', dev: false }],
-  });
+  };
+  expect(readManifests(dir, base)).toEqual(delta);
+
+  // Handed the diff's paths it reads only the manifests among them, and one it was not handed moved nothing (D136).
+  expect(readManifests(dir, base, ['examples/demo/package.json', 'packages/a/package.json'])).toEqual(delta);
+  expect(readManifests(dir, base, ['packages/a/src/index.ts'])).toEqual({ deps_added: [], deps_moved: [] });
+  expect(readManifests(dir, base, [])).toEqual({ deps_added: [], deps_moved: [] });
 });

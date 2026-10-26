@@ -17,7 +17,7 @@
 import type { Config } from './config.js';
 import { classifyFile } from './modules.js';
 import type { ImportEdge, Modules } from './modules.js';
-import { computeReach } from './reach.js';
+import { computeCellsReached } from './reach.js';
 import type { ReachInputs } from './reach.js';
 import type {
   ChangedFile,
@@ -247,10 +247,11 @@ function sortUnique(paths: readonly string[]): readonly string[] {
 }
 
 /**
- * Evidence asks reach's question once more per changed file, because D27's
- * *high reach* is measured per file while `weather.reach` is the union over
- * the whole change. It reuses `computeReach` rather than walking again, so
- * D5's hop rules keep exactly one implementation.
+ * Evidence asks reach's question once more for each changed file, because
+ * D27's *high reach* is measured per file while `weather.reach` is the union
+ * over the whole change. `computeCellsReached` answers it for every changed
+ * file in one walk of each graph, beside the walk `computeReach` makes, so
+ * reach keeps its one home.
  */
 export type EvidenceInputs = Omit<ReachInputs, 'changed'> & {
   /** The placed changed set `computeReach` returned: keyed by head path, each on one cell or one group (D40, D48). */
@@ -367,23 +368,6 @@ function indexCells(modules: Modules): ReadonlyMap<string, string> {
   return new Map(modules.organelles.map((organelle) => [organelle.path, organelle.cell]));
 }
 
-function reachInputsFor(inputs: EvidenceInputs, file: ChangedFile): ReachInputs {
-  return {
-    changed: [file],
-    modules: inputs.modules,
-    groups: inputs.groups,
-    headEdges: inputs.headEdges,
-    baseEdges: inputs.baseEdges,
-  };
-}
-
-/** How many cells one changed file's reach touches, its own included; a shore or test file is not terrain and touches none. */
-function cellsReached(file: ChangedFile, inputs: EvidenceInputs): number {
-  if (file.cell === undefined) return 0;
-  const { reach } = computeReach(reachInputsFor(inputs, file));
-  return new Set(reach.map((entry) => entry.cell)).size;
-}
-
 /**
  * A changed barrel that something outside its cell imports: D27's *escaped
  * interface*. "Outside" is measured the way D45 measures a hop, by innermost
@@ -482,6 +466,7 @@ export function computeEvidence(inputs: EvidenceInputs): EvidenceResult {
   const coverageOf = check?.coverage === undefined ? undefined : new Map(check.coverage.map((file) => [file.path, file]));
   const mutationOf = new Map((check?.mutation ?? []).map((file) => [file.path, file]));
   const cells = indexCells(inputs.modules);
+  const reached = computeCellsReached(inputs);
 
   const files = inputs.changed
     .map((file): FileEvidence => {
@@ -493,7 +478,7 @@ export function computeEvidence(inputs: EvidenceInputs): EvidenceResult {
         ...(coverage === undefined ? {} : { coverage: patchCoverage(file.path, changedLines, coverage) }),
         unmeasured: isUnmeasured(file, coverageOf, inputs.code),
         mutants: mutation === undefined ? [] : liveMutants(file.path, changedLines, mutation),
-        cells_reached: cellsReached(file, inputs),
+        cells_reached: reached.get(file.path) ?? 0,
         escaped_interface: escapedInterface(file, cells, inputs.headEdges),
       };
     })

@@ -20,6 +20,7 @@ const FLAGS = {
   svg: { type: 'string' },
   open: { type: 'boolean' },
   cache: { type: 'boolean' },
+  history: { type: 'string' },
   verbose: { type: 'boolean' },
   version: { type: 'boolean', short: 'V' },
   help: { type: 'boolean', short: 'h' },
@@ -34,6 +35,8 @@ type Flags = {
   readonly open?: boolean | undefined;
   /** Only `--no-cache` sets it, to false: the terrain cache is on unless told otherwise (D96). */
   readonly cache?: boolean | undefined;
+  /** `--history <n>`, as typed: read as a whole number of commits, at least one (D50). */
+  readonly history?: string | undefined;
   readonly verbose?: boolean | undefined;
   readonly version?: boolean | undefined;
   readonly help?: boolean | undefined;
@@ -76,11 +79,15 @@ async function main(argv: readonly string[]): Promise<Outcome> {
   const repo = flags.repo ?? process.cwd();
   const verbose = flags.verbose === true;
   const cache = flags.cache !== false;
+  const history = flags.history === undefined ? undefined : Number(flags.history);
+  if (history !== undefined && (!Number.isSafeInteger(history) || history < 1 || !/^\d+$/.test(flags.history ?? ''))) {
+    return misuse('--history <n> takes a whole number of commits, at least 1');
+  }
   const serves = flags.out === undefined && flags.svg === undefined;
-  if (serves) return serveRun({ repo, base: flags.base, assets: webDir(), open: flags.open !== false, verbose, cache });
+  if (serves) return serveRun({ repo, base: flags.base, assets: webDir(), open: flags.open !== false, verbose, cache, history });
 
   if (flags.open === true && flags.svg === undefined) return misuse('--open needs --svg <file>');
-  return run({ repo, base: flags.base, out: flags.out ?? DEFAULT_OUT, svg: flags.svg, open: flags.open === true, verbose, cache });
+  return run({ repo, base: flags.base, out: flags.out ?? DEFAULT_OUT, svg: flags.svg, open: flags.open === true, verbose, cache, history });
 }
 
 const outcome = await main(process.argv.slice(2));

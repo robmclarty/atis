@@ -95,7 +95,20 @@ export type ScanOptions = {
    * the scan itself stays on `dir`. Defaults to `dir`.
    */
   readonly repo?: string;
+  /**
+   * What a scan of an earlier commit read from each file, and the paths the
+   * diff since then touched (D136). A file the diff left alone holds the same
+   * bytes at the same path, so what it read stands and the file is not read
+   * again; only the touched ones, and any it never read, are.
+   */
+  readonly prior?: { readonly parsed: ParsedFiles; readonly touched: ReadonlySet<string> };
 };
+
+/** What a scan read from each TypeScript file of a tree, by path: what a later scan of a later commit reuses (D136). */
+export type ParsedFiles = Readonly<Record<string, ParsedFile>>;
+
+/** A scan, and what it read from each file to make it. */
+export type ScannedTree = { readonly scan: Scan; readonly parsed: ParsedFiles };
 
 /** The name a namespace import takes, and the one `export * from` takes. */
 const STAR = '*';
@@ -217,7 +230,8 @@ type Reference = {
 /** An `export * from …`, and the shape it gives every name it passes on. */
 type Star = { readonly specifier: string; readonly shape: string };
 
-type Parsed = {
+/** What one TypeScript file says, read from its source alone: a pure function of its path and its bytes. */
+export type ParsedFile = {
   readonly loc: number;
   /** The lines of each statement that survives type stripping (D80, D141). */
   readonly code: readonly CodeSpan[];
@@ -596,7 +610,7 @@ function passedThrough(statement: ts.ImportDeclaration, exported: ReadonlyMap<st
   return importBindings(statement).flatMap(([local, bound]) => (exported.get(local) ?? []).map((as) => ({ name: bound.name, as })));
 }
 
-function parseSource(path: string, content: string): Parsed {
+function parseSource(path: string, content: string): ParsedFile {
   // The compiler gives `.mts` and `.cts` no kind of their own: they parse as
   // `.ts` does, and a `.d.mts` or `.d.cts` is a declaration file by its name (D77).
   const kind = path.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
@@ -1147,18 +1161,31 @@ function memberEntries(context: Context, fallow: readonly FallowEntry[]): Readon
  * in, when the reviewed repo has one.
  */
 export function scanImports(dir: string, options: ScanOptions = {}): Scan {
+  return readTree(dir, options).scan;
+}
+
+/**
+ * `scanImports`, with what it read from each file beside the scan, for a
+ * later commit's scan to reuse. Handed an earlier commit's, it reads only the
+ * files the diff touched and links the tree the same way, so its scan is the
+ * one a full read would give (D136).
+ */
+export function readTree(dir: string, options: ScanOptions = {}): ScannedTree {
   const root = resolve(dir);
   const tree = walk(root);
   const context = contextOf(root, tree);
   const { members } = context;
+  const { prior } = options;
+  const kept = (path: string): ParsedFile | undefined =>
+    prior === undefined || prior.touched.has(path) || !Object.hasOwn(prior.parsed, path) ? undefined : prior.parsed[path];
 
-  const parsed = new Map<string, Parsed>();
+  const parsed = new Map<string, ParsedFile>();
   const edges: ScannedEdge[] = [];
   const stars = new Map<string, readonly Passed[]>();
   const packages = new Map<string, readonly string[]>();
   for (const path of tree.files) {
     if (!TYPESCRIPT.test(path)) continue;
-    const file = parseSource(path, readFileSync(join(root, path), 'utf8'));
+    const file = kept(path) ?? parseSource(path, readFileSync(join(root, path), 'utf8'));
     parsed.set(path, file);
     const outside: string[] = [];
     for (const { specifier, names, line, reexports } of file.references) {
@@ -1200,7 +1227,7 @@ export function scanImports(dir: string, options: ScanOptions = {}): Scan {
   });
   const fallow = fallowEntryPoints(root, options.repo ?? dir);
   const entries = memberEntries(context, fallow.entries);
-  return {
+  const scan: Scan = {
     files,
     edges: edges.toSorted((a, b) => byPath(a.from, b.from) || a.line - b.line || byPath(a.to, b.to)),
     members: members.map((member) => ({
@@ -1212,4 +1239,5 @@ export function scanImports(dir: string, options: ScanOptions = {}): Scan {
     })),
     entry_points: fallow.lookup,
   };
+  return { scan, parsed: Object.fromEntries(parsed) };
 }

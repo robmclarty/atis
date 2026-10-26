@@ -1,3 +1,7 @@
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { expect, test } from 'vitest';
 
 import { DEFAULT_CONFIG } from '../config.js';
@@ -12,11 +16,12 @@ import {
   trustCoverage,
 } from '../evidence.js';
 import type { CheckArtifacts, CheckSummarySlot, CodeSpan, Dead, EvidenceInputs, FileEvidence, Health, RedSplit } from '../evidence.js';
-import { identifyGroups } from '../groups.js';
+import { identifyGroups, shoreMatcher } from '../groups.js';
+import type { BuildInputs } from '../map.js';
 import { identifyModules } from '../modules.js';
 import type { ImportEdge, ScannedFile } from '../modules.js';
-import { computeReach } from '../reach.js';
-import type { DiffFile } from '../reach.js';
+import { computeCellsReached, computeReach } from '../reach.js';
+import type { DiffFile, ReachInputs } from '../reach.js';
 import type { ChangeKind, Checks, Hunk } from '../schema.js';
 
 const TIMESTAMP = '2026-09-17T05:52:40.668Z';
@@ -1077,4 +1082,43 @@ test('a red slot whose own output was never read, or named no file, stays global
   // Clean reports under red slots: each failed on something its findings do not show.
   const empty = categoryFor(CHAIN, [change('src/pm/tools.ts')], ran({ lint: { diagnostics: [] }, struct: { matches: [] } }, [slot('lint', false), slot('struct', false)]));
   expect(empty.slots.map((entry) => entry.scope)).toEqual(['global', 'global']);
+});
+
+/** The demo's two scans and its diff, the inputs `buildMap` is golden-tested on. */
+const DEMO = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'fixtures', 'demo', 'inputs.json'), 'utf8')) as BuildInputs;
+
+/** Each changed file's cells reached, walked for that file alone: what evidence counted before the change was walked once. */
+function cellsAlone(inputs: ReachInputs): ReadonlyMap<string, number> {
+  const { changed } = computeReach(inputs);
+  return new Map(
+    changed.map((file) => [file.path, file.cell === undefined ? 0 : new Set(computeReach({ ...inputs, changed: [file] }).reach.map((entry) => entry.cell)).size] as const),
+  );
+}
+
+test('the cells each changed file reaches are counted in one walk of the change, as many as walking each alone, on the demo inputs (D27)', () => {
+  const files = [...new Map([...DEMO.base.files, ...DEMO.head.files].map((file) => [file.path, file] as const)).values()];
+  const roots = [...new Set([...DEMO.base.members, ...DEMO.head.members].map((member) => member.dir))].toSorted();
+  const modules = identifyModules(files, [...DEMO.base.edges, ...DEMO.head.edges], roots, shoreMatcher(DEFAULT_CONFIG.groups, roots));
+  const groups = identifyGroups(files, DEFAULT_CONFIG.groups, roots);
+  const inputs: ReachInputs = { changed: DEMO.diff, modules, groups, headEdges: DEMO.head.edges, baseEdges: DEMO.base.edges };
+
+  const alone = cellsAlone(inputs);
+  expect(computeCellsReached(inputs)).toEqual(alone);
+  // The demo's added file reaches past its own cell, and its deleted one is walked on the base graph (D39).
+  expect(alone.get('libs/core/src/pm/tools.ts')).toBeGreaterThan(1);
+  expect(alone.get('libs/core/src/pm/legacy.ts')).toBeGreaterThan(0);
+});
+
+test('a change of more files than one word of bits holds counts each file its own reach', () => {
+  // Forty single-file cells in a chain, each importing the one before it, all changed: file k reaches k to 39.
+  const paths = Array.from({ length: 40 }, (_unused, index) => `src/m${String(index).padStart(2, '0')}/a.ts`);
+  const head = imports(...paths.slice(1).map((path, index) => `${path} > ${paths[index] ?? ''}`));
+  const scanned = paths.map((path): ScannedFile => ({ path, loc: 10, exports: [] }));
+  const modules = identifyModules(scanned, head, []);
+  const groups = identifyGroups(scanned, DEFAULT_CONFIG.groups, []);
+  const inputs: ReachInputs = { changed: paths.map((path) => change(path)), modules, groups, headEdges: head, baseEdges: head };
+
+  const counted = computeCellsReached(inputs);
+  expect(counted).toEqual(cellsAlone(inputs));
+  expect(paths.map((path) => counted.get(path))).toEqual(paths.map((_path, index) => 40 - index));
 });

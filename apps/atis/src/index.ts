@@ -29,6 +29,7 @@ opens it in a tab, and runs until interrupted.
   --no-open       serve without opening the tab
   --no-cache      measure the base afresh, neither reading nor writing the
                   terrain kept per base commit in .atis/terrain/
+  --history <n>   read the newest <n> commits of history (default 5000)
   --verbose       print per-source timings, and the terrain cache's hit or
                   miss, on stderr
   --version, -V   print the version

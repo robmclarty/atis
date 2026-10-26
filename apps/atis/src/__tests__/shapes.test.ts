@@ -90,7 +90,8 @@ test("an inferred export is printed by the checker over the tree's own imports, 
 
   // The checker follows the import into `make.ts` and prints the type it found there.
   expect(shapeOf(checked(files), INDEX, 'build')).toBe('function build(): import("./make.js").Made;');
-});
+  // The first checker program of the file parses the compiler's default library, a few seconds beside the whole suite.
+}, 60_000);
 
 test('a workspace package is followed by its manifest, never through a node_modules the extraction lacks (D118)', () => {
   const files: Tree = {

@@ -44,10 +44,10 @@ import {
   readDiff,
   readLog,
   readManifests,
-  scanImports,
+  readTree,
   shapePaths,
 } from './sources/index.js';
-import type { Scan } from './sources/index.js';
+import type { ParsedFiles, Scan, ScanOptions } from './sources/index.js';
 
 /** The flags for a run that writes files, already parsed: `cli.ts` owns the parsing, `run` owns the work. */
 export type Options = {
@@ -65,6 +65,8 @@ export type Options = {
   readonly verbose: boolean;
   /** `false` measures the base side afresh and keeps nothing (`--no-cache`); the terrain cache is read and written otherwise (D96). */
   readonly cache?: boolean | undefined;
+  /** How many commits of history to read, newest first; 5,000 unless a repository's log is too slow to (D50). */
+  readonly history?: number | undefined;
 };
 
 /** The flags for the served run (D92, D133). */
@@ -77,6 +79,7 @@ export type ServeRunOptions = {
   readonly open: boolean;
   readonly verbose: boolean;
   readonly cache?: boolean | undefined;
+  readonly history?: number | undefined;
   /** The run's token (D134); drawn at random unless a test names one. */
   readonly token?: string | undefined;
 };
@@ -123,8 +126,8 @@ function headOf(repo: string): { readonly sha: string; readonly time: number } {
 /** One extracted commit: `tree` is the extraction the scanner reads, `root` the temp directory holding it. */
 type Extraction = { readonly tree: string; readonly root: string };
 
-/** One side of the change: its extraction, which the checker reads again, and the scan of it. */
-type Side = { readonly tree: string; readonly scan: Scan };
+/** One side of the change: its extraction, which the checker reads again, the scan of it, and what the scan read from each file. */
+type Side = { readonly tree: string; readonly scan: Scan; readonly parsed: ParsedFiles };
 
 /** `git archive <sha> | tar -x` into a temp directory of its own (D32), the archive kept beside the tree, not in it. */
 function extract(repo: string, sha: string): Extraction {
@@ -201,6 +204,7 @@ const CONFIG = DEFAULT_CONFIG;
  */
 type Ground = {
   readonly scan: Scan;
+  readonly parsed: ParsedFiles;
   readonly commits: readonly Commit[];
   readonly layout: Layout;
   readonly tree?: string;
@@ -208,7 +212,13 @@ type Ground = {
 };
 
 /** How a run reaches the repository: its path, its timings, and the scan of an extracted commit. */
-type Reader = { readonly repo: string; readonly timings: Timing[]; readonly scanAt: (source: string, sha: string) => Side };
+type Reader = {
+  readonly repo: string;
+  readonly timings: Timing[];
+  readonly scanAt: (source: string, sha: string, prior?: ScanOptions['prior']) => Side;
+  /** How many commits of history to read (D50). */
+  readonly history: number;
+};
 
 /**
  * The base side, from the terrain cache when it holds this commit for this
@@ -220,21 +230,22 @@ type Reader = { readonly repo: string; readonly timings: Timing[]; readonly scan
  * map never depended on it (C4).
  */
 function groundAt(reader: Reader, sha: string, cache: boolean): Ground {
-  const { repo, timings } = reader;
-  const key = cache ? { code: codeKey(), config: configKey(CONFIG) } : undefined;
+  const { repo, timings, history } = reader;
+  const key = cache ? { code: codeKey(), config: configKey(CONFIG, history) } : undefined;
   const read = key === undefined ? undefined : timed(timings, 'cache read', () => readTerrain(repo, sha, key));
   if (read?.hit === true) {
     const { terrain } = read;
-    return { scan: terrain.scan, commits: terrain.commits, layout: terrain.layout, cache: `hit, ${relative(repo, terrainPath(repo, sha))}` };
+    const { scan, parsed, commits, layout } = terrain;
+    return { scan, parsed, commits, layout, cache: `hit, ${relative(repo, terrainPath(repo, sha))}` };
   }
   const side = reader.scanAt('scan base', sha);
-  const commits = timed(timings, 'log base', () => readLog(repo, sha));
+  const commits = timed(timings, 'log base', () => readLog(repo, sha, history));
   const nearest = key === undefined ? undefined : timed(timings, 'cache near', () => nearestTerrain(repo, sha, key));
   const layout = timed(timings, 'layout base', () => layOutTerrain(side.scan, CONFIG, nearest?.terrain.layout));
   if (key === undefined || read === undefined) return { ...side, commits, layout, cache: 'off (--no-cache)' };
   const from = nearest === undefined ? 'laid out cold' : `relaxed from ${nearest.sha}`;
   try {
-    const path = timed(timings, 'cache write', () => writeTerrain(repo, sha, key, { scan: side.scan, commits, layout }));
+    const path = timed(timings, 'cache write', () => writeTerrain(repo, sha, key, { scan: side.scan, parsed: side.parsed, commits, layout }));
     return { ...side, commits, layout, cache: `miss (${read.reason}), ${from}, wrote ${relative(repo, path)}` };
   } catch (error) {
     return { ...side, commits, layout, cache: `miss (${read.reason}), ${from}, not written: ${messageOf(error)}` };
@@ -242,7 +253,7 @@ function groundAt(reader: Reader, sha: string, cache: boolean): Ground {
 }
 
 /** Read the repository and build the map; throws on a repository it cannot read, with the extractions removed either way. */
-function measure(repoPath: string, base: string, cache: boolean): Measured {
+function measure(repoPath: string, base: string, cache: boolean, history: number = HISTORY_WINDOW): Measured {
   const repo = resolve(repoPath);
   const timings: Timing[] = [];
   const extractions: Extraction[] = [];
@@ -252,17 +263,18 @@ function measure(repoPath: string, base: string, cache: boolean): Measured {
     extractions.push(extraction);
     return extraction.tree;
   };
-  const scanAt = (source: string, sha: string): Side =>
+  const scanAt = (source: string, sha: string, prior?: ScanOptions['prior']): Side =>
     timed(timings, source, () => {
       const tree = treeAt(sha);
-      return { tree, scan: scanImports(tree, { repo }) };
+      return { tree, ...readTree(tree, prior === undefined ? { repo } : { repo, prior }) };
     });
 
   try {
     const head = headOf(repo);
     const diff = timed(timings, 'diff', () => readDiff(repo, base));
-    const ground = groundAt({ repo, timings, scanAt }, diff.merge_base, cache);
-    const headSide = scanAt('scan head', head.sha);
+    const ground = groundAt({ repo, timings, scanAt, history }, diff.merge_base, cache);
+    // The head reads only what the diff touched; every other file holds the base's bytes (D136).
+    const headSide = scanAt('scan head', head.sha, { parsed: ground.parsed, touched: new Set(diff.changed.map((file) => file.path)) });
     // The names only the checker can print, in the changed interface files alone, each side timed (D118).
     // A base read from the cache has no tree, so it is extracted only when one of those files has such a name.
     const paths = shapePaths(diff.changed, ground.scan, headSide.scan);
@@ -271,10 +283,11 @@ function measure(repoPath: string, base: string, cache: boolean): Measured {
       inferred.size === 0 ? ground.scan : checkInferredShapes(ground.tree ?? treeAt(diff.merge_base), ground.scan, inferred),
     );
     const headScan = timed(timings, 'shapes head', () => checkInferredShapes(headSide.tree, headSide.scan, paths.head));
-    const { deps_added, deps_moved } = timed(timings, 'manifests', () => readManifests(repo, diff.merge_base));
+    const touched = diff.changed.flatMap((file) => (file.from === undefined ? [file.path] : [file.path, file.from]));
+    const { deps_added, deps_moved } = timed(timings, 'manifests', () => readManifests(repo, diff.merge_base, touched));
     // The window at the base, with the change's own commits on top, newest first (D8).
     const commits = timed(timings, 'log', () =>
-      [...readLog(repo, `${diff.merge_base}..${HEAD}`), ...ground.commits].slice(0, HISTORY_WINDOW),
+      [...readLog(repo, `${diff.merge_base}..${HEAD}`, history), ...ground.commits].slice(0, history),
     );
     const check = timed(timings, 'check', () => readCheck(repo));
 
@@ -309,7 +322,7 @@ function measure(repoPath: string, base: string, cache: boolean): Measured {
 export function run(options: Options): Outcome {
   const out = resolve(options.out);
   try {
-    const measured = measure(options.repo, options.base, options.cache !== false);
+    const measured = measure(options.repo, options.base, options.cache !== false, options.history);
     const { map, timings } = measured;
     timed(timings, 'write', () => {
       writeAtomic(out, serialize(map));
@@ -344,7 +357,7 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
     return { exitCode: 2, stdout: '', stderr: `atis: no built web app at ${assets}; run \`pnpm build\` first\n` };
   }
   try {
-    const measured = measure(options.repo, options.base, options.cache !== false);
+    const measured = measure(options.repo, options.base, options.cache !== false, options.history);
     const { map, timings } = measured;
     const token = options.token ?? randomBytes(16).toString('hex');
     const started = performance.now();

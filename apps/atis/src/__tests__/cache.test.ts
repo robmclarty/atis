@@ -11,7 +11,7 @@ import { afterAll, expect, test } from 'vitest';
 import { codeKey, configKey, hashCode, readTerrain, terrainPath, writeTerrain } from '../cache.js';
 import type { BaseTerrain, TerrainKey } from '../cache.js';
 import { run } from '../run.js';
-import { scanImports } from '../sources/index.js';
+import { HISTORY_WINDOW, readTree, scanImports } from '../sources/index.js';
 import type { Scan } from '../sources/index.js';
 
 /**
@@ -42,10 +42,11 @@ function write(path: string, text: string): void {
   writeFileSync(path, text);
 }
 
-const KEY: TerrainKey = { code: 'c'.repeat(64), config: configKey(DEFAULT_CONFIG) };
+const KEY: TerrainKey = { code: 'c'.repeat(64), config: configKey(DEFAULT_CONFIG, HISTORY_WINDOW) };
 
 const TERRAIN: BaseTerrain = {
   scan: { files: [], edges: [], members: [], entry_points: { source: 'manifests', reason: 'no fallow in the tree' } },
+  parsed: { 'src/a.ts': { loc: 3, code: [{ start: 1, end: 3 }], exports: ['a'], shapes: { a: 'const a: number;' }, inferred: [], references: [], stars: [] } },
   commits: [{ sha: SHA, time: 1_700_000_000, subject: 'feat: the first', files: [{ path: 'src/a.ts', added: 3, deleted: 0 }] }],
   layout: { width: 480, height: 96, shore: { y0: 0, y1: 0 }, bands: [{ index: 0, y0: 0, y1: 96 }], positions: { 'src/a.ts': { x: 60, y: 48, r: 6 } } },
 };
@@ -68,9 +69,11 @@ test('an entry misses on a changed config, and says so', () => {
   writeTerrain(repo, SHA, KEY, TERRAIN);
 
   const moved = { ...DEFAULT_CONFIG, notices: { ...DEFAULT_CONFIG.notices, large_lines: DEFAULT_CONFIG.notices.large_lines + 1 } };
-  expect(configKey(DEFAULT_CONFIG)).toBe(configKey({ ...DEFAULT_CONFIG }));
-  expect(configKey(moved)).not.toBe(configKey(DEFAULT_CONFIG));
-  expect(readTerrain(repo, SHA, { ...KEY, config: configKey(moved) })).toEqual({ hit: false, reason: 'config changed' });
+  expect(configKey(DEFAULT_CONFIG, HISTORY_WINDOW)).toBe(configKey({ ...DEFAULT_CONFIG }, HISTORY_WINDOW));
+  expect(configKey(moved, HISTORY_WINDOW)).not.toBe(configKey(DEFAULT_CONFIG, HISTORY_WINDOW));
+  expect(readTerrain(repo, SHA, { ...KEY, config: configKey(moved, HISTORY_WINDOW) })).toEqual({ hit: false, reason: 'config changed' });
+  // A window read under another --history is another terrain (D50).
+  expect(readTerrain(repo, SHA, { ...KEY, config: configKey(DEFAULT_CONFIG, 100) })).toEqual({ hit: false, reason: 'config changed' });
 });
 
 test('an entry misses on changed code: a byte, a file or the compiler, never a test or a declaration (D137)', () => {
@@ -126,6 +129,8 @@ test('a corrupt entry reads as a miss, never an error', () => {
   writeFileSync(path, JSON.stringify({ ...(entry as object), layout: [] }));
   expect(readTerrain(repo, SHA, KEY)).toEqual(unreadable);
   writeFileSync(path, JSON.stringify({ ...(entry as object), commits: [1, 2] }));
+  expect(readTerrain(repo, SHA, KEY)).toEqual(unreadable);
+  writeFileSync(path, JSON.stringify({ ...(entry as object), parsed: { 'src/a.ts': { loc: 3 } } }));
   expect(readTerrain(repo, SHA, KEY)).toEqual(unreadable);
   writeFileSync(path, JSON.stringify({ ...(entry as object), sha: OTHER_SHA }));
   expect(readTerrain(repo, SHA, KEY)).toEqual(unreadable);
@@ -217,7 +222,7 @@ test('the kept layout is the one a change that changes nothing relaxes from, and
   const map = assertMap(JSON.parse(readFileSync(out, 'utf8')));
   expect(map.weather.changed).toEqual([]);
 
-  const kept = readTerrain(repo, git('rev-parse', 'HEAD'), { code: codeKey(), config: configKey(DEFAULT_CONFIG) });
+  const kept = readTerrain(repo, git('rev-parse', 'HEAD'), { code: codeKey(), config: configKey(DEFAULT_CONFIG, HISTORY_WINDOW) });
   expect(kept.hit).toBe(true);
   const layout = kept.hit ? kept.terrain.layout : undefined;
   expect(Object.keys(layout?.positions ?? {})).toEqual(['package.json', 'src/index.ts', 'src/shapes.ts', 'src/square.ts']);
@@ -270,19 +275,25 @@ const AFTER = 'f4f44ba4e7896dcf72dd111d80d85a452d746fb3';
 /** The mean distance, in the field's units, the unchanged files may move when the second commit relaxes from the first. */
 const DISPLACEMENT_BOUND = 4;
 
-test('on two consecutive commits of this repo, unchanged files move less than the pinned bound relaxed, and more laid out cold (D97)', () => {
+test('on two consecutive commits of this repo, unchanged files move less than the pinned bound relaxed, and more laid out cold (D97, D136)', () => {
   const repo = execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: dirname(fileURLToPath(import.meta.url)), encoding: 'utf8' }).trim();
   const changed = new Set(execFileSync('git', ['diff', '--name-only', BEFORE, AFTER], { cwd: repo, encoding: 'utf8' }).trim().split('\n'));
-  const scanAt = (sha: string): Scan => {
+  const treeAt = (sha: string): string => {
     const root = temp('commit');
     const tree = join(root, 'tree');
     mkdirSync(tree);
     execFileSync('git', ['archive', '--format=tar', '-o', join(root, 'commit.tar'), sha], { cwd: repo });
     execFileSync('tar', ['-xf', join(root, 'commit.tar'), '-C', tree]);
-    return scanImports(tree, { repo });
+    return tree;
   };
-  const before = layOutTerrain(scanAt(BEFORE), DEFAULT_CONFIG);
-  const after = scanAt(AFTER);
+  const [beforeTree, afterTree] = [treeAt(BEFORE), treeAt(AFTER)];
+  const first = readTree(beforeTree, { repo });
+  const before = layOutTerrain(first.scan, DEFAULT_CONFIG);
+  const after: Scan = scanImports(afterTree, { repo });
+
+  // The second commit's scan, reading only the files the diff touched over the first's reads, is the full scan (D136).
+  expect(readTree(afterTree, { repo, prior: { parsed: first.parsed, touched: changed } }).scan).toEqual(after);
+
   const relaxed = layOutTerrain(after, DEFAULT_CONFIG, before);
   const cold = layOutTerrain(after, DEFAULT_CONFIG);
   const unchanged = (path: string): boolean => !changed.has(path);
@@ -291,4 +302,18 @@ test('on two consecutive commits of this repo, unchanged files move less than th
   expect(meanDisplacement(before, cold, unchanged)).toBeGreaterThan(DISPLACEMENT_BOUND);
   // One prior and one input lay out one field.
   expect(JSON.stringify(layOutTerrain(after, DEFAULT_CONFIG, before))).toBe(JSON.stringify(relaxed));
+}, MINUTE);
+
+test('--history caps the window a run reads, and a terrain kept under one cap is not read under another (D50)', () => {
+  const { repo } = twoCommits();
+  const dir = temp('history');
+  const out = (name: string): string => join(dir, `${name}.json`);
+
+  const capped = run({ repo, base: 'HEAD', out: out('capped'), verbose: true, history: 1 });
+  expect(capped.exitCode, capped.stderr).toBe(0);
+  expect(assertMap(JSON.parse(readFileSync(out('capped'), 'utf8'))).terrain.history.window_commits).toBe(1);
+
+  const whole = run({ repo, base: 'HEAD', out: out('whole'), verbose: true });
+  expect(whole.stderr).toContain('terrain cache miss (config changed)');
+  expect(assertMap(JSON.parse(readFileSync(out('whole'), 'utf8'))).terrain.history.window_commits).toBe(2);
 }, MINUTE);

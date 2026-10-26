@@ -257,7 +257,7 @@ test('--version and --help exit 0; an unknown flag, a stray positional and a mis
   expect(atis(['-V']).status).toBe(0);
   expect(atis(['--help']).stdout).toContain('--base <ref>');
 
-  for (const args of [[], ['--nope'], ['--base'], ['main'], ['--base', 'main', 'extra']]) {
+  for (const args of [[], ['--nope'], ['--base'], ['main'], ['--base', 'main', 'extra'], ['--base', 'main', '--history', '0'], ['--base', 'main', '--history', '2.5'], ['--base', 'main', '--history', 'all']]) {
     const result = atis(args);
     expect(result.status).toBe(2);
     expect(result.stdout).toBe('');

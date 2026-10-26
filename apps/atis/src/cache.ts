@@ -1,8 +1,9 @@
 /**
  * cache: the terrain a run keeps for the next one (D96, D137).
  *
- * The base side of a run depends on the base commit alone: its scan, the
- * history window at it (D8), and its terrain's own layout. Each is costly and
+ * The base side of a run depends on the base commit alone: its scan and what
+ * the scan read from each file, the history window at it (D8), and its
+ * terrain's own layout. Each is costly and
  * none changes while the commit does not, so a run on a base it has seen reads
  * them from `.atis/terrain/<sha>.json` under the reviewed repository instead
  * of extracting, scanning and walking the log again. Beside its commit, an
@@ -24,12 +25,14 @@ import { fileURLToPath } from 'node:url';
 import type { Commit, Config, Layout } from 'core';
 import ts from 'typescript';
 
-import type { Scan } from './sources/index.js';
+import type { ParsedFiles, Scan } from './sources/index.js';
 
 /** One base commit's terrain: what a run would otherwise extract, scan and walk the log for. */
 export type BaseTerrain = {
   /** The base tree's scan, before the checker prints the change's inferred names, which depend on the change (D118). */
   readonly scan: Scan;
+  /** What the scan read from each file, which the head's scan reuses for every file the diff left alone (D136). */
+  readonly parsed: ParsedFiles;
   /** The history window at the base, newest first (D8); a run reads only its change's own commits on top. */
   readonly commits: readonly Commit[];
   /** The base terrain's own layout, as `layOutTerrain` lays it out (D97 starts from it). */
@@ -40,7 +43,7 @@ export type BaseTerrain = {
 export type TerrainKey = {
   /** A hash of the code that builds a terrain: atis's own files, core's, and the compiler the scan runs on. */
   readonly code: string;
-  /** A hash of the config the terrain was laid out under. */
+  /** A hash of the config the terrain was laid out under and the history window it read (D50). */
   readonly config: string;
 };
 
@@ -130,9 +133,9 @@ export function codeKey(): string {
   return ownCode;
 }
 
-/** The config key: the config as JSON, which is plain data, so one config is one string. */
-export function configKey(config: Config): string {
-  return sha256(JSON.stringify(config));
+/** The config key: the config and the history window as JSON, which is plain data, so one config is one string. */
+export function configKey(config: Config, history: number): string {
+  return sha256(JSON.stringify({ config, history }));
 }
 
 /*
@@ -149,6 +152,10 @@ function isScan(value: unknown): value is Scan {
     Array.isArray(value['members']) &&
     isRecord(value['entry_points'])
   );
+}
+
+function isParsed(value: unknown): value is ParsedFiles {
+  return isRecord(value) && Object.values(value).every((file) => isRecord(file) && Array.isArray(file['references']));
 }
 
 function isCommits(value: unknown): value is readonly Commit[] {
@@ -172,9 +179,9 @@ export function readTerrain(repo: string, sha: string, key: TerrainKey): Terrain
   if (!isRecord(entry) || entry['sha'] !== sha || !isRecord(entry['key'])) return { hit: false, reason: 'unreadable' };
   if (entry['key']['code'] !== key.code) return { hit: false, reason: 'code changed' };
   if (entry['key']['config'] !== key.config) return { hit: false, reason: 'config changed' };
-  const { scan, commits, layout } = entry;
-  if (!isScan(scan) || !isCommits(commits) || !isLayout(layout)) return { hit: false, reason: 'unreadable' };
-  return { hit: true, terrain: { scan, commits, layout } };
+  const { scan, parsed, commits, layout } = entry;
+  if (!isScan(scan) || !isParsed(parsed) || !isCommits(commits) || !isLayout(layout)) return { hit: false, reason: 'unreadable' };
+  return { hit: true, terrain: { scan, parsed, commits, layout } };
 }
 
 /** Keep the terrain of `sha` for the next run, atomically, with `.atis/` ignored by a `.gitignore` of its own. Returns where it went. */

@@ -406,14 +406,17 @@ function carve(contour: Contour, members: readonly Position[], others: readonly 
  */
 function membraneOf(
   ids: readonly string[],
-  positions: Readonly<Record<string, Position>>,
+  placed: readonly (readonly [string, Position])[],
   fields: readonly Field[],
 ): Contour | undefined {
   const inside = new Set(ids);
-  const placed = Object.entries(positions).toSorted(([a], [b]) => byPath(a, b));
   const members = placed.flatMap(([id, at]) => (inside.has(id) ? [at] : []));
   if (members.length === 0) return undefined;
-  const others = placed.flatMap(([id, at]) => (inside.has(id) ? [] : [at]));
+  const others = withinReach(
+    members,
+    placed.flatMap(([id, at]) => (inside.has(id) ? [] : [at])),
+    fields.reduce((most, field) => Math.max(most, reachOf(field.options)), 0),
+  );
 
   let best: { readonly contour: Contour; readonly tally: Tally } | undefined;
   for (const field of fields) {
@@ -430,6 +433,41 @@ function membraneOf(
   return best === undefined ? undefined : carve(best.contour, members, best.tally.intruders);
 }
 
+/** The widest file a field holds, `force.ts`'s largest radius, and how many bends past its region a route is given room for. */
+const WIDEST_FILE = 30;
+const BENDS = 1;
+
+/**
+ * How far from a skin's members another file can still bear on its cut. The
+ * field reaches `nodeR1` past a file and the library pads the region it cuts
+ * in by that and `morphBuffer`; a route bent round a file at the edge of the
+ * members' box steps out past that file by `morphBuffer`, which carries the
+ * region out by a file's width and that again. Room for one such bend kept
+ * every skin of a 4,000-file repository byte for byte as it was cut against
+ * the whole field, and so did none.
+ */
+function reachOf(options: IBubbleSetOptions): number {
+  const padding = Math.max(options.nodeR1 ?? 0, options.edgeR1 ?? 0) + (options.morphBuffer ?? 0);
+  return padding + BENDS * (2 * WIDEST_FILE + (options.morphBuffer ?? 0));
+}
+
+
+/**
+ * The other files within `reach` of the members' box, in the order given.
+ * The library tests every member against every other file on the field as
+ * it routes the ways between them, which on a field of thousands was nearly
+ * all of the time a layout took (91 of 99 s on a 4,000-file repository); a
+ * file farther off is outside the region the field is cut in, so it changes
+ * nothing but the cost.
+ */
+function withinReach(members: readonly Position[], others: readonly Position[], reach: number): readonly Position[] {
+  const x0 = Math.min(...members.map((at) => at.x - at.r)) - reach;
+  const x1 = Math.max(...members.map((at) => at.x + at.r)) + reach;
+  const y0 = Math.min(...members.map((at) => at.y - at.r)) - reach;
+  const y1 = Math.max(...members.map((at) => at.y + at.r)) + reach;
+  return others.filter((at) => at.x + at.r >= x0 && at.x - at.r <= x1 && at.y + at.r >= y0 && at.y - at.r <= y1);
+}
+
 /**
  * One contour per cell and per shore group that has a mark on the field,
  * keyed by the cell's or the group's id (a cell id carries its kind, so the
@@ -441,14 +479,15 @@ function membraneOf(
 export function computeMembranes(input: MembraneInput): Readonly<Record<string, Contour>> {
   const subtree = subtreeOf(input.cells);
   const drawn: (readonly [string, Contour])[] = [];
+  const placed = Object.entries(input.positions).toSorted(([a], [b]) => byPath(a, b));
 
   for (const cell of input.cells) {
     const ids = (subtree.get(cell.id) ?? [cell]).flatMap((held) => held.organelles);
-    const contour = membraneOf(ids, input.positions, CELL_FIELDS);
+    const contour = membraneOf(ids, placed, CELL_FIELDS);
     if (contour !== undefined) drawn.push([cell.id, contour]);
   }
   for (const group of input.groups) {
-    const contour = membraneOf(group.files, input.positions, SHORE_FIELDS);
+    const contour = membraneOf(group.files, placed, SHORE_FIELDS);
     if (contour !== undefined) drawn.push([group.id, contour]);
   }
 

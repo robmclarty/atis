@@ -190,9 +190,9 @@ export function parseLog(output: string): readonly Commit[] {
   return commits;
 }
 
-/** The `-n 5000` window of `head`'s log, or of a range such as `<base>..HEAD`, no author or email field anywhere (C6). */
-export function readLog(repo: string, head: string): readonly Commit[] {
-  return parseLog(git(repo, ['log', '--numstat', '--no-merges', `--format=${LOG_FORMAT}`, '-n', String(HISTORY_WINDOW), head]));
+/** The newest `window` commits of `head`'s log, or of a range such as `<base>..HEAD`, 5,000 unless capped (D50), no author or email field anywhere (C6). */
+export function readLog(repo: string, head: string, window: number = HISTORY_WINDOW): readonly Commit[] {
+  return parseLog(git(repo, ['log', '--numstat', '--no-merges', `--format=${LOG_FORMAT}`, '-n', String(window), head]));
 }
 
 /** `merge_base(base, HEAD)..HEAD`, the way GitHub shows a PR (D25); the two sides scan from commits only (D46). */
@@ -302,9 +302,17 @@ function manifestPaths(repo: string, sha: string): readonly string[] {
   });
 }
 
-/** Every workspace manifest at `mergeBase` and at `HEAD` (D46), diffed into `deps_added[]` (D47) and `deps_moved[]` (D83). */
-export function readManifests(repo: string, mergeBase: string): ManifestDelta {
-  const paths = new Set([...manifestPaths(repo, mergeBase), ...manifestPaths(repo, HEAD)]);
+/**
+ * Every workspace manifest at `mergeBase` and at `HEAD` (D46), diffed into
+ * `deps_added[]` (D47) and `deps_moved[]` (D83). Handed the paths the diff
+ * touched, it reads only the manifests among them: one the change left alone
+ * says at `HEAD` what it said at the base, so it adds and moves nothing, and
+ * a change that touched none is read without asking git anything.
+ */
+export function readManifests(repo: string, mergeBase: string, touched?: readonly string[]): ManifestDelta {
+  const named = touched === undefined ? undefined : new Set(touched.filter((path) => path === MANIFEST || path.endsWith(`/${MANIFEST}`)));
+  if (named?.size === 0) return { deps_added: [], deps_moved: [] };
+  const paths = [...new Set([...manifestPaths(repo, mergeBase), ...manifestPaths(repo, HEAD)])].filter((path) => named?.has(path) ?? true);
   const deltas = [...paths].map((path) => diffManifests(path, showFile(repo, mergeBase, path), showFile(repo, HEAD, path)));
   const order = (a: DepAdded, b: DepAdded): number => byPath(a.manifest, b.manifest) || byPath(a.name, b.name);
   return {

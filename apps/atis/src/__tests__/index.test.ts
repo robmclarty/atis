@@ -21,6 +21,8 @@ test('the usage text names every flag the bin parses', () => {
     '--svg <file>',
     '--open',
     '--no-open',
+    '--no-cache',
+    '--history <n>',
     '--verbose',
     '--version',
     '--help',

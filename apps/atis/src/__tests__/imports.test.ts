@@ -12,6 +12,7 @@ import {
   parseFallowEntryPoints,
   parseManifestWorkspaces,
   parseWorkspaceGlobs,
+  readTree,
   scanImports,
 } from '../sources/index.js';
 import type { Scan, ScannedFile, ScannedMember } from '../sources/index.js';
@@ -1016,4 +1017,39 @@ test('parseFallowEntryPoints collapses the ./ segments fallow leaves in workspac
     { path: 'libs/core/src/index.ts', tag: 'package.json main' },
   ]);
   expect(() => parseFallowEntryPoints('{"ok":true}')).toThrow(/entry_points/);
+});
+
+/**
+ * The workspace one commit later: `types.ts` gains a star through an added
+ * `extra.ts`, so the barrel that stars `types.ts` passes a new name though
+ * its own bytes never moved; `greet.ts` exports one more name; `lazy.ts` is
+ * renamed out from under the import that loads it; and `polyfill.ts` is
+ * deleted from under its importer. Only the files the diff names changed.
+ */
+const LATER: Readonly<Record<string, string>> = Object.fromEntries([
+  ...Object.entries(WORKSPACE).filter(([path]) => path !== 'apps/cli/src/polyfill.ts' && path !== 'apps/cli/src/lazy.ts'),
+  ['apps/cli/src/types.ts', `export * from './extra.js';\n\nexport type Options = { readonly verbose: boolean };\n\nexport const DEFAULTS: Options = { verbose: false };\n`],
+  ['apps/cli/src/extra.ts', `export const EXTRA = 'extra';\n`],
+  ['apps/cli/src/later.ts', `export const LAZY = 'later';\n`],
+  ['libs/shared/src/greet.ts', `export function greet(value: unknown): string {\n  return String(value);\n}\n\nexport const HELLO = 'hello';\nexport const BYE = 'bye';\n`],
+]);
+
+test('a later commit read over the reads of an earlier one, reading only what the diff names, scans as a full read does (D136)', () => {
+  const earlier = readTree(workspace);
+  const later = writeTree(mkdtempSync(join(tmpdir(), 'atis-later-')), LATER);
+  scratch.push(later);
+  const touched = new Set(['apps/cli/src/extra.ts', 'apps/cli/src/later.ts', 'apps/cli/src/types.ts', 'libs/shared/src/greet.ts']);
+
+  const full = scanImports(later);
+  expect(readTree(later, { prior: { parsed: earlier.parsed, touched } }).scan).toEqual(full);
+  // The untouched barrel passes the added file's name on through the touched one's star, and its imports of the
+  // renamed and the deleted file resolve to nothing: the reads are kept, the linking is done again.
+  const barrel = full.files.find((file) => file.path === 'apps/cli/src/index.ts');
+  expect(barrel?.exports).toContain('EXTRA');
+  expect(full.edges.filter((edge) => edge.from === 'apps/cli/src/index.ts').map((edge) => edge.to)).not.toContain('apps/cli/src/polyfill.ts');
+
+  // A file the diff does not name is never read again: told nothing was touched, the later scan keeps the earlier reads.
+  const kept = readTree(later, { prior: { parsed: earlier.parsed, touched: new Set() } }).scan;
+  expect(kept.files.find((file) => file.path === 'libs/shared/src/greet.ts')?.exports).toEqual(['HELLO', 'greet']);
+  expect(full.files.find((file) => file.path === 'libs/shared/src/greet.ts')?.exports).toEqual(['BYE', 'HELLO', 'greet']);
 });

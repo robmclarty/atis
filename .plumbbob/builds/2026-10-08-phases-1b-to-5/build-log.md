@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 49 — feat(core): relax a new base's layout from the nearest cached one
+**Current step:** 50 — perf(cli): draw a cached run's first frame within two seconds
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -98,7 +98,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 113. feat(web): draw the far zoom as a dark planet under its dependencies' stars
 - ☑ 114. fix(core): keep a package's sibling cells apart so no two skins cross
 - ☑ 48. feat(cli): cache the terrain per base commit
-- ☐ 49. feat(core): relax a new base's layout from the nearest cached one
+- ☑ 49. feat(core): relax a new base's layout from the nearest cached one
 - ☐ 50. perf(cli): draw a cached run's first frame within two seconds
 - ☐ 51. feat(cli): measure health, duplication and structure at the base
 - ☐ 52. feat(core): compute health deltas, introduced findings and improvements
@@ -204,6 +204,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] an added file whose folder's room is spent still lands beside its own and can cross a sibling's skin (1 of 80 seeded layouts, fields seed 30); D32 pins the terrain, so more growth room or a relayout of the ground D32 forbids are the ways out
 - [x] hover on the planet: name a city light's file, or a star's package with its importers and health; the far zoom hovers nothing on the flat ground under it now (planet-far-field, step 113)
 - [ ] the readLog test on this repo (git.test.ts) takes 4-5 s under the full check, against vitest's 5 s default timeout, and flaked once in step 48's run; git log --numstat over 135 commits costs ~1.8 s alone, which step 50's log timings and D50's --history cap should look at
+- [ ] a cached run reuses its base's layout: pin the ground the change did not touch where the base put it, place only the change's files, recut only the skins near them, and scan the head without extracting the whole tree, so actual's cached first frame (11.2 s, 6.8 s of it the map's build) reaches about 2 s (C14 world-budget, D136 first-frame-clock); trades step 49's relaxed ground for a pinned one
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -1932,3 +1933,4 @@ folder, so it rides the branch into the PR.)*
   At LOD0 the picker used to answer for the far field's lit files at their flat places. Under the planet those places no longer match what is drawn, and a tag there would point at empty sky, so hover now stands down at LOD0. Naming a light's file or a star's package on hover would need the planet's own picking. I parked that (P59).
 
 - 2026-10-26 — step 48 checkpointed · c80af1d91 — feat(cli): cache the terrain per base commit (1 drift, 9m)
+- 2026-10-26 — step 49 checkpointed · 2950c4f64 — feat(core): relax a new base's layout from the nearest cached one (1 drift, 13m)
