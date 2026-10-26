@@ -31,7 +31,11 @@
  * the world to another overlay and then to none (D101). Framed on one file
  * past LOD3's gate, the file opens onto its plate: its functions as
  * granules, the strip of its lines with its hunk, its uncovered lines and its
- * mutants (§6, D102).
+ * mutants (§6, D102). Past LOD4's gate the changed file's plate gives way to
+ * its diff: a page with no token shows its hunk's line range alone, and one
+ * served with the token shows the diff `/diff/<path>` answers, its hunk's head
+ * and its head linked to the file in the editor, beside the PR the page was
+ * told of (D102).
  */
 
 import { accessSync, constants, readFileSync } from 'node:fs';
@@ -97,15 +101,32 @@ const serveMap = (body: string): Plugin => ({
   },
 });
 
-/** The app on loopback from its sources, on a port the system picks, serving the demo map unless handed another. */
-const serve = async (body: string = readFileSync(DEMO, 'utf8')): Promise<{ readonly server: ViteDevServer; readonly url: string }> => {
+/** Answer `/diff/<path>` for one path and the run's token, as the CLI does (D102, D134), with `body` as the served diff. */
+const serveDiff = (path: string, token: string, body: string): Plugin => ({
+  name: 'atis-serve-diff',
+  configureServer(server) {
+    server.middlewares.use((request, response, next) => {
+      const url = new URL(request.url ?? '/', 'http://127.0.0.1');
+      if (url.pathname !== `/diff/${path}`) {
+        next();
+        return;
+      }
+      response.statusCode = url.searchParams.get('token') === token ? 200 : 403;
+      response.setHeader('content-type', 'application/json');
+      response.end(response.statusCode === 200 ? body : '"refused"');
+    });
+  },
+});
+
+/** The app on loopback from its sources, on a port the system picks, serving the demo map unless handed another, and whatever else the plugins handed in answer. */
+const serve = async (body: string = readFileSync(DEMO, 'utf8'), served: readonly Plugin[] = []): Promise<{ readonly server: ViteDevServer; readonly url: string }> => {
   const server = await createServer({
     root: WEB,
     configFile: join(WEB, 'vite.config.ts'),
     logLevel: 'silent',
     clearScreen: false,
     server: { host: '127.0.0.1', port: 0, strictPort: false, open: false, hmr: false },
-    plugins: [serveMap(body)],
+    plugins: [serveMap(body), ...served],
   });
   await server.listen();
   const address = server.httpServer?.address();
@@ -556,6 +577,51 @@ test('framed on one file past LOD3, it opens onto its plate: its functions, its 
     expect(await page.$$eval('[data-file-plate] [data-uncovered]', (lines) => lines.map((line) => line.getAttribute('data-uncovered')))).toEqual(['27', '64']);
     expect(await page.$$eval('[data-file-plate] [data-mutant]', (mutants) => mutants.length)).toBe(2);
     expect(await page.$eval('[data-file-plate]', (plate) => plate instanceof SVGElement && plate.style.display !== 'none')).toBe(true);
+    expect(complaints).toEqual([]);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+test("past LOD4 the changed file's plate gives way to its diff: its hunk's line range with no token, and the served diff with links to the editor and the PR with one (D102)", { timeout: 180_000 }, async () => {
+  const path = 'libs/core/src/pm/tools.ts';
+  const diff = { path, diff: `diff --git a/${path} b/${path}\nnew file mode 100644\n--- /dev/null\n+++ b/${path}\n@@ -0,0 +1,2 @@\n+export const localBin = 'node_modules/.bin';\n+export const toolName = (name: string): string => name;\n`, root: '/work/demo', editor: 'vscode://file{root}/{path}:{line}' };
+  const { server, url } = await serve(undefined, [serveDiff(path, 't0', JSON.stringify(diff))]);
+  const browser = await launch();
+  try {
+    const page = await browser.newPage({ viewport: { width: 960, height: 720 } });
+    const complaints: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error' || message.type() === 'warning') complaints.push(`${message.type()}: ${message.text()}`);
+    });
+    page.on('pageerror', (error) => complaints.push(`pageerror: ${error.message}`));
+    const tools = (JSON.parse(readFileSync(DEMO, 'utf8')) as { terrain: { layout: { positions: Record<string, { x: number; y: number }> } } }).terrain.layout.positions[path];
+    const framed = `backend=webgl&zoom=100&centre=${String(tools?.x)},${String(tools?.y)}&pr=${encodeURIComponent('https://github.com/o/r/pull/4')}`;
+
+    // No token, as a fixture has none: the hunk's line range alone, and why, with nothing to open but the PR.
+    await page.goto(`${url}/?${framed}`);
+    await page.waitForSelector(`#world[data-world="settled"][data-diff="${path}"]`, { timeout: 90_000 });
+    expect(await page.getAttribute('#world', 'data-lod')).toBe('4');
+    expect(await page.$eval('[data-diff-sheet] [data-diff-title]', (title) => title.textContent)).toBe(`+${path}`);
+    expect(await page.$$eval('[data-diff-sheet] [data-range]', (ranges) => ranges.map((range) => range.textContent))).toEqual(['lines 1-96']);
+    expect(await page.$eval('[data-diff-sheet] [data-diff-note]', (note) => note.textContent)).toContain("the hunks' line ranges alone");
+    expect(await page.$$('[data-diff-sheet] [data-editor]')).toHaveLength(0);
+    expect(await page.getAttribute('[data-diff-sheet] [data-pr]', 'href')).toBe('https://github.com/o/r/pull/4');
+    // The plate it cross-faded from has faded out under it.
+    expect(await page.$eval('[data-file-plate]', (plate) => plate instanceof SVGElement && (plate.style.display === 'none' || Number(plate.style.opacity) === 0))).toBe(true);
+
+    // Served with the token: the diff `/diff/<path>` answers, its hunk's head and the sheet's head linked to the file in the editor.
+    await page.goto(`${url}/?token=t0&${framed}`);
+    await page.waitForSelector('[data-diff-sheet] [data-diff-row="added"]', { timeout: 90_000 });
+    expect(await page.$$eval('[data-diff-sheet] [data-diff-row]', (rows) => rows.map((row) => [row.getAttribute('data-diff-row'), row.getAttribute('data-line')]))).toEqual([
+      ['hunk', '1'],
+      ['added', '1'],
+      ['added', '2'],
+    ]);
+    expect(await page.getAttribute('[data-diff-sheet] [data-diff-row="hunk"]', 'href')).toBe(`vscode://file/work/demo/${path}:1`);
+    expect(await page.getAttribute('[data-diff-sheet] [data-editor]', 'href')).toBe(`vscode://file/work/demo/${path}:1`);
+    expect(await page.getAttribute('[data-diff-sheet] [data-pr]', 'href')).toBe('https://github.com/o/r/pull/4');
     expect(complaints).toEqual([]);
   } finally {
     await browser.close();

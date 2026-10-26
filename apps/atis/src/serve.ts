@@ -1,15 +1,20 @@
 /**
  * serve: the world on loopback (D92, C13). One `node:http` server bound to
- * `127.0.0.1` at a port the system picks, answering four things to read and
+ * `127.0.0.1` at a port the system picks, answering five things to read and
  * one to write, and nothing else (D93): the built app's `index.html` at `/`,
  * its assets by path under the directory it is handed, the map at
  * `/map.json`, held in memory, and, when it is handed the run's `.check/`, a
  * slot's raw output at `/check/<slot>`, read only, for the slots the map
  * holds and no other (D134); and, when it is handed a way to rebuild, the one
  * write C13 allows, `POST /base`, which asks for the map over another base
- * and holds the one it gets in place of the map it held. It answers only a
- * `Host` of `127.0.0.1:<port>` or `localhost:<port>`, and the map, the raw
- * output and the write only to the run's token: a page in another tab can
+ * and holds the one it gets in place of the map it held, and beside it a
+ * changed file's diff at `/diff/<path>`, read from git in the repository the
+ * base is resolved in, between the two sides of the map it holds, for the
+ * paths that map changed and no other (D102, D134), with the repository's
+ * path and the editor template its `atis.config.json` names, so the page can
+ * open the file at a line. It answers only a `Host` of `127.0.0.1:<port>` or
+ * `localhost:<port>`, and the map, the raw output, the diff and the write
+ * only to the run's token: a page in another tab can
  * reach a loopback port, and through DNS rebinding read what it answers, so
  * the server trusts neither the port nor the origin but the token the opened
  * URL carries. The write checks the `Origin` too, since a form in another
@@ -24,6 +29,8 @@ import { readFile, stat } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { extname, join, resolve, sep } from 'node:path';
+
+import { CONFIG_FILE, DEFAULT_EDITOR, configuredEditor } from 'core';
 
 /** The run's check artifacts: where checkride wrote them, and the slots the map holds, the only ones served. */
 export type ServedChecks = {
@@ -41,6 +48,13 @@ export type BaseRequest = { readonly base?: string; readonly last?: 'commit' | '
 /** A map rebuilt over another base: its JSON text, and the slots its raw output may now be served for. */
 export type Rebuilt = { readonly map: string; readonly slots: readonly string[] };
 
+/**
+ * What `/diff/<path>` answers (D102): the file's diff between the map's two
+ * sides as git prints it, the repository's absolute path, and the editor
+ * template the page fills to open the file at a line.
+ */
+export type ServedDiff = { readonly path: string; readonly diff: string; readonly root: string; readonly editor: string };
+
 /** How the server rebuilds the map over another base: the repository a ref is resolved in, and the rebuild itself, which throws on a base it cannot measure from. */
 export type Rebase = {
   readonly repo: string;
@@ -52,11 +66,11 @@ export type ServeOptions = {
   readonly assets: string;
   /** The map as its JSON text. */
   readonly map: string;
-  /** The run's token, which `/map.json` and `/check/<slot>` require as `?token=`. */
+  /** The run's token, which `/map.json`, `/check/<slot>`, `/diff/<path>` and `POST /base` require as `?token=`. */
   readonly token: string;
   /** The check artifacts to serve raw at `/check/<slot>`; left out, as a fixture or a test leaves it, the path is not served. */
   readonly checks?: ServedChecks | undefined;
-  /** How `POST /base` rebuilds the map; left out, the write is not taken. */
+  /** How `POST /base` rebuilds the map, and the repository `/diff/<path>` reads; left out, neither is served. */
   readonly rebase?: Rebase | undefined;
 };
 
@@ -98,6 +112,13 @@ const RAW_FILES = ['.stdout.txt', '.json'] as const;
 /** The most a `POST /base` body may hold: a ref and two words, never a file. */
 const BODY_LIMIT = 4096;
 
+/** The most one file's diff may run to before git's answer is cut off as a failure. */
+const DIFF_LIMIT = 32 * 1024 * 1024;
+/** A commit's full sha, SHA-1 or SHA-256: the only form a side is handed to git in, so a map can never name a flag. */
+const SHA = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/;
+/** The head a map reads from the working tree names in place of a commit (D99). */
+const WORKING_TREE = 'working-tree';
+
 /** One answer: the status, the type, and the body, left off a HEAD. */
 const answer = (request: IncomingMessage, response: ServerResponse, status: number, type: string, body: string | Buffer): void => {
   response.writeHead(status, { 'content-type': type, 'content-length': Buffer.byteLength(body), 'cache-control': 'no-store' });
@@ -114,7 +135,7 @@ const fileFor = (root: string, pathname: string): string | undefined => {
   }
 };
 
-/** A path segment decoded, or left as it came when it does not decode, which no slot is named like. */
+/** A path segment decoded, or left as it came when it does not decode, which no slot or changed path is named like. */
 const decodedOr = (segment: string): string => {
   try {
     return decodeURIComponent(segment);
@@ -185,12 +206,98 @@ const isCommit = (repo: string, ref: string): Promise<boolean> =>
 /** A failure's message, without a stack. */
 const messageOf = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
-/** Serve the app, the map and the raw check output on loopback at a port of the system's choosing, and take `POST /base` when handed a way to rebuild; resolves once it is listening. */
+/** One changed file a diff may be read for: its kind, and the path it was renamed from. */
+type Diffable = { readonly kind: string; readonly from?: string };
+
+/** What a diff is read between, from the map the server holds: its two sides and each path it changed; none when it holds no change git can be asked about. */
+type Sides = { readonly mergeBase: string; readonly head: string; readonly changed: ReadonlyMap<string, Diffable> };
+
+/** The sides of a map's change, read loosely from its text, since the server holds the map as text and only serves it; a map with a side that is no commit's sha, or no change, has none. */
+const sidesOf = (text: string): Sides | undefined => {
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+  if (!isRecord(value) || !isRecord(value['meta']) || !isRecord(value['weather'])) return undefined;
+  const { merge_base: mergeBase, head } = value['meta'];
+  const changed = value['weather']['changed'];
+  if (typeof mergeBase !== 'string' || !SHA.test(mergeBase) || typeof head !== 'string' || !(SHA.test(head) || head === WORKING_TREE) || !Array.isArray(changed)) return undefined;
+  const files = new Map<string, Diffable>();
+  for (const file of changed as readonly unknown[]) {
+    if (!isRecord(file) || typeof file['path'] !== 'string' || typeof file['kind'] !== 'string') continue;
+    const from = file['from'];
+    files.set(file['path'], { kind: file['kind'], ...(typeof from === 'string' ? { from } : {}) });
+  }
+  return { mergeBase, head, changed: files };
+};
+
+/** git's answer to `args` in `repo`; `git diff --no-index` exits 1 when the two files differ, which is the answer asked for. */
+const gitText = (repo: string, args: readonly string[]): Promise<string> =>
+  new Promise((done, failed) => {
+    execFile('git', args, { cwd: repo, encoding: 'utf8', maxBuffer: DIFF_LIMIT }, (error, stdout) => {
+      if (error === null || (args.includes('--no-index') && error.code === 1)) done(stdout);
+      else failed(error);
+    });
+  });
+
+/**
+ * One changed file's diff between the map's sides, renames followed through
+ * the path it came from. A working tree's head is the tree on disk, where a
+ * file `git add` would take but never has is untracked, so an added file git
+ * shows nothing for there is diffed against nothing (D99).
+ */
+const diffOf = async (repo: string, sides: Sides, path: string, file: Diffable): Promise<string> => {
+  const working = sides.head === WORKING_TREE;
+  const paths = file.from === undefined ? [path] : [file.from, path];
+  const diff = await gitText(repo, ['diff', '--no-color', '--no-ext-diff', '--find-renames', sides.mergeBase, ...(working ? [] : [sides.head]), '--', ...paths]);
+  if (diff !== '' || !working || file.kind !== 'added') return diff;
+  return gitText(repo, ['diff', '--no-color', '--no-ext-diff', '--no-index', '--', '/dev/null', path]);
+};
+
+/** The editor template the repository's `atis.config.json` names, else VS Code's (D102); a config that names a broken one throws, as misuse (C4). */
+const editorOf = async (repo: string): Promise<string> => {
+  let text: string | undefined;
+  try {
+    text = await readFile(join(repo, CONFIG_FILE), 'utf8');
+  } catch {
+    text = undefined;
+  }
+  return configuredEditor(text) ?? DEFAULT_EDITOR;
+};
+
+/** Serve the app, the map and the raw check output on loopback at a port of the system's choosing, and take `POST /base` and serve the diffs when handed a way to rebuild; resolves once it is listening. */
 export const serve = async ({ assets, map: first, token, checks: given, rebase }: ServeOptions): Promise<Served> => {
   const root = resolve(assets);
   let port = 0;
   let map = first;
   let checks = given;
+  // The diff's repository and editor, read once, so a broken editor fails the run before it serves (C4).
+  const repo = rebase === undefined ? undefined : resolve(rebase.repo);
+  const editor = repo === undefined ? undefined : await editorOf(repo);
+  // The held map's sides, read again only when a base replaces it.
+  let sidesRead: { readonly text: string; readonly sides: Sides | undefined } | undefined;
+  const sides = (): Sides | undefined => {
+    if (sidesRead?.text !== map) sidesRead = { text: map, sides: sidesOf(map) };
+    return sidesRead.sides;
+  };
+
+  /** `/diff/<path>` (D102, D134): the run's token, then a path the held map changed, diffed between its sides in the repository the server reads. */
+  const diffed = async (request: IncomingMessage, response: ServerResponse, url: URL, path: string): Promise<void> => {
+    if (url.searchParams.get('token') !== token) {
+      answer(request, response, 403, PLAIN, "a diff answers only to this run's token\n");
+      return;
+    }
+    const held = sides();
+    const file = held?.changed.get(path);
+    if (repo === undefined || editor === undefined || held === undefined || file === undefined) {
+      answer(request, response, 404, PLAIN, 'no diff for that path\n');
+      return;
+    }
+    const served: ServedDiff = { path, diff: await diffOf(repo, held, path, file), root: repo, editor };
+    answer(request, response, 200, TYPES['.json'] ?? OCTETS, `${JSON.stringify(served)}\n`);
+  };
 
   /**
    * `POST /base` (D134): the run's token, an `Origin` of this server's own,
@@ -267,6 +374,11 @@ export const serve = async ({ assets, map: first, token, checks: given, rebase }
         return;
       }
       answer(request, response, 200, TYPES[extname(file)] ?? PLAIN, await readFile(file));
+      return;
+    }
+    const changed = /^\/diff\/(.+)$/.exec(url.pathname)?.[1];
+    if (changed !== undefined) {
+      await diffed(request, response, url, decodedOr(changed));
       return;
     }
     const file = fileFor(root, url.pathname);

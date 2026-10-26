@@ -10,6 +10,7 @@ import { createElement } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { Chrome } from './chrome/index.js';
+import { prOf } from './diff.js';
 import { loadMap, mapUrl, servedToken } from './load.js';
 import type { MapState } from './load.js';
 import { createNav } from './nav.js';
@@ -42,4 +43,4 @@ const url = mapUrl(location.search);
 show({ status: 'loading', url });
 const state = await loadMap(url, (target) => fetch(target));
 show(state);
-if (state.status === 'ready') await drawWorld(canvas, state.map, viewOf(location.search), registry, nav);
+if (state.status === 'ready') await drawWorld(canvas, state.map, viewOf(location.search), registry, nav, { token, pr: prOf(location.search) });

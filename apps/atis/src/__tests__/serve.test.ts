@@ -7,17 +7,17 @@ import { join } from 'node:path';
 
 import { afterAll, expect, test } from 'vitest';
 
-import { assertMap } from 'core';
+import { DEFAULT_EDITOR, assertMap } from 'core';
 
 import { serveRun } from '../run.js';
 import { serve } from '../serve.js';
-import type { BaseRequest, Served } from '../serve.js';
+import type { BaseRequest, Rebuilt, Served, ServedDiff } from '../serve.js';
 
 /**
  * The loopback server in-process over a stub app (D133): it answers the page,
- * the assets, the map and a held slot's raw output, and nothing else; binds
- * loopback alone (C13); and refuses a foreign Host and a missing or wrong
- * token (D134).
+ * the assets, the map, a held slot's raw output and a changed file's diff,
+ * and nothing else; binds loopback alone (C13); and refuses a foreign Host
+ * and a missing or wrong token (D134).
  */
 const TOKEN = 'a3f1c2d4e5b6a7f8091a2b3c4d5e6f70';
 const MAP = '{"meta":{"repo":"stub"}}\n';
@@ -281,3 +281,108 @@ test('served for real, a base switched away and back draws the terrain it drew, 
   expect(back.terrain.layout).toEqual(first.terrain.layout);
   expect(back.weather.changed).toEqual(first.weather.changed);
 }, 60_000);
+
+/** As much of a map as the server reads for a diff: the change's two sides and the files it changed. */
+const changeMap = (mergeBase: string, head: string, changed: readonly { readonly path: string; readonly kind: string; readonly from?: string }[]): string =>
+  `${JSON.stringify({ meta: { repo: 'stub', merge_base: mergeBase, head }, weather: { changed } })}\n`;
+
+/** A server reading diffs in `repo` for the map given, its rebuild the one handed in, else one that measures nothing. */
+const diffing = async (repo: string, map: string, rebuild: (request: BaseRequest) => Promise<Rebuilt> = () => Promise.reject(new Error('no base here'))): Promise<Served> => {
+  const served = await serve({ assets: stubApp(), map, token: TOKEN, rebase: { repo, rebuild } });
+  servers.push(served);
+  return served;
+};
+
+const diffAt = async (served: Served, path: string): Promise<ServedDiff> => {
+  const answered = await get(served.port, `/diff/${path}?token=${TOKEN}`);
+  expect(answered.status).toBe(200);
+  expect(answered.type).toBe('application/json; charset=utf-8');
+  return JSON.parse(answered.body) as ServedDiff;
+};
+
+test("a changed file's diff is served at /diff/<path> with the token, read from git between the map's sides, beside the repo's path and VS Code's editor template (D102)", async () => {
+  const repo = twoCommits();
+  const served = await diffing(repo, changeMap(git(repo, 'rev-parse', 'v1'), git(repo, 'rev-parse', 'HEAD'), [{ path: 'src/square.ts', kind: 'added' }]));
+  const diff = await diffAt(served, 'src/square.ts');
+  expect(diff.path).toBe('src/square.ts');
+  expect(diff.root).toBe(repo);
+  expect(diff.editor).toBe(DEFAULT_EDITOR);
+  expect(diff.diff).toContain('+++ b/src/square.ts');
+  expect(diff.diff).toContain('@@ -0,0 +1,5 @@');
+  expect(diff.diff).toContain('+export function square(side: number): number {');
+  // An escaped path is the path it names.
+  expect((await diffAt(served, 'src%2Fsquare.ts')).path).toBe('src/square.ts');
+});
+
+test('a diff is refused without the token, and served only for a path the map changed, never one it climbs to (D134)', async () => {
+  const repo = twoCommits();
+  const served = await diffing(repo, changeMap(git(repo, 'rev-parse', 'v1'), git(repo, 'rev-parse', 'HEAD'), [{ path: 'src/square.ts', kind: 'added' }]));
+  const refused = await Promise.all(['/diff/src/square.ts', '/diff/src/square.ts?token=', `/diff/src/square.ts?token=${TOKEN}0`].map((path) => get(served.port, path)));
+  expect(refused.map((answer) => answer.status)).toEqual([403, 403, 403]);
+  for (const answer of refused) expect(answer.body).toContain('token');
+  // A file the change left alone, one that is not there, and paths that climb out or do not decode.
+  const paths = ['src/shapes.ts', 'src/nowhere.ts', 'src/..%2Fsquare.ts', '..%2Fpackage.json', '%2e%2e/package.json', '%zz', 'src/square.ts/'];
+  const answers = await Promise.all(paths.map((path) => get(served.port, `/diff/${path}?token=${TOKEN}`)));
+  expect(answers.map((answer) => answer.status)).toEqual(paths.map(() => 404));
+  expect((await get(served.port, `/diff/?token=${TOKEN}`)).status).toBe(404);
+});
+
+test("a diff follows a rename through the path it came from, and a map whose sides are not commits' shas, or a run that reads no repository, serves none (D134)", async () => {
+  const repo = twoCommits();
+  const before = git(repo, 'rev-parse', 'HEAD');
+  git(repo, 'mv', 'src/shapes.ts', 'src/area.ts');
+  git(repo, 'commit', '--quiet', '-m', 'refactor: name the module for what it measures');
+  const renamed = await diffing(repo, changeMap(before, git(repo, 'rev-parse', 'HEAD'), [{ path: 'src/area.ts', kind: 'renamed', from: 'src/shapes.ts' }]));
+  const diff = await diffAt(renamed, 'src/area.ts');
+  expect(diff.diff).toContain('rename from src/shapes.ts');
+  expect(diff.diff).toContain('rename to src/area.ts');
+
+  // A side that would be a flag to git, or a branch's name, is never handed to it.
+  for (const side of ['--output=/tmp/x', 'main']) {
+    const strange = await diffing(repo, changeMap(side, git(repo, 'rev-parse', 'HEAD'), [{ path: 'src/area.ts', kind: 'renamed' }]));
+    expect((await get(strange.port, `/diff/src/area.ts?token=${TOKEN}`)).status).toBe(404);
+  }
+  const stub = await diffing(repo, MAP);
+  expect((await get(stub.port, `/diff/src/area.ts?token=${TOKEN}`)).status).toBe(404);
+  const without = await start();
+  expect((await get(without.port, `/diff/src/area.ts?token=${TOKEN}`)).status).toBe(404);
+});
+
+test("a working tree's diff is the tree on disk, an untracked added file diffed against nothing (D99)", async () => {
+  const repo = twoCommits();
+  writeFileSync(join(repo, 'src', 'shapes.ts'), 'export function area(width: number, height: number): number {\n  return Math.abs(width * height);\n}\n');
+  writeFileSync(join(repo, 'src', 'circle.ts'), 'export const TAU = Math.PI * 2;\n');
+  const served = await diffing(repo, changeMap(git(repo, 'rev-parse', 'HEAD'), 'working-tree', [{ path: 'src/circle.ts', kind: 'added' }, { path: 'src/shapes.ts', kind: 'modified' }]));
+  const modified = await diffAt(served, 'src/shapes.ts');
+  expect(modified.diff).toContain('-  return width * height;');
+  expect(modified.diff).toContain('+  return Math.abs(width * height);');
+  const added = await diffAt(served, 'src/circle.ts');
+  expect(added.diff).toContain('+export const TAU = Math.PI * 2;');
+});
+
+test("a diff reads the sides of the map a base put in place, never the map it replaced", async () => {
+  const repo = twoCommits();
+  const [first, head] = [git(repo, 'rev-parse', 'v1'), git(repo, 'rev-parse', 'HEAD')];
+  const served = await diffing(repo, changeMap(first, head, [{ path: 'src/square.ts', kind: 'added' }]), () => Promise.resolve({ map: changeMap(head, head, []), slots: [] }));
+  expect((await get(served.port, `/diff/src/square.ts?token=${TOKEN}`)).status).toBe(200);
+  expect((await postBase(served, { base: 'HEAD' })).status).toBe(200);
+  expect((await get(served.port, `/diff/src/square.ts?token=${TOKEN}`)).status).toBe(404);
+});
+
+test("the editor template is the repo's atis.config.json's, and one that would run a script, or names no path, fails the run before it serves (D102, C4)", async () => {
+  const repo = twoCommits();
+  const map = changeMap(git(repo, 'rev-parse', 'v1'), git(repo, 'rev-parse', 'HEAD'), [{ path: 'src/square.ts', kind: 'added' }]);
+  writeFileSync(join(repo, 'atis.config.json'), '{ "editor": "zed://file{root}/{path}:{line}" }\n');
+  expect((await diffAt(await diffing(repo, map), 'src/square.ts')).editor).toBe('zed://file{root}/{path}:{line}');
+  const broken = [
+    ['{ "editor": "javascript:alert(1)//{path}" }', 'not run a script'],
+    ['{ "editor": " Data:text/html,{path}" }', 'not run a script'],
+    ['{ "editor": "vscode://file{root}" }', 'naming {path}'],
+    ['{ "editor": 3 }', 'naming {path}'],
+    ['{ "editor": ', 'not JSON'],
+  ] as const;
+  for (const [config, reason] of broken) {
+    writeFileSync(join(repo, 'atis.config.json'), config);
+    await expect(serve({ assets: stubApp(), map, token: TOKEN, rebase: { repo, rebuild: () => Promise.reject(new Error('no base here')) } })).rejects.toThrow(reason);
+  }
+});

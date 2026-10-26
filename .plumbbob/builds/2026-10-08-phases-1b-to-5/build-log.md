@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 63 — feat(web): open a file into its functions, hunks and coverage strip
+**Current step:** 64 — feat(web): show a changed file's diff or open it in the editor
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -113,7 +113,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 60. feat(svg): render the whole-repo overlays in the still map
 - ☑ 61. feat(web): toggle overlays and switch bases from the HUD
 - ☑ 62. feat(core): record each file's functions for the file level
-- ☐ 63. feat(web): open a file into its functions, hunks and coverage strip
+- ☑ 63. feat(web): open a file into its functions, hunks and coverage strip
 - ☐ 64. feat(web): show a changed file's diff or open it in the editor
 - ☐ 65. feat(web): open the health radar from the HUD
 - ☐ 66. perf(web): collapse cells into composites past 5,000 files
@@ -215,6 +215,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] A long range has no cap: `--range` writes a whole weather frame per commit and runs the reviewed repo's fallow on each commit's extraction once (cached after), so a hundred-commit range is a hundred frames in map.json and a slow first run; decide whether to cap or thin long ranges
 - [ ] the world's range-scrubber test (step 58) read 6 notice boxes for frame 0 once under the full suite's load and passed alone and on rerun: it counts [data-labels] marks as soon as data-scrub reads settled, so the labels may redraw a beat after the frame settles
 - [ ] on a repo map the still map's legend still keys a change's marks: its hatching row reads 'how much of it was rewritten lately' while hatching there means the drawn overlay (trouble spots or recent heat), and no row keys an overlay's ring or echo
+- [ ] the world smoke test's range scrubber case flaked once under the full suite's load (6 label marks at frame 0, expected 0) and passed alone three times
+- [ ] the served run tells the page the branch's PR, so the diff sheet's PR link shows without a ?pr= parameter (step 71's gh lookup knows it)
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -2251,3 +2253,4 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-26 — step 60 checkpointed · 1f789705e — feat(svg): render the whole-repo overlays in the still map (1 drift, 14m)
 - 2026-10-26 — step 61 checkpointed · bc8c7200a — feat(web): toggle overlays and switch bases from the HUD (1 drift, 21m)
 - 2026-10-26 — step 62 checkpointed · 3e7093def — feat(core): record each file's functions for the file level (1 drift, 10m)
+- 2026-10-26 — step 63 checkpointed · 73447abce — feat(web): open a file into its functions, hunks and coverage strip (1 drift, 9m)

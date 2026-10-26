@@ -81,7 +81,12 @@
  * body of the opened cell first, opens onto its plate: its functions as
  * granules, its hunks, the changed lines no test ran and its live mutants
  * on the strip of its lines, cross-faded in at LOD3's layer (§6, D102); the
- * canvas names the file it opens.
+ * canvas names the file it opens. Past LOD4's gate a changed file's plate
+ * cross-fades to its diff on a sheet of the chrome: the diff the serving
+ * CLI answers at `/diff/<path>` with the run's token, its hunks' heads linked
+ * to the file in the reader's editor beside the PR the page was told of, or,
+ * for a fixture with no server, the hunks' line ranges alone (D93, D102); the
+ * canvas names the file whose diff it shows.
  */
 
 import { AgXToneMapping, AmbientLight, Color, DataUtils, DirectionalLight, RenderPipeline, Scene, Vector3, WebGPUCoordinateSystem, WebGPURenderer } from 'three/webgpu';
@@ -93,6 +98,8 @@ import type { MapJson, OverlayName } from 'core';
 
 import { RAIL_WIDTH, zoomFor } from '../fit.js';
 import { askedOf, slideWords } from '../asked.js';
+import { diffLevelOf, loadDiff } from '../diff.js';
+import type { DiffAnswer, DiffLevel } from '../diff.js';
 import { hoverOf } from '../hover.js';
 import type { Hovered } from '../hover.js';
 import { marksOf } from '../marks.js';
@@ -110,6 +117,7 @@ import { FIELD, createWalk, ownsKey } from '../walk.js';
 import type { Stop } from '../walk.js';
 import { createBolts } from './bolts.js';
 import type { Bolts } from './bolts.js';
+import { DIFF_LOOK, createDiffSheet } from './diff.js';
 import { FILE_LOOK, createFilePlate } from './file.js';
 import { centreOn, clampZoom, createCamera, createControls, fitCamera, outlineOf, pixelsPerUnit, rayAt, smoothControls, standAt, standOf } from './camera.js';
 import type { Stand } from './camera.js';
@@ -155,8 +163,11 @@ type WeatherLayer = {
   readonly dispose: () => void;
 };
 
+/** What the page holds beyond the map: the run's token, which a served path asks for and a fixture has none of (D134), and the PR the page was told of. */
+export type PageLinks = { readonly token?: string | undefined; readonly pr?: string | undefined };
+
 /** Draw the world for a map into the canvas, keep it fitted to the window beside the rail, run its one loop, and keep the chrome's line to it (`nav.ts`). */
-export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: View, registry: Registry, nav: Nav): Promise<void> => {
+export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: View, registry: Registry, nav: Nav, links: PageLinks = {}): Promise<void> => {
   const lighting = registry.view(LIGHTING, 'LIGHTING');
   const skyLook = registry.view(SKY, 'SKY');
   const skinLook = registry.view(SKIN, 'SKIN');
@@ -233,9 +244,10 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   scene.add(...interior.meshes);
   // The far zoom's planet (D170): over the rules, which are the flat world's, and under everything else.
   const planet = createPlanet(map, registry.view(PLANET, 'PLANET'), () => ({ change: tokens.CHANGE_HUE, ifr: tokens.IFR_HUE, category: categoryHue(current.map.weather.checks.category, tokens), field: tokens.FIELD_FILL }));
-  // The file level's plate (§6's LOD3, D102): over the slide and its labels, under the hover's tag.
+  // The file level's plate (§6's LOD3, D102): over the slide and its labels, under the hover's tag; the diff level's sheet over the plate it cross-fades from.
   const filePlate = createFilePlate(registry.view(FILE_LOOK));
-  canvas.after(space.rules, planet.element, ...interior.elements, hover.outline, ...current.labels.elements, filePlate.element, hover.tag);
+  const diffSheet = createDiffSheet(registry.view(DIFF_LOOK));
+  canvas.after(space.rules, planet.element, ...interior.elements, hover.outline, ...current.labels.elements, filePlate.element, diffSheet.element, hover.tag);
   // Which cell is open, the slide laid for it, and the level the last frame was drawn at, which a click is read against.
   let opening: OpenState = CLOSED;
   let slide: Slide | undefined;
@@ -354,10 +366,27 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     return hovered === undefined || body === undefined ? hovered : { ...hovered, ring: body.outline.ring };
   };
   let bodies: ReturnType<typeof interiorOf> = [];
-  // The file the plate opens, the map it was read from, and the plate as the scene lays it (D102).
+  // The file the plate opens, the map it was read from, the plate as the scene lays it, and the change's entry for it, which only a changed file has (D102).
   let fileFocus: string | undefined;
   let fileMap: MapJson | undefined;
   let fileLevel: FileLevel | undefined;
+  let fileChanged: MapJson['weather']['changed'][number] | undefined;
+  // Each map's diffs as the server answered them, asked for once a file's diff level first shows, and the level as last read (D102).
+  const diffAnswers = new WeakMap<MapJson, Map<string, DiffAnswer>>();
+  let diffRead: { readonly map: MapJson; readonly path: string; readonly answer: DiffAnswer | undefined; readonly level: DiffLevel } | undefined;
+  /** A changed file's diff level in `frame`: its diff asked of the server the first time, when the page has the run's token, and read as far as the answer has come. */
+  const diffLevelFor = (frame: MapJson, file: NonNullable<typeof fileChanged>): DiffLevel => {
+    const answers = diffAnswers.get(frame) ?? new Map<string, DiffAnswer>();
+    diffAnswers.set(frame, answers);
+    const { token } = links;
+    if (token !== undefined && !answers.has(file.path)) {
+      answers.set(file.path, { status: 'loading' });
+      void loadDiff(file.path, token, (url) => fetch(url)).then((answer) => answers.set(file.path, answer));
+    }
+    const answer = answers.get(file.path);
+    if (diffRead?.map !== frame || diffRead.path !== file.path || diffRead.answer !== answer) diffRead = { map: frame, path: file.path, answer, level: diffLevelOf(file, answer, links.pr) };
+    return diffRead.level;
+  };
   /** The file nearest a layout point: among the opened cell's bodies where they float, else among the placed files where they stand. */
   const nearestFile = ([x, y]: Point): { readonly id: string; readonly x: number; readonly y: number } | undefined => {
     const positions = map.terrain.layout?.positions ?? {};
@@ -502,6 +531,9 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   const relay = (next: MapJson): void => {
     fading?.dispose();
     fading = current;
+    // The canvas says a fade is under way from the step itself, so a frame it names is never read as settled before the fade is drawn.
+    if (shownFrame !== undefined) canvas.dataset['scrub'] = 'fading';
+    if (map.overlays !== undefined) canvas.dataset['overlayFade'] = 'fading';
     current = layerOf(next, shownName);
     hover.tag.before(...current.labels.elements);
     skin.reach(next);
@@ -724,10 +756,19 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       fileFocus = focus?.id;
       fileMap = current.map;
       fileLevel = focus === undefined ? undefined : fileLevelOf(current.map, focus.id);
+      fileChanged = focus === undefined ? undefined : current.map.weather.changed.find((file) => file.path === focus.id);
       if (fileFocus === undefined) delete canvas.dataset['file'];
       else canvas.dataset['file'] = fileFocus;
     }
-    filePlate.render(camera, canvas.clientWidth, canvas.clientHeight, free, focus === undefined ? undefined : new Vector3(focus.x, heightAt(focus.x, focus.y), focus.y), fileLevel, fileShown);
+    // The diff level (D102): past LOD4's gate a changed file's plate gives way to its diff, on a sheet beneath the HUD.
+    const diffShown = fileChanged === undefined ? 0 : (frame.lod?.opacity[4] ?? 0);
+    const diffLevel = fileChanged === undefined || diffShown <= 0 ? undefined : diffLevelFor(current.map, fileChanged);
+    if (diffLevel?.path !== canvas.dataset['diff']) {
+      if (diffLevel === undefined) delete canvas.dataset['diff'];
+      else canvas.dataset['diff'] = diffLevel.path;
+    }
+    filePlate.render(camera, canvas.clientWidth, canvas.clientHeight, free, focus === undefined ? undefined : new Vector3(focus.x, heightAt(focus.x, focus.y), focus.y), fileLevel, fileShown * (1 - diffShown));
+    diffSheet.render(canvas.clientHeight, free, diffLevel, diffShown);
     const words = slideWords(open.exploded, fieldTarget, slide === undefined ? undefined : barrelOf.get(slide.cell));
     interior.render(camera, canvas.clientWidth, canvas.clientHeight, canvas.clientWidth - RAIL_WIDTH, pixelsPerUnit(camera, canvas.clientWidth), open.exploded, words);
     // A slide's files float under a still pointer, so the hover follows them each frame while one shows.

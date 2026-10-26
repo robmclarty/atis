@@ -78,14 +78,38 @@ export type Config = {
   readonly overlays: OverlayConfig;
 };
 
-/** The file D28 names at the reviewed repo's root; for now atis reads only its `trunk` (D99). */
+/** The file D28 names at the reviewed repo's root; for now atis reads only its `trunk` (D99) and its `editor` (D102). */
 export const CONFIG_FILE = 'atis.config.json';
 
 /** The branches tried for the trunk when the repo configures none, in order, each local and then on `origin/` (D99). */
 export const TRUNK_CANDIDATES: readonly string[] = ['main', 'master', 'develop', 'trunk'];
 
+/**
+ * How a changed file opens in the reader's editor at a line (D102): a URL
+ * template whose `{root}` is the repository's absolute path, `{path}` the
+ * file's path inside it and `{line}` the line, VS Code's unless an
+ * `atis.config.json` names its own `editor`, such as
+ * `zed://file{root}/{path}:{line}` or a forge's `.../blob/main/{path}#L{line}`.
+ */
+export const DEFAULT_EDITOR = 'vscode://file{root}/{path}:{line}';
+
+/** The schemes a link the page writes may never carry: each runs or embeds what it holds rather than opening it. */
+const UNSAFE_SCHEME = /^\s*(?:javascript|data|vbscript|blob):/i;
+
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** An `atis.config.json`'s text as its object; a file that will not parse, or is not an object, throws (C4). */
+function configObject(text: string): Readonly<Record<string, unknown>> {
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch (error) {
+    throw new Error(`${CONFIG_FILE} is not JSON: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
+  }
+  if (!isRecord(value)) throw new Error(`${CONFIG_FILE} is not a JSON object`);
+  return value;
 }
 
 /**
@@ -96,17 +120,43 @@ function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
  */
 export function configuredTrunk(text: string | undefined): string | undefined {
   if (text === undefined) return undefined;
-  let value: unknown;
-  try {
-    value = JSON.parse(text);
-  } catch (error) {
-    throw new Error(`${CONFIG_FILE} is not JSON: ${error instanceof Error ? error.message : String(error)}`, { cause: error });
-  }
-  if (!isRecord(value)) throw new Error(`${CONFIG_FILE} is not a JSON object`);
-  const trunk = value['trunk'];
+  const trunk = configObject(text)['trunk'];
   if (trunk === undefined) return undefined;
   if (typeof trunk !== 'string' || trunk === '' || trunk.startsWith('-')) throw new Error(`${CONFIG_FILE}'s trunk must name a branch`);
   return trunk;
+}
+
+/**
+ * The editor template an `atis.config.json` names (D102), or undefined when
+ * there is no file or it names none, so `DEFAULT_EDITOR` stands. One that
+ * names no `{path}` opens no file, and one in a scheme that runs what it
+ * holds would hand a reviewed repo's config a script in the page, so each
+ * throws as misuse, as a broken file does (C4).
+ */
+export function configuredEditor(text: string | undefined): string | undefined {
+  if (text === undefined) return undefined;
+  const editor = configObject(text)['editor'];
+  if (editor === undefined) return undefined;
+  if (typeof editor !== 'string' || !editor.includes('{path}')) throw new Error(`${CONFIG_FILE}'s editor must be a URL template naming {path}`);
+  if (UNSAFE_SCHEME.test(editor)) throw new Error(`${CONFIG_FILE}'s editor must open a file, not run a script`);
+  return editor;
+}
+
+/** A path's segments each escaped for a URL, its slashes kept. */
+const escapedPath = (path: string): string => path.split('/').map(encodeURIComponent).join('/');
+
+/**
+ * The link that opens `path` at `line` in the reader's editor: `template`
+ * with its `{root}`, `{path}` and `{line}` filled, each segment of a path
+ * escaped so a file's name cannot reshape the URL; none when the filled link
+ * would run a script rather than open a file (D102).
+ */
+export function editorLink(template: string, at: { readonly root: string; readonly path: string; readonly line: number }): string | undefined {
+  const link = template
+    .replaceAll('{root}', escapedPath(at.root.replace(/\/+$/, '')))
+    .replaceAll('{path}', escapedPath(at.path))
+    .replaceAll('{line}', String(Math.max(1, Math.trunc(at.line))));
+  return UNSAFE_SCHEME.test(link) ? undefined : link;
 }
 
 const IMAGES = ['*.png', '*.jpg', '*.jpeg', '*.gif', '*.webp', '*.avif', '*.ico'];
