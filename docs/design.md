@@ -212,6 +212,25 @@ state's graphite, muted (D49). The HUD names the overlay drawn and counts it.
 | `OVERLAY_ECHO_WIDTH` | `1` | each echo ring's stroke, in `GLYPH_STROKE` |
 | `OVERLAY_MUTED_STROKE` | `#58616b` | the graphite ring of a baselined finding, `STANDING_STORM_FILL`'s |
 
+## The file level
+
+Past LOD3's gate (§6, D102) the file nearest the view's centre opens onto a
+plate of its own over the world, centred where the file lies. Its functions
+are granules down the plate in the order of their lines, each sized by the
+lines it spans and dented once per threshold it breaks, as a file is by its
+rules (D146), in the organelles' `ORGANELLE_FILL` and `ORGANELLE_STROKE`; a
+function nested in another stands in a column to its right. Beside them runs
+the strip of the file's lines on the same scale, in `TERRACE_LINE` on a
+`TERRACE_FILL` ground: the change's hunks in `CHANGE_HUE`, the changed lines
+no test ran in `EVIDENCE_LIGHT` (D71, D80), and each live mutant a notch of
+that light, `MUTANT_NOTCH_WIDTH` deep, pinned to its line.
+
+| Token | Value | Where it appears |
+| --- | --- | --- |
+| `FILE_PLATE_SCREEN` | `0.72` | the share of the free screen's shorter side the plate fills |
+| `FILE_STRIP_SHARE` | `0.14` | the share of the plate's width the strip of lines takes, at its right |
+| `FILE_GRANULE_PAD` | `0.12` | the share of its slot each granule keeps clear round it |
+
 ## Chrome (the brutalist frame)
 
 The chrome frames the world rather than covering it (§7, §5.4, D12): a strip of

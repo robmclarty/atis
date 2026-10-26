@@ -195,6 +195,17 @@ export const OVERLAY_ECHO_WIDTH = 1;
 export const OVERLAY_MUTED_STROKE = STANDING_STORM_FILL;
 
 /**
+ * The file level (§6's LOD3, D102): one file opened onto a plate of its own,
+ * its functions as granules down its lines and a strip of its lines beside
+ * them. The plate fills this share of the free screen's shorter side, the
+ * strip takes this share of the plate's width, and each granule keeps this
+ * share of its slot clear round it, so two functions never touch.
+ */
+export const FILE_PLATE_SCREEN = 0.72;
+export const FILE_STRIP_SHARE = 0.14;
+export const FILE_GRANULE_PAD = 0.12;
+
+/**
  * The chrome (§7, D12) is the other material: flat blocks, hard edges, high
  * contrast, one monospace face, and technical-drawing annotations. Nothing
  * here glows, blurs or grades. It frames the world on its own flat ground,

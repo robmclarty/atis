@@ -28,7 +28,10 @@
  * weather cross-fades and settles, the notices' boxes follow the frame, and
  * the terrain beneath never settles again (D100). Served as a whole repo,
  * the demo opens on its trouble spots, and a toggle in the HUD cross-fades
- * the world to another overlay and then to none (D101).
+ * the world to another overlay and then to none (D101). Framed on one file
+ * past LOD3's gate, the file opens onto its plate: its functions as
+ * granules, the strip of its lines with its hunk, its uncovered lines and its
+ * mutants (§6, D102).
  */
 
 import { accessSync, constants, readFileSync } from 'node:fs';
@@ -521,6 +524,38 @@ test("served as a whole repo, the world opens on its trouble spots and the HUD's
 
     // The terrain never moved beneath the overlays: the skin is still settled (P2).
     expect(await page.getAttribute('#world', 'data-world')).toBe('settled');
+    expect(complaints).toEqual([]);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+test('framed on one file past LOD3, it opens onto its plate: its functions, its hunk, its uncovered lines and its mutants, with a clean console (D102)', { timeout: 120_000 }, async () => {
+  const { server, url } = await serve();
+  const browser = await launch();
+  try {
+    const page = await browser.newPage({ viewport: { width: 960, height: 720 } });
+    const complaints: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error' || message.type() === 'warning') complaints.push(`${message.type()}: ${message.text()}`);
+    });
+    page.on('pageerror', (error) => complaints.push(`pageerror: ${error.message}`));
+
+    const tools = (JSON.parse(readFileSync(DEMO, 'utf8')) as { terrain: { layout: { positions: Record<string, { x: number; y: number }> } } }).terrain.layout.positions['libs/core/src/pm/tools.ts'];
+    await page.goto(`${url}/?backend=webgl&zoom=30&centre=${String(tools?.x)},${String(tools?.y)}`);
+    await page.waitForSelector('#world[data-world="settled"][data-file="libs/core/src/pm/tools.ts"]', { timeout: 90_000 });
+    expect(await page.getAttribute('#world', 'data-lod')).toBe('3');
+    // The plate holds the file's three functions, the one that breaks two rules dented, and its strip's marks.
+    expect(await page.$$eval('[data-file-plate] [data-function]', (granules) => granules.map((granule) => [granule.getAttribute('data-function'), granule.getAttribute('data-rules')]))).toEqual([
+      ['localBin', '0'],
+      ['resolveTool', '2'],
+      ['toolName', '0'],
+    ]);
+    expect(await page.$$eval('[data-file-plate] [data-hunk]', (hunks) => hunks.length)).toBe(1);
+    expect(await page.$$eval('[data-file-plate] [data-uncovered]', (lines) => lines.map((line) => line.getAttribute('data-uncovered')))).toEqual(['27', '64']);
+    expect(await page.$$eval('[data-file-plate] [data-mutant]', (mutants) => mutants.length)).toBe(2);
+    expect(await page.$eval('[data-file-plate]', (plate) => plate instanceof SVGElement && plate.style.display !== 'none')).toBe(true);
     expect(complaints).toEqual([]);
   } finally {
     await browser.close();

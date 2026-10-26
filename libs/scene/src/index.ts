@@ -7,6 +7,7 @@
  */
 
 export * from './drift.js';
+export * from './file.js';
 export * from './heightfield.js';
 export * from './instances.js';
 export * from './interior.js';

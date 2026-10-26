@@ -77,14 +77,18 @@
  * settled. On a whole repo's map the overlay the HUD's toggles show is laid
  * with the weather's marks, and a toggle cross-fades to the next the same way
  * (D101); the canvas says which overlay it shows and when that fade has
- * settled.
+ * settled. Past LOD3's gate the file nearest the view's centre, a floating
+ * body of the opened cell first, opens onto its plate: its functions as
+ * granules, its hunks, the changed lines no test ran and its live mutants
+ * on the strip of its lines, cross-faded in at LOD3's layer (§6, D102); the
+ * canvas names the file it opens.
  */
 
 import { AgXToneMapping, AmbientLight, Color, DataUtils, DirectionalLight, RenderPipeline, Scene, Vector3, WebGPUCoordinateSystem, WebGPURenderer } from 'three/webgpu';
 import { emissive, mrt, output, pass } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
-import { FIELD_FILL, LOD_GATES, MOTION_TOKENS, REACH_ORIGIN_OPACITY, RELIEF, cellSlide, cellWiring, createPicker, createScheduler, fillOf, gridFor, instances, interiorOf, planetShown, slideCellOf, surfacePoint } from 'scene';
-import type { Lod, Pick, Point, Slide } from 'scene';
+import { FIELD_FILL, LOD_GATES, MOTION_TOKENS, REACH_ORIGIN_OPACITY, RELIEF, cellSlide, cellWiring, createPicker, createScheduler, fileLevelOf, fillOf, gridFor, instances, interiorOf, planetShown, slideCellOf, surfacePoint } from 'scene';
+import type { FileLevel, Lod, Pick, Point, Slide } from 'scene';
 import type { MapJson, OverlayName } from 'core';
 
 import { RAIL_WIDTH, zoomFor } from '../fit.js';
@@ -106,6 +110,7 @@ import { FIELD, createWalk, ownsKey } from '../walk.js';
 import type { Stop } from '../walk.js';
 import { createBolts } from './bolts.js';
 import type { Bolts } from './bolts.js';
+import { FILE_LOOK, createFilePlate } from './file.js';
 import { centreOn, clampZoom, createCamera, createControls, fitCamera, outlineOf, pixelsPerUnit, rayAt, smoothControls, standAt, standOf } from './camera.js';
 import type { Stand } from './camera.js';
 import { TAG_LOOK, createHover } from './hover.js';
@@ -228,7 +233,9 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   scene.add(...interior.meshes);
   // The far zoom's planet (D170): over the rules, which are the flat world's, and under everything else.
   const planet = createPlanet(map, registry.view(PLANET, 'PLANET'), () => ({ change: tokens.CHANGE_HUE, ifr: tokens.IFR_HUE, category: categoryHue(current.map.weather.checks.category, tokens), field: tokens.FIELD_FILL }));
-  canvas.after(space.rules, planet.element, ...interior.elements, hover.outline, ...current.labels.elements, hover.tag);
+  // The file level's plate (§6's LOD3, D102): over the slide and its labels, under the hover's tag.
+  const filePlate = createFilePlate(registry.view(FILE_LOOK));
+  canvas.after(space.rules, planet.element, ...interior.elements, hover.outline, ...current.labels.elements, filePlate.element, hover.tag);
   // Which cell is open, the slide laid for it, and the level the last frame was drawn at, which a click is read against.
   let opening: OpenState = CLOSED;
   let slide: Slide | undefined;
@@ -347,6 +354,29 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     return hovered === undefined || body === undefined ? hovered : { ...hovered, ring: body.outline.ring };
   };
   let bodies: ReturnType<typeof interiorOf> = [];
+  // The file the plate opens, the map it was read from, and the plate as the scene lays it (D102).
+  let fileFocus: string | undefined;
+  let fileMap: MapJson | undefined;
+  let fileLevel: FileLevel | undefined;
+  /** The file nearest a layout point: among the opened cell's bodies where they float, else among the placed files where they stand. */
+  const nearestFile = ([x, y]: Point): { readonly id: string; readonly x: number; readonly y: number } | undefined => {
+    const positions = map.terrain.layout?.positions ?? {};
+    const candidates = bodies.length > 0 ? bodies.map((body) => ({ id: body.id, x: body.x, y: body.y })) : map.terrain.organelles.flatMap((organelle) => {
+      const floated = floatedOnSurface.get(organelle.id);
+      const at = floated === undefined ? positions[organelle.id] : { x: floated[0], y: floated[1] };
+      return at === undefined ? [] : [{ id: organelle.id, x: at.x, y: at.y }];
+    });
+    let nearest: { readonly id: string; readonly x: number; readonly y: number } | undefined;
+    let gap = Number.POSITIVE_INFINITY;
+    for (const candidate of candidates) {
+      const away = Math.hypot(candidate.x - x, candidate.y - y);
+      if (away < gap) {
+        gap = away;
+        nearest = candidate;
+      }
+    }
+    return nearest;
+  };
   let lastFrame = performance.now();
 
   // The two layers laid on the CPU are laid again on the next frame after one of their tokens moves, once however many moved.
@@ -687,6 +717,17 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       placedLod = lod;
     }
     for (const layer of layers()) layer.labels.render(camera, canvas.clientWidth, canvas.clientHeight, surface * (layer === current ? mixed : 1 - mixed));
+    // The file level (D102): past LOD3's gate the file nearest the view's centre, a floating body of the opened cell first, opens onto its plate.
+    const fileShown = frame.lod?.opacity[3] ?? 0;
+    const focus = fileShown <= 0 || middle === undefined ? undefined : nearestFile(middle);
+    if (focus?.id !== fileFocus || current.map !== fileMap) {
+      fileFocus = focus?.id;
+      fileMap = current.map;
+      fileLevel = focus === undefined ? undefined : fileLevelOf(current.map, focus.id);
+      if (fileFocus === undefined) delete canvas.dataset['file'];
+      else canvas.dataset['file'] = fileFocus;
+    }
+    filePlate.render(camera, canvas.clientWidth, canvas.clientHeight, free, focus === undefined ? undefined : new Vector3(focus.x, heightAt(focus.x, focus.y), focus.y), fileLevel, fileShown);
     const words = slideWords(open.exploded, fieldTarget, slide === undefined ? undefined : barrelOf.get(slide.cell));
     interior.render(camera, canvas.clientWidth, canvas.clientHeight, canvas.clientWidth - RAIL_WIDTH, pixelsPerUnit(camera, canvas.clientWidth), open.exploded, words);
     // A slide's files float under a still pointer, so the hover follows them each frame while one shows.
