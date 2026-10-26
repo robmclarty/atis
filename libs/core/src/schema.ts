@@ -335,6 +335,7 @@ export type Meta = {
   readonly base: string;
   /** The base as typed: `--base <ref>`, `--last-commit` or `--last-tag`; absent when none was, and the run took the trunk (D99). */
   readonly base_typed?: string;
+  /** The head commit's sha, or `working-tree` when the head side was read from the working tree (D99). */
   readonly head: string;
   readonly merge_base: string;
   readonly mode: 'change';

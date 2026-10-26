@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import { afterAll, expect, test } from 'vitest';
 
-import { commitOf, diffManifests, parseDiff, parseLog, readDiff, readLog, readManifests, resolveBase, resolveTrunk } from '../sources/index.js';
+import { commitOf, diffManifests, parseDiff, parseLog, readDiff, readLog, readManifests, resolveBase, resolveTrunk, workingTree } from '../sources/index.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FIXTURES = join(HERE, '..', '..', 'fixtures', 'diff');
@@ -299,4 +299,41 @@ test('readDiff and readManifests read the change at a head other than HEAD (D99)
   expect(readDiff(dir, base).changed).toEqual([]);
   expect(readDiff(dir, base, head).changed.map((change) => change.path)).toEqual(['package.json']);
   expect(readManifests(dir, base, ['package.json'], head).deps_added).toEqual([{ manifest: 'package.json', name: 'zod', range: '^3.0.0', dev: false }]);
+});
+
+test('workingTree writes the tree as it stands, staged, unstaged and untracked, the ignored left out and the index untouched (D99)', () => {
+  const { dir, git } = tempRepo('working');
+  writeFileSync(join(dir, '.gitignore'), 'ignored.txt\n');
+  writeJson(dir, 'package.json', { name: 'demo' });
+  writeFileSync(join(dir, 'staged.txt'), 'before\n');
+  writeFileSync(join(dir, 'unstaged.txt'), 'before\n');
+  git(['add', '--all']);
+  git(['commit', '--quiet', '--no-verify', '-m', 'base']);
+  const base = git(['rev-parse', 'HEAD']).trim();
+
+  writeFileSync(join(dir, 'staged.txt'), 'staged\n');
+  git(['add', 'staged.txt']);
+  writeFileSync(join(dir, 'unstaged.txt'), 'unstaged\n');
+  writeFileSync(join(dir, 'untracked.txt'), 'untracked\n');
+  writeFileSync(join(dir, 'ignored.txt'), 'ignored\n');
+  const status = git(['status', '--porcelain']);
+
+  const tree = workingTree(dir);
+  expect(git(['ls-tree', '-r', '--name-only', tree]).trim().split('\n')).toEqual(['.gitignore', 'package.json', 'staged.txt', 'unstaged.txt', 'untracked.txt']);
+  expect(git(['show', `${tree}:unstaged.txt`])).toBe('unstaged\n');
+  // The reviewer's own index still stages what it staged, and nothing more.
+  expect(git(['status', '--porcelain'])).toBe(status);
+  expect(git(['diff', '--cached', '--name-only']).trim()).toBe('staged.txt');
+
+  const diff = readDiff(dir, base, 'HEAD', tree);
+  expect(diff.merge_base).toBe(base);
+  expect(diff.changed.map((change) => [change.path, change.kind])).toEqual([
+    ['staged.txt', 'modified'],
+    ['unstaged.txt', 'modified'],
+    ['untracked.txt', 'added'],
+  ]);
+  // A clean tree is the head commit's own tree.
+  git(['add', '--all']);
+  git(['commit', '--quiet', '--no-verify', '-m', 'head']);
+  expect(workingTree(dir)).toBe(git(['rev-parse', 'HEAD^{tree}']).trim());
 });

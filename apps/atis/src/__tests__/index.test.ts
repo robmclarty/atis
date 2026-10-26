@@ -20,6 +20,7 @@ test('the usage text names every flag the bin parses', () => {
     '--last-commit',
     '--last-tag',
     '--head <ref>',
+    '--working-tree',
     '--out <file>',
     '--svg <file>',
     '--open',

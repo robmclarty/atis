@@ -3,7 +3,9 @@
  *
  * `measure` first resolves what the change is against: the base the
  * reviewer named, a shortcut counted back from the head, or the trunk when
- * they named none, and the head, `HEAD` unless `--head` named another (D99).
+ * they named none, and the head, `HEAD` unless `--head` named another, or
+ * the working tree under `--working-tree`, written as a tree object whose
+ * sha stands for the head commit's everywhere below (D99).
  * It scans the merge-base tree and the head's tree, so the terrain
  * comes from the base and the weather from the head (D32) and both sides
  * describe commits rather than a working tree (D46). The base is extracted
@@ -13,7 +15,8 @@
  * reviewed repo's fallow has to read it from disk (D136, D172). The diff, the manifest delta and the log window
  * come from the repository itself; only `.check/` is read from the working
  * tree, since artifacts are not committed, and only when the head is the
- * checked-out `HEAD`, the one commit it can describe (D135). The base side (its scan, the
+ * checked-out `HEAD` or the working tree itself, the one tree it can
+ * describe (D135). The base side (its scan, the
  * history window at it and its terrain's layout) is kept per base commit in
  * the terrain cache, so a run on a base it has seen reads it rather than
  * extracting and scanning it again, and reads only its change's own commits on
@@ -77,8 +80,15 @@ import {
   readTree,
   resolveBase,
   shapePaths,
+  workingTree,
 } from './sources/index.js';
 import type { BaseAsked, CheckInputs, EntryPoints, LocalFallow, ParsedFiles, Scan, ScanOptions, ScannedTree } from './sources/index.js';
+
+/** How the reviewer asked for the head (D99): a ref `--head` named, or the working tree, `--working-tree`. */
+export type HeadAsked = string | { readonly workingTree: true };
+
+/** What `meta.head` reads for a map whose head side is the working tree (D99). */
+export const WORKING_TREE = 'working-tree';
 
 /** The flags for a run that writes files, already parsed: `cli.ts` owns the parsing, `run` owns the work. */
 export type Options = {
@@ -86,8 +96,8 @@ export type Options = {
   readonly repo: string;
   /** The base the reviewer asked for, a ref or a shortcut; absent, the trunk (D99). The diff is `merge-base(base, head)..head` (D25). */
   readonly base?: BaseAsked | undefined;
-  /** The ref the weather is of; `HEAD` when absent (D99). */
-  readonly head?: string | undefined;
+  /** The ref the weather is of, or the working tree; `HEAD` when absent (D99). */
+  readonly head?: HeadAsked | undefined;
   /** Where to write the map, resolved against the working directory. */
   readonly out: string;
   /** Where to write the still SVG (D33); when absent, only `map.json` is written. */
@@ -106,7 +116,7 @@ export type Options = {
 export type ServeRunOptions = {
   readonly repo: string;
   readonly base?: BaseAsked | undefined;
-  readonly head?: string | undefined;
+  readonly head?: HeadAsked | undefined;
   /** The built web app's directory, `index.html` and its assets; `pnpm build` fills it. */
   readonly assets: string;
   /** Open the tab once serving; a no-op under a test run. */
@@ -165,11 +175,11 @@ function commitAt(repo: string, ref: string): Head {
 
 /**
  * `.check/` when the head is the checked-out `HEAD`, the one commit whose
- * working tree checkride can have run on; any other head reads git-only and
- * says why (D135, C2).
+ * working tree checkride can have run on, or that working tree itself; any
+ * other head reads git-only and says why (D135, C2).
  */
-function checkFor(repo: string, ref: string, head: Head, checkedOut: Head): CheckInputs {
-  if (head.sha === checkedOut.sha) return readCheck(repo);
+function checkFor(repo: string, ref: string, head: Head, checkedOut: Head, working: boolean): CheckInputs {
+  if (working || head.sha === checkedOut.sha) return readCheck(repo);
   return { mode: 'git-only', reason: `the head ${ref} is not the checked-out HEAD, so .check/ does not describe it` };
 }
 
@@ -372,7 +382,7 @@ function headAt(repo: string, sha: string, prior: NonNullable<ScanOptions['prior
 }
 
 /** What a run reads the repository for: the base and the head the reviewer asked for (D99), the cache switch and the history window. */
-type Asked = { readonly base?: BaseAsked | undefined; readonly head?: string | undefined; readonly cache: boolean; readonly history?: number | undefined };
+type Asked = { readonly base?: BaseAsked | undefined; readonly head?: HeadAsked | undefined; readonly cache: boolean; readonly history?: number | undefined };
 
 /** Read the repository and build the map; throws on a repository it cannot read, with the extractions removed either way. */
 function measure(repoPath: string, asked: Asked): Measured {
@@ -394,20 +404,23 @@ function measure(repoPath: string, asked: Asked): Measured {
 
   try {
     const checkedOut = commitAt(repo, HEAD);
-    const headRef = asked.head ?? HEAD;
+    const working = typeof asked.head === 'object';
+    const headRef = typeof asked.head === 'string' ? asked.head : HEAD;
     const head = headRef === HEAD ? checkedOut : commitAt(repo, headRef);
     const base = timed(timings, 'base', () => resolveBase(repo, asked.base, headRef));
-    const diff = timed(timings, 'diff', () => readDiff(repo, base.ref, head.sha));
+    // The head side's tree: the head commit's, or the working tree's, staged, unstaged and untracked (D99).
+    const tree = working ? timed(timings, 'working tree', () => workingTree(repo)) : head.sha;
+    const diff = timed(timings, 'diff', () => readDiff(repo, base.ref, head.sha, tree));
     const ground = groundAt({ repo, timings, scanAt, history }, diff.merge_base, cache);
     // Neither side is extracted unless something reads it from disk: the checker, or the reviewed repo's fallow.
     let baseTree = ground.tree;
     const baseTreeOf = (): string => (baseTree ??= treeAt(diff.merge_base));
     let headTree: string | undefined;
-    const headTreeOf = (): string => (headTree ??= treeAt(head.sha));
+    const headTreeOf = (): string => (headTree ??= treeAt(tree));
     const fallow = localFallow(repo);
     // The head reads only what the diff touched; every other file holds the base's bytes (D136).
     const touched = new Set(diff.changed.map((file) => file.path));
-    const headRead = timed(timings, 'scan head', () => headAt(repo, head.sha, { parsed: ground.parsed, touched }, headTreeOf, fallow, cache));
+    const headRead = timed(timings, 'scan head', () => headAt(repo, tree, { parsed: ground.parsed, touched }, headTreeOf, fallow, cache));
     const headSide = headRead.side;
     // The names only the checker can print, in the changed interface files alone, each side timed (D118).
     const paths = shapePaths(diff.changed, ground.scan, headSide.scan);
@@ -420,14 +433,14 @@ function measure(repoPath: string, asked: Asked): Measured {
     );
     // Both sides by the same fallow, the base's beside its terrain and the head's per head commit (D98, D136).
     const baseStructure = timed(timings, 'structure base', () => structureAt(repo, diff.merge_base, baseTreeOf, fallow, cache));
-    const headStructure = timed(timings, 'structure head', () => structureAt(repo, head.sha, headTreeOf, fallow, cache));
+    const headStructure = timed(timings, 'structure head', () => structureAt(repo, tree, headTreeOf, fallow, cache));
     const manifests = diff.changed.flatMap((file) => (file.from === undefined ? [file.path] : [file.path, file.from]));
-    const { deps_added, deps_moved } = timed(timings, 'manifests', () => readManifests(repo, diff.merge_base, manifests, head.sha));
-    // The window at the base, with the change's own commits on top, newest first (D8).
+    const { deps_added, deps_moved } = timed(timings, 'manifests', () => readManifests(repo, diff.merge_base, manifests, tree));
+    // The window at the base, with the change's own commits on top, newest first (D8); a working tree adds none.
     const commits = timed(timings, 'log', () =>
       [...readLog(repo, `${diff.merge_base}..${head.sha}`, history), ...ground.commits].slice(0, history),
     );
-    const check = timed(timings, 'check', () => checkFor(repo, headRef, head, checkedOut));
+    const check = timed(timings, 'check', () => checkFor(repo, headRef, head, checkedOut, working));
 
     const map = timed(timings, 'build', () =>
       buildMap({
@@ -435,7 +448,7 @@ function measure(repoPath: string, asked: Asked): Measured {
           repo: basename(repo),
           base: base.ref,
           base_typed: base.typed,
-          head: head.sha,
+          head: working ? WORKING_TREE : head.sha,
           merge_base: diff.merge_base,
           generated_at: new Date().toISOString(),
         },

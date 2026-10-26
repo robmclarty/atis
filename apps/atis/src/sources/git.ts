@@ -1,7 +1,8 @@
 /**
  * git: the change itself. `resolveBase` turns the base the reviewer asked
  * for, or the trunk when they asked for none, into a ref (D99);
- * `readDiff` computes the merge-base (D25) and turns
+ * `workingTree` writes the working tree as a tree object, so the head side
+ * can be read from it the way it is read from a commit (D99); `readDiff` computes the merge-base (D25) and turns
  * `git diff --name-status`, `--numstat` and `-U0` between it and the head
  * (D46) into `changed[]`; `readManifests` reads every workspace `package.json`
  * at both ends of the diff and `diffManifests` turns two manifests into the
@@ -12,6 +13,9 @@
  */
 
 import { execFileSync } from 'node:child_process';
+import { copyFileSync, existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 
 import { CONFIG_FILE, TRUNK_CANDIDATES, configuredTrunk } from 'core';
 import type { ChangeKind, Commit, DepAdded, DepMoved, Hunk } from 'core';
@@ -203,15 +207,42 @@ export function readLog(repo: string, head: string, window: number = HISTORY_WIN
   return parseLog(git(repo, ['log', '--numstat', '--no-merges', `--format=${LOG_FORMAT}`, '-n', String(window), head]));
 }
 
-/** `merge_base(base, head)..head`, the way GitHub shows a PR (D25); the two sides scan from commits only (D46). */
-export function readDiff(repo: string, base: string, head: string = HEAD): Diff {
+/**
+ * `merge_base(base, head)..head`, the way GitHub shows a PR (D25); the two
+ * sides scan from commits only (D46), or, under `--working-tree`, the head
+ * side from `tree`, the working tree written as a tree object (D99).
+ */
+export function readDiff(repo: string, base: string, head: string = HEAD, tree: string = head): Diff {
   const mergeBase = git(repo, ['merge-base', base, head]).trim();
   const changed = parseDiff(
-    git(repo, ['diff', '--name-status', '-M', mergeBase, head]),
-    git(repo, ['diff', '--numstat', '-M', mergeBase, head]),
-    git(repo, ['diff', '-U0', '-M', mergeBase, head]),
+    git(repo, ['diff', '--name-status', '-M', mergeBase, tree]),
+    git(repo, ['diff', '--numstat', '-M', mergeBase, tree]),
+    git(repo, ['diff', '-U0', '-M', mergeBase, tree]),
   );
   return { merge_base: mergeBase, changed };
+}
+
+/**
+ * The working tree as a tree object (D99): every tracked file as it is on
+ * disk, staged or not, and every untracked one `git add` would take, the
+ * ignored left out. It is written through a copy of the repo's index, so the
+ * index the reviewer stages into is never touched; its blobs join the
+ * object store unreferenced, as `git stash create`'s do. The tree's sha
+ * stands for the head's everywhere a commit's would.
+ */
+export function workingTree(repo: string): string {
+  const dir = mkdtempSync(join(tmpdir(), 'atis-index-'));
+  const index = join(dir, 'index');
+  try {
+    // The repo's own index carries each file's stat data, so `git add` rehashes only what changed.
+    const own = resolve(repo, git(repo, ['rev-parse', '--git-path', 'index']).trim());
+    if (existsSync(own)) copyFileSync(own, index);
+    const env = { ...process.env, GIT_INDEX_FILE: index };
+    execFileSync('git', ['add', '--all'], { cwd: repo, env, stdio: 'ignore' });
+    return execFileSync('git', ['write-tree'], { cwd: repo, env, encoding: 'utf8' }).trim();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 }
 
 /**

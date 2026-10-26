@@ -29,6 +29,11 @@ opens it in a tab, and runs until interrupted.
   --last-tag      measure from the newest tag the head reaches
   --head <ref>    map the change at <ref> rather than at HEAD; .check/ is read
                   only for the checked-out HEAD, so another head is git-only
+  --working-tree  map the change in the working tree, staged, unstaged and
+                  untracked, rather than at HEAD, with .check/ as its evidence;
+                  with --base HEAD it is the uncommitted change alone. The
+                  same inputs write the same map only on a clean tree: a dirty
+                  one maps what it holds at the moment it is read
   --out <file>    write the map to <file> and exit (default with --svg: map.json)
   --svg <file>    render the map as a static SVG at <file> and exit
   --open          open the rendered SVG in the platform viewer (needs --svg)

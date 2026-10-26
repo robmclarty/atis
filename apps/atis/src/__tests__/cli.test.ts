@@ -386,3 +386,30 @@ test('two flags that name the base are misuse, and a ref that names no commit ex
   }
   expect(existsSync(out)).toBe(false);
 }, MINUTE);
+
+test('--working-tree maps the staged, the unstaged and the untracked change, with .check/ read as the tree\'s own (D99, D135)', () => {
+  const { repo, sha } = featureClone('working');
+  write(repo, 'src/shapes.ts', 'export function area(width: number, height: number): number {\n  return Math.abs(width * height);\n}\n');
+  git(repo, 'add', 'src/shapes.ts');
+  write(repo, 'src/cube.ts', "import { square } from './square.js';\n\nexport function cube(side: number): number {\n  return Math.abs(square(side) * side);\n}\n");
+  write(repo, 'src/line.ts', 'export function line(length: number): number {\n  return length;\n}\n');
+  mkdirSync(join(repo, '.check'));
+  const out = join(temp('working-map'), 'map.json');
+
+  const result = atis(['--repo', repo, '--base', 'HEAD', '--working-tree', '--out', out]);
+  expect(result.status, result.stderr).toBe(0);
+  const map = mapAt(out);
+  expect(map.meta.head).toBe('working-tree');
+  expect(map.meta.merge_base).toBe(sha('HEAD'));
+  expect(map.weather.changed.map((file) => [file.path, file.kind])).toEqual([
+    ['src/cube.ts', 'modified'],
+    ['src/line.ts', 'added'],
+    ['src/shapes.ts', 'modified'],
+  ]);
+  // The tree's own .check/ is read, here an empty one, rather than muted for the head.
+  expect(map.meta.instruments.reason).toBe('.check/ is empty');
+
+  const both = atis(['--repo', repo, '--working-tree', '--head', 'HEAD', '--out', out]);
+  expect(both.status).toBe(2);
+  expect(both.stderr).toContain('--head and --working-tree each name the head');
+}, MINUTE);

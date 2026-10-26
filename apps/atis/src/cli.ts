@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 
 import { USAGE, VERSION } from './index.js';
 import { run, serveRun } from './run.js';
-import type { Outcome } from './run.js';
+import type { HeadAsked, Outcome } from './run.js';
 import type { BaseAsked } from './sources/index.js';
 
 const FLAGS = {
@@ -20,6 +20,7 @@ const FLAGS = {
   'last-commit': { type: 'boolean' },
   'last-tag': { type: 'boolean' },
   head: { type: 'string' },
+  'working-tree': { type: 'boolean' },
   out: { type: 'string' },
   svg: { type: 'string' },
   open: { type: 'boolean' },
@@ -36,6 +37,7 @@ type Flags = {
   readonly 'last-commit'?: boolean | undefined;
   readonly 'last-tag'?: boolean | undefined;
   readonly head?: string | undefined;
+  readonly 'working-tree'?: boolean | undefined;
   readonly out?: string | undefined;
   readonly svg?: string | undefined;
   /** `--open` is true, `--no-open` false, and neither leaves it undefined. */
@@ -89,6 +91,13 @@ function baseOf(flags: Flags): { readonly base: BaseAsked | undefined } | { read
   return { base: asked[0] };
 }
 
+/** The head the flags ask for (D99): `--head <ref>`, `--working-tree`, or neither, which is `HEAD`. Both name the head, so the two together are misuse (C4). */
+function headOf(flags: Flags): { readonly head: HeadAsked | undefined } | { readonly reason: string } {
+  const working = flags['working-tree'] === true;
+  if (working && flags.head !== undefined) return { reason: '--head and --working-tree each name the head; give one of them' };
+  return { head: working ? { workingTree: true } : flags.head };
+}
+
 async function main(argv: readonly string[]): Promise<Outcome> {
   const parsed = parseFlags(argv);
   if ('reason' in parsed) return misuse(parsed.reason);
@@ -99,7 +108,9 @@ async function main(argv: readonly string[]): Promise<Outcome> {
   const asked = baseOf(flags);
   if ('reason' in asked) return misuse(asked.reason);
   const { base } = asked;
-  const { head } = flags;
+  const headAsked = headOf(flags);
+  if ('reason' in headAsked) return misuse(headAsked.reason);
+  const { head } = headAsked;
 
   const repo = flags.repo ?? process.cwd();
   const verbose = flags.verbose === true;

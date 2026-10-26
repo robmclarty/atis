@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 55 — feat(cli): resolve the trunk and the named bases
+**Current step:** 56 — feat(cli): map the working tree's uncommitted weather
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -105,7 +105,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 53. feat(svg): draw improvements, the live Health Δ and the rename leader
 - ☑ 54. feat(web): draw improvements, Health Δ and the rename leader
 - ☑ 115. perf(core): reuse a cached base's layout for the ground the change did not touch
-- ☐ 55. feat(cli): resolve the trunk and the named bases
+- ☑ 55. feat(cli): resolve the trunk and the named bases
 - ☐ 56. feat(cli): map the working tree's uncommitted weather
 - ☐ 57. feat(core): build one weather frame per commit of a range
 - ☐ 58. feat(web): scrub a range's weather over one terrain
@@ -2180,3 +2180,5 @@ folder, so it rides the branch into the PR.)*
   `actual`'s `package:packages/desktop-client` has no skin: Bubble Sets finds no ring around its 877 files. The kept-skin check first treated "no ring" as "not kept", so it recut that skin on every run, for 554 ms, and got nothing again. Same members with nothing nearby now keeps "no ring" too.
 
   The missing skin itself is a rendering gap that predates this step. It's parked.
+
+- 2026-10-26 — step 55 checkpointed · a517784b2 — feat(cli): resolve the trunk and the named bases (1 drift, 8m)
