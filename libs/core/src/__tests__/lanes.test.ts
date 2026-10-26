@@ -21,6 +21,15 @@ import type { Band, Layout, Organelle } from '../schema.js';
  * on a few terraces that overlap its neighbours', one has a file stranded on
  * a terrace far from the rest of it, imports cross between packages, and the
  * change adds files to some.
+ *
+ * And inside a package, its cells keep apart the same way (D171): a folder's
+ * skin reaches round all of its files, so a single-file cell the forces
+ * settled among them drew two skins crossing, as `folder:apps/web/src/world`
+ * crossed `single:apps/web/src/nav.ts`. The second fixtures are seeded
+ * packages of folder and single-file cells shaped the way `apps/web` was:
+ * folders stretched over several terraces, a crowd of single-file cells on
+ * the same terraces, imports tying the singles into the folders, and a
+ * change that adds files to folders and brings a new cell whole.
  */
 const PACKAGES = 4;
 const BANDS = 6;
@@ -102,27 +111,26 @@ function skinsCross(one: Contour, other: Contour): boolean {
 }
 
 /**
- * Everything wrong with how one field keeps its packages apart: a file whose
- * centre lies under the skin of a cell in another package, and a skin that
- * crosses, or lies wholly inside, the skin of a cell in another package.
+ * Everything wrong with how one field keeps two cells apart, for every pair
+ * `apart` names: a file whose centre lies under the skin of a cell it should
+ * keep out of, and a skin that crosses, or lies wholly inside, the other's.
  */
-function trouble(layout: Layout, cells: readonly Pick<MembraneCell, 'id'>[], packageOf: ReadonlyMap<string, string>, organelles: readonly Organelle[]): readonly string[] {
+function trouble(layout: Layout, cells: readonly Pick<MembraneCell, 'id'>[], organelles: readonly Organelle[], apart: (one: string, other: string) => boolean): readonly string[] {
   const found: string[] = [];
   const skins = cells.flatMap((cell) => {
     const contour = layout.contours?.[cell.id];
-    return contour === undefined ? [] : [{ id: cell.id, pkg: packageOf.get(cell.id) ?? cell.id, contour }];
+    return contour === undefined ? [] : [{ id: cell.id, contour }];
   });
   for (const file of organelles) {
     const at = layout.positions[file.id];
-    const own = packageOf.get(file.cell) ?? file.cell;
     if (at === undefined) continue;
     for (const skin of skins) {
-      if (skin.pkg !== own && withinContour(skin.contour, at.x, at.y)) found.push(`${file.id} lies under ${skin.id}`);
+      if (apart(file.cell, skin.id) && withinContour(skin.contour, at.x, at.y)) found.push(`${file.id} lies under ${skin.id}`);
     }
   }
   skins.forEach((one, index) => {
     for (const other of skins.slice(index + 1)) {
-      if (one.pkg === other.pkg) continue;
+      if (!apart(one.id, other.id)) continue;
       const [ox, oy] = other.contour[0] ?? [0, 0];
       const [nx, ny] = one.contour[0] ?? [0, 0];
       if (skinsCross(one.contour, other.contour)) found.push(`${one.id} crosses ${other.id}`);
@@ -132,6 +140,21 @@ function trouble(layout: Layout, cells: readonly Pick<MembraneCell, 'id'>[], pac
   return found;
 }
 
+/** Two cells in different packages, for the lanes (D166). */
+function otherPackages(packageOf: ReadonlyMap<string, string>): (one: string, other: string) => boolean {
+  return (one, other) => (packageOf.get(one) ?? one) !== (packageOf.get(other) ?? other);
+}
+
+/** Two cells of which neither holds the other (D171). */
+function unrelated(cells: readonly MembraneCell[]): (one: string, other: string) => boolean {
+  const parentOf = new Map(cells.flatMap((cell) => (cell.parent === undefined ? [] : [[cell.id, cell.parent] as const])));
+  const holds = (outer: string, inner: string): boolean => {
+    for (let at = parentOf.get(inner); at !== undefined; at = parentOf.get(at)) if (at === outer) return true;
+    return false;
+  };
+  return (one, other) => one !== other && !holds(one, other) && !holds(other, one);
+}
+
 const FIELDS = SEEDS.map((seed) => {
   const shape = synthetic(seed);
   return { seed, shape, layout: computeLayout(shape.input) };
@@ -139,7 +162,7 @@ const FIELDS = SEEDS.map((seed) => {
 
 test('no skin crosses a skin of another package, and no file lies under one', () => {
   for (const { seed, shape, layout } of FIELDS) {
-    expect(trouble(layout, shape.input.cells, shape.packages, shape.input.organelles), `seed ${String(seed)}`).toEqual([]);
+    expect(trouble(layout, shape.input.cells, shape.input.organelles, otherPackages(shape.packages)), `seed ${String(seed)}`).toEqual([]);
   }
 });
 
@@ -177,7 +200,7 @@ test('a file stranded far below the rest of its package stands under its package
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FIXTURES = join(HERE, '..', '..', 'fixtures');
 
-test('the demo keeps its packages apart', () => {
+test('the demo keeps its packages apart, and the cells inside each', () => {
   const inputs = JSON.parse(readFileSync(join(FIXTURES, 'demo', 'inputs.json'), 'utf8')) as BuildInputs;
   const map = buildMap(inputs, DEFAULT_CONFIG);
   const layout = map.terrain.layout;
@@ -186,5 +209,82 @@ test('the demo keeps its packages apart', () => {
   const packages = new Map(map.terrain.cells.map((cell) => [cell.id, cell.kind === 'package' ? cell.id : (cell.parent ?? cell.id)] as const));
 
   expect(new Set(packages.values()).size).toBeGreaterThan(1);
-  expect(trouble(layout, map.terrain.cells, packages, map.terrain.organelles)).toEqual([]);
+  expect(trouble(layout, map.terrain.cells, map.terrain.organelles, otherPackages(packages))).toEqual([]);
+  expect(map.terrain.cells.filter((cell) => cell.parent !== undefined).length).toBeGreaterThan(2);
+  expect(trouble(layout, map.terrain.cells, map.terrain.organelles, unrelated(map.terrain.cells))).toEqual([]);
+});
+
+/**
+ * One package shaped the way `apps/web` was on atis's own map: two or three
+ * folders stretched over several terraces, a crowd of single-file cells on
+ * the same terraces, a barrel of its own, and imports that tie the singles
+ * into the folders, which is what pulled the forces' singles in among a
+ * folder's files. The change adds files to the folders, a file to a single
+ * that sits on another terrace from it, and a new single-file cell whole.
+ */
+const SINGLES = 12;
+
+function crowded(seed: number): LayoutInput {
+  const random = seededRandom(seed);
+  const pick = (count: number): number => Math.floor(random() * count);
+  const root = 'apps/w';
+  const pkg = `package:${root}`;
+  const barrel = `${root}/src/main.ts`;
+  const organelles: Organelle[] = [organelle(barrel, pkg, 0, 40 + pick(60))];
+  const cells: MembraneCell[] = [{ id: pkg, organelles: [barrel] }];
+  const hold = (cell: string, files: readonly string[], bands: () => number): void => {
+    for (const path of files) organelles.push(organelle(path, cell, bands(), 10 + pick(400)));
+    cells.push({ id: cell, parent: pkg, organelles: [...files] });
+  };
+
+  const folders = 2 + pick(2);
+  for (let at = 0; at < folders; at += 1) {
+    const top = pick(BANDS - 3);
+    const files = Array.from({ length: 5 + pick(8) }, (_unused, file) => `${root}/src/d${String(at)}/f${String(file)}.ts`);
+    hold(`folder:${root}/src/d${String(at)}`, files, () => top + pick(3));
+  }
+  for (let at = 0; at < SINGLES; at += 1) {
+    const path = `${root}/src/s${String(at).padStart(2, '0')}.ts`;
+    hold(`single:${path}`, [path], () => pick(BANDS));
+  }
+
+  const novel = `${root}/src/new.ts`;
+  organelles.push(organelle(novel, `single:${novel}`, pick(BANDS), 30));
+  cells.push({ id: `single:${novel}`, parent: pkg, organelles: [novel] });
+  const ids = organelles.map((file) => file.id);
+  const singles = ids.filter((id) => /\/s\d+\.ts$/u.test(id));
+  const folded = ids.filter((id) => id.includes('/d'));
+  const edges = [
+    ...singles.flatMap((single) => [{ from: single, to: folded[pick(folded.length)] ?? '' }, { from: folded[pick(folded.length)] ?? '', to: single }]),
+    ...Array.from({ length: ids.length }, () => ({ from: ids[pick(ids.length)] ?? '', to: ids[pick(ids.length)] ?? '' })),
+  ];
+  const added = new Set([novel, ...folded.filter(() => random() < 0.2), ...singles.filter(() => random() < 0.1)]);
+  const bands: readonly Band[] = Array.from({ length: BANDS }, (_unused, index) => ({ index, depth_min: index, depth_max: index }));
+  return { cells, organelles, edges, bands, groups: [], added };
+}
+
+const CROWDS = SEEDS.map((seed) => {
+  const input = crowded(seed);
+  return { seed, input, layout: computeLayout(input) };
+});
+
+test('no two cells of which neither holds the other draw skins that cross or nest, and no file lies under a cell it is not in', () => {
+  for (const { seed, input, layout } of CROWDS) {
+    expect(trouble(layout, input.cells, input.organelles, unrelated(input.cells)), `crowd ${String(seed)}`).toEqual([]);
+  }
+  for (const { seed, shape, layout } of FIELDS) {
+    expect(trouble(layout, shape.input.cells, shape.input.organelles, unrelated(shape.input.cells)), `seed ${String(seed)}`).toEqual([]);
+  }
+});
+
+test('a crowded package places every file it holds, each on its own terrace', () => {
+  for (const { seed, input, layout } of CROWDS) {
+    for (const file of input.organelles) {
+      const at = layout.positions[file.id];
+      const band = layout.bands.find((strip) => strip.index === file.band);
+      expect(at, `crowd ${String(seed)}: ${file.id}`).toBeDefined();
+      expect(at?.y, `crowd ${String(seed)}: ${file.id}`).toBeGreaterThan(band?.y0 ?? 0);
+      expect(at?.y, `crowd ${String(seed)}: ${file.id}`).toBeLessThan(band?.y1 ?? 0);
+    }
+  }
 });

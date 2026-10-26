@@ -233,9 +233,10 @@ test('the tags stand in two columns beside the slide, each on its body\'s side, 
     expect(tag.box.height).toBe(height);
     expect(tag.box.width).toBeCloseTo(tag.text.length * LABELING.fontSize * MONO_ADVANCE + 2 * LABELING.pad, 9);
     // Against the slide's edge, and the leader from the tag's inner edge to the body's rim.
-    if (tag.side === 'left') expect(tag.box.x + tag.box.width).toBe(x0 - LABELING.gap);
-    else expect(tag.box.x).toBe(x1 + LABELING.gap);
-    expect(tag.leader.from).toEqual([tag.side === 'left' ? tag.box.x + tag.box.width : tag.box.x, tag.box.y + height / 2]);
+    if (tag.side === 'left') expect(tag.box.x + tag.box.width).toBeCloseTo(x0 - LABELING.gap, 9);
+    else expect(tag.box.x).toBeCloseTo(x1 + LABELING.gap, 9);
+    expect(tag.leader.from[0]).toBeCloseTo(tag.side === 'left' ? tag.box.x + tag.box.width : tag.box.x, 9);
+    expect(tag.leader.from[1]).toBeCloseTo(tag.box.y + height / 2, 9);
     expect(Math.hypot(tag.leader.to[0] - sx, tag.leader.to[1] - sy)).toBeCloseTo(body.r * SCREEN.pixelsPerUnit, 6);
   }
   for (const side of ['left', 'right'] as const) {

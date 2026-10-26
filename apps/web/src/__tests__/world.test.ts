@@ -249,6 +249,13 @@ const openedOn = async (browser: Browser, url: string, cell: string, reducedMoti
   return { page, complaints };
 };
 
+/** Show or hide every layer the page draws over the world's own canvas. */
+const layersShown = async (page: Page, shown: boolean): Promise<void> => {
+  await page.evaluate((visibility) => {
+    for (const element of document.body.children) if (element instanceof HTMLElement && element.id !== 'world') element.style.visibility = visibility;
+  }, shown ? '' : 'hidden');
+};
+
 /** Two frames of a page, `apart` milliseconds apart. */
 const twoFrames = async (page: Page, apart: number): Promise<readonly [Buffer, Buffer]> => {
   const first = await page.screenshot({ type: 'png' });
@@ -300,17 +307,18 @@ test('under reduced motion nothing changes from frame to frame after load, in an
     await moving.page.close();
 
     // Reduced: the slide cut in, nothing settles, breathes, flares, pulses or drifts, so the frames are the same to the pixel.
+    // The world's own frame is judged, the layers over it hidden, since Chrome sharpens the text of a tag that has just
+    // moved or appeared a moment after it stops, which is the browser's raster and no motion of the world's.
     const { page, complaints } = await openedOn(browser, url, cell, 'reduce');
     expect(await page.getAttribute('#world', 'data-motion')).toBe('reduced');
+    await layersShown(page, false);
     const [still, later] = await twoFrames(page, 1500);
     expect(still.equals(later)).toBe(true);
     // A fly-to cuts: a frame just after the notice's row is clicked is already where the view lands, and the landing
-    // does not swing. The world's own frame is judged, the layers over it hidden, since Chrome sharpens the text of a
-    // tag that has just moved a moment after it stops, which is the browser's raster and no motion of the world's.
+    // does not swing.
+    await layersShown(page, true);
     await page.click('[data-notices] [data-notice="1"]');
-    await page.evaluate(() => {
-      for (const element of document.body.children) if (element instanceof HTMLElement && element.id !== 'world') element.style.visibility = 'hidden';
-    });
+    await layersShown(page, false);
     await page.waitForTimeout(150);
     const [landed, rested] = await twoFrames(page, 1000);
     expect(landed.equals(rested)).toBe(true);

@@ -11,20 +11,23 @@
  * order (land above the abyss). Under it the terraces descend, band 0 at the
  * top where the entry points are, the deepest band at the bottom. Across them
  * each package stands in a lane of its own, so no package's skin runs between
- * another's cells (D166). Terrain is settled first and added files second,
- * with the terrain pinned, so that the weather never moves the ground under
- * it (D32). The membranes are cut last,
+ * another's cells (D166), and inside its lane each cell stands apart from its
+ * siblings, so no two cells' skins cross (D171, `siblings.ts`). Terrain is
+ * settled first and added files second, with the terrain pinned, so that the
+ * weather never moves the ground under it (D32). The membranes are cut last,
  * over the settled field, one per cell and one per shore group (D13).
  */
 
 import { classifyFile } from '../modules.js';
 import type { ImportEdge } from '../modules.js';
 import type { Band, Group, Layout, LayoutBand, Organelle, Position } from '../schema.js';
-import { radiusOf, simulate } from './force.js';
+import { heightsOn, radiusOf, simulate } from './force.js';
 import type { LayoutFile, Placement, Strip } from './force.js';
 import { computeMembranes } from './membranes.js';
 import type { MembraneCell } from './membranes.js';
-import { LAYOUT_SEED, seededRandom } from './random.js';
+import { LAYOUT_SEED, seedOf, seededRandom } from './random.js';
+import { placeAdded, standApart } from './siblings.js';
+import type { Block, Held } from './siblings.js';
 
 export * from './force.js';
 export * from './membranes.js';
@@ -199,42 +202,122 @@ function pathOf(id: string): string {
   return id.slice(id.indexOf(':') + 1);
 }
 
+/** The kind in a cell's id, the part `pathOf` leaves out. */
+function kindOf(id: string): string {
+  return id.slice(0, Math.max(id.indexOf(':'), 0));
+}
+
 /**
- * The lane each cell stands in: the outermost cell that holds it, which is
- * its package, or the cell itself when no package holds it (D45).
+ * A cell and every cell that holds it, the cell first and its package last
+ * (D45), so the last is the lane it stands in: a cell no package holds is a
+ * lane of its own. The walk stops at a loop rather than trusting the tree to
+ * have none.
  */
-function laneOf(cells: readonly MembraneCell[]): (cell: string) => string {
+function ancestry(cells: readonly MembraneCell[]): (cell: string) => readonly string[] {
   const parentOf = new Map(cells.flatMap((cell) => (cell.parent === undefined ? [] : [[cell.id, cell.parent] as const])));
   return (cell) => {
-    const seen = new Set([cell]);
-    let at = cell;
-    for (let up = parentOf.get(at); up !== undefined && !seen.has(up); up = parentOf.get(at)) {
-      seen.add(up);
-      at = up;
-    }
-    return at;
+    const line = [cell];
+    for (let up = parentOf.get(cell); up !== undefined && !line.includes(up); up = parentOf.get(up)) line.push(up);
+    return line;
   };
+}
+
+/**
+ * Which part of `root` a cell is in: the cell `root` holds that it lies
+ * beneath, or `''` when it is `root` itself, which is the part its own files
+ * make. `line` is the cell's ancestry, so `root` is somewhere in it.
+ */
+function partOf(line: readonly string[], root: string): string {
+  const at = line.indexOf(root);
+  return at <= 0 ? '' : (line[at - 1] ?? '');
 }
 
 /** One lane settled in a frame of its own: its terrain's left edge on the margin, and how far right that terrain reaches. */
 type Settled = { readonly placements: readonly Placement[]; readonly span: number; readonly grounded: boolean };
 
+/** The fields every pass of one layout shares. */
+type Field = { readonly input: LayoutInput; readonly strips: ReadonlyMap<number, Strip>; readonly line: (cell: string) => readonly string[] };
+
+/** Settle files with the forces, with nothing pinned, from the layout's seed or a seed of their own. */
+function alone(files: readonly LayoutFile[], field: Field, seed = LAYOUT_SEED): readonly Placement[] {
+  return simulate({ files, edges: field.input.edges, strips: field.strips, width: spreadWidth(files), fixed: new Map(), random: seededRandom(seed) });
+}
+
+/**
+ * How far a block may rise (below zero) and fall and keep every file on its
+ * terrace: a file's height within its strip says nothing (D13), so a block
+ * may take any of the heights all of its files can.
+ */
+function liftOf(placements: readonly Placement[], bandOf: ReadonlyMap<string, number>, strips: ReadonlyMap<number, Strip>): readonly [number, number] {
+  return placements.reduce<readonly [number, number]>(
+    ([up, down], placed) => {
+      const strip = strips.get(bandOf.get(placed.id) ?? -1);
+      if (strip === undefined) return [up, down];
+      const [low, high] = heightsOn(strip, placed.r);
+      return [Math.max(up, Math.min(low - placed.y, 0)), Math.min(down, Math.max(high - placed.y, 0))];
+    },
+    [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY],
+  );
+}
+
+/**
+ * Settle the files beneath `root`, keeping the cells it holds apart (D171).
+ * A root whose files are all its own, or all one held cell's, has no
+ * siblings to keep apart and settles as one. Otherwise each part (the
+ * root's own files, and each held cell with every cell beneath it) settles
+ * alone into a block, the forces settle the whole root once more to say
+ * where each block wants to be, near the files it imports and is imported
+ * by, and the blocks are stood apart as near those places as they fit.
+ */
+function settleBeneath(root: string, files: readonly LayoutFile[], field: Field, seed = LAYOUT_SEED): readonly Placement[] {
+  const parts = new Map<string, LayoutFile[]>();
+  for (const file of files) {
+    const part = partOf(field.line(file.cell), root);
+    parts.set(part, [...(parts.get(part) ?? []), file]);
+  }
+  const [only] = parts.keys();
+  if (parts.size <= 1) return only === undefined || only === '' ? alone(files, field, seed) : settleBeneath(only, files, field, seed);
+
+  const together = alone(files, field, seed);
+  const partOfFile = new Map(files.map((file) => [file.id, partOf(field.line(file.cell), root)] as const));
+  const wanted = new Map<string, { total: number; count: number }>();
+  for (const placed of together) {
+    const part = partOfFile.get(placed.id) ?? '';
+    const seen = wanted.get(part) ?? { total: 0, count: 0 };
+    wanted.set(part, { total: seen.total + placed.x, count: seen.count + 1 });
+  }
+  const bandOf = new Map(files.map((file) => [file.id, file.band] as const));
+  const blocks = [...parts].map(([part, held]): Block => {
+    const seen = wanted.get(part);
+    const placements = part === '' ? alone(held, field, seedOf(root)) : settleBeneath(part, held, field, seedOf(part));
+    return {
+      key: part,
+      placements,
+      wanted: seen === undefined ? 0 : seen.total / seen.count,
+      lift: liftOf(placements, bandOf, field.strips),
+      grows: part === '' || kindOf(part) !== 'single',
+    };
+  });
+  return standApart(blocks);
+}
+
 /**
  * Settle one lane, in the two passes D32 asks for. The terrain goes first,
- * alone, and is then slid onto the margin and rounded; the second pass pins
- * exactly those numbers, so every force in it is working around a terrain it
- * cannot move, and the only thing it decides is where the change's new files
- * go: within the lane's slack either side of its terrain, never out across
- * the gutter. A lane whose every file is new has no terrain to pin, so the
- * second pass is the only one there was and it is what gets slid.
+ * alone, its cells kept apart, and is then slid onto the margin and rounded;
+ * the second pass pins exactly those numbers, so every force in it is
+ * working around a terrain it cannot move, and the only thing it decides is
+ * where the change's new files go: within the lane's slack either side of
+ * its terrain, never out across the gutter, and moved from where the forces
+ * wanted them only as far as keeps sibling cells apart. A lane whose every
+ * file is new has no terrain to pin, so it settles as terrain would, and that
+ * is what gets slid.
  */
-function settleLane(files: readonly LayoutFile[], input: LayoutInput, strips: ReadonlyMap<number, Strip>): Settled {
+function settleLane(root: string, files: readonly LayoutFile[], field: Field): Settled {
+  const { input } = field;
   const ground = files.filter((file) => !input.added.has(file.id));
-  const shared = { edges: input.edges, strips, width: spreadWidth(ground.length === 0 ? files : ground) } as const;
-
-  const terrain = simulate({ ...shared, files: ground, fixed: new Map(), random: seededRandom(LAYOUT_SEED) });
+  const terrain = settleBeneath(root, ground, field);
   if (terrain.length === 0) {
-    const all = simulate({ ...shared, files, fixed: new Map(), random: seededRandom(LAYOUT_SEED + 1) });
+    const all = settleBeneath(root, files, field);
     const slid = shift(all, offsetFor(all));
     return { placements: slid, span: spanOf(slid), grounded: false };
   }
@@ -242,14 +325,32 @@ function settleLane(files: readonly LayoutFile[], input: LayoutInput, strips: Re
   const span = spanOf(settled);
   if (ground.length === files.length) return { placements: settled, span, grounded: true };
 
-  const all = simulate({
-    ...shared,
+  const lane = { x0: MARGIN - LANE_SLACK, x1: MARGIN + span + LANE_SLACK };
+  const wanted = simulate({
     files,
+    edges: input.edges,
+    strips: field.strips,
+    width: spreadWidth(ground),
     fixed: new Map(settled.map((placed) => [placed.id, placed] as const)),
-    lane: { x0: MARGIN - LANE_SLACK, x1: MARGIN + span + LANE_SLACK },
+    lane,
     random: seededRandom(LAYOUT_SEED + 1),
   });
-  return { placements: all.map(roundPlacement), span, grounded: true };
+  const cellOf = new Map(files.map((file) => [file.id, file.cell] as const));
+  const held = (placed: Placement): Held => ({ ...placed, cell: cellOf.get(placed.id) ?? '' });
+  const bandOf = new Map(files.map((file) => [file.id, file.band] as const));
+  const added = placeAdded({
+    terrain: settled.map(held),
+    added: wanted.flatMap((placed) => {
+      const strip = field.strips.get(bandOf.get(placed.id) ?? -1);
+      return input.added.has(placed.id) && strip !== undefined ? [{ ...held(placed), heights: heightsOn(strip, placed.r) }] : [];
+    }),
+    levels: (cell) => {
+      const line = field.line(cell);
+      return line.slice(0, line.indexOf(root) + 1).toReversed().map((at) => [at, partOf(line, at)] as const);
+    },
+    lane,
+  });
+  return { placements: [...settled, ...added.map(roundPlacement)], span, grounded: true };
 }
 
 /**
@@ -268,15 +369,15 @@ function settleLane(files: readonly LayoutFile[], input: LayoutInput, strips: Re
  * hop the skin already draws (D45).
  */
 function settle(files: readonly LayoutFile[], input: LayoutInput, strips: ReadonlyMap<number, Strip>): readonly Placement[] {
-  const laneFor = laneOf(input.cells);
+  const field: Field = { input, strips, line: ancestry(input.cells) };
   const lanes = new Map<string, LayoutFile[]>();
   for (const file of files) {
-    const lane = laneFor(file.cell);
+    const lane = field.line(file.cell).at(-1) ?? file.cell;
     lanes.set(lane, [...(lanes.get(lane) ?? []), file]);
   }
   const settled = [...lanes]
     .toSorted(([a], [b]) => byPath(pathOf(a), pathOf(b)) || byPath(a, b))
-    .map(([, held]) => settleLane(held, input, strips));
+    .map(([root, held]) => settleLane(root, held, field));
 
   let left = MARGIN;
   return [...settled.filter((lane) => lane.grounded), ...settled.filter((lane) => !lane.grounded)].flatMap((lane) => {

@@ -9,8 +9,9 @@
  * edges it works from are never drawn, only felt. A cohesion force pulls a
  * cell's files toward their own centroid, so a cell reads as one clump under
  * the membrane step 16 draws around it, and pulls every file of the pass,
- * which is one package, more weakly toward theirs. And `forceCollide` keeps
- * two files from sharing a spot, on a radius that already means mass (C11).
+ * which is one package or one cell of it, more weakly toward theirs. And
+ * `forceCollide` keeps two files from sharing a spot, on a radius that
+ * already means mass (C11).
  *
  * A fifth holds the first one's promise. The terraces are not a preference
  * the forces negotiate over, so `forceTerrace` runs after all four and trims
@@ -81,13 +82,14 @@ const TICKS = 300;
 const BAND_STRENGTH = 0.3;
 const COLLIDE_STRENGTH = 0.9;
 const COLLIDE_ITERATIONS = 2;
-const COLLIDE_PAD = 5;
+/** The clearance two files keep beyond their radii; the added files' placing keeps it too (see `siblings.ts`). */
+export const COLLIDE_PAD = 5;
 const LINK_STRENGTH = 0.06;
 const LINK_GAP = 34;
 /** Cohesion pulls sideways; vertically it only nudges, or it would fight the terraces. */
 const COHESION_STRENGTH = 0.09;
 const COHESION_VERTICAL = 0.2;
-/** The pull on every file toward the whole pass's centre, sideways only: a pass is one package (see `settle` in `index.ts`). */
+/** The pull on every file toward the whole pass's centre, sideways only: a pass is one package or one cell of it (see `settleBeneath` in `index.ts`). */
 const GATHER_STRENGTH = 0.02;
 /** The share of its velocity a node carries into the next tick; `d3-force`'s own default. */
 const VELOCITY_KEPT = 0.6;
@@ -127,17 +129,22 @@ function centerOf(strip: Strip): number {
 }
 
 /**
- * Keep a file on its terrace: never nearer an edge than its own radius and a
- * little clearance, so the shape the SVG draws is inside the strip and not
- * only its centre, and so a file resting against the boundary still reads as
- * on the terrace rather than on the line between two. A strip too thin to hold
- * the file at all falls back to the middle of it, which is the closest thing
- * to inside that exists.
+ * The heights a file's centre may take on its terrace: never nearer an edge
+ * than its own radius and a little clearance, so the shape the SVG draws is
+ * inside the strip and not only its centre, and so a file resting against
+ * the boundary still reads as on the terrace rather than on the line between
+ * two. A strip too thin to hold the file at all leaves it only the middle of
+ * it, which is the closest thing to inside that exists.
  */
+export function heightsOn(strip: Strip, r: number): readonly [number, number] {
+  const low = strip.y0 + r + STRIP_PAD;
+  const high = strip.y1 - r - STRIP_PAD;
+  return low > high ? [centerOf(strip), centerOf(strip)] : [low, high];
+}
+
+/** Keep a file on its terrace, inside the heights `heightsOn` gives it. */
 function ontoStrip(y: number, node: Node): number {
-  const low = node.strip.y0 + node.r + STRIP_PAD;
-  const high = node.strip.y1 - node.r - STRIP_PAD;
-  if (low > high) return centerOf(node.strip);
+  const [low, high] = heightsOn(node.strip, node.r);
   return Math.min(Math.max(y, low), high);
 }
 

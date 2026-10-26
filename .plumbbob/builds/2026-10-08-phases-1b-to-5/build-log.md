@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 108 — fix(core): keep each package's cells together so no skin crosses another's
+**Current step:** 114 — fix(core): keep a package's sibling cells apart so no two skins cross
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -90,12 +90,13 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 105. feat(web): float a package's modules inside its opened slide
 - ☑ 106. feat(svg): key the reach, its crossings and the history textures in the legend
 - ☑ 107. fix(web): keep the legend and other cells' labels off the world
-- ☐ 108. fix(core): keep each package's cells together so no skin crosses another's
+- ☑ 108. fix(core): keep each package's cells together so no skin crosses another's
 - ☐ 109. fix(core): keep the shore's docs and data out of co-change notices and the HUD's size
 - ☐ 110. fix(web): write the world's labels only on hover or in an exploded cell
 - ☐ 111. fix(web): set the world in space and rule its depth bands faintly
 - ☐ 112. feat(core): record the outside packages the terrain uses, with their health
 - ☐ 113. feat(web): draw the far zoom as a dark planet under its dependencies' stars
+- ☐ 114. fix(core): keep a package's sibling cells apart so no two skins cross
 - ☐ 48. feat(cli): cache the terrain per base commit
 - ☐ 49. feat(core): relax a new base's layout from the nearest cached one
 - ☐ 50. perf(cli): draw a cached run's first frame within two seconds
@@ -196,9 +197,11 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] Rob at range 28's stop: hide the world's inline labels (file and notice labels, a slide's tags) unless their file is hovered or its cell is expanded, so the shapes read
 - [x] Rob at range 28's stop: drop the depth bands from the world's background for a ground like outer space, and mark the bands' rough boundaries with 1px horizontal rules over the 3D, translucent and only just visible
 - [x] Rob at range 28's stop: at the far zoom draw the repo as a dark planet, its files as night lights on a sphere, with the outside dependencies it uses as distant stars coloured by health (red, yellow) that rim-light its silhouette; zooming in, the planet fills the frame and becomes the world as it is now
-- [ ] sibling cells inside one package still cross: 7 pairs in apps/web on atis's own map (chrome x world, world x nav, registry, view); D166 asks that cells not overlap, and step 108 kept to packages
-- [ ] apps/web/src/vite-env.d.ts, which nothing imports and which imports nothing, lands on the deepest band, so apps/web's skin hangs a tendril through the whole abyss; read where depth puts a file with no edges
-- [ ] step 49's relaxation from a cached layout now runs lane by lane, and a package whose terrain grows slides every lane to its right; its displacement bound should hold lane places, or measure within lanes
+- [x] sibling cells inside one package still cross: 7 pairs in apps/web on atis's own map (chrome x world, world x nav, registry, view); D166 asks that cells not overlap, and step 108 kept to packages
+- [x] apps/web/src/vite-env.d.ts, which nothing imports and which imports nothing, lands on the deepest band, so apps/web's skin hangs a tendril through the whole abyss; read where depth puts a file with no edges
+- [x] step 49's relaxation from a cached layout now runs lane by lane, and a package whose terrain grows slides every lane to its right; its displacement bound should hold lane places, or measure within lanes
+- [ ] world.test.ts's reduced-motion browser test is flaky before step 114 too (2 of 8 runs red on HEAD 245e5ad): two frames 1.5 s apart in an opened cell differ under reduced motion; find what still moves, or what Chrome re-rasters
+- [ ] an added file whose folder's room is spent still lands beside its own and can cross a sibling's skin (1 of 80 seeded layouts, fields seed 30); D32 pins the terrain, so more growth room or a relayout of the ground D32 forbids are the ways out
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -283,6 +286,10 @@ Harvest results this boundary:
 - **blocker**: park 51 · Rob at range 28's stop: hide the world's inline labels (file and notice labels, a slide's tags) unless their file is hovered or its cell is expanded, so the shapes read → step 110 in range 30, ahead of 109, so D166's judgment sees the labels on demand
 - **blocker**: park 52 · Rob at range 28's stop: drop the depth bands from the world's background for a ground like outer space, and mark the bands' rough boundaries with 1px horizontal rules over the 3D, translucent and only just visible → step 111 in range 30, ahead of 109, so D166's judgment sees the space ground and its rules
 - **blocker**: park 53 · Rob at range 28's stop: at the far zoom draw the repo as a dark planet, its files as night lights on a sphere, with the outside dependencies it uses as distant stars coloured by health (red, yellow) that rim-light its silhouette; zooming in, the planet fills the frame and becomes the world as it is now → steps 112 and 113 in a new range 31 after range 30, so range 16 builds on the planet's far field
+- 2026-10-26, at range 29 of 31's stop: 3 parked ideas, classified.
+- **blocker**: park 54 · sibling cells inside one package still cross: 7 pairs in apps/web on atis's own map (chrome x world, world x nav, registry, view); D166 asks that cells not overlap, and step 108 kept to packages → D166 names "cells do not overlap" and range 30's stop judges D166 met, yet 7 to 9 sibling pairs inside `apps/web` still cross and no step addresses it
+- **tangent**: park 55 · apps/web/src/vite-env.d.ts, which nothing imports and which imports nothing, lands on the deepest band, so apps/web's skin hangs a tendril through the whole abyss; read where depth puts a file with no edges → one edge-less file's depth makes a tendril, honest about where depth puts it, and cosmetic beside the crossings
+- **tangent**: park 56 · step 49's relaxation from a cached layout now runs lane by lane, and a package whose terrain grows slides every lane to its right; its displacement bound should hold lane places, or measure within lanes → it is step 49's own displacement bound to design, and wave 3 is sharpened at its boundary
 
 ## Log
 
@@ -1733,3 +1740,66 @@ folder, so it rides the branch into the PR.)*
   - **Steps 112 and 113, the planet** (P53): core records each outside package the terrain imports, how many files use it, and its health from evidence atis already reads offline (C5). Red is an advisory at high or critical, yellow a lower advisory, the change hue a package the change added or moved, and a plain dim light is no finding; with no security evidence the stars are muted, never green (C2). The far zoom then draws the repo as a dark sphere with its files as night lights, under those stars, which rim-light its silhouette, and zooming in, the planet fills the frame and hands off to the world as it is now.
 
   Steps 110 and 111 join range 30 ahead of 109, so its D166 judgment sees them. Steps 112 and 113 take a new range 31 right after it, with a stop to judge the planet on atis's own map, so range 16 opens on the finished far field.
+
+- 2026-10-26 — step 108 checkpointed · 245e5ad39 — fix(core): keep each package's cells together so no skin crosses another's (1 drift, 17m)
+- 2026-10-26 — range 29 of 31's stop recorded — on atis's own map, judge that no package's skin crosses another's
+
+  **Summary**: Step 108 gives each package a lane of its own across the shared terraces, so on atis's own map no package's skin crosses another's: the 30 crossings measured before the change are now 0, and no file sits under another package's skin.
+
+  1. Each package now settles alone and stands in its own lane, side by side in path order
+  2. A weak pull to the lane's centre keeps a package's stray file under the package
+  3. Added files stay inside their lane, and a lane's place depends on terrain, never weather
+  4. Seam strayed: three tests in scene and web hard-coded the demo's old geometry
+  5. A flag: I deleted the `.playwright-mcp/` scratch folder without looking first
+
+  **Readout**:
+
+  ```text
+  steps        1 of 1 landed
+               - 108 245e5ad
+  check        green: 1 of 1 checks, 1 landing
+  done-when    met
+  decisions    honored:
+               - D166 (legibility-first)
+               - D24 (layout-in-core)
+               - D32 (terrain-from-base)
+  constraints  14 of 14 honored
+  seam         strayed: 5 paths outside step 108's seam
+               - apps/web/src/__tests__/walk.test.ts
+               - libs/core/src/layout/force.ts
+               - libs/core/src/layout/index.ts
+               - libs/scene/src/__tests__/interior.test.ts
+               - libs/scene/src/__tests__/picking.test.ts
+  diff         +1646 -1465 across 12 files
+  spent        17 min · green first run at every landing · 1 drift warning
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Harvested**: 3 of 56 parked ideas open
+
+  - P54 · sibling cells inside one package still cross: 7 pairs in apps/web on atis's own map (chrome x world, world x nav, registry, view); D166 asks that cells not overlap, and step 108 kept to packages → lean: blocker, D166 names "cells do not overlap" and range 30's stop judges D166 met, yet 7 to 9 sibling pairs inside `apps/web` still cross and no step addresses it
+  - P55 · apps/web/src/vite-env.d.ts, which nothing imports and which imports nothing, lands on the deepest band, so apps/web's skin hangs a tendril through the whole abyss; read where depth puts a file with no edges → lean: tangent, one edge-less file's depth makes a tendril, honest about where depth puts it, and cosmetic beside the crossings
+  - P56 · step 49's relaxation from a cached layout now runs lane by lane, and a package whose terrain grows slides every lane to its right; its displacement bound should hold lane places, or measure within lanes → lean: tangent, it is step 49's own displacement bound to design, and wave 3 is sharpened at its boundary
+
+  **Recommendation**: Open `/tmp/atis-108/final.svg`, or the world on `/tmp/atis-108/final.json`, judge the package lanes met, and confirm P54 as a blocker so a step keeping a package's sibling cells from crossing joins range 30. Cross-package crossings measure zero on atis's map and on every seeded test, so the stop's question is answered. The overlaps you will still see are all inside `apps/web`, and D166 holds range 16 until those are gone too.
+
+  **1.** Each package now settles alone and stands in its own lane, side by side in path order
+
+  `computeLayout` groups the files by their outermost cell: the package, or the cell itself when no package holds it. It settles each group with the existing forces on the terraces every lane shares, then sets the lanes side by side in path order. Each lane keeps 40 units of slack either side of its terrain, with a 24-unit gutter between lanes, so two packages' terrain stands at least 104 apart. Their x-ranges never overlap, so a skin has no other package's cells to run between. Imports between packages no longer pull files together; the gap between lanes is the hop the package skin already draws. On atis's own map against `HEAD~` (step 107's change), measured by a script that tests every skin pair across packages: 30 crossings before, 0 after, with nothing nested and no file under a foreign skin. The field went from 600 to 1452 wide. It now reads as six regions on a diagonal: the apps at the top left, `libs/scene` in the middle, `libs/core` at the bottom, and `libs/svg` top right. The SVG of this step's own change against its parent is at `/tmp/atis-108/final.svg`, and its map at `/tmp/atis-108/final.json` for the world (`pnpm --filter web dev`, then `?map=/@fs/tmp/atis-108/final.json`).
+
+  **2.** A weak pull to the lane's centre keeps a package's stray file under the package
+
+  The first cut left `apps/web/src/vite-env.d.ts` at the far end of its lane. That file imports nothing, nothing imports it, and it sits alone on the deepest band, so the `apps/web` skin ran diagonally down across the field to reach it. Cohesion now takes a grouping, and a second, weaker instance pulls every file of the pass (one package) toward the pass's centre, sideways only, at 0.02 against the cell's 0.09. The stray now hangs straight down under `apps/web`, and the field narrowed from 1661 to 1452. A test pins a stranded file standing under its package on six seeds; with the pull switched off, it fails.
+
+  **3.** Added files stay inside their lane, and a lane's place depends on terrain, never weather
+
+  The second pass for added files (D32) runs per lane with the terrain pinned, and a new lane force holds added files inside the lane's slack, the same way `forceTerrace` holds a file on its band. Where a lane stands depends only on the terrain of the lanes before it. A package the change adds whole goes after every lane that has ground, so new files and packages take room beside the ground and don't shift it sideways. One limit: band heights still count added files, as they did before this step, so the weather can still move the ground up or down slightly.
+
+  **4.** Seam strayed: three tests in scene and web hard-coded the demo's old geometry
+
+  The demo's two packages (`apps/cli` and `libs/core`) used to stack and now stand side by side. That broke three consumers that had pixel points or a close-up framing baked in. `picking.test.ts` and `walk.test.ts` take new points inside the pm folder's skin. `interior.test.ts`'s close-up is now centred on the slide itself rather than on fixed numbers. The walk's step up from `tools.ts` now lands on `legacy.ts` under the walk's own scoring (45 against 65). The seam named `layout.ts`, which is a folder, so `force.ts` shows as a stray too. `lanes.test.ts` (new) holds the done-when on the demo and on six seeded four-package maps; on the old layout it fails with 16 problems on seed 1.
+
+  **5.** A flag: I deleted the `.playwright-mcp/` scratch folder without looking first
+
+  While viewing the SVG I took one Playwright screenshot, which landed in `.playwright-mcp/`, and I removed the whole folder rather than just that file. The folder is excluded locally (`.git/info/exclude`) and only ever holds Playwright's screenshots and console logs, but it may have held captures from earlier sessions, and those are gone.

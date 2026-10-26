@@ -34,3 +34,20 @@ export function seededRandom(seed: number): () => number {
     return state / MODULUS;
   };
 }
+
+/** FNV-1a's 32-bit offset basis and prime. */
+const FNV_BASIS = 2_166_136_261;
+const FNV_PRIME = 16_777_619;
+
+/**
+ * A seed of a cell's own, for a pass that settles one cell alone: the
+ * layout's seed folded with the cell's id by FNV-1a. Each cell settled from
+ * the one seed would draw the same first numbers as every other, and so rest
+ * every single-file cell at the same height on its terrace, a row of beads;
+ * a seed per id tells them apart and is still the same on every run (C3).
+ */
+export function seedOf(id: string): number {
+  let hash = FNV_BASIS ^ LAYOUT_SEED;
+  for (const char of id) hash = Math.imul(hash ^ (char.codePointAt(0) ?? 0), FNV_PRIME) >>> 0;
+  return hash;
+}

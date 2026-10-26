@@ -53,9 +53,9 @@ test('between two files the nearer edge wins', () => {
 test('a cell nested in another answers before the cell that holds it, and open ground answers nothing', () => {
   const picker = createPicker(DEMO);
   // Inside the pm folder's skin, clear of its files.
-  expect(picker.pick([210, 500], 1, 0)).toEqual({ kind: 'membrane', cell: PM });
+  expect(picker.pick([190, 500], 1, 0)).toEqual({ kind: 'membrane', cell: PM });
   // Inside the package, outside both cells it holds.
-  expect(picker.pick([220, 420], 1, 0)).toEqual({ kind: 'membrane', cell: CORE });
+  expect(picker.pick([210, 380], 1, 0)).toEqual({ kind: 'membrane', cell: CORE });
   expect(picker.pick([400, 600], 1, 0)).toBeUndefined();
 });
 
