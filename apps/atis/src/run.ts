@@ -32,6 +32,11 @@
  * one change runs it on neither side (D98, D136). The extractions are removed
  * and the sources go to the pure `buildMap`.
  *
+ * `--whole-repo` maps no change: it reads the head's own terrain, kept per
+ * commit in the same cache, its log window, its `.check/` under D135's rule,
+ * and checkride's baseline as the head commits it, and core draws the whole
+ * repository's overlays over that terrain in place of weather (D101).
+ *
  * The map then goes one of two ways. `run` writes it atomically, and the still
  * SVG beside it, and exits. `serveRun` keeps it in memory and serves it with
  * the built web app on loopback, opening the tab (D92), until the process is
@@ -46,8 +51,8 @@ import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { platform, tmpdir } from 'node:os';
 import { basename, join, relative, resolve } from 'node:path';
 
-import { DEFAULT_CONFIG, buildMap, layOutTerrain } from 'core';
-import type { Commit, FrameInputs, Layout, MapJson, Structure } from 'core';
+import { DEFAULT_CONFIG, OVERLAY_NAMES, buildMap, buildRepoMap, layOutTerrain } from 'core';
+import type { CheckBaseline, Commit, FrameInputs, Layout, MapJson, Structure } from 'core';
 import { renderSvg } from 'svg';
 
 import {
@@ -68,12 +73,14 @@ import {
 import { serve } from './serve.js';
 import type { Served } from './serve.js';
 import {
+  BASELINE_FILE,
   HISTORY_WINDOW,
   NO_LOCAL_FALLOW,
   checkInferredShapes,
   commitOf,
   localFallow,
   measureStructure,
+  parseBaseline,
   readCheck,
   readDiff,
   readLog,
@@ -105,6 +112,8 @@ export type Options = {
   readonly head?: HeadAsked | undefined;
   /** A range to frame commit by commit; it names the base and the head itself, so neither is set beside it (D100). */
   readonly range?: RangeAsked | undefined;
+  /** Map the whole repository at the head, its overlays in place of a change, so no base is set beside it (D101). */
+  readonly wholeRepo?: boolean | undefined;
   /** Where to write the map, resolved against the working directory. */
   readonly out: string;
   /** Where to write the still SVG (D33); when absent, only `map.json` is written. */
@@ -125,6 +134,7 @@ export type ServeRunOptions = {
   readonly base?: BaseAsked | undefined;
   readonly head?: HeadAsked | undefined;
   readonly range?: RangeAsked | undefined;
+  readonly wholeRepo?: boolean | undefined;
   /** The built web app's directory, `index.html` and its assets; `pnpm build` fills it. */
   readonly assets: string;
   /** Open the tab once serving; a no-op under a test run. */
@@ -240,16 +250,15 @@ function timed<T>(timings: Timing[], source: string, work: () => T): T {
   return value;
 }
 
-/** What `--verbose` prints: whether the terrain cache, each side's structure and the head's entry points hit, then each source's time. */
+/** What `--verbose` prints: whether the terrain cache, each side's structure and the head's entry points hit, where a run read them, then each source's time. */
 function report(measured: Measured): string {
-  const { timings, structure } = measured;
+  const { timings, structure, entries } = measured;
   const width = timings.reduce((widest, timing) => Math.max(widest, timing.source.length), 0);
   const lines = timings.map((timing) => `  ${timing.source.padEnd(width)}  ${String(timing.ms)} ms\n`);
   const kept = [
     `  terrain cache ${measured.cache}\n`,
-    `  structure base ${structure.base}\n`,
-    `  structure head ${structure.head}\n`,
-    `  entry points head ${measured.entries}\n`,
+    ...(structure === undefined ? [] : [`  structure base ${structure.base}\n`, `  structure head ${structure.head}\n`]),
+    ...(entries === undefined ? [] : [`  entry points head ${entries}\n`]),
   ];
   return [...kept, ...lines].join('');
 }
@@ -282,18 +291,23 @@ function serialize(map: unknown): string {
   return `${JSON.stringify(map, null, 2)}\n`;
 }
 
-/** The one line every run prints: the category, the change's size and the notices. */
+/** The one line every run prints: the category, the change's size and the notices; or, for the whole repository, its terrain and the overlays it drew (D101). */
 function summary(map: MapJson): string {
+  if (map.overlays !== undefined) {
+    const { overlays } = map;
+    const drawn = OVERLAY_NAMES.filter((name) => overlays[name] !== undefined).length;
+    return `whole repo, ${counted(map.terrain.organelles.length, 'file')} on the terrain, ${String(drawn)} of ${String(OVERLAY_NAMES.length)} overlays`;
+  }
   return `${map.weather.checks.category}, ${counted(map.weather.changed.length, 'file')} changed, ${counted(map.notices.length, 'notice')}`;
 }
 
-/** The map built, the timings so far, which the caller adds its own to, and what the terrain cache, each side's structure and the head's entry points did. */
+/** The map built, the timings so far, which the caller adds its own to, and what the terrain cache, each side's structure and the head's entry points did, where the run read them. */
 type Measured = {
   readonly map: MapJson;
   readonly timings: Timing[];
   readonly cache: string;
-  readonly structure: { readonly base: string; readonly head: string };
-  readonly entries: string;
+  readonly structure?: { readonly base: string; readonly head: string };
+  readonly entries?: string;
 };
 
 /** The config every run measures with: core's defaults, since no `atis.config.json` is read yet. */
@@ -331,7 +345,7 @@ type Reader = {
  * nowhere. A cache that will not write leaves the run as it was, since the
  * map never depended on it (C4).
  */
-function groundAt(reader: Reader, sha: string, cache: boolean): Ground {
+function groundAt(reader: Reader, sha: string, cache: boolean, side: string = 'base'): Ground {
   const { repo, timings, history } = reader;
   const key = cache ? { code: codeKey(), config: configKey(CONFIG, history) } : undefined;
   const read = key === undefined ? undefined : timed(timings, 'cache read', () => readTerrain(repo, sha, key));
@@ -340,17 +354,17 @@ function groundAt(reader: Reader, sha: string, cache: boolean): Ground {
     const { scan, parsed, commits, layout } = terrain;
     return { scan, parsed, commits, layout, cache: `hit, ${relative(repo, terrainPath(repo, sha))}` };
   }
-  const side = reader.scanAt('scan base', sha);
-  const commits = timed(timings, 'log base', () => readLog(repo, sha, history));
+  const scanned = reader.scanAt(`scan ${side}`, sha);
+  const commits = timed(timings, `log ${side}`, () => readLog(repo, sha, history));
   const nearest = key === undefined ? undefined : timed(timings, 'cache near', () => nearestTerrain(repo, sha, key));
-  const layout = timed(timings, 'layout base', () => layOutTerrain(side.scan, CONFIG, nearest?.terrain.layout));
-  if (key === undefined || read === undefined) return { ...side, commits, layout, cache: 'off (--no-cache)' };
+  const layout = timed(timings, `layout ${side}`, () => layOutTerrain(scanned.scan, CONFIG, nearest?.terrain.layout));
+  if (key === undefined || read === undefined) return { ...scanned, commits, layout, cache: 'off (--no-cache)' };
   const from = nearest === undefined ? 'laid out cold' : `relaxed from ${nearest.sha}`;
   try {
-    const path = timed(timings, 'cache write', () => writeTerrain(repo, sha, key, { scan: side.scan, parsed: side.parsed, commits, layout }));
-    return { ...side, commits, layout, cache: `miss (${read.reason}), ${from}, wrote ${relative(repo, path)}` };
+    const path = timed(timings, 'cache write', () => writeTerrain(repo, sha, key, { scan: scanned.scan, parsed: scanned.parsed, commits, layout }));
+    return { ...scanned, commits, layout, cache: `miss (${read.reason}), ${from}, wrote ${relative(repo, path)}` };
   } catch (error) {
-    return { ...side, commits, layout, cache: `miss (${read.reason}), ${from}, not written: ${messageOf(error)}` };
+    return { ...scanned, commits, layout, cache: `miss (${read.reason}), ${from}, not written: ${messageOf(error)}` };
   }
 }
 
@@ -411,11 +425,12 @@ function headAt(repo: string, sha: string, prior: NonNullable<ScanOptions['prior
   }
 }
 
-/** What a run reads the repository for: the base and the head the reviewer asked for (D99), the cache switch and the history window. */
+/** What a run reads the repository for: the base and the head the reviewer asked for (D99), or the whole repository (D101), the cache switch and the history window. */
 type Asked = {
   readonly base?: BaseAsked | undefined;
   readonly head?: HeadAsked | undefined;
   readonly range?: RangeAsked | undefined;
+  readonly wholeRepo?: boolean | undefined;
   readonly cache: boolean;
   readonly history?: number | undefined;
 };
@@ -439,8 +454,71 @@ function rangeBase(repo: string, range: RangeAsked): { readonly ref: string; rea
   return { ref: range.from, typed };
 }
 
+/**
+ * checkride's baseline as `sha` commits it (D49), read from git's objects, so
+ * a baseline edited and not committed is not the one drawn; or why there is
+ * none to read.
+ */
+function committedBaseline(repo: string, sha: string): CheckBaseline {
+  const spec = `${sha}:${BASELINE_FILE}`;
+  try {
+    git(repo, 'cat-file', '-e', spec);
+  } catch {
+    return { reason: `no ${BASELINE_FILE} is committed at the head` };
+  }
+  return parseBaseline(git(repo, 'show', spec));
+}
+
+/**
+ * Read the whole repository at the head and build its `repo` map (D101): the
+ * head's terrain, from the terrain cache as any base's is, so a change later
+ * measured from this commit stands on the same ground (D96); its log window;
+ * its `.check/`, read only when the head is the checked-out `HEAD` (D135);
+ * and the baseline it commits. Throws on a repository it cannot read, with
+ * the extraction removed either way.
+ */
+function measureRepo(repoPath: string, asked: Asked): Measured {
+  const { cache, history = HISTORY_WINDOW } = asked;
+  const repo = resolve(repoPath);
+  const timings: Timing[] = [];
+  const extractions: Extraction[] = [];
+  const scanAt = (source: string, sha: string): Side =>
+    timed(timings, source, () => {
+      const extraction = extract(repo, sha);
+      extractions.push(extraction);
+      return { tree: extraction.tree, ...readTree(extraction.tree, { repo }) };
+    });
+
+  try {
+    const checkedOut = commitAt(repo, HEAD);
+    const named = typeof asked.head === 'string' ? asked.head : HEAD;
+    const head = named === HEAD ? checkedOut : commitAt(repo, named);
+    const ground = groundAt({ repo, timings, scanAt, history }, head.sha, cache, 'head');
+    const check = timed(timings, 'check', () => checkFor(repo, `the head ${named}`, head, checkedOut, false));
+    const baseline = timed(timings, 'baseline', () => committedBaseline(repo, head.sha));
+    const map = timed(timings, 'build', () =>
+      buildRepoMap(
+        {
+          meta: { repo: basename(repo), named, head: head.sha, generated_at: new Date().toISOString() },
+          scan: ground.scan,
+          commits: ground.commits,
+          head_time: head.time,
+          check,
+          baseline,
+          ground: ground.layout,
+        },
+        CONFIG,
+      ),
+    );
+    return { map, timings, cache: ground.cache };
+  } finally {
+    for (const extraction of extractions) rmSync(extraction.root, { recursive: true, force: true });
+  }
+}
+
 /** Read the repository and build the map; throws on a repository it cannot read, with the extractions removed either way. */
 function measure(repoPath: string, asked: Asked): Measured {
+  if (asked.wholeRepo === true) return measureRepo(repoPath, asked);
   const { cache, history = HISTORY_WINDOW } = asked;
   const repo = resolve(repoPath);
   const timings: Timing[] = [];
@@ -556,7 +634,7 @@ function measure(repoPath: string, asked: Asked): Measured {
 export function run(options: Options): Outcome {
   const out = resolve(options.out);
   try {
-    const measured = measure(options.repo, { base: options.base, head: options.head, range: options.range, cache: options.cache !== false, history: options.history });
+    const measured = measure(options.repo, { base: options.base, head: options.head, range: options.range, wholeRepo: options.wholeRepo, cache: options.cache !== false, history: options.history });
     const { map, timings } = measured;
     timed(timings, 'write', () => {
       writeAtomic(out, serialize(map));
@@ -591,7 +669,7 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
     return { exitCode: 2, stdout: '', stderr: `atis: no built web app at ${assets}; run \`pnpm build\` first\n` };
   }
   try {
-    const measured = measure(options.repo, { base: options.base, head: options.head, range: options.range, cache: options.cache !== false, history: options.history });
+    const measured = measure(options.repo, { base: options.base, head: options.head, range: options.range, wholeRepo: options.wholeRepo, cache: options.cache !== false, history: options.history });
     const { map, timings } = measured;
     const token = options.token ?? randomBytes(16).toString('hex');
     const started = performance.now();

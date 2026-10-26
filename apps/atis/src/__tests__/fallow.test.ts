@@ -62,7 +62,7 @@ test('three captured reports read through the parsers .check/ uses, with the ver
     muted: [],
   });
   // What the parsers read is what the side holds: the one function over its threshold, and the cycles kept whole.
-  expect('health' in structure ? structure.health?.findings : undefined).toEqual([{ path: 'src/gate.ts', exceeded: 'cyclomatic', line: 42, line_count: 95, name: 'runGate', cyclomatic: 28, cognitive: 22 }]);
+  expect('health' in structure ? structure.health?.findings : undefined).toEqual([{ path: 'src/gate.ts', exceeded: 'cyclomatic', line: 42, col: 0, line_count: 95, name: 'runGate', cyclomatic: 28, cognitive: 22 }]);
   expect('dead' in structure ? structure.dead?.circular_dependencies : undefined).toHaveLength(3);
   // The envelope names the report's kind and the fallow that wrote it.
   expect(parseHealth(captured('health.json'))).toMatchObject({ kind: 'health', version: '3.22.0', schema_version: 9 });

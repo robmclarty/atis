@@ -13,6 +13,7 @@ export * from './layout/index.js';
 export * from './map.js';
 export * from './modules.js';
 export * from './notices.js';
+export * from './overlays.js';
 export * from './reach.js';
 export * from './schema.js';
 export * from './ties.js';

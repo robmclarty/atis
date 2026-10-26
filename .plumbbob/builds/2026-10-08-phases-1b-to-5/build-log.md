@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 58 — feat(web): scrub a range's weather over one terrain
+**Current step:** 59 — feat(core): compute the whole-repo overlays
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -108,7 +108,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 55. feat(cli): resolve the trunk and the named bases
 - ☑ 56. feat(cli): map the working tree's uncommitted weather
 - ☑ 57. feat(core): build one weather frame per commit of a range
-- ☐ 58. feat(web): scrub a range's weather over one terrain
+- ☑ 58. feat(web): scrub a range's weather over one terrain
 - ☐ 59. feat(core): compute the whole-repo overlays
 - ☐ 60. feat(svg): render the whole-repo overlays in the still map
 - ☐ 61. feat(web): toggle overlays and switch bases from the HUD
@@ -212,7 +212,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] actual's package:packages/desktop-client has no skin at all: Bubble Sets finds no ring round its 877 files, so the world draws that package without a membrane
 - [x] the checker's extractions (D118 inferred-shapes) cost 0.4 to 0.9 s of every cached corpus run and 1.1 s of atis's own; reading its program from git's objects, as the head scan now does, would drop them
 - [x] actual's world takes 1.1 s from the map's arrival to its first frame (C14 world-budget), so the command keeps only 0.9 s of a 2 s first frame; actual's last second is on the page side, in apps/web
-- [ ] A long range has no cap: `--range` writes a whole weather frame per commit and runs the reviewed repo's fallow on each commit's extraction once (cached after), so a hundred-commit range is a hundred frames in map.json and a slow first run; decide whether to cap or thin long ranges
+- [x] A long range has no cap: `--range` writes a whole weather frame per commit and runs the reviewed repo's fallow on each commit's extraction once (cached after), so a hundred-commit range is a hundred frames in map.json and a slow first run; decide whether to cap or thin long ranges
+- [ ] the world's range-scrubber test (step 58) read 6 notice boxes for frame 0 once under the full suite's load and passed alone and on rerun: it counts [data-labels] marks as soon as data-scrub reads settled, so the labels may redraw a beat after the frame settles
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -317,6 +318,8 @@ Harvest results this boundary:
 - **tangent**: park 65 · actual's package:packages/desktop-client has no skin at all: Bubble Sets finds no ring round its 877 files, so the world draws that package without a membrane → it shows only on a corpus repo's 877-file package and predates the hold, not on the maps Rob knows
 - **tangent**: park 66 · the checker's extractions (D118 inferred-shapes) cost 0.4 to 0.9 s of every cached corpus run and 1.1 s of atis's own; reading its program from git's objects, as the head scan now does, would drop them → atis already draws a little over 2 s, and the checker's program is D118's seam, not range 17's
 - **tangent**: park 67 · actual's world takes 1.1 s from the map's arrival to its first frame (C14 world-budget), so the command keeps only 0.9 s of a 2 s first frame; actual's last second is on the page side, in apps/web → C14 holds from the map's arrival and the 2 s from the command is a target (D150), so the page side can wait for a perf pass
+- 2026-10-26, at range 17 of 32's stop: 1 parked idea, classified.
+- **tangent**: park 68 · A long range has no cap: `--range` writes a whole weather frame per commit and runs the reviewed repo's fallow on each commit's extraction once (cached after), so a hundred-commit range is a hundred frames in map.json and a slow first run; decide whether to cap or thin long ranges → a long range costs one cached fallow run per commit, and nothing ahead of wave 4 depends on capping it
 
 ## Log
 
@@ -2185,3 +2188,60 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-26 — step 55 checkpointed · a517784b2 — feat(cli): resolve the trunk and the named bases (1 drift, 8m)
 - 2026-10-26 — step 56 checkpointed · a0a184a54 — feat(cli): map the working tree's uncommitted weather (1 drift, 3m)
 - 2026-10-26 — step 57 checkpointed · 5b2f2d2ed — feat(core): build one weather frame per commit of a range (1 drift, 9m)
+- 2026-10-26 — step 58 checkpointed · 1eac3916f — feat(web): scrub a range's weather over one terrain (14m)
+- 2026-10-26 — range 17 of 32's stop recorded — scrub a range of this repo over one terrain (step 58's check), and try the trunk default, the named bases and the working tree's weather
+
+  **Summary**: atis can now map a change against more than one typed ref. `--base` is optional and takes the trunk: the one `atis.config.json` names, else the first of main, master, develop and trunk, local before `origin/`. `--last-commit`, `--last-tag`, `--head <ref>` and `--working-tree` name the other bases and heads, and `--range a..b` writes one map with a weather frame per commit. In the world, a scrubber in the HUD steps those frames, cross-fading the weather over a terrain that never moves.
+
+  1. Three of the four steps strayed a few lines outside their seams, each for a reason the seam missed
+  2. `meta.base` now holds the base as resolved, and a new optional `meta.base_typed` holds it as typed
+  3. `--working-tree` writes the tree as a git tree object through a copy of the index, so your own staging is never touched
+  4. Each range frame is its commit's change from the one merge-base, so the weather builds up and the last frame is the map's own
+  5. The scrubber cross-fades the world's weather at the motion budget's own rate; I checked it on this repo's range
+
+  **Readout**:
+
+  ```text
+  steps        4 of 4 landed
+               - 55 a517784 · 56 a0a184a · 57 5b2f2d2 · 58 1eac391
+  check        green: 1 of 1 checks, 4 landings
+  done-when    met
+  decisions    honored:
+               - D99 (named-bases), D135 (evidence-for-head)
+               - D100 (sequence-frames), D85 (schema-bumps)
+  constraints  14 of 14 honored
+  seam         strayed: 6 paths outside 3 steps' seams
+               - step 55: apps/atis/src/__tests__/index.test.ts and 2 others
+               - step 56: apps/atis/src/__tests__/index.test.ts
+               - step 57: apps/atis/src/__tests__/index.test.ts and 1 other
+  diff         +1895 -273 across 28 files
+  spent        43 min · green first run at every landing · 3 drift warnings
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Harvested**: 1 of 68 parked ideas open
+
+  - P68 · A long range has no cap: `--range` writes a whole weather frame per commit and runs the reviewed repo's fallow on each commit's extraction once (cached after), so a hundred-commit range is a hundred frames in map.json and a slow first run; decide whether to cap or thin long ranges → lean: tangent, a long range costs one cached fallow run per commit, and nothing ahead of wave 4 depends on capping it
+
+  **Recommendation**: Run `pnpm build`, then `atis --range 8fa79cb..HEAD` in this repo, and step it with `,` and `.` to judge the cross-fade. Then try `atis --last-commit` and `atis --working-tree --base HEAD` with an edit or two uncommitted. On this checkout `atis` with no base takes `main`, which is `HEAD`, so it maps an empty change, and `--last-tag` exits 2 because the repo has no tags yet. Neither is a fault, but both are the honest answers for this repo, and an earlier commit or a tag shows them working.
+
+  **1.** Three of the four steps strayed a few lines outside their seams, each for a reason the seam missed
+
+  Step 55 (trunk and named bases) touched `libs/core/src/map.ts`, two lines that pass the new `meta.base_typed` through `buildMap`, its only honest home. It also added a schema test and the new flags to `apps/atis/src/__tests__/index.test.ts`, whose test claims the usage text names every flag. Step 56 (working tree) touched that same test file. Step 57 (range frames) changed the usage text in `apps/atis/src/index.ts`, plus that test again. None widens what the step does. Step 58 (the scrubber) landed plumb.
+
+  **2.** `meta.base` now holds the base as resolved, and a new optional `meta.base_typed` holds it as typed
+
+  `meta.base` reads `origin/main`, `HEAD~1`, `v1` or the typed ref, which is what the HUD's status line prints ("atis against origin/main"). `meta.base_typed` reads `--base v1`, `--last-tag`, `--last-commit` or `--range a..b`, and is absent when nothing was typed and the trunk was taken (C2 (never-fake)). Both are added keys, so the schema stays at 1 (D85 (schema-bumps)). Two calls to know about. First, `--last-tag` takes the tag `git describe` finds nearest the head, not the newest by date. A head that is itself tagged therefore maps an empty change. Second, a head other than the checked-out `HEAD` reads git-only, and its reason names it ("the head origin/main is not the checked-out HEAD, so .check/ does not describe it") (D135 (evidence-for-head)).
+
+  **3.** `--working-tree` writes the tree as a git tree object through a copy of the index, so your own staging is never touched
+
+  The tree takes every tracked file as it is on disk, staged or not, plus every untracked file `git add` would take. Its sha then stands in for the head commit's everywhere: the diff, the head scan, the manifests and the per-commit caches. Its blobs join the object store unreferenced, the way `git stash create`'s do, and git's gc clears them. `meta.head` reads `working-tree`, and `.check/` is read as the tree's own evidence. The usage text says the same inputs give the same map only on a clean tree, amending D46 (head-is-a-commit).
+
+  **4.** Each range frame is its commit's change from the one merge-base, so the weather builds up and the last frame is the map's own
+
+  Frames follow the head's first parents from the merge-base (`--first-parent --ancestry-path`), so commits merged in from another line belong to their merge's frame. `buildMap` now splits into an assembly and its layout. A frame runs the same assembly but never lays out, which is why the terrain cannot move. Some files existed only in an earlier commit (added, then renamed or deleted by the range's head), so the one terrain has no place for them. Such a file keeps its changed entry, so the frame's counts and notices stay true. It is named in the frame's `unplaced`, and only the wiring and reach that would need a place are dropped. `assertMap` checks every frame over the one terrain. Only the checked-out `HEAD`'s frame reads `.check/`.
+
+  **5.** The scrubber cross-fades the world's weather at the motion budget's own rate; I checked it on this repo's range
+
+  Each tick is one commit, filled in its frame's category hue, with the frame shown outlined in ink. The arrows, a click on a tick, or `,` and `.` step it. Every chrome block (grades, notices, rail, minimap, wiring) reads the frame it stands at. In the world each frame's weather is a layer of its own that fades in as the last fades out. The skin's reach and the planet's lights mix in place, all at `LOD_FADE_MS` (300 ms), and the step cuts under reduced motion (C12 (motion-budget)). I wrote `atis --range 8fa79cb..HEAD` of this run's first three commits (8.5 s cold, three frames) and opened it in Chrome. It opened on frame 3/3 at MVFR. Two `,` presses stepped it to 1/3 at NOINST with its own notices, over the same terrain, with one label layer left and a clean console. One visual is baked rather than a token: a tick is half the HUD font wide, and the arrows reuse the breadcrumb's 6 px padding.

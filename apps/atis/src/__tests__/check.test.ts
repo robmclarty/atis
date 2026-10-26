@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, expect, test } from 'vitest';
 
 import {
+  parseBaseline,
   parseCoverage,
   parseDead,
   parseDupes,
@@ -113,12 +114,12 @@ test('parseSummary is harness_broken when schema_version: 1 but the rest of the 
 // the fallow readers: health, dead, dupes
 // ---------------------------------------------------------------------------
 
-test('parseHealth reads file_scores, findings by path with the exceeded threshold and the lines they span, and fan_in_p95, dropping a malformed row', () => {
+test('parseHealth reads file_scores with their total complexity, findings by path with the exceeded threshold, the lines they span and their column, and fan_in_p95, dropping a malformed row', () => {
   const parsed = parseHealth(
     JSON.stringify({
       schema_version: 9,
       file_scores: [
-        { path: './src/a.ts', fan_in: 3, fan_out: 1, lines: 10, function_count: 2, maintainability_index: 90, crap_max: 1 },
+        { path: './src/a.ts', fan_in: 3, fan_out: 1, lines: 10, function_count: 2, maintainability_index: 90, crap_max: 1, total_cyclomatic: 14 },
         { path: 'src/broken.ts' },
       ],
       findings: [
@@ -133,16 +134,18 @@ test('parseHealth reads file_scores, findings by path with the exceeded threshol
   );
   expect(parsed).toEqual({
     value: {
-      file_scores: [{ path: 'src/a.ts', fan_in: 3, fan_out: 1, lines: 10, function_count: 2, maintainability_index: 90, crap_max: 1 }],
-      // Its name and its measures match it to its base self and say whether a change made it worse (D98).
-      findings: [{ path: 'src/router.ts', exceeded: 'all', line: 67, line_count: 60, name: 'add', cyclomatic: 22, cognitive: 34 }],
+      // A file's total complexity is a trouble spot's (D101).
+      file_scores: [{ path: 'src/a.ts', fan_in: 3, fan_out: 1, lines: 10, function_count: 2, maintainability_index: 90, crap_max: 1, total_cyclomatic: 14 }],
+      // Its name and its measures match it to its base self and say whether a change made it worse (D98);
+      // its column keys an unnamed function in checkride's baseline (D49).
+      findings: [{ path: 'src/router.ts', exceeded: 'all', line: 67, col: 2, line_count: 60, name: 'add', cyclomatic: 22, cognitive: 34 }],
       fan_in_p95: 6,
     },
     schema_version: 9,
   });
 });
 
-test('parseDead passes circular_dependencies, re_export_cycles, boundary_violations and unused_exports through', () => {
+test('parseDead passes circular_dependencies, re_export_cycles, boundary_violations, unused_exports and unused_files through', () => {
   const parsed = parseDead(
     JSON.stringify({
       schema_version: 11,
@@ -150,6 +153,7 @@ test('parseDead passes circular_dependencies, re_export_cycles, boundary_violati
       re_export_cycles: [],
       boundary_violations: [{ from: 'apps', to: 'libs' }],
       unused_exports: [],
+      unused_files: [{ path: 'src/orphan.ts' }],
     }),
   );
   expect(parsed).toEqual({
@@ -158,6 +162,7 @@ test('parseDead passes circular_dependencies, re_export_cycles, boundary_violati
       re_export_cycles: [],
       boundary_violations: [{ from: 'apps', to: 'libs' }],
       unused_exports: [],
+      unused_files: [{ path: 'src/orphan.ts' }],
     },
     schema_version: 11,
   });
@@ -186,6 +191,30 @@ test('parseDupes passes clone_families through and records a fallow schema_versi
     value: { clone_families: [{ files: ['a.ts', 'b.ts'] }] },
     schema_version: 42,
   });
+});
+
+test("parseBaseline reads each check's keys as opaque strings, and the counts of the keys a capture found more than once (D49)", () => {
+  const parsed = parseBaseline(
+    JSON.stringify({
+      schema_version: 1,
+      slots: { dupes: ['dupes:dup:0ac5220b'], health: ['health:src/a.ts:run', '', 7], lint: [], prose: 'none' },
+      captured_with: { health: { pin_source: 'package.json' } },
+      counts: { health: { 'health:src/a.ts:run': 2, 'health:src/a.ts:odd': 1 }, dead: 'none' },
+    }),
+  );
+
+  // A malformed entry is dropped, and a field atis does not read is ignored, as checkride's own reader does.
+  expect(parsed).toEqual({
+    slots: { dupes: ['dupes:dup:0ac5220b'], health: ['health:src/a.ts:run'], lint: [] },
+    counts: { health: { 'health:src/a.ts:run': 2 } },
+  });
+  expect(parseBaseline(JSON.stringify({ schema_version: 1, slots: {} }))).toEqual({ slots: {} });
+});
+
+test('parseBaseline refuses a newer schema whole, rather than half reading it, and says why it read nothing (C2)', () => {
+  expect(parseBaseline(JSON.stringify({ schema_version: 2, slots: {} }))).toEqual({ reason: 'checkride.baseline.json is schema_version 2, and atis reads 1' });
+  expect(parseBaseline('{')).toEqual({ reason: 'checkride.baseline.json is not a JSON object' });
+  expect(parseBaseline(JSON.stringify({ schema_version: 1 }))).toEqual({ reason: 'checkride.baseline.json has no slots' });
 });
 
 // ---------------------------------------------------------------------------
@@ -433,13 +462,13 @@ test('reads the trimmed checkride fixture: mode check, the summary, and every fa
 test('health.json: file_scores, findings by path with the exceeded threshold and their lines, and fan_in_p95', () => {
   const result = expectCheck(fixtureResult);
   expect(result.health?.file_scores).toHaveLength(3);
-  expect(result.health?.findings).toEqual([{ path: 'src/gate.ts', exceeded: 'cyclomatic', line: 42, line_count: 95, name: 'runGate', cyclomatic: 28, cognitive: 22 }]);
+  expect(result.health?.findings).toEqual([{ path: 'src/gate.ts', exceeded: 'cyclomatic', line: 42, col: 0, line_count: 95, name: 'runGate', cyclomatic: 28, cognitive: 22 }]);
   expect(result.health?.fan_in_p95).toBe(6);
 });
 
-test('dead.json and dupes.json: the four dead-code channels and clone_families, all clean here', () => {
+test('dead.json and dupes.json: the five dead-code channels and clone_families, all clean here', () => {
   const result = expectCheck(fixtureResult);
-  expect(result.dead).toEqual({ circular_dependencies: [], re_export_cycles: [], boundary_violations: [], unused_exports: [] });
+  expect(result.dead).toEqual({ circular_dependencies: [], re_export_cycles: [], boundary_violations: [], unused_exports: [], unused_files: [] });
   expect(result.dupes).toEqual({ clone_families: [] });
 });
 

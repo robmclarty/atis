@@ -18,6 +18,7 @@ import type {
   Advisory,
   AdvisoryPath,
   CheckArtifacts,
+  CheckBaseline,
   CheckSummary,
   CheckSummarySlot,
   Coverage,
@@ -150,7 +151,9 @@ function envelopeOf(record: Record<string, unknown>): Omit<FallowParse<unknown>,
  * where a red `health` meets a change or does not (D73), and
  * `target_thresholds.fan_in_p95`. A finding keeps its function's name and its
  * three measures where fallow gives them, which match it to its base self
- * and say whether the change made it worse (D98).
+ * and say whether the change made it worse (D98). A file keeps its total
+ * cyclomatic complexity, a trouble spot's complexity, and a finding its
+ * column, which keys an unnamed function in checkride's baseline (D101).
  */
 export function parseHealth(text: string): FallowParse<Health> | undefined {
   const value = parseJson(text);
@@ -168,6 +171,7 @@ export function parseHealth(text: string): FallowParse<Health> | undefined {
     }
     const fan_in = numberField(raw, 'fan_in');
     const fan_out = numberField(raw, 'fan_out');
+    const total_cyclomatic = numberField(raw, 'total_cyclomatic');
     return [
       {
         path: normalizePath(path),
@@ -177,6 +181,7 @@ export function parseHealth(text: string): FallowParse<Health> | undefined {
         function_count,
         maintainability_index,
         crap_max,
+        ...(total_cyclomatic === undefined ? {} : { total_cyclomatic }),
       },
     ];
   });
@@ -189,11 +194,22 @@ export function parseHealth(text: string): FallowParse<Health> | undefined {
     const line_count = numberField(raw, 'line_count');
     if (typeof path !== 'string' || typeof exceeded !== 'string' || line === undefined || line_count === undefined) return [];
     const name = stringField(raw, 'name');
+    const col = numberField(raw, 'col');
     const measures = (['cyclomatic', 'cognitive', 'crap'] as const).flatMap((measure) => {
       const measured = numberField(raw, measure);
       return measured === undefined ? [] : [[measure, measured] as const];
     });
-    return [{ path: normalizePath(path), exceeded, line, line_count, ...(name === undefined ? {} : { name }), ...Object.fromEntries(measures) }];
+    return [
+      {
+        path: normalizePath(path),
+        exceeded,
+        line,
+        ...(col === undefined ? {} : { col }),
+        line_count,
+        ...(name === undefined ? {} : { name }),
+        ...Object.fromEntries(measures),
+      },
+    ];
   });
 
   const thresholds = value['target_thresholds'];
@@ -204,8 +220,9 @@ export function parseHealth(text: string): FallowParse<Health> | undefined {
 
 /**
  * `dead.json` (fallow): `circular_dependencies`, `re_export_cycles`,
- * `boundary_violations`, `unused_exports`, each finding kept whole, so core
- * reads the paths it names and the lines it stands on by key (D140).
+ * `boundary_violations`, `unused_exports` and `unused_files`, each finding
+ * kept whole, so core reads the paths it names and the lines it stands on by
+ * key (D140, D101).
  */
 export function parseDead(text: string): FallowParse<Dead> | undefined {
   const value = parseJson(text);
@@ -216,6 +233,7 @@ export function parseDead(text: string): FallowParse<Dead> | undefined {
       re_export_cycles: arrayField(value, 're_export_cycles'),
       boundary_violations: arrayField(value, 'boundary_violations'),
       unused_exports: arrayField(value, 'unused_exports'),
+      unused_files: arrayField(value, 'unused_files'),
     },
     ...envelopeOf(value),
   };
@@ -372,6 +390,48 @@ export function parseLint(text: string): Lint | undefined {
 export function parseStruct(text: string): Struct | undefined {
   const value = parseJson(text);
   return Array.isArray(value) ? { matches: reportedFindings(value, 'file') } : undefined;
+}
+
+/** checkride's committed baseline, at the repository's root (D49). */
+export const BASELINE_FILE = 'checkride.baseline.json';
+const BASELINE_SCHEMA_VERSION = 1;
+
+/** Each entry of `record` that is itself a record, by key; anything else is dropped. */
+function records(record: Record<string, unknown>): Readonly<Record<string, Record<string, unknown>>> {
+  return Object.fromEntries(Object.entries(record).flatMap(([key, value]) => (isRecord(value) ? [[key, value] as const] : [])));
+}
+
+/**
+ * `checkride.baseline.json` (schema 1): each check's grandfathered keys, and
+ * how many findings a key grandfathers where `counts` names it, kept as
+ * opaque strings to compare and count, never parse (D49). The reader is
+ * checkride's own kind of tolerant: unknown fields are ignored and a
+ * malformed entry dropped, while a newer `schema_version` is refused whole
+ * rather than half read.
+ */
+export function parseBaseline(text: string): CheckBaseline {
+  const value = parseJson(text);
+  if (!isRecord(value)) return { reason: `${BASELINE_FILE} is not a JSON object` };
+  const version = value['schema_version'];
+  if (version !== BASELINE_SCHEMA_VERSION) {
+    return { reason: `${BASELINE_FILE} is schema_version ${String(version)}, and atis reads ${String(BASELINE_SCHEMA_VERSION)}` };
+  }
+  const slotsRaw = value['slots'];
+  if (!isRecord(slotsRaw)) return { reason: `${BASELINE_FILE} has no slots` };
+  const slots = Object.fromEntries(
+    Object.entries(slotsRaw).flatMap(([slot, keys]) =>
+      Array.isArray(keys) ? [[slot, keys.filter((key): key is string => typeof key === 'string' && key !== '')] as const] : [],
+    ),
+  );
+  const countsRaw = value['counts'];
+  if (!isRecord(countsRaw)) return { slots };
+  const counts = Object.fromEntries(
+    Object.entries(records(countsRaw)).map(([slot, keys]) => [
+      slot,
+      Object.fromEntries(Object.entries(keys).filter((entry): entry is [string, number] => Number.isInteger(entry[1]) && Number(entry[1]) >= 2)),
+    ]),
+  );
+  return { slots, counts };
 }
 
 /** `.check/`, or a `reason` it cannot be trusted: absent, empty, or no schema-1 `summary.json` (D41). */

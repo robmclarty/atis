@@ -514,3 +514,70 @@ test('--range beside a flag that names the base or the head, or not two refs, is
   }
   expect(existsSync(out)).toBe(false);
 }, MINUTE);
+
+/**
+ * A `.check/` whose fallow slots ran, written now and holding `files`; its run
+ * window opens an hour back, so every file reads as this run's (D41).
+ */
+function writeCheck(repo: string, files: Readonly<Record<string, unknown>>): void {
+  const slots = ['dead', 'dupes', 'health'];
+  const summary = { schema_version: 1, ok: true, checks_run: slots.length, timestamp: new Date().toISOString(), total_duration_ms: 3_600_000, checks: slots.map((name) => ({ name, ok: true })) };
+  write(repo, '.check/summary.json', JSON.stringify(summary));
+  for (const [name, value] of Object.entries(files)) write(repo, `.check/${name}`, JSON.stringify(value));
+}
+
+test("--whole-repo maps the head's own terrain with its overlays, and draws muted only the findings a committed baseline grandfathers (D101, D49)", () => {
+  const { repo, sha } = featureClone('whole');
+  const dir = temp('whole-maps');
+  writeCheck(repo, {
+    'health.json': { file_scores: [{ path: 'src/cube.ts', lines: 5, function_count: 1, maintainability_index: 88, crap_max: 2, total_cyclomatic: 3 }], findings: [] },
+    'dead.json': { unused_exports: [{ path: 'src/shapes.ts', export_name: 'area', line: 1, col: 16 }] },
+  });
+  write(repo, 'checkride.baseline.json', JSON.stringify({ schema_version: 1, slots: { dead: ['dead-code:unused_exports:src/shapes.ts:area'] } }));
+
+  // Written but not committed, the baseline is not the head's, so it draws nothing muted.
+  const before = join(dir, 'before.json');
+  const outcome = run({ repo, wholeRepo: true, out: before, verbose: false });
+  expect(outcome.exitCode).toBe(0);
+  expect(outcome.stdout).toMatch(/^whole repo, 4 files on the terrain, 5 of 8 overlays, wrote /);
+  const map = mapAt(before);
+  expect(map.meta).toMatchObject({ mode: 'repo', base: 'HEAD', head: sha('HEAD'), merge_base: sha('HEAD') });
+  expect(map.weather.changed).toEqual([]);
+  expect(map.notices).toEqual([]);
+  expect(map.overlays?.trouble_spots).toEqual([{ path: 'src/cube.ts', commits: 1, complexity: 3, score: 1 }]);
+  expect(map.overlays?.dead_code).toEqual([{ path: 'src/shapes.ts', kind: 'export', name: 'area', line: 1 }]);
+  expect(map.overlays?.recent_heat?.commits).toBe(3);
+  expect(map.overlays?.muted).toEqual([
+    'baselined: no checkride.baseline.json is committed at the head',
+    'coverage_gaps: .check/ ran no test slot',
+    'duplication: .check/dupes.json is missing or unreadable',
+  ]);
+
+  git(repo, 'add', 'checkride.baseline.json');
+  git(repo, 'commit', '--quiet', '-m', 'chore: baseline the unused export');
+  const after = join(dir, 'after.json');
+  expect(run({ repo, wholeRepo: true, out: after, verbose: false }).exitCode).toBe(0);
+  expect(mapAt(after).overlays?.baselined).toEqual([{ kind: 'unused-export', files: ['src/shapes.ts'], name: 'area' }]);
+
+  // The head's terrain is kept per commit like any base's, so a change measured from it stands on the same ground (D96, P2).
+  expect(run({ repo, base: 'HEAD', out: join(dir, 'change.json'), verbose: true }).stderr).toContain('terrain cache hit');
+
+  // Another head reads git-only, so every overlay .check/ feeds is muted with D135's reason.
+  const other = join(dir, 'other.json');
+  expect(run({ repo, wholeRepo: true, head: 'origin/main', out: other, verbose: false }).exitCode).toBe(0);
+  const elsewhere = mapAt(other);
+  expect(elsewhere.meta).toMatchObject({ base: 'origin/main', head: sha('origin/main') });
+  expect(elsewhere.overlays?.muted).toContain('dead_code: the head origin/main is not the checked-out HEAD, so .check/ does not describe it');
+}, MINUTE);
+
+test('--whole-repo beside a flag that names a base, a range or the working tree is misuse (C4)', () => {
+  for (const [args, reason] of [
+    [['--whole-repo', '--base', 'main'], '--whole-repo maps one commit with no change; drop --base'],
+    [['--whole-repo', '--range', 'main..HEAD'], 'drop --range'],
+    [['--whole-repo', '--working-tree', '--last-tag'], 'drop --last-tag and --working-tree'],
+  ] as const) {
+    const result = atis([...args, '--out', join(temp('whole-misuse'), 'map.json')]);
+    expect(result.status, args.join(' ')).toBe(2);
+    expect(result.stderr).toContain(reason);
+  }
+}, MINUTE);

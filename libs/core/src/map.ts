@@ -13,7 +13,9 @@
  * sorted (C3). Handed a range's commits, it runs the same assembly at each,
  * short of the layout, for the weather frames a reviewer scrubs over the one
  * terrain (D100). `layOutTerrain` runs the same assembly over a base commit
- * alone, for the terrain the CLI caches per base (D96).
+ * alone, for the terrain the CLI caches per base (D96), and `buildRepoMap`
+ * runs it over one commit as a change of nothing, with the whole
+ * repository's overlays in place of weather (D101).
  */
 
 import { DEFAULT_CONFIG } from './config.js';
@@ -21,7 +23,7 @@ import type { Config } from './config.js';
 import { computeDependencies } from './dependencies.js';
 import { computeDepth } from './depth.js';
 import type { Depths, FileDepth } from './depth.js';
-import { compareStructure, computeCategory, computeEvidence, dentsFrom, pathsOf, trustCoverage } from './evidence.js';
+import { compareStructure, computeCategory, computeEvidence, dentsFrom, trustCoverage } from './evidence.js';
 import type { CheckArtifacts, Dupes, Health, Structure } from './evidence.js';
 import { OTHER_GROUP, identifyGroups, shoreMatcher } from './groups.js';
 import { computeHistory } from './history.js';
@@ -32,6 +34,8 @@ import { classifyFile, identifyModules } from './modules.js';
 import type { ImportEdge, ModuleCell, Modules, ScannedFile } from './modules.js';
 import { findGhosts, findPublicNames, rankNotices } from './notices.js';
 import type { NamedEdge, PublishingMember, ScanFile } from './notices.js';
+import { computeOverlays, numberCloneFamilies } from './overlays.js';
+import type { CheckBaseline } from './overlays.js';
 import { TESTS_GROUP, computeReach } from './reach.js';
 import type { DiffFile } from './reach.js';
 import { SCHEMA_VERSION } from './schema.js';
@@ -314,22 +318,16 @@ function dentsOf(check: CheckArtifacts): ReadonlyMap<string, readonly string[]> 
 }
 
 /**
- * Which clone family each file belongs to. fallow names no id for a family,
- * so the map numbers them: the families sorted by their own file lists,
- * `family-1` up, which is what makes two runs over one `dupes.json` mark the
- * same cells with the same glyph (C3).
+ * Which clone family each file belongs to, under the number the overlays give
+ * the same family (C3, D101).
  */
 function cloneFamilies(dupes: Dupes | undefined): ReadonlyMap<string, string> {
-  const families = (dupes?.clone_families ?? [])
-    .map((family) => sortUnique(pathsOf(family)))
-    .filter((files) => files.length > 0)
-    .toSorted((a, b) => byPath(a.join('\n'), b.join('\n')));
   const of = new Map<string, string>();
-  families.forEach((files, index) => {
+  for (const { id, files } of numberCloneFamilies(dupes)) {
     for (const path of files) {
-      if (!of.has(path)) of.set(path, `family-${String(index + 1)}`);
+      if (!of.has(path)) of.set(path, id);
     }
-  });
+  }
   return of;
 }
 
@@ -793,6 +791,71 @@ function assemble(inputs: BuildInputs, config: Config): Assembled {
       config,
     }),
   };
+}
+
+/** What a `repo` map is of: the one commit, as the reviewer named it and by its sha, and the clock (D101, C3). */
+export type RepoMeta = {
+  readonly repo: string;
+  /** The head as it was named: `HEAD`, or the ref `--head` named. */
+  readonly named: string;
+  readonly head: string;
+  readonly generated_at: string;
+};
+
+/** Everything a `repo` map reads (D101): one commit's scan and log, its `.check/`, and checkride's baseline as it holds one. */
+export type RepoInputs = {
+  readonly meta: RepoMeta;
+  /** The commit's tree, scanned (D21): the terrain and every overlay's files. */
+  readonly scan: Scan;
+  /** The log window at the commit, newest first (D8): trouble spots' churn and the recent heat. */
+  readonly commits: readonly Commit[];
+  readonly head_time: number;
+  /** The `.check/` artifacts, or the reason there are none to trust (D41, D135). */
+  readonly check: CheckArtifacts;
+  /** checkride's baseline as the commit holds it, or why it holds none (D49). */
+  readonly baseline: CheckBaseline;
+  /** The commit's own laid-out terrain, as the CLI keeps it per commit (D96); absent, the field is laid out here. */
+  readonly ground?: Layout;
+  readonly prior?: Prior;
+};
+
+/**
+ * Assemble a `repo` map (D101): the commit's terrain under a change of
+ * nothing, so its weather is empty and it ranks no notice, and the whole
+ * repository's overlays over it. The terrain is the one `layOutTerrain` lays
+ * out for the commit, so a change later measured from it stands on the same
+ * ground (P2). Its coverage is trusted as a change's is (D122).
+ */
+export function buildRepoMap(inputs: RepoInputs, config: Config = DEFAULT_CONFIG): MapJson & { readonly terrain: { readonly layout: Layout } } {
+  const { meta, scan, commits, head_time, check, ground, prior } = inputs;
+  const still: BuildInputs = {
+    meta: { repo: meta.repo, base: meta.named, head: meta.head, merge_base: meta.head, generated_at: meta.generated_at },
+    base: scan,
+    head: scan,
+    diff: [],
+    deps_added: [],
+    commits,
+    head_time,
+    check,
+    ...(ground === undefined ? {} : { ground }),
+    ...(prior === undefined ? {} : { prior }),
+  };
+  const { lay, ...assembled } = assemble(still, config);
+  const { terrain } = assembled;
+  const files = terrain.organelles.map((organelle) => organelle.path);
+  const code = new Map(scan.files.map((file) => [file.path, file.code ?? []] as const));
+  const trusted = trustCoverage(check, new Set(files));
+  const overlays = computeOverlays({
+    // A test is evidence with no place of its own (D4), so the overlays draw on the terrain and the shore alone.
+    placed: new Set([...files, ...terrain.groups.filter((group) => group.id !== TESTS_GROUP).flatMap((group) => group.files)]),
+    terrain: new Map(files.map((path) => [path, code.get(path) ?? []] as const)),
+    commits,
+    check: trusted.check,
+    coverage_unnamed: trusted.muted !== undefined,
+    baseline: inputs.baseline,
+    config: config.overlays,
+  });
+  return { ...assembled, meta: { ...assembled.meta, mode: 'repo' }, terrain: { ...terrain, layout: lay() }, notices: [], overlays };
 }
 
 /** No `.check/` stands behind a terrain on its own: the layout never reads it, and nothing else of the map is kept. */

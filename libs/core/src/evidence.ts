@@ -56,6 +56,8 @@ export type HealthFileScore = {
   readonly function_count: number;
   readonly maintainability_index: number;
   readonly crap_max: number;
+  /** The sum of its functions' cyclomatic complexity, where fallow gives it: a trouble spot's complexity (D101). */
+  readonly total_cyclomatic?: number;
 };
 
 /**
@@ -68,6 +70,8 @@ export type HealthFinding = {
   readonly path: string;
   readonly exceeded: string;
   readonly line: number;
+  /** The column it starts at, as fallow writes it, which keys an unnamed function in checkride's baseline (D49). */
+  readonly col?: number;
   readonly line_count: number;
   readonly name?: string;
   readonly cyclomatic?: number;
@@ -87,6 +91,8 @@ export type Dead = {
   readonly re_export_cycles: readonly unknown[];
   readonly boundary_violations: readonly unknown[];
   readonly unused_exports: readonly unknown[];
+  /** The files nothing imports, where the reader kept them: whole-repo dead code (D101). */
+  readonly unused_files?: readonly unknown[];
 };
 
 export type Dupes = { readonly clone_families: readonly unknown[] };

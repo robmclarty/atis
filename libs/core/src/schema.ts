@@ -327,18 +327,31 @@ export type Instruments = {
   readonly structure?: { readonly base: StructureSide; readonly head: StructureSide };
 };
 
+/**
+ * What a map is of (D101): one change, its weather over the terrain it stands
+ * on, or the whole repository at one commit, its overlays over that commit's
+ * own terrain. A reader that knows only `change` still reads a `repo` map, as
+ * a terrain under a change of nothing (D85).
+ */
+export type MapMode = 'change' | 'repo';
+
 export type Meta = {
   readonly schema_version: 1;
   readonly generated_at: string;
   readonly repo: string;
-  /** The base as resolved: the ref the merge-base is taken against, `main`, `origin/main`, `HEAD~1`, a tag, or the ref `--base` named (D99). */
+  /**
+   * The base as resolved: the ref the merge-base is taken against, `main`,
+   * `origin/main`, `HEAD~1`, a tag, or the ref `--base` named (D99). On a
+   * `repo` map, the head as it was named, since the terrain is the head's own.
+   */
   readonly base: string;
   /** The base as typed: `--base <ref>`, `--last-commit` or `--last-tag`; absent when none was, and the run took the trunk (D99). */
   readonly base_typed?: string;
   /** The head commit's sha, or `working-tree` when the head side was read from the working tree (D99). */
   readonly head: string;
+  /** The commit the terrain is cut from: the merge-base of a change, or the head itself on a `repo` map. */
   readonly merge_base: string;
-  readonly mode: 'change';
+  readonly mode: MapMode;
   readonly instruments: Instruments;
 };
 
@@ -363,12 +376,90 @@ export type Frame = {
  */
 export type Sequence = { readonly frames: readonly Frame[] };
 
+/**
+ * A trouble spot (§8): a file the log keeps changing that is also complex.
+ * `commits` counts the window's commits touching it, `complexity` is fallow's
+ * total cyclomatic complexity of it, and `score` is their product over the
+ * repository's largest, so the worst spot scores 1.
+ */
+export type TroubleSpot = { readonly path: string; readonly commits: number; readonly complexity: number; readonly score: number };
+
+/** One function over one of fallow's thresholds (D9): its name where fallow gives one, the line it starts on, and every rule it breaks. */
+export type Breach = { readonly function?: string; readonly line: number; readonly rules: readonly string[] };
+
+/**
+ * An ugly spot (§8): a file fallow measured, with its maintainability index
+ * where fallow scored the file, and every threshold its functions break,
+ * none for a file that breaks none.
+ */
+export type UglySpot = { readonly path: string; readonly maintainability?: number; readonly breaches: readonly Breach[] };
+
+/**
+ * A coverage gap (§8): a file whose statements the coverage report counts,
+ * some of them never run, or a terrain file holding code that the report
+ * never names at all, a gap of unknown size (D80).
+ */
+export type CoverageGap =
+  | { readonly path: string; readonly statements: number; readonly uncovered: number }
+  | { readonly path: string; readonly unmeasured: true };
+
+/** Dead code (§8): a file nothing imports, or one export nothing reads, by name. */
+export type DeadCode = { readonly path: string; readonly kind: 'file' } | { readonly path: string; readonly kind: 'export'; readonly name: string; readonly line?: number };
+
+/**
+ * One clone family (§8): the files its copies sit in, under the id its
+ * cells and organelles carry as `clone_family`, and the lines it
+ * duplicates where fallow counts them.
+ */
+export type CloneFamily = { readonly id: string; readonly files: readonly string[]; readonly lines?: number };
+
+/** One cycle (§8): an import cycle, its files in import order as fallow lists them, or a cycle of re-exports. */
+export type Cycle = { readonly kind: 'import' | 're-export'; readonly files: readonly string[] };
+
+/** The last `commits` commits of the window (§8), and how many of them touched each file they touched. */
+export type RecentHeat = { readonly commits: number; readonly files: readonly { readonly path: string; readonly commits: number }[] };
+
+/** What a baselined finding is: a function over a threshold, a dead file or export, a cycle, or a clone family (D49). */
+export type BaselinedKind = 'threshold' | 'unused-file' | 'unused-export' | 'cycle' | 'clone-family';
+
+/**
+ * A finding checkride's committed baseline grandfathers, drawn muted (D49):
+ * the files it stands on, and the function, export or clone family it is.
+ */
+export type BaselinedFinding = { readonly kind: BaselinedKind; readonly files: readonly string[]; readonly name?: string };
+
+/**
+ * Whole-repository state at one commit, drawn over its own terrain in place
+ * of a change's weather (D101). Each overlay is absent when its source is,
+ * and `muted` then names it with the reason, as `overlay: reason` (C2). Every
+ * overlay names only files the map places on its terrain or its shore, never
+ * a test (D4), and every list is sorted (C3).
+ */
+export type Overlays = {
+  readonly trouble_spots?: readonly TroubleSpot[];
+  readonly ugly_spots?: readonly UglySpot[];
+  readonly coverage_gaps?: readonly CoverageGap[];
+  readonly dead_code?: readonly DeadCode[];
+  readonly duplication?: readonly CloneFamily[];
+  readonly cycles?: readonly Cycle[];
+  readonly recent_heat?: RecentHeat;
+  readonly baselined?: readonly BaselinedFinding[];
+  readonly muted?: readonly string[];
+};
+
+/** Every overlay a `repo` map can carry, in the order §8 lists them, the baseline last (D49, D101). */
+export const OVERLAY_NAMES = ['trouble_spots', 'ugly_spots', 'coverage_gaps', 'dead_code', 'duplication', 'cycles', 'recent_heat', 'baselined'] as const;
+
+export type OverlayName = (typeof OVERLAY_NAMES)[number];
+
 export type MapJson = {
   readonly meta: Meta;
   readonly terrain: Terrain;
   readonly weather: Weather;
   readonly notices: readonly Notice[];
   readonly sequence?: Sequence;
+  /** Set exactly on a `repo` map (D101). */
+  readonly overlays?: Overlays;
 };
 
 const NOTICE_BUDGET: Readonly<Record<NoticeTier, number>> = {
@@ -522,6 +613,8 @@ function assertShape(value: unknown): asserts value is MapJson {
   }
   expectString(meta['base'], 'meta.base');
   if (meta['base_typed'] !== undefined) expectString(meta['base_typed'], 'meta.base_typed');
+  const mode = meta['mode'];
+  if (mode !== 'change' && mode !== 'repo') fail('meta.mode', 'expected change or repo');
 
   const instruments = expectRecord(meta['instruments'], 'meta.instruments');
   const entryPoints = instruments['entry_points'];
@@ -601,6 +694,174 @@ function assertShape(value: unknown): asserts value is MapJson {
   if (sequence !== undefined) {
     const frames = expectArray(expectRecord(sequence, 'sequence')['frames'], 'sequence.frames');
     frames.forEach((raw, index) => assertFrame(raw, `sequence.frames[${String(index)}]`, placed));
+  }
+
+  // A repo map is a terrain under a change of nothing, with the overlays in place of its weather (D101).
+  if ((root['overlays'] !== undefined) !== (mode === 'repo')) fail('overlays', 'expected overlays exactly on a repo map');
+  if (mode === 'repo') {
+    if (expectArray(expectRecord(root['weather'], 'weather')['changed'], 'weather.changed').length > 0) fail('weather.changed', 'a repo map changes no file');
+    if (expectArray(root['notices'], 'notices').length > 0) fail('notices', 'a repo map ranks no notice');
+    if (sequence !== undefined) fail('sequence', 'a repo map has no range to frame');
+    assertOverlays(root['overlays'], placed);
+  }
+}
+
+const OVERLAY_KEYS: ReadonlySet<string> = new Set([...OVERLAY_NAMES, 'muted']);
+const BASELINED_KINDS: ReadonlySet<string> = new Set(['threshold', 'unused-file', 'unused-export', 'cycle', 'clone-family']);
+
+function expectWhole(value: unknown, path: string, least = 0): number {
+  if (!isWholeCount(value) || value < least) fail(path, `expected a whole count of at least ${String(least)}`);
+  return value;
+}
+
+/** A file the map places, an organelle or a group's file. */
+function expectPlaced(value: unknown, path: string, placed: Placed): string {
+  const file = expectString(value, path);
+  if (!placed.files.has(file)) fail(path, `unknown organelle or group file "${file}"`);
+  return file;
+}
+
+/** At least one file, each one the map places. */
+function assertFiles(value: unknown, path: string, placed: Placed): void {
+  const files = expectArray(value, path);
+  if (files.length === 0) fail(path, 'expected at least one file');
+  files.forEach((file, index) => expectPlaced(file, `${path}[${String(index)}]`, placed));
+}
+
+/** A list with one entry per file, each a record the map places, sorted by path and named once (C3); hands back the records. */
+function expectByPath(value: unknown, path: string, placed: Placed): readonly (readonly [Record<string, unknown>, string])[] {
+  let previous: string | undefined;
+  return expectArray(value, path).map((raw, index) => {
+    const at = `${path}[${String(index)}]`;
+    const entry = expectRecord(raw, at);
+    const file = expectPlaced(entry['path'], `${at}.path`, placed);
+    if (previous !== undefined && previous >= file) fail(`${at}.path`, `expected the paths sorted and unique, got "${file}" after "${previous}"`);
+    previous = file;
+    return [entry, at] as const;
+  });
+}
+
+function assertTroubleSpots(value: unknown, placed: Placed): void {
+  for (const [spot, at] of expectByPath(value, 'overlays.trouble_spots', placed)) {
+    expectWhole(spot['commits'], `${at}.commits`, 1);
+    if (expectFinite(spot['complexity'], `${at}.complexity`) <= 0) fail(`${at}.complexity`, 'expected a complexity above zero');
+    const score = expectFinite(spot['score'], `${at}.score`);
+    if (score <= 0 || score > 1) fail(`${at}.score`, 'expected a score above 0 and at most 1');
+  }
+}
+
+function assertUglySpots(value: unknown, placed: Placed): void {
+  for (const [spot, at] of expectByPath(value, 'overlays.ugly_spots', placed)) {
+    if (spot['maintainability'] !== undefined) expectFinite(spot['maintainability'], `${at}.maintainability`);
+    expectArray(spot['breaches'], `${at}.breaches`).forEach((raw, index) => {
+      const where = `${at}.breaches[${String(index)}]`;
+      const breach = expectRecord(raw, where);
+      if (breach['function'] !== undefined) expectString(breach['function'], `${where}.function`);
+      expectWhole(breach['line'], `${where}.line`);
+      const rules = expectArray(breach['rules'], `${where}.rules`);
+      if (rules.length === 0) fail(`${where}.rules`, 'expected at least one rule');
+      rules.forEach((rule, n) => expectString(rule, `${where}.rules[${String(n)}]`));
+    });
+  }
+}
+
+/** A gap is a measured file with statements that never ran, or a file the report never names; never both. */
+function assertCoverageGaps(value: unknown, placed: Placed): void {
+  for (const [gap, at] of expectByPath(value, 'overlays.coverage_gaps', placed)) {
+    if (gap['unmeasured'] !== undefined) {
+      if (gap['unmeasured'] !== true) fail(`${at}.unmeasured`, 'expected true');
+      if (gap['statements'] !== undefined || gap['uncovered'] !== undefined) fail(at, 'an unmeasured file counts no statements');
+      continue;
+    }
+    const statements = expectWhole(gap['statements'], `${at}.statements`, 1);
+    const uncovered = expectWhole(gap['uncovered'], `${at}.uncovered`, 1);
+    if (uncovered > statements) fail(`${at}.uncovered`, 'more statements uncovered than counted');
+  }
+}
+
+function assertDeadCode(value: unknown, placed: Placed): void {
+  expectArray(value, 'overlays.dead_code').forEach((raw, index) => {
+    const at = `overlays.dead_code[${String(index)}]`;
+    const entry = expectRecord(raw, at);
+    expectPlaced(entry['path'], `${at}.path`, placed);
+    const kind = entry['kind'];
+    if (kind !== 'file' && kind !== 'export') fail(`${at}.kind`, 'expected file or export');
+    if (kind === 'export') expectString(entry['name'], `${at}.name`);
+    if (entry['line'] !== undefined) expectWhole(entry['line'], `${at}.line`, 1);
+  });
+}
+
+function assertDuplication(value: unknown, placed: Placed): void {
+  expectArray(value, 'overlays.duplication').forEach((raw, index) => {
+    const at = `overlays.duplication[${String(index)}]`;
+    const family = expectRecord(raw, at);
+    expectString(family['id'], `${at}.id`);
+    assertFiles(family['files'], `${at}.files`, placed);
+    if (family['lines'] !== undefined) expectWhole(family['lines'], `${at}.lines`);
+  });
+}
+
+function assertCycles(value: unknown, placed: Placed): void {
+  expectArray(value, 'overlays.cycles').forEach((raw, index) => {
+    const at = `overlays.cycles[${String(index)}]`;
+    const cycle = expectRecord(raw, at);
+    if (cycle['kind'] !== 'import' && cycle['kind'] !== 're-export') fail(`${at}.kind`, 'expected import or re-export');
+    assertFiles(cycle['files'], `${at}.files`, placed);
+  });
+}
+
+/** The heat is a window of commits, and how many of them touched each file, never more than the window holds. */
+function assertRecentHeat(value: unknown, placed: Placed): void {
+  const heat = expectRecord(value, 'overlays.recent_heat');
+  const held = expectWhole(heat['commits'], 'overlays.recent_heat.commits');
+  for (const [file, at] of expectByPath(heat['files'], 'overlays.recent_heat.files', placed)) {
+    if (expectWhole(file['commits'], `${at}.commits`, 1) > held) fail(`${at}.commits`, 'more commits than the window holds');
+  }
+}
+
+function assertBaselined(value: unknown, placed: Placed): void {
+  expectArray(value, 'overlays.baselined').forEach((raw, index) => {
+    const at = `overlays.baselined[${String(index)}]`;
+    const finding = expectRecord(raw, at);
+    const kind = finding['kind'];
+    if (typeof kind !== 'string' || !BASELINED_KINDS.has(kind)) fail(`${at}.kind`, 'expected threshold, unused-file, unused-export, cycle or clone-family');
+    assertFiles(finding['files'], `${at}.files`, placed);
+    if (finding['name'] !== undefined) expectString(finding['name'], `${at}.name`);
+  });
+}
+
+const OVERLAY_ASSERTS: Readonly<Record<OverlayName, (value: unknown, placed: Placed) => void>> = {
+  trouble_spots: assertTroubleSpots,
+  ugly_spots: assertUglySpots,
+  coverage_gaps: assertCoverageGaps,
+  dead_code: assertDeadCode,
+  duplication: assertDuplication,
+  cycles: assertCycles,
+  recent_heat: assertRecentHeat,
+  baselined: assertBaselined,
+};
+
+/**
+ * The overlays (D101): only the eight §8 names, each either drawn or muted
+ * with its reason as `overlay: reason`, never both and never neither (C2),
+ * and each naming only files the map places.
+ */
+function assertOverlays(value: unknown, placed: Placed): void {
+  const overlays = expectRecord(value, 'overlays');
+  for (const key of Object.keys(overlays)) {
+    if (!OVERLAY_KEYS.has(key)) fail(`overlays.${key}`, 'unknown overlay');
+  }
+  const muted = new Set(
+    (overlays['muted'] === undefined ? [] : expectArray(overlays['muted'], 'overlays.muted')).map((entry, index) => {
+      const [name = ''] = expectString(entry, `overlays.muted[${String(index)}]`).split(': ');
+      return name;
+    }),
+  );
+  for (const name of OVERLAY_NAMES) {
+    const drawn = overlays[name] !== undefined;
+    if (drawn && muted.has(name)) fail(`overlays.${name}`, 'drawn and muted both');
+    if (!drawn && !muted.has(name)) fail(`overlays.${name}`, 'absent with no reason in overlays.muted');
+    if (drawn) OVERLAY_ASSERTS[name](overlays[name], placed);
   }
 }
 

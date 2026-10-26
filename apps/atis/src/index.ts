@@ -19,6 +19,7 @@ export const USAGE = `${NAME} ${VERSION}: a weather map for code changes.
   atis [--base <ref> | --last-commit | --last-tag]
        [--head <ref> | --working-tree] [options]
   atis --range <from>..<to> [options]
+  atis --whole-repo [--head <ref>] [options]
 
 With no --out or --svg, atis serves the world on 127.0.0.1 at a port of its own,
 opens it in a tab, and runs until interrupted.
@@ -40,6 +41,11 @@ opens it in a tab, and runs until interrupted.
                   with --base HEAD it is the uncommitted change alone. The
                   same inputs write the same map only on a clean tree: a dirty
                   one maps what it holds at the moment it is read
+  --whole-repo    map the whole repository at the head rather than a change:
+                  no weather, and overlays of its trouble spots, ugly spots,
+                  coverage gaps, dead code, duplication, cycles, recent heat
+                  and the findings a committed checkride.baseline.json
+                  grandfathers; an overlay whose source is missing says why
   --out <file>    write the map to <file> and exit (default with --svg: map.json)
   --svg <file>    render the map as a static SVG at <file> and exit
   --open          open the rendered SVG in the platform viewer (needs --svg)

@@ -22,6 +22,7 @@ const FLAGS = {
   head: { type: 'string' },
   'working-tree': { type: 'boolean' },
   range: { type: 'string' },
+  'whole-repo': { type: 'boolean' },
   out: { type: 'string' },
   svg: { type: 'string' },
   open: { type: 'boolean' },
@@ -41,6 +42,8 @@ type Flags = {
   readonly 'working-tree'?: boolean | undefined;
   /** `--range <from>..<to>`, as typed (D100). */
   readonly range?: string | undefined;
+  /** `--whole-repo`: the repository at the head, with its overlays, rather than a change (D101). */
+  readonly 'whole-repo'?: boolean | undefined;
   readonly out?: string | undefined;
   readonly svg?: string | undefined;
   /** `--open` is true, `--no-open` false, and neither leaves it undefined. */
@@ -121,6 +124,24 @@ function rangeOf(flags: Flags): { readonly range: RangeAsked | undefined } | { r
   return { range: { from, to } };
 }
 
+/**
+ * Whether the flags ask for the whole repository (D101): `--whole-repo` maps
+ * the head with no change, so a flag that names a base, a range or the
+ * working tree is misuse beside it (C4); `--head` still names the commit.
+ */
+function wholeRepoOf(flags: Flags): { readonly wholeRepo: boolean } | { readonly reason: string } {
+  if (flags['whole-repo'] !== true) return { wholeRepo: false };
+  const named = [
+    flags.base === undefined ? [] : ['--base'],
+    flags['last-commit'] === true ? ['--last-commit'] : [],
+    flags['last-tag'] === true ? ['--last-tag'] : [],
+    flags.range === undefined ? [] : ['--range'],
+    flags['working-tree'] === true ? ['--working-tree'] : [],
+  ].flat();
+  if (named.length > 0) return { reason: `--whole-repo maps one commit with no change; drop ${named.join(' and ')}` };
+  return { wholeRepo: true };
+}
+
 async function main(argv: readonly string[]): Promise<Outcome> {
   const parsed = parseFlags(argv);
   if ('reason' in parsed) return misuse(parsed.reason);
@@ -128,6 +149,9 @@ async function main(argv: readonly string[]): Promise<Outcome> {
   const { flags } = parsed;
   if (flags.version === true) return { exitCode: 0, stdout: `${VERSION}\n`, stderr: '' };
   if (flags.help === true) return { exitCode: 0, stdout: USAGE, stderr: '' };
+  const whole = wholeRepoOf(flags);
+  if ('reason' in whole) return misuse(whole.reason);
+  const { wholeRepo } = whole;
   const ranged = rangeOf(flags);
   if ('reason' in ranged) return misuse(ranged.reason);
   const { range } = ranged;
@@ -146,10 +170,10 @@ async function main(argv: readonly string[]): Promise<Outcome> {
     return misuse('--history <n> takes a whole number of commits, at least 1');
   }
   const serves = flags.out === undefined && flags.svg === undefined;
-  if (serves) return serveRun({ repo, base, head, range, assets: webDir(), open: flags.open !== false, verbose, cache, history });
+  if (serves) return serveRun({ repo, base, head, range, wholeRepo, assets: webDir(), open: flags.open !== false, verbose, cache, history });
 
   if (flags.open === true && flags.svg === undefined) return misuse('--open needs --svg <file>');
-  return run({ repo, base, head, range, out: flags.out ?? DEFAULT_OUT, svg: flags.svg, open: flags.open === true, verbose, cache, history });
+  return run({ repo, base, head, range, wholeRepo, out: flags.out ?? DEFAULT_OUT, svg: flags.svg, open: flags.open === true, verbose, cache, history });
 }
 
 const outcome = await main(process.argv.slice(2));

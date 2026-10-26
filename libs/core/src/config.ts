@@ -61,6 +61,12 @@ export type NoticeConfig = {
   readonly cochange_support: number;
 };
 
+/** The numbers §8's whole-repo overlays name only in words (D101). */
+export type OverlayConfig = {
+  /** How many of the newest commits count as recent, for the recent heat overlay. */
+  readonly heat_commits: number;
+};
+
 export type Config = {
   /** The shore's first-match table (D48); a file no row matches lands in `other`. */
   readonly groups: readonly GroupRule[];
@@ -68,6 +74,8 @@ export type Config = {
   readonly category: CategoryConfig;
   /** The notice ladder and its gates (§5.4). */
   readonly notices: NoticeConfig;
+  /** The whole-repo overlays (§8, D101). */
+  readonly overlays: OverlayConfig;
 };
 
 /** The file D28 names at the reviewed repo's root; for now atis reads only its `trunk` (D99). */
@@ -149,6 +157,7 @@ export const DEFAULT_CONFIG: Config = {
     cochange_rate: 0.5,
     cochange_support: 3,
   },
+  overlays: { heat_commits: 50 },
   // D48's groups in its order, except that `build` is tried first and `prompts` before `docs`:
   // first match wins, so a committed `dist/` keeps its `.md`, `.css` and `.mjs` together (D84),
   // and `*.md` would otherwise swallow AGENTS.md and CLAUDE.md.
