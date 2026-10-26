@@ -11,7 +11,7 @@ import { fileURLToPath } from 'node:url';
 
 import { USAGE, VERSION } from './index.js';
 import { run, serveRun } from './run.js';
-import type { HeadAsked, Outcome } from './run.js';
+import type { HeadAsked, Outcome, RangeAsked } from './run.js';
 import type { BaseAsked } from './sources/index.js';
 
 const FLAGS = {
@@ -21,6 +21,7 @@ const FLAGS = {
   'last-tag': { type: 'boolean' },
   head: { type: 'string' },
   'working-tree': { type: 'boolean' },
+  range: { type: 'string' },
   out: { type: 'string' },
   svg: { type: 'string' },
   open: { type: 'boolean' },
@@ -38,6 +39,8 @@ type Flags = {
   readonly 'last-tag'?: boolean | undefined;
   readonly head?: string | undefined;
   readonly 'working-tree'?: boolean | undefined;
+  /** `--range <from>..<to>`, as typed (D100). */
+  readonly range?: string | undefined;
   readonly out?: string | undefined;
   readonly svg?: string | undefined;
   /** `--open` is true, `--no-open` false, and neither leaves it undefined. */
@@ -98,6 +101,26 @@ function headOf(flags: Flags): { readonly head: HeadAsked | undefined } | { read
   return { head: working ? { workingTree: true } : flags.head };
 }
 
+/** One end of a range: a ref, with no dot at either end, which git's `...` would leave. */
+function isRangeEnd(part: string): boolean {
+  return part !== '' && !part.startsWith('.') && !part.endsWith('.');
+}
+
+/**
+ * The range the flags ask for (D100): `--range <from>..<to>` names the base
+ * and the head both, so any other flag that names either is misuse beside
+ * it, and so is a range that is not two refs and `..` (C4).
+ */
+function rangeOf(flags: Flags): { readonly range: RangeAsked | undefined } | { readonly reason: string } {
+  if (flags.range === undefined) return { range: undefined };
+  const named = [flags.base === undefined ? [] : ['--base'], flags['last-commit'] === true ? ['--last-commit'] : [], flags['last-tag'] === true ? ['--last-tag'] : [], flags.head === undefined ? [] : ['--head'], flags['working-tree'] === true ? ['--working-tree'] : []].flat();
+  if (named.length > 0) return { reason: `--range names the base and the head itself; drop ${named.join(' and ')}` };
+  // Two refs and `..` between them; git's `...` is misuse here.
+  const [from = '', to = '', ...rest] = flags.range.split('..');
+  if (rest.length > 0 || !isRangeEnd(from) || !isRangeEnd(to)) return { reason: '--range takes two refs as <from>..<to>' };
+  return { range: { from, to } };
+}
+
 async function main(argv: readonly string[]): Promise<Outcome> {
   const parsed = parseFlags(argv);
   if ('reason' in parsed) return misuse(parsed.reason);
@@ -105,6 +128,9 @@ async function main(argv: readonly string[]): Promise<Outcome> {
   const { flags } = parsed;
   if (flags.version === true) return { exitCode: 0, stdout: `${VERSION}\n`, stderr: '' };
   if (flags.help === true) return { exitCode: 0, stdout: USAGE, stderr: '' };
+  const ranged = rangeOf(flags);
+  if ('reason' in ranged) return misuse(ranged.reason);
+  const { range } = ranged;
   const asked = baseOf(flags);
   if ('reason' in asked) return misuse(asked.reason);
   const { base } = asked;
@@ -120,10 +146,10 @@ async function main(argv: readonly string[]): Promise<Outcome> {
     return misuse('--history <n> takes a whole number of commits, at least 1');
   }
   const serves = flags.out === undefined && flags.svg === undefined;
-  if (serves) return serveRun({ repo, base, head, assets: webDir(), open: flags.open !== false, verbose, cache, history });
+  if (serves) return serveRun({ repo, base, head, range, assets: webDir(), open: flags.open !== false, verbose, cache, history });
 
   if (flags.open === true && flags.svg === undefined) return misuse('--open needs --svg <file>');
-  return run({ repo, base, head, out: flags.out ?? DEFAULT_OUT, svg: flags.svg, open: flags.open === true, verbose, cache, history });
+  return run({ repo, base, head, range, out: flags.out ?? DEFAULT_OUT, svg: flags.svg, open: flags.open === true, verbose, cache, history });
 }
 
 const outcome = await main(process.argv.slice(2));

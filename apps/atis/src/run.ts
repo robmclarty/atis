@@ -5,7 +5,9 @@
  * reviewer named, a shortcut counted back from the head, or the trunk when
  * they named none, and the head, `HEAD` unless `--head` named another, or
  * the working tree under `--working-tree`, written as a tree object whose
- * sha stands for the head commit's everywhere below (D99).
+ * sha stands for the head commit's everywhere below (D99). `--range a..b`
+ * reads `b` as the head and `a` as the base, and every commit between as a
+ * head of its own over that one base, each a weather frame (D100).
  * It scans the merge-base tree and the head's tree, so the terrain
  * comes from the base and the weather from the head (D32) and both sides
  * describe commits rather than a working tree (D46). The base is extracted
@@ -45,7 +47,7 @@ import { platform, tmpdir } from 'node:os';
 import { basename, join, relative, resolve } from 'node:path';
 
 import { DEFAULT_CONFIG, buildMap, layOutTerrain } from 'core';
-import type { Commit, Layout, MapJson, Structure } from 'core';
+import type { Commit, FrameInputs, Layout, MapJson, Structure } from 'core';
 import { renderSvg } from 'svg';
 
 import {
@@ -82,10 +84,13 @@ import {
   shapePaths,
   workingTree,
 } from './sources/index.js';
-import type { BaseAsked, CheckInputs, EntryPoints, LocalFallow, ParsedFiles, Scan, ScanOptions, ScannedTree } from './sources/index.js';
+import type { BaseAsked, CheckInputs, Diff, EntryPoints, LocalFallow, ParsedFiles, Scan, ScanOptions, ScannedTree } from './sources/index.js';
 
 /** How the reviewer asked for the head (D99): a ref `--head` named, or the working tree, `--working-tree`. */
 export type HeadAsked = string | { readonly workingTree: true };
+
+/** A range as `--range <from>..<to>` typed it: the map is `to`'s change over `from`, with a weather frame per commit between (D100). */
+export type RangeAsked = { readonly from: string; readonly to: string };
 
 /** What `meta.head` reads for a map whose head side is the working tree (D99). */
 export const WORKING_TREE = 'working-tree';
@@ -98,6 +103,8 @@ export type Options = {
   readonly base?: BaseAsked | undefined;
   /** The ref the weather is of, or the working tree; `HEAD` when absent (D99). */
   readonly head?: HeadAsked | undefined;
+  /** A range to frame commit by commit; it names the base and the head itself, so neither is set beside it (D100). */
+  readonly range?: RangeAsked | undefined;
   /** Where to write the map, resolved against the working directory. */
   readonly out: string;
   /** Where to write the still SVG (D33); when absent, only `map.json` is written. */
@@ -117,6 +124,7 @@ export type ServeRunOptions = {
   readonly repo: string;
   readonly base?: BaseAsked | undefined;
   readonly head?: HeadAsked | undefined;
+  readonly range?: RangeAsked | undefined;
   /** The built web app's directory, `index.html` and its assets; `pnpm build` fills it. */
   readonly assets: string;
   /** Open the tab once serving; a no-op under a test run. */
@@ -165,9 +173,9 @@ type Head = { readonly sha: string; readonly time: number };
  * so a directory that is not a repository fails here, quietly and by name,
  * before any source has shelled out.
  */
-function commitAt(repo: string, ref: string): Head {
+function commitAt(repo: string, ref: string, flag: string = '--head'): Head {
   const named = ref === HEAD ? HEAD : commitOf(repo, ref);
-  if (named === undefined) throw new Error(`--head ${ref} names no commit`);
+  if (named === undefined) throw new Error(`${flag} ${ref} names no commit`);
   const [sha = '', time = ''] = git(repo, 'show', '-s', '--format=%H%n%ct', named).split('\n');
   if (!SHA.test(sha) || !UNIX_SECONDS.test(time)) throw new Error(`cannot read ${ref} of ${repo}`);
   return { sha, time: Number(time) };
@@ -176,11 +184,33 @@ function commitAt(repo: string, ref: string): Head {
 /**
  * `.check/` when the head is the checked-out `HEAD`, the one commit whose
  * working tree checkride can have run on, or that working tree itself; any
- * other head reads git-only and says why (D135, C2).
+ * other head, `named` by how the reviewer asked for it, reads git-only and
+ * says why (D135, C2).
  */
-function checkFor(repo: string, ref: string, head: Head, checkedOut: Head, working: boolean): CheckInputs {
+function checkFor(repo: string, named: string, head: Head, checkedOut: Head, working: boolean): CheckInputs {
   if (working || head.sha === checkedOut.sha) return readCheck(repo);
-  return { mode: 'git-only', reason: `the head ${ref} is not the checked-out HEAD, so .check/ does not describe it` };
+  return { mode: 'git-only', reason: `${named} is not the checked-out HEAD, so .check/ does not describe it` };
+}
+
+/** One commit of a range, oldest first: the head of one weather frame (D100). */
+type RangeCommit = Head & { readonly subject: string };
+
+/**
+ * The commits of `mergeBase..head` along the head's first parents, oldest
+ * first: the states the range's head passed through on its own line, each a
+ * descendant of the merge-base the one terrain is cut from (D100). A commit a
+ * merge brought in from another line is part of that merge's frame.
+ */
+function rangeCommits(repo: string, mergeBase: string, head: string): readonly RangeCommit[] {
+  const output = git(repo, 'log', '--reverse', '--first-parent', '--ancestry-path', '--format=%H%x00%ct%x00%s', `${mergeBase}..${head}`);
+  return output
+    .split('\n')
+    .filter((line) => line !== '')
+    .map((line) => {
+      const [sha = '', time = '', subject = ''] = line.split('\0');
+      if (!SHA.test(sha) || !UNIX_SECONDS.test(time)) throw new Error(`malformed range line: "${line}"`);
+      return { sha, time: Number(time), subject };
+    });
 }
 
 /** One extracted commit: `tree` is the extraction the scanner reads, `root` the temp directory holding it. */
@@ -382,7 +412,32 @@ function headAt(repo: string, sha: string, prior: NonNullable<ScanOptions['prior
 }
 
 /** What a run reads the repository for: the base and the head the reviewer asked for (D99), the cache switch and the history window. */
-type Asked = { readonly base?: BaseAsked | undefined; readonly head?: HeadAsked | undefined; readonly cache: boolean; readonly history?: number | undefined };
+type Asked = {
+  readonly base?: BaseAsked | undefined;
+  readonly head?: HeadAsked | undefined;
+  readonly range?: RangeAsked | undefined;
+  readonly cache: boolean;
+  readonly history?: number | undefined;
+};
+
+/** One head side of the map before its shapes are checked: the tree it is read from, its change from the merge-base, and the scan of it (D136). */
+type HeadSide = { readonly tree: string; readonly changed: Diff['changed']; readonly read: HeadRead };
+
+/** One head side, read whole: every input `buildMap` takes from a head (D100). */
+type HeadInputs = Omit<FrameInputs, 'commit' | 'subject' | 'head_time'>;
+
+/** How a run times one leg of a side: alone, under its own name, or folded into a whole range's (D50). */
+type Clock = <T>(source: string, work: () => T) => T;
+
+/** A frame's legs, timed only as the whole range's `frames` line. */
+const folded: Clock = (_, work) => work();
+
+/** A range's base (D100): its `from`, which must name a commit, recorded as the range was typed. */
+function rangeBase(repo: string, range: RangeAsked): { readonly ref: string; readonly typed: string } {
+  const typed = `--range ${range.from}..${range.to}`;
+  if (commitOf(repo, range.from) === undefined) throw new Error(`${typed}: ${range.from} names no commit`);
+  return { ref: range.from, typed };
+}
 
 /** Read the repository and build the map; throws on a repository it cannot read, with the extractions removed either way. */
 function measure(repoPath: string, asked: Asked): Measured {
@@ -404,43 +459,74 @@ function measure(repoPath: string, asked: Asked): Measured {
 
   try {
     const checkedOut = commitAt(repo, HEAD);
+    const { range } = asked;
     const working = typeof asked.head === 'object';
-    const headRef = typeof asked.head === 'string' ? asked.head : HEAD;
-    const head = headRef === HEAD ? checkedOut : commitAt(repo, headRef);
-    const base = timed(timings, 'base', () => resolveBase(repo, asked.base, headRef));
+    const headRef = range?.to ?? (typeof asked.head === 'string' ? asked.head : HEAD);
+    const head = headRef === HEAD ? checkedOut : commitAt(repo, headRef, range === undefined ? '--head' : '--range');
+    const base = timed(timings, 'base', () => (range === undefined ? resolveBase(repo, asked.base, headRef) : rangeBase(repo, range)));
     // The head side's tree: the head commit's, or the working tree's, staged, unstaged and untracked (D99).
     const tree = working ? timed(timings, 'working tree', () => workingTree(repo)) : head.sha;
     const diff = timed(timings, 'diff', () => readDiff(repo, base.ref, head.sha, tree));
     const ground = groundAt({ repo, timings, scanAt, history }, diff.merge_base, cache);
-    // Neither side is extracted unless something reads it from disk: the checker, or the reviewed repo's fallow.
-    let baseTree = ground.tree;
-    const baseTreeOf = (): string => (baseTree ??= treeAt(diff.merge_base));
-    let headTree: string | undefined;
-    const headTreeOf = (): string => (headTree ??= treeAt(tree));
+    // No tree is extracted unless something reads it from disk: the checker, or the reviewed repo's fallow.
+    const trees = new Map<string, string>(ground.tree === undefined ? [] : [[diff.merge_base, ground.tree]]);
+    const treeOf = (sha: string): string => {
+      const kept = trees.get(sha);
+      if (kept !== undefined) return kept;
+      const extracted = treeAt(sha);
+      trees.set(sha, extracted);
+      return extracted;
+    };
     const fallow = localFallow(repo);
-    // The head reads only what the diff touched; every other file holds the base's bytes (D136).
-    const touched = new Set(diff.changed.map((file) => file.path));
-    const headRead = timed(timings, 'scan head', () => headAt(repo, tree, { parsed: ground.parsed, touched }, headTreeOf, fallow, cache));
-    const headSide = headRead.side;
-    // The names only the checker can print, in the changed interface files alone, each side timed (D118).
-    const paths = shapePaths(diff.changed, ground.scan, headSide.scan);
-    const inferred = { base: inferredIn(ground.scan, paths.base), head: inferredIn(headSide.scan, paths.head) };
+
+    // Each head reads only what its diff touched; every other file holds the base's bytes (D136).
+    const sideAt = (sideTree: string, changed: Diff['changed']): HeadSide => {
+      const touched = new Set(changed.map((file) => file.path));
+      return { tree: sideTree, changed, read: headAt(repo, sideTree, { parsed: ground.parsed, touched }, () => treeOf(sideTree), fallow, cache) };
+    };
+    const top = timed(timings, 'scan head', () => sideAt(tree, diff.changed));
+    // A range reads each commit as a head over the one base, its last the map's own head (D100).
+    const frameSides =
+      range === undefined
+        ? []
+        : timed(timings, 'frames scan', () =>
+            rangeCommits(repo, diff.merge_base, head.sha).map((commit) => ({
+              commit,
+              side: commit.sha === head.sha ? top : sideAt(commit.sha, readDiff(repo, diff.merge_base, commit.sha).changed),
+            })),
+          );
+
+    // The names only the checker can print, in the changed interface files alone, each side timed (D118);
+    // the base's, once, for every side that reads it.
+    const sides = [top, ...frameSides.map((frame) => frame.side)];
+    const basePaths = new Set(sides.flatMap((side) => [...shapePaths(side.changed, ground.scan, side.read.side.scan).base]));
+    const inferredBase = inferredIn(ground.scan, basePaths);
     const baseScan = timed(timings, 'shapes base', () =>
-      inferred.base.size === 0 ? ground.scan : checkInferredShapes(baseTreeOf(), ground.scan, inferred.base),
+      inferredBase.size === 0 ? ground.scan : checkInferredShapes(treeOf(diff.merge_base), ground.scan, inferredBase),
     );
-    const headScan = timed(timings, 'shapes head', () =>
-      inferred.head.size === 0 ? headSide.scan : checkInferredShapes(headTreeOf(), headSide.scan, inferred.head),
-    );
-    // Both sides by the same fallow, the base's beside its terrain and the head's per head commit (D98, D136).
-    const baseStructure = timed(timings, 'structure base', () => structureAt(repo, diff.merge_base, baseTreeOf, fallow, cache));
-    const headStructure = timed(timings, 'structure head', () => structureAt(repo, tree, headTreeOf, fallow, cache));
-    const manifests = diff.changed.flatMap((file) => (file.from === undefined ? [file.path] : [file.path, file.from]));
-    const { deps_added, deps_moved } = timed(timings, 'manifests', () => readManifests(repo, diff.merge_base, manifests, tree));
-    // The window at the base, with the change's own commits on top, newest first (D8); a working tree adds none.
-    const commits = timed(timings, 'log', () =>
-      [...readLog(repo, `${diff.merge_base}..${head.sha}`, history), ...ground.commits].slice(0, history),
-    );
-    const check = timed(timings, 'check', () => checkFor(repo, headRef, head, checkedOut, working));
+    // Both sides by the same fallow, the base's beside its terrain and each head's per head commit (D98, D136).
+    const baseStructure = timed(timings, 'structure base', () => structureAt(repo, diff.merge_base, () => treeOf(diff.merge_base), fallow, cache));
+
+    /** One head side, read whole: its shapes, its structure, its manifests, its log and its evidence. */
+    const inputsOf = (side: HeadSide, commit: string, check: () => CheckInputs, clock: Clock): { readonly inputs: HeadInputs; readonly cache: string } => {
+      const headScan = side.read.side.scan;
+      const inferred = inferredIn(headScan, shapePaths(side.changed, ground.scan, headScan).head);
+      const scan = clock('shapes head', () => (inferred.size === 0 ? headScan : checkInferredShapes(treeOf(side.tree), headScan, inferred)));
+      const structure = clock('structure head', () => structureAt(repo, side.tree, () => treeOf(side.tree), fallow, cache));
+      const manifests = side.changed.flatMap((file) => (file.from === undefined ? [file.path] : [file.path, file.from]));
+      const { deps_added, deps_moved } = clock('manifests', () => readManifests(repo, diff.merge_base, manifests, side.tree));
+      // The window at the base, with the change's own commits on top, newest first (D8); a working tree adds none.
+      const window = clock('log', () => [...readLog(repo, `${diff.merge_base}..${commit}`, history), ...ground.commits].slice(0, history));
+      const inputs = { head: scan, diff: side.changed, deps_added, deps_moved, commits: window, check: clock('check', check), structure: { base: baseStructure.structure, head: structure.structure } };
+      return { inputs, cache: structure.cache };
+    };
+    const own: Clock = (source, work) => timed(timings, source, work);
+    const { inputs: headInputs, cache: structureCache } = inputsOf(top, head.sha, () => checkFor(repo, `the head ${headRef}`, head, checkedOut, working), own);
+    const frameOf = ({ commit, side }: (typeof frameSides)[number]): FrameInputs => {
+      const read = side === top ? headInputs : inputsOf(side, commit.sha, () => checkFor(repo, `the commit ${commit.sha}`, commit, checkedOut, false), folded).inputs;
+      return { commit: commit.sha, subject: commit.subject, ...read, head_time: commit.time };
+    };
+    const frames = range === undefined ? undefined : timed(timings, 'frames', () => frameSides.map(frameOf));
 
     const map = timed(timings, 'build', () =>
       buildMap({
@@ -453,19 +539,14 @@ function measure(repoPath: string, asked: Asked): Measured {
           generated_at: new Date().toISOString(),
         },
         base: baseScan,
-        head: headScan,
-        diff: diff.changed,
-        deps_added,
-        deps_moved,
-        commits,
+        ...headInputs,
         head_time: head.time,
-        check,
         // The map holds the base's own layout wherever the change left the ground alone (D32, D172).
         ground: ground.layout,
-        structure: { base: baseStructure.structure, head: headStructure.structure },
+        ...(frames === undefined ? {} : { frames }),
       }, CONFIG),
     );
-    return { map, timings, cache: ground.cache, structure: { base: baseStructure.cache, head: headStructure.cache }, entries: headRead.entries };
+    return { map, timings, cache: ground.cache, structure: { base: baseStructure.cache, head: structureCache }, entries: top.read.entries };
   } finally {
     for (const extraction of extractions) rmSync(extraction.root, { recursive: true, force: true });
   }
@@ -475,7 +556,7 @@ function measure(repoPath: string, asked: Asked): Measured {
 export function run(options: Options): Outcome {
   const out = resolve(options.out);
   try {
-    const measured = measure(options.repo, { base: options.base, head: options.head, cache: options.cache !== false, history: options.history });
+    const measured = measure(options.repo, { base: options.base, head: options.head, range: options.range, cache: options.cache !== false, history: options.history });
     const { map, timings } = measured;
     timed(timings, 'write', () => {
       writeAtomic(out, serialize(map));
@@ -510,7 +591,7 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
     return { exitCode: 2, stdout: '', stderr: `atis: no built web app at ${assets}; run \`pnpm build\` first\n` };
   }
   try {
-    const measured = measure(options.repo, { base: options.base, head: options.head, cache: options.cache !== false, history: options.history });
+    const measured = measure(options.repo, { base: options.base, head: options.head, range: options.range, cache: options.cache !== false, history: options.history });
     const { map, timings } = measured;
     const token = options.token ?? randomBytes(16).toString('hex');
     const started = performance.now();

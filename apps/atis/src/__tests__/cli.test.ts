@@ -413,3 +413,104 @@ test('--working-tree maps the staged, the unstaged and the untracked change, wit
   expect(both.status).toBe(2);
   expect(both.stderr).toContain('--head and --working-tree each name the head');
 }, MINUTE);
+
+/**
+ * A small package tagged `base`, then three commits on top: one adds a
+ * square, one a cube that squares, and the last reshapes the area. Beside
+ * it, an ignored `.check/` whose one slot ran green, which only the
+ * checked-out commit may read as its own (D135).
+ */
+function threeCommits(prefix: string): { readonly repo: string; readonly sha: (ref: string) => string } {
+  const repo = join(temp(prefix), 'repo');
+  mkdirSync(repo);
+  git(repo, 'init', '--quiet', '--initial-branch=main');
+  write(repo, '.gitignore', '.check/\n');
+  write(repo, 'package.json', '{ "name": "demo", "private": true, "type": "module" }\n');
+  write(repo, 'src/index.ts', "export { area } from './shapes.js';\n");
+  write(repo, 'src/shapes.ts', 'export function area(width: number, height: number): number {\n  return width * height;\n}\n');
+  git(repo, 'add', '.');
+  git(repo, 'commit', '--quiet', '-m', 'feat: measure an area');
+  git(repo, 'tag', 'base');
+  write(repo, 'src/square.ts', 'export function square(side: number): number {\n  return side * side;\n}\n');
+  git(repo, 'add', '.');
+  git(repo, 'commit', '--quiet', '-m', 'feat: square a side');
+  write(repo, 'src/cube.ts', "import { square } from './square.js';\n\nexport function cube(side: number): number {\n  return square(side) * side;\n}\n");
+  git(repo, 'add', '.');
+  git(repo, 'commit', '--quiet', '-m', 'feat: cube a side');
+  write(repo, 'src/shapes.ts', "import { square } from './square.js';\n\nexport function area(width: number, height: number): number {\n  return width === height ? square(width) : width * height;\n}\n");
+  git(repo, 'add', '.');
+  git(repo, 'commit', '--quiet', '-m', 'fix: square a square');
+  const ran = { name: 'lint', adapter: 'oxlint', ok: true, exit_code: 0, duration_ms: 1, output_file: null };
+  write(repo, '.check/summary.json', `${JSON.stringify({ schema_version: 1, ok: true, checks_run: 1, timestamp: new Date().toISOString(), total_duration_ms: 1, checks: [ran] })}\n`);
+  return { repo, sha: (ref) => git(repo, 'rev-parse', ref) };
+}
+
+test('--range writes one map over the merge-base\'s terrain, the head\'s weather, and a frame per commit in order (D100, D135)', () => {
+  const { repo, sha } = threeCommits('range');
+  const dir = temp('range-maps');
+  const ranged = join(dir, 'ranged.json');
+  const plain = join(dir, 'plain.json');
+
+  const result = run({ repo, range: { from: 'base', to: 'HEAD' }, out: ranged, verbose: true });
+  expect(result.exitCode, result.stderr).toBe(0);
+  expect(result.stderr).toMatch(/frames\s+\d+ ms/);
+  expect(run({ repo, base: 'base', out: plain, verbose: false }).exitCode).toBe(0);
+  const map = mapAt(ranged);
+  const change = mapAt(plain);
+
+  expect([map.meta.base, map.meta.base_typed, map.meta.merge_base, map.meta.head]).toEqual(['base', '--range base..HEAD', sha('base'), sha('HEAD')]);
+  // One terrain, and the head's own weather and notices: the map of the change, with its frames beside.
+  expect(map.terrain).toEqual(change.terrain);
+  expect(map.weather).toEqual(change.weather);
+  expect(map.notices).toEqual(change.notices);
+
+  const frames = map.sequence?.frames ?? [];
+  expect(frames.map((frame) => [frame.commit, frame.subject])).toEqual([
+    [sha('HEAD~2'), 'feat: square a side'],
+    [sha('HEAD~1'), 'feat: cube a side'],
+    [sha('HEAD'), 'fix: square a square'],
+  ]);
+  // Each frame is its commit's change over the one base, so the weather builds up commit by commit.
+  expect(frames.map((frame) => frame.weather.changed.map((file) => file.path))).toEqual([
+    ['src/square.ts'],
+    ['src/cube.ts', 'src/square.ts'],
+    ['src/cube.ts', 'src/shapes.ts', 'src/square.ts'],
+  ]);
+  expect(frames.at(-1)?.weather).toEqual(map.weather);
+  expect(frames.at(-1)?.notices).toEqual(map.notices);
+
+  // Only the checked-out commit's frame reads .check/; the others say why they read none.
+  expect(map.meta.instruments.mode).toBe('check');
+  expect(frames.map((frame) => frame.weather.checks.slots.map((slot) => slot.name))).toEqual([[], [], ['lint']]);
+  expect(frames[0]?.weather.checks.reason).toBe(`the commit ${sha('HEAD~2')} is not the checked-out HEAD, so .check/ does not describe it`);
+}, MINUTE);
+
+test('a range whose head is not the checked-out HEAD carries no evidence in any frame (D135)', () => {
+  const { repo, sha } = threeCommits('range-back');
+  const out = join(temp('range-back-map'), 'map.json');
+
+  expect(run({ repo, range: { from: 'base', to: 'HEAD~1' }, out, verbose: false }).exitCode).toBe(0);
+  const map = mapAt(out);
+  expect(map.meta.head).toBe(sha('HEAD~1'));
+  expect(map.meta.instruments.reason).toBe('the head HEAD~1 is not the checked-out HEAD, so .check/ does not describe it');
+  expect(map.sequence?.frames.map((frame) => frame.weather.checks.category)).toEqual(['NOINST', 'NOINST']);
+}, MINUTE);
+
+test('--range beside a flag that names the base or the head, or not two refs, is misuse (C4)', () => {
+  const { repo } = threeCommits('range-misuse');
+  const out = join(temp('range-misuse-map'), 'map.json');
+  for (const [args, reason] of [
+    [['--range', 'base..HEAD', '--base', 'base'], '--range names the base and the head itself; drop --base'],
+    [['--range', 'base..HEAD', '--working-tree', '--last-tag'], 'drop --last-tag and --working-tree'],
+    [['--range', 'base...HEAD'], '--range takes two refs as <from>..<to>'],
+    [['--range', 'base..'], '--range takes two refs as <from>..<to>'],
+    [['--range', 'base..HEAD..main'], '--range takes two refs as <from>..<to>'],
+    [['--range', 'nowhere..HEAD'], '--range nowhere..HEAD: nowhere names no commit'],
+    [['--range', 'base..nowhere'], '--range nowhere names no commit'],
+  ] as const) {
+    const result = atis(['--repo', repo, '--out', out, ...args]);
+    expect(result.status, args.join(' ')).toBe(2);
+    expect(result.stderr).toContain(reason);
+  }
+  expect(existsSync(out)).toBe(false);
+}, MINUTE);

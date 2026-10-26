@@ -8,7 +8,7 @@ import { DEFAULT_CONFIG } from '../config.js';
 import { COVERAGE_UNNAMED } from '../evidence.js';
 import type { CheckArtifacts, Dead, Structure } from '../evidence.js';
 import { buildMap } from '../map.js';
-import type { BuildInputs, EntryPointLookup } from '../map.js';
+import type { BuildInputs, EntryPointLookup, FrameInputs } from '../map.js';
 import type { ExportShapes } from '../notices.js';
 import { assertMap } from '../schema.js';
 import type { Instruments } from '../schema.js';
@@ -573,4 +573,66 @@ test('a git-only read fakes no channel at all', () => {
   expect(map.terrain.organelles.every((organelle) => organelle.function_count === undefined)).toBe(true);
   // The graph is atis's own, so fan-in survives a missing `.check/` (D52).
   expect(map.terrain.cells.find((cell) => cell.id === 'folder:libs/core/src/pm')?.fan_in).toBe(2);
+});
+
+/** The demo change as the last commit of a range: the head side's inputs, read at it (D100). */
+function headFrame(inputs: BuildInputs, commit: string, subject: string): FrameInputs {
+  const { head, diff, deps_added, commits, head_time, check, structure } = inputs;
+  return { commit, subject, head, diff, deps_added, commits, head_time, check, ...(structure === undefined ? {} : { structure }) };
+}
+
+test('a range writes one frame per commit over the one terrain, the last the map\'s own weather and notices (D100)', () => {
+  const inputs = inputsFor('demo');
+  // The first commit touched the README alone, and is not the checked-out HEAD, so it reads git-only (D135).
+  const readme = inputs.diff.filter((file) => file.path === 'README.md');
+  const first: FrameInputs = {
+    ...headFrame({ ...inputs, head: inputs.base, diff: readme, deps_added: [] }, 'a'.repeat(40), 'docs: say what the doctor does'),
+    check: { mode: 'git-only', reason: 'the commit is not the checked-out HEAD' },
+  };
+  const last = headFrame(inputs, 'b'.repeat(40), 'feat(cli): run the doctor');
+  const plain = buildMap(inputs, DEFAULT_CONFIG);
+  const map = buildMap({ ...inputs, frames: [first, last] }, DEFAULT_CONFIG);
+
+  expect(() => assertMap(map)).not.toThrow();
+  // The frames move nothing: the terrain, the weather and the notices are the map's without them.
+  expect(map.terrain).toEqual(plain.terrain);
+  expect(map.weather).toEqual(plain.weather);
+  expect(map.notices).toEqual(plain.notices);
+
+  const frames = map.sequence?.frames ?? [];
+  expect(frames.map((frame) => [frame.commit, frame.subject])).toEqual([
+    ['a'.repeat(40), 'docs: say what the doctor does'],
+    ['b'.repeat(40), 'feat(cli): run the doctor'],
+  ]);
+  expect(frames[1]?.weather).toEqual(map.weather);
+  expect(frames[1]?.notices).toEqual(map.notices);
+  expect(frames[1]?.unplaced).toBeUndefined();
+
+  // The first frame is its own commit's weather: the README alone, with no evidence, since no .check/ describes it.
+  expect(frames[0]?.weather.changed.map((file) => file.path)).toEqual(['README.md']);
+  expect(frames[0]?.weather.evidence).toEqual({});
+  expect(frames[0]?.weather.checks.category).toBe('NOINST');
+  expect(frames[0]?.weather.checks.reason).toBe('the commit is not the checked-out HEAD');
+});
+
+test('a file only an earlier commit had keeps its changed entry, is named unplaced, and draws no wiring the terrain cannot place (D100, C2)', () => {
+  const inputs = inputsFor('demo');
+  const gone = 'libs/core/src/pm/gone.ts';
+  const tools = inputs.head.files.find((file) => file.path === 'libs/core/src/pm/tools.ts');
+  if (tools === undefined) throw new Error('the demo head has no tools.ts');
+  const head = {
+    ...inputs.head,
+    files: [...inputs.head.files, { ...tools, path: gone }].toSorted((a, b) => (a.path < b.path ? -1 : 1)),
+    edges: [...inputs.head.edges, { from: gone, to: 'libs/core/src/util/format.ts', names: ['format'], line: 1 }],
+  };
+  const diff = [...inputs.diff, { path: gone, kind: 'added' as const, added: 96, deleted: 0, hunks: [{ start: 1, count: 96 }] }].toSorted((a, b) => (a.path < b.path ? -1 : 1));
+  const earlier = headFrame({ ...inputs, head, diff }, 'c'.repeat(40), 'feat: a helper the next commit folds away');
+  const map = buildMap({ ...inputs, frames: [earlier, headFrame(inputs, 'd'.repeat(40), 'refactor: fold the helper into tools')] }, DEFAULT_CONFIG);
+
+  expect(() => assertMap(map)).not.toThrow();
+  const [frame] = map.sequence?.frames ?? [];
+  expect(frame?.unplaced).toEqual([gone]);
+  expect(frame?.weather.changed.find((file) => file.path === gone)?.kind).toBe('added');
+  expect(frame?.weather.wiring?.some((edge) => edge.from === gone || edge.to === gone)).toBe(false);
+  expect(map.terrain.organelles.some((organelle) => organelle.id === gone)).toBe(false);
 });

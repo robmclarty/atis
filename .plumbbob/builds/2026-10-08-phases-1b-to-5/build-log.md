@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 56 — feat(cli): map the working tree's uncommitted weather
+**Current step:** 57 — feat(core): build one weather frame per commit of a range
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -106,7 +106,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 54. feat(web): draw improvements, Health Δ and the rename leader
 - ☑ 115. perf(core): reuse a cached base's layout for the ground the change did not touch
 - ☑ 55. feat(cli): resolve the trunk and the named bases
-- ☐ 56. feat(cli): map the working tree's uncommitted weather
+- ☑ 56. feat(cli): map the working tree's uncommitted weather
 - ☐ 57. feat(core): build one weather frame per commit of a range
 - ☐ 58. feat(web): scrub a range's weather over one terrain
 - ☐ 59. feat(core): compute the whole-repo overlays
@@ -212,6 +212,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] actual's package:packages/desktop-client has no skin at all: Bubble Sets finds no ring round its 877 files, so the world draws that package without a membrane
 - [x] the checker's extractions (D118 inferred-shapes) cost 0.4 to 0.9 s of every cached corpus run and 1.1 s of atis's own; reading its program from git's objects, as the head scan now does, would drop them
 - [x] actual's world takes 1.1 s from the map's arrival to its first frame (C14 world-budget), so the command keeps only 0.9 s of a 2 s first frame; actual's last second is on the page side, in apps/web
+- [ ] A long range has no cap: `--range` writes a whole weather frame per commit and runs the reviewed repo's fallow on each commit's extraction once (cached after), so a hundred-commit range is a hundred frames in map.json and a slow first run; decide whether to cap or thin long ranges
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -2182,3 +2183,4 @@ folder, so it rides the branch into the PR.)*
   The missing skin itself is a rendering gap that predates this step. It's parked.
 
 - 2026-10-26 — step 55 checkpointed · a517784b2 — feat(cli): resolve the trunk and the named bases (1 drift, 8m)
+- 2026-10-26 — step 56 checkpointed · a0a184a54 — feat(cli): map the working tree's uncommitted weather (1 drift, 3m)

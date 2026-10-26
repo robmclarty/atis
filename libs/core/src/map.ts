@@ -10,7 +10,9 @@
  * modules, depth, history, reach, evidence and notices in that order, counts
  * the outside packages the terrain imports (D170), and finally lays the
  * terrain out on the field every renderer draws (D24). Every list leaves
- * sorted (C3). `layOutTerrain` runs the same assembly over a base commit
+ * sorted (C3). Handed a range's commits, it runs the same assembly at each,
+ * short of the layout, for the weather frames a reviewer scrubs over the one
+ * terrain (D100). `layOutTerrain` runs the same assembly over a base commit
  * alone, for the terrain the CLI caches per base (D96).
  */
 
@@ -38,14 +40,18 @@ import type {
   DepAdded,
   DepMoved,
   ExceptionalEdge,
+  Frame,
   Group,
   Instruments,
   Layout,
   MapJson,
+  Notice,
   Organelle,
   Stability,
   StructureSide,
+  Terrain,
   Ties,
+  Weather,
   WiringEdge,
 } from './schema.js';
 import { computePackageTies, computeTies } from './ties.js';
@@ -112,6 +118,19 @@ export type BuildInputs = {
   readonly ground?: Layout;
   /** fallow's measure of the base and the head extractions (D98); absent, the map says nothing of either. */
   readonly structure?: { readonly base: Structure; readonly head: Structure };
+  /** A range's commits, oldest first, each read as the head (D100); absent, the map is of one change and has no sequence. */
+  readonly frames?: readonly FrameInputs[];
+};
+
+/**
+ * One commit of a range, as the head side of a change over the map's own
+ * base (D100): the commit and its subject, and every input `buildMap` reads
+ * from a head, each read at that commit. Its `.check/` is the run's own only
+ * when the commit is the checked-out `HEAD`; any other reads git-only (D135).
+ */
+export type FrameInputs = Pick<BuildInputs, 'head' | 'diff' | 'deps_added' | 'deps_moved' | 'commits' | 'head_time' | 'check' | 'structure'> & {
+  readonly commit: string;
+  readonly subject: string;
 };
 
 const CYCLE = 'cycle';
@@ -592,6 +611,46 @@ function instrumentsOf(check: CheckArtifacts, entries: EntryPointsRead, muted: r
  * or a process; two runs over one input set differ in nothing at all (C3).
  */
 export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): MapJson & { readonly terrain: { readonly layout: Layout } } {
+  const { lay, ...change } = assemble(inputs, config);
+  const map = { ...change, terrain: { ...change.terrain, layout: lay() } };
+  if (inputs.frames === undefined) return map;
+  const frames = inputs.frames.map((frame) => frameOver(inputs, frame, map.terrain, config));
+  return { ...map, sequence: { frames } };
+}
+
+/**
+ * One commit of a range over the map's one terrain (D100): the weather and
+ * notices `buildMap` gives that commit as the head, short of a layout of its
+ * own. The terrain is the range head's and never moves (P2), so a file only
+ * an earlier commit had (one the head renamed or deleted since) has no place
+ * on it. Its changed entry stays, so the frame's counts and notices hold, and
+ * it is named in `unplaced`; only what cannot be drawn without a place, its
+ * wiring and its reach into a cell the terrain lacks, is left out (C2).
+ */
+function frameOver(inputs: BuildInputs, frame: FrameInputs, terrain: Terrain, config: Config): Frame {
+  const { commit, subject, ...head } = frame;
+  const { weather, notices } = assemble({ ...inputs, ...head }, config);
+  const placed = new Set([...terrain.organelles.map((organelle) => organelle.path), ...terrain.groups.flatMap((group) => group.files)]);
+  const cells = new Set(terrain.cells.map((cell) => cell.id));
+  const unplaced = sortUnique(weather.changed.map((file) => file.path).filter((path) => !placed.has(path)));
+  const { wiring } = weather;
+  const kept: Weather = {
+    ...weather,
+    reach: weather.reach.filter((entry) => cells.has(entry.cell)),
+    ...(wiring === undefined ? {} : { wiring: wiring.filter((edge) => placed.has(edge.from) && placed.has(edge.to)) }),
+  };
+  return { commit, subject, weather: kept, notices, ...(unplaced.length === 0 ? {} : { unplaced }) };
+}
+
+/** Everything `buildMap` derives from one change but the layout, and the layout itself held back until asked for, since a range's frames never lay out (D100). */
+type Assembled = Omit<MapJson, 'terrain' | 'sequence'> & {
+  readonly terrain: Omit<Terrain, 'layout'>;
+  readonly lay: () => Layout;
+  readonly weather: Weather;
+  readonly notices: readonly Notice[];
+};
+
+function assemble(inputs: BuildInputs, config: Config): Assembled {
   const renames = renamesOf(inputs.diff);
   const base = rekeyScan(inputs.base, renames);
   const { head } = inputs;
@@ -660,12 +719,15 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
   // it, so the weather never moves the ground (D32).
   // A renamed file's old place is read from the prior under its base path (D40, D97).
   // Over its base's own layout, the map holds the ground the change left alone (D172).
-  const { prior, ground } = inputs;
-  const renamed = new Map([...renames].map(([from, path]) => [path, from] as const));
-  const before = ground === undefined ? (prior === undefined ? {} : { prior }) : { ground: groundOf(ground, inputs.base, config) };
-  const layout = computeLayout({ cells, organelles, edges, bands: depths.bands, groups, added, renames: renamed, ...before });
+  const lay = (): Layout => {
+    const { prior, ground } = inputs;
+    const renamed = new Map([...renames].map(([from, path]) => [path, from] as const));
+    const before = ground === undefined ? (prior === undefined ? {} : { prior }) : { ground: groundOf(ground, inputs.base, config) };
+    return computeLayout({ cells, organelles, edges, bands: depths.bands, groups, added, renames: renamed, ...before });
+  };
 
   return {
+    lay,
     meta: {
       schema_version: SCHEMA_VERSION,
       generated_at: inputs.meta.generated_at,
@@ -693,7 +755,6 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
         new Set(modules.organelles.map((organelle) => organelle.path)),
       ),
       history: { window_commits: history.window_commits, cochange: history.cochange },
-      layout,
     },
     weather: {
       changed: reach.changed,

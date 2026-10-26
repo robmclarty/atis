@@ -349,3 +349,39 @@ test('rejects a changed entry naming an unknown group', () => {
   };
   expect(() => assertMap(withUnknownGroup)).toThrow(/weather\.changed\[0\]\.group/);
 });
+
+/** The minimal map with a range's frames beside its weather (D100). */
+function withFrames(...frames: readonly Record<string, unknown>[]): unknown {
+  return { ...minimalMap(), sequence: { frames } };
+}
+
+function frame(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return { commit: 'a'.repeat(40), subject: 'feat: a commit', weather: minimalMap().weather, notices: [], ...overrides };
+}
+
+test('accepts a range\'s frames, one with a file the terrain does not place, and a map with none (D100)', () => {
+  const gone = groupChangedEntry({ path: 'docs/gone.md', group: 'prompts' });
+  const unplaced = frame({ weather: { ...minimalMap().weather, changed: [changedEntry(), gone] }, unplaced: ['docs/gone.md'] });
+  const ranged = withFrames(frame(), unplaced);
+  expect(assertMap(ranged)).toEqual(ranged);
+  expect(assertMap(withFrames())).toEqual(withFrames());
+});
+
+test('checks every frame as it checks the weather and the notices, over the one terrain (D100)', () => {
+  const weather = minimalMap().weather;
+  const cases: readonly [Record<string, unknown>, RegExp][] = [
+    [{ commit: 1 }, /sequence\.frames\[0\]\.commit/],
+    [{ subject: undefined }, /sequence\.frames\[0\]\.subject/],
+    [{ weather: { ...weather, reach: [{ path: 'src/foo/index.ts', cell: 'src/gone', hops: 0, via: [] }] } }, /sequence\.frames\[0\]\.weather\.reach\[0\]\.cell: unknown cell/],
+    [{ weather: { ...weather, changed: [groupChangedEntry({ group: 'prompts' })] } }, /sequence\.frames\[0\]\.weather\.changed\[0\]\.group: unknown group/],
+    [{ weather: { ...weather, wiring: [{ from: 'src/foo/index.ts', to: 'src/gone.ts' }] } }, /sequence\.frames\[0\]\.weather\.wiring\[0\]\.to/],
+    [{ notices: ['primary', 'primary'].map((tier) => notice(tier as NoticeTier)) }, /sequence\.frames\[0\]\.notices\[1\]: too many primary/],
+    [{ unplaced: ['src/foo/index.ts'] }, /sequence\.frames\[0\]\.unplaced\[0\]: the terrain places/],
+    [{ unplaced: ['src/gone.ts'] }, /sequence\.frames\[0\]\.unplaced: not a changed file "src\/gone\.ts"/],
+  ];
+  for (const [overrides, error] of cases) expect(() => assertMap(withFrames(frame(overrides)))).toThrow(error);
+
+  const two = { ...weather, changed: [groupChangedEntry({ path: 'b.md', group: 'prompts' }), groupChangedEntry({ path: 'a.md', group: 'prompts' })] };
+  expect(() => assertMap(withFrames(frame({ weather: two, unplaced: ['b.md', 'a.md'] })))).toThrow(/unplaced\[1\]: expected the paths sorted/);
+  expect(() => assertMap({ ...minimalMap(), sequence: {} })).toThrow(/sequence\.frames/);
+});

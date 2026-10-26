@@ -16,7 +16,9 @@ export const VERSION = '0.0.0';
 
 export const USAGE = `${NAME} ${VERSION}: a weather map for code changes.
 
-  atis [--base <ref> | --last-commit | --last-tag] [--head <ref>] [options]
+  atis [--base <ref> | --last-commit | --last-tag]
+       [--head <ref> | --working-tree] [options]
+  atis --range <from>..<to> [options]
 
 With no --out or --svg, atis serves the world on 127.0.0.1 at a port of its own,
 opens it in a tab, and runs until interrupted.
@@ -29,6 +31,10 @@ opens it in a tab, and runs until interrupted.
   --last-tag      measure from the newest tag the head reaches
   --head <ref>    map the change at <ref> rather than at HEAD; .check/ is read
                   only for the checked-out HEAD, so another head is git-only
+  --range <from>..<to>
+                  map <to>'s change over <from>, with a weather frame for each
+                  commit between, oldest first, over the one terrain; only the
+                  frame of the checked-out HEAD reads .check/
   --working-tree  map the change in the working tree, staged, unstaged and
                   untracked, rather than at HEAD, with .check/ as its evidence;
                   with --base HEAD it is the uncommitted change alone. The

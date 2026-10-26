@@ -342,11 +342,33 @@ export type Meta = {
   readonly instruments: Instruments;
 };
 
+/** One commit of a range (D100): its weather and notices over the map's one terrain, which it never moves (P2). */
+export type Frame = {
+  readonly commit: string;
+  readonly subject: string;
+  readonly weather: Weather;
+  readonly notices: readonly Notice[];
+  /**
+   * The changed files the one terrain does not place, sorted: files this
+   * commit had that the range's head renamed or deleted since. Each keeps its
+   * changed entry; absent when the terrain places every one.
+   */
+  readonly unplaced?: readonly string[];
+};
+
+/**
+ * A range's weather moving over one terrain (D100): one frame per commit of
+ * `base..head`, oldest first, the last the map's own weather. An added key
+ * (D85), absent on a map of one change.
+ */
+export type Sequence = { readonly frames: readonly Frame[] };
+
 export type MapJson = {
   readonly meta: Meta;
   readonly terrain: Terrain;
   readonly weather: Weather;
   readonly notices: readonly Notice[];
+  readonly sequence?: Sequence;
 };
 
 const NOTICE_BUDGET: Readonly<Record<NoticeTier, number>> = {
@@ -516,19 +538,7 @@ function assertShape(value: unknown): asserts value is MapJson {
     for (const side of ['base', 'head']) assertStructureSide(structure[side], `meta.instruments.structure.${side}`);
   }
 
-  const notices = expectArray(root['notices'], 'notices');
-  if (notices.length > 6) fail('notices', `at most 6 notices, got ${String(notices.length)}`);
-
-  const tierCounts: Record<NoticeTier, number> = { primary: 0, secondary: 0, tertiary: 0 };
-  notices.forEach((raw, index) => {
-    const notice = expectRecord(raw, `notices[${String(index)}]`);
-    if (!isNoticeTier(notice['tier'])) fail(`notices[${String(index)}].tier`, 'expected a notice tier');
-    const tier = notice['tier'];
-    tierCounts[tier] += 1;
-    if (tierCounts[tier] > NOTICE_BUDGET[tier]) {
-      fail(`notices[${String(index)}]`, `too many ${tier} notices, at most ${String(NOTICE_BUDGET[tier])}`);
-    }
-  });
+  assertNotices(root['notices'], 'notices');
 
   const terrain = expectRecord(root['terrain'], 'terrain');
 
@@ -567,15 +577,6 @@ function assertShape(value: unknown): asserts value is MapJson {
     }
   });
 
-  const weather = expectRecord(root['weather'], 'weather');
-
-  const reach = expectArray(weather['reach'], 'weather.reach');
-  reach.forEach((raw, index) => {
-    const entry = expectRecord(raw, `weather.reach[${String(index)}]`);
-    const cell = expectString(entry['cell'], `weather.reach[${String(index)}].cell`);
-    if (!cellIds.has(cell)) fail(`weather.reach[${String(index)}].cell`, `unknown cell "${cell}"`);
-  });
-
   const layout = terrain['layout'];
   if (layout !== undefined) {
     const layoutRecord = expectRecord(layout, 'terrain.layout');
@@ -593,31 +594,102 @@ function assertShape(value: unknown): asserts value is MapJson {
     }
   }
 
-  const changed = expectArray(weather['changed'], 'weather.changed');
+  const placed: Placed = { cells: cellIds, groups: groupIds, files: new Set([...organelleIds, ...groupFiles]) };
+  assertWeather(root['weather'], 'weather', placed, new Set());
+
+  const sequence = root['sequence'];
+  if (sequence !== undefined) {
+    const frames = expectArray(expectRecord(sequence, 'sequence')['frames'], 'sequence.frames');
+    frames.forEach((raw, index) => assertFrame(raw, `sequence.frames[${String(index)}]`, placed));
+  }
+}
+
+/** What the map's one terrain places: its cells, its shore groups, and every file it holds a place for, an organelle or a group's file. */
+type Placed = { readonly cells: ReadonlySet<string>; readonly groups: ReadonlySet<string>; readonly files: ReadonlySet<string> };
+
+/** At most six notices, each tier within its budget (C7). */
+function assertNotices(value: unknown, path: string): void {
+  const notices = expectArray(value, path);
+  if (notices.length > 6) fail(path, `at most 6 notices, got ${String(notices.length)}`);
+
+  const tierCounts: Record<NoticeTier, number> = { primary: 0, secondary: 0, tertiary: 0 };
+  notices.forEach((raw, index) => {
+    const notice = expectRecord(raw, `${path}[${String(index)}]`);
+    if (!isNoticeTier(notice['tier'])) fail(`${path}[${String(index)}].tier`, 'expected a notice tier');
+    const tier = notice['tier'];
+    tierCounts[tier] += 1;
+    if (tierCounts[tier] > NOTICE_BUDGET[tier]) {
+      fail(`${path}[${String(index)}]`, `too many ${tier} notices, at most ${String(NOTICE_BUDGET[tier])}`);
+    }
+  });
+}
+
+/**
+ * One commit of a range (D100), checked as the map's own weather is, over the
+ * map's one terrain. A file it names in `unplaced` is a changed file of its
+ * own that the terrain holds no place for, so its changed entry may name a
+ * group the terrain lacks.
+ */
+function assertFrame(value: unknown, path: string, placed: Placed): void {
+  const frame = expectRecord(value, path);
+  expectString(frame['commit'], `${path}.commit`);
+  expectString(frame['subject'], `${path}.subject`);
+  const unplaced = new Set<string>();
+  if (frame['unplaced'] !== undefined) {
+    let previous: string | undefined;
+    expectArray(frame['unplaced'], `${path}.unplaced`).forEach((raw, index) => {
+      const at = `${path}.unplaced[${String(index)}]`;
+      const file = expectString(raw, at);
+      if (placed.files.has(file)) fail(at, `the terrain places "${file}"`);
+      if (previous !== undefined && previous >= file) fail(at, `expected the paths sorted and unique, got "${file}" after "${previous}"`);
+      previous = file;
+      unplaced.add(file);
+    });
+  }
+  const changed = assertWeather(frame['weather'], `${path}.weather`, placed, unplaced);
+  for (const file of unplaced) {
+    if (!changed.has(file)) fail(`${path}.unplaced`, `not a changed file "${file}"`);
+  }
+  assertNotices(frame['notices'], `${path}.notices`);
+}
+
+/** A weather over the terrain `placed` describes, `unplaced` the files of it that terrain holds no place for; hands back the changed paths. */
+function assertWeather(value: unknown, path: string, placed: Placed, unplaced: ReadonlySet<string>): ReadonlySet<string> {
+  const weather = expectRecord(value, path);
+
+  const reach = expectArray(weather['reach'], `${path}.reach`);
+  reach.forEach((raw, index) => {
+    const entry = expectRecord(raw, `${path}.reach[${String(index)}]`);
+    const cell = expectString(entry['cell'], `${path}.reach[${String(index)}].cell`);
+    if (!placed.cells.has(cell)) fail(`${path}.reach[${String(index)}].cell`, `unknown cell "${cell}"`);
+  });
+
+  const changed = expectArray(weather['changed'], `${path}.changed`);
   const changedPaths = new Set<string>();
   changed.forEach((raw, index) => {
-    const entry = expectRecord(raw, `weather.changed[${String(index)}]`);
+    const entry = expectRecord(raw, `${path}.changed[${String(index)}]`);
     const hasCell = entry['cell'] !== undefined;
     const hasGroup = entry['group'] !== undefined;
     if (hasCell === hasGroup) {
-      fail(`weather.changed[${String(index)}]`, 'exactly one of cell or group is required');
+      fail(`${path}.changed[${String(index)}]`, 'exactly one of cell or group is required');
     }
     if (entry['group'] !== undefined) {
-      const group = expectString(entry['group'], `weather.changed[${String(index)}].group`);
-      if (!groupIds.has(group)) fail(`weather.changed[${String(index)}].group`, `unknown group "${group}"`);
+      const group = expectString(entry['group'], `${path}.changed[${String(index)}].group`);
+      const own = typeof entry['path'] === 'string' && unplaced.has(entry['path']);
+      if (!placed.groups.has(group) && !own) fail(`${path}.changed[${String(index)}].group`, `unknown group "${group}"`);
     }
     if (typeof entry['path'] === 'string') changedPaths.add(entry['path']);
   });
 
   const wiring = weather['wiring'];
   if (wiring !== undefined) {
-    expectArray(wiring, 'weather.wiring').forEach((raw, index) => {
-      const at = `weather.wiring[${String(index)}]`;
+    expectArray(wiring, `${path}.wiring`).forEach((raw, index) => {
+      const at = `${path}.wiring[${String(index)}]`;
       const edge = expectRecord(raw, at);
       const from = expectString(edge['from'], `${at}.from`);
       const to = expectString(edge['to'], `${at}.to`);
-      for (const [end, path] of [['from', from], ['to', to]] as const) {
-        if (!organelleIds.has(path) && !groupFiles.has(path)) fail(`${at}.${end}`, `unknown organelle or group file "${path}"`);
+      for (const [end, file] of [['from', from], ['to', to]] as const) {
+        if (!placed.files.has(file)) fail(`${at}.${end}`, `unknown organelle or group file "${file}"`);
       }
       if (from === to) fail(at, 'a file does not import itself');
       if (!changedPaths.has(from) && !changedPaths.has(to)) fail(at, 'neither end is a changed file');
@@ -627,35 +699,35 @@ function assertShape(value: unknown): asserts value is MapJson {
   // What got better, and the health that moved, is the change's own: each names a changed file (D98).
   const improvements = weather['improvements'];
   if (improvements !== undefined) {
-    expectArray(improvements, 'weather.improvements').forEach((raw, index) => assertImprovement(raw, `weather.improvements[${String(index)}]`, changedPaths));
+    expectArray(improvements, `${path}.improvements`).forEach((raw, index) => assertImprovement(raw, `${path}.improvements[${String(index)}]`, changedPaths));
   }
-  if (weather['health_delta'] !== undefined) assertHealthDelta(weather['health_delta'], 'weather.health_delta', changedPaths);
+  if (weather['health_delta'] !== undefined) assertHealthDelta(weather['health_delta'], `${path}.health_delta`, changedPaths);
 
   const dependencies = weather['dependencies'];
   if (dependencies !== undefined) {
     let previous: string | undefined;
-    expectArray(dependencies, 'weather.dependencies').forEach((raw, index) => {
-      const at = `weather.dependencies[${String(index)}]`;
+    expectArray(dependencies, `${path}.dependencies`).forEach((raw, index) => {
+      const at = `${path}.dependencies[${String(index)}]`;
       const name = assertDependency(raw, at);
       if (previous !== undefined && previous >= name) fail(`${at}.name`, `expected the names sorted and unique, got "${name}" after "${previous}"`);
       previous = name;
     });
   }
 
-  const evidence = expectRecord(weather['evidence'], 'weather.evidence');
+  const evidence = expectRecord(weather['evidence'], `${path}.evidence`);
   const unmeasured = evidence['unmeasured'];
   if (unmeasured !== undefined) {
-    if (evidence['patch_coverage'] === undefined) fail('weather.evidence.unmeasured', 'only a map with patch_coverage names unmeasured files');
-    expectArray(unmeasured, 'weather.evidence.unmeasured').forEach((path, index) => {
-      const at = `weather.evidence.unmeasured[${String(index)}]`;
-      if (!changedPaths.has(expectString(path, at))) fail(at, `not a changed file "${String(path)}"`);
+    if (evidence['patch_coverage'] === undefined) fail(`${path}.evidence.unmeasured`, 'only a map with patch_coverage names unmeasured files');
+    expectArray(unmeasured, `${path}.evidence.unmeasured`).forEach((file, index) => {
+      const at = `${path}.evidence.unmeasured[${String(index)}]`;
+      if (!changedPaths.has(expectString(file, at))) fail(at, `not a changed file "${String(file)}"`);
     });
   }
 
-  const checks = expectRecord(weather['checks'], 'weather.checks');
-  const slots = expectArray(checks['slots'], 'weather.checks.slots');
+  const checks = expectRecord(weather['checks'], `${path}.checks`);
+  const slots = expectArray(checks['slots'], `${path}.checks.slots`);
   slots.forEach((raw, index) => {
-    const at = `weather.checks.slots[${String(index)}]`;
+    const at = `${path}.checks.slots[${String(index)}]`;
     const slot = expectRecord(raw, at);
     const splits = slot['ok'] === false && slot['skipped'] !== true && Array.isArray(slot['scope']);
     if (slot['change'] === undefined) {
@@ -663,11 +735,12 @@ function assertShape(value: unknown): asserts value is MapJson {
       return;
     }
     if (!splits) fail(`${at}.change`, 'only a red slot that names files records a change');
-    expectArray(slot['change'], `${at}.change`).forEach((path, entry) => {
+    expectArray(slot['change'], `${at}.change`).forEach((file, entry) => {
       const pathAt = `${at}.change[${String(entry)}]`;
-      if (!changedPaths.has(expectString(path, pathAt))) fail(pathAt, `not a changed file "${String(path)}"`);
+      if (!changedPaths.has(expectString(file, pathAt))) fail(pathAt, `not a changed file "${String(file)}"`);
     });
   });
+  return changedPaths;
 }
 
 /** Turn an unknown value into a trusted `MapJson`, or throw naming the offending path. */
