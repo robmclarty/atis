@@ -18,7 +18,8 @@
  * Under an opened cell's slide the marks in that cell give way as the slide
  * fades in, since the slide draws the change its own way (step 40), and once a
  * cell has closed, the marks on its files stand with them where they last
- * floated (D165). The
+ * floated (D165). A frame of a range fades its marks in or out as a whole
+ * while the scrubber's cross-fade runs, and they go once it has (D100). The
  * instance's numbers are packed into five buffers beside the strip's two,
  * since WebGPU allows a pipeline eight vertex buffers and no more.
  */
@@ -55,6 +56,10 @@ export type Sectors = {
   readonly hide: (cell: string | undefined, fade: number) => void;
   /** Stand the marks on these files with them, by path, where the float last left them, and every other mark at its place (D165). */
   readonly move: (moved: ReadonlyMap<string, Point>) => void;
+  /** The share of the marks a range's frame shows while the scrubber cross-fades it, 1 at rest (D100). */
+  readonly fade: Float;
+  /** Free the mesh's buffers and its material, once its frame has faded out. */
+  readonly dispose: () => void;
 };
 
 /** A strip of `STEPS` steps along and two rows across: each vertex knows how far along it is and which side it is on, as one `step` of two. */
@@ -111,6 +116,7 @@ export const createSectors = (sectors: readonly Sector[], relief: DataTexture, g
   geometry.setAttribute('extra', new InstancedBufferAttribute(extra, 4));
 
   const bloom = uniform(1);
+  const fade = uniform(1);
   const haloOpacity = uniform(1);
   const haloBloom = uniform(1);
   // The cell under a slide, by its number, and how far the slide has faded in over it.
@@ -162,7 +168,7 @@ export const createSectors = (sectors: readonly Sector[], relief: DataTexture, g
   const shown = mix(surface, float(1), look.w);
   // A mark in the opened cell gives way as its slide fades in.
   const under = step(abs(inCell.sub(hidden)), float(0.5)).mul(hiddenFade);
-  const alpha = look.y.mul(mix(float(1), haloOpacity, halo)).mul(shown).mul(dashed).mul(textured).mul(float(1).sub(under));
+  const alpha = look.y.mul(mix(float(1), haloOpacity, halo)).mul(shown).mul(dashed).mul(textured).mul(float(1).sub(under)).mul(fade);
   // A mark's colour, brightened by its notice's light while it flares.
   const colour = palette.colourOf(look.x).mul(gain);
   material.colorNode = colour;
@@ -210,11 +216,16 @@ export const createSectors = (sectors: readonly Sector[], relief: DataTexture, g
         scales.array[rank + 1] = lights[rank]?.scale ?? 1;
       }
     },
-    hide: (cell, fade) => {
+    hide: (cell, share) => {
       hidden.value = cell === undefined ? 0 : (cellNumber.get(cell) ?? 0);
-      hiddenFade.value = fade;
+      hiddenFade.value = share;
     },
     move,
+    fade,
+    dispose: () => {
+      geometry.dispose();
+      material.dispose();
+    },
   };
 };
 

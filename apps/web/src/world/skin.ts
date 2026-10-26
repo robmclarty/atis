@@ -24,7 +24,10 @@
  * softened a little (D152): a warm light in the skin, brightest in the
  * changed cell and dimmer per membrane crossed (D5), brighter over a cell's
  * body than in the crease between, and the bloom sees a fifth of it (D151),
- * so a broad reach stays a luminance and never a fog.
+ * so a broad reach stays a luminance and never a fog. A step of a range's
+ * scrubber lays the next frame's reach in the fourth channel and the loop
+ * mixes the two as the scheduler cross-fades the weather, the relief and the
+ * tissue beneath it never moving (D100, P2).
  *
  * The look, the weather's look and the relief come through the registry
  * (D156): the albedos, the sheen and the lights are uniforms the loop re-reads
@@ -57,6 +60,10 @@ export type Skin = {
   readonly restyle: () => void;
   /** Lay the relief again from the registry's relief, when one of its tokens moved. */
   readonly relayer: () => void;
+  /** Take the reach of another frame of a range, which the skin fades to from the reach it shows now as `reachMix` rises (D100). */
+  readonly reach: (map: MapJson) => void;
+  /** How far the skin has faded from the reach it showed to the one it took last, 0 to 1. */
+  readonly reachMix: UniformNode<'float', number>;
 };
 
 /** Fill the relief as the GPU reads it: red the resting swells, green the cells' mass, half floats so both backends filter it. */
@@ -89,7 +96,7 @@ const soften = (grid: Grid, radius: number): Grid => {
   return grid;
 };
 
-/** The tissue as the GPU reads it: red the cells' bodies, green their membrane lines, blue the reach, softened. */
+/** The tissue as the GPU reads it: red the cells' bodies, green their membrane lines, blue the reach shown and alpha the reach a scrub fades to, softened; both reaches the one at first. */
 const tissueTexture = (layers: Tissue, reach: Grid): DataTexture => {
   const { columns, rows } = layers.body;
   const data = new Uint16Array(columns * rows * 4);
@@ -97,9 +104,23 @@ const tissueTexture = (layers: Tissue, reach: Grid): DataTexture => {
     data[i * 4] = DataUtils.toHalfFloat(layers.body.values[i] ?? 0);
     data[i * 4 + 1] = DataUtils.toHalfFloat(layers.membrane.values[i] ?? 0);
     data[i * 4 + 2] = DataUtils.toHalfFloat(reach.values[i] ?? 0);
-    data[i * 4 + 3] = DataUtils.toHalfFloat(1);
+    data[i * 4 + 3] = data[i * 4 + 2] ?? 0;
   }
   return softTexture(new DataTexture(data, columns, rows, RGBAFormat, HalfFloatType));
+};
+
+/**
+ * Lay another frame's reach in the alpha channel to fade to, and what the
+ * skin shows at this moment of the fade in the blue channel to fade from, so
+ * a step taken mid-fade carries on from where the light stands.
+ */
+const takeReach = (data: Uint16Array, reach: Grid, mixed: number): void => {
+  for (let i = 0; i < reach.values.length; i += 1) {
+    const from = DataUtils.fromHalfFloat(data[i * 4 + 2] ?? 0);
+    const to = DataUtils.fromHalfFloat(data[i * 4 + 3] ?? 0);
+    data[i * 4 + 2] = DataUtils.toHalfFloat(from + (to - from) * mixed);
+    data[i * 4 + 3] = DataUtils.toHalfFloat(reach.values[i] ?? 0);
+  }
 };
 
 /** A data texture the skin samples between, as every soft layer is (D152). */
@@ -179,6 +200,7 @@ export const createSkin = (map: MapJson, look: SkinLook, weather: WeatherLook, r
   const reachOrigin = uniform(reachGlow.REACH_ORIGIN_OPACITY);
   const reachBloom = uniform(weather.reachBloom);
   const reachBodyGain = uniform(weather.reachBodyGain);
+  const reachMix = uniform(1);
 
   /** The skin's height at a texture coordinate: the resting swells, and the cells' mass at the scheduler's amplitude. */
   const heightAt = (at: Node) => {
@@ -209,9 +231,9 @@ export const createSkin = (map: MapJson, look: SkinLook, weather: WeatherLook, r
   const rim = pow(float(1).sub(facing), rimPower).mul(rimGain);
   const glow = body.mul(cellLight);
   // The reach's light in the skin, at the origin's opacity the SVG lays it at and dimmer per hop: brighter over a body than in the crease between, and the bloom sees only its share.
-  const reach = reachColour.mul(base.b).mul(reachOrigin).mul(reachGain).mul(mix(float(1), reachBodyGain, body)).mul(surface);
-  material.emissiveNode = rimColour.mul(rim.add(glow)).mul(surface).add(reach);
-  material.mrtNode = mrt({ emissive: vec4(reach.mul(reachBloom), 1) });
+  const reachLight = reachColour.mul(mix(base.b, base.a, reachMix)).mul(reachOrigin).mul(reachGain).mul(mix(float(1), reachBodyGain, body)).mul(surface);
+  material.emissiveNode = rimColour.mul(rim.add(glow)).mul(surface).add(reachLight);
+  material.mrtNode = mrt({ emissive: vec4(reachLight.mul(reachBloom), 1) });
 
   const restyle = (): void => {
     fieldAlbedo.value.set(look.fieldAlbedo);
@@ -238,9 +260,17 @@ export const createSkin = (map: MapJson, look: SkinLook, weather: WeatherLook, r
     reliefMap.needsUpdate = true;
   };
 
+  const reach = (next: MapJson): void => {
+    const { data: texels } = tissueMap.image;
+    if (!(texels instanceof Uint16Array)) return;
+    takeReach(texels, soften(reachField(next, RESOLUTION), Math.round(weather.reachSoften)), reachMix.value);
+    reachMix.value = 0;
+    tissueMap.needsUpdate = true;
+  };
+
   const { width, height } = map.terrain.layout ?? { width: 0, height: 0 };
   const mesh = new Mesh(gridGeometry(field.height, width, height), material);
   // The vertex stage moves the skin, so its resting bounds would cull it wrongly.
   mesh.frustumCulled = false;
-  return { mesh, relief: reliefMap, amp, lift, surface, restyle, relayer };
+  return { mesh, relief: reliefMap, amp, lift, surface, restyle, relayer, reach, reachMix };
 };

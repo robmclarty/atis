@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 57 — feat(core): build one weather frame per commit of a range
+**Current step:** 58 — feat(web): scrub a range's weather over one terrain
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -107,7 +107,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 115. perf(core): reuse a cached base's layout for the ground the change did not touch
 - ☑ 55. feat(cli): resolve the trunk and the named bases
 - ☑ 56. feat(cli): map the working tree's uncommitted weather
-- ☐ 57. feat(core): build one weather frame per commit of a range
+- ☑ 57. feat(core): build one weather frame per commit of a range
 - ☐ 58. feat(web): scrub a range's weather over one terrain
 - ☐ 59. feat(core): compute the whole-repo overlays
 - ☐ 60. feat(svg): render the whole-repo overlays in the still map
@@ -2184,3 +2184,4 @@ folder, so it rides the branch into the PR.)*
 
 - 2026-10-26 — step 55 checkpointed · a517784b2 — feat(cli): resolve the trunk and the named bases (1 drift, 8m)
 - 2026-10-26 — step 56 checkpointed · a0a184a54 — feat(cli): map the working tree's uncommitted weather (1 drift, 3m)
+- 2026-10-26 — step 57 checkpointed · 5b2f2d2ed — feat(core): build one weather frame per commit of a range (1 drift, 9m)

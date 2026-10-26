@@ -4,7 +4,8 @@
  * storm above its cell, the change's full size in the IFR hue and standing
  * state smaller in graphite, drawn flat on the skin and shown from LOD1. A
  * change's bolt is light the bloom sees; a standing bolt is terrain and is
- * not.
+ * not. A frame of a range fades its bolts in or out as a whole while the
+ * scrubber's cross-fade runs, and they go once it has (D100).
  */
 
 import { BufferAttribute, DataTexture, DoubleSide, InstancedBufferAttribute, InstancedBufferGeometry, Mesh, MeshBasicNodeMaterial, Shape, ShapeGeometry } from 'three/webgpu';
@@ -47,7 +48,10 @@ const boltGeometry = (): InstancedBufferGeometry => {
   return geometry;
 };
 
-export const createBolts = (bolts: readonly Bolt[], relief: DataTexture, grid: Grid, amp: Float, lift: Float, surface: Float, palette: Palette): { readonly mesh: Mesh; readonly bloom: Float } => {
+/** The bolts as the world draws them: the mesh, the bloom's share of their light, and, for a range's frame, its share of the cross-fade and the free once it has faded out (D100). */
+export type Bolts = { readonly mesh: Mesh; readonly bloom: Float; readonly fade: Float; readonly dispose: () => void };
+
+export const createBolts = (bolts: readonly Bolt[], relief: DataTexture, grid: Grid, amp: Float, lift: Float, surface: Float, palette: Palette): Bolts => {
   const count = bolts.length;
   const geometry = boltGeometry();
   geometry.instanceCount = count;
@@ -61,6 +65,8 @@ export const createBolts = (bolts: readonly Bolt[], relief: DataTexture, grid: G
   geometry.setAttribute('style', new InstancedBufferAttribute(style, 2));
 
   const bloom = uniform(1);
+  const fade = uniform(1);
+  const shown = surface.mul(fade);
   const at = attribute('centre', 'vec3');
   const look = attribute('style', 'vec2');
   const x = at.x.add(positionLocal.x.mul(at.z));
@@ -76,12 +82,16 @@ export const createBolts = (bolts: readonly Bolt[], relief: DataTexture, grid: G
   material.depthWrite = false;
   const colour = palette.colourOf(look.x);
   material.colorNode = colour;
-  material.opacityNode = surface;
-  material.mrtNode = mrt({ emissive: vec4(colour.mul(surface).mul(look.y).mul(bloom), 1) });
+  material.opacityNode = shown;
+  material.mrtNode = mrt({ emissive: vec4(colour.mul(shown).mul(look.y).mul(bloom), 1) });
 
   const mesh = new Mesh(geometry, material);
   mesh.frustumCulled = false;
   mesh.renderOrder = 3;
   mesh.visible = count > 0;
-  return { mesh, bloom };
+  const dispose = (): void => {
+    geometry.dispose();
+    material.dispose();
+  };
+  return { mesh, bloom, fade, dispose };
 };

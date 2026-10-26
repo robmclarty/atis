@@ -8,7 +8,9 @@
  * no arrowhead (D40, D97); widths are laid into the geometry when the world
  * is built, so a moved width shows on the next map, not the next frame. They
  * show from LOD1, and the bloom sees a small share of their light, so a
- * tangle of cycles reads as lines and not as haze.
+ * tangle of cycles reads as lines and not as haze. A frame of a range fades
+ * its ribbons in or out as a whole while the scrubber's cross-fade runs, and
+ * they go once it has (D100).
  */
 
 import { BufferAttribute, BufferGeometry, DataTexture, DoubleSide, Mesh, MeshBasicNodeMaterial } from 'three/webgpu';
@@ -54,7 +56,10 @@ const lay = (ribbon: Ribbon, positions: number[], hues: number[], index: number[
   index.push(tip, tip + 1, tip + 2);
 };
 
-export const createRibbons = (ribbons: readonly Ribbon[], relief: DataTexture, grid: Grid, amp: Float, lift: Float, surface: Float, palette: Palette): { readonly mesh: Mesh; readonly bloom: Float } => {
+/** The ribbons as the world draws them: the mesh, the bloom's share of their light, and, for a range's frame, its share of the cross-fade and the free once it has faded out (D100). */
+export type Ribbons = { readonly mesh: Mesh; readonly bloom: Float; readonly fade: Float; readonly dispose: () => void };
+
+export const createRibbons = (ribbons: readonly Ribbon[], relief: DataTexture, grid: Grid, amp: Float, lift: Float, surface: Float, palette: Palette): Ribbons => {
   const positions: number[] = [];
   const hues: number[] = [];
   const index: number[] = [];
@@ -65,6 +70,8 @@ export const createRibbons = (ribbons: readonly Ribbon[], relief: DataTexture, g
   geometry.setIndex(new BufferAttribute(Uint32Array.from(index), 1));
 
   const bloom = uniform(1);
+  const fade = uniform(1);
+  const shown = surface.mul(fade);
   const uvAt = vec2(positionLocal.x.div(grid.resolution).add(0.5).div(grid.columns), positionLocal.z.div(grid.resolution).add(0.5).div(grid.rows));
   const height = texture(relief, uvAt);
   const material = new MeshBasicNodeMaterial();
@@ -74,12 +81,16 @@ export const createRibbons = (ribbons: readonly Ribbon[], relief: DataTexture, g
   material.depthWrite = false;
   const colour = palette.colourOf(attribute('hue', 'float'));
   material.colorNode = colour;
-  material.opacityNode = surface;
-  material.mrtNode = mrt({ emissive: vec4(colour.mul(surface).mul(bloom), 1) });
+  material.opacityNode = shown;
+  material.mrtNode = mrt({ emissive: vec4(colour.mul(shown).mul(bloom), 1) });
 
   const mesh = new Mesh(geometry, material);
   mesh.frustumCulled = false;
   mesh.renderOrder = 2;
   mesh.visible = ribbons.length > 0;
-  return { mesh, bloom };
+  const dispose = (): void => {
+    geometry.dispose();
+    material.dispose();
+  };
+  return { mesh, bloom, fade, dispose };
 };

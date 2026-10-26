@@ -1,7 +1,8 @@
 /**
  * frame: the chrome's root, the flat DOM the world is framed by (§7, D12),
  * drawn with React (D91). It holds the status line, and once the map is read
- * the HUD's grade blocks over it (§7), with the legend folded into its `key` block (D87, D166), and the breadcrumb
+ * the HUD's grade blocks over it (§7), with the legend folded into its `key` block (D87, D166), on a map of a range the
+ * scrubber under them, every block drawn from the frame it stands at (D100), and the breadcrumb
  * under it (§6), the minimap in the bottom-left corner (D154), and the right-hand column, the ranked notices over the shore rail
  * (§5.4, D153); over them all, the open cell's wiring plate while it is toggled on (step 41); and, behind a switch, the dev panel (D156): off and absent by
  * default, its code fetched only when it is first opened. A development build shows a toggle for it; a published
@@ -10,10 +11,11 @@
  */
 
 import { CHROME_MUTED, CHROME_PAD, FONT_FAMILY } from 'scene';
-import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import type { CSSProperties, ReactElement, ReactNode } from 'react';
 
 import type { DevPanel } from '../dev/index.js';
+import { frameMap } from '../frames.js';
 import type { MapState } from '../load.js';
 import { createNav } from '../nav.js';
 import type { Nav } from '../nav.js';
@@ -23,6 +25,7 @@ import { Crumbs } from './crumbs.js';
 import { Hud } from './hud.js';
 import { useLive } from './live.js';
 import { Minimap } from './minimap.js';
+import { Scrubber } from './scrubber.js';
 import { Status } from './status.js';
 import { WiringPlate } from './wiring.js';
 
@@ -75,6 +78,10 @@ export const Chrome = ({ state, registry, nav: given, dev, token, load = loadPan
   const own = useMemo(() => createNav(), []);
   const nav = given ?? own;
   const Panel = useMemo(() => lazy(() => load().then((module) => ({ default: module.DevPanel }))), [load]);
+  // The frame of a range the scrubber stands at, and the map as that frame shows it; the map itself for one change.
+  const at = useSyncExternalStore(nav.subscribe, nav.frame, nav.frame);
+  const ranged = state.status === 'ready' ? state.map : undefined;
+  const map = useMemo(() => (ranged === undefined ? undefined : frameMap(ranged, at)), [ranged, at]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
@@ -89,22 +96,23 @@ export const Chrome = ({ state, registry, nav: given, dev, token, load = loadPan
   return (
     <>
       <div style={COLUMN}>
-        {state.status === 'ready' && <Hud map={state.map} registry={registry} token={token} />}
+        {map !== undefined && <Hud map={map} registry={registry} token={token} />}
+        {ranged !== undefined && <Scrubber map={ranged} registry={registry} nav={nav} />}
         <Status state={state} registry={registry} />
-        {state.status === 'ready' && <Crumbs map={state.map} registry={registry} nav={nav} />}
+        {map !== undefined && <Crumbs map={map} registry={registry} nav={nav} />}
         {open && (
           <Suspense fallback={null}>
             <Panel registry={registry} onClose={() => setOpen(false)} />
           </Suspense>
         )}
       </div>
-      {state.status === 'ready' && <Column map={state.map} registry={registry} nav={nav} />}
-      {state.status === 'ready' && (
+      {map !== undefined && <Column map={map} registry={registry} nav={nav} />}
+      {map !== undefined && (
         <Corner registry={registry}>
-          <Minimap map={state.map} registry={registry} nav={nav} />
+          <Minimap map={map} registry={registry} nav={nav} />
         </Corner>
       )}
-      {state.status === 'ready' && <WiringPlate map={state.map} registry={registry} nav={nav} />}
+      {map !== undefined && <WiringPlate map={map} registry={registry} nav={nav} />}
       {dev && (
         <button type="button" data-dev-toggle onClick={() => setOpen((was) => !was)} style={TOGGLE}>
           tokens

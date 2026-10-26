@@ -249,3 +249,44 @@ test("a frame's flares do not depend on the frame rate: a minute drawn at 30 a s
   expect(starts).toHaveLength(sixty.length);
   starts.forEach((start, index) => expect(Math.abs(start - (sixty[index] ?? 0))).toBeLessThanOrEqual(1000 / 30));
 });
+
+test("a scrub fades the new frame's weather in over the last one's within the cross-fade, and holds at rest otherwise (D100, C12)", () => {
+  const { scheduler, at } = rig();
+  at(SETTLE_MS + 500);
+  expect(scheduler.frame().weather).toBe(1);
+  scheduler.scrub(TIERS);
+  expect(scheduler.frame().weather).toBe(0);
+  let t = SETTLE_MS + 500;
+  const seen: number[] = [];
+  while (t < SETTLE_MS + 500 + LOD_FADE_MS + FRAME_MS) {
+    t += FRAME_MS;
+    at(t);
+    seen.push(scheduler.frame().weather);
+  }
+  // It rises frame by frame and lands by the cross-fade's end, never a blink and never longer (C12).
+  expect(seen.every((value, index) => index === 0 || value >= (seen[index - 1] ?? 0))).toBe(true);
+  expect(seen.filter((value) => value > 0 && value < 1).length).toBeGreaterThan(10);
+  expect(seen.at(-1)).toBe(1);
+
+  // Under reduced motion a scrub cuts.
+  const still = rig(7, true);
+  still.scheduler.scrub(TIERS);
+  expect(still.scheduler.frame().weather).toBe(1);
+});
+
+test("a scrub hands the lights to the new frame's notices: one with no primary breathes nothing, and its secondaries flare on their own clocks", () => {
+  const { scheduler, at } = rig();
+  at(SETTLE_MS + 1000);
+  scheduler.frame();
+  scheduler.scrub(['secondary', 'tertiary']);
+  const frames: MotionFrame[] = [];
+  for (let t = SETTLE_MS + 1000; t <= SETTLE_MS + 1000 + 2 * SECONDARY_FLARE_MAX_MS; t += 50) {
+    at(t);
+    frames.push(scheduler.frame());
+  }
+  expect(frames.every((frame) => frame.notices.length === 2)).toBe(true);
+  // No primary to breathe, so the first notice swells only while it flares, and the tertiary never lights.
+  expect(frames.some((frame) => (frame.notices[0]?.gain ?? 1) > 1)).toBe(true);
+  expect(frames.every((frame) => frame.notices[1]?.gain === 1 && frame.notices[1]?.scale === 1)).toBe(true);
+  expect(frames.every((frame) => frame.flaring === undefined || frame.flaring === 0)).toBe(true);
+});

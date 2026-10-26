@@ -7,7 +7,9 @@
  * 41); the chrome asks the world to look somewhere, to fly to a stop, to
  * explode or wire the open cell, or to write what it writes of the target of
  * a notice row the pointer is over (D168), and the world moves its camera or
- * its slide, or writes the target's words. Neither imports the
+ * its slide, or writes the target's words. It carries the frame of a range
+ * the scrubber stands at, too (D100): the chrome steps it, and the world
+ * cross-fades to that frame's weather. Neither imports the
  * other: `main.ts` hands both the same line, and an ask made before the world
  * is drawn, or with no world at all, as in a DOM test, goes nowhere. Pure, so
  * a test reads it straight.
@@ -26,6 +28,7 @@ export type Steering = {
   readonly explode?: () => void;
   readonly wire?: () => void;
   readonly hover?: (target: string | undefined) => void;
+  readonly scrub?: (frame: number) => void;
 };
 
 export type Nav = {
@@ -53,6 +56,10 @@ export type Nav = {
   readonly wire: () => void;
   /** Ask the world to write what it writes of a target the pointer is over in the chrome, or of none once it leaves (D168). */
   readonly hover: (target: string | undefined) => void;
+  /** The frame of a range the scrubber stands at; none until it has stepped, when the map's own weather shows (D100). */
+  readonly frame: () => number | undefined;
+  /** Step the scrubber to a frame: the chrome hears it, and the world cross-fades to its weather. */
+  readonly scrub: (frame: number) => void;
   /** The world takes the chrome's asks; the latest to steer is the one asked, until it lets go. */
   readonly steer: (steering: Steering) => () => void;
 };
@@ -69,6 +76,7 @@ export const createNav = (): Nav => {
   let stop: Stop = FIELD;
   let opened: Opened | undefined;
   let steering: Steering | undefined;
+  let frame: number | undefined;
   const tell = (): void => listeners.forEach((listener) => listener());
   return {
     outline: () => outline,
@@ -98,6 +106,13 @@ export const createNav = (): Nav => {
     explode: () => steering?.explode?.(),
     wire: () => steering?.wire?.(),
     hover: (target) => steering?.hover?.(target),
+    frame: () => frame,
+    scrub: (next) => {
+      if (next === frame) return;
+      frame = next;
+      tell();
+      steering?.scrub?.(next);
+    },
     steer: (next) => {
       steering = next;
       return () => {

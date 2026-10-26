@@ -21,12 +21,15 @@
  * or on a package's slide its package (D167), slowly and on the screen's
  * scale; once the cell closes, the surface draws its files where they last
  * floated, and they ease home only as the view climbs on toward the field
- * (D165). The curves are the materials spike's, as `docs/design.md` records
- * them.
+ * (D165). Stepping a range's scrubber to another frame cross-fades its
+ * weather in over the last one's at the same rate, the terrain beneath it
+ * still, and its notices take the lights from there (D100). The curves are
+ * the materials spike's, as `docs/design.md` records them.
  *
  * Under reduced motion only a static halo stands for the load flare: no
  * settle, no breathing, no flares, no jiggle, still shapes, no float, and a
- * fly-to, a slide and an exploded view that cut rather than ease.
+ * fly-to, a slide, an exploded view and a frame's weather that cut rather
+ * than ease.
  *
  * The tokens it is timed from come in as one object, read at the moment each
  * is needed and never once at the start, so the dev panel's registry can hand
@@ -178,6 +181,8 @@ export type MotionFrame = {
   readonly fly: number | undefined;
   /** The opened cell: its slide's fade and its exploded view's spread. */
   readonly open: OpenFrame;
+  /** How far the frame of a range a scrub stepped to has faded in over the one it replaced, 0 to 1; 1 at rest (D100). */
+  readonly weather: number;
   /** The levels of detail, when the frame was given the zoom. */
   readonly lod?: LodPlan;
 };
@@ -203,6 +208,12 @@ export type Scheduler = {
   readonly explode: (on: boolean) => void;
   /** Step the open cell's float to the clock's time, and say where every floated file stands (D157, D165); nothing moves under reduced motion. */
   readonly float: (map: MapJson, view: FloatView) => Floated;
+  /**
+   * Step to another frame of a range, whose notices have these tiers in rank
+   * order (D100): its weather fades in from nothing over the last one's, and
+   * its notices' lights start from rest, the random flares drawn afresh.
+   */
+  readonly scrub: (tiers: readonly NoticeTier[]) => void;
   /** What happened to every flare asked for, in order: run, queued or dropped, with the time and the rank. */
   readonly log: () => readonly string[];
 };
@@ -260,8 +271,12 @@ type Flare = { readonly index: number; readonly start: number; readonly gain: nu
 const FLOAT_CATCH_UP_MS = 1000;
 
 /** The scheduler, over its clock and its seed. */
-export function createScheduler({ clock, seed, tiers, reduced, tokens: T = MOTION_TOKENS }: SchedulerOptions): Scheduler {
+export function createScheduler({ clock, seed, tiers: loaded, reduced, tokens: T = MOTION_TOKENS }: SchedulerOptions): Scheduler {
   const chance = seeded(seed);
+  // The notices' tiers in rank order: the map's own, until a scrub steps to another frame's.
+  let tiers = loaded;
+  // How far the frame a scrub stepped to has faded in.
+  let weather = 1;
   const log: string[] = [];
   const due = new Map<number, number>();
   let loadAt: number | undefined;
@@ -362,9 +377,10 @@ export function createScheduler({ clock, seed, tiers, reduced, tokens: T = MOTIO
     lod = zoom === undefined ? lod : lodPlan(lod, zoom, elapsed, T.LOD_FADE_MS, gates);
     shown = approach(shown, opened === undefined ? 0 : 1, elapsed);
     exploded = approach(exploded, explodeTarget, elapsed);
+    weather = approach(weather, 1, elapsed);
     if (shown === 0 && opened === undefined) shownCell = undefined;
     const open: OpenFrame = { cell: shownCell, shown, exploded };
-    const shared = { t: since, hover: hoverValue, fly: flying, open, ...(lod === undefined || zoom === undefined ? {} : { lod }) };
+    const shared = { t: since, hover: hoverValue, fly: flying, open, weather, ...(lod === undefined || zoom === undefined ? {} : { lod }) };
 
     if (reduced || loadAt === undefined) {
       return { ...shared, amp: 1, lift: 0, notices: tiers.map(() => ({ gain: 1, scale: 1 })), flaring: undefined, halo: reduced && tiers.includes('primary') };
@@ -458,6 +474,18 @@ export function createScheduler({ clock, seed, tiers, reduced, tokens: T = MOTIO
         for (const file of away) surface.set(file.id, [file.x, file.y]);
       }
       return { open: floating?.float.files ?? fading, surface };
+    },
+    scrub: (next) => {
+      tiers = next;
+      weather = reduced ? 1 : 0;
+      // The last frame's flare goes with its weather; the new frame's notices flare at random from here.
+      inFlight = undefined;
+      queued = undefined;
+      due.clear();
+      if (!reduced && loadAt !== undefined) {
+        const now = clock();
+        tiers.forEach((_, index) => schedule(index, now));
+      }
     },
     log: () => [...log],
   };

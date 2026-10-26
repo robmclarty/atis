@@ -100,6 +100,8 @@ export type Labels = {
   readonly place: (viewport: Viewport, lod: Lod, slide: Slide | undefined, asked: ReadonlySet<string>) => void;
   /** Keep every label over its point for this camera and canvas, and draw the leaders, with the surface's layer as the layers' opacity. */
   readonly render: (camera: Camera, width: number, height: number, surface: number) => void;
+  /** Take the layers off the page, once a range's frame they belong to has faded out (D100). */
+  readonly dispose: () => void;
 };
 
 const SVG = 'http://www.w3.org/2000/svg';
@@ -351,5 +353,10 @@ export const createLabels = (map: MapJson, tags: readonly Label[], heightAt: Hei
     }
   };
 
-  return { elements: [leaders, text], place, render };
+  const dispose = (): void => {
+    leaders.remove();
+    text.remove();
+  };
+
+  return { elements: [leaders, text], place, render, dispose };
 };

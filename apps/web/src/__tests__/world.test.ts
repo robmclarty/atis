@@ -23,7 +23,10 @@
  * an opened cell and across a fly-to, beside a page with motion on whose
  * frames move (step 42). And at the opening frame the world is a dark planet
  * under one star per outside package the map records, which the wheel zooms
- * through LOD1's gate to the flat world (D170).
+ * through LOD1's gate to the flat world (D170). Served as a range, the demo's
+ * scrubber steps its frames by key: the canvas names the frame it shows, the
+ * weather cross-fades and settles, the notices' boxes follow the frame, and
+ * the terrain beneath never settles again (D100).
  */
 
 import { accessSync, constants, readFileSync } from 'node:fs';
@@ -87,15 +90,15 @@ const serveMap = (body: string): Plugin => ({
   },
 });
 
-/** The app on loopback from its sources, on a port the system picks. */
-const serve = async (): Promise<{ readonly server: ViteDevServer; readonly url: string }> => {
+/** The app on loopback from its sources, on a port the system picks, serving the demo map unless handed another. */
+const serve = async (body: string = readFileSync(DEMO, 'utf8')): Promise<{ readonly server: ViteDevServer; readonly url: string }> => {
   const server = await createServer({
     root: WEB,
     configFile: join(WEB, 'vite.config.ts'),
     logLevel: 'silent',
     clearScreen: false,
     server: { host: '127.0.0.1', port: 0, strictPort: false, open: false, hmr: false },
-    plugins: [serveMap(readFileSync(DEMO, 'utf8'))],
+    plugins: [serveMap(body)],
   });
   await server.listen();
   const address = server.httpServer?.address();
@@ -431,6 +434,56 @@ test('under reduced motion nothing changes from frame to frame after load, in an
     const [landed, rested] = await twoFrames(page, 1000);
     expect(landed.equals(rested)).toBe(true);
     expect(landed.equals(still)).toBe(false);
+    expect(complaints).toEqual([]);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+/** The demo map as a range of two commits (D100): the first touched the README alone and read no `.check/`, the second is the map's own weather. */
+const rangedDemo = (): string => {
+  const demo = JSON.parse(readFileSync(DEMO, 'utf8')) as { meta: { head: string }; weather: Record<string, unknown> & { changed: readonly { path: string }[] }; notices: readonly unknown[] };
+  const { health_delta: _moved, ...unmeasured } = demo.weather;
+  const reason = 'the commit is not the checked-out HEAD, so .check/ does not describe it';
+  const first = { ...unmeasured, changed: demo.weather.changed.filter((file) => file.path === 'README.md'), reach: [], wiring: [], evidence: {}, checks: { category: 'NOINST', checks_run: 0, reason, slots: [] }, improvements: [] };
+  const frames = [
+    { commit: 'a'.repeat(40), subject: 'docs: say what the doctor does', weather: first, notices: [] },
+    { commit: demo.meta.head, subject: 'feat(cli): run the doctor', weather: demo.weather, notices: demo.notices },
+  ];
+  return JSON.stringify({ ...demo, sequence: { frames } });
+};
+
+test("served as a range, the scrubber steps its frames by key and the weather cross-fades over a terrain that never settles again, with a clean console (D100)", { timeout: 120_000 }, async () => {
+  const { server, url } = await serve(rangedDemo());
+  const browser = await launch();
+  try {
+    const page = await browser.newPage({ viewport: { width: 960, height: 720 } });
+    const complaints: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error' || message.type() === 'warning') complaints.push(`${message.type()}: ${message.text()}`);
+    });
+    page.on('pageerror', (error) => complaints.push(`pageerror: ${error.message}`));
+
+    await page.goto(`${url}/?backend=webgl&zoom=2`);
+    await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
+    // The world opens on the map's own frame, its six notices boxed.
+    expect(await page.getAttribute('[data-scrubber]', 'data-scrubber')).toBe('1');
+    expect(await page.$$eval('[data-labels] [data-mark]', (elements) => elements.length)).toBe(6);
+    const rules = await page.$$eval('[data-rules] line', (lines) => lines.map((line) => [line.getAttribute('x1'), line.getAttribute('y1'), line.getAttribute('x2'), line.getAttribute('y2')].join(',')));
+
+    // `,` steps back a commit: the canvas names the frame, the weather fades and settles, and the first commit boxes no notice.
+    await page.keyboard.press(',');
+    await page.waitForSelector('#world[data-frame="0"][data-scrub="settled"]', { timeout: 30_000 });
+    expect(await page.getAttribute('[data-scrubber]', 'data-scrubber')).toBe('0');
+    expect(await page.$$eval('[data-labels] [data-mark]', (elements) => elements.length)).toBe(0);
+    await page.keyboard.press('.');
+    await page.waitForSelector('#world[data-frame="1"][data-scrub="settled"]', { timeout: 30_000 });
+    expect(await page.$$eval('[data-labels] [data-mark]', (elements) => elements.length)).toBe(6);
+
+    // The terrain never moved: the skin is still settled, and the rules lie where they lay (P2).
+    expect(await page.getAttribute('#world', 'data-world')).toBe('settled');
+    expect(await page.$$eval('[data-rules] line', (lines) => lines.map((line) => [line.getAttribute('x1'), line.getAttribute('y1'), line.getAttribute('x2'), line.getAttribute('y2')].join(',')))).toEqual(rules);
     expect(complaints).toEqual([]);
   } finally {
     await browser.close();

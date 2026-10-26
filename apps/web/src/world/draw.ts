@@ -67,7 +67,14 @@
  * complete frame, every layer drawn once, is on the screen, the canvas raises
  * its ready flag and the page marks the moment `atis:ready`, which the budget
  * script times the first frame by and a capture waits on (step 43, D105); the
- * canvas also says which level of detail it draws at.
+ * canvas also says which level of detail it draws at. On a map of a range,
+ * the scrubber's step to another commit cross-fades the weather over the one
+ * terrain (D100): that frame's marks, tags and labels are laid as a layer of
+ * their own and fade in as the last frame's fade out, the skin's reach and
+ * the planet's lights mixing the same way, at the scheduler's cross-fade and
+ * cut under reduced motion (C12), the relief, the tissue and the files never
+ * moving (P2); the canvas says which frame it shows and when the fade has
+ * settled.
  */
 
 import { AgXToneMapping, AmbientLight, Color, DataUtils, DirectionalLight, RenderPipeline, Scene, Vector3, WebGPUCoordinateSystem, WebGPURenderer } from 'three/webgpu';
@@ -84,6 +91,7 @@ import type { Hovered } from '../hover.js';
 import { marksOf } from '../marks.js';
 import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, NOTICE, PLANET, SKIN, SKY, SPACE, WALK, WEATHER } from '../materials.js';
 import type { Nav } from '../nav.js';
+import { frameMap, lastFrame as ownFrame } from '../frames.js';
 import { categoryHue, runsOf } from '../notices.js';
 import { CLOSED, OPEN_LOD, openedBy, openedOf } from '../opened.js';
 import type { OpenState } from '../opened.js';
@@ -92,16 +100,21 @@ import type { View } from '../view.js';
 import { FIELD, createWalk, ownsKey } from '../walk.js';
 import type { Stop } from '../walk.js';
 import { createBolts } from './bolts.js';
+import type { Bolts } from './bolts.js';
 import { centreOn, clampZoom, createCamera, createControls, fitCamera, outlineOf, pixelsPerUnit, rayAt, smoothControls, standAt, standOf } from './camera.js';
 import type { Stand } from './camera.js';
 import { TAG_LOOK, createHover } from './hover.js';
 import { SLIDE_CHROME, createInterior } from './interior.js';
 import { LABEL_LOOK, createLabels, viewportOf } from './labels.js';
+import type { Labels } from './labels.js';
 import { ORGANELLE_LOOK, createOrganelles } from './organelles.js';
 import { PALETTE_LOOK, createPalette } from './palette.js';
+import type { Palette } from './palette.js';
 import { createPlanet } from './planet.js';
 import { createRibbons } from './ribbons.js';
+import type { Ribbons } from './ribbons.js';
 import { createSectors } from './sectors.js';
+import type { Sectors } from './sectors.js';
 import { RESOLUTION, createSkin } from './skin.js';
 import { createSky } from './sky.js';
 import { createSpace } from './space.js';
@@ -120,6 +133,17 @@ const boxOf = (points: readonly Point[] | undefined): Box | undefined =>
   points === undefined || points.length === 0 ? undefined : { x0: Math.min(...points.map(([x]) => x)), y0: Math.min(...points.map(([, y]) => y)), x1: Math.max(...points.map(([x]) => x)), y1: Math.max(...points.map(([, y]) => y)) };
 
 const overlaps = (a: Box, b: Box): boolean => a.x0 <= b.x1 && a.x1 >= b.x0 && a.y0 <= b.y1 && a.y1 >= b.y0;
+
+/** One frame's weather as the world draws it over the one terrain (D100): its map, its palette, its marks on the GPU and its tags and labels over the canvas, taken off the page once it has faded out. */
+type WeatherLayer = {
+  readonly map: MapJson;
+  readonly palette: Palette;
+  readonly sectors: Sectors;
+  readonly bolts: Bolts;
+  readonly ribbons: Ribbons;
+  readonly labels: Labels;
+  readonly dispose: () => void;
+};
 
 /** Draw the world for a map into the canvas, keep it fitted to the window beside the rail, run its one loop, and keep the chrome's line to it (`nav.ts`). */
 export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: View, registry: Registry, nav: Nav): Promise<void> => {
@@ -160,12 +184,6 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   const grid = gridFor(map, RESOLUTION);
   const organelles = createOrganelles(map, skin.relief, grid, skin.amp, skin.lift, tokens);
   scene.add(...organelles.meshes);
-  const palette = createPalette(tokens, map.weather.checks.category);
-  const marks = marksOf(map);
-  const sectors = createSectors(marks.sectors, skin.relief, grid, skin.amp, skin.lift, organelles.surface, palette);
-  const bolts = createBolts(marks.bolts, skin.relief, grid, skin.amp, skin.lift, organelles.surface, palette);
-  const ribbons = createRibbons(marks.ribbons, skin.relief, grid, skin.amp, skin.lift, organelles.surface, palette);
-  scene.add(sectors.mesh, ribbons.mesh, bolts.mesh);
   // The tags over the canvas: a layer of their own between the canvas and the chrome, at each point's resting height on the skin.
   const heightAt = (x: number, y: number): number => {
     const column = Math.min(grid.columns - 1, Math.max(0, Math.round(x / grid.resolution)));
@@ -174,7 +192,25 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     const i = (row * grid.columns + column) * 4;
     return field instanceof Uint16Array ? DataUtils.fromHalfFloat(field[i] ?? 0) + DataUtils.fromHalfFloat(field[i + 1] ?? 0) : 0;
   };
-  const labels = createLabels(map, marks.labels, heightAt, palette, labelLook);
+  /** A frame's weather laid as a layer of its own: its marks in the scene, in its category's palette, and its tags and labels for the page. */
+  const layerOf = (frame: MapJson): WeatherLayer => {
+    const palette = createPalette(tokens, frame.weather.checks.category);
+    const marks = marksOf(frame);
+    const sectors = createSectors(marks.sectors, skin.relief, grid, skin.amp, skin.lift, organelles.surface, palette);
+    const bolts = createBolts(marks.bolts, skin.relief, grid, skin.amp, skin.lift, organelles.surface, palette);
+    const ribbons = createRibbons(marks.ribbons, skin.relief, grid, skin.amp, skin.lift, organelles.surface, palette);
+    scene.add(sectors.mesh, ribbons.mesh, bolts.mesh);
+    const labels = createLabels(frame, marks.labels, heightAt, palette, labelLook);
+    const dispose = (): void => {
+      scene.remove(sectors.mesh, ribbons.mesh, bolts.mesh);
+      for (const layer of [sectors, bolts, ribbons, labels]) layer.dispose();
+    };
+    return { map: frame, palette, sectors, bolts, ribbons, labels, dispose };
+  };
+  // The frame of a range shown, the map's own weather at first, and the one it fades from while a scrub's cross-fade runs (D100).
+  let current = layerOf(map);
+  let fading: WeatherLayer | undefined;
+  const layers = (): readonly WeatherLayer[] => (fading === undefined ? [current] : [current, fading]);
   // The hover's outline lies under the labels and its tag over them (step 38).
   const hoverLook = registry.view(HOVER, 'HOVER');
   const hover = createHover(heightAt, hoverLook, registry.view(TAG_LOOK));
@@ -183,17 +219,16 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   const interior = createInterior(heightAt, RESOLUTION, interiorLook, registry.view(SLIDE_CHROME));
   scene.add(...interior.meshes);
   // The far zoom's planet (D170): over the rules, which are the flat world's, and under everything else.
-  const category = map.weather.checks.category;
-  const planet = createPlanet(map, registry.view(PLANET, 'PLANET'), () => ({ change: tokens.CHANGE_HUE, ifr: tokens.IFR_HUE, category: categoryHue(category, tokens), field: tokens.FIELD_FILL }));
-  canvas.after(space.rules, planet.element, ...interior.elements, hover.outline, ...labels.elements, hover.tag);
+  const planet = createPlanet(map, registry.view(PLANET, 'PLANET'), () => ({ change: tokens.CHANGE_HUE, ifr: tokens.IFR_HUE, category: categoryHue(current.map.weather.checks.category, tokens), field: tokens.FIELD_FILL }));
+  canvas.after(space.rules, planet.element, ...interior.elements, hover.outline, ...current.labels.elements, hover.tag);
   // Which cell is open, the slide laid for it, and the level the last frame was drawn at, which a click is read against.
   let opening: OpenState = CLOSED;
   let slide: Slide | undefined;
   let slideCell: string | undefined;
   let lastLod: Lod = 0;
   let exploded = false;
-  // The index of the notice whose light each target's stain follows inside the slide (step 34).
-  const lightOf = new Map(runsOf(map).map((run) => [run.target, run.light] as const));
+  // The index of the notice whose light each target's stain follows inside the slide (step 34), for the frame shown.
+  let lightOf = new Map(runsOf(map).map((run) => [run.target, run.light] as const));
   // The highest the skin rises at rest, where a ray under the pointer starts its walk down to it.
   const highest = (): number => {
     let top = 0;
@@ -300,7 +335,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     const pick = pickAt(ground, lod, hoverLook.slop / pixelsPerUnit(camera, canvas.clientWidth));
     // Inside the opened cell a file is hovered in the outline it is drawn in, pulsing as the scheduler moves it.
     const body = pick?.kind === 'organelle' && slide !== undefined && pick.cell === slide.cell ? interior.bodies().find((each) => each.id === pick.path) : undefined;
-    const hovered = pick === undefined ? undefined : hoverOf(map, pick);
+    const hovered = pick === undefined ? undefined : hoverOf(current.map, pick);
     return hovered === undefined || body === undefined ? hovered : { ...hovered, ring: body.outline.ring };
   };
   let bodies: ReturnType<typeof interiorOf> = [];
@@ -422,7 +457,26 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   const wire = (): void => {
     if (opening.open !== undefined && cellWiring(map, opening.open) !== undefined) apply(openedBy(opening, { kind: 'wire' }));
   };
-  // The minimap asks for a place and the camera eases there (D154); a notice's row asks for a stop and the camera flies there; the breadcrumb's buttons ask for the exploded view and the wiring.
+  // A step of the scrubber lays its frame's weather as the layer shown, and the one shown before fades out beneath it; a step taken mid-fade drops the layer already fading (D100).
+  let shownFrame = ownFrame(map);
+  let relaySlide = false;
+  const scrub = (index: number): void => {
+    if (index === shownFrame) return;
+    shownFrame = index;
+    canvas.dataset['frame'] = String(index);
+    const next = frameMap(map, index);
+    fading?.dispose();
+    fading = current;
+    current = layerOf(next);
+    hover.tag.before(...current.labels.elements);
+    skin.reach(next);
+    planet.weather(next);
+    lightOf = new Map(runsOf(next).map((run) => [run.target, run.light] as const));
+    scheduler.scrub(next.notices.map((notice) => notice.tier));
+    relaySlide = true;
+    placeLabels = true;
+  };
+  // The minimap asks for a place and the camera eases there (D154); a notice's row asks for a stop and the camera flies there; the breadcrumb's buttons ask for the exploded view and the wiring; the scrubber asks for a frame.
   nav.steer({
     lookAt: (point) => {
       byHand();
@@ -436,6 +490,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       rowTarget = target;
       placeLabels = true;
     },
+    scrub,
   });
   // The arrows walk to a sibling, Enter descends and Escape ascends, unless the key is the focused element's own or the chrome already took it (an open legend folds away on Escape); with a cell open, Escape closes it first, x spreads or gathers its exploded view (D155), and w draws or takes away its wiring.
   globalThis.addEventListener('keydown', (event) => {
@@ -524,9 +579,10 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     }
     // The slide (step 40): laid when the cell it shows changes, its bodies laid every frame where the scene has them, and the surface's files and marks in it giving way as it fades in.
     const open = frame.open;
-    if (open.cell !== slideCell) {
+    if (open.cell !== slideCell || relaySlide) {
       slideCell = open.cell;
-      slide = open.cell === undefined ? undefined : cellSlide(map, open.cell, interiorLook);
+      relaySlide = false;
+      slide = open.cell === undefined ? undefined : cellSlide(current.map, open.cell, interiorLook);
       interior.slide(slide);
       placeLabels = true;
     }
@@ -539,18 +595,27 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       canvas.dataset['floated'] = String(floatedShown);
     }
     organelles.move(floated.surface);
-    sectors.move(floated.surface);
+    for (const layer of layers()) layer.sectors.move(floated.surface);
     bodies = slide === undefined || open.shown <= 0 ? [] : interiorOf(slide, { drifted: floated.open, reduced, explode: open.exploded, shape: scheduler.shape });
     interior.show(bodies, open.shown, (id) => {
       const light = lightOf.get(id);
       return light === undefined ? 1 : (frame.notices[light]?.gain ?? 1);
     });
     organelles.hide(slide?.cell, open.shown);
-    sectors.hide(slide?.cell, open.shown);
+    for (const layer of layers()) layer.sectors.hide(slide?.cell, open.shown);
     if (open.exploded >= 1 !== exploded) {
       exploded = open.exploded >= 1;
       canvas.dataset['exploded'] = exploded ? 'on' : 'off';
     }
+    // A scrub's cross-fade: the frame shown fades in as the one before it fades out, and that one goes once it has (D100).
+    const mixed = frame.weather;
+    if (fading !== undefined && mixed >= 1) {
+      fading.dispose();
+      fading = undefined;
+    }
+    const scrubbing = fading === undefined ? 'settled' : 'fading';
+    if (canvas.dataset['scrub'] !== scrubbing && shownFrame !== undefined) canvas.dataset['scrub'] = scrubbing;
+    skin.reachMix.value = mixed;
     skin.amp.value = frame.amp;
     skin.lift.value = frame.lift;
     skin.surface.value = surface;
@@ -558,13 +623,19 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     space.restyle();
     organelles.surface.value = surface;
     organelles.restyle();
-    palette.restyle();
-    sectors.light(frame.notices);
-    sectors.halo.opacity.value = noticeLook.haloOpacity;
-    sectors.halo.bloom.value = noticeLook.haloBloom;
-    sectors.bloom.value = weatherLook.markBloom;
-    bolts.bloom.value = weatherLook.markBloom;
-    ribbons.bloom.value = weatherLook.ribbonBloom;
+    for (const layer of layers()) {
+      layer.palette.restyle();
+      layer.sectors.fade.value = layer === current ? mixed : 1 - mixed;
+      layer.bolts.fade.value = layer.sectors.fade.value;
+      layer.ribbons.fade.value = layer.sectors.fade.value;
+      layer.sectors.halo.opacity.value = noticeLook.haloOpacity;
+      layer.sectors.halo.bloom.value = noticeLook.haloBloom;
+      layer.sectors.bloom.value = weatherLook.markBloom;
+      layer.bolts.bloom.value = weatherLook.markBloom;
+      layer.ribbons.bloom.value = weatherLook.ribbonBloom;
+    }
+    // The notices' lights are the shown frame's; the frame fading out holds the last it was given.
+    current.sectors.light(frame.notices);
     background.set(tokens.FIELD_FILL);
     key.color.set(lighting.key);
     key.position.set(...lighting.keyFrom).multiplyScalar(CAMERA_REACH).add(centre);
@@ -583,17 +654,18 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       { camera, width: canvas.clientWidth, height: canvas.clientHeight, free, pixelsPerUnit: pixelsPerUnit(camera, canvas.clientWidth), centre: middle, zoom: camera.zoom, gate: levels.gates[0] ?? LOD_GATES[0] ?? { enter: 1.7, exit: 1.45 } },
       planetLayer,
       frame.notices.map((notice) => notice.gain),
+      mixed,
     );
     if (planetLayer > 0 !== planetOn) {
       planetOn = planetLayer > 0;
       canvas.dataset['planet'] = planetOn ? 'on' : 'off';
     }
     if (placeLabels || lod !== placedLod) {
-      labels.place(viewportOf(camera, canvas.clientWidth), lod, slide, askedOf(fieldTarget, rowTarget));
+      for (const layer of layers()) layer.labels.place(viewportOf(camera, canvas.clientWidth), lod, slide, askedOf(fieldTarget, rowTarget));
       placeLabels = false;
       placedLod = lod;
     }
-    labels.render(camera, canvas.clientWidth, canvas.clientHeight, surface);
+    for (const layer of layers()) layer.labels.render(camera, canvas.clientWidth, canvas.clientHeight, surface * (layer === current ? mixed : 1 - mixed));
     const words = slideWords(open.exploded, fieldTarget, slide === undefined ? undefined : barrelOf.get(slide.cell));
     interior.render(camera, canvas.clientWidth, canvas.clientHeight, canvas.clientWidth - RAIL_WIDTH, pixelsPerUnit(camera, canvas.clientWidth), open.exploded, words);
     // A slide's files float under a still pointer, so the hover follows them each frame while one shows.

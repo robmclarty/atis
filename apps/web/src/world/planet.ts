@@ -10,6 +10,9 @@
  * surface's fades in, so the cross-fade at LOD1's gate hands the planet,
  * filling the frame by then, to the flat world. Nothing on it moves of its
  * own: under reduced motion the notice's light holds, and so does it (C12).
+ * A step of a range's scrubber hands it another frame's lit files and stars,
+ * which it cross-fades to from the ones it shows, the body beneath them still
+ * (D100, P2).
  * The look comes through the registry (D156), each frame.
  */
 
@@ -39,8 +42,10 @@ export type PlanetFrame = {
 export type Planet = {
   /** The planet's canvas, over the world's. */
   readonly element: HTMLCanvasElement;
-  /** Draw it for this frame, `shown` its layer's share, the notices' gains as the scheduler eases them; hidden at none. */
-  readonly render: (frame: PlanetFrame, shown: number, gains: readonly number[]) => void;
+  /** Draw it for this frame, `shown` its layer's share, the notices' gains as the scheduler eases them, and `mix` how far a scrub has faded to the frame it took last; hidden at none. */
+  readonly render: (frame: PlanetFrame, shown: number, gains: readonly number[], mix?: number) => void;
+  /** Take another frame of a range's lit files and stars, to fade to from the ones it shows (D100). */
+  readonly weather: (map: MapJson) => void;
 };
 
 /** How many samples round the rim the stars' light is laid at. */
@@ -69,9 +74,16 @@ const glow = (context: CanvasRenderingContext2D, x: number, y: number, core: num
   context.fill();
 };
 
+/** One frame's weather on the planet: its map, which its stars are laid from, and its lit files. */
+type Sky = { readonly map: MapJson; readonly lights: ReturnType<typeof planetLights>; laid?: { readonly key: string; readonly stars: readonly DependencyStar[]; readonly rim: Float32Array } };
+
+const skyOf = (map: MapJson): Sky => ({ map, lights: planetLights(map) });
+
 export const createPlanet = (map: MapJson, look: PlanetLook, hues: () => PlanetHues): Planet => {
   const layout = map.terrain.layout ?? { width: 1, height: 1 };
-  const lights = planetLights(map);
+  // The frame shown, and the one it fades from while a scrub's cross-fade runs.
+  let sky = skyOf(map);
+  let fading: Sky | undefined;
   const element = document.createElement('canvas');
   element.dataset['planetLayer'] = '';
   element.dataset['stars'] = String(map.weather.dependencies?.length ?? 0);
@@ -81,14 +93,13 @@ export const createPlanet = (map: MapJson, look: PlanetLook, hues: () => PlanetH
   const rimCanvas = document.createElement('canvas');
   const rimContext = rimCanvas.getContext('2d');
 
-  // The stars and the rim's light change only with the room, the look's shape or a hue, so they are laid again only then.
-  let laid: { readonly key: string; readonly stars: readonly DependencyStar[]; readonly rim: Float32Array } | undefined;
-  const starsFor = (room: { readonly x: number; readonly y: number }, colourOf: (hue: StarHue) => Rgb): NonNullable<typeof laid> => {
+  // A frame's stars and the rim's light change only with the room, the look's shape or a hue, so they are laid again only then.
+  const starsFor = (of: Sky, room: { readonly x: number; readonly y: number }, colourOf: (hue: StarHue) => Rgb): NonNullable<Sky['laid']> => {
     const key = JSON.stringify([room, look.starNear, look.starGap, look.starSeed, look.rimSpread, (['ifr', 'amber', 'change', 'clean', 'unread'] as const).map(colourOf)]);
-    if (laid?.key === key) return laid;
-    const stars = dependencyStars(map, room, look);
-    laid = { key, stars, rim: rimLight(stars, RIM_SAMPLES, colourOf, look) };
-    return laid;
+    if (of.laid?.key === key) return of.laid;
+    const stars = dependencyStars(of.map, room, look);
+    of.laid = { key, stars, rim: rimLight(stars, RIM_SAMPLES, colourOf, look) };
+    return of.laid;
   };
 
   const point = new Vector3();
@@ -98,7 +109,8 @@ export const createPlanet = (map: MapJson, look: PlanetLook, hues: () => PlanetH
     return [((point.x + 1) / 2) * width, ((1 - point.y) / 2) * height];
   };
 
-  const render = (frame: PlanetFrame, shown: number, gains: readonly number[]): void => {
+  const render = (frame: PlanetFrame, shown: number, gains: readonly number[], mix = 1): void => {
+    if (mix >= 1) fading = undefined;
     if (shown <= 0 || context === null || rimContext === null || frame.centre === undefined) {
       element.style.display = 'none';
       return;
@@ -130,13 +142,17 @@ export const createPlanet = (map: MapJson, look: PlanetLook, hues: () => PlanetH
     context.fillStyle = colours.field;
     context.fillRect(0, 0, width, height);
 
-    // The stars, placed in planet radii at the opening frame's size, part and leave the frame as the planet grows.
+    // The stars, placed in planet radii at the opening frame's size, part and leave the frame as the planet grows;
+    // while a scrub's cross-fade runs, the frame it fades from at what remains of it and the one shown at what has come.
     const farRadius = look.farFill * halfDiagonal;
-    const { stars, rim } = starsFor({ x: free / 2 / farRadius, y: height / 2 / farRadius }, colourOf);
+    const room = { x: free / 2 / farRadius, y: height / 2 / farRadius };
+    const skies = [...(fading === undefined ? [] : [{ of: fading, weight: 1 - mix }]), { of: sky, weight: fading === undefined ? 1 : mix }].map(({ of, weight }) => ({ of, weight, ...starsFor(of, room, colourOf) }));
     context.globalCompositeOperation = 'lighter';
-    for (const star of stars) {
-      const core = look.starMin + (look.starMax - look.starMin) * star.weight;
-      glow(context, cx + star.x * radiusPx, cy + star.y * radiusPx, core, core * look.starGlow, colourOf(star.hue), look.starGain, look.glowShare);
+    for (const { stars, weight } of skies) {
+      for (const star of stars) {
+        const core = look.starMin + (look.starMax - look.starMin) * star.weight;
+        glow(context, cx + star.x * radiusPx, cy + star.y * radiusPx, core, core * look.starGlow, colourOf(star.hue), look.starGain * weight, look.glowShare);
+      }
     }
 
     // The dark body, a hair lighter at its middle.
@@ -155,20 +171,26 @@ export const createPlanet = (map: MapJson, look: PlanetLook, hues: () => PlanetH
     context.clip();
     context.globalCompositeOperation = 'lighter';
     const scale = (radius / wrap) * frame.pixelsPerUnit;
-    for (const light of lights) {
-      const [x, y, z] = onPlanet([light.x, light.y], facing, radius, wrap);
-      const facingCamera = -(x * view.x + y * view.y + z * view.z) / radius;
-      if (facingCamera <= 0) continue;
-      const [sx, sy] = project(camera, width, height, facing[0] + x, y - radius, facing[1] + z);
-      const core = Math.max(look.lightMin, light.r * scale);
-      const gain = light.notice < 0 ? 1 : (gains[light.notice] ?? 1);
-      const colour = rgbOf(light.hue === 'category' ? colours.category : colours.change);
-      glow(context, sx, sy, core, core * look.lightGlow, colour, look.lightGain * gain * Math.min(1, facingCamera / Math.max(look.limbFade, 1e-6)), look.glowShare);
+    for (const { of, weight } of skies) {
+      // The frame faded from holds its notices' lights at rest: the scheduler's are the shown frame's.
+      const shownSky = of === sky;
+      for (const light of of.lights) {
+        const [x, y, z] = onPlanet([light.x, light.y], facing, radius, wrap);
+        const facingCamera = -(x * view.x + y * view.y + z * view.z) / radius;
+        if (facingCamera <= 0) continue;
+        const [sx, sy] = project(camera, width, height, facing[0] + x, y - radius, facing[1] + z);
+        const core = Math.max(look.lightMin, light.r * scale);
+        const gain = light.notice < 0 || !shownSky ? 1 : (gains[light.notice] ?? 1);
+        const colour = rgbOf(light.hue === 'category' ? colours.category : colours.change);
+        glow(context, sx, sy, core, core * look.lightGlow, colour, look.lightGain * gain * weight * Math.min(1, facingCamera / Math.max(look.limbFade, 1e-6)), look.glowShare);
+      }
     }
     context.restore();
 
     // The rim the stars light: their colours laid round the limb, masked to a band from inside it to a haze past it, added over the planet.
-    if (stars.length > 0) {
+    const rim = new Float32Array(RIM_SAMPLES * 3);
+    for (const { rim: lit, weight } of skies) lit.forEach((value, at) => (rim[at] = (rim[at] ?? 0) + value * weight));
+    if (skies.some(({ stars }) => stars.length > 0)) {
       rimContext.setTransform(ratio, 0, 0, ratio, 0, 0);
       rimContext.globalCompositeOperation = 'source-over';
       rimContext.clearRect(0, 0, width, height);
@@ -194,5 +216,11 @@ export const createPlanet = (map: MapJson, look: PlanetLook, hues: () => PlanetH
     context.globalCompositeOperation = 'source-over';
   };
 
-  return { element, render };
+  const weather = (next: MapJson): void => {
+    fading = sky;
+    sky = skyOf(next);
+    element.dataset['stars'] = String(next.weather.dependencies?.length ?? 0);
+  };
+
+  return { element, render, weather };
 };
