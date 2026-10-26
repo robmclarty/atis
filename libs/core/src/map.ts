@@ -25,6 +25,7 @@ import { OTHER_GROUP, identifyGroups, shoreMatcher } from './groups.js';
 import { computeHistory } from './history.js';
 import type { Commit, CommitFile, FileHistory } from './history.js';
 import { computeLayout } from './layout/index.js';
+import type { Prior } from './layout/index.js';
 import { classifyFile, identifyModules } from './modules.js';
 import type { ImportEdge, ModuleCell, Modules, ScannedFile } from './modules.js';
 import { findGhosts, findPublicNames, rankNotices } from './notices.js';
@@ -84,6 +85,8 @@ export type BuildInputs = {
   readonly head_time: number;
   /** The `.check/` artifacts, or the reason there are none to trust (D41). */
   readonly check: CheckArtifacts;
+  /** The layout to relax from, keyed by path: the base terrain's own, which the CLI keeps per base (D96, D97); absent, the field settles from nothing. */
+  readonly prior?: Prior;
 };
 
 /** fallow's compound `exceeded` values, split so the count of dents is the count of rules (§5.1). */
@@ -588,7 +591,10 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
   // Last, because the field is drawn over everything above it: the terrain
   // settles from the base alone and the added files find their place after
   // it, so the weather never moves the ground (D32).
-  const layout = computeLayout({ cells, organelles, edges, bands: depths.bands, groups, added });
+  // A renamed file's old place is read from the prior under its base path (D40, D97).
+  const { prior } = inputs;
+  const renamed = new Map([...renames].map(([from, path]) => [path, from] as const));
+  const layout = computeLayout({ cells, organelles, edges, bands: depths.bands, groups, added, renames: renamed, ...(prior === undefined ? {} : { prior }) });
 
   return {
     meta: {
@@ -660,14 +666,16 @@ const NO_CHANGE: CheckArtifacts = { mode: 'git-only', reason: 'a terrain alone c
 
 /**
  * A base commit's own terrain, laid out: the field `buildMap` draws for a
- * change that changes nothing over `scan`. It depends on the commit and the
- * config alone, which is what lets the CLI keep it per base commit beside the
- * scan and the history window (D96), for a later layout to start from (D97).
- * It is `buildMap`'s own pipeline rather than a copy of it, so the two cannot
- * lay one terrain out two ways.
+ * change that changes nothing over `scan`, relaxed from `prior` when one is
+ * given, as a nearest cached ancestor's layout is (D97). It depends on the
+ * commit, the config and the prior alone, which is what lets the CLI keep it
+ * per base commit beside the scan and the history window (D96), for the map
+ * of a change over it to relax from. It is `buildMap`'s own pipeline rather
+ * than a copy of it, so the two cannot lay one terrain out two ways.
  */
-export function layOutTerrain(scan: Scan, config: Config = DEFAULT_CONFIG): Layout {
+export function layOutTerrain(scan: Scan, config: Config = DEFAULT_CONFIG, prior?: Prior): Layout {
   const meta: MapMeta = { repo: '', base: '', head: '', merge_base: '', generated_at: '' };
-  const inputs: BuildInputs = { meta, base: scan, head: scan, diff: [], deps_added: [], commits: [], head_time: 0, check: NO_CHANGE };
+  const still = { meta, base: scan, head: scan, diff: [], deps_added: [], commits: [], head_time: 0, check: NO_CHANGE };
+  const inputs: BuildInputs = prior === undefined ? still : { ...still, prior };
   return buildMap(inputs, config).terrain.layout;
 }

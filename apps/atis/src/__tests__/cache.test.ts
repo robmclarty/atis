@@ -2,13 +2,17 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import { DEFAULT_CONFIG, assertMap } from 'core';
+import { DEFAULT_CONFIG, assertMap, layOutTerrain } from 'core';
+import type { Layout } from 'core';
 import { afterAll, expect, test } from 'vitest';
 
 import { codeKey, configKey, hashCode, readTerrain, terrainPath, writeTerrain } from '../cache.js';
 import type { BaseTerrain, TerrainKey } from '../cache.js';
 import { run } from '../run.js';
+import { scanImports } from '../sources/index.js';
+import type { Scan } from '../sources/index.js';
 
 /**
  * The terrain cache (D96, D137): an entry read back whole, a miss for each
@@ -161,7 +165,7 @@ test('a second run on the same base reads the cache, and writes the map the firs
 
   const first = run({ repo, base: 'HEAD~1', out: join(out, 'first.json'), verbose: true });
   expect(first.exitCode, first.stderr).toBe(0);
-  expect(first.stderr).toContain(`terrain cache miss (no entry), wrote .atis/terrain/${base}.json`);
+  expect(first.stderr).toContain(`terrain cache miss (no entry), laid out cold, wrote .atis/terrain/${base}.json`);
   expect(first.stderr).toMatch(/scan base\s+\d+ ms/);
   expect(existsSync(entry)).toBe(true);
 
@@ -182,7 +186,7 @@ test('a second run on the same base reads the cache, and writes the map the firs
   // A corrupt entry is a miss, measured afresh and written over.
   const mended = run({ repo, base: 'HEAD~1', out: join(out, 'mended.json'), verbose: true });
   expect(mended.exitCode, mended.stderr).toBe(0);
-  expect(mended.stderr).toContain('terrain cache miss (unreadable), wrote');
+  expect(mended.stderr).toContain('terrain cache miss (unreadable), laid out cold, wrote');
   expect(bytesBesideTheClock(join(out, 'mended.json'))).toBe(bytesBesideTheClock(join(out, 'first.json')));
 
   // An entry another build of atis wrote, or one laid out under another config, misses by name.
@@ -195,7 +199,7 @@ test('a second run on the same base reads the cache, and writes the map the firs
     writeFileSync(entry, JSON.stringify({ ...(kept as object), key: { ...key, [part]: '0'.repeat(64) } }));
     const missed = run({ repo, base: 'HEAD~1', out: join(out, `${part}.json`), verbose: true });
     expect(missed.exitCode, missed.stderr).toBe(0);
-    expect(missed.stderr).toContain(`terrain cache miss (${reason}), wrote`);
+    expect(missed.stderr).toContain(`terrain cache miss (${reason}), laid out cold, wrote`);
     expect(bytesBesideTheClock(join(out, `${part}.json`))).toBe(bytesBesideTheClock(join(out, 'first.json')));
   }
 
@@ -204,7 +208,7 @@ test('a second run on the same base reads the cache, and writes the map the firs
   expect(existsSync(join(repo, '.gitignore'))).toBe(false);
 }, MINUTE);
 
-test('the kept layout is the one the map draws for a change that changes nothing', () => {
+test('the kept layout is the one a change that changes nothing relaxes from, and barely moves (D97)', () => {
   const { repo, git } = twoCommits();
   const out = join(temp('still'), 'map.json');
 
@@ -215,6 +219,76 @@ test('the kept layout is the one the map draws for a change that changes nothing
 
   const kept = readTerrain(repo, git('rev-parse', 'HEAD'), { code: codeKey(), config: configKey(DEFAULT_CONFIG) });
   expect(kept.hit).toBe(true);
-  expect(kept.hit ? kept.terrain.layout : undefined).toEqual(map.terrain.layout);
-  expect(Object.keys(map.terrain.layout?.positions ?? {})).toEqual(['package.json', 'src/index.ts', 'src/shapes.ts', 'src/square.ts']);
+  const layout = kept.hit ? kept.terrain.layout : undefined;
+  expect(Object.keys(layout?.positions ?? {})).toEqual(['package.json', 'src/index.ts', 'src/shapes.ts', 'src/square.ts']);
+  expect(Object.keys(map.terrain.layout?.positions ?? {})).toEqual(Object.keys(layout?.positions ?? {}));
+  expect(meanDisplacement(layout, map.terrain.layout)).toBeLessThan(1);
+}, MINUTE);
+
+test('a base the cache has not seen relaxes from the nearest ancestor it has, and never from a descendant (D97)', () => {
+  const { repo, git } = twoCommits();
+  write(join(repo, 'src', 'cube.ts'), "import { square } from './square.js';\n\nexport function cube(side: number): number {\n  return square(side) * side;\n}\n");
+  git('add', '.');
+  git('commit', '--quiet', '-m', 'feat: measure a cube');
+  const [first, second, third] = [git('rev-parse', 'HEAD~2'), git('rev-parse', 'HEAD~1'), git('rev-parse', 'HEAD')];
+  const out = (name: string): string => join(temp('near'), `${name}.json`);
+
+  expect(run({ repo, base: first, out: out('first'), verbose: true }).stderr).toContain('miss (no entry), laid out cold');
+  expect(run({ repo, base: third, out: out('third'), verbose: true }).stderr).toContain(`miss (no entry), relaxed from ${first}`);
+  // The middle commit's nearest kept ancestor is the first; the third, kept too, is its descendant.
+  expect(run({ repo, base: second, out: out('second'), verbose: true }).stderr).toContain(`miss (no entry), relaxed from ${first}`);
+
+  // An ancestor kept under other code is no prior.
+  rmSync(terrainPath(repo, second));
+  const kept: unknown = JSON.parse(readFileSync(terrainPath(repo, first), 'utf8'));
+  writeFileSync(terrainPath(repo, first), JSON.stringify({ ...(kept as object), key: { code: '0'.repeat(64), config: KEY.config } }));
+  expect(run({ repo, base: second, out: out('again'), verbose: true }).stderr).toContain('miss (no entry), laid out cold');
+
+  // With the cache off, nothing is looked for and the base is laid out from nothing.
+  const off = run({ repo, base: second, out: out('off'), verbose: true, cache: false });
+  expect(off.stderr).toContain('terrain cache off (--no-cache)');
+  expect(off.stderr).not.toMatch(/cache near/);
+}, MINUTE);
+
+/** The mean distance the files both layouts place moved from the first to the second, over those `kept` keeps. */
+function meanDisplacement(from: Layout | undefined, to: Layout | undefined, kept: (path: string) => boolean = () => true): number {
+  const moved = Object.keys(to?.positions ?? {}).flatMap((path) => {
+    const was = from?.positions[path];
+    const now = to?.positions[path];
+    return was === undefined || now === undefined || !kept(path) ? [] : [Math.hypot(now.x - was.x, now.y - was.y)];
+  });
+  return moved.reduce((total, distance) => total + distance, 0) / moved.length;
+}
+
+/**
+ * Two consecutive commits of this repository (D97): step 112's, which
+ * recorded the outside packages, and step 113's, which drew the planet over
+ * them. Fourteen files changed between them, three of them added.
+ */
+const BEFORE = '3af7b74d1c0f926d461c7c8c9565dd0148ba4f4c';
+const AFTER = 'f4f44ba4e7896dcf72dd111d80d85a452d746fb3';
+/** The mean distance, in the field's units, the unchanged files may move when the second commit relaxes from the first. */
+const DISPLACEMENT_BOUND = 4;
+
+test('on two consecutive commits of this repo, unchanged files move less than the pinned bound relaxed, and more laid out cold (D97)', () => {
+  const repo = execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: dirname(fileURLToPath(import.meta.url)), encoding: 'utf8' }).trim();
+  const changed = new Set(execFileSync('git', ['diff', '--name-only', BEFORE, AFTER], { cwd: repo, encoding: 'utf8' }).trim().split('\n'));
+  const scanAt = (sha: string): Scan => {
+    const root = temp('commit');
+    const tree = join(root, 'tree');
+    mkdirSync(tree);
+    execFileSync('git', ['archive', '--format=tar', '-o', join(root, 'commit.tar'), sha], { cwd: repo });
+    execFileSync('tar', ['-xf', join(root, 'commit.tar'), '-C', tree]);
+    return scanImports(tree, { repo });
+  };
+  const before = layOutTerrain(scanAt(BEFORE), DEFAULT_CONFIG);
+  const after = scanAt(AFTER);
+  const relaxed = layOutTerrain(after, DEFAULT_CONFIG, before);
+  const cold = layOutTerrain(after, DEFAULT_CONFIG);
+  const unchanged = (path: string): boolean => !changed.has(path);
+
+  expect(meanDisplacement(before, relaxed, unchanged)).toBeLessThan(DISPLACEMENT_BOUND);
+  expect(meanDisplacement(before, cold, unchanged)).toBeGreaterThan(DISPLACEMENT_BOUND);
+  // One prior and one input lay out one field.
+  expect(JSON.stringify(layOutTerrain(after, DEFAULT_CONFIG, before))).toBe(JSON.stringify(relaxed));
 }, MINUTE);

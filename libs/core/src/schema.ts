@@ -106,6 +106,13 @@ export type Layout = {
   readonly shore: { readonly y0: number; readonly y1: number };
   readonly bands: readonly LayoutBand[];
   readonly positions: Readonly<Record<string, Position>>;
+  /**
+   * Where each renamed file stood before, by its head path: its place in the
+   * layout this one relaxed from, under its old path, carried into this field.
+   * Its old-to-new leader runs from here to `positions` (D40, D97); absent
+   * with no layout to relax from, or no renamed file that layout placed (C2).
+   */
+  readonly renamed_from?: Readonly<Record<string, Position>>;
   /** One closed contour per cell and per non-empty shore group; absent until step 16 draws them. */
   readonly contours?: Readonly<Record<string, readonly (readonly [number, number])[]>>;
 };
@@ -471,6 +478,12 @@ function assertShape(value: unknown): asserts value is MapJson {
     for (const path of Object.keys(positions)) {
       if (!organelleIds.has(path) && !groupFiles.has(path)) {
         fail(`terrain.layout.positions["${path}"]`, `unknown organelle or group file "${path}"`);
+      }
+    }
+    const renamed = layoutRecord['renamed_from'];
+    if (renamed !== undefined) {
+      for (const path of Object.keys(expectRecord(renamed, 'terrain.layout.renamed_from'))) {
+        if (positions[path] === undefined) fail(`terrain.layout.renamed_from["${path}"]`, `no position for "${path}"`);
       }
     }
   }

@@ -7,7 +7,7 @@ import { expect, test } from 'vitest';
 import { DEFAULT_CONFIG } from '../config.js';
 import { LAYOUT_SEED, computeLayout, radiusOf, seededRandom, simulate } from '../layout/index.js';
 import type { LayoutInput } from '../layout/index.js';
-import { buildMap } from '../map.js';
+import { buildMap, layOutTerrain } from '../map.js';
 import type { BuildInputs } from '../map.js';
 import { assertMap } from '../schema.js';
 import type { Band, Group, Layout, Organelle, Position } from '../schema.js';
@@ -224,4 +224,67 @@ test('buildMap emits a layout every organelle and shore file has a place in', ()
   for (const cell of map.terrain.cells) expect(layout.contours?.[cell.id]).toBeDefined();
   // The added file was placed by the second pass and is on the field like any other.
   expect(layout.positions['libs/core/src/pm/tools.ts']).toBeDefined();
+});
+
+/** The mean distance the files both layouts place moved from the first to the second. */
+function displacement(from: Layout, to: Layout): number {
+  const moved = Object.keys(to.positions).flatMap((id) => {
+    const was = from.positions[id];
+    const now = to.positions[id];
+    return was === undefined || now === undefined ? [] : [Math.hypot(now.x - was.x, now.y - was.y)];
+  });
+  return moved.reduce((total, distance) => total + distance, 0) / moved.length;
+}
+
+/** One file of a one-cell, one-terrace pass. */
+function lone(id: string): { readonly id: string; readonly cell: string; readonly band: number; readonly loc: number } {
+  return { id, cell: 'folder:src', band: 0, loc: 40 };
+}
+
+test('a file the prior placed starts where it was, and a new file of its cell starts beside it (D97)', () => {
+  const strips = new Map([[0, { y0: 100, y1: 200 }]]);
+  const shared = { edges: [], strips, width: 900, fixed: new Map(), random: seededRandom(LAYOUT_SEED) } as const;
+  const start = new Map([['src/a.ts', { x: 2400, y: 130 }]]);
+
+  // Alone on its terrace nothing pulls it anywhere, so it rests exactly where it started, far outside a cold pass's columns.
+  expect(simulate({ ...shared, files: [lone('src/a.ts')], start })).toEqual([{ id: 'src/a.ts', x: 2400, y: 130, r: radiusOf(40) }]);
+
+  // A file the prior never saw starts beside its cell's files, in the prior's frame, not in a cold pass's column.
+  const placed = simulate({ ...shared, files: [lone('src/a.ts'), lone('src/b.ts')], start });
+  const added = placed.find((one) => one.id === 'src/b.ts');
+  expect(Math.abs((added?.x ?? 0) - 2400)).toBeLessThan(80);
+});
+
+test('relaxed from its own layout, a field barely moves, and one prior and one input lay out one field (D97)', () => {
+  const relaxed = computeLayout({ ...INPUT, prior: FIELD });
+  expect(displacement(FIELD, relaxed)).toBeLessThan(3);
+  expect(JSON.stringify(computeLayout({ ...INPUT, prior: FIELD }))).toBe(JSON.stringify(relaxed));
+  // No prior, no relaxing: the field is the one it always was.
+  expect(JSON.stringify(computeLayout({ ...INPUT }))).toBe(JSON.stringify(FIELD));
+});
+
+test('a renamed file keeps where it stood before, carried beside the file nearest it that stayed (D40, D97)', () => {
+  const inputs = JSON.parse(readFileSync(join(FIXTURES, 'rename', 'inputs.json'), 'utf8')) as BuildInputs;
+  const prior = layOutTerrain(inputs.base, DEFAULT_CONFIG);
+  const map = buildMap({ ...inputs, prior }, DEFAULT_CONFIG);
+  expect(() => assertMap(map)).not.toThrow();
+
+  const was = prior.positions['src/old-name.ts'];
+  const before = prior.positions['src/index.ts'];
+  const after = map.terrain.layout.positions['src/index.ts'];
+  expect(was).toBeDefined();
+  // `src/index.ts` is the nearest file to the old name that stands in both layouts.
+  expect(map.terrain.layout.renamed_from).toEqual({
+    'src/new-name.ts': {
+      x: Math.round(((was?.x ?? 0) + (after?.x ?? 0) - (before?.x ?? 0)) * 100) / 100,
+      y: Math.round(((was?.y ?? 0) + (after?.y ?? 0) - (before?.y ?? 0)) * 100) / 100,
+      r: was?.r,
+    },
+  });
+
+  // With no layout before it there is nowhere it stood, and the key is absent rather than guessed (C2).
+  expect(buildMap(inputs, DEFAULT_CONFIG).terrain.layout.renamed_from).toBeUndefined();
+  // And a second position for a file the map does not place is refused.
+  const stray = { ...map, terrain: { ...map.terrain, layout: { ...map.terrain.layout, renamed_from: { 'src/gone.ts': { x: 1, y: 1, r: 4 } } } } };
+  expect(() => assertMap(stray)).toThrow(/renamed_from/);
 });

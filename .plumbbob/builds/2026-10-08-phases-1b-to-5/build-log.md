@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 48 — feat(cli): cache the terrain per base commit
+**Current step:** 49 — feat(core): relax a new base's layout from the nearest cached one
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -97,7 +97,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 112. feat(core): record the outside packages the terrain uses, with their health
 - ☑ 113. feat(web): draw the far zoom as a dark planet under its dependencies' stars
 - ☑ 114. fix(core): keep a package's sibling cells apart so no two skins cross
-- ☐ 48. feat(cli): cache the terrain per base commit
+- ☑ 48. feat(cli): cache the terrain per base commit
 - ☐ 49. feat(core): relax a new base's layout from the nearest cached one
 - ☐ 50. perf(cli): draw a cached run's first frame within two seconds
 - ☐ 51. feat(cli): measure health, duplication and structure at the base
@@ -1930,3 +1930,5 @@ folder, so it rides the branch into the PR.)*
   **5.** While the planet shows, the pointer hovers nothing on the flat ground under it
 
   At LOD0 the picker used to answer for the far field's lit files at their flat places. Under the planet those places no longer match what is drawn, and a tag there would point at empty sky, so hover now stands down at LOD0. Naming a light's file or a star's package on hover would need the planet's own picking. I parked that (P59).
+
+- 2026-10-26 — step 48 checkpointed · c80af1d91 — feat(cli): cache the terrain per base commit (1 drift, 9m)

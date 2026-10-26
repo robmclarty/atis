@@ -160,7 +160,8 @@ test('readLog against this repo with HEAD: no author field anywhere (C6), and th
       expect(file.deleted).toBeGreaterThanOrEqual(0);
     }
   }
-});
+  // This repository's log takes about two seconds alone, and more beside the whole suite: it is measured, never raced (D50).
+}, 60_000);
 
 test('readDiff against this repo with --base HEAD~1', () => {
   const repo = execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: HERE, encoding: 'utf8' }).trim();

@@ -21,7 +21,10 @@
  *
  * Nothing here runs on a clock: the simulation is created, stopped before
  * `d3-timer` can take a frame, and then advanced by hand (D34). Its chance
- * comes from a seeded generator, so a base ref draws one map (C3).
+ * comes from a seeded generator, so a base ref draws one map (C3). A pass
+ * handed where a layout before it put its files starts each one there and
+ * relaxes, rather than settling from nothing, so a terrain that barely changed
+ * is drawn barely moved (D97); one prior and one input still draw one map.
  */
 
 import { forceCollide, forceLink, forceSimulation, forceY } from 'd3-force';
@@ -46,6 +49,9 @@ export type Placement = { readonly id: string; readonly x: number; readonly y: n
 /** A stretch of `x`, `x0` left of `x1`, that a pass keeps every file it places inside. */
 export type Lane = { readonly x0: number; readonly x1: number };
 
+/** A point on the field. */
+export type Point = { readonly x: number; readonly y: number };
+
 export type SimulationInput = {
   readonly files: readonly LayoutFile[];
   /** The terrain's import graph; the simulation feels every edge and draws none. */
@@ -58,6 +64,13 @@ export type SimulationInput = {
   readonly fixed: ReadonlyMap<string, Placement>;
   /** The stretch the files this pass places may not leave; without one, they go where the forces take them. */
   readonly lane?: Lane;
+  /**
+   * Where a layout before this one put some of these files, in that layout's
+   * frame (D97): each starts there rather than in its cell's column, and the
+   * more of the pass that starts so, the gentler the pass, until one that all
+   * starts so only relaxes.
+   */
+  readonly start?: ReadonlyMap<string, Point>;
   readonly random: () => number;
 };
 
@@ -95,6 +108,14 @@ const GATHER_STRENGTH = 0.02;
 const VELOCITY_KEPT = 0.6;
 /** How far a starting position may fall from its cell's column, in either direction. */
 const START_JITTER = 44;
+/**
+ * The heat a pass starts at when every file it moves has a place to start
+ * from: what a pass from nothing has cooled to a little past its middle, so
+ * collision works a grown or a new file in while the pulls a cold pass had
+ * already cooled out of barely stir. Hotter, a terrain at rest creeps toward
+ * its centroids on every relaxation; colder, a new file's imports never reach it.
+ */
+const WARM_ALPHA = 0.02;
 /** The clearance a file keeps from its terrace's own edges, on top of its radius. */
 const STRIP_PAD = 3;
 
@@ -111,8 +132,6 @@ type Node = SimulationNodeDatum & {
 };
 
 type Link = SimulationLinkDatum<Node> & { source: string | Node; target: string | Node };
-
-type Point = { readonly x: number; readonly y: number };
 
 /** The radius a file of `loc` lines is drawn at. */
 export function radiusOf(loc: number): number {
@@ -184,34 +203,46 @@ function columns(files: readonly LayoutFile[], width: number): ReadonlyMap<strin
   return new Map(cells.map((cell, index) => [cell, margin + ((index + 0.5) * usable) / cells.length]));
 }
 
-/**
- * Where a cell's new files should appear: beside the ones it already has, when
- * the terrain settled some, and otherwise in the cell's own column. An added
- * file joins its neighbours rather than landing across the field from them.
- */
-function anchors(
-  files: readonly LayoutFile[],
-  fixed: ReadonlyMap<string, Placement>,
-  column: ReadonlyMap<string, number>,
-): ReadonlyMap<string, number> {
+/** Each cell's mean `x` over its files that `at` places; a cell with none is absent. */
+function meanColumns(files: readonly LayoutFile[], at: ReadonlyMap<string, Point>): ReadonlyMap<string, number> {
   const sums = new Map<string, { total: number; count: number }>();
   for (const file of files) {
-    const placed = fixed.get(file.id);
+    const placed = at.get(file.id);
     if (placed === undefined) continue;
     const seen = sums.get(file.cell) ?? { total: 0, count: 0 };
     sums.set(file.cell, { total: seen.total + placed.x, count: seen.count + 1 });
   }
-  return new Map(
-    [...column].map(([cell, x]) => {
-      const seen = sums.get(cell);
-      return [cell, seen === undefined ? x : seen.total / seen.count];
-    }),
-  );
+  return new Map([...sums].map(([cell, seen]) => [cell, seen.total / seen.count]));
 }
+
+/**
+ * Where a cell's new files should appear: beside the ones it already has, when
+ * the terrain settled some or a layout before this one placed some, and
+ * otherwise in the cell's own column. An added file joins its neighbours
+ * rather than landing across the field from them. A prior layout drew in a
+ * frame of its own, so a cell it never saw starts in its column carried into
+ * that frame, by how far the columns of the cells it did see lie from them on
+ * average.
+ */
+function anchors(
+  files: readonly LayoutFile[],
+  fixed: ReadonlyMap<string, Placement>,
+  start: ReadonlyMap<string, Point>,
+  column: ReadonlyMap<string, number>,
+): ReadonlyMap<string, number> {
+  const settled = meanColumns(files, fixed);
+  const begun = meanColumns(files, start);
+  const shifts = [...begun].map(([cell, x]) => x - (column.get(cell) ?? x));
+  const shift = shifts.length === 0 ? 0 : shifts.reduce((total, by) => total + by, 0) / shifts.length;
+  return new Map([...column].map(([cell, x]) => [cell, settled.get(cell) ?? begun.get(cell) ?? x + shift]));
+}
+
+const NO_START: ReadonlyMap<string, Point> = new Map();
 
 function toNodes(input: SimulationInput): readonly Node[] {
   const column = columns(input.files, input.width);
-  const anchor = anchors(input.files, input.fixed, column);
+  const start = input.start ?? NO_START;
+  const anchor = anchors(input.files, input.fixed, start, column);
   return input.files.flatMap((file): Node[] => {
     const strip = input.strips.get(file.band);
     if (strip === undefined) return [];
@@ -221,6 +252,13 @@ function toNodes(input: SimulationInput): readonly Node[] {
     // A pinned file rests exactly where the pass before this one left it.
     if (placed !== undefined) {
       return [{ ...base, rest: placed.y, x: placed.x, y: placed.y, fx: placed.x, fy: placed.y }];
+    }
+    // A file a layout before this one placed starts there, resting at that height on its terrace.
+    const begun = start.get(file.id);
+    if (begun !== undefined) {
+      const [low, high] = heightsOn(strip, r);
+      const rest = Math.min(Math.max(begun.y, low), high);
+      return [{ ...base, rest, x: begun.x, y: rest }];
     }
     const rest = restOn(strip, r, input.random);
     return [
@@ -326,6 +364,18 @@ function forceLane(lane: Lane): Force<Node, Link> {
   return force;
 }
 
+/**
+ * How hot a pass starts: `d3-force`'s full heat for a pass that settles from
+ * nothing, `WARM_ALPHA` for one whose every moving file starts where a layout
+ * before it put that file, and between them by the share that does (D97).
+ */
+function heatOf(nodes: readonly Node[], start: ReadonlyMap<string, Point>): number {
+  const moving = nodes.filter((node) => node.fx === undefined);
+  if (moving.length === 0 || start.size === 0) return 1;
+  const begun = moving.filter((node) => start.has(node.id)).length;
+  return 1 - (1 - WARM_ALPHA) * (begun / moving.length);
+}
+
 /** Two linked files rest a gap apart, whatever their sizes; the gap is the same everywhere. */
 function linkDistance(link: Link): number {
   const radius = (end: string | Node): number => (typeof end === 'string' ? RADIUS_MIN : end.r);
@@ -369,6 +419,7 @@ export function simulate(input: SimulationInput): readonly Placement[] {
   simulation.force('terrace', forceTerrace());
   const { lane } = input;
   if (lane !== undefined) simulation.force('lane', forceLane(lane));
+  simulation.alpha(heatOf(nodes, input.start ?? NO_START));
   simulation.tick(TICKS);
 
   return nodes.map((node) => ({

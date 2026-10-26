@@ -11,9 +11,11 @@
  * code or a changed config misses by itself, whatever the version says. Every
  * entry is written atomically, and one that will not read is a miss, never an
  * error. `.atis/.gitignore` holds `*`, so atis never edits the repository's
- * own ignores.
+ * own ignores. A base the cache has not seen is laid out from the nearest
+ * ancestor it has, so the terrain holds still across bases (D97).
  */
 
+import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, relative, sep } from 'node:path';
@@ -47,6 +49,9 @@ export type TerrainRead = { readonly hit: true; readonly terrain: BaseTerrain } 
 
 const DIRECTORY = '.atis';
 const TERRAIN = 'terrain';
+const ENTRY = '.json';
+/** How many commits back from a base the cache looks for an ancestor's terrain to relax from (D97). */
+const ANCESTRY = 1000;
 const IGNORE_ALL = '*\n';
 const TESTS = '__tests__';
 /** The files that are code: TypeScript sources under a test run, JavaScript once built; never a declaration or a source map. */
@@ -72,7 +77,7 @@ export function writeAtomic(path: string, text: string): void {
 
 /** Where a base commit's terrain is kept, under the reviewed repository. */
 export function terrainPath(repo: string, sha: string): string {
-  return join(repo, DIRECTORY, TERRAIN, `${sha}.json`);
+  return join(repo, DIRECTORY, TERRAIN, `${sha}${ENTRY}`);
 }
 
 /** Every code file under `dir`, by its path relative to `root`, tests left out: they never build a terrain. */
@@ -179,4 +184,37 @@ export function writeTerrain(repo: string, sha: string, key: TerrainKey, terrain
   const path = terrainPath(repo, sha);
   writeAtomic(path, JSON.stringify({ sha, key, ...terrain }));
   return path;
+}
+
+/** The commits the cache holds an entry for, by the names of its files. */
+function keptCommits(repo: string): ReadonlySet<string> {
+  const dir = join(repo, DIRECTORY, TERRAIN);
+  if (!existsSync(dir)) return new Set();
+  return new Set(readdirSync(dir).flatMap((name) => (name.endsWith(ENTRY) && !name.startsWith('.') ? [name.slice(0, -ENTRY.length)] : [])));
+}
+
+/** `sha` and its ancestors, nearest first, as far back as the cache looks; none when git cannot walk them. */
+function ancestorsOf(repo: string, sha: string): readonly string[] {
+  try {
+    const listed = execFileSync('git', ['rev-list', `--max-count=${String(ANCESTRY)}`, sha], { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    return listed.split('\n').filter((line) => line !== '');
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * The terrain of the nearest ancestor of `sha` the cache holds for this code
+ * and config, for a new base's layout to relax from (D97); none when the
+ * cache holds no ancestor's, which lays the base out from nothing.
+ */
+export function nearestTerrain(repo: string, sha: string, key: TerrainKey): { readonly sha: string; readonly terrain: BaseTerrain } | undefined {
+  const kept = keptCommits(repo);
+  if ([...kept].every((commit) => commit === sha)) return undefined;
+  for (const ancestor of ancestorsOf(repo, sha)) {
+    if (ancestor === sha || !kept.has(ancestor)) continue;
+    const read = readTerrain(repo, ancestor, key);
+    if (read.hit) return { sha: ancestor, terrain: read.terrain };
+  }
+  return undefined;
 }

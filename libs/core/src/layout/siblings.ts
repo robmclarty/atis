@@ -50,8 +50,9 @@ const TRY_STEP = 6;
 /**
  * A block settled in a frame of its own, keyed by the part of its parent it
  * is, with the `x` the forces wanted its centroid at, how far up (below
- * zero) and down its files' terraces let it rise and fall, and whether the
- * change can add files to it.
+ * zero) and down its files' terraces let it rise and fall, whether the
+ * change can add files to it, and whether its place is where a layout
+ * before this one stood it rather than where the forces wanted it (D97).
  */
 export type Block = {
   readonly key: string;
@@ -59,6 +60,7 @@ export type Block = {
   readonly wanted: number;
   readonly lift: readonly [number, number];
   readonly grows: boolean;
+  readonly kept: boolean;
 };
 
 type Point = readonly [number, number];
@@ -185,7 +187,10 @@ function nearestFree(wanted: number, forbidden: readonly Span[]): number {
  * clear of all of them: slid sideways, and up or down only as far as its
  * files' terraces let them go, so it may stand above or below a block, or
  * tucked in beside its slope, when the two keep to different terraces. Path
- * order breaks a tie in size, so the field is the same every time (C3).
+ * order breaks a tie in size, so the field is the same every time (C3). The
+ * blocks a layout before this one stood go before every block it never saw,
+ * so they keep the places they had, which were clear of each other then, and
+ * the new ones find room round them (D97).
  */
 export function standApart(blocks: readonly Block[]): readonly Placement[] {
   const sized = blocks.map((block) => {
@@ -196,7 +201,7 @@ export function standApart(blocks: readonly Block[]): readonly Placement[] {
   });
   const stood: Hull[] = [];
   return sized
-    .toSorted((a, b) => b.area - a.area || byPath(a.block.key, b.block.key))
+    .toSorted((a, b) => Number(b.block.kept) - Number(a.block.kept) || b.area - a.area || byPath(a.block.key, b.block.key))
     .flatMap(({ block, outline }) => {
       if (block.placements.length === 0) return [];
       const centroid = block.placements.reduce((sum, placed) => sum + placed.x, 0) / block.placements.length;

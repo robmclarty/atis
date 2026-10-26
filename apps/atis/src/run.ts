@@ -11,8 +11,10 @@
  * the terrain cache, so a run on a base it has seen reads it rather than
  * extracting and scanning it again, and reads only its change's own commits on
  * top of the window (D8, D96); `--no-cache` measures it afresh and keeps
- * nothing. The extractions are removed and the sources go to the pure
- * `buildMap`.
+ * nothing. A base the cache has not seen is laid out relaxed from the
+ * nearest ancestor it has, and the map relaxes from the base's own layout,
+ * so the ground holds still across bases and under the change (D97). The
+ * extractions are removed and the sources go to the pure `buildMap`.
  *
  * The map then goes one of two ways. `run` writes it atomically, and the still
  * SVG beside it, and exits. `serveRun` keeps it in memory and serves it with
@@ -29,10 +31,10 @@ import { platform, tmpdir } from 'node:os';
 import { basename, join, relative, resolve } from 'node:path';
 
 import { DEFAULT_CONFIG, buildMap, layOutTerrain } from 'core';
-import type { Commit, MapJson } from 'core';
+import type { Commit, Layout, MapJson } from 'core';
 import { renderSvg } from 'svg';
 
-import { codeKey, configKey, readTerrain, terrainPath, writeAtomic, writeTerrain } from './cache.js';
+import { codeKey, configKey, nearestTerrain, readTerrain, terrainPath, writeAtomic, writeTerrain } from './cache.js';
 import { serve } from './serve.js';
 import type { Served } from './serve.js';
 import {
@@ -193,11 +195,17 @@ type Measured = { readonly map: MapJson; readonly timings: Timing[]; readonly ca
 const CONFIG = DEFAULT_CONFIG;
 
 /**
- * The base side of a run: the base tree's scan and the history window at it,
- * the extraction behind the scan when this run made one, and what the terrain
- * cache did, for `--verbose` to say.
+ * The base side of a run: the base tree's scan, the history window at it and
+ * its terrain's own layout, the extraction behind the scan when this run made
+ * one, and what the terrain cache did, for `--verbose` to say.
  */
-type Ground = { readonly scan: Scan; readonly commits: readonly Commit[]; readonly tree?: string; readonly cache: string };
+type Ground = {
+  readonly scan: Scan;
+  readonly commits: readonly Commit[];
+  readonly layout: Layout;
+  readonly tree?: string;
+  readonly cache: string;
+};
 
 /** How a run reaches the repository: its path, its timings, and the scan of an extracted commit. */
 type Reader = { readonly repo: string; readonly timings: Timing[]; readonly scanAt: (source: string, sha: string) => Side };
@@ -205,26 +213,31 @@ type Reader = { readonly repo: string; readonly timings: Timing[]; readonly scan
 /**
  * The base side, from the terrain cache when it holds this commit for this
  * code and config, else measured: the tree extracted and scanned, the log
- * walked from the base, and the terrain laid out alone, all three kept for the
- * next run (D96). A cache that will not write leaves the run as it was, since
- * the map never depended on it (C4).
+ * walked from the base, and the terrain laid out alone, relaxed from the
+ * nearest ancestor the cache holds (D97), all three kept for the next run
+ * (D96). With the cache off, the terrain is laid out from nothing and kept
+ * nowhere. A cache that will not write leaves the run as it was, since the
+ * map never depended on it (C4).
  */
 function groundAt(reader: Reader, sha: string, cache: boolean): Ground {
   const { repo, timings } = reader;
   const key = cache ? { code: codeKey(), config: configKey(CONFIG) } : undefined;
   const read = key === undefined ? undefined : timed(timings, 'cache read', () => readTerrain(repo, sha, key));
   if (read?.hit === true) {
-    return { scan: read.terrain.scan, commits: read.terrain.commits, cache: `hit, ${relative(repo, terrainPath(repo, sha))}` };
+    const { terrain } = read;
+    return { scan: terrain.scan, commits: terrain.commits, layout: terrain.layout, cache: `hit, ${relative(repo, terrainPath(repo, sha))}` };
   }
   const side = reader.scanAt('scan base', sha);
   const commits = timed(timings, 'log base', () => readLog(repo, sha));
-  if (key === undefined || read === undefined) return { ...side, commits, cache: 'off (--no-cache)' };
-  const layout = timed(timings, 'layout base', () => layOutTerrain(side.scan, CONFIG));
+  const nearest = key === undefined ? undefined : timed(timings, 'cache near', () => nearestTerrain(repo, sha, key));
+  const layout = timed(timings, 'layout base', () => layOutTerrain(side.scan, CONFIG, nearest?.terrain.layout));
+  if (key === undefined || read === undefined) return { ...side, commits, layout, cache: 'off (--no-cache)' };
+  const from = nearest === undefined ? 'laid out cold' : `relaxed from ${nearest.sha}`;
   try {
     const path = timed(timings, 'cache write', () => writeTerrain(repo, sha, key, { scan: side.scan, commits, layout }));
-    return { ...side, commits, cache: `miss (${read.reason}), wrote ${relative(repo, path)}` };
+    return { ...side, commits, layout, cache: `miss (${read.reason}), ${from}, wrote ${relative(repo, path)}` };
   } catch (error) {
-    return { ...side, commits, cache: `miss (${read.reason}), not written: ${messageOf(error)}` };
+    return { ...side, commits, layout, cache: `miss (${read.reason}), ${from}, not written: ${messageOf(error)}` };
   }
 }
 
@@ -282,6 +295,8 @@ function measure(repoPath: string, base: string, cache: boolean): Measured {
         commits,
         head_time: head.time,
         check,
+        // The map relaxes from the base's own layout, so the change never moves the ground under it (D32, D97).
+        prior: ground.layout,
       }, CONFIG),
     );
     return { map, timings, cache: ground.cache };

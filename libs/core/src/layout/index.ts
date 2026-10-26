@@ -16,13 +16,21 @@
  * settled first and added files second, with the terrain pinned, so that the
  * weather never moves the ground under it (D32). The membranes are cut last,
  * over the settled field, one per cell and one per shore group (D13).
+ *
+ * Handed a layout before it, the field relaxes from it rather than settling
+ * from nothing (D97): each file that kept its path starts where it was, at the
+ * same share of its terrace's height, so a terrain that barely changed is
+ * drawn barely moved, across bases as within one. A renamed file's place in
+ * that layout, under its old path, is carried into this field beside the
+ * file nearest it that stayed, which is the second position its old-to-new
+ * leader runs from (D40).
  */
 
 import { classifyFile } from '../modules.js';
 import type { ImportEdge } from '../modules.js';
 import type { Band, Group, Layout, LayoutBand, Organelle, Position } from '../schema.js';
 import { heightsOn, radiusOf, simulate } from './force.js';
-import type { LayoutFile, Placement, Strip } from './force.js';
+import type { LayoutFile, Placement, Point, Strip } from './force.js';
 import { computeMembranes } from './membranes.js';
 import type { MembraneCell } from './membranes.js';
 import { LAYOUT_SEED, seedOf, seededRandom } from './random.js';
@@ -77,7 +85,14 @@ export type LayoutInput = {
   readonly groups: readonly Group[];
   /** The files this change added, laid out in the second pass (D32). */
   readonly added: ReadonlySet<string>;
+  /** A layout before this one to relax from, keyed by path: a base's own, or its nearest cached ancestor's (D97). */
+  readonly prior?: Prior;
+  /** The change's renames, head path to base path, whose places in `prior` are carried into this field (D40). */
+  readonly renames?: ReadonlyMap<string, string>;
 };
+
+/** What a layout before this one says: where each file was, and the terraces it was on. */
+export type Prior = Pick<Layout, 'positions' | 'bands'>;
 
 function byPath(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
@@ -236,11 +251,18 @@ function partOf(line: readonly string[], root: string): string {
 type Settled = { readonly placements: readonly Placement[]; readonly span: number; readonly grounded: boolean };
 
 /** The fields every pass of one layout shares. */
-type Field = { readonly input: LayoutInput; readonly strips: ReadonlyMap<number, Strip>; readonly line: (cell: string) => readonly string[] };
+type Field = {
+  readonly input: LayoutInput;
+  readonly strips: ReadonlyMap<number, Strip>;
+  readonly line: (cell: string) => readonly string[];
+  /** Where the prior put each file it shares with this field, carried onto this field's terraces. */
+  readonly start: ReadonlyMap<string, Point>;
+};
 
-/** Settle files with the forces, with nothing pinned, from the layout's seed or a seed of their own. */
+/** Settle files with the forces, with nothing pinned, from the layout's seed or a seed of their own, starting each from the prior where it has one. */
 function alone(files: readonly LayoutFile[], field: Field, seed = LAYOUT_SEED): readonly Placement[] {
-  return simulate({ files, edges: field.input.edges, strips: field.strips, width: spreadWidth(files), fixed: new Map(), random: seededRandom(seed) });
+  const { input, strips, start } = field;
+  return simulate({ files, edges: input.edges, strips, width: spreadWidth(files), fixed: new Map(), start, random: seededRandom(seed) });
 }
 
 /**
@@ -267,7 +289,10 @@ function liftOf(placements: readonly Placement[], bandOf: ReadonlyMap<string, nu
  * root's own files, and each held cell with every cell beneath it) settles
  * alone into a block, the forces settle the whole root once more to say
  * where each block wants to be, near the files it imports and is imported
- * by, and the blocks are stood apart as near those places as they fit.
+ * by, and the blocks are stood apart as near those places as they fit. A
+ * part a layout before this one placed wants the place it had instead: the
+ * forces settling the whole root pull stood-apart blocks back together, so
+ * a block placed by them would creep on every relaxation (D97).
  */
 function settleBeneath(root: string, files: readonly LayoutFile[], field: Field, seed = LAYOUT_SEED): readonly Placement[] {
   const parts = new Map<string, LayoutFile[]>();
@@ -290,15 +315,37 @@ function settleBeneath(root: string, files: readonly LayoutFile[], field: Field,
   const blocks = [...parts].map(([part, held]): Block => {
     const seen = wanted.get(part);
     const placements = part === '' ? alone(held, field, seedOf(root)) : settleBeneath(part, held, field, seedOf(part));
+    const kept = keptPlace(placements, field.start);
     return {
       key: part,
       placements,
-      wanted: seen === undefined ? 0 : seen.total / seen.count,
+      wanted: kept ?? (seen === undefined ? 0 : seen.total / seen.count),
       lift: liftOf(placements, bandOf, field.strips),
       grows: part === '' || kindOf(part) !== 'single',
+      kept: kept !== undefined,
     };
   });
   return standApart(blocks);
+}
+
+function meanX(points: readonly Point[]): number {
+  return points.reduce((total, point) => total + point.x, 0) / points.length;
+}
+
+/**
+ * Where a block a layout before this one placed wants its centroid: where it
+ * puts the files that layout placed back where they were, on average,
+ * whatever files the block has gained beside them. None for a block that
+ * layout never saw.
+ */
+function keptPlace(placements: readonly Placement[], start: ReadonlyMap<string, Point>): number | undefined {
+  const known = placements.filter((placed) => start.has(placed.id));
+  if (known.length === 0) return undefined;
+  const were = known.flatMap((placed) => {
+    const was = start.get(placed.id);
+    return was === undefined ? [] : [was];
+  });
+  return meanX(were) - meanX(known) + meanX(placements);
 }
 
 /**
@@ -369,7 +416,7 @@ function settleLane(root: string, files: readonly LayoutFile[], field: Field): S
  * hop the skin already draws (D45).
  */
 function settle(files: readonly LayoutFile[], input: LayoutInput, strips: ReadonlyMap<number, Strip>): readonly Placement[] {
-  const field: Field = { input, strips, line: ancestry(input.cells) };
+  const field: Field = { input, strips, line: ancestry(input.cells), start: startsOf(files, input.prior, strips) };
   const lanes = new Map<string, LayoutFile[]>();
   for (const file of files) {
     const lane = field.line(file.cell).at(-1) ?? file.cell;
@@ -385,6 +432,59 @@ function settle(files: readonly LayoutFile[], input: LayoutInput, strips: Readon
     left = Math.ceil(left + lane.span + 2 * LANE_SLACK + LANE_GUTTER);
     return offset === 0 ? lane.placements : shift(lane.placements, offset);
   });
+}
+
+/**
+ * Where the prior puts each file it shares with this field (D97). Its `x` is
+ * kept in the prior's frame, which the passes carry their new files into; its
+ * height keeps its share of the terrace it stood on, set on the terrace it
+ * stands on now, since terraces grow and move with what stands on them and a
+ * file's height within one says nothing (D13).
+ */
+function startsOf(files: readonly LayoutFile[], prior: Prior | undefined, strips: ReadonlyMap<number, Strip>): ReadonlyMap<string, Point> {
+  if (prior === undefined) return new Map();
+  return new Map(
+    files.flatMap((file) => {
+      const was = prior.positions[file.id];
+      const strip = strips.get(file.band);
+      if (was === undefined || strip === undefined) return [];
+      const stood = prior.bands.find((band) => was.y >= band.y0 && was.y < band.y1);
+      const share = stood === undefined || stood.y1 <= stood.y0 ? 0.5 : (was.y - stood.y0) / (stood.y1 - stood.y0);
+      return [[file.id, { x: was.x, y: strip.y0 + share * (strip.y1 - strip.y0) }] as const];
+    }),
+  );
+}
+
+/**
+ * Where each renamed file stood in the prior, under its old path, carried
+ * into this field beside the file nearest it there that stands in both (D40,
+ * D97): the field's lanes and terraces shift with what the change adds, and
+ * the nearest neighbour that stayed shifted with them. A renamed file the
+ * prior never placed has no second position (C2).
+ */
+function renamedFrom(prior: Prior | undefined, renames: ReadonlyMap<string, string>, positions: Readonly<Record<string, Position>>): Readonly<Record<string, Position>> {
+  if (prior === undefined || renames.size === 0) return {};
+  const moved = new Set(renames.keys());
+  const stayed = Object.keys(positions)
+    .filter((id) => !moved.has(id) && prior.positions[id] !== undefined)
+    .toSorted(byPath);
+  const entries = [...renames]
+    .toSorted(([a], [b]) => byPath(a, b))
+    .flatMap(([path, from]) => {
+      const was = prior.positions[from];
+      if (was === undefined || positions[path] === undefined) return [];
+      const nearest = stayed.reduce<{ readonly id: string; readonly distance: number } | undefined>((best, id) => {
+        const there = prior.positions[id];
+        const distance = there === undefined ? Number.POSITIVE_INFINITY : Math.hypot(there.x - was.x, there.y - was.y);
+        return best === undefined || distance < best.distance ? { id, distance } : best;
+      }, undefined);
+      const before = nearest === undefined ? undefined : prior.positions[nearest.id];
+      const after = nearest === undefined ? undefined : positions[nearest.id];
+      const dx = before === undefined || after === undefined ? 0 : after.x - before.x;
+      const dy = before === undefined || after === undefined ? 0 : after.y - before.y;
+      return [[path, { x: round(was.x + dx), y: round(was.y + dy), r: was.r }] as const];
+    });
+  return Object.fromEntries(entries);
 }
 
 /**
@@ -413,12 +513,15 @@ export function computeLayout(input: LayoutInput): Layout {
   ].toSorted(([a], [b]) => byPath(a, b));
   const positions = Object.fromEntries(entries);
 
+  const renamed = renamedFrom(input.prior, input.renames ?? new Map(), positions);
+
   return {
     width: Math.max(MIN_WIDTH, shore.extent, Math.ceil(right) + MARGIN),
     height: shore.height + bands.reduce((total, band) => total + (band.y1 - band.y0), 0),
     shore: { y0: 0, y1: shore.height },
     bands,
     positions,
+    ...(Object.keys(renamed).length === 0 ? {} : { renamed_from: renamed }),
     contours: computeMembranes({ cells: input.cells, groups: input.groups, positions }),
   };
 }
