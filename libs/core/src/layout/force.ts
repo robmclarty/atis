@@ -8,13 +8,15 @@
  * imported together, which is §5.1's "coupling = proximity"; the ordinary
  * edges it works from are never drawn, only felt. A cohesion force pulls a
  * cell's files toward their own centroid, so a cell reads as one clump under
- * the membrane step 16 draws around it. And `forceCollide` keeps two files
- * from sharing a spot, on a radius that already means mass (C11).
+ * the membrane step 16 draws around it, and pulls every file of the pass,
+ * which is one package, more weakly toward theirs. And `forceCollide` keeps
+ * two files from sharing a spot, on a radius that already means mass (C11).
  *
  * A fifth holds the first one's promise. The terraces are not a preference
  * the forces negotiate over, so `forceTerrace` runs after all four and trims
  * each tick back to what the strip can hold; see it below for why a clamp at
- * the end will not do.
+ * the end will not do. A pass given a lane holds its files inside it the
+ * same way.
  *
  * Nothing here runs on a clock: the simulation is created, stopped before
  * `d3-timer` can take a frame, and then advanced by hand (D34). Its chance
@@ -40,6 +42,9 @@ export type Strip = { readonly y0: number; readonly y1: number };
 /** Where one file landed, and how big it is. */
 export type Placement = { readonly id: string; readonly x: number; readonly y: number; readonly r: number };
 
+/** A stretch of `x`, `x0` left of `x1`, that a pass keeps every file it places inside. */
+export type Lane = { readonly x0: number; readonly x1: number };
+
 export type SimulationInput = {
   readonly files: readonly LayoutFile[];
   /** The terrain's import graph; the simulation feels every edge and draws none. */
@@ -50,6 +55,8 @@ export type SimulationInput = {
   readonly width: number;
   /** Positions already settled, pinned so this pass cannot move them (D32). */
   readonly fixed: ReadonlyMap<string, Placement>;
+  /** The stretch the files this pass places may not leave; without one, they go where the forces take them. */
+  readonly lane?: Lane;
   readonly random: () => number;
 };
 
@@ -80,6 +87,8 @@ const LINK_GAP = 34;
 /** Cohesion pulls sideways; vertically it only nudges, or it would fight the terraces. */
 const COHESION_STRENGTH = 0.09;
 const COHESION_VERTICAL = 0.2;
+/** The pull on every file toward the whole pass's centre, sideways only: a pass is one package (see `settle` in `index.ts`). */
+const GATHER_STRENGTH = 0.02;
 /** The share of its velocity a node carries into the next tick; `d3-force`'s own default. */
 const VELOCITY_KEPT = 0.6;
 /** How far a starting position may fall from its cell's column, in either direction. */
@@ -130,6 +139,14 @@ function ontoStrip(y: number, node: Node): number {
   const high = node.strip.y1 - node.r - STRIP_PAD;
   if (low > high) return centerOf(node.strip);
   return Math.min(Math.max(y, low), high);
+}
+
+/** Keep a file's whole disc inside its lane, as `ontoStrip` keeps it on its terrace; a lane too narrow for it holds it in the middle. */
+function intoLane(x: number, node: Node, lane: Lane): number {
+  const low = lane.x0 + node.r;
+  const high = lane.x1 - node.r;
+  if (low > high) return (lane.x0 + lane.x1) / 2;
+  return Math.min(Math.max(x, low), high);
 }
 
 /**
@@ -222,26 +239,31 @@ function toLinks(edges: readonly ImportEdge[], placed: ReadonlySet<string>): Lin
 }
 
 /**
- * The one force `d3-force` has no name for: every file in a cell pulled toward
- * the mean of that cell's positions. The centroid is recomputed each tick, so
- * the clump finds its own place rather than being told one.
+ * The one force `d3-force` has no name for: every file in a group pulled
+ * toward the mean of that group's positions, sideways at `strength` and
+ * vertically at `vertical` of it. The centroid is recomputed each tick, so the
+ * clump finds its own place rather than being told one. A cell is one group;
+ * the whole pass is another, held more weakly, so a package's file that
+ * nothing imports still stands under the package rather than off at the end
+ * of its row.
  */
-function forceCohesion(): Force<Node, Link> {
+function forceCohesion(groupOf: (node: Node) => string, strength: number, vertical: number): Force<Node, Link> {
   let nodes: Node[] = [];
   const force = (alpha: number): void => {
     const sums = new Map<string, { x: number; y: number; count: number }>();
     for (const node of nodes) {
-      const seen = sums.get(node.cell) ?? { x: 0, y: 0, count: 0 };
-      sums.set(node.cell, { x: seen.x + node.x, y: seen.y + node.y, count: seen.count + 1 });
+      const group = groupOf(node);
+      const seen = sums.get(group) ?? { x: 0, y: 0, count: 0 };
+      sums.set(group, { x: seen.x + node.x, y: seen.y + node.y, count: seen.count + 1 });
     }
     const centroids = new Map<string, Point>(
-      [...sums].map(([cell, sum]) => [cell, { x: sum.x / sum.count, y: sum.y / sum.count }]),
+      [...sums].map(([group, sum]) => [group, { x: sum.x / sum.count, y: sum.y / sum.count }]),
     );
     for (const node of nodes) {
-      const centroid = centroids.get(node.cell);
+      const centroid = centroids.get(groupOf(node));
       if (centroid === undefined) continue;
-      node.vx = (node.vx ?? 0) + (centroid.x - node.x) * COHESION_STRENGTH * alpha;
-      node.vy = (node.vy ?? 0) + (centroid.y - node.y) * COHESION_STRENGTH * COHESION_VERTICAL * alpha;
+      node.vx = (node.vx ?? 0) + (centroid.x - node.x) * strength * alpha;
+      node.vy = (node.vy ?? 0) + (centroid.y - node.y) * strength * vertical * alpha;
     }
   };
   force.initialize = (given: Node[]): void => {
@@ -268,6 +290,27 @@ function forceTerrace(): Force<Node, Link> {
       if (node.fy !== undefined) continue;
       const held = ontoStrip(node.y + (node.vy ?? 0) * VELOCITY_KEPT, node);
       node.vy = (held - node.y) / VELOCITY_KEPT;
+    }
+  };
+  force.initialize = (given: Node[]): void => {
+    nodes = given;
+  };
+  return force;
+}
+
+/**
+ * The terrace's rule turned sideways, for a pass given a lane: run after
+ * everything else, it trims what the tick was about to do in `x` to what the
+ * lane can hold, so a crowd pushes along the lane and down the terrace rather
+ * than out into a neighbour's.
+ */
+function forceLane(lane: Lane): Force<Node, Link> {
+  let nodes: Node[] = [];
+  const force = (): void => {
+    for (const node of nodes) {
+      if (node.fx !== undefined) continue;
+      const held = intoLane(node.x + (node.vx ?? 0) * VELOCITY_KEPT, node, lane);
+      node.vx = (held - node.x) / VELOCITY_KEPT;
     }
   };
   force.initialize = (given: Node[]): void => {
@@ -305,7 +348,8 @@ export function simulate(input: SimulationInput): readonly Placement[] {
       .distance((link) => linkDistance(link))
       .strength(LINK_STRENGTH),
   );
-  simulation.force('cohesion', forceCohesion());
+  simulation.force('cohesion', forceCohesion((node) => node.cell, COHESION_STRENGTH, COHESION_VERTICAL));
+  simulation.force('gather', forceCohesion(() => '', GATHER_STRENGTH, 0));
   // Collision is the last of the four that move a file, so it has the final
   // say on two of them sharing a spot; the terrace then holds them all on
   // their own band whatever the four between them worked out.
@@ -316,11 +360,13 @@ export function simulate(input: SimulationInput): readonly Placement[] {
       .iterations(COLLIDE_ITERATIONS),
   );
   simulation.force('terrace', forceTerrace());
+  const { lane } = input;
+  if (lane !== undefined) simulation.force('lane', forceLane(lane));
   simulation.tick(TICKS);
 
   return nodes.map((node) => ({
     id: node.id,
-    x: node.x,
+    x: node.fx === undefined && lane !== undefined ? intoLane(node.x, node, lane) : node.x,
     y: node.fy === undefined ? ontoStrip(node.y, node) : node.y,
     r: node.r,
   }));

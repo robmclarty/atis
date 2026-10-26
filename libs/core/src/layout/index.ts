@@ -9,9 +9,11 @@
  * The field is read downward. The shore sits above everything, a strip of the
  * tracked files that are not code at all, one block per group in D48's table
  * order (land above the abyss). Under it the terraces descend, band 0 at the
- * top where the entry points are, the deepest band at the bottom. Terrain is
- * settled first and added files second, with the terrain pinned, so that the
- * weather never moves the ground under it (D32). The membranes are cut last,
+ * top where the entry points are, the deepest band at the bottom. Across them
+ * each package stands in a lane of its own, so no package's skin runs between
+ * another's cells (D166). Terrain is settled first and added files second,
+ * with the terrain pinned, so that the weather never moves the ground under
+ * it (D32). The membranes are cut last,
  * over the settled field, one per cell and one per shore group (D13).
  */
 
@@ -41,6 +43,15 @@ const WIDTH_STEP = 20;
 /** No terrace is thinner than this, or than this many of its own widest organelle. */
 const MIN_BAND_HEIGHT = 96;
 const BAND_ROOM = 3;
+
+/**
+ * A package's lane: the room it keeps either side of its terrain for the
+ * change's added files, and the gutter between one lane's room and the next.
+ * Together they stand two packages' terrain over a hundred units apart, twice
+ * as far as a skin's field reaches out from the files it holds.
+ */
+const LANE_SLACK = 40;
+const LANE_GUTTER = 24;
 
 /** The shore's grid: a fixed pitch, blocks of at most this many columns, a gap between groups. */
 const SHORE_PITCH = 18;
@@ -178,37 +189,101 @@ function offsetFor(placements: readonly Placement[]): number {
   return MARGIN - placements.reduce((left, placed) => Math.min(left, placed.x - placed.r), Number.POSITIVE_INFINITY);
 }
 
+/** How far right of the margin a pass slid onto it reaches. */
+function spanOf(placements: readonly Placement[]): number {
+  return placements.reduce((edge, placed) => Math.max(edge, placed.x + placed.r), MARGIN) - MARGIN;
+}
+
+/** The path in a cell's id, which `identifyModules` writes as `<kind>:<path>`. */
+function pathOf(id: string): string {
+  return id.slice(id.indexOf(':') + 1);
+}
+
 /**
- * Settle the field, in the two passes D32 asks for. The terrain goes first,
+ * The lane each cell stands in: the outermost cell that holds it, which is
+ * its package, or the cell itself when no package holds it (D45).
+ */
+function laneOf(cells: readonly MembraneCell[]): (cell: string) => string {
+  const parentOf = new Map(cells.flatMap((cell) => (cell.parent === undefined ? [] : [[cell.id, cell.parent] as const])));
+  return (cell) => {
+    const seen = new Set([cell]);
+    let at = cell;
+    for (let up = parentOf.get(at); up !== undefined && !seen.has(up); up = parentOf.get(at)) {
+      seen.add(up);
+      at = up;
+    }
+    return at;
+  };
+}
+
+/** One lane settled in a frame of its own: its terrain's left edge on the margin, and how far right that terrain reaches. */
+type Settled = { readonly placements: readonly Placement[]; readonly span: number; readonly grounded: boolean };
+
+/**
+ * Settle one lane, in the two passes D32 asks for. The terrain goes first,
  * alone, and is then slid onto the margin and rounded; the second pass pins
  * exactly those numbers, so every force in it is working around a terrain it
  * cannot move, and the only thing it decides is where the change's new files
- * go. A repository whose every file is new has no terrain to pin, so the
+ * go: within the lane's slack either side of its terrain, never out across
+ * the gutter. A lane whose every file is new has no terrain to pin, so the
  * second pass is the only one there was and it is what gets slid.
  */
-function settle(
-  files: readonly LayoutFile[],
-  input: LayoutInput,
-  strips: ReadonlyMap<number, Strip>,
-  width: number,
-): readonly Placement[] {
-  const shared = { edges: input.edges, strips, width } as const;
+function settleLane(files: readonly LayoutFile[], input: LayoutInput, strips: ReadonlyMap<number, Strip>): Settled {
+  const ground = files.filter((file) => !input.added.has(file.id));
+  const shared = { edges: input.edges, strips, width: spreadWidth(ground.length === 0 ? files : ground) } as const;
 
-  const terrain = simulate({
-    ...shared,
-    files: files.filter((file) => !input.added.has(file.id)),
-    fixed: new Map(),
-    random: seededRandom(LAYOUT_SEED),
-  });
-  const ground = shift(terrain, offsetFor(terrain));
+  const terrain = simulate({ ...shared, files: ground, fixed: new Map(), random: seededRandom(LAYOUT_SEED) });
+  if (terrain.length === 0) {
+    const all = simulate({ ...shared, files, fixed: new Map(), random: seededRandom(LAYOUT_SEED + 1) });
+    const slid = shift(all, offsetFor(all));
+    return { placements: slid, span: spanOf(slid), grounded: false };
+  }
+  const settled = shift(terrain, offsetFor(terrain));
+  const span = spanOf(settled);
+  if (ground.length === files.length) return { placements: settled, span, grounded: true };
 
   const all = simulate({
     ...shared,
     files,
-    fixed: new Map(ground.map((placed) => [placed.id, placed] as const)),
+    fixed: new Map(settled.map((placed) => [placed.id, placed] as const)),
+    lane: { x0: MARGIN - LANE_SLACK, x1: MARGIN + span + LANE_SLACK },
     random: seededRandom(LAYOUT_SEED + 1),
   });
-  return ground.length === 0 ? shift(all, offsetFor(all)) : all.map(roundPlacement);
+  return { placements: all.map(roundPlacement), span, grounded: true };
+}
+
+/**
+ * Settle the field, a lane at a time. A package's skin holds every cell
+ * beneath it (D45), so a package whose files the forces let wander in among
+ * another's draws that skin running between the other's cells, which reads
+ * as one package inside the other. So each package settles alone, on the
+ * terraces every lane shares, and the lanes stand side by side in path order,
+ * each with its slack and a gutter between, so no two packages share a
+ * stretch of the field and no skin has another package's cells to run
+ * between. Where a lane stands is measured off the terrain of the lanes
+ * before it, never their added files, and the lanes the change brought whole
+ * stand after every lane that has ground, so the change's new files and
+ * packages take room beside the ground rather than shouldering it aside
+ * (D32). Imports between packages pull nothing: the gap they cross is the
+ * hop the skin already draws (D45).
+ */
+function settle(files: readonly LayoutFile[], input: LayoutInput, strips: ReadonlyMap<number, Strip>): readonly Placement[] {
+  const laneFor = laneOf(input.cells);
+  const lanes = new Map<string, LayoutFile[]>();
+  for (const file of files) {
+    const lane = laneFor(file.cell);
+    lanes.set(lane, [...(lanes.get(lane) ?? []), file]);
+  }
+  const settled = [...lanes]
+    .toSorted(([a], [b]) => byPath(pathOf(a), pathOf(b)) || byPath(a, b))
+    .map(([, held]) => settleLane(held, input, strips));
+
+  let left = MARGIN;
+  return [...settled.filter((lane) => lane.grounded), ...settled.filter((lane) => !lane.grounded)].flatMap((lane) => {
+    const offset = left - MARGIN;
+    left = Math.ceil(left + lane.span + 2 * LANE_SLACK + LANE_GUTTER);
+    return offset === 0 ? lane.placements : shift(lane.placements, offset);
+  });
 }
 
 /**
@@ -228,7 +303,7 @@ export function computeLayout(input: LayoutInput): Layout {
   const shore = layOutShore(input.groups, spread);
   const bands = stripsFor(input.bands, files, spread, shore.height);
   const strips = new Map(bands.map((band) => [band.index, band] as const));
-  const placements = settle(files, input, strips, spread);
+  const placements = settle(files, input, strips);
 
   const right = placements.reduce((edge, placed) => Math.max(edge, placed.x + placed.r), 0);
   const entries: readonly (readonly [string, Position])[] = [

@@ -247,7 +247,8 @@ test('the tags stand in two columns beside the slide, each on its body\'s side, 
     });
   }
   // However the slide is framed, the columns stay on the screen: a slide wider than the screen pulls them in from its edges.
-  const close = tagsOf(slide, bodies, (x, y) => [x * 20 - 2000, y * 20 - 6000], { width: 800, height: 600, pixelsPerUnit: 20 });
+  const [cx, cy] = [(Math.min(...slide.ring.map(([x]) => x)) + Math.max(...slide.ring.map(([x]) => x))) / 2, (Math.min(...slide.ring.map(([, y]) => y)) + Math.max(...slide.ring.map(([, y]) => y))) / 2];
+  const close = tagsOf(slide, bodies, (x, y) => [(x - cx) * 20 + 400, (y - cy) * 20 + 300], { width: 800, height: 600, pixelsPerUnit: 20 });
   for (const tag of close) {
     expect(tag.box.x).toBeGreaterThanOrEqual(0);
     expect(tag.box.x + tag.box.width).toBeLessThanOrEqual(800);

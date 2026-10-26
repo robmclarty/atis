@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 107 — fix(web): keep the legend and other cells' labels off the world
+**Current step:** 108 — fix(core): keep each package's cells together so no skin crosses another's
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -89,9 +89,13 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 104. feat(core): record each file's ties within its package
 - ☑ 105. feat(web): float a package's modules inside its opened slide
 - ☑ 106. feat(svg): key the reach, its crossings and the history textures in the legend
-- ☐ 107. fix(web): keep the legend and other cells' labels off the world
+- ☑ 107. fix(web): keep the legend and other cells' labels off the world
 - ☐ 108. fix(core): keep each package's cells together so no skin crosses another's
 - ☐ 109. fix(core): keep the shore's docs and data out of co-change notices and the HUD's size
+- ☐ 110. fix(web): write the world's labels only on hover or in an exploded cell
+- ☐ 111. fix(web): set the world in space and rule its depth bands faintly
+- ☐ 112. feat(core): record the outside packages the terrain uses, with their health
+- ☐ 113. feat(web): draw the far zoom as a dark planet under its dependencies' stars
 - ☐ 48. feat(cli): cache the terrain per base commit
 - ☐ 49. feat(core): relax a new base's layout from the nearest cached one
 - ☐ 50. perf(cli): draw a cached run's first frame within two seconds
@@ -187,8 +191,14 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] modules float inside their package: on checkride-shaped repos most cells are single-file modules (56 of 69 on atis's map), so an opened package is its barrel and a sheet of holes and no module ever floats; let a package's slide draw the files of the single-file cells it holds as bodies, with looseness measured against the package, which needs core to record each file's ties within its package (a schema bump) and reshapes D157 and step 40's holes
 - [x] the world smoke test's reduced-motion frame flakes about one run in five at HEAD: two frames of the opened pm folder 1.5 s apart differ (`still.equals(later)`), with its layers over the world still shown
 - [x] an opened package's wiring overlay (`cellWiring`) counts only edges at the package's own files, so a package of modules such as `apps/web` shows none of its modules' wiring (D167)
-- [ ] on atis's own map a noticed file on an opened package's slide wears its notice label beside the slide as well as its tag in the column (apps/web's registry.ts and materials.ts): weigh letting the tag carry the notice's rank and dropping the label while the slide is open (libs/scene/src/labels.ts, apps/web/src/world/labels.ts)
-- [ ] apps/web's opened slide on atis's own map draws the hole for apps/web/src/world as a wedge with a straight edge across the slide, where that folder's skin runs outside its package's: check it is gone once step 108 keeps a package's cells together
+- [x] on atis's own map a noticed file on an opened package's slide wears its notice label beside the slide as well as its tag in the column (apps/web's registry.ts and materials.ts): weigh letting the tag carry the notice's rank and dropping the label while the slide is open (libs/scene/src/labels.ts, apps/web/src/world/labels.ts)
+- [x] apps/web's opened slide on atis's own map draws the hole for apps/web/src/world as a wedge with a straight edge across the slide, where that folder's skin runs outside its package's: check it is gone once step 108 keeps a package's cells together
+- [x] Rob at range 28's stop: hide the world's inline labels (file and notice labels, a slide's tags) unless their file is hovered or its cell is expanded, so the shapes read
+- [x] Rob at range 28's stop: drop the depth bands from the world's background for a ground like outer space, and mark the bands' rough boundaries with 1px horizontal rules over the 3D, translucent and only just visible
+- [x] Rob at range 28's stop: at the far zoom draw the repo as a dark planet, its files as night lights on a sphere, with the outside dependencies it uses as distant stars coloured by health (red, yellow) that rim-light its silhouette; zooming in, the planet fills the frame and becomes the world as it is now
+- [ ] sibling cells inside one package still cross: 7 pairs in apps/web on atis's own map (chrome x world, world x nav, registry, view); D166 asks that cells not overlap, and step 108 kept to packages
+- [ ] apps/web/src/vite-env.d.ts, which nothing imports and which imports nothing, lands on the deepest band, so apps/web's skin hangs a tendril through the whole abyss; read where depth puts a file with no edges
+- [ ] step 49's relaxation from a cached layout now runs lane by lane, and a package whose terrain grows slides every lane to its right; its displacement bound should hold lane places, or measure within lanes
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -267,6 +277,12 @@ Harvest results this boundary:
 - 2026-10-25, at range 27 of 30's stop: 2 parked ideas, classified.
 - **tangent**: park 47 · the world smoke test's reduced-motion frame flakes about one run in five at HEAD: two frames of the opened pm folder 1.5 s apart differ (`still.equals(later)`), with its layers over the world still shown → it flakes at HEAD without this range, and a rerun clears it, so it blocks nothing ahead
 - **tangent**: park 48 · an opened package's wiring overlay (`cellWiring`) counts only edges at the package's own files, so a package of modules such as `apps/web` shows none of its modules' wiring (D167) → no step names a package's wiring and the stop judges the float, so it waits unless `w` on `apps/web` reads as broken
+- 2026-10-26, at range 28 of 31's stop: 5 parked ideas, classified.
+- **tangent**: park 49 · on atis's own map a noticed file on an opened package's slide wears its notice label beside the slide as well as its tag in the column (apps/web's registry.ts and materials.ts): weigh letting the tag carry the notice's rank and dropping the label while the slide is open (libs/scene/src/labels.ts, apps/web/src/world/labels.ts) → the doubled name is legible and §6 keeps every notice's label, so letting the tag carry the rank is a refinement for later
+- **tangent**: park 50 · apps/web's opened slide on atis's own map draws the hole for apps/web/src/world as a wedge with a straight edge across the slide, where that folder's skin runs outside its package's: check it is gone once step 108 keeps a package's cells together → step 108 is built to end the overlap behind it, and range 29's stop judges exactly that on this map
+- **blocker**: park 51 · Rob at range 28's stop: hide the world's inline labels (file and notice labels, a slide's tags) unless their file is hovered or its cell is expanded, so the shapes read → step 110 in range 30, ahead of 109, so D166's judgment sees the labels on demand
+- **blocker**: park 52 · Rob at range 28's stop: drop the depth bands from the world's background for a ground like outer space, and mark the bands' rough boundaries with 1px horizontal rules over the 3D, translucent and only just visible → step 111 in range 30, ahead of 109, so D166's judgment sees the space ground and its rules
+- **blocker**: park 53 · Rob at range 28's stop: at the far zoom draw the repo as a dark planet, its files as night lights on a sphere, with the outside dependencies it uses as distant stars coloured by health (red, yellow) that rim-light its silhouette; zooming in, the planet fills the frame and becomes the world as it is now → steps 112 and 113 in a new range 31 after range 30, so range 16 builds on the planet's far field
 
 ## Log
 
@@ -1649,3 +1665,71 @@ folder, so it rides the branch into the PR.)*
   While running the browser tests, the reduced-motion frame failed once. With my change stashed it failed one run in six at HEAD, on the same pixel comparison of the pm folder, which this range doesn't touch. I parked it as P47. Separately, `cellWiring` counts only edges at the open cell's own files. A package of modules therefore wires only its barrel, and `apps/web` has nothing to wire. That sits outside both steps' done-when and seam, so it is parked as P48.
 
 - 2026-10-25 — step 106 checkpointed · 0f8c5eaea — feat(svg): key the reach, its crossings and the history textures in the legend (1 drift, 11m)
+- 2026-10-25 — step 107 checkpointed · 869f9b1de — fix(web): keep the legend and other cells' labels off the world (1 drift, 17m)
+- 2026-10-26 — range 28 of 31's stop recorded — on atis's own map, judge the legend's new rows, the legend folded off the world into its `key` block, and an opened slide with no other cell's labels on it
+
+  **Summary**: Both legends now key every mark that lights or textures the map, the world's legend stays folded in a `key` block until asked for, and no surface label lands on an opened slide or its tag columns. You judged the build adequate and asked to keep going, with three new asks: labels only on hover or expand, a space background with faint band rules, and a dark planet at the far zoom. Each folds in as a step (P51 to P53, below); the legend part of your ask already works that way.
+
+  1. Both steps strayed a hair outside their seams, each for a file the step needed
+  2. Both renderers' legends gain four rows, each drawn flat from the tokens its mark uses
+  3. The world's legend folds into a `key` block at the end of the HUD's row
+  4. Labels keep off the opened slide and, past the done-when's letter, off its tag columns
+  5. Your reply adds three steps; the legend already opens and closes only from its `key` block
+
+  **Readout**:
+
+  ```text
+  steps        2 of 2 landed
+               - 106 0f8c5ea · 107 869f9b1
+  check        green: 1 of 1 checks, 2 landings
+  done-when    met
+  decisions    honored:
+               - D166 (legibility-first)
+               - D87 (legend-inset)
+               - D12 (materials)
+               - D125 (practice-map-current)
+  constraints  14 of 14 honored
+  seam         strayed: 3 paths outside 2 steps' seams
+               - step 106: apps/web/src/hud.ts, docs/glance-test.md
+               - step 107: docs/design.md
+  diff         +1387 -405 across 22 files
+  spent        29 min · green first run at every landing · 2 drift warnings
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Harvested**: 5 of 53 parked ideas open
+
+  - P49 · on atis's own map a noticed file on an opened package's slide wears its notice label beside the slide as well as its tag in the column (apps/web's registry.ts and materials.ts): weigh letting the tag carry the notice's rank and dropping the label while the slide is open (libs/scene/src/labels.ts, apps/web/src/world/labels.ts) → lean: tangent, the doubled name is legible and §6 keeps every notice's label, so letting the tag carry the rank is a refinement for later
+  - P50 · apps/web's opened slide on atis's own map draws the hole for apps/web/src/world as a wedge with a straight edge across the slide, where that folder's skin runs outside its package's: check it is gone once step 108 keeps a package's cells together → lean: tangent, step 108 is built to end the overlap behind it, and range 29's stop judges exactly that on this map
+  - P51 · Rob at range 28's stop: hide the world's inline labels (file and notice labels, a slide's tags) unless their file is hovered or its cell is expanded, so the shapes read → lean: blocker, step 110 in range 30, ahead of 109, so D166's judgment sees the labels on demand
+  - P52 · Rob at range 28's stop: drop the depth bands from the world's background for a ground like outer space, and mark the bands' rough boundaries with 1px horizontal rules over the 3D, translucent and only just visible → lean: blocker, step 111 in range 30, ahead of 109, so D166's judgment sees the space ground and its rules
+  - P53 · Rob at range 28's stop: at the far zoom draw the repo as a dark planet, its files as night lights on a sphere, with the outside dependencies it uses as distant stars coloured by health (red, yellow) that rim-light its silhouette; zooming in, the planet fills the frame and becomes the world as it is now → lean: blocker, steps 112 and 113 in a new range 31 after range 30, so range 16 builds on the planet's far field
+
+  **Recommendation**: Type `/plumbbob:run`. It records the leans as proposed, folds steps 110 to 113 into the plan as described in highlight 5, and builds range 29 (step 108) to its stop. The new steps all come after 108, so nothing in range 29 changes; if you would rather build the planet later in the build, say where before you type it.
+
+  **1.** Both steps strayed a hair outside their seams, each for a file the step needed
+
+  Step 106 touched `apps/web/src/hud.ts`, which holds the world's copy of the legend's list (a parity test holds it to the still sheet's), and `docs/glance-test.md`, whose current legend a D125 test holds to the inset word for word. I added marks 11 to 14 there and left round two's record as it was read. Step 107 touched `docs/design.md` to record where the legend now lives. All three edits are small and match what the steps changed.
+
+  **2.** Both renderers' legends gain four rows, each drawn flat from the tokens its mark uses
+
+  Row 11, "warm light: the reach, dimmer each module out", is three blocks stepping down one hop at a time: `REACH_GLOW` at `REACH_ORIGIN_OPACITY` times `REACH_DECAY` to the hop, laid over the chrome's ground. Row 12, "lit halo: where the reach leaves a module", is the warm disc `CROSSING_PAD` past a file at `CROSSING_OPACITY`, with the file's outline inside. Rows 13 and 14 are churn's hatching ("how much of it was rewritten lately") and bug-fix rate's stipple ("how many of its commits fixed bugs"). Both use `TEXTURE_INK` at `TEXTURE_MAX_OPACITY` over the file, drawn as the world's own diagonals and dots, never a pattern, so the inset stays flat. The world reads every new token live from the registry. The practice map gains a finder per mark, and retake-5's balloons now run to 14, each on a real instance. The five goldens and `docs/glance-practice.svg` are regenerated. At the legend's size the stipple sample is four dots, faithful to the pitch but faint: worth a look.
+
+  **3.** The world's legend folds into a `key` block at the end of the HUD's row
+
+  It is closed at load. A click opens the legend beneath the row, where a grade block's parts open, one panel at a time. A second click or Esc folds it away. Esc is captured by the HUD first and marked as handled, and the world's keyboard now skips a key the chrome took, so pressing Esc with the legend open leaves an opened cell open. The bottom-left corner holds the minimap alone.
+
+  **4.** Labels keep off the opened slide and, past the done-when's letter, off its tag columns
+
+  `labelsFor` takes rings, in layout units, that no label box may fall on. The world passes the slide's skin. On atis's own map that alone left four surface labels sitting on the slide's tag column (`legend.ts` over `screen.ts`, `practice.ts` over `registry.ts`). So the world also passes each tag column at rest, stretched to the skin's full height because the tags slide with their bodies. The slide's tags now stand alone. Placement uses the overhead frame every label already uses, so under a strong tilt the clearance is an estimate. On atis's own map, with `apps/web` open, `drift.ts`, `motion.ts` and `interior.ts` look as if they sit on the slide. They actually sit on `libs/scene`'s reach-lit ground, in a bay that `apps/web`'s skin wraps around (step 108's overlap, and P50's wedge). Tests: the scene pins every label clear of a round slide at every level with all six notices kept, and clear of the demo pm folder's toothed skin. The smoke test opens the key, folds it on Esc with the package still open, and finds no surface label on a slide tag.
+
+  **5.** Your reply adds three steps; the legend already opens and closes only from its `key` block
+
+  Step 107 already made the legend collapsed by default, opened and closed by the `key` block at the end of the HUD's row (or Esc). If you saw it open, the build you served predates step 107; I ran `pnpm build` after the range, so `atis --base HEAD~2` serves this range. The other three asks become blockers, each a step with a decision of its own.
+
+  - **Step 110, labels on demand** (P51): every text label the world draws (file and notice labels, storm and rename tags, an opened cell's tags) hides until its file is hovered, and an opened cell's exploded view shows its tags. The numbered notice boxes stay as marks.
+  - **Step 111, space and rules** (P52): the field drops the depth bands' stripes and terrace steps for a near-black ground with a faint seeded star field. Each band boundary becomes a 1px horizontal rule drawn over the 3D, translucent and only just visible.
+  - **Steps 112 and 113, the planet** (P53): core records each outside package the terrain imports, how many files use it, and its health from evidence atis already reads offline (C5). Red is an advisory at high or critical, yellow a lower advisory, the change hue a package the change added or moved, and a plain dim light is no finding; with no security evidence the stars are muted, never green (C2). The far zoom then draws the repo as a dark sphere with its files as night lights, under those stars, which rim-light its silhouette, and zooming in, the planet fills the frame and hands off to the world as it is now.
+
+  Steps 110 and 111 join range 30 ahead of 109, so its D166 judgment sees them. Steps 112 and 113 take a new range 31 right after it, with a stop to judge the planet on atis's own map, so range 16 opens on the finished far field.

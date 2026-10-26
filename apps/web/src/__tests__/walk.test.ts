@@ -29,7 +29,7 @@ const PM = cell('folder:libs/core/src/pm');
 const UTIL = cell('directory:libs/core/src/util');
 const INDEX = file('libs/core/src/pm/index.ts', 'folder:libs/core/src/pm');
 /** A point inside the pm folder's skin, clear of its files. */
-const IN_PM = [130, 470] as const;
+const IN_PM = [210, 500] as const;
 
 const notice = (target: string): Notice => ({ tier: 'primary', kind: 'k', target, why: 'w', inputs: {}, thresholds: {}, weight: 1 });
 const noticed = (target: string): MapJson => ({ ...DEMO, notices: [notice(target)] });
@@ -68,7 +68,8 @@ test('an arrow walks to the sibling that way, cells among cells and files among 
   expect(WALK.key(PM, 'ArrowDown', IN_PM)).toEqual(UTIL);
   expect(WALK.key(UTIL, 'ArrowUp', IN_PM)).toEqual(PM);
   expect(WALK.key(INDEX, 'ArrowDown', IN_PM)).toEqual(file('libs/core/src/pm/legacy.ts', 'folder:libs/core/src/pm'));
-  expect(WALK.key(file('libs/core/src/pm/tools.ts', 'folder:libs/core/src/pm'), 'ArrowUp', IN_PM)).toEqual(file('libs/core/src/pm/slots.ts', 'folder:libs/core/src/pm'));
+  // Up from tools.ts, slots.ts lies nearer along the line but far off it, so legacy.ts is the step.
+  expect(WALK.key(file('libs/core/src/pm/tools.ts', 'folder:libs/core/src/pm'), 'ArrowUp', IN_PM)).toEqual(file('libs/core/src/pm/legacy.ts', 'folder:libs/core/src/pm'));
   expect(WALK.key(FIELD, 'ArrowLeft', IN_PM)).toBeUndefined();
   expect(WALK.key(PM, 'Tab', IN_PM)).toBeUndefined();
 });
