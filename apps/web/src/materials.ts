@@ -16,7 +16,7 @@ import type { InteriorLayout, LodGate } from 'scene';
 
 /** The skin's material: the albedos, the membrane line, how rough and how wet it is, the share of its albedo kept at the far field, and the tissue's own faint light. */
 export type SkinLook = {
-  /** The skin where it lies on the field: graphite. */
+  /** The skin where it lies on the open field: near-black, the ground space is (D169). */
   readonly fieldAlbedo: string;
   /** The skin where a cell's body lies under it: blue-grey. */
   readonly tissueAlbedo: string;
@@ -36,7 +36,7 @@ export type SkinLook = {
 };
 
 export const SKIN: SkinLook = {
-  fieldAlbedo: '#14181e',
+  fieldAlbedo: '#07090c',
   tissueAlbedo: '#2b333d',
   membraneLine: '#3c4652',
   roughness: 0.46,
@@ -47,6 +47,39 @@ export const SKIN: SkinLook = {
   rimGain: 0.05,
   rimPower: 3,
   cellLight: 0.035,
+};
+
+/**
+ * The space the field is (D169): its faint stars, which stay a size on the
+ * screen however near the camera comes and never bloom, and the rule at each
+ * band's boundary that depth reads from, drawn over the 3D in an ink just
+ * visible enough to register, so it sits back from every mark.
+ */
+export type SpaceLook = {
+  /** The stars' ink, how bright the brightest is drawn, and a star's radius in screen pixels. */
+  readonly starInk: string;
+  readonly starGain: number;
+  readonly starRadius: number;
+  /** The star grid: layout units between its cells, the share of its cells that hold a star, and the seed the field is drawn from (C3). */
+  readonly starSpacing: number;
+  readonly starDensity: number;
+  readonly starSeed: number;
+  /** The rule at each band's boundary: its ink, how much of it shows, and its width in screen pixels. */
+  readonly ruleInk: string;
+  readonly ruleOpacity: number;
+  readonly ruleWidth: number;
+};
+
+export const SPACE: SpaceLook = {
+  starInk: '#c6d0dc',
+  starGain: 0.5,
+  starRadius: 0.8,
+  starSpacing: 22,
+  starDensity: 0.3,
+  starSeed: 1,
+  ruleInk: '#8796a8',
+  ruleOpacity: 0.16,
+  ruleWidth: 1,
 };
 
 /** The bloom on the emissive target alone (D11, D12): how strong, how wide, and the light below which nothing blooms. */

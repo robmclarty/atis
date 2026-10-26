@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 110 — fix(web): write the world's labels only on hover or in an exploded cell
+**Current step:** 111 — fix(web): set the world in space and rule its depth bands faintly
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -92,7 +92,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 107. fix(web): keep the legend and other cells' labels off the world
 - ☑ 108. fix(core): keep each package's cells together so no skin crosses another's
 - ☐ 109. fix(core): keep the shore's docs and data out of co-change notices and the HUD's size
-- ☐ 110. fix(web): write the world's labels only on hover or in an exploded cell
+- ☑ 110. fix(web): write the world's labels only on hover or in an exploded cell
 - ☐ 111. fix(web): set the world in space and rule its depth bands faintly
 - ☐ 112. feat(core): record the outside packages the terrain uses, with their health
 - ☐ 113. feat(web): draw the far zoom as a dark planet under its dependencies' stars
@@ -1805,3 +1805,4 @@ folder, so it rides the branch into the PR.)*
   While viewing the SVG I took one Playwright screenshot, which landed in `.playwright-mcp/`, and I removed the whole folder rather than just that file. The folder is excluded locally (`.git/info/exclude`) and only ever holds Playwright's screenshots and console logs, but it may have held captures from earlier sessions, and those are gone.
 
 - 2026-10-26 — step 114 checkpointed · 6e46bac30 — fix(core): keep a package's sibling cells apart so no two skins cross (41m)
+- 2026-10-26 — step 110 checkpointed · c96ebc3ba — fix(web): write the world's labels only on hover or in an exploded cell (14m)

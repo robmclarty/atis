@@ -112,26 +112,18 @@ test('the grid covers the layout at the resolution asked for, with a sample on e
   expect(() => gridFor(mapOf([]), 0)).toThrow(/positive resolution/);
 });
 
-test('terraces never climb going down the map, and each band sits one step below the one above', () => {
-  const { terrace } = heightfield(mapOf([]), 5);
-  for (let column = 0; column < terrace.columns; column += 1) {
-    for (let row = 1; row < terrace.rows; row += 1) {
-      expect(at(terrace, column, row)).toBeLessThanOrEqual(at(terrace, column, row - 1));
-    }
+test('no band steps the skin: with no file swelling it and no body rising, the field is level across every band boundary (D169)', () => {
+  const { height, swell, mass } = heightfield(mapOf([]), 2);
+  expect(height.values.every((value) => value === 0)).toBe(true);
+  expect(swell.values.every((value) => value === 0)).toBe(true);
+  expect(mass.values.every((value) => value === 0)).toBe(true);
+  // Far from any file, the ground either side of a boundary stands at one height.
+  const map = mapOf([{ id: 'src/a.ts', cell: 'folder:src', band: 0, x: 60, y: 100, stability: BEDROCK }]);
+  const field = heightfield(map, 2);
+  for (const edge of [40 + BAND_HEIGHT, 40 + 2 * BAND_HEIGHT]) {
+    expect(sampleGrid(field.height, 500, edge - 20)).toBeCloseTo(sampleGrid(field.height, 500, edge + 20), 6);
   }
-  // Mid-band, more than `terraceSoft` from either edge, each band rests a full step down.
-  const middles = [0, 1, 2].map((band) => sampleGrid(terrace, WIDTH / 2, 40 + band * BAND_HEIGHT + BAND_HEIGHT / 2));
-  expect(middles[0]).toBeCloseTo(0, 6);
-  expect(middles[1]).toBeCloseTo(-RELIEF.terraceStep, 6);
-  expect(middles[2]).toBeCloseTo(-2 * RELIEF.terraceStep, 6);
-});
-
-test('a terrace edge is eased, not a cliff: halfway down at the edge itself', () => {
-  const { terrace } = heightfield(mapOf([]), 2);
-  const edge = 40 + BAND_HEIGHT;
-  expect(sampleGrid(terrace, 100, edge)).toBeCloseTo(-RELIEF.terraceStep / 2, 4);
-  expect(sampleGrid(terrace, 100, edge - RELIEF.terraceSoft)).toBeCloseTo(0, 4);
-  expect(sampleGrid(terrace, 100, edge + RELIEF.terraceSoft)).toBeCloseTo(-RELIEF.terraceStep, 4);
+  expect(Object.keys(RELIEF).filter((name) => name.startsWith('terrace'))).toEqual([]);
 });
 
 test('a bedrock file sits above a churny one in the same band, cell for cell', () => {
@@ -161,7 +153,7 @@ test('a map without stability has no swells, and a stability with no churn ratio
   const ageOnly = heightfield(mapOf([{ id: 'src/a.ts', cell: 'folder:src', band: 0, x: 300, y: 140, stability: { age_days: 900 } }]), 4);
   expect(ageOnly.swell.values.every((value) => value === 0)).toBe(true);
 
-  // The demo without its stability keys keeps its terraces and bumps, and loses only the swells.
+  // The demo without its stability keys keeps its bumps, and loses only the swells.
   const stripped: MapJson = {
     ...DEMO,
     terrain: { ...DEMO.terrain, organelles: DEMO.terrain.organelles.map(({ stability: _stability, ...rest }) => rest) },
@@ -171,7 +163,6 @@ test('a map without stability has no swells, and a stability with no churn ratio
   expect(bare.swell.values.every((value) => value === 0)).toBe(true);
   expect(full.swell.values.some((value) => value !== 0)).toBe(true);
   expect(bare.mass.values).toEqual(full.mass.values);
-  expect(bare.terrace.values).toEqual(full.terrace.values);
 });
 
 test("a bump peaks at its cell's centre and falls smoothly to nothing at its radius", () => {
@@ -231,10 +222,10 @@ test("a package's bump weighs its own files, not its folders', and a cell with n
   expect(bumps(mapOf([]))).toEqual([]);
 });
 
-test('the height is the sum of the three scales', () => {
+test('the height is the sum of the two scales, stability and mass', () => {
   const field = heightfield(DEMO, 4);
   field.height.values.forEach((value, i) => {
-    expect(value).toBeCloseTo((field.terrace.values[i] ?? 0) + (field.swell.values[i] ?? 0) + (field.mass.values[i] ?? 0), 4);
+    expect(value).toBeCloseTo((field.swell.values[i] ?? 0) + (field.mass.values[i] ?? 0), 4);
   });
 });
 

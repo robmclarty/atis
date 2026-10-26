@@ -1,13 +1,15 @@
 /**
  * skin: the one soft skin (D16, D151), step 24's heightfield as one mesh. Its
- * relief rides a data texture (D152): the terraces and swells in one channel,
- * which never move, and the cells' mass in another, which the vertex stage
- * scales by the scheduler's amplitude, so the settle and the jiggle move the
- * bumps alone (§5.5) while the scheduler's lift raises the whole skin. The
- * normal is read in the fragment stage from the same texture, one sample
- * either side, so the terraces stay soft however coarse the mesh, and the
- * clearcoat reads that normal too: left alone it takes the flat grid's and
- * never glints (the spike's finding).
+ * relief rides a data texture (D152): the swells in one channel, which never
+ * move, and the cells' mass in another, which the vertex stage scales by the
+ * scheduler's amplitude, so the settle and the jiggle move the bumps alone
+ * (§5.5) while the scheduler's lift raises the whole skin. No band steps it:
+ * the open field is level and near-black, a ground like space, and depth
+ * reads from the rules drawn over it (D169). The normal is read in the
+ * fragment stage from the same texture, one sample either side, so the
+ * relief stays soft however coarse the mesh, and the clearcoat reads that
+ * normal too: left alone it takes the flat grid's and never glints (the
+ * spike's finding).
  *
  * The base tissue rides a second texture, step 25's grids: the cells' bodies,
  * which blend the albedo from graphite to blue-grey, and their membrane lines,
@@ -57,11 +59,11 @@ export type Skin = {
   readonly relayer: () => void;
 };
 
-/** Fill the relief as the GPU reads it: red the resting terraces and swells, green the cells' mass, half floats so both backends filter it. */
+/** Fill the relief as the GPU reads it: red the resting swells, green the cells' mass, half floats so both backends filter it. */
 const fillRelief = (data: Uint16Array, field: Heightfield): void => {
   const { columns, rows } = field.height;
   for (let i = 0; i < columns * rows; i += 1) {
-    data[i * 4] = DataUtils.toHalfFloat((field.terrace.values[i] ?? 0) + (field.swell.values[i] ?? 0));
+    data[i * 4] = DataUtils.toHalfFloat(field.swell.values[i] ?? 0);
     data[i * 4 + 1] = DataUtils.toHalfFloat(field.mass.values[i] ?? 0);
     data[i * 4 + 2] = 0;
     data[i * 4 + 3] = DataUtils.toHalfFloat(1);
@@ -178,7 +180,7 @@ export const createSkin = (map: MapJson, look: SkinLook, weather: WeatherLook, r
   const reachBloom = uniform(weather.reachBloom);
   const reachBodyGain = uniform(weather.reachBodyGain);
 
-  /** The skin's height at a texture coordinate: the resting terraces and swells, and the cells' mass at the scheduler's amplitude. */
+  /** The skin's height at a texture coordinate: the resting swells, and the cells' mass at the scheduler's amplitude. */
   const heightAt = (at: Node) => {
     const sample = texture(reliefMap, at);
     return sample.r.add(sample.g.mul(amp));
@@ -196,7 +198,7 @@ export const createSkin = (map: MapJson, look: SkinLook, weather: WeatherLook, r
   material.normalNode = normalInView;
   material.clearcoatNormalNode = normalInView;
 
-  // Blue-grey where a cell's body lies under the skin, graphite on the field between, the membrane line laid over; a trace of it all at the far field.
+  // Blue-grey where a cell's body lies under the skin, near-black on the field between, the membrane line laid over; a trace of it all at the far field.
   const base = texture(tissueMap, uv());
   const body = clamp(base.r, 0, 1);
   const albedo = mix(fieldAlbedo, tissueAlbedo, body).add(membraneLine.mul(base.g));

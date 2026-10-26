@@ -5,7 +5,8 @@
  * path in the installed Chrome, else a Chromium on the PATH (D145), and fails
  * on a console error or a blank frame. It looks at the lit surface, past
  * LOD1's gate, since the far field is dark by design until the weather lights
- * it (D151); there it writes no label at load, and the pointer over a file
+ * it (D151); its field is space ruled at each band's boundary (D169), and
+ * there it writes no label at load, and the pointer over a file
  * writes that file's and takes it away on leaving (D168). A second frame
  * opens on one cell where it fills the screen, and
  * the cell opens as a stained slide (step 40, D165): the canvas names the
@@ -121,6 +122,11 @@ test('the world draws the demo map headless on WebGL 2, lit at the surface, with
     expect(await page.getAttribute('#world', 'data-ready')).toBe('true');
     expect(await page.evaluate(() => performance.getEntriesByName('atis:ready').length)).toBe(1);
     expect(await page.getAttribute('#world', 'data-lod')).toBe('1');
+    // The field is space with a rule at each band's boundary over the canvas, one a boundary (D169).
+    const bands = (JSON.parse(readFileSync(DEMO, 'utf8')) as { terrain: { layout: { bands: readonly unknown[] } } }).terrain.layout.bands.length;
+    expect(await page.$$eval('[data-rules] line', (lines) => lines.length)).toBe(bands - 1);
+    // A rule off the screen at this framing is not drawn; those on it run across it.
+    expect(await page.$$eval('[data-rules] line', (lines) => lines.filter((line) => line instanceof SVGElement && line.style.display !== 'none').length)).toBeGreaterThan(0);
 
     // The chrome's status line sits over the canvas; the frame judged is the world's alone.
     await page.evaluate(() => document.querySelector<HTMLElement>('#chrome')?.style.setProperty('visibility', 'hidden'));

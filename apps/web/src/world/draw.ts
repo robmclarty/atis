@@ -1,7 +1,9 @@
 /**
  * draw: the world under a map, the three.js half of the app (D91). One
  * `WebGPURenderer`, falling back to WebGL 2 by itself unless the view forces
- * it (D132); the near-black field (§5.6, D11); step 24's heightfield as the
+ * it (D132); the near-black field, a ground like space with faint stars on
+ * it and a translucent rule at each band's boundary over the canvas, no band
+ * stepping the skin (§5.6, D11, D169); step 24's heightfield as the
  * one soft skin over step 25's tissue, lit by one key light and an ambient,
  * with a dark sky for its sheen (D151); every placed file as one instanced
  * mesh on it; and one render loop, which asks the scheduler for every frame
@@ -77,7 +79,7 @@ import { askedOf, slideWords } from '../asked.js';
 import { hoverOf } from '../hover.js';
 import type { Hovered } from '../hover.js';
 import { marksOf } from '../marks.js';
-import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, NOTICE, SKIN, SKY, WALK, WEATHER } from '../materials.js';
+import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, NOTICE, SKIN, SKY, SPACE, WALK, WEATHER } from '../materials.js';
 import type { Nav } from '../nav.js';
 import { runsOf } from '../notices.js';
 import { CLOSED, OPEN_LOD, openedBy, openedOf } from '../opened.js';
@@ -98,6 +100,7 @@ import { createRibbons } from './ribbons.js';
 import { createSectors } from './sectors.js';
 import { RESOLUTION, createSkin } from './skin.js';
 import { createSky } from './sky.js';
+import { createSpace } from './space.js';
 
 /** How far off the key light stands: far enough that its direction is one across the layout. */
 const CAMERA_REACH = 1000;
@@ -147,6 +150,9 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   scene.add(ambient);
   const skin = createSkin(map, skinLook, weatherLook, tokens, relief);
   scene.add(skin.mesh);
+  // The field is space (D169): faint stars on the open ground and past it, and a rule at each band's boundary over the canvas.
+  const space = createSpace(map, registry.view(SPACE, 'SPACE'));
+  scene.add(space.mesh);
   const grid = gridFor(map, RESOLUTION);
   const organelles = createOrganelles(map, skin.relief, grid, skin.amp, skin.lift, tokens);
   scene.add(...organelles.meshes);
@@ -172,7 +178,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   const interiorLook = registry.view(INTERIOR, 'INTERIOR');
   const interior = createInterior(heightAt, RESOLUTION, interiorLook, registry.view(SLIDE_CHROME));
   scene.add(...interior.meshes);
-  canvas.after(...interior.elements, hover.outline, ...labels.elements, hover.tag);
+  canvas.after(space.rules, ...interior.elements, hover.outline, ...labels.elements, hover.tag);
   // Which cell is open, the slide laid for it, and the level the last frame was drawn at, which a click is read against.
   let opening: OpenState = CLOSED;
   let slide: Slide | undefined;
@@ -541,6 +547,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     skin.lift.value = frame.lift;
     skin.surface.value = surface;
     skin.restyle();
+    space.restyle();
     organelles.surface.value = surface;
     organelles.restyle();
     palette.restyle();
@@ -561,6 +568,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     glow.radius.value = bloomLook.radius;
     glow.threshold.value = bloomLook.threshold;
     post.render();
+    space.render(camera, canvas.clientWidth, canvas.clientHeight);
     if (placeLabels || lod !== placedLod) {
       labels.place(viewportOf(camera, canvas.clientWidth), lod, slide, askedOf(fieldTarget, rowTarget));
       placeLabels = false;

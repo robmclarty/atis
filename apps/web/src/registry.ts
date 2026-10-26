@@ -14,7 +14,7 @@
 
 import * as scene from 'scene';
 
-import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, MINIMAP, NOTICE, SKIN, SKY, WALK, WEATHER } from './materials.js';
+import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, MINIMAP, NOTICE, SKIN, SKY, SPACE, WALK, WEATHER } from './materials.js';
 
 /** One section of the panel: the design doc's heading and the tokens its table names, in the table's order. */
 export type Section = { readonly title: string; readonly names: readonly string[] };
@@ -22,6 +22,7 @@ export type Section = { readonly title: string; readonly names: readonly string[
 /** The world's material objects, each field a token named `OBJECT.field`. */
 const MATERIALS: Readonly<Record<string, Readonly<Record<string, unknown>>>> = {
   SKIN,
+  SPACE,
   LIGHTING,
   SKY,
   BLOOM,
@@ -160,7 +161,7 @@ export const SECTIONS: readonly Section[] = [
     title: "The legend inset and the practice map's balloons",
     names: ['LEGEND_ROW', 'LEGEND_SAMPLE_R', 'LEGEND_SLOT', 'LEGEND_FONT_SIZE', 'LEGEND_PAD', 'LEGEND_KEY_PITCH', 'CALLOUT_R', 'CALLOUT_REACH', 'CALLOUT_FONT_SIZE', 'CALLOUT_CLEARANCE'],
   },
-  { title: MATERIALS_TITLE, names: [...fieldsOf('SKIN'), ...fieldsOf('LIGHTING'), ...fieldsOf('SKY'), ...fieldsOf('BLOOM'), ...fieldsOf('WEATHER'), ...fieldsOf('NOTICE'), ...fieldsOf('RELIEF'), ...fieldsOf('LEVELS'), ...fieldsOf('CAMERA'), ...fieldsOf('HOVER'), ...fieldsOf('WALK'), ...fieldsOf('MINIMAP'), ...fieldsOf('INTERIOR'), ...fieldsOf('WIRING')] },
+  { title: MATERIALS_TITLE, names: [...fieldsOf('SKIN'), ...fieldsOf('SPACE'), ...fieldsOf('LIGHTING'), ...fieldsOf('SKY'), ...fieldsOf('BLOOM'), ...fieldsOf('WEATHER'), ...fieldsOf('NOTICE'), ...fieldsOf('RELIEF'), ...fieldsOf('LEVELS'), ...fieldsOf('CAMERA'), ...fieldsOf('HOVER'), ...fieldsOf('WALK'), ...fieldsOf('MINIMAP'), ...fieldsOf('INTERIOR'), ...fieldsOf('WIRING')] },
   {
     title: 'Motion',
     names: [

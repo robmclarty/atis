@@ -1,7 +1,8 @@
 /**
- * heightfield: the soft skin's relief (§5.1), elevation at three scales and
- * nothing else (C11). Terraces, the large scale, step down by depth band, eased
- * across each edge with no line drawn there (D151). Swells, the medium scale,
+ * heightfield: the soft skin's relief (§5.1), elevation by stability and mass
+ * and nothing else (C11). No depth band steps the skin: the field is a level
+ * ground like space, and depth reads from a rule at each band's boundary
+ * drawn over it (D169, amending D151's terraces). Swells, the broad scale,
  * raise old, quiet files as bedrock and lower churny ones, read from each
  * file's `stability` (D149) and absent where the map carries none (C2). Bumps,
  * the small scale, swell each cell through the skin by its mass, one per cell,
@@ -16,15 +17,12 @@
 import type { MapJson, Organelle } from 'core';
 
 /**
- * The relief's sizes, in the heightfield's own units (a terrace's step is 4,
- * as the materials spike tuned it) and the layout's. One object, handed in, so
- * the dev panel can move them live (D156); `RELIEF` is where they rest.
+ * The relief's sizes, in the heightfield's own units (a cell's body stands at
+ * most 9, as the materials spike tuned it) and the layout's. One object,
+ * handed in, so the dev panel can move them live (D156); `RELIEF` is where
+ * they rest.
  */
 export type Relief = {
-  /** How far each band's terrace sits below the one above it. */
-  readonly terraceStep: number;
-  /** Half the span each terrace edge is eased across, in layout units: soft enough that no line shows (D151). */
-  readonly terraceSoft: number;
   /** A swell's peak: up this far under bedrock, down this far under churn. */
   readonly swellHeight: number;
   /** How broad the swell round each file is, a gaussian's sigma in layout units. */
@@ -42,8 +40,6 @@ export type Relief = {
 };
 
 export const RELIEF: Relief = {
-  terraceStep: 4,
-  terraceSoft: 36,
   swellHeight: 3,
   swellSpread: 48,
   swellOldDays: 365,
@@ -67,7 +63,6 @@ export type Grid = {
 
 /** The relief by scale, and their sum, which is the skin's resting height. */
 export type Heightfield = {
-  readonly terrace: Grid;
   readonly swell: Grid;
   readonly mass: Grid;
   readonly height: Grid;
@@ -88,11 +83,6 @@ function byPath(a: string, b: string): number {
 
 function clamp01(value: number): number {
   return Math.min(1, Math.max(0, value));
-}
-
-function smoothstep(t: number): number {
-  const c = clamp01(t);
-  return c * c * (3 - 2 * c);
 }
 
 /** An empty grid covering the map's layout at `resolution`; a map with no layout gets a single sample (C2: nothing is drawn there). */
@@ -119,16 +109,6 @@ export function sampleGrid(grid: Grid, x: number, y: number): number {
   return top * (1 - ty) + bottom * ty;
 }
 
-/** Fill a grid, sample by sample, from a function of the layout point. */
-function fill(grid: Grid, height: (x: number, y: number) => number): Grid {
-  for (let row = 0; row < grid.rows; row += 1) {
-    for (let column = 0; column < grid.columns; column += 1) {
-      grid.values[row * grid.columns + column] = height(column * grid.resolution, row * grid.resolution);
-    }
-  }
-  return grid;
-}
-
 /** Visit every sample within `reach` layout units of a point, with its index and its distance squared. */
 function around(grid: Grid, x: number, y: number, reach: number, visit: (index: number, d2: number) => void): void {
   const c0 = Math.max(0, Math.ceil((x - reach) / grid.resolution));
@@ -141,13 +121,6 @@ function around(grid: Grid, x: number, y: number, reach: number, visit: (index: 
       if (d2 <= reach * reach) visit(row * grid.columns + column, d2);
     }
   }
-}
-
-/** Terraces: band 0 at 0, each band below one step lower, eased across each edge so the step reads as relief alone. */
-function terraces(map: MapJson, grid: Grid, relief: Relief): Grid {
-  const edges = (map.terrain.layout?.bands ?? []).toSorted((a, b) => a.index - b.index).slice(1).map((band) => band.y0);
-  const soft = Math.max(relief.terraceSoft, Number.EPSILON);
-  return fill(grid, (_x, y) => edges.reduce((height, edge) => height - relief.terraceStep * smoothstep((y - edge + soft) / (2 * soft)), 0));
 }
 
 /**
@@ -234,14 +207,13 @@ function masses(map: MapJson, grid: Grid, relief: Relief): Grid {
   return grid;
 }
 
-/** The skin's relief over the map's layout, every `resolution` layout units, by scale and summed. */
+/** The skin's relief over the map's layout, every `resolution` layout units, by scale and summed: level wherever no file swells it or no cell's body rises. */
 export function heightfield(map: MapJson, resolution: number, relief: Relief = RELIEF): Heightfield {
-  const terrace = terraces(map, gridFor(map, resolution), relief);
   const swell = swells(map, gridFor(map, resolution), relief);
   const mass = masses(map, gridFor(map, resolution), relief);
   const height = gridFor(map, resolution);
   for (let i = 0; i < height.values.length; i += 1) {
-    height.values[i] = (terrace.values[i] ?? 0) + (swell.values[i] ?? 0) + (mass.values[i] ?? 0);
+    height.values[i] = (swell.values[i] ?? 0) + (mass.values[i] ?? 0);
   }
-  return { terrace, swell, mass, height };
+  return { swell, mass, height };
 }

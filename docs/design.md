@@ -325,13 +325,13 @@ leader's dots.
 
 ## World materials
 
-The world's own look, beside the sheet's tokens above: the skin and its lights,
-the sky its sheen mirrors, the bloom, the weather's and the notices' light in
+The world's own look, beside the sheet's tokens above: the skin, the space
+ground it lies on and its lights, the sky its sheen mirrors, the bloom, the weather's and the notices' light in
 the world, the relief, the levels of detail and the camera, and the chrome the
 world alone draws (the hover, the walk's framing, the minimap, an opened cell's
 slide and its wiring plate). Each is a field of one object, defined once: the
-skin, lights, sky, bloom, weather, notices, levels, camera, hover, walk, minimap
-and slide in `apps/web/src/materials.ts`, the relief in
+skin, the space ground, lights, sky, bloom, weather, notices, levels, camera,
+hover, walk, minimap and slide in `apps/web/src/materials.ts`, the relief in
 `libs/scene/src/heightfield.ts` (`RELIEF`), the slide's layout in
 `libs/scene/src/interior.ts` (`INTERIOR_LAYOUT`) and the wiring plate's spacing
 in `libs/scene/src/wiring.ts` (`WIRING_SPACING`). The world reads every one
@@ -355,7 +355,7 @@ the change's stains and the notices light the dark (§5.6).
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `SKIN.fieldAlbedo` | `#14181e` | the skin's albedo where it lies on the open field: graphite |
+| `SKIN.fieldAlbedo` | `#07090c` | the skin's albedo where it lies on the open field: near-black, the ground space is (D169) |
 | `SKIN.tissueAlbedo` | `#2b333d` | the skin's albedo over a cell's body: blue-grey |
 | `SKIN.membraneLine` | `#3c4652` | the membrane line laid into the tissue, added over the albedo as wide as the cell's interface |
 | `SKIN.roughness` | `0.46` | the skin's roughness under the key light |
@@ -366,6 +366,29 @@ the change's stains and the notices light the dark (§5.6).
 | `SKIN.rimGain` | `0.05` | how strong the rim is; it never blooms |
 | `SKIN.rimPower` | `3` | how sharply the rim falls off with the skin's facing |
 | `SKIN.cellLight` | `0.035` | each cell's own faint light over its body; it never blooms |
+
+### The space ground
+
+The field is a ground like outer space (D169): near-black, with a faint star
+field seeded over a grid the ground repeats every 64 cells, drawn on a plane a
+little above the level field, so the stars show on the open ground and past the
+layout's edge and hide wherever a cell's body or a swell rises through them. A
+star stays its size on the screen at every zoom and never blooms. No depth band
+is drawn as a stripe or a terrace step: each band's boundary is a rule drawn
+over the canvas, beneath every other layer, across the whole screen. The still
+SVG keeps its bands (the terraces above).
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `SPACE.starInk` | `#c6d0dc` | the stars' ink, added over the ground beneath them |
+| `SPACE.starGain` | `0.5` | how bright the brightest star is drawn; most are a fraction of it |
+| `SPACE.starRadius` | `0.8` | a star's radius in screen pixels, at every zoom |
+| `SPACE.starSpacing` | `22` | layout units between the star grid's cells, each holding one star at most |
+| `SPACE.starDensity` | `0.3` | the share of the grid's cells that hold a star |
+| `SPACE.starSeed` | `1` | the seed the star field is drawn from: one seed, one sky (C3) |
+| `SPACE.ruleInk` | `#8796a8` | the ink of the rule at each band's boundary |
+| `SPACE.ruleOpacity` | `0.16` | how much of the rule shows: just enough to register, so it sits back from every mark |
+| `SPACE.ruleWidth` | `1` | the rule's width in screen pixels |
 
 ### The lights
 
@@ -419,10 +442,11 @@ the change's stains and the notices light the dark (§5.6).
 
 ### The relief
 
+The skin rises by stability and mass alone; no band steps it, since depth reads
+from the space ground's rules (D169, amending D151's terraces).
+
 | Token | Value | Use |
 | --- | --- | --- |
-| `RELIEF.terraceStep` | `4` | how far each band's terrace sits below the one above it, in the heightfield's units |
-| `RELIEF.terraceSoft` | `36` | half the span a terrace edge is eased across, in layout units: soft enough that no line shows (D151) |
 | `RELIEF.swellHeight` | `3` | a swell's peak: up this far under bedrock, down this far under churn (D149) |
 | `RELIEF.swellSpread` | `48` | how broad the swell round each file is, a gaussian's sigma in layout units |
 | `RELIEF.swellOldDays` | `365` | the age, in days, at which a file reads as fully old |
@@ -528,7 +552,7 @@ bound changes §5.5 itself, and moves the bound in the test with it.
 | Token | Value | Bound | What it moves |
 | --- | --- | --- | --- |
 | `SETTLE_MS` | `400` | above 0, at most 600: a transient (§5.5 starts it at 400) | the load settle: the skin drops onto the terrain, the one moment the whole surface moves |
-| `SETTLE_LIFT` | `18` | above 0: a drop | how far above the terrain the skin starts, in the heightfield's units (the spike's, where a cell's body swells 9 and a terrace steps 4) |
+| `SETTLE_LIFT` | `18` | above 0: a drop | how far above the terrain the skin starts, in the heightfield's units (the spike's, where a cell's body swells 9) |
 | `SETTLE_DAMPING` | `0.72` | above 0, at most 1: damped, and landing inside `SETTLE_MS` | the settle spring's damping ratio, which lands the skin with a small overshoot rather than a bounce |
 | `FLARE_MS` | `600` | above 0, at most 600: a burst, since only the breathing outlasts a transient | a flare's length, on load and at random |
 | `FLARE_GAIN` | `3` | above 0: a flare brightens | the light a flare adds at its peak, as a multiple of the notice's own, so the primary peaks at four times its light |
@@ -641,7 +665,13 @@ purpose, not by omission:
   an eighth of a turn apart: placement, not a look;
 - the motion's curves (the flare's rise and fall, the breathing's sine, when each
   clock starts, and the flare queue one deep), described under
-  [Motion](#motion): they shape how a token's time is spent rather than set it.
+  [Motion](#motion): they shape how a token's time is spent rather than set it;
+- the star field's grid (`STAR_GRID` in `apps/web/src/space.ts`, 64 cells each
+  way before it repeats), how far into its cell a star may sit (`STAR_MARGIN`)
+  and how its brightness is spread (`STAR_FALLOFF`, `STAR_FLOOR`), and the
+  stars' plane, 0.3 above the level field and eight times the layout's longer
+  side across (`STAR_LIFT`, `STAR_REACH` in `apps/web/src/world/space.ts`):
+  geometry the seed and the tokens above draw on, not a look.
 
 ## Phase 1b: the materials spike
 
