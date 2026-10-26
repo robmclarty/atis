@@ -3815,6 +3815,21 @@
       }
     ],
     "deps_moved": [],
+    "dependencies": [
+      {
+        "name": "kleur",
+        "importers": 2
+      },
+      {
+        "name": "picomatch",
+        "importers": 2,
+        "change": "added"
+      },
+      {
+        "name": "semver",
+        "importers": 1
+      }
+    ],
     "improvements": []
   },
   "notices": [

@@ -7,13 +7,15 @@
  * (C1), so the clock is an input too, and it decides nothing the parts have
  * not already settled: it rekeys the base terrain by the diff's renames
  * (D40), names the graph each computation runs on (D39), and composes
- * modules, depth, history, reach, evidence and notices in that order, and
- * finally lays the terrain out on the field every renderer draws (D24). Every
- * list leaves sorted (C3).
+ * modules, depth, history, reach, evidence and notices in that order, counts
+ * the outside packages the terrain imports (D170), and finally lays the
+ * terrain out on the field every renderer draws (D24). Every list leaves
+ * sorted (C3).
  */
 
 import { DEFAULT_CONFIG } from './config.js';
 import type { Config } from './config.js';
+import { computeDependencies } from './dependencies.js';
 import { computeDepth } from './depth.js';
 import type { FileDepth } from './depth.js';
 import { computeCategory, computeEvidence, pathsOf, trustCoverage } from './evidence.js';
@@ -574,6 +576,13 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
   };
   const cells = assembleCells(modules, edges, signals);
   const organelles = assembleOrganelles(modules, signals);
+  const dependencies = computeDependencies({
+    files: head.files,
+    terrain: new Set(modules.organelles.map((organelle) => organelle.path)),
+    deps_added,
+    deps_moved,
+    security: ran?.security,
+  });
   const ghosts = findGhosts(history.cochange, inputs.diff.map((file) => file.path), config.notices);
   // Last, because the field is drawn over everything above it: the terrain
   // settles from the base alone and the added files find their place after
@@ -621,6 +630,7 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
       ghosts,
       deps_added,
       deps_moved,
+      ...(dependencies === undefined ? {} : { dependencies }),
       improvements: [],
     },
     notices: rankNotices({

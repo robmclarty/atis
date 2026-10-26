@@ -9,8 +9,9 @@
  * `./foo.js` lands on `foo.ts` and `./foo.mjs` on `foo.mts`. Workspace
  * packages resolve by name through `pnpm-workspace.yaml`, or the root
  * manifest's `workspaces` when there is none, and their own manifests; bare
- * npm packages are dropped. Nothing resolves through `node_modules`, which an
- * extracted commit does not have anyway.
+ * npm packages resolve to no file, and each file records instead the outside
+ * packages it imports by name (D170). Nothing resolves through
+ * `node_modules`, which an extracted commit does not have anyway.
  *
  * Beside each exported name the scan records the shape the compiler declares
  * for it (D76): the file's emitted declarations, printed, so a body-only edit
@@ -29,6 +30,7 @@
 
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, realpathSync } from 'node:fs';
+import { isBuiltin } from 'node:module';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 import { classifyFile, memberOf } from 'core';
@@ -47,6 +49,8 @@ export type ScannedFile = {
   readonly inferred: readonly string[];
   /** The lines of each statement that leaves JavaScript behind once its types are stripped, which is what a coverage report measures (D80, D141). */
   readonly code: readonly CodeSpan[];
+  /** The outside packages it imports, by package name and sorted: never a workspace member or a Node built-in (D170). */
+  readonly packages: readonly string[];
 };
 
 /**
@@ -103,6 +107,9 @@ const WORKSPACE_FILE = 'pnpm-workspace.yaml';
 const FALLOW_BIN = 'node_modules/.bin/fallow';
 const FALLOW_TIMEOUT_MS = 60_000;
 const SKIPPED_DIRECTORIES = new Set(['.git', 'node_modules']);
+
+/** A package name npm would take, scoped or not, as a bare specifier opens with it. */
+const PACKAGE_NAME = /^(?:@[a-z0-9][\w.~-]*\/)?[a-z0-9][\w.~-]*$/i;
 
 /** The export conditions a workspace target is read through, source first (D20). */
 const CONDITIONS = ['source', 'import', 'module', 'node', 'require', 'default', 'types'];
@@ -918,6 +925,20 @@ function resolveSpecifier(specifier: string, from: string, context: Context): st
   return resolveWorkspace(specifier, context);
 }
 
+/**
+ * The outside package a specifier no tree file answers imports (D170): the
+ * `@scope/name` or `name` a bare specifier opens with, where that names no
+ * workspace member and the specifier no Node built-in, `fs` or `node:fs`. A
+ * path, a `#` subpath import or a URL names no package.
+ */
+function outsidePackage(specifier: string, context: Context): string | undefined {
+  if (isBuiltin(specifier)) return undefined;
+  const parts = specifier.split('/');
+  const name = (specifier.startsWith('@') ? parts.slice(0, 2) : parts.slice(0, 1)).join('/');
+  if (!PACKAGE_NAME.test(name) || context.members.some((member) => member.name === name)) return undefined;
+  return name;
+}
+
 function contextOf(root: string, tree: Tree): Context {
   const paths = new Set(tree.files);
   return {
@@ -1134,15 +1155,23 @@ export function scanImports(dir: string, options: ScanOptions = {}): Scan {
   const parsed = new Map<string, Parsed>();
   const edges: ScannedEdge[] = [];
   const stars = new Map<string, readonly Passed[]>();
+  const packages = new Map<string, readonly string[]>();
   for (const path of tree.files) {
     if (!TYPESCRIPT.test(path)) continue;
     const file = parseSource(path, readFileSync(join(root, path), 'utf8'));
     parsed.set(path, file);
+    const outside: string[] = [];
     for (const { specifier, names, line, reexports } of file.references) {
       const to = resolveSpecifier(specifier, path, context);
-      if (to === undefined || to === path) continue;
+      if (to === undefined) {
+        const name = outsidePackage(specifier, context);
+        if (name !== undefined) outside.push(name);
+        continue;
+      }
+      if (to === path) continue;
       edges.push({ from: path, to, names, line, ...(reexports === undefined ? {} : { reexports }) });
     }
+    packages.set(path, sorted(outside));
     stars.set(
       path,
       file.stars.flatMap((star) => {
@@ -1166,6 +1195,7 @@ export function scanImports(dir: string, options: ScanOptions = {}): Scan {
       shapes: withStars(names, parsed.get(path)?.shapes ?? {}, stars.get(path) ?? [], exports),
       inferred: parsed.get(path)?.inferred ?? [],
       code: parsed.get(path)?.code ?? [],
+      packages: packages.get(path) ?? [],
     };
   });
   const fallow = fallowEntryPoints(root, options.repo ?? dir);

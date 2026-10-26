@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 109 — fix(core): keep the shore's docs and data out of co-change notices and the HUD's size
+**Current step:** 112 — feat(core): record the outside packages the terrain uses, with their health
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -91,7 +91,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 106. feat(svg): key the reach, its crossings and the history textures in the legend
 - ☑ 107. fix(web): keep the legend and other cells' labels off the world
 - ☑ 108. fix(core): keep each package's cells together so no skin crosses another's
-- ☐ 109. fix(core): keep the shore's docs and data out of co-change notices and the HUD's size
+- ☑ 109. fix(core): keep the shore's docs and data out of co-change notices and the HUD's size
 - ☑ 110. fix(web): write the world's labels only on hover or in an exploded cell
 - ☑ 111. fix(web): set the world in space and rule its depth bands faintly
 - ☐ 112. feat(core): record the outside packages the terrain uses, with their health
@@ -200,8 +200,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] sibling cells inside one package still cross: 7 pairs in apps/web on atis's own map (chrome x world, world x nav, registry, view); D166 asks that cells not overlap, and step 108 kept to packages
 - [x] apps/web/src/vite-env.d.ts, which nothing imports and which imports nothing, lands on the deepest band, so apps/web's skin hangs a tendril through the whole abyss; read where depth puts a file with no edges
 - [x] step 49's relaxation from a cached layout now runs lane by lane, and a package whose terrain grows slides every lane to its right; its displacement bound should hold lane places, or measure within lanes
-- [ ] world.test.ts's reduced-motion browser test is flaky before step 114 too (2 of 8 runs red on HEAD 245e5ad): two frames 1.5 s apart in an opened cell differ under reduced motion; find what still moves, or what Chrome re-rasters
-- [ ] an added file whose folder's room is spent still lands beside its own and can cross a sibling's skin (1 of 80 seeded layouts, fields seed 30); D32 pins the terrain, so more growth room or a relayout of the ground D32 forbids are the ways out
+- [x] world.test.ts's reduced-motion browser test is flaky before step 114 too (2 of 8 runs red on HEAD 245e5ad): two frames 1.5 s apart in an opened cell differ under reduced motion; find what still moves, or what Chrome re-rasters
+- [x] an added file whose folder's room is spent still lands beside its own and can cross a sibling's skin (1 of 80 seeded layouts, fields seed 30); D32 pins the terrain, so more growth room or a relayout of the ground D32 forbids are the ways out
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -290,6 +290,9 @@ Harvest results this boundary:
 - **blocker**: park 54 · sibling cells inside one package still cross: 7 pairs in apps/web on atis's own map (chrome x world, world x nav, registry, view); D166 asks that cells not overlap, and step 108 kept to packages → D166 names "cells do not overlap" and range 30's stop judges D166 met, yet 7 to 9 sibling pairs inside `apps/web` still cross and no step addresses it
 - **tangent**: park 55 · apps/web/src/vite-env.d.ts, which nothing imports and which imports nothing, lands on the deepest band, so apps/web's skin hangs a tendril through the whole abyss; read where depth puts a file with no edges → one edge-less file's depth makes a tendril, honest about where depth puts it, and cosmetic beside the crossings
 - **tangent**: park 56 · step 49's relaxation from a cached layout now runs lane by lane, and a package whose terrain grows slides every lane to its right; its displacement bound should hold lane places, or measure within lanes → it is step 49's own displacement bound to design, and wave 3 is sharpened at its boundary
+- 2026-10-26, at range 30 of 31's stop: 2 parked ideas, classified.
+- **tangent**: park 57 · world.test.ts's reduced-motion browser test is flaky before step 114 too (2 of 8 runs red on HEAD 245e5ad): two frames 1.5 s apart in an opened cell differ under reduced motion; find what still moves, or what Chrome re-rasters → step 114 made the first frame pair judge the world's own canvas, which removes the flake's cause, and the test has passed every run since
+- **tangent**: park 58 · an added file whose folder's room is spent still lands beside its own and can cross a sibling's skin (1 of 80 seeded layouts, fields seed 30); D32 pins the terrain, so more growth room or a relayout of the ground D32 forbids are the ways out → one seeded layout in eighty and none on atis's own maps, and D32 pins the terrain; worth a step only if a real change shows it
 
 ## Log
 
@@ -1807,3 +1810,65 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-26 — step 114 checkpointed · 6e46bac30 — fix(core): keep a package's sibling cells apart so no two skins cross (41m)
 - 2026-10-26 — step 110 checkpointed · c96ebc3ba — fix(web): write the world's labels only on hover or in an exploded cell (14m)
 - 2026-10-26 — step 111 checkpointed · 0b6bb31a5 — fix(web): set the world in space and rule its depth bands faintly (11m)
+- 2026-10-26 — step 109 checkpointed · 8fe382b92 — fix(core): keep the shore's docs and data out of co-change notices and the HUD's size (1 drift, 6m)
+- 2026-10-26 — range 30 of 31's stop recorded — on atis's own map against `HEAD~` and `HEAD~4`, judge no two cells' skins crossing ([D171 (sibling-cells-apart)](#d171)), the labels shown only on hover or in an exploded cell ([D168 (labels-on-demand)](#d168)), the space ground with its faint band rules ([D169 (space-ground)](#d169)), and the notices and the HUD: no co-change notice between two docs, and Size counting source; then judge [D166 (legibility-first)](#d166) met before the planet and range 16 build on the world
+
+  **Summary**: All four of the range's legibility fixes are in. Inside a package no two cells' skins cross: on atis's own map against `HEAD~` the sibling crossings went from 9 to 0. The world writes no word over the field until you ask for it, by hovering a file, a cell or a notice row, or by exploding an opened cell. The field is now near-black space with faint stars and a faint 1px rule at each band's boundary, where the terrace steps used to be. Co-change notices now need source on one side, so two docs never raise one, and the HUD's Size counts only the terrain, with the shore listed separately in its parts.
+
+  1. Step 109 touched two files outside its seam: the world's HUD words are in `apps/web/src/hud.ts` and `parts.ts`, not under `chrome/`
+  2. No two sibling cells' skins cross on either map: each cell settles alone, then the cells are placed apart near where the forces wanted them
+  3. The world writes no word unasked: labels show for what the pointer is over, and an opened cell's tags show in its exploded view
+  4. The field is space: terraces gone, faint stars that keep their size on screen, and a translucent rule at each band boundary
+  5. Notices and Size: no shore-only pair raises a co-change, and Size counts source; three source-and-test notices remain on `HEAD~`
+
+  **Readout**:
+
+  ```text
+  steps        4 of 4 landed
+               - 114 6e46bac · 110 c96ebc3 · 111 0b6bb31 · 109 8fe382b
+  check        green: 1 of 1 checks, 4 landings
+  done-when    met
+  decisions    honored:
+               - D171 (sibling-cells-apart)
+               - D168 (labels-on-demand)
+               - D169 (space-ground)
+               - D166 (legibility-first)
+               - D32 (terrain-from-base)
+  constraints  14 of 14 honored
+  seam         strayed: 2 paths outside step 109's seam
+               - apps/web/src/hud.ts
+               - apps/web/src/parts.ts
+  diff         +2738 -1432 across 47 files
+  spent        71 min · green first run at every landing · 1 drift warning
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Harvested**: 2 of 58 parked ideas open
+
+  - P57 · world.test.ts's reduced-motion browser test is flaky before step 114 too (2 of 8 runs red on HEAD 245e5ad): two frames 1.5 s apart in an opened cell differ under reduced motion; find what still moves, or what Chrome re-rasters → lean: tangent, step 114 made the first frame pair judge the world's own canvas, which removes the flake's cause, and the test has passed every run since
+  - P58 · an added file whose folder's room is spent still lands beside its own and can cross a sibling's skin (1 of 80 seeded layouts, fields seed 30); D32 pins the terrain, so more growth room or a relayout of the ground D32 forbids are the ways out → lean: tangent, one seeded layout in eighty and none on atis's own maps, and D32 pins the terrain; worth a step only if a real change shows it
+
+  **Recommendation**: Judge D171, D168 and D169 met, confirm D166 met so range 31 builds the planet, and keep P57 and P58 as tangents. Both maps measure zero crossings, and the screenshots show the field quiet at rest, with labels on hover and space with faint rules. To look yourself, run `pnpm --filter web dev` and open `?map=/@fs/Users/robmclarty/Projects/atis/code/atis/.playwright-mcp/range-30/head-4.json&zoom=1.8`. The open question is whether the three source-and-test co-change notices on `HEAD~` still read as noise.
+
+  **1.** Step 109 touched two files outside its seam: the world's HUD words are in `apps/web/src/hud.ts` and `parts.ts`, not under `chrome/`
+
+  The seam named `apps/web/src/chrome/`, but the world builds its HUD blocks in `apps/web/src/hud.ts` and the parts a block opens in `apps/web/src/parts.ts`. Size could not count only the terrain in the world without changing both, so the checkpoint landed with the two paths flagged. Both renderers now read one new core helper, `changeSize`, which counts a cell's files apart from the shore's. The parity test, which holds the sheet's HUD words and the world's together on every fixture, still passes.
+
+  **2.** No two sibling cells' skins cross on either map: each cell settles alone, then the cells are placed apart near where the forces wanted them
+
+  Inside a package, each cell's files now settle by themselves into a block. The forces then settle the whole package once more, only to say where each block wants to be, near what it imports. The biggest block goes first; every later one takes the nearest free spot. A block can slide sideways, and up or down within its terraces. Its outline is the convex hull of its files' discs, padded to keep a 20-unit gap, with 16 more of room around any block that can gain files. Each block settles from a seed derived from its own id; with one shared seed, every single-file cell rested at the same height in its band, in rows like beads. The change's added files still come in the second pass, with the terrain pinned (D32), and slide along their terrace only as far as keeps their cell's skin clear of its siblings.
+
+  Measured on both maps: zero sibling crossings, nothing nested, no file under another cell's skin. Step 108's package checks also stay at zero. The field is wider: 1878 units against `HEAD~` (it was 1437 after step 108) and 1820 against `HEAD~4`. Layout time is unchanged on a large synthetic package. In `lanes.test.ts`, the D171 check holds on the demo, on six seeded crowded packages with added files, and on step 108's layouts, and it fails on the old layout. The maps are `.playwright-mcp/range-30/head-1.svg` and `head-4.svg` (in the repo's git-excluded scratch folder), with the matching `.json` for the world.
+
+  **3.** The world writes no word unasked: labels show for what the pointer is over, and an opened cell's tags show in its exploded view
+
+  At load and at rest the field shows only the numbered notice boxes. The pointer over a file writes its name or its notice labels, and over a cell, that cell's notice labels and its storm's slot. A renamed file's old path shows the same way. Hovering a row in the notice column asks for that row's target, over a new line from the chrome to the world. An opened cell's tags and the barrel's exports fade in as its exploded view spreads, or show one tag at a time while the pointer is over a body. The browser smoke test checks all of this on the demo. See `.playwright-mcp/range-30/head-4-rest.png`, `-hover.png` and `-exploded.png`.
+
+  **4.** The field is space: terraces gone, faint stars that keep their size on screen, and a translucent rule at each band boundary
+
+  The relief no longer steps by band, so the field is level except where stability swells it or a cell's body rises. The open field and the background are near-black. Stars come from a seed on a grid that repeats every 64 cells. They're drawn on a plane just above the field, so they show on open ground and past the layout's edge, and hide wherever a body rises through them. Each star is about a pixel across at every zoom, and none blooms. Each band boundary gets one 1px rule across the screen at 0.16 opacity, drawn over the canvas beneath every other layer. The look is a new `SPACE` material in the dev panel and the design doc. The SVG and its goldens are unchanged.
+
+  **5.** Notices and Size: no shore-only pair raises a co-change, and Size counts source; three source-and-test notices remain on `HEAD~`
+
+  Against `HEAD~` (step 109's own change), Size reads `+54 −16, 4 files`. The shore's `+92 −38` across 13 files is listed separately in the block's parts. Against `HEAD~4` it reads `+1009 −155, 23 files`, where every changed file would have counted 51. No co-change notice pairs two shore files on either map. Three of `HEAD~`'s four notices still say that `chrome/frame.tsx`, `hud.tsx` and `legend.tsx` usually change with `hud.test.tsx` and did not. Each pairs a source file with its test, so the rule keeps them. If they read as noise to you, a test-only partner could be dropped too, and that would be a new call.

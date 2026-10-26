@@ -311,6 +311,29 @@ test("accepts a cell's export names, none included, and rejects a list that is n
   expect(() => assertMap(withExports(['listSlots', 7]))).toThrow(/terrain\.cells\[0\]\.exports\[1\]: expected a string/);
 });
 
+test('accepts the outside packages, none included, and rejects a severity no advisory backs, an unsorted list or a package no file imports (D170)', () => {
+  const withDependencies = (dependencies: unknown): unknown => {
+    const map = minimalMap();
+    return { ...map, weather: { ...map.weather, dependencies } };
+  };
+  expect(() => assertMap(withDependencies([]))).not.toThrow();
+  expect(() =>
+    assertMap(
+      withDependencies([
+        { name: '@scope/kit', importers: 1 },
+        { name: 'express', importers: 2, change: 'moved', advisories: 2, severity: 'high' },
+        { name: 'kleur', importers: 1, advisories: 0 },
+      ]),
+    ),
+  ).not.toThrow();
+  expect(() => assertMap(withDependencies([{ name: 'kleur', importers: 1, severity: 'low' }]))).toThrow(/dependencies\[0\]\.severity: a severity is required exactly when/);
+  expect(() => assertMap(withDependencies([{ name: 'kleur', importers: 1, advisories: 1 }]))).toThrow(/dependencies\[0\]\.severity/);
+  expect(() => assertMap(withDependencies([{ name: 'kleur', importers: 0 }]))).toThrow(/dependencies\[0\]\.importers/);
+  expect(() => assertMap(withDependencies([{ name: 'kleur', importers: 1, change: 'removed' }]))).toThrow(/dependencies\[0\]\.change/);
+  expect(() => assertMap(withDependencies([{ name: 'b', importers: 1 }, { name: 'a', importers: 1 }]))).toThrow(/dependencies\[1\]\.name: expected the names sorted/);
+  expect(() => assertMap(withDependencies({}))).toThrow(/weather\.dependencies: expected an array/);
+});
+
 test('rejects a changed entry naming an unknown group', () => {
   const map = minimalMap();
   const withUnknownGroup = {

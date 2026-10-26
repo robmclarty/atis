@@ -230,6 +230,39 @@ const FORMATS: Readonly<Record<string, string>> = {
 };
 
 /**
+ * A member that imports outside packages every way a file can (D170): scoped
+ * and by subpath, as a type, through a re-export and lazily, beside Node's
+ * built-ins, a sibling member by subpath, a `#` subpath import, a test's
+ * runner and a path the tree does not hold.
+ */
+const OUTSIDE: Readonly<Record<string, string>> = {
+  'pnpm-workspace.yaml': `packages:\n  - 'apps/*'\n  - 'libs/*'\n`,
+  'package.json': `{ "name": "outside", "private": true }\n`,
+  'apps/web/package.json': `{ "name": "web", "main": "src/index.ts" }\n`,
+  'apps/web/src/index.ts': `import { readFileSync } from 'node:fs';
+import { join } from 'path';
+import { mkdir } from 'fs/promises';
+import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { useQuery } from '@tanstack/react-query';
+import type { Plugin } from 'vite';
+import { kit } from 'kit-lib/extra';
+import { local } from '#internal/local';
+import { missing } from './missing.js';
+export { z } from 'zod';
+
+export async function start(plugin: Plugin): Promise<unknown> {
+  readFileSync(join('a', 'b'));
+  void mkdir; void THREE; void OrbitControls; void useQuery; void kit; void local; void missing;
+  return import('@scope/lazy');
+}
+`,
+  'apps/web/src/__tests__/index.test.ts': `import { expect, test } from 'vitest';\nimport { start } from '../index.js';\n\ntest('start', () => expect(start).toBeDefined());\n`,
+  'libs/kit/package.json': `{ "name": "kit-lib", "exports": { ".": "./src/index.ts" } }\n`,
+  'libs/kit/src/index.ts': `import { a } from 'three';\nexport const kit = a;\n`,
+};
+
+/**
  * hono's benchmarks' shape (D77): NodeNext modules in `.mts` and `.cts`,
  * declarations in a `.d.mts`, a `.test.mts` and a `vite.config.mts`.
  */
@@ -371,7 +404,7 @@ test('every tracked file is listed, classified and sorted, whether it is parsed 
     ['pnpm-workspace.yaml', 'other'],
   ]);
   expect(fileIn(scan, 'libs/shared/src/greet.ts').loc).toBe(4);
-  expect(fileIn(scan, 'README.md')).toEqual({ path: 'README.md', loc: 0, kind: 'other', exports: [], shapes: {}, inferred: [], code: [] });
+  expect(fileIn(scan, 'README.md')).toEqual({ path: 'README.md', loc: 0, kind: 'other', exports: [], shapes: {}, inferred: [], code: [], packages: [] });
 });
 
 test('a file holds code only where a statement survives type stripping, so a barrel of re-exports holds none (D80, D141)', () => {
@@ -635,6 +668,25 @@ test('every specifier resolves the way NodeNext would, npm packages are dropped,
       reexports: [{ name: '*', as: 'view' }],
     },
     { from: 'libs/shared/src/view.tsx', to: 'libs/shared/src/greet.ts', names: ['greet'], line: 1 },
+  ]);
+});
+
+test('each file records the outside packages it imports by package name, never a workspace member, a Node built-in or a path (D170)', () => {
+  const found = scanTree(OUTSIDE);
+  expect(fileIn(found, 'apps/web/src/index.ts').packages).toEqual(['@scope/lazy', '@tanstack/react-query', 'three', 'vite', 'zod']);
+  expect(fileIn(found, 'apps/web/src/__tests__/index.test.ts').packages).toEqual(['vitest']);
+  expect(fileIn(found, 'libs/kit/src/index.ts').packages).toEqual(['three']);
+  expect(fileIn(found, 'apps/web/package.json').packages).toEqual([]);
+  expect(fileIn(scan, 'apps/cli/src/index.ts').packages).toEqual(['chalk']);
+});
+
+test('the map counts each outside package by the terrain files that import it, a test counting for none (D170)', () => {
+  expect(mapOf(scanTree(OUTSIDE)).weather.dependencies).toEqual([
+    { name: '@scope/lazy', importers: 1 },
+    { name: '@tanstack/react-query', importers: 1 },
+    { name: 'three', importers: 2 },
+    { name: 'vite', importers: 1 },
+    { name: 'zod', importers: 1 },
   ]);
 });
 

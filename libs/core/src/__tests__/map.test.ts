@@ -52,6 +52,19 @@ test('two runs over one input set produce the same bytes', () => {
   expect(serialize(buildMap(inputs, DEFAULT_CONFIG))).toBe(serialize(buildMap(inputs, DEFAULT_CONFIG)));
 });
 
+test("the demo map's outside packages are the head's imports from terrain files, the one the change added marked, with no audit read (D170)", () => {
+  const map = buildMap(inputsFor('demo'), DEFAULT_CONFIG);
+
+  // `vitest` is a test's and the committed `dist/index.d.ts` is shore, so
+  // neither counts; the security slot was skipped, so no package carries a
+  // severity or a count of advisories (C2).
+  expect(map.weather.dependencies).toEqual([
+    { name: 'kleur', importers: 2 },
+    { name: 'picomatch', importers: 2, change: 'added' },
+    { name: 'semver', importers: 1 },
+  ]);
+});
+
 test('the demo map reads its terrain from the base and its weather from the head', () => {
   const map = buildMap(inputsFor('demo'), DEFAULT_CONFIG);
 

@@ -202,6 +202,29 @@ export type DepAdded = { readonly manifest: string; readonly name: string; reado
 /** A dependency both sides of a manifest name, at a range this change moved `from` another (D83). */
 export type DepMoved = DepAdded & { readonly from: string };
 
+/** What this change did to an outside package in a manifest (D83): added it, or moved its range. */
+export type DependencyChange = 'added' | 'moved';
+
+/**
+ * An outside package the terrain imports at head (D170), one star the far
+ * zoom hangs around the planet: never a workspace member or a Node built-in.
+ */
+export type Dependency = {
+  readonly name: string;
+  /** How many terrain files import it at head; a test or a shore file is no terrain (D4). */
+  readonly importers: number;
+  /** Absent where this change neither added it to a manifest nor moved its range; `added` where it did both. */
+  readonly change?: DependencyChange;
+  /**
+   * How many advisories name it, as their module or on a path that pulls
+   * their module in. Absent where no audit's advisories were read, which is
+   * no evidence rather than a clean audit (C2).
+   */
+  readonly advisories?: number;
+  /** The worst severity among those advisories, lower-cased as the audit writes it; set exactly when `advisories` is above zero. */
+  readonly severity?: string;
+};
+
 /** An import edge on the head graph with a changed file at one end or both: `from` imports `to` (§6's wiring). */
 export type WiringEdge = { readonly from: string; readonly to: string };
 
@@ -221,6 +244,12 @@ export type Weather = {
   readonly deps_added: readonly DepAdded[];
   /** The ranges this change moved, beside the dependencies it added (D83); absent where no manifest delta was read (C2). */
   readonly deps_moved?: readonly DepMoved[];
+  /**
+   * The outside packages the terrain imports at head, sorted by name (D170).
+   * An added key (D85), absent where the head scan recorded no file's
+   * imports by package (C2).
+   */
+  readonly dependencies?: readonly Dependency[];
   // D23: base-side metrics need the terrain cache of phase 3, so this build never populates it.
   readonly improvements: readonly [];
 };
@@ -309,6 +338,10 @@ function isCount(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0;
 }
 
+function isWholeCount(value: unknown): value is number {
+  return isCount(value) && Number.isInteger(value);
+}
+
 /** A stability is an age, and a churn ratio only where one was measured; neither is ever negative. */
 function assertStability(value: unknown, path: string): void {
   const stability = expectRecord(value, path);
@@ -321,9 +354,30 @@ function assertStability(value: unknown, path: string): void {
 function assertTies(value: unknown, path: string): void {
   const ties = expectRecord(value, path);
   for (const side of ['inside', 'outside'] as const) {
-    const count = ties[side];
-    if (!isCount(count) || !Number.isInteger(count)) fail(`${path}.${side}`, 'expected a whole count');
+    if (!isWholeCount(ties[side])) fail(`${path}.${side}`, 'expected a whole count');
   }
+}
+
+/**
+ * An outside package (D170): a name read by at least one terrain file, and a
+ * severity exactly where some advisory names it, so a clean audit and no
+ * audit stay two different things (C2).
+ */
+function assertDependency(value: unknown, path: string): string {
+  const dependency = expectRecord(value, path);
+  const name = expectString(dependency['name'], `${path}.name`);
+  const importers = dependency['importers'];
+  if (!isWholeCount(importers) || importers === 0) fail(`${path}.importers`, 'expected a whole count above zero');
+  const change = dependency['change'];
+  if (change !== undefined && change !== 'added' && change !== 'moved') fail(`${path}.change`, 'expected added or moved');
+  const advisories = dependency['advisories'];
+  if (advisories !== undefined && !isWholeCount(advisories)) fail(`${path}.advisories`, 'expected a whole count');
+  const severity = dependency['severity'];
+  if ((severity !== undefined) !== (typeof advisories === 'number' && advisories > 0)) {
+    fail(`${path}.severity`, 'a severity is required exactly when an advisory names the package');
+  }
+  if (severity !== undefined) expectString(severity, `${path}.severity`);
+  return name;
 }
 
 /**
@@ -449,6 +503,17 @@ function assertShape(value: unknown): asserts value is MapJson {
       }
       if (from === to) fail(at, 'a file does not import itself');
       if (!changedPaths.has(from) && !changedPaths.has(to)) fail(at, 'neither end is a changed file');
+    });
+  }
+
+  const dependencies = weather['dependencies'];
+  if (dependencies !== undefined) {
+    let previous: string | undefined;
+    expectArray(dependencies, 'weather.dependencies').forEach((raw, index) => {
+      const at = `weather.dependencies[${String(index)}]`;
+      const name = assertDependency(raw, at);
+      if (previous !== undefined && previous >= name) fail(`${at}.name`, `expected the names sorted and unique, got "${name}" after "${previous}"`);
+      previous = name;
     });
   }
 

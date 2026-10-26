@@ -17,7 +17,7 @@
  */
 
 import type { Config, NoticeConfig, NoticeKind } from './config.js';
-import { broughtAdvisories, healthSpan, placeOnChange, readRedSplit, spanOnChange, structuralPlaces, unusedExportPlaces } from './evidence.js';
+import { broughtAdvisories, healthSpan, placeOnChange, readRedSplit, severityRank, spanOnChange, structuralPlaces, unusedExportPlaces } from './evidence.js';
 import type { Advisory, BroughtPackage, CheckArtifacts, CodeSpan, FileEvidence, RedSplit } from './evidence.js';
 import { OTHER_GROUP } from './groups.js';
 import type { FileHistory } from './history.js';
@@ -56,9 +56,6 @@ const STAR = '*';
 
 /** The slot whose findings its own per-package notices name, so it spends no row of its own (D83). */
 const SECURITY_SLOT = 'security';
-
-/** The audit's severities, worst first: the order a security notice lists its advisories in. */
-const SEVERITIES = ['critical', 'high', 'moderate', 'low', 'info'];
 
 /** The slot whose red on the change takes the first notice, whatever it weighs (D74). */
 const TEST_SLOT = 'test';
@@ -101,7 +98,12 @@ export type ExportShapes = Readonly<Record<string, string | null>>;
  * D141); absent where a scan did not read it, a file is never called
  * unmeasured on a guess.
  */
-export type ScanFile = ScannedFile & { readonly shapes?: ExportShapes; readonly code?: readonly CodeSpan[] };
+export type ScanFile = ScannedFile & {
+  readonly shapes?: ExportShapes;
+  readonly code?: readonly CodeSpan[];
+  /** The outside packages it imports, by name, where the scan recorded them (D170). */
+  readonly packages?: readonly string[];
+};
 
 /**
  * A workspace member as the public-name walk reads it (D75). Both fields are
@@ -382,11 +384,6 @@ function thresholdCandidates(check: RanCheck, hunks: ReadonlyMap<string, readonl
     thresholds: {},
     slot: 'health',
   }));
-}
-
-function severityRank(severity: string): number {
-  const rank = SEVERITIES.indexOf(severity.toLowerCase());
-  return rank === -1 ? SEVERITIES.length : rank;
 }
 
 /** `` high on `qs`, moderate on `body-parser` ``: a package's advisories, worst first, then by module (C3). */

@@ -106,6 +106,15 @@ export type AdvisoryPath = { readonly manifest: string; readonly packages: reado
 /** One advisory as the audit reports it: the vulnerable module, its severity, and every path that pulls it in (D83). */
 export type Advisory = { readonly module: string; readonly severity: string; readonly paths: readonly AdvisoryPath[] };
 
+/** The audit's severities, worst first: the order a security notice lists its advisories in. */
+const SEVERITIES = ['critical', 'high', 'moderate', 'low', 'info'];
+
+/** Where a severity falls in the audit's order, worst first; a word the audit does not use falls after `info`. */
+export function severityRank(severity: string): number {
+  const rank = SEVERITIES.indexOf(severity.toLowerCase());
+  return rank === -1 ? SEVERITIES.length : rank;
+}
+
 /**
  * `security.json`: the audit's counts, and its advisories where the report
  * names them. Without `advisories` no advisory can be tied to the change, so

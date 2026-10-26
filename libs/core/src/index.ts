@@ -4,6 +4,7 @@
  */
 
 export * from './config.js';
+export * from './dependencies.js';
 export * from './depth.js';
 export * from './evidence.js';
 export * from './groups.js';
