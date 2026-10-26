@@ -74,6 +74,9 @@
  * the planet's lights mixing the same way, at the scheduler's cross-fade and
  * cut under reduced motion (C12), the relief, the tissue and the files never
  * moving (P2); the canvas says which frame it shows and when the fade has
+ * settled. On a whole repo's map the overlay the HUD's toggles show is laid
+ * with the weather's marks, and a toggle cross-fades to the next the same way
+ * (D101); the canvas says which overlay it shows and when that fade has
  * settled.
  */
 
@@ -82,7 +85,7 @@ import { emissive, mrt, output, pass } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 import { FIELD_FILL, LOD_GATES, MOTION_TOKENS, REACH_ORIGIN_OPACITY, RELIEF, cellSlide, cellWiring, createPicker, createScheduler, fillOf, gridFor, instances, interiorOf, planetShown, slideCellOf, surfacePoint } from 'scene';
 import type { Lod, Pick, Point, Slide } from 'scene';
-import type { MapJson } from 'core';
+import type { MapJson, OverlayName } from 'core';
 
 import { RAIL_WIDTH, zoomFor } from '../fit.js';
 import { askedOf, slideWords } from '../asked.js';
@@ -92,6 +95,8 @@ import { marksOf } from '../marks.js';
 import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, NOTICE, PLANET, SKIN, SKY, SPACE, WALK, WEATHER } from '../materials.js';
 import type { Nav } from '../nav.js';
 import { frameMap, lastFrame as ownFrame } from '../frames.js';
+import { shownOverlay } from '../overlays.js';
+import type { OverlayAsk } from '../overlays.js';
 import { categoryHue, runsOf } from '../notices.js';
 import { CLOSED, OPEN_LOD, openedBy, openedOf } from '../opened.js';
 import type { OpenState } from '../opened.js';
@@ -192,10 +197,10 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     const i = (row * grid.columns + column) * 4;
     return field instanceof Uint16Array ? DataUtils.fromHalfFloat(field[i] ?? 0) + DataUtils.fromHalfFloat(field[i + 1] ?? 0) : 0;
   };
-  /** A frame's weather laid as a layer of its own: its marks in the scene, in its category's palette, and its tags and labels for the page. */
-  const layerOf = (frame: MapJson): WeatherLayer => {
+  /** A frame's weather laid as a layer of its own, with a whole repo's overlay shown: its marks in the scene, in its category's palette, and its tags and labels for the page. */
+  const layerOf = (frame: MapJson, overlay: OverlayName | undefined): WeatherLayer => {
     const palette = createPalette(tokens, frame.weather.checks.category);
-    const marks = marksOf(frame);
+    const marks = marksOf(frame, overlay);
     const sectors = createSectors(marks.sectors, skin.relief, grid, skin.amp, skin.lift, organelles.surface, palette);
     const bolts = createBolts(marks.bolts, skin.relief, grid, skin.amp, skin.lift, organelles.surface, palette);
     const ribbons = createRibbons(marks.ribbons, skin.relief, grid, skin.amp, skin.lift, organelles.surface, palette);
@@ -207,8 +212,11 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     };
     return { map: frame, palette, sectors, bolts, ribbons, labels, dispose };
   };
+  // The overlay a whole repo's map shows, its default until a toggle asks for another (D101).
+  let shownName = shownOverlay(map, nav.overlay());
+  if (map.overlays !== undefined) canvas.dataset['overlay'] = shownName ?? 'none';
   // The frame of a range shown, the map's own weather at first, and the one it fades from while a scrub's cross-fade runs (D100).
-  let current = layerOf(map);
+  let current = layerOf(map, shownName);
   let fading: WeatherLayer | undefined;
   const layers = (): readonly WeatherLayer[] => (fading === undefined ? [current] : [current, fading]);
   // The hover's outline lies under the labels and its tag over them (step 38).
@@ -460,14 +468,11 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   // A step of the scrubber lays its frame's weather as the layer shown, and the one shown before fades out beneath it; a step taken mid-fade drops the layer already fading (D100).
   let shownFrame = ownFrame(map);
   let relaySlide = false;
-  const scrub = (index: number): void => {
-    if (index === shownFrame) return;
-    shownFrame = index;
-    canvas.dataset['frame'] = String(index);
-    const next = frameMap(map, index);
+  /** The weather of `next`, with the overlay shown, laid as the layer shown, and the one shown before fading out beneath it. */
+  const relay = (next: MapJson): void => {
     fading?.dispose();
     fading = current;
-    current = layerOf(next);
+    current = layerOf(next, shownName);
     hover.tag.before(...current.labels.elements);
     skin.reach(next);
     planet.weather(next);
@@ -475,6 +480,20 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     scheduler.scrub(next.notices.map((notice) => notice.tier));
     relaySlide = true;
     placeLabels = true;
+  };
+  const scrub = (index: number): void => {
+    if (index === shownFrame) return;
+    shownFrame = index;
+    canvas.dataset['frame'] = String(index);
+    relay(frameMap(map, index));
+  };
+  // A toggle shows another overlay of a whole repo's map, or none, cross-faded as a scrub is (D101).
+  const overlay = (asked: OverlayAsk): void => {
+    const name = shownOverlay(map, asked);
+    if (name === shownName) return;
+    shownName = name;
+    canvas.dataset['overlay'] = name ?? 'none';
+    relay(frameMap(map, shownFrame));
   };
   // The minimap asks for a place and the camera eases there (D154); a notice's row asks for a stop and the camera flies there; the breadcrumb's buttons ask for the exploded view and the wiring; the scrubber asks for a frame.
   nav.steer({
@@ -491,6 +510,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       placeLabels = true;
     },
     scrub,
+    overlay,
   });
   // The arrows walk to a sibling, Enter descends and Escape ascends, unless the key is the focused element's own or the chrome already took it (an open legend folds away on Escape); with a cell open, Escape closes it first, x spreads or gathers its exploded view (D155), and w draws or takes away its wiring.
   globalThis.addEventListener('keydown', (event) => {
@@ -615,6 +635,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     }
     const scrubbing = fading === undefined ? 'settled' : 'fading';
     if (canvas.dataset['scrub'] !== scrubbing && shownFrame !== undefined) canvas.dataset['scrub'] = scrubbing;
+    if (canvas.dataset['overlayFade'] !== scrubbing && map.overlays !== undefined) canvas.dataset['overlayFade'] = scrubbing;
     skin.reachMix.value = mixed;
     skin.amp.value = frame.amp;
     skin.lift.value = frame.lift;

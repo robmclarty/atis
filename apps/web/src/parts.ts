@@ -8,12 +8,15 @@
  * does not carry opens the one line that says so, never a number (C2). In
  * served mode a red slot also names the slot whose raw output the CLI serves
  * at `/check/<slot>` (D134); the chrome adds the link, so a fixture with no
- * server shows the parts without it. Pure: no React, no DOM.
+ * server shows the parts without it. On a whole repo's map the overlay
+ * block opens every overlay the map holds, counted, or muted with the map's
+ * reason (D101, C2). Pure: no React, no DOM.
  */
 
-import { OTHER_GROUP, changeSize, readRedSplit } from 'core';
+import { OTHER_GROUP, OVERLAY_NAMES, changeSize, readRedSplit } from 'core';
 import type { CheckSlot, Improvement, MapJson } from 'core';
-import { healthDeltaOf } from 'scene';
+import { healthDeltaOf, overlayOf } from 'scene';
+import type { OverlayUnit } from 'scene';
 
 import { rowsOf, tallyOf } from './notices.js';
 
@@ -150,6 +153,19 @@ const healthParts = (map: MapJson): Parts => {
 };
 
 /** What a block opens, by its id. */
+/** An overlay's unit, counted more than once. */
+const PLURALS: Readonly<Record<OverlayUnit, string>> = { file: 'files', finding: 'findings', family: 'families', cycle: 'cycles' };
+
+/** Every overlay a whole repo's map holds, with how many entries it draws, or why the map holds none of it (D101, C2). */
+const overlayParts = (map: MapJson): Parts => {
+  const lines = OVERLAY_NAMES.flatMap((name) => {
+    const view = overlayOf(map, name);
+    if (view === undefined) return [];
+    return ['reason' in view ? `${view.title} ${DOT} muted: ${view.reason}` : `${view.title} ${DOT} ${String(view.count)} ${view.count === 1 ? view.unit : PLURALS[view.unit]}`];
+  });
+  return lines.length === 0 ? { block: 'overlay', parts: [], empty: 'a map of a change holds no overlays' } : { block: 'overlay', parts: [{ heading: 'the whole repo\'s overlays', lines }] };
+};
+
 export const partsOf = (map: MapJson, block: string): Parts => {
   switch (block) {
     case 'category': {
@@ -177,6 +193,8 @@ export const partsOf = (map: MapJson, block: string): Parts => {
       const files = map.terrain.groups.find((group) => group.id === OTHER_GROUP)?.files ?? [];
       return files.length === 0 ? { block, parts: [], empty: 'nothing fell to other' } : { block, parts: [{ heading: `${String(files.length)} files no group claims`, lines: [...files].toSorted(byPath) }] };
     }
+    case 'overlay':
+      return overlayParts(map);
     default:
       return { block, parts: [], empty: 'nothing to open' };
   }

@@ -3,12 +3,13 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { assertMap } from 'core';
-import type { MapJson } from 'core';
-import { ARROW_SIZE, CROSSING_PAD, EMPHASIS_PAD, GHOST_PAD, INTEGRITY_GAP_WIDTH, INTEGRITY_PAD, MUTANT_NOTCH_DEPTH, PRIMARY_RING_WIDTH, RENAME_DASH, RENAME_LEADER_WIDTH, SECONDARY_RING_WIDTH, STANDING_STORM_SCALE, STITCH_LENGTH, STITCH_TEAR, STORM_LABEL_GAP, renameLeaderOf, weatherOf } from 'scene';
+import type { MapJson, OverlayName } from 'core';
+import { ARROW_SIZE, CROSSING_PAD, EMPHASIS_PAD, GHOST_PAD, INTEGRITY_GAP_WIDTH, INTEGRITY_PAD, MUTANT_NOTCH_DEPTH, PRIMARY_RING_WIDTH, RENAME_DASH, RENAME_LEADER_WIDTH, SECONDARY_RING_WIDTH, STANDING_STORM_SCALE, STITCH_LENGTH, STITCH_TEAR, STORM_LABEL_GAP, TEXTURE_MAX_OPACITY, renameLeaderOf, weatherOf } from 'scene';
 import { expect, test } from 'vitest';
 
 import { HUES, marksOf } from '../marks.js';
 import type { Sector } from '../marks.js';
+import { repoMap } from './repo-map.js';
 
 /**
  * The world's marks against the scene's weather, mark for mark (D86): one
@@ -222,8 +223,8 @@ test("a renamed file's leader is dashed ribbons from where its base put it to it
   expect(marksOf({ ...map, terrain: { ...map.terrain, layout } }).ribbons.some((ribbon) => ribbon.kind === 'renamed')).toBe(false);
 });
 
-test('the hues a mark can name are the twelve the palette holds, and a map with no weather or notices has no marks', () => {
-  expect(HUES).toHaveLength(12);
+test('the hues a mark can name are the thirteen the palette holds, and a map with no weather or notices has no marks', () => {
+  expect(HUES).toHaveLength(13);
   const unhistoried = DEMO.terrain.organelles.map(({ churn_ratio: _churn, bugfix_rate: _bugfix, ...organelle }) => organelle);
   const quiet: MapJson = { ...DEMO, terrain: { ...DEMO.terrain, organelles: unhistoried, edges_exceptional: [] }, weather: { ...DEMO.weather, changed: [], reach: [], ghosts: [], evidence: {}, checks: { ...DEMO.weather.checks, slots: [] } }, notices: [] };
   expect(marksOf(quiet)).toEqual({ sectors: [], bolts: [], ribbons: [], labels: [] });
@@ -264,4 +265,23 @@ test("a notice's target wears its tier's emphasis: the primary a halo and a thin
   expect(ofKind(marksOf(ashore).sectors, 'ring')).toHaveLength(0);
   expect(HUES).toContain('category');
   expect(HUES).toContain('leader');
+});
+
+test("a whole repo's overlay is laid as sectors in the channel the still map draws it in, and a map of a change lays none (D101, C11)", () => {
+  const map = repoMap();
+  const overlaid = (name: OverlayName): readonly Sector[] => marksOf(map, name).sectors.filter((sector) => sector.kind === 'overlay');
+
+  // History is hatching at its level, the worst trouble spot at full.
+  const trouble = overlaid('trouble_spots');
+  expect(trouble.map((sector) => [sector.path, sector.pattern, sector.hue])).toContainEqual(['apps/cli/src/doctor.ts', 'hatch', 'ink']);
+  expect(trouble.find((sector) => sector.path === 'apps/cli/src/doctor.ts')?.opacity).toBe(TEXTURE_MAX_OPACITY);
+  // What the checks found is a ring of the evidence light, lit by its level: 5 of the barrel's 10 statements never ran.
+  expect(overlaid('coverage_gaps').find((sector) => sector.path === 'libs/core/src/pm/index.ts')).toMatchObject({ hue: 'evidence', opacity: 0.5, inner: INTEGRITY_PAD - INTEGRITY_GAP_WIDTH / 2 });
+  // Duplication echoes each family file twice in the glyph's grey; a cycle is an LIFR ring; a baselined finding is graphite.
+  expect(overlaid('duplication').map((sector) => sector.hue)).toEqual(['glyph', 'glyph', 'glyph', 'glyph']);
+  expect(new Set(overlaid('cycles').map((sector) => sector.hue))).toEqual(new Set(['lifr']));
+  expect(new Set(overlaid('baselined').map((sector) => sector.hue))).toEqual(new Set(['standing']));
+  // None shown is the weather's marks alone, and a map of a change has no overlay to lay.
+  expect(marksOf(map).sectors.some((sector) => sector.kind === 'overlay')).toBe(false);
+  expect(marksOf(DEMO, 'cycles')).toEqual(marksOf(DEMO));
 });

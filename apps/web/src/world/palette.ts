@@ -11,7 +11,7 @@
 import { Color, Vector3 } from 'three/webgpu';
 import type { Node, UniformNode } from 'three/webgpu';
 import { float, select, uniform } from 'three/tsl';
-import { CHANGE_HUE, CHROME_MUTED, EVIDENCE_LIGHT, GHOST_STROKE, IFR_HUE, IMPROVED_HUE, LEADER_INK, LIFR_HUE, MVFR_HUE, REACH_GLOW, STANDING_STORM_FILL, STITCH_UNLIT, TEXTURE_INK, VFR_HUE } from 'scene';
+import { CHANGE_HUE, CHROME_MUTED, EVIDENCE_LIGHT, GHOST_STROKE, GLYPH_STROKE, IFR_HUE, IMPROVED_HUE, LEADER_INK, LIFR_HUE, MVFR_HUE, REACH_GLOW, STANDING_STORM_FILL, STITCH_UNLIT, TEXTURE_INK, VFR_HUE } from 'scene';
 import type { FlightCategory } from 'core';
 
 import { HUES } from '../marks.js';
@@ -19,7 +19,7 @@ import type { Hue } from '../marks.js';
 import { CATEGORY_TOKEN } from '../notices.js';
 
 /** The tokens the palette reads, at rest: the shape its live view takes. */
-export const PALETTE_LOOK = { CHANGE_HUE, REACH_GLOW, EVIDENCE_LIGHT, IFR_HUE, STITCH_UNLIT, GHOST_STROKE, TEXTURE_INK, LIFR_HUE, STANDING_STORM_FILL, VFR_HUE, MVFR_HUE, LEADER_INK, CHROME_MUTED, IMPROVED_HUE };
+export const PALETTE_LOOK = { CHANGE_HUE, REACH_GLOW, EVIDENCE_LIGHT, IFR_HUE, STITCH_UNLIT, GHOST_STROKE, TEXTURE_INK, LIFR_HUE, STANDING_STORM_FILL, VFR_HUE, MVFR_HUE, LEADER_INK, CHROME_MUTED, IMPROVED_HUE, GLYPH_STROKE };
 type PaletteLook = typeof PALETTE_LOOK;
 
 /** Which token each hue is, in `HUES`' order; the category's depends on the map. */
@@ -35,6 +35,7 @@ const TOKEN_OF: Readonly<Record<Exclude<Hue, 'category'>, keyof PaletteLook>> = 
   standing: 'STANDING_STORM_FILL',
   leader: 'LEADER_INK',
   improved: 'IMPROVED_HUE',
+  glyph: 'GLYPH_STROKE',
 };
 
 const tokenOf = (hue: Hue, category: FlightCategory): keyof PaletteLook => (hue === 'category' ? CATEGORY_TOKEN[category] : TOKEN_OF[hue]);

@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 60 — feat(svg): render the whole-repo overlays in the still map
+**Current step:** 61 — feat(web): toggle overlays and switch bases from the HUD
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -110,7 +110,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 57. feat(core): build one weather frame per commit of a range
 - ☑ 58. feat(web): scrub a range's weather over one terrain
 - ☑ 59. feat(core): compute the whole-repo overlays
-- ☐ 60. feat(svg): render the whole-repo overlays in the still map
+- ☑ 60. feat(svg): render the whole-repo overlays in the still map
 - ☐ 61. feat(web): toggle overlays and switch bases from the HUD
 - ☐ 62. feat(core): record each file's functions for the file level
 - ☐ 63. feat(web): open a file into its functions, hunks and coverage strip
@@ -2248,3 +2248,4 @@ folder, so it rides the branch into the PR.)*
   Each tick is one commit, filled in its frame's category hue, with the frame shown outlined in ink. The arrows, a click on a tick, or `,` and `.` step it. Every chrome block (grades, notices, rail, minimap, wiring) reads the frame it stands at. In the world each frame's weather is a layer of its own that fades in as the last fades out. The skin's reach and the planet's lights mix in place, all at `LOD_FADE_MS` (300 ms), and the step cuts under reduced motion (C12 (motion-budget)). I wrote `atis --range 8fa79cb..HEAD` of this run's first three commits (8.5 s cold, three frames) and opened it in Chrome. It opened on frame 3/3 at MVFR. Two `,` presses stepped it to 1/3 at NOINST with its own notices, over the same terrain, with one label layer left and a clean console. One visual is baked rather than a token: a tick is half the HUD font wide, and the arrows reuse the breadcrumb's 6 px padding.
 
 - 2026-10-26 — step 59 checkpointed · 20a0c0b90 — feat(core): compute the whole-repo overlays (1 drift, 27m)
+- 2026-10-26 — step 60 checkpointed · 1f789705e — feat(svg): render the whole-repo overlays in the still map (1 drift, 14m)

@@ -37,7 +37,7 @@ import {
 } from 'scene';
 import { useEffect, useMemo, useState } from 'react';
 import type { ReactElement } from 'react';
-import type { MapJson } from 'core';
+import type { MapJson, OverlayName } from 'core';
 
 import { RAIL_WIDTH } from '../fit.js';
 import { blocksOf } from '../hud.js';
@@ -74,11 +74,11 @@ const LOOK = {
 /** What the `key` block opens: the legend, beneath the row where a grade block's parts would be. No grade block has this id. */
 const KEY = 'key';
 
-/** The grade blocks for a map, read live from the registry, with the run's token when the map is served (D134), for the raw output a red slot links to. */
-export const Hud = ({ map, registry, token }: { readonly map: MapJson; readonly registry: Registry; readonly token?: string | undefined }): ReactElement => {
+/** The grade blocks for a map, read live from the registry, with the run's token when the map is served (D134), for the raw output a red slot links to, and the overlay a whole repo's map shows (D101). */
+export const Hud = ({ map, registry, token, overlay }: { readonly map: MapJson; readonly registry: Registry; readonly token?: string | undefined; readonly overlay?: OverlayName | undefined }): ReactElement => {
   useLive(registry);
   const look = registry.view(LOOK);
-  const blocks = useMemo(() => blocksOf(map), [map]);
+  const blocks = useMemo(() => blocksOf(map, overlay), [map, overlay]);
   const [open, setOpen] = useState<string | undefined>(undefined);
   const parts = useMemo(() => (open === undefined || open === KEY ? undefined : partsOf(map, open)), [map, open]);
   const hue = categoryHue(map.weather.checks.category, look);

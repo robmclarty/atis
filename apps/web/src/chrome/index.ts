@@ -3,6 +3,7 @@
  * (D91). It is covered by the tests, unlike the GPU code in `world/`.
  */
 
+export * from './bases.js';
 export * from './box.js';
 export * from './column.js';
 export * from './crumbs.js';
@@ -13,6 +14,7 @@ export * from './legend.js';
 export * from './live.js';
 export * from './minimap.js';
 export * from './notices.js';
+export * from './overlays.js';
 export * from './parts.js';
 export * from './rail.js';
 export * from './scrubber.js';

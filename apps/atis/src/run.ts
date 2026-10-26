@@ -71,7 +71,7 @@ import {
   writeTerrain,
 } from './cache.js';
 import { serve } from './serve.js';
-import type { Served } from './serve.js';
+import type { BaseRequest, Rebuilt, Served } from './serve.js';
 import {
   BASELINE_FILE,
   HISTORY_WINDOW,
@@ -659,8 +659,25 @@ export function run(options: Options): Outcome {
 }
 
 /**
+ * The map over the base a `POST /base` names (D99, C13): measured as a fresh
+ * run is, the head the served run's own unless the request asks for the
+ * working tree, through the same terrain cache, so a base whose terrain is
+ * kept draws the ground it drew before (P2). A range or a whole-repo map
+ * gives way to one change over the base asked for.
+ */
+function rebuilder(options: ServeRunOptions): (request: BaseRequest) => Promise<Rebuilt> {
+  return (request) => {
+    const base = request.last === undefined ? request.base : { last: request.last };
+    const head = request.working_tree === true ? { workingTree: true as const } : options.head;
+    const { map } = measure(options.repo, { base, head, cache: options.cache !== false, history: options.history });
+    return Promise.resolve({ map: serialize(map), slots: map.weather.checks.slots.map((slot) => slot.name) });
+  };
+}
+
+/**
  * Read the repository, build the map and serve it with the built web app on
- * loopback (D92, D133, D134), opening the tab unless told not to. The outcome
+ * loopback (D92, D133, D134), opening the tab unless told not to, and rebuild
+ * it over another base when the page asks (`POST /base`). The outcome
  * carries the server, which the caller closes on interrupt; its exit code is
  * 0 once serving, and 2 with no built app to serve or a repository it cannot
  * read (C4).
@@ -676,7 +693,13 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
     const token = options.token ?? randomBytes(16).toString('hex');
     const started = performance.now();
     // The raw check output beside the map (D93): the run's `.check/`, for the slots the map holds alone (D134).
-    const served = await serve({ assets, map: serialize(map), token, checks: { dir: join(options.repo, '.check'), slots: map.weather.checks.slots.map((slot) => slot.name) } });
+    const served = await serve({
+      assets,
+      map: serialize(map),
+      token,
+      checks: { dir: join(options.repo, '.check'), slots: map.weather.checks.slots.map((slot) => slot.name) },
+      rebase: { repo: resolve(options.repo), rebuild: rebuilder(options) },
+    });
     timings.push({ source: 'serve', ms: Math.round(performance.now() - started) });
     if (options.open) openTarget(served.url);
     return {

@@ -13,8 +13,12 @@
  * and halo breathe and flare where the scene anchors it (D148). A changed
  * file the change made healthier wears the calm-positive hue in place of the
  * change hue, and a renamed one's leader runs as dashed ribbons from where
- * its base put it (D40, D97, D98). Pure: no three, no DOM, so a test reads
- * the records straight.
+ * its base put it (D40, D97, D98). On a whole repo's map, the overlay shown
+ * is laid as sectors too, from the scene's `overlayOf` (D90, D101), in the
+ * channel the still map draws it in: history as hatching, what the checks
+ * found as a ring of the evidence light, duplication as two echo rings, a
+ * cycle as an LIFR ring, a baselined finding as a graphite one (C11, D49).
+ * Pure: no three, no DOM, so a test reads the records straight.
  */
 
 import {
@@ -34,6 +38,8 @@ import {
   INTEGRITY_GAP_WIDTH,
   INTEGRITY_PAD,
   MUTANT_NOTCH_DEPTH,
+  OVERLAY_ECHO_GAP,
+  OVERLAY_ECHO_WIDTH,
   MUTANT_NOTCH_WIDTH,
   PRIMARY_RING_WIDTH,
   RENAME_DASH,
@@ -46,24 +52,25 @@ import {
   STITCH_WIDTH,
   STORM_LABEL_GAP,
   TEXTURE_MAX_OPACITY,
+  overlayOf,
   renameLeaderOf,
   slideCellOf,
   weatherOf,
 } from 'scene';
-import type { ChangeState, FileWeather, SceneWeather, Storm } from 'scene';
-import type { MapJson, Position } from 'core';
+import type { ChangeState, FileWeather, OverlayChannel, SceneWeather, Storm } from 'scene';
+import type { MapJson, OverlayName, Position } from 'core';
 
 import { runsOf } from './notices.js';
 
-/** The hues a mark can take, by what it means: the index the material's palette is read at. `category` is the map's flight category's, `leader` the chrome's leaders' grey, `improved` the calm-positive state (D98). */
-export const HUES = ['change', 'reach', 'evidence', 'ifr', 'unlit', 'ghost', 'ink', 'lifr', 'standing', 'category', 'leader', 'improved'] as const;
+/** The hues a mark can take, by what it means: the index the material's palette is read at. `category` is the map's flight category's, `leader` the chrome's leaders' grey, `improved` the calm-positive state (D98), `glyph` the clone glyph's grey, repetition's (C11). */
+export const HUES = ['change', 'reach', 'evidence', 'ifr', 'unlit', 'ghost', 'ink', 'lifr', 'standing', 'category', 'leader', 'improved', 'glyph'] as const;
 export type Hue = (typeof HUES)[number];
 
 /** A texture laid over a mark: none, hatching for churn, stipple for bug-fix rate (C11). */
 export type Pattern = 'none' | 'hatch' | 'stipple';
 
-/** What a mark is, for a reader and a test; the GPU reads the numbers. A `halo` is the primary notice's light, a `ring` a tier's emphasis (§5.4). */
-export type MarkKind = 'stain' | 'outline' | 'crossing' | 'hairline' | 'gap' | 'notch' | 'stitch' | 'ghost' | 'history' | 'halo' | 'ring';
+/** What a mark is, for a reader and a test; the GPU reads the numbers. A `halo` is the primary notice's light, a `ring` a tier's emphasis (§5.4), an `overlay` a whole repo's overlay on a file (D101). */
+export type MarkKind = 'stain' | 'outline' | 'crossing' | 'hairline' | 'gap' | 'notch' | 'stitch' | 'ghost' | 'history' | 'halo' | 'ring' | 'overlay';
 
 /**
  * One sector about a file: an arc from `from` to `to` (radians, y down, the
@@ -290,8 +297,28 @@ const historyOf = (map: MapJson): readonly Sector[] => {
     });
 };
 
-/** The marks on every placed file the weather touches, in the SVG's own layer order: stains, the primary's halo, history, evidence, ghosts, the tier rings; crossings with the reach beneath. */
-const sectorsOf = (map: MapJson, weather: SceneWeather): readonly Sector[] => {
+/** One file's mark in an overlay's channel at its level, as the still map draws it (C11). */
+const overlayMark = (channel: OverlayChannel, file: FileWeather, at: Position, level: number): readonly Sector[] => {
+  if (channel === 'texture') return [disc('overlay', file, at, 0, 'ink', TEXTURE_MAX_OPACITY * level, 0, false, 'hatch')];
+  if (channel === 'luminance') return [ring('overlay', file, at, INTEGRITY_PAD, INTEGRITY_GAP_WIDTH, 'evidence', level, 1)];
+  if (channel === 'state') return [ring('overlay', file, at, INTEGRITY_PAD, INTEGRITY_GAP_WIDTH, 'lifr', 1, 1)];
+  if (channel === 'muted') return [ring('overlay', file, at, INTEGRITY_PAD, INTEGRITY_GAP_WIDTH, 'standing', 1, 0)];
+  return [1, 2].map((echo) => ring('overlay', file, at, echo * OVERLAY_ECHO_GAP, OVERLAY_ECHO_WIDTH, 'glyph', 1, 0));
+};
+
+/** The overlay shown on a whole repo's map, every placed file it marks, laid over the weather (D101); none when it is muted, or on a map of a change. */
+const overlaySectorsOf = (map: MapJson, name: OverlayName | undefined): readonly Sector[] => {
+  const view = name === undefined ? undefined : overlayOf(map, name);
+  if (view === undefined || 'reason' in view) return [];
+  const positions = map.terrain.layout?.positions ?? {};
+  return view.marks.flatMap(({ path, level }) => {
+    const at = positions[path];
+    return at === undefined ? [] : overlayMark(view.channel, { path }, at, level);
+  });
+};
+
+/** The marks on every placed file the weather touches, in the SVG's own layer order: stains, the primary's halo, history, evidence, ghosts, the tier rings, and a whole repo's overlay last; crossings with the reach beneath. */
+const sectorsOf = (map: MapJson, weather: SceneWeather, overlay: OverlayName | undefined): readonly Sector[] => {
   const positions = map.terrain.layout?.positions ?? {};
   const placed = weather.files.flatMap((file) => {
     const at = positions[file.path];
@@ -305,7 +332,7 @@ const sectorsOf = (map: MapJson, weather: SceneWeather): readonly Sector[] => {
   // The cell each mark sits in, its file's or the cell itself when a notice's emphasis hangs on a cell's skin, and the slide that shows it: a package's for a single-file module it holds (D167).
   const cellOf = new Map(map.terrain.organelles.map((organelle) => [organelle.id, organelle.cell] as const));
   const cells = new Set(map.terrain.cells.map((cell) => cell.id));
-  return [...crossings, ...stains, ...halos, ...historyOf(map), ...evidence, ...ghosts, ...rings].map((sector): Sector => {
+  return [...crossings, ...stains, ...halos, ...historyOf(map), ...evidence, ...ghosts, ...rings, ...overlaySectorsOf(map, overlay)].map((sector): Sector => {
     const cell = cellOf.get(sector.path) ?? (cells.has(sector.path) ? sector.path : undefined);
     return cell === undefined ? sector : { ...sector, cell: slideCellOf(map, cell) };
   });
@@ -379,11 +406,11 @@ const leadersOf = (map: MapJson, weather: SceneWeather): readonly Ribbon[] => {
   });
 };
 
-/** The weather's marks for a map, read from the scene's derivation alone. */
-export const marksOf = (map: MapJson): Marks => {
+/** The weather's marks for a map, read from the scene's derivation alone, with the overlay shown on a whole repo's map (D101). */
+export const marksOf = (map: MapJson, overlay?: OverlayName): Marks => {
   const weather = weatherOf(map);
   const { bolts, labels } = boltsOf(weather.storms);
-  return { sectors: sectorsOf(map, weather), bolts, ribbons: [...ribbonsOf(map, weather), ...leadersOf(map, weather)], labels: [...labels, ...renamesOf(map, weather)] };
+  return { sectors: sectorsOf(map, weather, overlay), bolts, ribbons: [...ribbonsOf(map, weather), ...leadersOf(map, weather)], labels: [...labels, ...renamesOf(map, weather)] };
 };
 
 /** The width a ribbon is drawn at, the only line on the map (§5.1). */

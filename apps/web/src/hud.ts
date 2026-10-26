@@ -7,14 +7,17 @@
  * and the standing block count the change's red and the rest apart (D70),
  * the Mutants block counts the survivors apart from those no test reached
  * (D143), and Health Δ is the maintainability fallow measured the change
- * move, muted with no base side (D98). A DOM test holds
+ * move, muted with no base side (D98). A whole repo's map changes nothing,
+ * so in place of the change's blocks it names its terrain and the overlay the
+ * world shows, counted, or muted with the map's reason (D101). A DOM test holds
  * the two renderers' words together on every fixture. Pure: no React, no
  * DOM, so a test reads the blocks straight.
  */
 
 import { OTHER_GROUP, changeSize, mutantOutcomes, readRedSplit } from 'core';
-import type { MapJson } from 'core';
-import { MUTED_DASH, healthDeltaOf } from 'scene';
+import type { MapJson, OverlayName } from 'core';
+import { MUTED_DASH, healthDeltaOf, overlayOf } from 'scene';
+import type { OverlayUnit } from 'scene';
 
 import { tallyOf } from './notices.js';
 
@@ -34,7 +37,7 @@ export type Block = {
 };
 
 /** The HUD blocks of §7, by their id, in the order the row draws them: the change's own evidence beside the category, then the red slots (D70). */
-export const HUD_ORDER: readonly string[] = ['category', 'patch-cov', 'mutants', 'reach', 'size', 'gate', 'standing', 'health', 'notices', 'other'];
+export const HUD_ORDER: readonly string[] = ['category', 'repo', 'overlay', 'patch-cov', 'mutants', 'reach', 'size', 'gate', 'standing', 'health', 'notices', 'other'];
 
 /** The minus sign a tally is written with. */
 const MINUS = '−';
@@ -104,14 +107,44 @@ const healthBlock = (map: MapJson): Block => {
   return delta === undefined ? muted('health', 'Health Δ', 'absent') : block('health', 'Health Δ', delta);
 };
 
-/** The HUD row of §7 in `HUD_ORDER`; `Standing` only when some red is wholly standing (D70), `Other` only when the shore's `other` group is non-empty (D48). */
-export const blocksOf = (map: MapJson): readonly Block[] => {
+/** How the HUD counts an overlay's entries, by its unit. */
+const UNITS: Readonly<Record<OverlayUnit, readonly [string, string]>> = {
+  file: ['file', 'files'],
+  finding: ['finding', 'findings'],
+  family: ['family', 'families'],
+  cycle: ['cycle', 'cycles'],
+};
+
+/**
+ * A whole repo's own blocks (D101): its terrain's size, and the overlay
+ * shown, named and counted, or muted with the map's reason (C2); `Overlay
+ * off` once the toggles have taken every overlay away.
+ */
+const repoBlocks = (map: MapJson, overlay: OverlayName | undefined): readonly Block[] => {
+  const files = map.terrain.organelles.length;
+  const repo = block('repo', 'Whole repo', String(files), files === 1 ? ' file' : ' files');
+  if (overlay === undefined) return [repo, block('overlay', 'Overlay', 'off')];
+  const view = overlayOf(map, overlay);
+  if (view === undefined || 'reason' in view) return [repo, muted('overlay', view?.title ?? overlay, view?.reason ?? 'absent')];
+  const [one, many] = UNITS[view.unit];
+  return [repo, block('overlay', view.title, String(view.count), ` ${view.count === 1 ? one : many}`)];
+};
+
+/**
+ * The HUD row of §7 in `HUD_ORDER`; `Standing` only when some red is wholly
+ * standing (D70), `Other` only when the shore's `other` group is non-empty
+ * (D48). A whole repo's map names its terrain and the overlay shown in place
+ * of the change's blocks (D101).
+ */
+export const blocksOf = (map: MapJson, overlay?: OverlayName): readonly Block[] => {
   const { changed, reach, checks } = map.weather;
   const cells = new Set(reach.map((entry) => entry.cell)).size;
   // The size is the terrain's: the shore's docs, data and tests are named apart, in the block's parts (D166).
   const size = changeSize(changed).terrain;
   const other = map.terrain.groups.find((group) => group.id === OTHER_GROUP);
-  const blocks: readonly Block[] = [
+  const others = other === undefined || other.files.length === 0 ? [] : [block('other', 'Other', String(other.files.length))];
+  const repo = map.overlays === undefined ? undefined : [block('category', '', checks.category), ...repoBlocks(map, overlay), ...gateBlocks(map), ...others];
+  const blocks: readonly Block[] = repo ?? [
     block('category', '', checks.category),
     coverageBlock(map),
     mutantBlock(map),
@@ -120,7 +153,7 @@ export const blocksOf = (map: MapJson): readonly Block[] => {
     ...gateBlocks(map),
     healthBlock(map),
     block('notices', 'Notices', tallyOf(map)),
-    ...(other === undefined || other.files.length === 0 ? [] : [block('other', 'Other', String(other.files.length))]),
+    ...others,
   ];
   const byId = new Map(blocks.map((entry) => [entry.id, entry] as const));
   return HUD_ORDER.flatMap((id) => {

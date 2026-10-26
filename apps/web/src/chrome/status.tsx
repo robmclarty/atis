@@ -16,11 +16,16 @@ import { useLive } from './live.js';
 /** The tokens the line is drawn with, at rest: the shape its live view takes. */
 const LOOK = { CHROME_GROUND, CHROME_INK, CHROME_MUTED, CHROME_PAD, FONT_FAMILY, HUD_FONT_SIZE, IFR_HUE };
 
-/** What the line says for each state: the map's repo and base once it is read, else where it is coming from or why it did not. */
+/** How many characters of a commit's sha the line writes. */
+const SHORT_SHA = 7;
+
+/** What the line says for each state: the map's repo and base once it is read, or the commit a whole repo's map is of (D101), else where it is coming from or why it did not. */
 const wordsOf = (state: MapState): string => {
   if (state.status === 'loading') return `reading ${state.url}`;
   if (state.status === 'failed') return `no map from ${state.url}: ${state.reason}`;
-  return `${state.map.meta.repo} against ${state.map.meta.base}`;
+  const { meta } = state.map;
+  if (meta.mode === 'repo') return `${meta.repo}, the whole repo at ${meta.head.slice(0, SHORT_SHA)}`;
+  return `${meta.repo} against ${meta.base}`;
 };
 
 /** The ink each state is written in: muted while loading, the default once read, the IFR hue when the map did not arrive. */

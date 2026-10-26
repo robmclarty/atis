@@ -9,7 +9,9 @@
  * a notice row the pointer is over (D168), and the world moves its camera or
  * its slide, or writes the target's words. It carries the frame of a range
  * the scrubber stands at, too (D100): the chrome steps it, and the world
- * cross-fades to that frame's weather. Neither imports the
+ * cross-fades to that frame's weather, and the overlay of a whole repo's
+ * map the HUD's toggles ask for (D101), which the world cross-fades to the
+ * same way. Neither imports the
  * other: `main.ts` hands both the same line, and an ask made before the world
  * is drawn, or with no world at all, as in a DOM test, goes nowhere. Pure, so
  * a test reads it straight.
@@ -18,6 +20,7 @@
 import type { Point } from 'scene';
 
 import type { Opened } from './opened.js';
+import type { OverlayAsk } from './overlays.js';
 import { FIELD } from './walk.js';
 import type { Stop } from './walk.js';
 
@@ -29,6 +32,7 @@ export type Steering = {
   readonly wire?: () => void;
   readonly hover?: (target: string | undefined) => void;
   readonly scrub?: (frame: number) => void;
+  readonly overlay?: (asked: OverlayAsk) => void;
 };
 
 export type Nav = {
@@ -60,6 +64,10 @@ export type Nav = {
   readonly frame: () => number | undefined;
   /** Step the scrubber to a frame: the chrome hears it, and the world cross-fades to its weather. */
   readonly scrub: (frame: number) => void;
+  /** The overlay the HUD's toggles asked for; nothing until one is pressed, when the map's default shows (D101). */
+  readonly overlay: () => OverlayAsk;
+  /** Ask for an overlay, or none: the chrome hears it, and the world cross-fades to it. */
+  readonly showOverlay: (asked: OverlayAsk) => void;
   /** The world takes the chrome's asks; the latest to steer is the one asked, until it lets go. */
   readonly steer: (steering: Steering) => () => void;
 };
@@ -77,6 +85,7 @@ export const createNav = (): Nav => {
   let opened: Opened | undefined;
   let steering: Steering | undefined;
   let frame: number | undefined;
+  let overlay: OverlayAsk;
   const tell = (): void => listeners.forEach((listener) => listener());
   return {
     outline: () => outline,
@@ -112,6 +121,13 @@ export const createNav = (): Nav => {
       frame = next;
       tell();
       steering?.scrub?.(next);
+    },
+    overlay: () => overlay,
+    showOverlay: (next) => {
+      if (next === overlay) return;
+      overlay = next;
+      tell();
+      steering?.overlay?.(next);
     },
     steer: (next) => {
       steering = next;

@@ -29,9 +29,13 @@ import {
 import { LEGEND as SHEET_LEGEND, SHAPE_KEY_WORDS as SHEET_SHAPE_KEY_WORDS, renderSvg } from 'svg';
 import { afterEach, beforeEach, expect, test } from 'vitest';
 
+import { OVERLAY_NAMES } from 'core';
+import type { OverlayName } from 'core';
+
 import { Chrome, Hud, Legend } from '../chrome/index.js';
 import { HUD_ORDER, LEGEND, SHAPE_KEY_WORDS, blockText, blocksOf, over } from '../hud.js';
 import { createRegistry } from '../registry.js';
+import { repoMap } from './repo-map.js';
 
 /**
  * The HUD's grade blocks and the legend inset in the world's chrome (§7,
@@ -45,6 +49,9 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..', '..', '..', '..');
 const DEMO = assertMap(JSON.parse(readFileSync(join(ROOT, 'libs', 'core', 'fixtures', 'demo', 'map.json'), 'utf8')));
 const REPO_FIXTURES = join(ROOT, 'fixtures');
+
+/** The blocks a map of a change draws: every one but a whole repo's own two (D101). */
+const CHANGE_ORDER = HUD_ORDER.filter((id) => id !== 'repo' && id !== 'overlay');
 
 /** A slot turned green, which records no split and names no file. */
 const greened = (slot: CheckSlot): CheckSlot => ({ name: slot.name, ok: true, skipped: slot.skipped, scope: 'global' });
@@ -80,13 +87,15 @@ const committedMaps = (): readonly (readonly [string, MapJson])[] =>
       }
     });
 
-/** The sheet's HUD blocks for a map: each `data-block`'s id, its muted reason, and what it reads as, the tags inside its text gone. */
-const sheetBlocks = (map: MapJson): readonly { readonly id: string; readonly reason: string | undefined; readonly text: string }[] =>
-  [...renderSvg(map).matchAll(/<g data-block="([^"]+)"([^>]*)>[\s\S]*?<text[^>]*>([\s\S]*?)<\/text>/g)].map(([, id = '', attrs = '', inner = '']) => ({
-    id,
-    reason: /data-reason="([\w-]+)"/.exec(attrs)?.[1],
-    text: inner.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim(),
-  }));
+/** The inverse of the sheet's escaping in an attribute. */
+const unescaped = (value: string): string => value.replaceAll('&#39;', "'").replaceAll('&quot;', '"').replaceAll('&lt;', '<').replaceAll('&gt;', '>').replaceAll('&amp;', '&');
+
+/** The sheet's HUD blocks for a map, a whole repo's drawn with `overlay`: each `data-block`'s id, its muted reason, and what it reads as, the tags inside its text gone. */
+const sheetBlocks = (map: MapJson, overlay?: OverlayName): readonly { readonly id: string; readonly reason: string | undefined; readonly text: string }[] =>
+  [...renderSvg(map, { overlay }).matchAll(/<g data-block="([^"]+)"([^>]*)>[\s\S]*?<text[^>]*>([\s\S]*?)<\/text>/g)].map(([, id = '', attrs = '', inner = '']) => {
+    const reason = /data-reason="([^"]+)"/.exec(attrs)?.[1];
+    return { id, reason: reason === undefined ? undefined : unescaped(reason), text: inner.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim() };
+  });
 
 let host: HTMLElement;
 let root: Root;
@@ -119,13 +128,26 @@ test("the world's blocks are the sheet's, block for block, on the demo, its four
     expect(world.map((block) => block.muted), name).toEqual(sheet.map((block) => block.reason));
     for (const block of world) expect(HUD_ORDER, `${name}: ${block.id}`).toContain(block.id);
   }
-  // Every block on the demo, in §7's order, with Standing and Other present, and the delta its fallow measured (D98).
+  // Every block on the demo, in §7's order, with Standing and Other present, and the delta its fallow measured (D98); a whole repo's two blocks are not a change's.
   const demo = blocksOf(DEMO);
-  expect(demo.map((block) => block.id)).toEqual(HUD_ORDER);
+  expect(demo.map((block) => block.id)).toEqual(CHANGE_ORDER);
   expect(demo.find((block) => block.id === 'health')).toEqual({ id: 'health', label: 'Health Δ', value: '+1.9', tail: '' });
   const { health_delta: _measured, ...unmeasured } = DEMO.weather;
   expect(blocksOf({ ...DEMO, weather: unmeasured }).find((block) => block.id === 'health')).toEqual({ id: 'health', label: 'Health Δ', value: MUTED_DASH, tail: '', muted: 'absent' });
   expect(blockText(demo[0] ?? { id: '', label: '', value: '', tail: '' })).toBe('IFR');
+});
+
+test("on a whole repo's map the world's blocks are the sheet's for every overlay it shows, and read Overlay off once none is (D101)", () => {
+  const map = repoMap();
+  for (const name of OVERLAY_NAMES) {
+    const sheet = sheetBlocks(map, name);
+    const world = blocksOf(map, name);
+    expect(world.map((block) => block.id), name).toEqual(sheet.map((block) => block.id));
+    expect(world.map(blockText), name).toEqual(sheet.map((block) => block.text));
+    expect(world.map((block) => block.muted), name).toEqual(sheet.map((block) => block.reason));
+  }
+  expect(blocksOf(map, 'trouble_spots').map(blockText)).toEqual(['VFR', 'Whole repo 8 files', 'Trouble spots 4 files', 'Gate pass', 'Standing 2 red', 'Other 1']);
+  expect(blocksOf(map).find((block) => block.id === 'overlay')).toEqual({ id: 'overlay', label: 'Overlay', value: 'off', tail: '' });
 });
 
 test("the world's Size counts the terrain alone, as the sheet's does, so a change of source and fixtures reads as its source (D166)", () => {
@@ -150,7 +172,7 @@ test('the HUD draws every block in order with its words: the category solid in i
   const map = { ...DEMO, weather: unmeasured };
   await act(async () => root.render(<Hud map={map} registry={createRegistry()} />));
   const blocks = all('[data-block]');
-  expect(blocks.map((block) => block.getAttribute('data-block'))).toEqual(HUD_ORDER);
+  expect(blocks.map((block) => block.getAttribute('data-block'))).toEqual(CHANGE_ORDER);
   expect(blocks.map((block) => block.textContent)).toEqual(blocksOf(map).map(blockText));
   const category = element('[data-block="category"]');
   expect(category.getAttribute('data-category')).toBe('IFR');
@@ -255,7 +277,7 @@ test('the chrome carries the HUD over the status line once the map is read, and 
   // The row and the panel it opens share a wrapper, and the status line follows it.
   const hud = element('[data-hud]');
   expect(hud.parentElement?.nextElementSibling?.getAttribute('role')).toBe('status');
-  expect(all('[data-hud] [data-block]')).toHaveLength(HUD_ORDER.length);
+  expect(all('[data-hud] [data-block]')).toHaveLength(CHANGE_ORDER.length);
   // The key block stands last in the row, and the legend it folds is not drawn until it is opened (D166).
   const key = element('[data-hud] [data-hud-key]');
   expect(hud.lastElementChild).toBe(key);

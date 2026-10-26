@@ -26,7 +26,9 @@
  * through LOD1's gate to the flat world (D170). Served as a range, the demo's
  * scrubber steps its frames by key: the canvas names the frame it shows, the
  * weather cross-fades and settles, the notices' boxes follow the frame, and
- * the terrain beneath never settles again (D100).
+ * the terrain beneath never settles again (D100). Served as a whole repo,
+ * the demo opens on its trouble spots, and a toggle in the HUD cross-fades
+ * the world to another overlay and then to none (D101).
  */
 
 import { accessSync, constants, readFileSync } from 'node:fs';
@@ -38,6 +40,8 @@ import type { Browser, Page } from 'playwright-core';
 import { createServer } from 'vite';
 import type { Plugin, ViteDevServer } from 'vite';
 import { expect, test } from 'vitest';
+
+import { repoMap } from './repo-map.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const WEB = join(HERE, '..', '..');
@@ -484,6 +488,39 @@ test("served as a range, the scrubber steps its frames by key and the weather cr
     // The terrain never moved: the skin is still settled, and the rules lie where they lay (P2).
     expect(await page.getAttribute('#world', 'data-world')).toBe('settled');
     expect(await page.$$eval('[data-rules] line', (lines) => lines.map((line) => [line.getAttribute('x1'), line.getAttribute('y1'), line.getAttribute('x2'), line.getAttribute('y2')].join(',')))).toEqual(rules);
+    expect(complaints).toEqual([]);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+test("served as a whole repo, the world opens on its trouble spots and the HUD's toggles cross-fade it to another overlay and to none, with a clean console (D101)", { timeout: 120_000 }, async () => {
+  const { server, url } = await serve(JSON.stringify(repoMap()));
+  const browser = await launch();
+  try {
+    const page = await browser.newPage({ viewport: { width: 960, height: 720 } });
+    const complaints: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error' || message.type() === 'warning') complaints.push(`${message.type()}: ${message.text()}`);
+    });
+    page.on('pageerror', (error) => complaints.push(`pageerror: ${error.message}`));
+
+    await page.goto(`${url}/?backend=webgl&zoom=2`);
+    await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
+    expect(await page.getAttribute('#world', 'data-overlay')).toBe('trouble_spots');
+    expect(await page.textContent('[data-block="overlay"]')).toBe('Trouble spots 4 files');
+
+    // The toggles are named as the canvas names the overlay it shows, so a click is held to the strip.
+    await page.click('[data-overlays] [data-overlay="coverage_gaps"]');
+    await page.waitForSelector('#world[data-overlay="coverage_gaps"][data-overlay-fade="settled"]', { timeout: 30_000 });
+    expect(await page.textContent('[data-block="overlay"]')).toBe('Coverage gaps 8 files');
+    await page.click('[data-overlays] [data-overlay="coverage_gaps"]');
+    await page.waitForSelector('#world[data-overlay="none"][data-overlay-fade="settled"]', { timeout: 30_000 });
+    expect(await page.textContent('[data-block="overlay"]')).toBe('Overlay off');
+
+    // The terrain never moved beneath the overlays: the skin is still settled (P2).
+    expect(await page.getAttribute('#world', 'data-world')).toBe('settled');
     expect(complaints).toEqual([]);
   } finally {
     await browser.close();
