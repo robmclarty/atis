@@ -77,6 +77,8 @@ export const SECTIONS: readonly Section[] = [
       'RENAME_DASH',
       'RENAME_LABEL_SIZE',
       'RENAME_LABEL_GAP',
+      'RENAME_LEADER_WIDTH',
+      'IMPROVED_HUE',
       'VFR_HUE',
       'MVFR_HUE',
       'IFR_HUE',

@@ -10,7 +10,10 @@
  * co-change. Each cell carries the reach at its nearest hop, dimmer by a
  * fixed share per membrane crossed (D5), and the storms over it, split by
  * whether the red is the change's (D68). The exceptional edges come beside
- * them. Each attribute has one channel of C11 and no other.
+ * them. A changed file the change made healthier carries what got better,
+ * the calm-positive state its hue wears (D98), and a renamed one the place
+ * its base put it, which its leader starts from (D40, D97). Each attribute
+ * has one channel of C11 and no other.
  *
  * The shore is no part of it: both renderers draw the shore as flat blocks
  * in the chrome (D153), from `shoreRail`, so a shore file's change and a
@@ -22,7 +25,7 @@
  */
 
 import { readRedSplit } from 'core';
-import type { ChangeKind, ExceptionalEdge, MapJson, ReachEntry, Stitch, Terrain } from 'core';
+import type { ChangeKind, ExceptionalEdge, Improvement, MapJson, ReachEntry, Stitch, Terrain } from 'core';
 
 import { gridFor } from './heightfield.js';
 import type { Grid } from './heightfield.js';
@@ -36,8 +39,21 @@ const FAILED = 'failed';
 const TOP = -Math.PI / 2;
 const BOTTOM = Math.PI / 2;
 
-/** Hue is state: what this change did to the file, and for a rename where it came from (D40). */
-export type ChangeState = { readonly kind: ChangeKind; readonly from?: string };
+/**
+ * Hue is state: what this change did to the file, and for a rename where it
+ * came from (D40): its old path, and the place the base's layout gave it,
+ * where the layout relaxed from one (D97). A changed file the change made
+ * healthier carries what got better, and its hue is the calm-positive one in
+ * place of the change hue: one state per file, its kind still told by its
+ * fill or its outline (D98). Absent where nothing got better or the map
+ * measured no base side (C2).
+ */
+export type ChangeState = {
+  readonly kind: ChangeKind;
+  readonly from?: string;
+  readonly fromAt?: { readonly x: number; readonly y: number };
+  readonly improvements?: readonly Improvement[];
+};
 
 /**
  * The skin round a changed file (D71): the share of its changed executable
@@ -201,9 +217,33 @@ function stitchesOf(map: MapJson): ReadonlyMap<string, readonly StitchMark[]> {
   );
 }
 
+/** The improvements naming each file, in the map's order (C3). */
+function improvementsOf(map: MapJson): ReadonlyMap<string, readonly Improvement[]> {
+  const byFile = new Map<string, Improvement[]>();
+  for (const improvement of map.weather.improvements ?? []) {
+    for (const path of improvement.files) byFile.set(path, [...(byFile.get(path) ?? []), improvement]);
+  }
+  return byFile;
+}
+
+/** Where a renamed file came from on the field, as the layout carries it. */
+type Place = { readonly x: number; readonly y: number };
+
+/** A changed file's state: its kind; for a rename its old path and, where the layout carries it, its base place; and what got better on it. */
+function changeOf(change: { readonly kind: ChangeKind; readonly from?: string } | undefined, fromAt: Place | undefined, better: readonly Improvement[] | undefined): ChangeState | undefined {
+  if (change === undefined) return undefined;
+  return {
+    kind: change.kind,
+    ...(change.from === undefined ? {} : { from: change.from }),
+    ...(change.kind === 'renamed' && fromAt !== undefined ? { fromAt: { x: fromAt.x, y: fromAt.y } } : {}),
+    ...(better === undefined ? {} : { improvements: better }),
+  };
+}
+
 /** Every placed terrain file the weather touches, with its state, by path. */
 function filesOf(map: MapJson): readonly FileWeather[] {
   const positions = map.terrain.layout?.positions ?? {};
+  const renamedFrom = map.terrain.layout?.renamed_from ?? {};
   const terrain = new Set(map.terrain.organelles.map((organelle) => organelle.id));
   const changes = new Map(map.weather.changed.map((file) => [file.path, file] as const));
   const crossings = new Set(map.weather.reach.flatMap((entry) => entry.via));
@@ -211,12 +251,13 @@ function filesOf(map: MapJson): readonly FileWeather[] {
   const notches = notchesOf(map);
   const stitches = stitchesOf(map);
   const ghosts = new Map(map.weather.ghosts.map((ghost) => [ghost.path, ghost] as const));
+  const improved = improvementsOf(map);
   const touched = new Set([...changes.keys(), ...crossings, ...skins.keys(), ...notches.keys(), ...stitches.keys(), ...ghosts.keys()]);
   return [...touched]
     .filter((path) => terrain.has(path) && positions[path] !== undefined)
     .toSorted(byPath)
     .map((path): FileWeather => {
-      const change = changes.get(path);
+      const change = changeOf(changes.get(path), renamedFrom[path], improved.get(path));
       const skin = skins.get(path);
       const onNotches = notches.get(path) ?? [];
       const onStitches = stitches.get(path) ?? [];
@@ -224,7 +265,7 @@ function filesOf(map: MapJson): readonly FileWeather[] {
       const hasEvidence = skin !== undefined || onNotches.length > 0 || onStitches.length > 0;
       return {
         path,
-        ...(change === undefined ? {} : { change: { kind: change.kind, ...(change.from === undefined ? {} : { from: change.from }) } }),
+        ...(change === undefined ? {} : { change }),
         ...(crossings.has(path) ? { crossing: true as const } : {}),
         ...(hasEvidence ? { evidence: { ...(skin === undefined ? {} : { skin }), notches: onNotches, stitches: onStitches } } : {}),
         ...(ghost === undefined ? {} : { ghost: { with: ghost.with, rate: ghost.rate, support: ghost.support } }),
@@ -333,6 +374,22 @@ function edgesOf(map: MapJson): readonly ExceptionalEdge[] {
   return map.terrain.edges_exceptional
     .filter((edge) => positions[edge.from] !== undefined && positions[edge.to] !== undefined)
     .toSorted((a, b) => byPath(a.from, b.from) || byPath(a.to, b.to) || byPath(a.kind, b.kind));
+}
+
+/** The minus sign a delta is written with, the chrome's own. */
+const MINUS = '−';
+
+/**
+ * The Health Δ block's value (§7, D98): the change's net movement in fallow's
+ * maintainability index, to the tenth, with its sign, `+` for better and `−`
+ * for worse, and a measured standstill `0.0`. Absent where the map measured
+ * no base side, which the block mutes rather than writing a 0 (C2).
+ */
+export function healthDeltaOf(map: MapJson): string | undefined {
+  const delta = map.weather.health_delta?.maintainability;
+  if (delta === undefined) return undefined;
+  const sign = delta > 0 ? '+' : delta < 0 ? MINUS : '';
+  return `${sign}${Math.abs(delta).toFixed(1)}`;
 }
 
 /** The weather both renderers draw, derived from the map alone. */

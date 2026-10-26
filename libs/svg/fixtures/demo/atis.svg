@@ -84,9 +84,9 @@
         <circle data-via="libs/core/src/pm/index.ts" cx="212.55" cy="412.96" r="10.45" opacity="0.9"/>
       </g>
       <g id="changed" fill="#5fd8ea" stroke="#5fd8ea" stroke-width="1.5">
-        <circle data-id="apps/cli/src/doctor.ts" data-kind="modified" cx="53.03" cy="237.93" r="13.03" stroke="none"/>
+        <circle data-id="apps/cli/src/doctor.ts" data-kind="modified" data-improved="dent threshold" cx="53.03" cy="237.93" r="13.03" fill="#8be0b4" stroke="none"/>
         <circle data-id="libs/core/src/pm/index.ts" data-kind="modified" cx="212.55" cy="412.96" r="7.45" stroke="none"/>
-        <circle data-id="libs/core/src/pm/legacy.ts" data-kind="deleted" cx="212.55" cy="518.39" r="8.16" fill="none"/>
+        <circle data-id="libs/core/src/pm/legacy.ts" data-kind="deleted" data-improved="clone-family dent threshold" cx="212.55" cy="518.39" r="8.16" fill="none" stroke="#8be0b4"/>
         <circle data-id="libs/core/src/pm/tools.ts" data-kind="added" cx="199.78" cy="543.56" r="10.07" stroke="none"/>
       </g>
       <g id="history">
@@ -164,17 +164,17 @@
         <rect x="10" y="31" width="90.12" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
         <text x="16" y="44.15" font-size="9" fill="#e6edf3"><tspan>Standing </tspan><tspan font-weight="bold">1</tspan><tspan> red</tspan></text>
       </g>
-      <g data-block="health" data-muted="true" data-reason="head-only">
-        <rect x="103.12" y="31" width="67.8" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
-        <text x="109.12" y="44.15" font-size="9" fill="#6b7480"><tspan>Health Δ </tspan><tspan font-weight="bold">—</tspan></text>
+      <g data-block="health">
+        <rect x="103.12" y="31" width="84.54" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="109.12" y="44.15" font-size="9" fill="#e6edf3"><tspan>Health Δ </tspan><tspan font-weight="bold">+1.9</tspan></text>
       </g>
       <g data-block="notices">
-        <rect x="173.92" y="31" width="84.54" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="179.92" y="44.15" font-size="9" fill="#e6edf3"><tspan>Notices </tspan><tspan font-weight="bold">1·2·3</tspan></text>
+        <rect x="190.66" y="31" width="84.54" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="196.66" y="44.15" font-size="9" fill="#e6edf3"><tspan>Notices </tspan><tspan font-weight="bold">1·2·3</tspan></text>
       </g>
       <g data-block="other">
-        <rect x="261.46" y="31" width="51.06" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="267.46" y="44.15" font-size="9" fill="#e6edf3"><tspan>Other </tspan><tspan font-weight="bold">1</tspan></text>
+        <rect x="278.2" y="31" width="51.06" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="284.2" y="44.15" font-size="9" fill="#e6edf3"><tspan>Other </tspan><tspan font-weight="bold">1</tspan></text>
       </g>
     </g>
     <g id="rules" stroke="#2b333d" stroke-width="1">

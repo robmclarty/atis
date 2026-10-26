@@ -66,6 +66,7 @@ import {
   SECONDARY_RING_WIDTH,
   STITCH_LENGTH,
   VFR_HUE,
+  healthDeltaOf,
   noticeAnchors,
   shoreRail,
   weatherOf,
@@ -148,9 +149,9 @@ const ADDED = '+';
 /**
  * One grade block: a label, a bold value, and a tail after it. A muted
  * block's value is the dash, and `muted` says why: `absent` when the map
- * never carried the input, `stale` when its slot's file predated the run
- * (D41), `empty` when there was nothing to measure, `head-only` for the
- * delta this build cannot take (D23).
+ * never carried the input, a Health Δ with no base side among them (D98),
+ * `stale` when its slot's file predated the run (D41), and `empty` when
+ * there was nothing to measure.
  */
 type Block = {
   readonly id: string;
@@ -279,6 +280,12 @@ function mutantBlock(map: MapJson): Block {
   return block('mutants', 'Mutants', String(survived), untested === 0 ? ' survived' : ` survived, ${String(untested)} untested`);
 }
 
+/** `Health Δ +1.9`: the change's net movement in fallow's maintainability index, signed, and muted where the map measured no base side (D98, C2). */
+function healthBlock(map: MapJson): Block {
+  const delta = healthDeltaOf(map);
+  return delta === undefined ? muted('health', 'Health Δ', 'absent') : block('health', 'Health Δ', delta);
+}
+
 /** The tally of each tier among the notices the list draws (C7). */
 function tierCounts(notices: readonly Notice[]): Readonly<Record<NoticeTier, number>> {
   const counts: Record<NoticeTier, number> = { primary: 0, secondary: 0, tertiary: 0 };
@@ -301,7 +308,7 @@ function blocksOf(map: MapJson, notices: readonly Notice[]): readonly Block[] {
     block('reach', 'Reach', String(cells), ' cells'),
     block('size', 'Size', `+${String(size.added)} ${MINUS}${String(size.deleted)}`, `, ${String(size.files)} files`),
     ...gateBlocks(map),
-    muted('health', 'Health Δ', 'head-only'),
+    healthBlock(map),
     block('notices', 'Notices', [tiers.primary, tiers.secondary, tiers.tertiary].map(String).join(DOT)),
     ...(other === undefined || other.files.length === 0 ? [] : [block('other', 'Other', String(other.files.length))]),
   ];

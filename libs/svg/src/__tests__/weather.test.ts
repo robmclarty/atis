@@ -12,6 +12,7 @@ import {
   GHOST_PAD,
   GHOST_STROKE,
   IFR_HUE,
+  IMPROVED_HUE,
   INTEGRITY_CLOSED_OPACITY,
   INTEGRITY_CLOSED_WIDTH,
   INTEGRITY_GAP_WIDTH,
@@ -21,6 +22,7 @@ import {
   MUTANT_NOTCH_WIDTH,
   RENAME_DASH,
   RENAME_LABEL_SIZE,
+  RENAME_LEADER_WIDTH,
   SECONDARY_RING_WIDTH,
   STANDING_STORM_FILL,
   STANDING_STORM_SCALE,
@@ -178,19 +180,22 @@ test('changed organelles are stained by kind, a changed shore file is the band\'
   const svg = renderSvg(demo());
   const changed = drawn(svg, 'changed');
   expect(changed).toContain(`fill="${CHANGE_HUE}" stroke="${CHANGE_HUE}"`);
-  const stains = [...changed.matchAll(/<circle data-id="([^"]+)" data-kind="(\w+)" cx="[\d.]+" cy="[\d.]+" r="([\d.]+)"([^/]*)\/>/g)].map(
-    ([, id, kind, r, rest]) => ({ id, kind, r: Number(r), rest: rest ?? '' }),
-  );
-  expect(stains.map((stain) => [stain.id, stain.kind])).toEqual([
-    ['apps/cli/src/doctor.ts', 'modified'],
-    ['libs/core/src/pm/index.ts', 'modified'],
-    ['libs/core/src/pm/legacy.ts', 'deleted'],
-    ['libs/core/src/pm/tools.ts', 'added'],
+  const stains = [
+    ...changed.matchAll(/<circle data-id="([^"]+)" data-kind="(\w+)"(?: data-improved="([^"]+)")? cx="[\d.]+" cy="[\d.]+" r="([\d.]+)"([^/]*)\/>/g),
+  ].map(([, id, kind, improved, r, rest]) => ({ id, kind, improved, r: Number(r), rest: rest ?? '' }));
+  expect(stains.map((stain) => [stain.id, stain.kind, stain.improved])).toEqual([
+    // The doctor eased a function, and the deleted legacy file took its threshold and its clone with it (D98).
+    ['apps/cli/src/doctor.ts', 'modified', 'dent threshold'],
+    ['libs/core/src/pm/index.ts', 'modified', undefined],
+    ['libs/core/src/pm/legacy.ts', 'deleted', 'clone-family dent threshold'],
+    ['libs/core/src/pm/tools.ts', 'added', undefined],
   ]);
   for (const stain of stains) {
-    // Added and modified are the hue through, with no rim of their own; deleted is the outline alone, the body gone.
-    if (stain.kind === 'deleted') expect(stain.rest).toBe(' fill="none"');
-    else expect(stain.rest).toBe(' stroke="none"');
+    // Added and modified are the hue through, with no rim of their own; deleted is the outline alone, the body gone;
+    // an improved file wears the calm-positive hue in place of the change hue, its kind as ever.
+    const hue = stain.improved === undefined ? '' : IMPROVED_HUE;
+    if (stain.kind === 'deleted') expect(stain.rest).toBe(hue === '' ? ' fill="none"' : ` fill="none" stroke="${hue}"`);
+    else expect(stain.rest).toBe(hue === '' ? ' stroke="none"' : ` fill="${hue}" stroke="none"`);
   }
   // A changed shore file is named on its group's block in the band, never on the field (D153).
   const world = drawn(svg, 'world');
@@ -210,6 +215,40 @@ test('a renamed file is a dashed outline at its one position, labelled with the 
   expect(label?.[3]).toBe('src/old.ts');
   expect(Number(label?.[1])).toBeGreaterThan(AT_A.x + AT_A.r);
   expect(Math.abs(Number(label?.[2]) - AT_A.y)).toBeLessThan(RENAME_LABEL_SIZE);
+});
+
+test('a changed file the change made healthier wears the calm-positive hue, one state, its kind still told; an untouched one it names wears nothing (D98)', () => {
+  const eased = { kind: 'threshold' as const, files: [A, B], rule: 'cyclomatic', function: 'area' };
+  const changed = (kind: ChangedFile['kind']): string =>
+    drawn(renderSvg(small({ weather: { changed: [{ ...MODIFIED_A, kind }], improvements: [eased] } })), 'changed');
+
+  expect(changed('modified')).toContain(`<circle data-id="${A}" data-kind="modified" data-improved="threshold" cx="70" cy="105" r="10" fill="${IMPROVED_HUE}" stroke="none"/>`);
+  expect(changed('deleted')).toContain(`<circle data-id="${A}" data-kind="deleted" data-improved="threshold" cx="70" cy="105" r="10" fill="none" stroke="${IMPROVED_HUE}"/>`);
+  // `b.ts` is named but untouched: the change's state is the changed file's alone.
+  expect(changed('modified')).not.toContain(`data-id="${B}"`);
+  // Measured, and nothing got better: the change hue as ever.
+  expect(drawn(renderSvg(small({ weather: { changed: [MODIFIED_A], improvements: [] } })), 'changed')).not.toContain('data-improved');
+});
+
+test('a renamed file draws a dashed leader from where its base put it to the rim of where it is (D40, D97)', () => {
+  const renamed: ChangedFile = { path: A, kind: 'renamed', from: 'src/old.ts', cell: CELL_A, is_barrel: false, added: 0, deleted: 0, hunks: [] };
+  const relaxed = (from: { readonly x: number; readonly y: number; readonly r: number }, weather: Partial<Weather> = {}): string => {
+    const map = small({ weather: { changed: [renamed], ...weather } });
+    const layout = map.terrain.layout;
+    return drawn(renderSvg({ ...map, terrain: { ...map.terrain, ...(layout === undefined ? {} : { layout: { ...layout, renamed_from: { [A]: from } } }) } }), 'changed');
+  };
+
+  // From (30, 105) to the rim of `a.ts`, 10 left of its centre at (70, 105), under its outline.
+  const leader = `<line data-id="${A}" data-leader="renamed" x1="30" y1="105" x2="60" y2="105" fill="none" stroke-width="${String(RENAME_LEADER_WIDTH)}" stroke-dasharray="${RENAME_DASH}"/>`;
+  const drawnLeader = relaxed({ x: 30, y: 105, r: 10 });
+  expect(drawnLeader).toContain(leader);
+  expect(drawnLeader.indexOf('data-leader')).toBeLessThan(drawnLeader.indexOf(`data-kind="renamed"`));
+  // Within its own body the file did not move: no leader; and with no layout to relax from, none either (C2).
+  expect(relaxed({ x: 75, y: 108, r: 10 })).not.toContain('data-leader');
+  expect(drawn(renderSvg(small({ weather: { changed: [renamed] } })), 'changed')).not.toContain('data-leader');
+  // A renamed file the change made healthier draws its leader in the calm-positive hue too.
+  const eased = relaxed({ x: 30, y: 105, r: 10 }, { improvements: [{ kind: 'dent', files: [A], rule: 'cognitive' }] });
+  expect(eased).toContain(`x2="60" y2="105" fill="none" stroke="${IMPROVED_HUE}"`);
 });
 
 test('reach glows through a blur, fills each reached cell at an opacity strictly decreasing by hops, and lights each barrel it crossed', () => {

@@ -8,7 +8,7 @@ import { expect, test } from 'vitest';
 
 import { sampleGrid } from '../heightfield.js';
 import { MUTANT_NOTCH_SPACING, REACH_DECAY, STITCH_SPACING, STORM_LIFT, STORM_ROW } from '../tokens.js';
-import { reachField, reachLuminance, stitchLook, weatherOf } from '../weather.js';
+import { healthDeltaOf, reachField, reachLuminance, stitchLook, weatherOf } from '../weather.js';
 import type { CellWeather, FileWeather, SceneWeather } from '../weather.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -33,15 +33,54 @@ const CORE = 'package:libs/core';
 const UTIL = 'directory:libs/core/src/util';
 
 test('each placed changed file carries its change kind, and a renamed one its old path (D40)', () => {
-  expect(fileOf(WEATHER, 'libs/core/src/pm/tools.ts')?.change).toEqual({ kind: 'added' });
-  expect(fileOf(WEATHER, 'libs/core/src/pm/legacy.ts')?.change).toEqual({ kind: 'deleted' });
-  expect(fileOf(WEATHER, 'apps/cli/src/doctor.ts')?.change).toEqual({ kind: 'modified' });
+  const plain = weatherOf(withWeather({ improvements: [] }));
+  expect(fileOf(plain, 'libs/core/src/pm/tools.ts')?.change).toEqual({ kind: 'added' });
+  expect(fileOf(plain, 'libs/core/src/pm/legacy.ts')?.change).toEqual({ kind: 'deleted' });
+  expect(fileOf(plain, 'apps/cli/src/doctor.ts')?.change).toEqual({ kind: 'modified' });
   const renamed = withWeather({
+    improvements: [],
     changed: DEMO.weather.changed.map((file) =>
       file.path === 'apps/cli/src/doctor.ts' ? { ...file, kind: 'renamed' as const, from: 'apps/cli/src/check.ts' } : file,
     ),
   });
   expect(fileOf(weatherOf(renamed), 'apps/cli/src/doctor.ts')?.change).toEqual({ kind: 'renamed', from: 'apps/cli/src/check.ts' });
+});
+
+test('a renamed file carries the place its base put it, where the layout relaxed from one, for its leader (D40, D97)', () => {
+  const changed = DEMO.weather.changed.map((file) =>
+    file.path === 'apps/cli/src/doctor.ts' ? { ...file, kind: 'renamed' as const, from: 'apps/cli/src/check.ts' } : file,
+  );
+  const layout = DEMO.terrain.layout ?? { width: 0, height: 0, shore: { y0: 0, y1: 0 }, bands: [], positions: {} };
+  const relaxed = { layout: { ...layout, renamed_from: { 'apps/cli/src/doctor.ts': { x: 40, y: 50, r: 6 } } } };
+  expect(fileOf(weatherOf(withWeather({ changed, improvements: [] }, relaxed)), 'apps/cli/src/doctor.ts')?.change).toEqual({
+    kind: 'renamed',
+    from: 'apps/cli/src/check.ts',
+    fromAt: { x: 40, y: 50 },
+  });
+  // Only a rename's place is read: a modified file the layout names there draws no leader.
+  expect(fileOf(weatherOf(withWeather({ improvements: [] }, relaxed)), 'apps/cli/src/doctor.ts')?.change).toEqual({ kind: 'modified' });
+});
+
+test('a changed file the change made healthier carries what got better, its one state; an untouched file it names carries none (D98, C2)', () => {
+  // The demo's doctor eased a cognitive function and lost that dent; the deleted legacy file left its threshold, its dent and its clone.
+  expect(fileOf(WEATHER, 'apps/cli/src/doctor.ts')?.change?.improvements?.map((improvement) => improvement.kind)).toEqual(['dent', 'threshold']);
+  expect(fileOf(WEATHER, 'libs/core/src/pm/legacy.ts')?.change?.improvements?.map((improvement) => improvement.kind)).toEqual(['clone-family', 'dent', 'threshold']);
+  // `slots.ts` was the dissolved family's other copy, and the change never touched it: no state of its own.
+  expect(fileOf(WEATHER, 'libs/core/src/pm/slots.ts')?.change).toBeUndefined();
+  expect(fileOf(WEATHER, 'libs/core/src/pm/tools.ts')?.change).toEqual({ kind: 'added' });
+  // With no base side, nothing improved is said at all.
+  const { improvements: _measured, ...unmeasured } = DEMO.weather;
+  expect(weatherOf({ ...DEMO, weather: unmeasured }).files.some((file) => file.change?.improvements !== undefined)).toBe(false);
+});
+
+test('the Health Δ block reads the change’s movement with its sign, and nothing where no base side was measured (D98, C2)', () => {
+  const delta = (maintainability: number): string | undefined => healthDeltaOf(withWeather({ health_delta: { maintainability, files: [] } }));
+  expect(healthDeltaOf(DEMO)).toBe('+1.9');
+  expect(delta(-8.4)).toBe('−8.4');
+  expect(delta(3)).toBe('+3.0');
+  expect(delta(0)).toBe('0.0');
+  const { health_delta: _measured, ...unmeasured } = DEMO.weather;
+  expect(healthDeltaOf({ ...DEMO, weather: unmeasured })).toBeUndefined();
 });
 
 test('a file the layout never placed carries no weather, a changed test file included, since it is a stitch (D4, C2)', () => {

@@ -242,7 +242,8 @@ test('every HUD number is read from the map', () => {
   expect(read('reach')).toBe('Reach 4 cells');
   // The size is the terrain's four files; the shore's README, test, manifest and stray are named apart (D166).
   expect(read('size')).toBe('Size +210 −94, 4 files');
-  expect(read('health')).toBe(`Health Δ ${MUTED_DASH}`);
+  // The maintainability the demo's fallow measured the change move, with its sign (D98).
+  expect(read('health')).toBe('Health Δ +1.9');
   expect(read('notices')).toBe('Notices 1·2·3');
   expect(read('other')).toBe('Other 1');
   // The value is the big numeral: bold, after a plain label.
@@ -376,12 +377,14 @@ test('a block whose input is absent or stale is muted with a dash, and the categ
   const muted = (chrome: string, id: string): string | undefined =>
     /data-muted="true" data-reason="([\w-]+)"/.exec(blockOf(chrome, id) ?? '')?.[1];
   const live = chromeOf(renderSvg(demo()));
-  for (const id of ['category', 'patch-cov', 'mutants', 'reach', 'size', 'gate', 'standing', 'notices', 'other']) {
+  for (const id of ['category', 'patch-cov', 'mutants', 'reach', 'size', 'gate', 'standing', 'health', 'notices', 'other']) {
     expect(muted(live, id), `${id} is live`).toBeUndefined();
   }
-  // The delta needs a base-side run this build never makes (D23).
-  expect(muted(live, 'health')).toBe('head-only');
-  expect(textOf(blockOf(live, 'health') ?? '')).toContain(MUTED_DASH);
+  // With no base side measured, the delta is a dash, never a 0 (D98, C2).
+  const { health_delta: _measured, ...unmeasured } = demo().weather;
+  const headOnly = chromeOf(renderSvg({ ...demo(), weather: unmeasured }));
+  expect(muted(headOnly, 'health')).toBe('absent');
+  expect(textOf(blockOf(headOnly, 'health') ?? '')).toContain(MUTED_DASH);
 
   // No `.check/` was trusted: the verdict is NOINST, every evidence block is a dash, and there is no standing state to count (C2, D41).
   const none = chromeOf(renderSvg(variant('NOINST')));
@@ -480,7 +483,8 @@ test('a row writes an added target with a leading +, a modified one without, and
   expect(svg).not.toContain('data-target="+');
   const changed = drawn(svg, 'changed');
   expect(changed.trimStart().startsWith(`<g id="changed" fill="${CHANGE_HUE}"`)).toBe(true);
-  const stains = [...changed.matchAll(/<circle data-id="[^"]+" data-kind="(added|modified)"([^>]*)\/>/g)];
+  // The one hue, that is, but where the change made a file healthier, which wears the calm-positive state instead (D98).
+  const stains = [...changed.matchAll(/<circle data-id="[^"]+" data-kind="(added|modified)"([^>]*)\/>/g)].filter(([, , attrs = '']) => !attrs.includes('data-improved'));
   expect(stains.map(([, kind]) => kind)).toContain('added');
   for (const [, , attrs] of stains) expect(attrs).not.toContain('fill=');
 

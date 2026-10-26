@@ -94,6 +94,17 @@ export const CHANGE_OUTLINE_WIDTH = 1.5;
 export const RENAME_DASH = '3 2';
 export const RENAME_LABEL_SIZE = 8;
 export const RENAME_LABEL_GAP = 4;
+/** Its leader: a dashed line this wide, in the change hue, from where the base put it to where it is (D40, D97). */
+export const RENAME_LEADER_WIDTH = 1;
+
+/**
+ * Improvement (§5.2, §5.3, D98): health that got better is a calm-positive
+ * state of its own, since "nothing to see" and "got better" are different
+ * messages. A changed file a threshold, a dent, a clone family or a cycle
+ * left wears it in place of the change hue, stained or outlined by its kind
+ * as ever, in a pale mint no category block wears.
+ */
+export const IMPROVED_HUE = '#8be0b4';
 
 /** The category hues the weather marks with (§5.3, D6): IFR for a red slot and a torn stitch, LIFR for a cycle or a boundary crossed. */
 export const IFR_HUE = '#f0546a';

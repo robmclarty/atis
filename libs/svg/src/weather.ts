@@ -6,7 +6,9 @@
  * channel keeps its one meaning (P3, C11). Hue is state: the change hue
  * stains what this change touched, a deleted file is that hue as an outline
  * with no body, a renamed one a dashed outline at its one position with its
- * old path beside it (D40); IFR red is a failed slot and a torn stitch; LIFR
+ * old path beside it and a dashed leader from where the base put it (D40,
+ * D97); a changed file the change made healthier wears the calm-positive
+ * mint in place of the change hue (D98); IFR red is a failed slot and a torn stitch; LIFR
  * magenta is a cycle or a boundary crossed. Luminance is reach and evidence:
  * a warm glow fills the changed cell and, one membrane on, the next cell
  * dimmer (D5), each barrel the reach crosses lit at the crossing; a changed
@@ -43,6 +45,7 @@ import {
   GHOST_PAD,
   GHOST_STROKE,
   IFR_HUE,
+  IMPROVED_HUE,
   INTEGRITY_CLOSED_OPACITY,
   INTEGRITY_CLOSED_WIDTH,
   INTEGRITY_GAP_WIDTH,
@@ -55,6 +58,7 @@ import {
   RENAME_DASH,
   RENAME_LABEL_GAP,
   RENAME_LABEL_SIZE,
+  RENAME_LEADER_WIDTH,
   STANDING_STORM_FILL,
   STANDING_STORM_SCALE,
   STITCH_LENGTH,
@@ -145,19 +149,55 @@ function placedFiles(weather: SceneWeather, layout: Layout): readonly { readonly
 }
 
 /**
+ * A renamed file's leader (D40, D97): a dashed line in its state's hue from
+ * the place the base's layout gave it to the rim of where it is now, which
+ * the head's layout, relaxed from the base's, moved it to. None where the two
+ * places lie within the file's own body.
+ */
+function drawLeader(path: string, from: { readonly x: number; readonly y: number }, at: Position, hue: string | undefined): Markup | undefined {
+  if (Math.hypot(from.x - at.x, from.y - at.y) <= at.r) return undefined;
+  const [x2, y2] = toward(at, from, at.r);
+  return el('line', {
+    'data-id': path,
+    'data-leader': 'renamed',
+    x1: from.x,
+    y1: from.y,
+    x2,
+    y2,
+    fill: 'none',
+    stroke: hue,
+    'stroke-width': RENAME_LEADER_WIDTH,
+    'stroke-dasharray': RENAME_DASH,
+  });
+}
+
+/** What got better on a file, as `data-improved` names it: each kind once, in order (D98). */
+function improvedKinds(change: ChangeState): string | undefined {
+  const kinds = [...new Set((change.improvements ?? []).map((improvement) => improvement.kind))].toSorted();
+  return kinds.length === 0 ? undefined : kinds.join(' ');
+}
+
+/**
  * One changed file's stain, by kind: added and modified are the change hue
  * through, with no rim of their own, since the fill is state and the rim is
  * evidence's to draw (C11); deleted is the outline alone, the body gone;
  * renamed is a dashed outline at its one position with the old path beside
- * it (D40). The stain is a circle at the organelle's radius, so a dented
- * file keeps its teeth in the base tissue's grey: shape stays conformance.
+ * it and its leader from where it was (D40, D97). A file the change made
+ * healthier wears the calm-positive hue in place of the change hue, one
+ * state per file (D98). The stain is a circle at the organelle's radius, so
+ * a dented file keeps its teeth in the base tissue's grey: shape stays
+ * conformance.
  */
 function drawStain(path: string, change: ChangeState, at: Position): readonly Markup[] {
-  const mark = { 'data-id': path, 'data-kind': change.kind, cx: at.x, cy: at.y, r: at.r };
-  if (change.kind === 'added' || change.kind === 'modified') return [el('circle', { ...mark, stroke: 'none' })];
-  if (change.kind === 'deleted') return [el('circle', { ...mark, fill: 'none' })];
-  const outline = el('circle', { ...mark, fill: 'none', 'stroke-dasharray': RENAME_DASH });
-  if (change.from === undefined) return [outline];
+  const improved = improvedKinds(change);
+  const hue = improved === undefined ? undefined : IMPROVED_HUE;
+  const mark = { 'data-id': path, 'data-kind': change.kind, 'data-improved': improved, cx: at.x, cy: at.y, r: at.r };
+  if (change.kind === 'added' || change.kind === 'modified') return [el('circle', { ...mark, fill: hue, stroke: 'none' })];
+  if (change.kind === 'deleted') return [el('circle', { ...mark, fill: 'none', stroke: hue })];
+  const outline = el('circle', { ...mark, fill: 'none', stroke: hue, 'stroke-dasharray': RENAME_DASH });
+  const leader = change.fromAt === undefined ? undefined : drawLeader(path, change.fromAt, at, hue);
+  const marks = [...(leader === undefined ? [] : [leader]), outline];
+  if (change.from === undefined) return marks;
   const label = el(
     'text',
     {
@@ -165,11 +205,12 @@ function drawStain(path: string, change: ChangeState, at: Position): readonly Ma
       x: at.x + at.r + RENAME_LABEL_GAP,
       y: at.y + RENAME_LABEL_SIZE * LABEL_BASELINE,
       'font-size': RENAME_LABEL_SIZE,
+      fill: hue,
       stroke: 'none',
     },
     [change.from],
   );
-  return [outline, label];
+  return [...marks, label];
 }
 
 /** The changed set, stained by kind (§5.2): a shore file at its mark, a test file nowhere, since it is a stitch (D4). */

@@ -1,0 +1,568 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 734" width="780" height="734" font-family="ui-monospace, Menlo, Consolas, monospace">
+  <rect id="ground" x="0" y="0" width="780" height="734" fill="#1a1f27"/>
+  <g id="world" transform="translate(0 -15)">
+    <rect id="field" x="0" y="74" width="480" height="586" fill="#0a0c0f"/>
+    <g id="terraces">
+      <g data-band="0">
+        <rect x="0" y="84" width="480" height="96" fill="#10141a"/>
+        <line x1="0" y1="84" x2="480" y2="84" stroke="#222831" stroke-width="1"/>
+      </g>
+      <g data-band="1">
+        <rect x="0" y="180" width="480" height="96" fill="#10141a"/>
+        <line x1="0" y1="180" x2="480" y2="180" stroke="#222831" stroke-width="1"/>
+      </g>
+      <g data-band="2">
+        <rect x="0" y="276" width="480" height="96" fill="#10141a"/>
+        <line x1="0" y1="276" x2="480" y2="276" stroke="#222831" stroke-width="1"/>
+      </g>
+      <g data-band="3">
+        <rect x="0" y="372" width="480" height="96" fill="#10141a"/>
+        <line x1="0" y1="372" x2="480" y2="372" stroke="#222831" stroke-width="1"/>
+      </g>
+      <g data-band="4">
+        <rect x="0" y="468" width="480" height="96" fill="#10141a"/>
+        <line x1="0" y1="468" x2="480" y2="468" stroke="#222831" stroke-width="1"/>
+      </g>
+      <g data-band="5">
+        <rect x="0" y="564" width="480" height="96" fill="#10141a"/>
+        <line x1="0" y1="564" x2="480" y2="564" stroke="#222831" stroke-width="1"/>
+      </g>
+    </g>
+    <g id="membranes" fill="#7a838e" fill-opacity="0.08" stroke="#4b535e" stroke-linejoin="round">
+      <path data-id="package:apps/cli" data-kind="package" stroke-width="2" d="M28.67 137.33L29.51 139.16L30.49 140.84L31.33 142.67L31.83 144.84L32.17 147.16L32.67 149.33L33.51 151.21L34.49 153.23L35.33 156L35.83 159.85L36.17 164.15L36.67 168L37.51 170.81L38.49 173.19L39.33 176L39.78 179.85L39.78 184.15L39.33 188L38.49 190.81L37.51 193.19L36.67 196L36.17 199.85L35.83 204.15L35.33 208L34.44 210.79L33.11 212.99L31.33 215.33L29.19 218.47L27.04 222.64L25.33 228L24.49 234.52L24.84 241.48L26.67 248L30.17 253.33L35.16 257.33L41.33 260L48.27 261.38L55.06 261.73L60.67 261.33L64.35 260.47L66.54 259.31L68 258L69.33 256.62L70.67 254.94L72 252.67L73.33 249.65L74.67 246.35L76 243.33L77.31 241.04L78.47 239.19L79.33 237.33L79.78 235.16L79.78 232.84L79.33 230.67L78.49 228.84L77.51 227.16L76.67 225.33L76.12 223.11L75.43 220.44L74 217.33L71.48 213.83L68.52 210.17L66 206.67L64.57 203.56L63.88 200.89L63.33 198.67L62.49 196.54L61.51 192.79L60.67 185.33L60.22 173.09L60.22 158.91L60.67 146.67L61.51 139.21L62.49 135.46L63.33 133.33L63.83 131.16L64.17 128.84L64.67 126.67L65.51 124.81L66.49 122.96L67.33 120.67L67.78 117.65L67.78 114.35L67.33 111.33L66.47 109.06L65.31 107.38L64 106L62.59 104.67L60.74 103.33L58 102L54.1 100.69L49.46 99.53L44.67 98.67L40.25 98.27L36.42 98.62L33.33 100L31.06 102.54L29.38 105.68L28 108.67L26.69 111.01L25.53 113.21L24.67 116L24.22 119.83L24.22 123.95L24.67 127.33L25.51 129.26L26.49 130.3L27.33 131.33L27.83 133.04L28.17 135.19L28.67 137.33Z"/>
+      <path data-id="package:libs/core" data-kind="package" data-dents="crap cycle cyclomatic" stroke-width="2.37" d="M216.01 266.47L210.21 266.64L205 268L200.98 270.64L198.14 274.47L196.33 279.33L195.42 284.96L195.25 290.59L195.67 295.33L196.51 298.59L197.49 300.96L198.33 303.33L198.83 306.35L199.17 309.65L199.67 312.67L200.51 315.23L201.49 318.99L202.33 326L202.78 337.41L202.78 350.59L202.33 362L201.49 369.01L200.51 372.77L199.67 375.33L199.17 378.35L198.83 381.65L198.33 384.67L197.47 387.01L196.31 389.21L196.27 389.3L186.49 392.13L192.18 400.57L191 404L189.69 406.77L188.53 408.79L187.67 410.67L187.22 412.84L187.22 415.16L187.67 417.33L188.53 419.21L189.69 421.23L191 424L192.31 427.98L193.47 433.14L194.33 439.33L194.75 446.3L194.58 453.26L193.67 459.33L191.96 463.93L189.81 467.63L187.67 471.33L185.86 475.73L184.36 480.72L183 486L181.67 491.33L180.33 496.67L179 502L177.67 507.33L176.33 512.67L175 518L173.69 523.38L172.53 529.06L171.67 535.33L171.17 542.27L170.83 549.06L170.33 554.67L169.47 558.4L168.31 560.94L167 563.33L165.67 566.35L164.33 569.65L163 572.67L161.67 575.01L160.33 577.21L159 580L157.67 583.93L156.33 588.74L155 594L153.69 599.38L152.53 605.06L151.67 611.33L151.22 618.25L151.22 624.86L151.67 630L152.51 632.89L153.49 634.44L154.33 636L154.83 638.54L155.17 641.68L155.67 644.67L156.53 646.94L157.69 648.62L159 650L160.41 651.33L162.26 652.67L165 654L168.9 655.31L172.32 656.16L177.24 665.25L184.18 657.61L186.78 657.38L190.33 656L193.42 653.43L195.91 650.12L197.67 646.67L198.63 643.56L199.15 640.89L199.67 638.67L200.51 636.54L201.49 632.79L202.33 625.33L202.83 613.09L203.17 598.91L203.67 586.67L204.65 579.09L206.68 574.47L210.33 570L215.86 563.56L222.14 555.78L227.67 548L231.35 541.33L233.54 536L235 532L236.31 528.99L237.47 525.23L238.33 518.67L238.78 508.1L238.78 495.9L238.33 485.33L237.47 478.79L236.31 475.21L235 472.67L233.67 469.65L232.33 466.35L231 463.33L229.69 460.89L228.53 458L227.67 453.33L227.22 446.12L227.22 437.88L227.67 430.67L228.51 425.93L229.49 422.52L230.33 418.67L230.78 413.14L230.78 406.86L230.43 402.59L236.9 394.72L227.4 391.03L227.17 389.65L226.83 386.35L226.33 383.33L225.49 380.77L224.51 377.01L223.67 370L223.22 358.59L223.22 345.41L223.67 334L224.51 326.99L225.49 323.23L226.33 320.67L226.83 317.65L227.17 314.35L227.67 311.33L228.51 309.04L229.49 307.19L230.33 305.33L230.83 303.16L231.17 300.84L231.67 298.67L232.51 296.77L233.49 294.57L234.33 291.33L234.73 286.62L234.38 281.16L233 276L230.36 271.98L226.53 269.14L221.67 267.33Z"/>
+      <path data-id="directory:libs/core/src/util" data-kind="directory" data-dents="cycle" stroke-width="2" d="M170.23 574.69L165 576L160.98 578.59L158.14 582.07L156.33 586L155.37 589.95L154.85 593.6L154.33 596.67L153.49 599.11L152.51 602L151.67 606.67L151.22 613.85L151.22 621.93L151.67 628.67L152.51 632.49L153.49 634.4L154.33 636L154.83 638.54L155.17 641.68L155.67 644.67L156.53 646.94L157.69 648.62L159 650L160.41 651.33L162.26 652.67L165 654L168.9 655.31L173.54 656.47L177.28 657.14L183.68 665.68L189.06 656.49L190.33 656L193.42 653.43L195.91 650.12L197.67 646.67L198.63 643.56L199.15 640.89L199.67 638.67L200.51 636.64L201.49 633.58L202.33 628L202.78 619.11L202.78 608.89L202.33 600L201.4 594.37L199.72 590.96L197 588L193.05 584.17L188.06 580.05L182.33 576.67L176.21 574.86Z"/>
+      <path data-id="folder:libs/core/src/pm" data-kind="folder" data-dents="crap cyclomatic" stroke-width="2.37" d="M205.21 390.67L200 392L195.98 394.67L193.14 398.67L191.33 404L190.42 410.47L190.25 417.09L190.67 422.67L191.51 426.52L192.49 429.93L193.33 434.67L193.78 441.88L193.78 450.12L193.33 457.33L192.47 462L191.31 464.89L190 467.33L188.67 470.35L187.33 473.65L186 476.67L184.98 478.48L174.87 481.78L181.79 489.88L181.33 492.67L180.49 494.99L179.51 497.01L178.67 499.33L178.17 502.35L177.83 505.65L177.33 508.67L176.49 510.99L175.51 513.01L174.67 515.33L174.17 518.35L173.83 521.65L173.33 524.67L172.49 526.99L171.51 529.01L170.67 531.33L170.22 534.32L170.22 537.46L170.67 540L171.51 541.46L172.49 542.32L173.33 543.33L173.88 545.06L174.57 547.38L176 550L178.62 552.64L182.27 555.14L186.67 557.33L191.53 559.11L196.69 560.44L202 561.33L207.31 561.7L212.47 561.19L217.33 559.33L221.75 555.9L225.58 551.43L228.67 546.67L230.94 542.25L232.62 538.42L234 535.33L235.31 532.74L236.47 528.81L237.33 521.33L237.78 509.09L237.78 494.91L237.33 482.67L236.9 479.06L243.29 470.47L232.88 468L231.19 465.48L229.04 460.96L227.33 454.67L226.42 446.52L226.25 437.93L226.67 430.67L227.53 425.98L228.69 422.91L230 420L231.28 416.15L232.27 411.85L232.67 408L232.22 405.21L230.89 403.01L228.67 400.67L225.56 397.68L221.56 394.54L216.67 392L211.01 390.67Z"/>
+      <path data-id="single:apps/cli/src/doctor.ts" data-kind="single" stroke-width="2" d="M40.67 259.67L45.51 261.89L50.49 263.22L55.33 263.67L59.78 263.22L63.78 261.89L67.33 259.67L70.44 256.58L73.11 252.75L75.33 248.33L77.09 243.49L78.25 238.51L78.67 233.67L78.2 229.2L76.69 225.02L74 221L70.05 217.07L65.06 213.59L59.33 211L53.23 209.62L47.43 209.27L42.67 209.67L39.43 210.56L37.23 211.89L35.33 213.67L33.16 215.91L30.84 218.75L28.67 222.33L26.89 226.7L25.56 231.52L24.67 236.33L24.22 240.73L24.22 244.38L24.67 247L25.58 248.48L27.09 249.52L29.33 251L32.42 253.54L36.25 256.68L40.67 259.67Z"/>
+      <path data-id="package:libs/core" data-family="family-1" d="M-3 -2H3M-3 2H3" fill="none" stroke="#7b848f" transform="translate(234.03 268.31)"/>
+      <path data-id="folder:libs/core/src/pm" data-family="family-1" d="M-3 -2H3M-3 2H3" fill="none" stroke="#7b848f" transform="translate(232.34 397)"/>
+    </g>
+    <g id="organelles" fill="#333a43" stroke="#5f6873" stroke-width="1">
+      <circle data-id="apps/cli/src/doctor.ts" cx="53.03" cy="237.93" r="13.03"/>
+      <circle data-id="apps/cli/src/index.ts" cx="47.66" cy="120.61" r="7.04"/>
+      <circle data-id="libs/core/src/index.ts" cx="217.22" cy="288.4" r="6.32"/>
+      <circle data-id="libs/core/src/pm/index.ts" cx="212.55" cy="412.96" r="7.45"/>
+      <circle data-id="libs/core/src/pm/legacy.ts" cx="212.55" cy="518.39" r="8.16"/>
+      <circle data-id="libs/core/src/pm/slots.ts" cx="212.55" cy="482.04" r="9.82"/>
+      <path data-id="libs/core/src/pm/slots.ts" data-family="family-1" d="M-3 -2H3M-3 2H3" fill="none" stroke="#7b848f" transform="translate(222.32 472.27)"/>
+      <path data-id="libs/core/src/pm/tools.ts" data-dents="crap cyclomatic" d="M210.63 543.56L210.41 544.61L210.14 545.62L209.83 546.61L209.48 547.58L209.04 548.51L208.54 549.42L208.01 550.31L207.41 551.19L206.73 552.03L205.94 552.78L205.03 553.38L204.02 553.79L202.94 553.98L201.85 553.95L200.78 553.74L199.78 553.41L198.85 553.04L197.97 552.67L197.12 552.32L196.29 551.99L195.47 551.63L194.64 551.25L193.79 550.86L192.92 550.42L192.04 549.92L191.19 549.3L190.43 548.56L189.82 547.69L189.37 546.72L189.11 545.68L189.03 544.62L189.08 543.56L189.23 542.52L189.45 541.51L189.73 540.51L190.08 539.54L190.52 538.61L191 537.69L191.51 536.78L192.08 535.86L192.73 534.98L193.51 534.18L194.42 533.53L195.45 533.1L196.55 532.92L197.67 532.98L198.76 533.23L199.78 533.6L200.72 534.03L201.6 534.43L202.44 534.79L203.27 535.13L204.09 535.49L204.93 535.85L205.81 536.21L206.74 536.6L207.69 537.07L208.6 537.67L209.42 538.41L210.07 539.3L210.51 540.31L210.73 541.38L210.75 542.48Z"/>
+      <path data-id="libs/core/src/pm/tools.ts" data-family="family-1" d="M-3 -2H3M-3 2H3" fill="none" stroke="#7b848f" transform="translate(209.73 533.61)"/>
+      <path data-id="libs/core/src/util/format.ts" data-dents="cycle" d="M188.39 637.89L188.28 639.05L188.01 640.18L187.61 641.26L187.08 642.28L186.44 643.24L185.69 644.11L184.85 644.9L183.9 645.57L182.87 646.11L181.77 646.48L180.63 646.68L179.47 646.7L178.33 646.53L177.25 646.18L176.24 645.69L175.31 645.09L174.48 644.39L173.72 643.64L173.04 642.83L172.41 641.97L171.83 641.05L171.33 640.07L170.92 639.02L170.63 637.89L170.5 636.71L170.56 635.5L170.83 634.31L171.33 633.19L172.03 632.18L172.9 631.32L173.91 630.65L175.01 630.16L176.14 629.85L177.27 629.69L178.39 629.66L179.47 629.72L180.53 629.87L181.56 630.09L182.58 630.38L183.58 630.77L184.56 631.26L185.48 631.88L186.33 632.63L187.07 633.5L187.66 634.5L188.08 635.58L188.33 636.72Z"/>
+      <path data-id="libs/core/src/util/text.ts" data-dents="cycle" d="M187.95 593.84L187.71 594.92L187.31 595.94L186.77 596.86L186.15 597.69L185.46 598.43L184.74 599.1L183.98 599.7L183.18 600.24L182.33 600.72L181.43 601.13L180.48 601.45L179.48 601.65L178.44 601.71L177.4 601.61L176.37 601.34L175.4 600.91L174.5 600.33L173.7 599.62L173.02 598.8L172.46 597.89L172.02 596.93L171.7 595.92L171.5 594.89L171.44 593.84L171.5 592.79L171.71 591.76L172.05 590.76L172.54 589.83L173.16 588.99L173.89 588.25L174.72 587.64L175.62 587.15L176.56 586.8L177.53 586.56L178.5 586.43L179.48 586.39L180.46 586.43L181.43 586.56L182.41 586.76L183.39 587.07L184.36 587.48L185.28 588.04L186.13 588.73L186.87 589.58L187.44 590.54L187.82 591.61L187.99 592.72Z"/>
+    </g>
+    <g id="weather">
+      <defs>
+        <pattern id="hatch" patternUnits="userSpaceOnUse" width="4" height="4">
+          <path d="M0 4L4 0" stroke="#cfd6de" stroke-width="1"/>
+        </pattern>
+        <pattern id="stipple" patternUnits="userSpaceOnUse" width="4" height="4">
+          <circle cx="2" cy="2" r="0.7" fill="#cfd6de"/>
+        </pattern>
+        <filter id="glow" x="-25%" y="-25%" width="150%" height="150%">
+          <feGaussianBlur stdDeviation="6"/>
+        </filter>
+        <marker id="arrow-boundary" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto" fill="#e35ce0">
+          <path d="M0 0L6 3L0 6Z"/>
+        </marker>
+        <marker id="arrow-cycle" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto" fill="#e35ce0">
+          <path d="M0 0L6 3L0 6Z"/>
+        </marker>
+        <marker id="arrow-new-cross-module" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto" fill="#5fd8ea">
+          <path d="M0 0L6 3L0 6Z"/>
+        </marker>
+      </defs>
+      <g id="standing-storms" fill="#58616b">
+        <path data-slot="dead" data-over="directory:libs/core/src/util" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(170.23 564.69) scale(0.6)"/>
+        <path data-slot="dead" data-over="package:libs/core" d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(216.01 256.47) scale(0.6)"/>
+      </g>
+      <g id="reach" fill="#f6e7c9" filter="url(#glow)">
+        <path data-id="package:apps/cli" data-hops="1" d="M28.67 137.33L29.51 139.16L30.49 140.84L31.33 142.67L31.83 144.84L32.17 147.16L32.67 149.33L33.51 151.21L34.49 153.23L35.33 156L35.83 159.85L36.17 164.15L36.67 168L37.51 170.81L38.49 173.19L39.33 176L39.78 179.85L39.78 184.15L39.33 188L38.49 190.81L37.51 193.19L36.67 196L36.17 199.85L35.83 204.15L35.33 208L34.44 210.79L33.11 212.99L31.33 215.33L29.19 218.47L27.04 222.64L25.33 228L24.49 234.52L24.84 241.48L26.67 248L30.17 253.33L35.16 257.33L41.33 260L48.27 261.38L55.06 261.73L60.67 261.33L64.35 260.47L66.54 259.31L68 258L69.33 256.62L70.67 254.94L72 252.67L73.33 249.65L74.67 246.35L76 243.33L77.31 241.04L78.47 239.19L79.33 237.33L79.78 235.16L79.78 232.84L79.33 230.67L78.49 228.84L77.51 227.16L76.67 225.33L76.12 223.11L75.43 220.44L74 217.33L71.48 213.83L68.52 210.17L66 206.67L64.57 203.56L63.88 200.89L63.33 198.67L62.49 196.54L61.51 192.79L60.67 185.33L60.22 173.09L60.22 158.91L60.67 146.67L61.51 139.21L62.49 135.46L63.33 133.33L63.83 131.16L64.17 128.84L64.67 126.67L65.51 124.81L66.49 122.96L67.33 120.67L67.78 117.65L67.78 114.35L67.33 111.33L66.47 109.06L65.31 107.38L64 106L62.59 104.67L60.74 103.33L58 102L54.1 100.69L49.46 99.53L44.67 98.67L40.25 98.27L36.42 98.62L33.33 100L31.06 102.54L29.38 105.68L28 108.67L26.69 111.01L25.53 113.21L24.67 116L24.22 119.83L24.22 123.95L24.67 127.33L25.51 129.26L26.49 130.3L27.33 131.33L27.83 133.04L28.17 135.19L28.67 137.33ZM40.67 259.67L45.51 261.89L50.49 263.22L55.33 263.67L59.78 263.22L63.78 261.89L67.33 259.67L70.44 256.58L73.11 252.75L75.33 248.33L77.09 243.49L78.25 238.51L78.67 233.67L78.2 229.2L76.69 225.02L74 221L70.05 217.07L65.06 213.59L59.33 211L53.23 209.62L47.43 209.27L42.67 209.67L39.43 210.56L37.23 211.89L35.33 213.67L33.16 215.91L30.84 218.75L28.67 222.33L26.89 226.7L25.56 231.52L24.67 236.33L24.22 240.73L24.22 244.38L24.67 247L25.58 248.48L27.09 249.52L29.33 251L32.42 253.54L36.25 256.68L40.67 259.67Z" fill-rule="evenodd" opacity="0.27"/>
+        <path data-id="package:libs/core" data-hops="1" d="M155.67 644.67L156.53 646.94L157.69 648.62L159 650L160.41 651.33L162.26 652.67L165 654L168.9 655.31L173.54 656.47L178.33 657.33L182.78 657.73L186.78 657.38L190.33 656L193.42 653.43L195.91 650.12L197.67 646.67L198.63 643.56L199.15 640.89L199.67 638.67L200.51 636.54L201.49 632.79L202.33 625.33L202.83 613.09L203.17 598.91L203.67 586.67L204.65 579.09L206.68 574.47L210.33 570L215.86 563.56L222.14 555.78L227.67 548L231.35 541.33L233.54 536L235 532L236.31 528.99L237.47 525.23L238.33 518.67L238.78 508.1L238.78 495.9L238.33 485.33L237.47 478.79L236.31 475.21L235 472.67L233.67 469.65L232.33 466.35L231 463.33L229.69 460.89L228.53 458L227.67 453.33L227.22 446.12L227.22 437.88L227.67 430.67L228.51 425.93L229.49 422.52L230.33 418.67L230.78 413.14L230.78 406.86L230.33 401.33L229.49 397.6L228.51 395.06L227.67 392.67L227.17 389.65L226.83 386.35L226.33 383.33L225.49 380.77L224.51 377.01L223.67 370L223.22 358.59L223.22 345.41L223.67 334L224.51 326.99L225.49 323.23L226.33 320.67L226.83 317.65L227.17 314.35L227.67 311.33L228.51 309.04L229.49 307.19L230.33 305.33L230.83 303.16L231.17 300.84L231.67 298.67L232.51 296.77L233.49 294.57L234.33 291.33L234.73 286.62L234.38 281.16L233 276L230.36 271.98L226.53 269.14L221.67 267.33L216.01 266.47L210.21 266.64L205 268L200.98 270.64L198.14 274.47L196.33 279.33L195.42 284.96L195.25 290.59L195.67 295.33L196.51 298.59L197.49 300.96L198.33 303.33L198.83 306.35L199.17 309.65L199.67 312.67L200.51 315.23L201.49 318.99L202.33 326L202.78 337.41L202.78 350.59L202.33 362L201.49 369.01L200.51 372.77L199.67 375.33L199.17 378.35L198.83 381.65L198.33 384.67L197.47 387.01L196.31 389.21L195 392L193.67 395.85L192.33 400.15L191 404L189.69 406.77L188.53 408.79L187.67 410.67L187.22 412.84L187.22 415.16L187.67 417.33L188.53 419.21L189.69 421.23L191 424L192.31 427.98L193.47 433.14L194.33 439.33L194.75 446.3L194.58 453.26L193.67 459.33L191.96 463.93L189.81 467.63L187.67 471.33L185.86 475.73L184.36 480.72L183 486L181.67 491.33L180.33 496.67L179 502L177.67 507.33L176.33 512.67L175 518L173.69 523.38L172.53 529.06L171.67 535.33L171.17 542.27L170.83 549.06L170.33 554.67L169.47 558.4L168.31 560.94L167 563.33L165.67 566.35L164.33 569.65L163 572.67L161.67 575.01L160.33 577.21L159 580L157.67 583.93L156.33 588.74L155 594L153.69 599.38L152.53 605.06L151.67 611.33L151.22 618.25L151.22 624.86L151.67 630L152.51 632.89L153.49 634.44L154.33 636L154.83 638.54L155.17 641.68L155.67 644.67ZM155.67 644.67L156.53 646.94L157.69 648.62L159 650L160.41 651.33L162.26 652.67L165 654L168.9 655.31L173.54 656.47L178.33 657.33L182.78 657.73L186.78 657.38L190.33 656L193.42 653.43L195.91 650.12L197.67 646.67L198.63 643.56L199.15 640.89L199.67 638.67L200.51 636.64L201.49 633.58L202.33 628L202.78 619.11L202.78 608.89L202.33 600L201.4 594.37L199.72 590.96L197 588L193.05 584.17L188.06 580.05L182.33 576.67L176.21 574.86L170.23 574.69L165 576L160.98 578.59L158.14 582.07L156.33 586L155.37 589.95L154.85 593.6L154.33 596.67L153.49 599.11L152.51 602L151.67 606.67L151.22 613.85L151.22 621.93L151.67 628.67L152.51 632.49L153.49 634.4L154.33 636L154.83 638.54L155.17 641.68L155.67 644.67ZM176 550L178.62 552.64L182.27 555.14L186.67 557.33L191.53 559.11L196.69 560.44L202 561.33L207.31 561.7L212.47 561.19L217.33 559.33L221.75 555.9L225.58 551.43L228.67 546.67L230.94 542.25L232.62 538.42L234 535.33L235.31 532.74L236.47 528.81L237.33 521.33L237.78 509.09L237.78 494.91L237.33 482.67L236.44 475.19L235.11 471.26L233.33 468.67L231.19 465.48L229.04 460.96L227.33 454.67L226.42 446.52L226.25 437.93L226.67 430.67L227.53 425.98L228.69 422.91L230 420L231.28 416.15L232.27 411.85L232.67 408L232.22 405.21L230.89 403.01L228.67 400.67L225.56 397.68L221.56 394.54L216.67 392L211.01 390.67L205.21 390.67L200 392L195.98 394.67L193.14 398.67L191.33 404L190.42 410.47L190.25 417.09L190.67 422.67L191.51 426.52L192.49 429.93L193.33 434.67L193.78 441.88L193.78 450.12L193.33 457.33L192.47 462L191.31 464.89L190 467.33L188.67 470.35L187.33 473.65L186 476.67L184.69 478.99L183.53 481.01L182.67 483.33L182.17 486.35L181.83 489.65L181.33 492.67L180.49 494.99L179.51 497.01L178.67 499.33L178.17 502.35L177.83 505.65L177.33 508.67L176.49 510.99L175.51 513.01L174.67 515.33L174.17 518.35L173.83 521.65L173.33 524.67L172.49 526.99L171.51 529.01L170.67 531.33L170.22 534.32L170.22 537.46L170.67 540L171.51 541.46L172.49 542.32L173.33 543.33L173.88 545.06L174.57 547.38L176 550Z" fill-rule="evenodd" opacity="0.27"/>
+        <path data-id="folder:libs/core/src/pm" data-hops="0" d="M176 550L178.62 552.64L182.27 555.14L186.67 557.33L191.53 559.11L196.69 560.44L202 561.33L207.31 561.7L212.47 561.19L217.33 559.33L221.75 555.9L225.58 551.43L228.67 546.67L230.94 542.25L232.62 538.42L234 535.33L235.31 532.74L236.47 528.81L237.33 521.33L237.78 509.09L237.78 494.91L237.33 482.67L236.44 475.19L235.11 471.26L233.33 468.67L231.19 465.48L229.04 460.96L227.33 454.67L226.42 446.52L226.25 437.93L226.67 430.67L227.53 425.98L228.69 422.91L230 420L231.28 416.15L232.27 411.85L232.67 408L232.22 405.21L230.89 403.01L228.67 400.67L225.56 397.68L221.56 394.54L216.67 392L211.01 390.67L205.21 390.67L200 392L195.98 394.67L193.14 398.67L191.33 404L190.42 410.47L190.25 417.09L190.67 422.67L191.51 426.52L192.49 429.93L193.33 434.67L193.78 441.88L193.78 450.12L193.33 457.33L192.47 462L191.31 464.89L190 467.33L188.67 470.35L187.33 473.65L186 476.67L184.69 478.99L183.53 481.01L182.67 483.33L182.17 486.35L181.83 489.65L181.33 492.67L180.49 494.99L179.51 497.01L178.67 499.33L178.17 502.35L177.83 505.65L177.33 508.67L176.49 510.99L175.51 513.01L174.67 515.33L174.17 518.35L173.83 521.65L173.33 524.67L172.49 526.99L171.51 529.01L170.67 531.33L170.22 534.32L170.22 537.46L170.67 540L171.51 541.46L172.49 542.32L173.33 543.33L173.88 545.06L174.57 547.38L176 550Z" opacity="0.45"/>
+        <path data-id="single:apps/cli/src/doctor.ts" data-hops="0" d="M40.67 259.67L45.51 261.89L50.49 263.22L55.33 263.67L59.78 263.22L63.78 261.89L67.33 259.67L70.44 256.58L73.11 252.75L75.33 248.33L77.09 243.49L78.25 238.51L78.67 233.67L78.2 229.2L76.69 225.02L74 221L70.05 217.07L65.06 213.59L59.33 211L53.23 209.62L47.43 209.27L42.67 209.67L39.43 210.56L37.23 211.89L35.33 213.67L33.16 215.91L30.84 218.75L28.67 222.33L26.89 226.7L25.56 231.52L24.67 236.33L24.22 240.73L24.22 244.38L24.67 247L25.58 248.48L27.09 249.52L29.33 251L32.42 253.54L36.25 256.68L40.67 259.67Z" opacity="0.45"/>
+        <circle data-via="apps/cli/src/doctor.ts" cx="53.03" cy="237.93" r="16.03" opacity="0.9"/>
+        <circle data-via="libs/core/src/pm/index.ts" cx="212.55" cy="412.96" r="10.45" opacity="0.9"/>
+      </g>
+      <g id="changed" fill="#5fd8ea" stroke="#5fd8ea" stroke-width="1.5">
+        <circle data-id="apps/cli/src/doctor.ts" data-kind="modified" data-improved="dent threshold" cx="53.03" cy="237.93" r="13.03" fill="#8be0b4" stroke="none"/>
+        <line data-id="libs/core/src/pm/index.ts" data-leader="renamed" x1="170" y1="380" x2="206.66" y2="408.4" fill="none" stroke-width="1" stroke-dasharray="3 2"/>
+        <circle data-id="libs/core/src/pm/index.ts" data-kind="renamed" cx="212.55" cy="412.96" r="7.45" fill="none" stroke-dasharray="3 2"/>
+        <text data-id="libs/core/src/pm/index.ts" x="224" y="415.76" font-size="8" stroke="none">libs/core/src/pm/main.ts</text>
+        <circle data-id="libs/core/src/pm/legacy.ts" data-kind="deleted" data-improved="clone-family dent threshold" cx="212.55" cy="518.39" r="8.16" fill="none" stroke="#8be0b4"/>
+        <circle data-id="libs/core/src/pm/tools.ts" data-kind="added" cx="199.78" cy="543.56" r="10.07" stroke="none"/>
+      </g>
+      <g id="history">
+        <circle data-id="apps/cli/src/doctor.ts" data-churn="3.37" cx="53.03" cy="237.93" r="13.03" fill="url(#hatch)" fill-opacity="0.7"/>
+        <circle data-id="apps/cli/src/doctor.ts" data-bugfix="0.5" cx="53.03" cy="237.93" r="13.03" fill="url(#stipple)" fill-opacity="0.7"/>
+        <circle data-id="libs/core/src/pm/index.ts" data-churn="2.76" cx="212.55" cy="412.96" r="7.45" fill="url(#hatch)" fill-opacity="0.64"/>
+        <circle data-id="libs/core/src/pm/index.ts" data-bugfix="0.4" cx="212.55" cy="412.96" r="7.45" fill="url(#stipple)" fill-opacity="0.56"/>
+        <circle data-id="libs/core/src/pm/tools.ts" data-churn="1" cx="199.78" cy="543.56" r="10.07" fill="url(#hatch)" fill-opacity="0.23"/>
+      </g>
+      <g id="evidence" stroke-width="2">
+        <g data-id="apps/cli/src/doctor.ts" data-unmeasured="true">
+          <circle cx="53.03" cy="237.93" r="14.28" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+          <circle cx="53.03" cy="237.93" r="14.28" fill="none" stroke="#e6edf3" stroke-width="2.5"/>
+        </g>
+        <g data-id="libs/core/src/pm/index.ts" data-covered="4" data-changed="9">
+          <circle cx="212.55" cy="412.96" r="8.7" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+          <circle cx="212.55" cy="412.96" r="8.7" fill="none" stroke="#e6edf3" stroke-width="2.5" pathLength="1" stroke-dasharray="0.56 1" transform="rotate(-90 212.55 412.96)"/>
+        </g>
+        <g data-id="libs/core/src/pm/tools.ts" data-covered="7" data-changed="9">
+          <circle cx="199.78" cy="543.56" r="11.32" fill="none" stroke="#e6edf3" stroke-width="1" stroke-opacity="0.3"/>
+          <circle cx="199.78" cy="543.56" r="11.32" fill="none" stroke="#e6edf3" stroke-width="2.5" pathLength="1" stroke-dasharray="0.22 1" transform="rotate(-90 199.78 543.56)"/>
+        </g>
+        <path data-id="libs/core/src/pm/tools.ts" data-line="27" data-status="NoCoverage" d="M194.59 531.94L197.69 535.76L198.46 530.9Z" fill="#e6edf3"/>
+        <path data-id="libs/core/src/pm/tools.ts" data-line="64" data-status="Survived" d="M201.1 530.9L201.87 535.76L204.97 531.94Z" fill="#e6edf3"/>
+        <line data-id="libs/core/src/pm/index.ts" data-test="libs/core/src/__tests__/pm.test.ts" data-status="failed" stroke="#f0546a" x1="212.55" y1="416.41" x2="212.55" y2="419.41"/>
+        <line data-id="libs/core/src/pm/index.ts" data-test="libs/core/src/__tests__/pm.test.ts" data-status="failed" stroke="#f0546a" x1="212.55" y1="421.41" x2="212.55" y2="424.41"/>
+        <line data-id="libs/core/src/pm/legacy.ts" data-test="libs/core/src/__tests__/pm.test.ts" data-status="failed" stroke="#f0546a" x1="212.55" y1="522.55" x2="212.55" y2="525.55"/>
+        <line data-id="libs/core/src/pm/legacy.ts" data-test="libs/core/src/__tests__/pm.test.ts" data-status="failed" stroke="#f0546a" x1="212.55" y1="527.55" x2="212.55" y2="530.55"/>
+        <line data-id="libs/core/src/pm/tools.ts" data-test="libs/core/src/__tests__/pm.test.ts" data-status="failed" stroke="#f0546a" x1="199.78" y1="549.63" x2="199.78" y2="552.63"/>
+        <line data-id="libs/core/src/pm/tools.ts" data-test="libs/core/src/__tests__/pm.test.ts" data-status="failed" stroke="#f0546a" x1="199.78" y1="554.63" x2="199.78" y2="557.63"/>
+      </g>
+      <g id="edges" fill="none" stroke-width="1">
+        <path data-from="libs/core/src/pm/tools.ts" data-to="libs/core/src/util/format.ts" data-kind="new-cross-module" d="M194.92 552.38Q175.48 587.68 178.8 629.45" stroke="#5fd8ea" marker-end="url(#arrow-new-cross-module)"/>
+        <path data-from="libs/core/src/util/format.ts" data-to="libs/core/src/util/text.ts" data-kind="cycle" d="M181.91 629.78Q186.08 615.87 181.71 601.28" stroke="#e35ce0" marker-end="url(#arrow-cycle)"/>
+        <path data-from="libs/core/src/util/text.ts" data-to="libs/core/src/util/format.ts" data-kind="cycle" d="M177.25 601.28Q172.87 615.86 177.04 629.78" stroke="#e35ce0" marker-end="url(#arrow-cycle)"/>
+      </g>
+      <g id="ghosts" fill="none" stroke="#7c8590" stroke-dasharray="2 2">
+        <circle data-id="libs/core/src/util/format.ts" data-with="libs/core/src/pm/index.ts" data-rate="0.6" cx="179.47" cy="637.89" r="11.47"/>
+      </g>
+      <g id="storms" fill="#f0546a">
+        <g data-slot="test" data-over="folder:libs/core/src/pm">
+          <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" transform="translate(205.21 380.67)"/>
+          <text x="211.21" y="383.47" font-size="8" font-variant="small-caps">test</text>
+        </g>
+      </g>
+    </g>
+  </g>
+  <g id="chrome">
+    <g id="hud">
+      <g data-block="category" data-category="IFR">
+        <rect x="10" y="8" width="36.18" height="20" fill="#f0546a"/>
+        <text x="16" y="22.55" font-size="13" fill="#0a0c0f"><tspan font-weight="bold">IFR</tspan></text>
+      </g>
+      <g data-block="patch-cov">
+        <rect x="49.18" y="8" width="162.66" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="55.18" y="21.15" font-size="9" fill="#e6edf3"><tspan>Patch cov </tspan><tspan font-weight="bold">61%</tspan><tspan>, 1 unmeasured</tspan></text>
+      </g>
+      <g data-block="mutants">
+        <rect x="214.84" y="8" width="179.4" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="220.84" y="21.15" font-size="9" fill="#e6edf3"><tspan>Mutants </tspan><tspan font-weight="bold">1</tspan><tspan> survived, 1 untested</tspan></text>
+      </g>
+      <g data-block="reach">
+        <rect x="397.24" y="8" width="84.54" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="403.24" y="21.15" font-size="9" fill="#e6edf3"><tspan>Reach </tspan><tspan font-weight="bold">4</tspan><tspan> cells</tspan></text>
+      </g>
+      <g data-block="size">
+        <rect x="484.78" y="8" width="134.76" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="490.78" y="21.15" font-size="9" fill="#e6edf3"><tspan>Size </tspan><tspan font-weight="bold">+210 −94</tspan><tspan>, 4 files</tspan></text>
+      </g>
+      <g data-block="gate">
+        <rect x="622.54" y="8" width="67.8" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="628.54" y="21.15" font-size="9" fill="#e6edf3"><tspan>Gate </tspan><tspan font-weight="bold">1</tspan><tspan> red</tspan></text>
+      </g>
+      <g data-block="standing">
+        <rect x="10" y="31" width="90.12" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="16" y="44.15" font-size="9" fill="#e6edf3"><tspan>Standing </tspan><tspan font-weight="bold">1</tspan><tspan> red</tspan></text>
+      </g>
+      <g data-block="health">
+        <rect x="103.12" y="31" width="84.54" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="109.12" y="44.15" font-size="9" fill="#e6edf3"><tspan>Health Δ </tspan><tspan font-weight="bold">+1.9</tspan></text>
+      </g>
+      <g data-block="notices">
+        <rect x="190.66" y="31" width="84.54" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="196.66" y="44.15" font-size="9" fill="#e6edf3"><tspan>Notices </tspan><tspan font-weight="bold">1·2·3</tspan></text>
+      </g>
+      <g data-block="other">
+        <rect x="278.2" y="31" width="51.06" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="284.2" y="44.15" font-size="9" fill="#e6edf3"><tspan>Other </tspan><tspan font-weight="bold">1</tspan></text>
+      </g>
+    </g>
+    <g id="rules" stroke="#2b333d" stroke-width="1">
+      <line x1="0" y1="59" x2="780" y2="59"/>
+      <line x1="480" y1="59" x2="480" y2="734"/>
+      <line x1="0" y1="645" x2="480" y2="645"/>
+    </g>
+    <g id="leaders" stroke="#9aa5b1" stroke-width="1" stroke-dasharray="0.1 3" stroke-linecap="round" fill="none">
+      <line data-notice="1" x1="495" y1="74" x2="228.47" y2="413.88"/>
+      <line data-notice="2" x1="495" y1="123" x2="241.47" y2="413.88"/>
+      <line data-notice="3" x1="495" y1="182.4" x2="254.47" y2="413.88"/>
+      <line data-notice="4" x1="495" y1="241.8" x2="267.47" y2="413.88"/>
+      <line data-notice="5" x1="495" y1="322" x2="72.9" y2="242.8"/>
+      <line data-notice="6" x1="495" y1="390.5" x2="217.56" y2="546.34"/>
+    </g>
+    <g id="notices">
+      <g data-notice="1" data-tier="primary" data-kind="red-check-slot" data-target="libs/core/src/pm/index.ts">
+        <g data-mark="1" data-tier="primary">
+          <rect x="490" y="69" width="10" height="10" fill="#f0546a"/>
+          <text x="495" y="76.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#0a0c0f">1</text>
+        </g>
+        <text x="505" y="77" font-size="8" font-weight="bold" fill="#e6edf3">libs/core/src/pm/index.ts</text>
+        <text x="505" y="86.4" font-size="7" font-variant="small-caps" fill="#e6edf3">red-check-slot</text>
+        <text x="505" y="96.5" font-size="8" fill="#e6edf3">the `test` check is red on this changed file</text>
+        <text x="505" y="105.9" font-size="7" fill="#6b7480">severity 10</text>
+      </g>
+      <g data-notice="2" data-tier="secondary" data-kind="deleted-export" data-target="libs/core/src/pm/index.ts">
+        <g data-mark="2" data-tier="secondary">
+          <rect x="490" y="118" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
+          <text x="495" y="125.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">2</text>
+        </g>
+        <text x="505" y="126" font-size="8" font-weight="bold" fill="#e6edf3">libs/core/src/pm/index.ts</text>
+        <text x="505" y="135.4" font-size="7" font-variant="small-caps" fill="#e6edf3">deleted-export</text>
+        <text x="505" y="145.5" font-size="8" fill="#e6edf3">`legacyResolve` no longer exported, and 1 file still</text>
+        <text x="505" y="155.9" font-size="8" fill="#e6edf3">imports it</text>
+        <text x="505" y="165.3" font-size="7" fill="#6b7480">severity 8</text>
+      </g>
+      <g data-notice="3" data-tier="secondary" data-kind="uncovered-high-reach" data-target="libs/core/src/pm/index.ts">
+        <g data-mark="3" data-tier="secondary">
+          <rect x="490" y="177.4" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
+          <text x="495" y="184.85" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">3</text>
+        </g>
+        <text x="505" y="185.4" font-size="8" font-weight="bold" fill="#e6edf3">libs/core/src/pm/index.ts</text>
+        <text x="505" y="194.8" font-size="7" font-variant="small-caps" fill="#e6edf3">uncovered-high-reach</text>
+        <text x="505" y="204.9" font-size="8" fill="#e6edf3">5 changed lines are uncovered and the change reaches</text>
+        <text x="505" y="215.3" font-size="8" fill="#e6edf3">4 cells</text>
+        <text x="505" y="224.7" font-size="7" fill="#6b7480">severity 7 · high_reach_cells 3</text>
+      </g>
+      <g data-notice="4" data-tier="tertiary" data-kind="interface-added" data-target="libs/core/src/pm/index.ts">
+        <g data-mark="4" data-tier="tertiary">
+          <rect x="490" y="236.8" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="495" y="244.25" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">4</text>
+        </g>
+        <text x="505" y="244.8" font-size="8" font-weight="bold" fill="#e6edf3">libs/core/src/pm/index.ts</text>
+        <text x="505" y="254.2" font-size="7" font-variant="small-caps" fill="#e6edf3">interface-added</text>
+        <text x="505" y="264.3" font-size="8" fill="#e6edf3">the interface of `libs/core/src/pm` grew</text>
+        <text x="505" y="274.7" font-size="8" fill="#e6edf3">(`resolveTool` added) and 2 files read it; the shape</text>
+        <text x="505" y="285.1" font-size="8" fill="#e6edf3">of `listSlots` and `resolveSlot` could not be</text>
+        <text x="505" y="295.5" font-size="8" fill="#e6edf3">compared</text>
+        <text x="505" y="304.9" font-size="7" fill="#6b7480">severity 3 · fan_in_high 2 · deep_band 4</text>
+      </g>
+      <g data-notice="5" data-tier="tertiary" data-kind="large-hot-change" data-target="apps/cli/src/doctor.ts">
+        <g data-mark="5" data-tier="tertiary">
+          <rect x="490" y="317" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="495" y="324.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">5</text>
+        </g>
+        <text x="505" y="325" font-size="8" font-weight="bold" fill="#e6edf3">apps/cli/src/doctor.ts</text>
+        <text x="505" y="334.4" font-size="7" font-variant="small-caps" fill="#e6edf3">large-hot-change</text>
+        <text x="505" y="344.5" font-size="8" fill="#e6edf3">136 lines changed in a file with churn 3.366 and a</text>
+        <text x="505" y="354.9" font-size="8" fill="#e6edf3">bug-fix rate of 0.5</text>
+        <text x="505" y="364.3" font-size="7" fill="#6b7480">severity 4 · large_lines 100 · hot_churn_ratio 2 ·</text>
+        <text x="505" y="373.4" font-size="7" fill="#6b7480">hot_bugfix_rate 0.3</text>
+      </g>
+      <g data-notice="6" data-tier="tertiary" data-kind="red-check-slot" data-target="libs/core/src/pm/tools.ts">
+        <g data-mark="6" data-tier="tertiary">
+          <rect x="490" y="385.5" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="495" y="392.95" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">6</text>
+        </g>
+        <text x="505" y="393.5" font-size="8" font-weight="bold" fill="#e6edf3">+libs/core/src/pm/tools.ts</text>
+        <text x="505" y="402.9" font-size="7" font-variant="small-caps" fill="#e6edf3">red-check-slot</text>
+        <text x="505" y="413" font-size="8" fill="#e6edf3">the `test` check is red on this changed file</text>
+        <text x="505" y="422.4" font-size="7" fill="#6b7480">severity 10</text>
+      </g>
+    </g>
+    <g id="shore">
+      <g data-group="deps" data-touched="true">
+        <rect x="10" y="655" width="77.52" height="42" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="15" y="668.3" font-size="8" font-variant="small-caps" fill="#e6edf3">deps<tspan fill="#6b7480"> 4</tspan></text>
+        <g data-grid="deps">
+          <rect x="15" y="671" width="4" height="4" data-file="package.json" data-kind="modified" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <rect x="20" y="671" width="4" height="4" data-file="apps/cli/package.json" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="25" y="671" width="4" height="4" data-file="libs/core/package.json" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+          <rect x="30" y="671" width="4" height="4" data-file="pnpm-workspace.yaml" data-kind="file" stroke-width="1" fill="#333a43" stroke="none"/>
+        </g>
+        <g data-id="package.json" data-kind="modified">
+          <circle cx="17.5" cy="686.5" r="2.5" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <text x="23" y="689.3" font-size="8" fill="#e6edf3">package.json</text>
+        </g>
+      </g>
+      <g data-group="docs" data-touched="true">
+        <rect x="93.52" y="655" width="62.64" height="42" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="98.52" y="668.3" font-size="8" font-variant="small-caps" fill="#e6edf3">docs<tspan fill="#6b7480"> 1</tspan></text>
+        <g data-grid="docs">
+          <rect x="98.52" y="671" width="4" height="4" data-file="README.md" data-kind="modified" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+        </g>
+        <g data-id="README.md" data-kind="modified">
+          <circle cx="101.02" cy="686.5" r="2.5" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <text x="106.52" y="689.3" font-size="8" fill="#e6edf3">README.md</text>
+        </g>
+      </g>
+      <g data-group="tests" data-touched="true">
+        <rect x="162.16" y="655" width="186.64" height="42" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="167.16" y="668.3" font-size="8" font-variant="small-caps" fill="#e6edf3">tests<tspan fill="#6b7480"> 1</tspan></text>
+        <g data-grid="tests">
+          <rect x="167.16" y="671" width="4" height="4" data-file="libs/core/src/__tests__/pm.test.ts" data-kind="modified" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+        </g>
+        <g data-id="libs/core/src/__tests__/pm.test.ts" data-kind="modified">
+          <circle cx="169.66" cy="686.5" r="2.5" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <text x="175.16" y="689.3" font-size="8" fill="#e6edf3">libs/core/src/__tests__/pm.test.ts</text>
+        </g>
+      </g>
+      <g data-group="other" data-touched="true" data-loud="true">
+        <rect x="354.8" y="655" width="62.64" height="42" fill="none" stroke="#e6edf3" stroke-width="2"/>
+        <text x="359.8" y="668.3" font-size="8" font-variant="small-caps" fill="#e6edf3">other<tspan fill="#6b7480"> 1</tspan></text>
+        <g data-grid="other">
+          <rect x="359.8" y="671" width="4" height="4" data-file="notes.xyz" data-kind="modified" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+        </g>
+        <g data-id="notes.xyz" data-kind="modified">
+          <circle cx="362.3" cy="686.5" r="2.5" stroke-width="1" fill="#5fd8ea" stroke="none"/>
+          <text x="367.8" y="689.3" font-size="8" fill="#e6edf3">notes.xyz</text>
+        </g>
+      </g>
+      <g data-group="build">
+        <rect x="423.44" y="655" width="44.72" height="21" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="428.44" y="668.3" font-size="8" font-variant="small-caps" fill="#e6edf3">build<tspan fill="#6b7480"> 2</tspan></text>
+      </g>
+      <g data-group="config">
+        <rect x="10" y="703" width="49.68" height="21" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="15" y="716.3" font-size="8" font-variant="small-caps" fill="#e6edf3">config<tspan fill="#6b7480"> 1</tspan></text>
+      </g>
+      <g data-group="settings">
+        <rect x="65.68" y="703" width="59.6" height="21" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="70.68" y="716.3" font-size="8" font-variant="small-caps" fill="#e6edf3">settings<tspan fill="#6b7480"> 1</tspan></text>
+      </g>
+    </g>
+    <g id="legend">
+      <rect x="490" y="435" width="280" height="289" fill="none" stroke="#6b7480" stroke-width="1"/>
+      <text x="496" y="448" font-size="7" font-variant="small-caps" fill="#6b7480">legend</text>
+      <g data-mark="category">
+        <g data-balloon="1">
+          <circle cx="503" cy="457" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="459.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">1</text>
+        </g>
+        <g>
+          <rect x="516" y="450" width="19.02" height="14" fill="#4fd37a"/>
+          <text x="519" y="459.45" font-size="7" font-weight="bold" fill="#0a0c0f">VFR</text>
+        </g>
+        <g>
+          <rect x="536.02" y="450" width="23.36" height="14" fill="#5b8def"/>
+          <text x="539.02" y="459.45" font-size="7" font-weight="bold" fill="#0a0c0f">MVFR</text>
+        </g>
+        <g>
+          <rect x="560.38" y="450" width="19.02" height="14" fill="#f0546a"/>
+          <text x="563.38" y="459.45" font-size="7" font-weight="bold" fill="#0a0c0f">IFR</text>
+        </g>
+        <g>
+          <rect x="580.4" y="450" width="23.36" height="14" fill="#e35ce0"/>
+          <text x="583.4" y="459.45" font-size="7" font-weight="bold" fill="#0a0c0f">LIFR</text>
+        </g>
+        <text x="610.76" y="459.45" font-size="7" fill="#e6edf3">category: set by the change alone</text>
+      </g>
+      <g data-mark="lit-arc">
+        <g data-balloon="2">
+          <circle cx="503" cy="475" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="477.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">2</text>
+        </g>
+        <circle cx="528" cy="475" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="528" cy="475" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
+        <circle cx="528" cy="475" r="6.25" fill="none" stroke="#e6edf3" stroke-width="2.5" pathLength="1" stroke-dasharray="0.4 1" transform="rotate(-90 528 475)"/>
+        <text x="546" y="477.45" font-size="7" fill="#e6edf3">lit arc: changed lines no test ran</text>
+      </g>
+      <g data-mark="hairline">
+        <g data-balloon="3">
+          <circle cx="503" cy="493" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="495.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">3</text>
+        </g>
+        <circle cx="528" cy="493" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="528" cy="493" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
+        <text x="546" y="495.45" font-size="7" fill="#e6edf3">hairline: changed lines the tests ran</text>
+      </g>
+      <g data-mark="notch">
+        <g data-balloon="4">
+          <circle cx="503" cy="511" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="513.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">4</text>
+        </g>
+        <circle cx="528" cy="511" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="528" cy="511" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
+        <path d="M526 503.5L528 508L530 503.5Z" fill="#e6edf3"/>
+        <text x="546" y="513.45" font-size="7" fill="#e6edf3">notch: a mutant no test killed</text>
+      </g>
+      <g data-mark="stitches">
+        <g data-balloon="5">
+          <circle cx="503" cy="529" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="531.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">5</text>
+        </g>
+        <circle cx="528" cy="529" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <line x1="528.5" y1="529.87" x2="532.5" y2="536.79" stroke="#e6edf3" stroke-width="2"/>
+        <line x1="528" y1="530" x2="528" y2="538" stroke="#6b7480" stroke-width="2"/>
+        <line x1="527.5" y1="529.87" x2="526" y2="532.46" stroke="#f0546a" stroke-width="2"/>
+        <line x1="525" y1="534.2" x2="523.5" y2="536.79" stroke="#f0546a" stroke-width="2"/>
+        <text x="546" y="531.45" font-size="7" fill="#e6edf3">stitches: its tests passed, not run, failed</text>
+      </g>
+      <g data-mark="red-bolt">
+        <g data-balloon="6">
+          <circle cx="503" cy="547" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="549.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">6</text>
+        </g>
+        <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" fill="#f0546a" transform="translate(528 547) scale(1)"/>
+        <text x="546" y="549.45" font-size="7" fill="#e6edf3">red bolt: a failing check names a changed file</text>
+      </g>
+      <g data-mark="grey-bolt">
+        <g data-balloon="7">
+          <circle cx="503" cy="565" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="567.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">7</text>
+        </g>
+        <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" fill="#58616b" transform="translate(528 565) scale(0.6)"/>
+        <text x="546" y="567.45" font-size="7" fill="#e6edf3">grey bolt: fails on files the change left alone</text>
+      </g>
+      <g data-mark="ghost">
+        <g data-balloon="8">
+          <circle cx="503" cy="583" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="585.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">8</text>
+        </g>
+        <circle cx="528" cy="583" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="528" cy="583" r="8" fill="none" stroke="#7c8590" stroke-dasharray="2 2"/>
+        <text x="546" y="585.45" font-size="7" fill="#e6edf3">ghost: usually changes with these, and did not</text>
+      </g>
+      <g data-mark="stain">
+        <g data-balloon="9">
+          <circle cx="503" cy="601" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="603.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">9</text>
+        </g>
+        <circle cx="528" cy="601" r="5" fill="#5fd8ea" stroke="#5f6873" stroke-width="1"/>
+        <text x="546" y="603.45" font-size="7" fill="#e6edf3">cyan: a changed file; +path in a row: added</text>
+      </g>
+      <g data-mark="unmeasured">
+        <g data-balloon="10">
+          <circle cx="503" cy="619" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="621.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">10</text>
+        </g>
+        <circle cx="528" cy="619" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="528" cy="619" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
+        <circle cx="528" cy="619" r="6.25" fill="none" stroke="#e6edf3" stroke-width="2.5"/>
+        <text x="546" y="621.45" font-size="7" fill="#e6edf3">skin lit whole: no coverage report names it</text>
+      </g>
+      <g data-mark="reach">
+        <g data-balloon="11">
+          <circle cx="503" cy="637" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="639.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">11</text>
+        </g>
+        <rect data-hops="0" x="516" y="632" width="8" height="10" fill="#7d7970"/>
+        <rect data-hops="1" x="524" y="632" width="8" height="10" fill="#555553"/>
+        <rect data-hops="2" x="532" y="632" width="8" height="10" fill="#3e3f41"/>
+        <text x="546" y="639.45" font-size="7" fill="#e6edf3">warm light: the reach, dimmer each module out</text>
+      </g>
+      <g data-mark="crossing">
+        <g data-balloon="12">
+          <circle cx="503" cy="655" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="657.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">12</text>
+        </g>
+        <circle cx="528" cy="655" r="8" fill="#e0d3b9"/>
+        <circle cx="528" cy="655" r="5" fill="none" stroke="#5f6873" stroke-width="1"/>
+        <text x="546" y="657.45" font-size="7" fill="#e6edf3">lit halo: where the reach leaves a module</text>
+      </g>
+      <g data-mark="hatching">
+        <g data-balloon="13">
+          <circle cx="503" cy="673" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="675.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">13</text>
+        </g>
+        <circle cx="528" cy="673" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <line x1="523.53" y1="673.47" x2="528.47" y2="668.53" stroke="#a0a7af" stroke-width="1"/>
+        <line x1="524.82" y1="676.18" x2="531.18" y2="669.82" stroke="#a0a7af" stroke-width="1"/>
+        <line x1="527.53" y1="677.47" x2="532.47" y2="672.53" stroke="#a0a7af" stroke-width="1"/>
+        <text x="546" y="675.45" font-size="7" fill="#e6edf3">hatching: how much of it was rewritten lately</text>
+      </g>
+      <g data-mark="stipple">
+        <g data-balloon="14">
+          <circle cx="503" cy="691" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="503" y="693.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">14</text>
+        </g>
+        <circle cx="528" cy="691" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="526" cy="689" r="0.7" fill="#a0a7af"/>
+        <circle cx="530" cy="689" r="0.7" fill="#a0a7af"/>
+        <circle cx="526" cy="693" r="0.7" fill="#a0a7af"/>
+        <circle cx="530" cy="693" r="0.7" fill="#a0a7af"/>
+        <text x="546" y="693.45" font-size="7" fill="#e6edf3">stipple: how many of its commits fixed bugs</text>
+      </g>
+      <g data-key="shapes">
+        <g data-rules="0">
+          <circle cx="505" cy="709" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        </g>
+        <g data-rules="1">
+          <path d="M527.87 709L527.85 709.64L527.77 710.28L527.63 710.92L527.42 711.55L527.11 712.16L526.72 712.72L526.24 713.23L525.69 713.65L525.06 713.97L524.39 714.18L523.69 714.27L523 714.24L522.33 714.1L521.7 713.87L521.11 713.56L520.58 713.19L520.1 712.78L519.66 712.34L519.26 711.87L518.9 711.37L518.58 710.83L518.31 710.26L518.1 709.64L517.97 709L517.93 708.33L517.99 707.66L518.16 706.99L518.43 706.36L518.81 705.78L519.27 705.27L519.8 704.83L520.39 704.48L521.02 704.21L521.67 704.02L522.33 703.91L523 703.88L523.67 703.93L524.33 704.05L524.96 704.26L525.56 704.56L526.11 704.95L526.59 705.41L527 705.93L527.32 706.5L527.57 707.11L527.73 707.73L527.83 708.36Z" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        </g>
+        <g data-rules="2">
+          <path d="M546.44 709L546.5 709.54L546.46 710.09L546.31 710.61L546.05 711.09L545.69 711.51L545.27 711.85L544.82 712.13L544.36 712.36L543.93 712.57L543.53 712.78L543.14 712.99L542.74 713.2L542.34 713.4L541.92 713.62L541.48 713.85L541 714.06L540.49 714.22L539.94 714.3L539.4 714.28L538.87 714.15L538.38 713.9L537.95 713.57L537.57 713.18L537.23 712.77L536.93 712.34L536.66 711.9L536.4 711.46L536.19 710.99L536.02 710.51L535.87 710.02L535.76 709.52L535.69 709L535.69 708.48L535.76 707.96L535.92 707.46L536.17 707L536.49 706.59L536.87 706.24L537.27 705.94L537.68 705.68L538.08 705.45L538.48 705.22L538.86 705.01L539.26 704.8L539.67 704.6L540.08 704.39L540.52 704.16L541 703.96L541.51 703.8L542.05 703.72L542.59 703.74L543.12 703.88L543.61 704.12L544.04 704.44L544.43 704.83L544.76 705.24L545.06 705.67L545.34 706.1L545.6 706.54L545.81 707.01L546 707.48L546.17 707.97L546.32 708.48Z" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        </g>
+        <g data-rules="3">
+          <path d="M563.94 709L563.88 709.43L563.79 709.85L563.69 710.26L563.67 710.7L563.8 711.24L563.97 711.87L563.91 712.44L563.49 712.77L562.82 712.82L562.16 712.77L561.66 712.79L561.27 712.93L560.91 713.1L560.55 713.25L560.18 713.39L559.81 713.6L559.43 713.95L559 714.35L558.51 714.59L558.03 714.48L557.63 714.11L557.29 713.69L556.96 713.38L556.59 713.17L556.22 712.98L555.86 712.75L555.5 712.5L555.08 712.29L554.51 712.14L553.85 711.97L553.35 711.63L553.23 711.1L553.46 710.49L553.78 709.92L553.98 709.44L554.06 709L554.12 708.57L554.21 708.15L554.31 707.74L554.34 707.31L554.24 706.78L554.1 706.17L554.17 705.62L554.58 705.29L555.22 705.22L555.86 705.25L556.35 705.21L556.73 705.07L557.09 704.9L557.45 704.75L557.82 704.6L558.18 704.37L558.56 703.96L559 703.49L559.51 703.21L560 703.33L560.4 703.77L560.73 704.26L561.05 704.61L561.41 704.83L561.78 705.02L562.14 705.25L562.5 705.5L562.93 705.7L563.54 705.82L564.24 705.98L564.77 706.31L564.89 706.86L564.62 707.49L564.25 708.07L564.02 708.56Z" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        </g>
+        <g data-rules="4">
+          <path d="M582.1 709L581.73 709.31L581.67 709.61L581.6 709.92L581.52 710.21L581.42 710.5L581.33 710.8L581.52 711.23L582.04 711.91L582.01 712.35L581.19 712.21L580.52 712.09L580.22 712.22L579.99 712.4L579.75 712.58L579.5 712.74L579.25 712.89L579.05 713.16L579.08 714.02L579.11 715.2L578.63 715.1L578 714.02L577.59 713.5L577.29 713.46L577 713.47L576.71 713.47L576.41 713.45L576.12 713.44L575.76 713.63L575.17 714.4L574.54 714.93L574.43 714.2L574.55 713.24L574.43 712.85L574.19 712.67L573.94 712.49L573.71 712.29L573.49 712.08L573.24 711.88L572.71 711.87L571.72 712.05L571.29 711.82L571.89 711.12L572.38 710.57L572.42 710.23L572.35 709.92L572.3 709.62L572.28 709.31L572.27 709L572.17 708.68L571.61 708.29L570.86 707.78L571.13 707.43L572.11 707.34L572.65 707.2L572.84 706.95L573 706.69L573.18 706.45L573.37 706.21L573.56 705.98L573.61 705.61L573.33 704.81L573.24 704.1L573.89 704.34L574.62 704.87L575.01 704.97L575.29 704.87L575.56 704.77L575.84 704.69L576.13 704.62L576.41 704.51L576.67 703.91L577 702.65L577.44 702.31L577.73 703.47L577.92 704.4L578.17 704.63L578.46 704.71L578.74 704.8L579.02 704.9L579.3 705.02L579.65 705.04L580.43 704.53L581.5 703.86L581.67 704.33L581.03 705.46L580.78 706.1L580.91 706.39L581.08 706.64L581.23 706.91L581.37 707.19L581.5 707.47L581.9 707.69L583.04 707.8L583.93 708.09L583.21 708.59Z" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        </g>
+        <g data-rules="5">
+          <path d="M599.48 709L600.05 709.25L601.88 709.68L600.45 709.81L599.4 709.88L599.31 710.08L599.25 710.29L599.18 710.49L599.09 710.69L599 710.89L598.91 711.09L599.53 711.72L600.79 712.87L599.14 712.07L598.4 711.79L598.24 711.94L598.08 712.08L597.92 712.23L597.76 712.36L597.58 712.48L597.44 712.65L597.95 713.92L598.4 715.36L597.1 713.44L596.65 712.99L596.45 713.05L596.25 713.11L596.04 713.17L595.84 713.21L595.63 713.25L595.43 713.36L595.28 714.75L595 715.41L594.77 713.6L594.58 713.28L594.37 713.26L594.16 713.22L593.95 713.18L593.75 713.13L593.54 713.07L593.26 713.19L592.21 714.91L591.89 714.81L592.65 712.93L592.58 712.63L592.4 712.51L592.22 712.39L592.05 712.25L591.89 712.11L591.73 711.96L591.41 711.95L590.09 712.64L590.31 712.14L591.13 711.32L591.08 711.09L590.98 710.9L590.89 710.7L590.8 710.5L590.73 710.29L590.66 710.09L590.18 709.96L588.35 709.99L589.41 709.55L590.49 709.22L590.53 709L590.54 708.78L590.56 708.56L590.59 708.35L590.63 708.13L590.67 707.92L590.07 707.51L588.5 706.68L590.1 706.97L590.98 707.1L591.11 706.92L591.22 706.74L591.34 706.56L591.48 706.39L591.61 706.22L591.73 706.04L591.02 705.02L589.99 703.48L591.75 705.04L592.41 705.5L592.59 705.4L592.78 705.29L592.96 705.19L593.16 705.1L593.35 705.02L593.53 704.89L593.42 703.78L593.47 702.9L594.09 704.45L594.37 704.75L594.58 704.73L594.79 704.71L595 704.71L595.21 704.71L595.42 704.72L595.65 704.63L596.13 703.31L596.49 703.06L596.32 704.66L596.46 704.93L596.66 705L596.86 705.08L597.05 705.17L597.24 705.26L597.43 705.37L597.76 705.28L599.22 703.86L599.26 704.3L598.22 705.78L598.26 706.04L598.41 706.2L598.55 706.37L598.68 706.54L598.8 706.72L598.92 706.9L599.42 706.91L601.57 706.28L600.71 706.96L599.35 707.68L599.33 707.92L599.38 708.13L599.42 708.34L599.45 708.56L599.46 708.78Z" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="596.47" cy="702.59" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="599.67" cy="703.54" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="601.76" cy="706.31" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="601.84" cy="709.72" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="600.78" cy="712.85" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="598.54" cy="715.48" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="595.11" cy="715.78" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="591.7" cy="715.54" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="589.85" cy="712.68" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="588.32" cy="709.92" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="588.56" cy="706.68" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="589.92" cy="703.45" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="593.33" cy="702.69" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        </g>
+        <g data-rules="6">
+          <path d="M617.24 709L617.22 709.17L617.21 709.33L617.19 709.5L617.16 709.66L617.13 709.82L617.12 709.99L619.56 710.85L618.32 710.73L616.93 710.45L616.87 710.6L616.79 710.75L616.72 710.89L616.63 711.04L616.55 711.17L616.51 711.34L619.27 713.56L617.12 712.25L616.14 711.68L616.03 711.8L615.91 711.91L615.79 712.02L615.67 712.12L615.54 712.22L615.47 712.4L616.97 714.94L615.41 712.94L615 712.56L614.85 712.64L614.71 712.7L614.56 712.76L614.41 712.82L614.26 712.87L614.17 713.14L614.81 716.55L613.86 713.34L613.64 713.02L613.48 713.04L613.32 713.06L613.16 713.07L613 713.07L612.84 713.07L612.66 713.36L612.21 715.72L612.34 713.18L612.2 713.01L612.04 712.98L611.89 712.95L611.73 712.9L611.58 712.86L611.42 712.8L611.06 713.21L609.93 715.02L610.94 712.68L610.84 712.53L610.7 712.45L610.56 712.36L610.42 712.27L610.29 712.17L610.17 712.07L609.49 712.51L608.26 713.38L609.78 711.75L609.7 711.6L609.6 711.47L609.5 711.34L609.41 711.2L609.32 711.06L609.24 710.92L607.65 711.47L606.55 711.67L609.01 710.47L608.98 710.31L608.93 710.15L608.88 709.99L608.85 709.83L608.82 709.66L608.79 709.5L606.64 709.5L606.75 709.25L608.76 709L608.78 708.83L608.79 708.67L608.81 708.5L608.84 708.34L608.87 708.18L608.89 708.01L607.18 707.36L608.07 707.4L609.07 707.55L609.13 707.4L609.21 707.25L609.28 707.11L609.37 706.96L609.45 706.83L609.51 706.67L607.73 705.17L609.18 705.99L609.86 706.32L609.97 706.2L610.09 706.09L610.21 705.98L610.33 705.88L610.46 705.78L610.52 705.59L608.8 702.71L610.55 705L611 705.44L611.15 705.36L611.29 705.3L611.44 705.24L611.59 705.18L611.74 705.13L611.84 704.89L611.28 701.83L612.14 704.69L612.36 704.98L612.52 704.96L612.68 704.94L612.84 704.93L613 704.93L613.16 704.93L613.36 704.49L613.96 700.91L613.67 704.74L613.8 704.99L613.96 705.02L614.11 705.05L614.27 705.1L614.42 705.14L614.58 705.2L615.04 704.58L616.6 701.93L615.08 705.29L615.16 705.47L615.3 705.55L615.44 705.64L615.58 705.73L615.71 705.83L615.83 705.93L616.55 705.45L617.86 704.51L616.22 706.25L616.3 706.4L616.4 706.53L616.5 706.66L616.59 706.8L616.68 706.94L616.76 707.08L617.91 706.73L618.72 706.63L616.98 707.53L617.02 707.69L617.07 707.85L617.12 708.01L617.15 708.17L617.18 708.34L617.21 708.5L619.19 708.51L619.09 708.76Z" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="611.27" cy="701.73" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="613.95" cy="700.79" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="616.7" cy="701.6" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="618.2" cy="704.08" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="619.5" cy="706.19" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="620.73" cy="708.54" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="620.55" cy="711.25" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="619.79" cy="714.04" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="617.07" cy="715.17" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="614.82" cy="716.65" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="612.21" cy="715.82" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="609.87" cy="715.26" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="607.95" cy="713.78" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="605.41" cy="712.28" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="604.95" cy="709.48" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="606.49" cy="707.06" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="607.4" cy="704.84" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="608.69" cy="702.46" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        </g>
+        <text x="628" y="711.45" font-size="7" fill="#e6edf3">shape: rules it breaks, 0 to 6</text>
+      </g>
+    </g>
+    <g id="marks">
+      <g data-target="libs/core/src/pm/index.ts">
+        <circle data-target="libs/core/src/pm/index.ts" data-tier="primary" fill="none" stroke="#f0546a" stroke-width="1.5" cx="212.55" cy="397.96" r="12.45"/>
+        <g data-mark="1" data-tier="primary">
+          <rect x="223.47" y="408.88" width="10" height="10" fill="#f0546a"/>
+          <text x="228.47" y="416.33" font-size="7" font-weight="bold" text-anchor="middle" fill="#0a0c0f">1</text>
+        </g>
+        <g data-mark="2" data-tier="secondary">
+          <rect x="236.47" y="408.88" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
+          <text x="241.47" y="416.33" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">2</text>
+        </g>
+        <g data-mark="3" data-tier="secondary">
+          <rect x="249.47" y="408.88" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
+          <text x="254.47" y="416.33" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">3</text>
+        </g>
+        <g data-mark="4" data-tier="tertiary">
+          <rect x="262.47" y="408.88" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="267.47" y="416.33" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">4</text>
+        </g>
+        <text data-target="libs/core/src/pm/index.ts" x="223.47" y="428.88" font-size="7" font-variant="small-caps" fill="#f0546a">red-check-slot</text>
+      </g>
+      <g data-target="apps/cli/src/doctor.ts">
+        <g data-mark="5" data-tier="tertiary">
+          <rect x="67.9" y="237.8" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="72.9" y="245.25" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">5</text>
+        </g>
+      </g>
+      <g data-target="libs/core/src/pm/tools.ts">
+        <g data-mark="6" data-tier="tertiary">
+          <rect x="212.56" y="541.34" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="217.56" y="548.79" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">6</text>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

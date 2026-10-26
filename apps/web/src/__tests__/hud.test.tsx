@@ -119,10 +119,12 @@ test("the world's blocks are the sheet's, block for block, on the demo, its four
     expect(world.map((block) => block.muted), name).toEqual(sheet.map((block) => block.reason));
     for (const block of world) expect(HUD_ORDER, `${name}: ${block.id}`).toContain(block.id);
   }
-  // Every block on the demo, in §7's order, with Standing and Other present; the delta waits for wave 3.
+  // Every block on the demo, in §7's order, with Standing and Other present, and the delta its fallow measured (D98).
   const demo = blocksOf(DEMO);
   expect(demo.map((block) => block.id)).toEqual(HUD_ORDER);
-  expect(demo.find((block) => block.id === 'health')).toEqual({ id: 'health', label: 'Health Δ', value: MUTED_DASH, tail: '', muted: 'head-only' });
+  expect(demo.find((block) => block.id === 'health')).toEqual({ id: 'health', label: 'Health Δ', value: '+1.9', tail: '' });
+  const { health_delta: _measured, ...unmeasured } = DEMO.weather;
+  expect(blocksOf({ ...DEMO, weather: unmeasured }).find((block) => block.id === 'health')).toEqual({ id: 'health', label: 'Health Δ', value: MUTED_DASH, tail: '', muted: 'absent' });
   expect(blockText(demo[0] ?? { id: '', label: '', value: '', tail: '' })).toBe('IFR');
 });
 
@@ -143,17 +145,20 @@ test('the legend keys the same marks in the same words as the sheet, and the sha
 });
 
 test('the HUD draws every block in order with its words: the category solid in its hue, a muted block in the muted grey with the dash', async () => {
-  await act(async () => root.render(<Hud map={DEMO} registry={createRegistry()} />));
+  // With no base side measured, the demo's Health Δ is the muted block (D98, C2).
+  const { health_delta: _measured, ...unmeasured } = DEMO.weather;
+  const map = { ...DEMO, weather: unmeasured };
+  await act(async () => root.render(<Hud map={map} registry={createRegistry()} />));
   const blocks = all('[data-block]');
   expect(blocks.map((block) => block.getAttribute('data-block'))).toEqual(HUD_ORDER);
-  expect(blocks.map((block) => block.textContent)).toEqual(blocksOf(DEMO).map(blockText));
+  expect(blocks.map((block) => block.textContent)).toEqual(blocksOf(map).map(blockText));
   const category = element('[data-block="category"]');
   expect(category.getAttribute('data-category')).toBe('IFR');
   expect(category.style.background).toBe('rgb(240, 84, 106)');
   expect(category.textContent).toBe('IFR');
   const health = element('[data-block="health"]');
   expect(health.getAttribute('data-muted')).toBe('true');
-  expect(health.getAttribute('data-reason')).toBe('head-only');
+  expect(health.getAttribute('data-reason')).toBe('absent');
   expect(health.style.color).toBe('rgb(107, 116, 128)');
   expect(health.textContent).toContain(MUTED_DASH);
   expect(element('[data-block="gate"]').querySelector('b')?.textContent).toBe('1');

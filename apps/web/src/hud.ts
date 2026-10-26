@@ -6,23 +6,24 @@
  * with a dash where the number would be, never a number (C2, D41), the gate
  * and the standing block count the change's red and the rest apart (D70),
  * the Mutants block counts the survivors apart from those no test reached
- * (D143), and Health Δ waits for wave 3's base side (D23). A DOM test holds
+ * (D143), and Health Δ is the maintainability fallow measured the change
+ * move, muted with no base side (D98). A DOM test holds
  * the two renderers' words together on every fixture. Pure: no React, no
  * DOM, so a test reads the blocks straight.
  */
 
 import { OTHER_GROUP, changeSize, mutantOutcomes, readRedSplit } from 'core';
 import type { MapJson } from 'core';
-import { MUTED_DASH } from 'scene';
+import { MUTED_DASH, healthDeltaOf } from 'scene';
 
 import { tallyOf } from './notices.js';
 
 /**
  * One grade block: a label, a bold value, and a tail after it. A muted
  * block's value is the dash, and `muted` says why: `absent` when the map
- * never carried the input, `stale` when its slot's file predated the run
- * (D41), `empty` when there was nothing to measure, `head-only` for the
- * delta this build cannot take (D23).
+ * never carried the input, a Health Δ with no base side among them (D98),
+ * `stale` when its slot's file predated the run (D41), and `empty` when
+ * there was nothing to measure.
  */
 export type Block = {
   readonly id: string;
@@ -97,6 +98,12 @@ const mutantBlock = (map: MapJson): Block => {
   return block('mutants', 'Mutants', String(survived), untested === 0 ? ' survived' : ` survived, ${String(untested)} untested`);
 };
 
+/** `Health Δ +1.9`: the change's net movement in fallow's maintainability index, signed, and muted where the map measured no base side (D98, C2). */
+const healthBlock = (map: MapJson): Block => {
+  const delta = healthDeltaOf(map);
+  return delta === undefined ? muted('health', 'Health Δ', 'absent') : block('health', 'Health Δ', delta);
+};
+
 /** The HUD row of §7 in `HUD_ORDER`; `Standing` only when some red is wholly standing (D70), `Other` only when the shore's `other` group is non-empty (D48). */
 export const blocksOf = (map: MapJson): readonly Block[] => {
   const { changed, reach, checks } = map.weather;
@@ -111,7 +118,7 @@ export const blocksOf = (map: MapJson): readonly Block[] => {
     block('reach', 'Reach', String(cells), ' cells'),
     block('size', 'Size', `+${String(size.added)} ${MINUS}${String(size.deleted)}`, `, ${String(size.files)} files`),
     ...gateBlocks(map),
-    muted('health', 'Health Δ', 'head-only'),
+    healthBlock(map),
     block('notices', 'Notices', tallyOf(map)),
     ...(other === undefined || other.files.length === 0 ? [] : [block('other', 'Other', String(other.files.length))]),
   ];

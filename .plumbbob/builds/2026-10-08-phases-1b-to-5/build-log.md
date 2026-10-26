@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 52 — feat(core): compute health deltas, introduced findings and improvements
+**Current step:** 53 — feat(svg): draw improvements, the live Health Δ and the rename leader
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -101,7 +101,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 49. feat(core): relax a new base's layout from the nearest cached one
 - ☑ 50. perf(cli): draw a cached run's first frame within two seconds
 - ☑ 51. feat(cli): measure health, duplication and structure at the base
-- ☐ 52. feat(core): compute health deltas, introduced findings and improvements
+- ☑ 52. feat(core): compute health deltas, introduced findings and improvements
 - ☐ 53. feat(svg): draw improvements, the live Health Δ and the rename leader
 - ☐ 54. feat(web): draw improvements, Health Δ and the rename leader
 - ☐ 115. perf(core): reuse a cached base's layout for the ground the change did not touch
@@ -206,6 +206,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] hover on the planet: name a city light's file, or a star's package with its importers and health; the far zoom hovers nothing on the flat ground under it now (planet-far-field, step 113)
 - [x] the readLog test on this repo (git.test.ts) takes 4-5 s under the full check, against vitest's 5 s default timeout, and flaked once in step 48's run; git log --numstat over 135 commits costs ~1.8 s alone, which step 50's log timings and D50's --history cap should look at
 - [x] a cached run reuses its base's layout: pin the ground the change did not touch where the base put it, place only the change's files, recut only the skins near them, and scan the head without extracting the whole tree, so actual's cached first frame (11.2 s, 6.8 s of it the map's build) reaches about 2 s (C14 world-budget, D136 first-frame-clock); trades step 49's relaxed ground for a pinned one
+- [ ] key the calm-positive stain of an improved file and a renamed file's leader in both legends: steps 53 and 54 draw both marks, and neither legend keys them yet, as neither keys the rename's dashed outline
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -2003,3 +2004,4 @@ folder, so it rides the branch into the PR.)*
   The new doc records the terrain cache (what it keeps, its key, entry sizes from 0.5 MB to 11.5 MB), the relayout's bound (1.7 relaxed against 8.6 cold, pinned at 4), a miss and a hit for this repo and the six tuning repos, and the first frame on both backends for this repo and `actual`. The script that measures the first frame is new at `apps/web/scripts/first-frame.ts`, beside `budget.ts`, outside the seam. The corpus worktrees have no `node_modules` and no `.check/`, which the doc says, so their maps are NOINST and their entry points come from the manifests.
 
 - 2026-10-26 — step 51 checkpointed · f00c9f376 — feat(cli): measure health, duplication and structure at the base (1 drift, 11m)
+- 2026-10-26 — step 52 checkpointed · d423968d1 — feat(core): compute health deltas, introduced findings and improvements (1 drift, 16m)

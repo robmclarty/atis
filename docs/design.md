@@ -101,16 +101,20 @@ Where the arms turn to and each arm's length are seeded by the file's path
 ## State (hue)
 
 Hue means state and nothing else (§5.3, C11): one change hue for what the change
-touched, and the four flight-category hues (D6). The category letters always
-ride on the category hue.
+touched, a calm-positive mint for a changed file the change made healthier (D98),
+and the four flight-category hues (D6). A file wears one state: an improved file
+takes the mint in place of the change hue, its kind still told by its fill or its
+outline. The category letters always ride on the category hue.
 
 | Token | Value | Where it appears |
 | --- | --- | --- |
-| `CHANGE_HUE` | `#5fd8ea` | `#changed`: added and modified files stained, deleted and renamed outlined; also a `new-cross-module` edge and its arrow |
+| `CHANGE_HUE` | `#5fd8ea` | `#changed`: added and modified files stained, deleted and renamed outlined, and a renamed file's leader; also a `new-cross-module` edge and its arrow |
 | `CHANGE_OUTLINE_WIDTH` | `1.5` | the outline width of a deleted or renamed file |
-| `RENAME_DASH` | `3 2` | the dashed outline of a renamed file at its one position (D40) |
+| `RENAME_DASH` | `3 2` | the dashed outline of a renamed file at its one position (D40), and the dashes of its leader |
 | `RENAME_LABEL_SIZE` | `8` | the old path written beside it |
 | `RENAME_LABEL_GAP` | `4` | the gap from the mark to that old-path label |
+| `RENAME_LEADER_WIDTH` | `1` | a renamed file's leader, dashed from the place its base's layout gave it to the rim of where it is (D40, D97) |
+| `IMPROVED_HUE` | `#8be0b4` | `#changed`: a changed file a threshold, a dent, a clone family or a cycle left (`data-improved`), its stain, outline, leader and old path in place of the change hue (D98) |
 | `VFR_HUE` | `#4fd37a` | the VFR category block, and the emphasis of a notice under a VFR category |
 | `MVFR_HUE` | `#5b8def` | the MVFR category block and its emphasis |
 | `IFR_HUE` | `#f0546a` | the IFR category, a torn stitch, and every storm on the change in `#storms` |

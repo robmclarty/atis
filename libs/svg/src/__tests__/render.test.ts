@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -410,4 +410,38 @@ test('the demo map renders the golden byte for byte, and the same bytes twice', 
   const svg = renderSvg(map);
   expect(svg).toBe(readFileSync(join(SVG_FIXTURES, 'demo', 'atis.svg'), 'utf8'));
   expect(renderSvg(map)).toBe(svg);
+});
+
+const BARREL = 'libs/core/src/pm/index.ts';
+
+/**
+ * The demo with its pm barrel renamed from `main.ts`, as a run over a cached
+ * base would map it: the head's layout relaxed from the base's, which put
+ * the file up and to the left of where it settled (D40, D97). The demo's own
+ * inputs have no rename, and no layout to relax from, so this variant is the
+ * one map whose golden draws a leader.
+ */
+function renamed(): MapJson {
+  const map = demo();
+  const layout = map.terrain.layout;
+  if (layout === undefined) throw new Error('the demo map is laid out');
+  return assertMap({
+    ...map,
+    terrain: { ...map.terrain, layout: { ...layout, renamed_from: { [BARREL]: { x: 170, y: 380, r: 7.45 } } } },
+    weather: {
+      ...map.weather,
+      changed: map.weather.changed.map((file) => (file.path === BARREL ? { ...file, kind: 'renamed' as const, from: 'libs/core/src/pm/main.ts' } : file)),
+    },
+  });
+}
+
+test('the demo with a renamed barrel renders its golden byte for byte: a dashed leader from where its base put it (D40, D97)', () => {
+  const svg = renderSvg(renamed());
+  const path = join(SVG_FIXTURES, 'demo', 'renamed.svg');
+  if (process.env['ATIS_UPDATE_GOLDENS'] === '1') writeFileSync(path, svg);
+  expect(svg).toBe(readFileSync(path, 'utf8'));
+  expect(svg).toContain(`<line data-id="${BARREL}" data-leader="renamed" x1="170" y1="380"`);
+  // The rest is the demo's own: only the barrel's stain, its leader and its old path differ.
+  const demoLines = new Set(renderSvg(demo()).split('\n'));
+  expect(svg.split('\n').filter((line) => !demoLines.has(line)).every((line) => line.includes(BARREL))).toBe(true);
 });
