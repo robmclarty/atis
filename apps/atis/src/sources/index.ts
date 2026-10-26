@@ -5,6 +5,7 @@
  */
 
 export * from './check.js';
+export * from './fallow.js';
 export * from './git.js';
 export * from './imports.js';
 export * from './shapes.js';

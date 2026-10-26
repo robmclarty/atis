@@ -37,6 +37,15 @@ A run then reads only what its change touched over the cached base:
 
 An entry is 0.5 MB on `inspector`'s 164 files and 11.5 MB on `actual`'s 4,207.
 
+Beside the terrains, `.atis/structure/<sha>.json` keeps what the reviewed repository's own
+fallow measured of one commit: its `health`, `dupes` and `dead-code` reports, read by the
+parsers `.check/` is read by (D98). The base's is read on the runs its terrain is, and the
+head's is kept per head commit, so a second run on one change runs fallow on neither side
+(D136). An entry is keyed by the code key and the version of the repository's fallow, so
+a moved pin measures both sides again over the terrain as it was, and an entry with an
+analysis fallow could not read is never kept. On this repository, measuring a side costs
+0.9 to 1.0 s (three fallow runs on its extraction), and reading it back 1 ms.
+
 ## The relayout's bound
 
 A base the cache has not seen is laid out relaxed from the nearest ancestor the cache

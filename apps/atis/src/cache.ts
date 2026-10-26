@@ -14,6 +14,14 @@
  * error. `.atis/.gitignore` holds `*`, so atis never edits the repository's
  * own ignores. A base the cache has not seen is laid out from the nearest
  * ancestor it has, so the terrain holds still across bases (D97).
+ *
+ * Beside each terrain sits what the reviewed repo's own fallow measured of a
+ * commit, at `.atis/structure/<sha>.json`: the base's, read on the same runs
+ * the terrain is, and the head's, per head commit, so a second run on one
+ * change runs fallow on neither side (D98, D136). It is keyed by the code
+ * that read it and the fallow that measured it, since a repository that moves
+ * its fallow pin would otherwise compare a base measured by one version with
+ * a head measured by another, while its terrain stands as it was.
  */
 
 import { execFileSync } from 'node:child_process';
@@ -22,7 +30,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFile
 import { basename, dirname, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { Commit, Config, Layout } from 'core';
+import type { Commit, Config, Layout, Structure } from 'core';
 import ts from 'typescript';
 
 import type { ParsedFiles, Scan } from './sources/index.js';
@@ -50,8 +58,23 @@ export type TerrainKey = {
 /** A hit carries the terrain; a miss says why, for `--verbose` to name. */
 export type TerrainRead = { readonly hit: true; readonly terrain: BaseTerrain } | { readonly hit: false; readonly reason: string };
 
+/** A commit's structure as fallow measured all of it; one with a reason or a muted analysis is never kept, since the next run may read it whole. */
+export type MeasuredStructure = Extract<Structure, { readonly fallow: string }>;
+
+/** What a structure entry is keyed by beside its commit (D98). */
+export type StructureKey = {
+  /** The same code key a terrain carries (D137): the parsers that read the reports are atis's own. */
+  readonly code: string;
+  /** The version of the reviewed repo's own fallow, as its package names it. */
+  readonly fallow: string;
+};
+
+/** A hit carries the structure; a miss says why. */
+export type StructureRead = { readonly hit: true; readonly structure: MeasuredStructure } | { readonly hit: false; readonly reason: string };
+
 const DIRECTORY = '.atis';
 const TERRAIN = 'terrain';
+const STRUCTURE = 'structure';
 const ENTRY = '.json';
 /** How many commits back from a base the cache looks for an ancestor's terrain to relax from (D97). */
 const ANCESTRY = 1000;
@@ -81,6 +104,29 @@ export function writeAtomic(path: string, text: string): void {
 /** Where a base commit's terrain is kept, under the reviewed repository. */
 export function terrainPath(repo: string, sha: string): string {
   return join(repo, DIRECTORY, TERRAIN, `${sha}${ENTRY}`);
+}
+
+/** Where a commit's structure is kept, beside the terrains (D98). */
+export function structurePath(repo: string, sha: string): string {
+  return join(repo, DIRECTORY, STRUCTURE, `${sha}${ENTRY}`);
+}
+
+/** Write an entry under `.atis/`, which ignores itself in git, so atis never edits the repository's own ignores. */
+function keep(repo: string, path: string, entry: unknown): string {
+  const ignore = join(repo, DIRECTORY, '.gitignore');
+  if (!existsSync(ignore)) writeAtomic(ignore, IGNORE_ALL);
+  writeAtomic(path, JSON.stringify(entry));
+  return path;
+}
+
+/** An entry's JSON, `undefined` when it will not parse, or no entry at all. */
+function entryAt(path: string): { readonly found: false } | { readonly found: true; readonly entry: unknown } {
+  if (!existsSync(path)) return { found: false };
+  try {
+    return { found: true, entry: JSON.parse(readFileSync(path, 'utf8')) };
+  } catch {
+    return { found: true, entry: undefined };
+  }
 }
 
 /** Every code file under `dir`, by its path relative to `root`, tests left out: they never build a terrain. */
@@ -166,16 +212,27 @@ function isLayout(value: unknown): value is Layout {
   return isRecord(value) && isRecord(value['positions']) && Array.isArray(value['bands']);
 }
 
+/** Each report is absent, or a record holding the lists `.check/`'s parsers give it. */
+function holds(value: unknown, lists: readonly string[]): boolean {
+  return value === undefined || (isRecord(value) && lists.every((list) => Array.isArray(value[list])));
+}
+
+function isStructure(value: unknown): value is MeasuredStructure {
+  return (
+    isRecord(value) &&
+    typeof value['fallow'] === 'string' &&
+    Array.isArray(value['muted']) &&
+    holds(value['health'], ['file_scores', 'findings']) &&
+    holds(value['dupes'], ['clone_families']) &&
+    holds(value['dead'], ['circular_dependencies', 're_export_cycles', 'boundary_violations', 'unused_exports'])
+  );
+}
+
 /** Read the terrain of `sha`, a hit only when the entry was written for this commit by this code under this config. */
 export function readTerrain(repo: string, sha: string, key: TerrainKey): TerrainRead {
-  const path = terrainPath(repo, sha);
-  if (!existsSync(path)) return { hit: false, reason: 'no entry' };
-  let entry: unknown;
-  try {
-    entry = JSON.parse(readFileSync(path, 'utf8'));
-  } catch {
-    return { hit: false, reason: 'unreadable' };
-  }
+  const read = entryAt(terrainPath(repo, sha));
+  if (!read.found) return { hit: false, reason: 'no entry' };
+  const { entry } = read;
   if (!isRecord(entry) || entry['sha'] !== sha || !isRecord(entry['key'])) return { hit: false, reason: 'unreadable' };
   if (entry['key']['code'] !== key.code) return { hit: false, reason: 'code changed' };
   if (entry['key']['config'] !== key.config) return { hit: false, reason: 'config changed' };
@@ -186,11 +243,24 @@ export function readTerrain(repo: string, sha: string, key: TerrainKey): Terrain
 
 /** Keep the terrain of `sha` for the next run, atomically, with `.atis/` ignored by a `.gitignore` of its own. Returns where it went. */
 export function writeTerrain(repo: string, sha: string, key: TerrainKey, terrain: BaseTerrain): string {
-  const ignore = join(repo, DIRECTORY, '.gitignore');
-  if (!existsSync(ignore)) writeAtomic(ignore, IGNORE_ALL);
-  const path = terrainPath(repo, sha);
-  writeAtomic(path, JSON.stringify({ sha, key, ...terrain }));
-  return path;
+  return keep(repo, terrainPath(repo, sha), { sha, key, ...terrain });
+}
+
+/** Read the structure of `sha`, a hit only when the entry was written for this commit by this code, as this fallow measured it (D98). */
+export function readStructure(repo: string, sha: string, key: StructureKey): StructureRead {
+  const read = entryAt(structurePath(repo, sha));
+  if (!read.found) return { hit: false, reason: 'no entry' };
+  const { entry } = read;
+  if (!isRecord(entry) || entry['sha'] !== sha || !isRecord(entry['key'])) return { hit: false, reason: 'unreadable' };
+  if (entry['key']['code'] !== key.code) return { hit: false, reason: 'code changed' };
+  if (entry['key']['fallow'] !== key.fallow) return { hit: false, reason: 'fallow changed' };
+  const { structure } = entry;
+  return isStructure(structure) ? { hit: true, structure } : { hit: false, reason: 'unreadable' };
+}
+
+/** Keep the structure of `sha` for the next run, atomically, beside the terrains. Returns where it went. */
+export function writeStructure(repo: string, sha: string, key: StructureKey, structure: MeasuredStructure): string {
+  return keep(repo, structurePath(repo, sha), { sha, key, structure });
 }
 
 /** The commits the cache holds an entry for, by the names of its files. */

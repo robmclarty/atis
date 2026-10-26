@@ -274,6 +274,13 @@ export type Notice = {
 
 export type FallowSchemas = { readonly health?: number; readonly dead?: number; readonly dupes?: number };
 
+/**
+ * What one side of the change was measured with by the reviewed repo's own
+ * fallow (D22, D98): the version that ran, and each analysis it could not
+ * read as `analysis: reason`; or why it never ran on that side at all (C2).
+ */
+export type StructureSide = { readonly fallow: string; readonly muted?: readonly string[] } | { readonly reason: string };
+
 export type Instruments = {
   readonly mode: InstrumentsMode;
   readonly reason?: string;
@@ -284,6 +291,8 @@ export type Instruments = {
   readonly stale?: readonly string[];
   /** Channels muted for what they hold rather than their age, each as `channel: reason` (D122). */
   readonly muted?: readonly string[];
+  /** How the base and the head extractions' health, duplication and structure were measured, absent when the run never asked (D98). */
+  readonly structure?: { readonly base: StructureSide; readonly head: StructureSide };
 };
 
 export type Meta = {
@@ -388,6 +397,22 @@ function assertDependency(value: unknown, path: string): string {
 }
 
 /**
+ * One side's structure (D98): the fallow version that measured it, or why it
+ * was not measured, never both and never neither, so an unmeasured side
+ * always says why (C2).
+ */
+function assertStructureSide(value: unknown, path: string): void {
+  const side = expectRecord(value, path);
+  if ((side['fallow'] === undefined) === (side['reason'] === undefined)) fail(path, 'expected exactly one of fallow and reason');
+  if (side['reason'] !== undefined) {
+    expectString(side['reason'], `${path}.reason`);
+    return;
+  }
+  expectString(side['fallow'], `${path}.fallow`);
+  if (side['muted'] !== undefined) expectArray(side['muted'], `${path}.muted`).forEach((entry, index) => expectString(entry, `${path}.muted[${String(index)}]`));
+}
+
+/**
  * Every check below is real runtime narrowing (never a cast): `assertMap`
  * hands back a value the compiler only trusts because this function proved
  * its shape as it went, throwing on the first path that does not match.
@@ -410,6 +435,10 @@ function assertShape(value: unknown): asserts value is MapJson {
     fail('meta.instruments.entry_points_reason', 'a reason is required exactly when entry_points is manifests');
   }
   if (entryReason !== undefined) expectString(entryReason, 'meta.instruments.entry_points_reason');
+  if (instruments['structure'] !== undefined) {
+    const structure = expectRecord(instruments['structure'], 'meta.instruments.structure');
+    for (const side of ['base', 'head']) assertStructureSide(structure[side], `meta.instruments.structure.${side}`);
+  }
 
   const notices = expectArray(root['notices'], 'notices');
   if (notices.length > 6) fail('notices', `at most 6 notices, got ${String(notices.length)}`);

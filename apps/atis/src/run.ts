@@ -14,7 +14,10 @@
  * nothing. A base the cache has not seen is laid out relaxed from the
  * nearest ancestor it has, and the map relaxes from the base's own layout,
  * so the ground holds still across bases and under the change (D97). The
- * extractions are removed and the sources go to the pure `buildMap`.
+ * reviewed repo's own fallow measures both extractions' health, duplication
+ * and structure, each kept per commit beside the terrain, so a second run on
+ * one change runs it on neither side (D98, D136). The extractions are removed
+ * and the sources go to the pure `buildMap`.
  *
  * The map then goes one of two ways. `run` writes it atomically, and the still
  * SVG beside it, and exits. `serveRun` keeps it in memory and serves it with
@@ -31,15 +34,29 @@ import { platform, tmpdir } from 'node:os';
 import { basename, join, relative, resolve } from 'node:path';
 
 import { DEFAULT_CONFIG, buildMap, layOutTerrain } from 'core';
-import type { Commit, Layout, MapJson } from 'core';
+import type { Commit, Layout, MapJson, Structure } from 'core';
 import { renderSvg } from 'svg';
 
-import { codeKey, configKey, nearestTerrain, readTerrain, terrainPath, writeAtomic, writeTerrain } from './cache.js';
+import {
+  codeKey,
+  configKey,
+  nearestTerrain,
+  readStructure,
+  readTerrain,
+  structurePath,
+  terrainPath,
+  writeAtomic,
+  writeStructure,
+  writeTerrain,
+} from './cache.js';
 import { serve } from './serve.js';
 import type { Served } from './serve.js';
 import {
   HISTORY_WINDOW,
+  NO_LOCAL_FALLOW,
   checkInferredShapes,
+  localFallow,
+  measureStructure,
   readCheck,
   readDiff,
   readLog,
@@ -47,7 +64,7 @@ import {
   readTree,
   shapePaths,
 } from './sources/index.js';
-import type { ParsedFiles, Scan, ScanOptions } from './sources/index.js';
+import type { LocalFallow, ParsedFiles, Scan, ScanOptions } from './sources/index.js';
 
 /** The flags for a run that writes files, already parsed: `cli.ts` owns the parsing, `run` owns the work. */
 export type Options = {
@@ -150,12 +167,13 @@ function timed<T>(timings: Timing[], source: string, work: () => T): T {
   return value;
 }
 
-/** What `--verbose` prints: whether the terrain cache hit, then each source's time. */
+/** What `--verbose` prints: whether the terrain cache and each side's structure hit, then each source's time. */
 function report(measured: Measured): string {
-  const { timings } = measured;
+  const { timings, structure } = measured;
   const width = timings.reduce((widest, timing) => Math.max(widest, timing.source.length), 0);
   const lines = timings.map((timing) => `  ${timing.source.padEnd(width)}  ${String(timing.ms)} ms\n`);
-  return [`  terrain cache ${measured.cache}\n`, ...lines].join('');
+  const kept = [`  terrain cache ${measured.cache}\n`, `  structure base ${structure.base}\n`, `  structure head ${structure.head}\n`];
+  return [...kept, ...lines].join('');
 }
 
 /**
@@ -191,8 +209,13 @@ function summary(map: MapJson): string {
   return `${map.weather.checks.category}, ${counted(map.weather.changed.length, 'file')} changed, ${counted(map.notices.length, 'notice')}`;
 }
 
-/** The map built, the timings so far, which the caller adds its own to, and what the terrain cache did. */
-type Measured = { readonly map: MapJson; readonly timings: Timing[]; readonly cache: string };
+/** The map built, the timings so far, which the caller adds its own to, and what the terrain cache and each side's structure did. */
+type Measured = {
+  readonly map: MapJson;
+  readonly timings: Timing[];
+  readonly cache: string;
+  readonly structure: { readonly base: string; readonly head: string };
+};
 
 /** The config every run measures with: core's defaults, since no `atis.config.json` is read yet. */
 const CONFIG = DEFAULT_CONFIG;
@@ -252,6 +275,32 @@ function groundAt(reader: Reader, sha: string, cache: boolean): Ground {
   }
 }
 
+/** One side's structure, and what the cache did with it, for `--verbose` to say. */
+type Measure = { readonly structure: Structure; readonly cache: string };
+
+/**
+ * One commit's structure (D98): kept from an earlier run when this code and
+ * this fallow measured it, else measured on its extraction, which `tree`
+ * makes only when it is needed, and kept for the next run (D136). Only a
+ * structure fallow read whole is kept, since a muted analysis may read on
+ * the next run. A cache that will not write leaves the run as it was (C4).
+ */
+function structureAt(repo: string, sha: string, tree: () => string, fallow: LocalFallow | undefined, cache: boolean): Measure {
+  if (fallow === undefined) return { structure: { reason: NO_LOCAL_FALLOW }, cache: 'none (no local fallow)' };
+  const key = cache && fallow.version !== undefined ? { code: codeKey(), fallow: fallow.version } : undefined;
+  const read = key === undefined ? undefined : readStructure(repo, sha, key);
+  if (read?.hit === true) return { structure: read.structure, cache: `hit, ${relative(repo, structurePath(repo, sha))}` };
+  const structure = measureStructure(tree(), fallow);
+  if (!cache) return { structure, cache: 'off (--no-cache)' };
+  if (key === undefined || read === undefined) return { structure, cache: 'measured, not kept: fallow names no version to key it by' };
+  if ('reason' in structure || structure.muted.length > 0) return { structure, cache: `miss (${read.reason}), measured, not kept: fallow read only part of it` };
+  try {
+    return { structure, cache: `miss (${read.reason}), measured, wrote ${relative(repo, writeStructure(repo, sha, key, structure))}` };
+  } catch (error) {
+    return { structure, cache: `miss (${read.reason}), measured, not written: ${messageOf(error)}` };
+  }
+}
+
 /** Read the repository and build the map; throws on a repository it cannot read, with the extractions removed either way. */
 function measure(repoPath: string, base: string, cache: boolean, history: number = HISTORY_WINDOW): Measured {
   const repo = resolve(repoPath);
@@ -277,12 +326,19 @@ function measure(repoPath: string, base: string, cache: boolean, history: number
     const headSide = scanAt('scan head', head.sha, { parsed: ground.parsed, touched: new Set(diff.changed.map((file) => file.path)) });
     // The names only the checker can print, in the changed interface files alone, each side timed (D118).
     // A base read from the cache has no tree, so it is extracted only when one of those files has such a name.
+    // A base read from the cache has no tree, so it is extracted once, and only when something reads it.
+    let baseTree = ground.tree;
+    const baseTreeOf = (): string => (baseTree ??= treeAt(diff.merge_base));
     const paths = shapePaths(diff.changed, ground.scan, headSide.scan);
     const inferred = new Set(ground.scan.files.filter((file) => paths.base.has(file.path) && file.inferred.length > 0).map((file) => file.path));
     const baseScan = timed(timings, 'shapes base', () =>
-      inferred.size === 0 ? ground.scan : checkInferredShapes(ground.tree ?? treeAt(diff.merge_base), ground.scan, inferred),
+      inferred.size === 0 ? ground.scan : checkInferredShapes(baseTreeOf(), ground.scan, inferred),
     );
     const headScan = timed(timings, 'shapes head', () => checkInferredShapes(headSide.tree, headSide.scan, paths.head));
+    // Both sides by the same fallow, the base's beside its terrain and the head's per head commit (D98, D136).
+    const fallow = localFallow(repo);
+    const baseStructure = timed(timings, 'structure base', () => structureAt(repo, diff.merge_base, baseTreeOf, fallow, cache));
+    const headStructure = timed(timings, 'structure head', () => structureAt(repo, head.sha, () => headSide.tree, fallow, cache));
     const touched = diff.changed.flatMap((file) => (file.from === undefined ? [file.path] : [file.path, file.from]));
     const { deps_added, deps_moved } = timed(timings, 'manifests', () => readManifests(repo, diff.merge_base, touched));
     // The window at the base, with the change's own commits on top, newest first (D8).
@@ -310,9 +366,10 @@ function measure(repoPath: string, base: string, cache: boolean, history: number
         check,
         // The map relaxes from the base's own layout, so the change never moves the ground under it (D32, D97).
         prior: ground.layout,
+        structure: { base: baseStructure.structure, head: headStructure.structure },
       }, CONFIG),
     );
-    return { map, timings, cache: ground.cache };
+    return { map, timings, cache: ground.cache, structure: { base: baseStructure.cache, head: headStructure.cache } };
   } finally {
     for (const extraction of extractions) rmSync(extraction.root, { recursive: true, force: true });
   }

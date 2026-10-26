@@ -119,7 +119,30 @@ export function parseSummary(text: string): SummaryParse {
   return { kind: 'ok', summary: { ok, checks_run: checksRun, timestamp, total_duration_ms: totalDurationMs, checks } };
 }
 
-type FallowParse<T> = { readonly value: T; readonly schema_version?: number };
+/**
+ * One fallow report, read: what it holds, and its envelope's `kind`, `version`
+ * and `schema_version`. The kind is what tells a report from fallow's error
+ * envelope, which parses as a report of nothing (C2); the version is which
+ * fallow wrote it (D98).
+ */
+export type FallowParse<T> = { readonly value: T; readonly kind?: string; readonly version?: string; readonly schema_version?: number };
+
+function stringField(record: Record<string, unknown>, key: string): string | undefined {
+  const value = record[key];
+  return typeof value === 'string' ? value : undefined;
+}
+
+/** The envelope every fallow report opens with, each part only when it is there. */
+function envelopeOf(record: Record<string, unknown>): Omit<FallowParse<unknown>, 'value'> {
+  const kind = stringField(record, 'kind');
+  const version = stringField(record, 'version');
+  const schemaVersion = numberField(record, 'schema_version');
+  return {
+    ...(kind === undefined ? {} : { kind }),
+    ...(version === undefined ? {} : { version }),
+    ...(schemaVersion === undefined ? {} : { schema_version: schemaVersion }),
+  };
+}
 
 /**
  * `health.json` (fallow): `file_scores[]`, `findings[]` by path with the
@@ -168,12 +191,8 @@ export function parseHealth(text: string): FallowParse<Health> | undefined {
 
   const thresholds = value['target_thresholds'];
   const fan_in_p95 = isRecord(thresholds) ? numberField(thresholds, 'fan_in_p95') : undefined;
-  const schemaVersion = numberField(value, 'schema_version');
 
-  return {
-    value: { file_scores, findings, ...(fan_in_p95 === undefined ? {} : { fan_in_p95 }) },
-    ...(schemaVersion === undefined ? {} : { schema_version: schemaVersion }),
-  };
+  return { value: { file_scores, findings, ...(fan_in_p95 === undefined ? {} : { fan_in_p95 }) }, ...envelopeOf(value) };
 }
 
 /**
@@ -184,7 +203,6 @@ export function parseHealth(text: string): FallowParse<Health> | undefined {
 export function parseDead(text: string): FallowParse<Dead> | undefined {
   const value = parseJson(text);
   if (!isRecord(value)) return undefined;
-  const schemaVersion = numberField(value, 'schema_version');
   return {
     value: {
       circular_dependencies: arrayField(value, 'circular_dependencies'),
@@ -192,7 +210,7 @@ export function parseDead(text: string): FallowParse<Dead> | undefined {
       boundary_violations: arrayField(value, 'boundary_violations'),
       unused_exports: arrayField(value, 'unused_exports'),
     },
-    ...(schemaVersion === undefined ? {} : { schema_version: schemaVersion }),
+    ...envelopeOf(value),
   };
 }
 
@@ -200,8 +218,7 @@ export function parseDead(text: string): FallowParse<Dead> | undefined {
 export function parseDupes(text: string): FallowParse<Dupes> | undefined {
   const value = parseJson(text);
   if (!isRecord(value)) return undefined;
-  const schemaVersion = numberField(value, 'schema_version');
-  return { value: { clone_families: arrayField(value, 'clone_families') }, ...(schemaVersion === undefined ? {} : { schema_version: schemaVersion }) };
+  return { value: { clone_families: arrayField(value, 'clone_families') }, ...envelopeOf(value) };
 }
 
 /** `coverage/coverage-final.json` (istanbul): absolute-path keys, `statementMap` start and end lines, `s` (D163). */

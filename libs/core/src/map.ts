@@ -20,7 +20,7 @@ import { computeDependencies } from './dependencies.js';
 import { computeDepth } from './depth.js';
 import type { FileDepth } from './depth.js';
 import { computeCategory, computeEvidence, pathsOf, trustCoverage } from './evidence.js';
-import type { CheckArtifacts, Dupes, Health } from './evidence.js';
+import type { CheckArtifacts, Dead, Dupes, Health } from './evidence.js';
 import { OTHER_GROUP, identifyGroups, shoreMatcher } from './groups.js';
 import { computeHistory } from './history.js';
 import type { Commit, CommitFile, FileHistory } from './history.js';
@@ -33,7 +33,21 @@ import type { NamedEdge, PublishingMember, ScanFile } from './notices.js';
 import { TESTS_GROUP, computeReach } from './reach.js';
 import type { DiffFile } from './reach.js';
 import { SCHEMA_VERSION } from './schema.js';
-import type { Cell, DepAdded, DepMoved, ExceptionalEdge, Group, Instruments, Layout, MapJson, Organelle, Stability, Ties, WiringEdge } from './schema.js';
+import type {
+  Cell,
+  DepAdded,
+  DepMoved,
+  ExceptionalEdge,
+  Group,
+  Instruments,
+  Layout,
+  MapJson,
+  Organelle,
+  Stability,
+  StructureSide,
+  Ties,
+  WiringEdge,
+} from './schema.js';
 import { computePackageTies, computeTies } from './ties.js';
 
 /**
@@ -57,6 +71,23 @@ export type Scan = {
   readonly members: readonly ScanMember[];
   readonly entry_points: EntryPointLookup;
 };
+
+/**
+ * One extracted commit's health, duplication and structure, as the reviewed
+ * repo's own fallow measured it (D22, D98): the version that ran, each of the
+ * three analyses it read, and each it could not as `analysis: reason`; or why
+ * it never ran on the commit at all (C2). Its reports are `.check/`'s, read
+ * by the same parsers, so the two sides of a change compare like for like.
+ */
+export type Structure =
+  | {
+      readonly fallow: string;
+      readonly health?: Health;
+      readonly dupes?: Dupes;
+      readonly dead?: Dead;
+      readonly muted: readonly string[];
+    }
+  | { readonly reason: string };
 
 /** What the map is of: the commits it spans, and the clock a pure `buildMap` cannot read for itself (C3). */
 export type MapMeta = {
@@ -87,6 +118,8 @@ export type BuildInputs = {
   readonly check: CheckArtifacts;
   /** The layout to relax from, keyed by path: the base terrain's own, which the CLI keeps per base (D96, D97); absent, the field settles from nothing. */
   readonly prior?: Prior;
+  /** fallow's measure of the base and the head extractions (D98); absent, the map says nothing of either. */
+  readonly structure?: { readonly base: Structure; readonly head: Structure };
 };
 
 /** fallow's compound `exceeded` values, split so the count of dents is the count of rules (§5.1). */
@@ -493,9 +526,17 @@ function entryPointsOf(base: EntryPointLookup, head: EntryPointLookup): EntryPoi
   return { entry_points: 'manifests', entry_points_reason: reasons.join('; ') };
 }
 
-/** What the map was measured with, and what it could not be: the muted channels say so by name (C2, D41, D122). */
-function instrumentsOf(check: CheckArtifacts, entries: EntryPointsRead, muted: readonly string[]): Instruments {
-  if (check.mode === 'git-only') return { mode: 'git-only', reason: check.reason, ...entries };
+/** One side's structure as the map records it: the fallow that measured it and what it could not read, or why it was never measured (D98, C2). */
+function structureSide(structure: Structure): StructureSide {
+  if ('reason' in structure) return { reason: structure.reason };
+  const muted = [...structure.muted].toSorted(byPath);
+  return { fallow: structure.fallow, ...(muted.length === 0 ? {} : { muted }) };
+}
+
+/** What the map was measured with, and what it could not be: the muted channels say so by name (C2, D41, D98, D122). */
+function instrumentsOf(check: CheckArtifacts, entries: EntryPointsRead, muted: readonly string[], structure: BuildInputs['structure']): Instruments {
+  const measured = structure === undefined ? {} : { structure: { base: structureSide(structure.base), head: structureSide(structure.head) } };
+  if (check.mode === 'git-only') return { mode: 'git-only', reason: check.reason, ...entries, ...measured };
   const stale = check.stale
     .map((channel) => `${channel.slot}: ${channel.file}, ${String(channel.age_ms)} ms older than the run`)
     .toSorted(byPath);
@@ -505,6 +546,7 @@ function instrumentsOf(check: CheckArtifacts, entries: EntryPointsRead, muted: r
     ...(Object.keys(check.fallow_schemas).length === 0 ? {} : { fallow_schemas: check.fallow_schemas }),
     ...(stale.length === 0 ? {} : { stale }),
     ...(muted.length === 0 ? {} : { muted: [...muted].toSorted(byPath) }),
+    ...measured,
   };
 }
 
@@ -609,6 +651,7 @@ export function buildMap(inputs: BuildInputs, config: Config = DEFAULT_CONFIG): 
         check,
         entryPointsOf(inputs.base.entry_points, head.entry_points),
         trusted.muted === undefined ? [] : [trusted.muted],
+        inputs.structure,
       ),
     },
     terrain: {

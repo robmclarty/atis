@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 50 — perf(cli): draw a cached run's first frame within two seconds
+**Current step:** 51 — feat(cli): measure health, duplication and structure at the base
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -99,11 +99,12 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 114. fix(core): keep a package's sibling cells apart so no two skins cross
 - ☑ 48. feat(cli): cache the terrain per base commit
 - ☑ 49. feat(core): relax a new base's layout from the nearest cached one
-- ☐ 50. perf(cli): draw a cached run's first frame within two seconds
+- ☑ 50. perf(cli): draw a cached run's first frame within two seconds
 - ☐ 51. feat(cli): measure health, duplication and structure at the base
 - ☐ 52. feat(core): compute health deltas, introduced findings and improvements
 - ☐ 53. feat(svg): draw improvements, the live Health Δ and the rename leader
 - ☐ 54. feat(web): draw improvements, Health Δ and the rename leader
+- ☐ 115. perf(core): reuse a cached base's layout for the ground the change did not touch
 - ☐ 55. feat(cli): resolve the trunk and the named bases
 - ☐ 56. feat(cli): map the working tree's uncommitted weather
 - ☐ 57. feat(core): build one weather frame per commit of a range
@@ -203,8 +204,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] world.test.ts's reduced-motion browser test is flaky before step 114 too (2 of 8 runs red on HEAD 245e5ad): two frames 1.5 s apart in an opened cell differ under reduced motion; find what still moves, or what Chrome re-rasters
 - [x] an added file whose folder's room is spent still lands beside its own and can cross a sibling's skin (1 of 80 seeded layouts, fields seed 30); D32 pins the terrain, so more growth room or a relayout of the ground D32 forbids are the ways out
 - [x] hover on the planet: name a city light's file, or a star's package with its importers and health; the far zoom hovers nothing on the flat ground under it now (planet-far-field, step 113)
-- [ ] the readLog test on this repo (git.test.ts) takes 4-5 s under the full check, against vitest's 5 s default timeout, and flaked once in step 48's run; git log --numstat over 135 commits costs ~1.8 s alone, which step 50's log timings and D50's --history cap should look at
-- [ ] a cached run reuses its base's layout: pin the ground the change did not touch where the base put it, place only the change's files, recut only the skins near them, and scan the head without extracting the whole tree, so actual's cached first frame (11.2 s, 6.8 s of it the map's build) reaches about 2 s (C14 world-budget, D136 first-frame-clock); trades step 49's relaxed ground for a pinned one
+- [x] the readLog test on this repo (git.test.ts) takes 4-5 s under the full check, against vitest's 5 s default timeout, and flaked once in step 48's run; git log --numstat over 135 commits costs ~1.8 s alone, which step 50's log timings and D50's --history cap should look at
+- [x] a cached run reuses its base's layout: pin the ground the change did not touch where the base put it, place only the change's files, recut only the skins near them, and scan the head without extracting the whole tree, so actual's cached first frame (11.2 s, 6.8 s of it the map's build) reaches about 2 s (C14 world-budget, D136 first-frame-clock); trades step 49's relaxed ground for a pinned one
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -298,6 +299,9 @@ Harvest results this boundary:
 - **tangent**: park 58 · an added file whose folder's room is spent still lands beside its own and can cross a sibling's skin (1 of 80 seeded layouts, fields seed 30); D32 pins the terrain, so more growth room or a relayout of the ground D32 forbids are the ways out → one seeded layout in eighty and none on atis's own maps, and D32 pins the terrain; worth a step only if a real change shows it
 - 2026-10-26, at range 31 of 31's stop: 1 parked idea, classified.
 - **tangent**: park 59 · hover on the planet: name a city light's file, or a star's package with its importers and health; the far zoom hovers nothing on the flat ground under it now (planet-far-field, step 113) → a hover on the planet is new reach for the far zoom, nothing in this range needs it, and the far zoom works without it
+- 2026-10-26, at the step 50 boundary: 2 parked ideas, classified.
+- **tangent**: park 60 · the readLog test on this repo (git.test.ts) takes 4-5 s under the full check, against vitest's 5 s default timeout, and flaked once in step 48's run; git log --numstat over 135 commits costs ~1.8 s alone, which step 50's log timings and D50's --history cap should look at → step 49 gave the test a minute and step 50's cache and `--history` took the log's cost off cached runs, so nothing is left to plan
+- **blocker**: park 61 · a cached run reuses its base's layout: pin the ground the change did not touch where the base put it, place only the change's files, recut only the skins near them, and scan the head without extracting the whole tree, so actual's cached first frame (11.2 s, 6.8 s of it the map's build) reaches about 2 s (C14 world-budget, D136 first-frame-clock); trades step 49's relaxed ground for a pinned one → wave 3's own outcome is a cached first frame within 2 s, and `actual` sits at 11.2 s until a cached run reuses its base's layout; it becomes step 115, a bare range of its own after range 16, since its pause holds the pinned-or-relaxed ground call
 
 ## Log
 
@@ -1934,3 +1938,66 @@ folder, so it rides the branch into the PR.)*
 
 - 2026-10-26 — step 48 checkpointed · c80af1d91 — feat(cli): cache the terrain per base commit (1 drift, 9m)
 - 2026-10-26 — step 49 checkpointed · 2950c4f64 — feat(core): relax a new base's layout from the nearest cached one (1 drift, 13m)
+- 2026-10-26 — step 50 checkpointed · 1b5743cd9 — perf(cli): draw a cached run's first frame within two seconds (1 red, 1 drift, 33m)
+
+  **Summary**: A cached run of this repository now draws its first frame 1.72 s after the command on WebGPU and 2.24 s on WebGL 2, and a cached run of `actual`, the largest corpus repo, went from 95 s to 11.2 s, which is still far over the 2 s the done-when asks for. Every other part of the done-when is in: reach is walked once for the whole change, the head scan reads only the files the diff touched, each leg is recorded per repository in `docs/performance.md` by a script, and `--history <n>` landed because four repos' log passes 2 s.
+
+  1. On `actual` the cached first frame takes 11.2 s, and 6.8 s of it is the map's build
+  2. Skins are now cut against the files near them, which took `actual`'s layout from 99 s to 6.4 s with every skin unchanged
+  3. The head scan, the evidence's reach and the manifests now do only what the change touched, each pinned equal to the old way
+  4. `--history <n>` landed, because four repos' log passes 2 s on a miss
+  5. Every leg per repository is in `docs/performance.md`, with the cache and the relayout's bound
+
+  **Readout**:
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    not met
+               → actual's cached first frame is 11.2 s; this repo's 1.7 to 2.2 s
+  decisions    2 of 2 honored
+  constraints  bent: C14 (world-budget)
+               → a cached run of actual is far past "a little over" 2 s
+  seam         strayed: 8 paths outside the seam
+               - apps/atis/src/__tests__/cache.test.ts
+               - apps/atis/src/__tests__/cli.test.ts
+               - apps/atis/src/__tests__/git.test.ts
+               - apps/atis/src/__tests__/index.test.ts
+               - apps/atis/src/__tests__/shapes.test.ts
+               - apps/atis/src/index.ts
+               - libs/core/src/layout/membranes.ts
+               - apps/web/scripts/first-frame.ts
+  diff         +635 -88 across 18 files
+  spent        33 min · 1 turn · 59s gate · 1 red run
+  ```
+
+  **Verdict**: ○ Out of plumb (done-when not met)
+
+  **Recommendation**: Land step 50 with `actual`'s miss on the record, and add a step after this range that makes a cached run reuse its base's layout. Pinning the untouched ground and recutting only the skins near the change is what closes the 6.8 s, and it swaps step 49's relaxed ground for a pinned one, which is a design call for you rather than a fix inside this step.
+
+  **1.** On `actual` the cached first frame takes 11.2 s, and 6.8 s of it is the map's build
+
+  `apps/web/scripts/first-frame.ts` times a served, cached run with Chrome already running. On `actual` (4,207 files, 1,727 placed) the command serves after 9.65 s: 6.8 s building the map, 1.7 s scanning the head, about 0.3 s for the diff, the cache read and the log, and the rest starting Node. The world then takes 1.4 s from the map's arrival, inside its own budget.
+
+  The build is the layout. Step 49 made the map relax from its base's own layout, so every lane is simulated again and every skin is cut again on every run, even where the change touched nothing. Closing it means a cached run reusing its base's layout: holding the ground the change did not touch exactly where the base put it, placing only the change's files into it the way the second pass already places added files, and recutting only the skins near them. That replaces step 49's relaxed ground with a pinned one, and it reaches into `layout/index.ts` and `map.ts`, well past this step's seam, so it is your call and not done here.
+
+  The head scan's 1.7 s is the other leg: it still extracts the whole head tree and links every file, though it reads only the ten the diff touched.
+
+  **2.** Skins are now cut against the files near them, which took `actual`'s layout from 99 s to 6.4 s with every skin unchanged
+
+  A profile of `actual`'s layout put 91 of its 99 s in the Bubble Sets library's edge routing: each skin's members were tested pairwise against every other file on the field. `membranes.ts` now hands each skin only the files within its region's reach (the field's padding and one bend round a file at the box's edge), and hoists the sort of the field out of the per-cell loop.
+
+  The output is byte for byte what it was: all 283 skins of `actual`, the demo map and every SVG golden. This is outside the step's seam (`libs/core/src/layout/membranes.ts`), and it is why the seam row flags a stray: without it no repository past a few hundred files had a chance at the budget.
+
+  **3.** The head scan, the evidence's reach and the manifests now do only what the change touched, each pinned equal to the old way
+
+  - **The head scan.** The cache now keeps what the base's scan read from each TypeScript file. `readTree` reuses those reads for every file the diff does not name and links the head tree as before, so stars, renames and deletions resolve afresh. A test pins it equal to a full scan on a tree of strings with a star through a touched file, a rename and a deletion, and again on step 112's and step 113's commits of this repository.
+  - **Reach.** `computeCellsReached` counts each changed file's cells reached in one walk per graph, each file carrying the changed files that reached it as bits. It equals the per-file walks on the demo inputs and on a forty-file chain that crosses a word of bits.
+  - **The manifests.** `readManifests` reads only the `package.json` files the diff touched, and asks git nothing when it touched none, which took 300 ms off this repo and 700 ms off `actual`.
+
+  **4.** `--history <n>` landed, because four repos' log passes 2 s on a miss
+
+  `discord.js`, `mermaid`, `matrix-js-sdk` and `actual` spend 2.7 to 6.0 s in `git log` over the 5,000-commit window on a miss. A hit reads only the change's own commits, about 30 ms. Per D50 (history-measured) the window stays 5,000, and `--history <n>` caps it; the cap joins the cache key, since a window read under another cap is another terrain. Tests cover the cap, the miss it causes, and the misuse a bad value earns.
+
+  **5.** Every leg per repository is in `docs/performance.md`, with the cache and the relayout's bound
+
+  The new doc records the terrain cache (what it keeps, its key, entry sizes from 0.5 MB to 11.5 MB), the relayout's bound (1.7 relaxed against 8.6 cold, pinned at 4), a miss and a hit for this repo and the six tuning repos, and the first frame on both backends for this repo and `actual`. The script that measures the first frame is new at `apps/web/scripts/first-frame.ts`, beside `budget.ts`, outside the seam. The corpus worktrees have no `node_modules` and no `.check/`, which the doc says, so their maps are NOINST and their entry points come from the manifests.
