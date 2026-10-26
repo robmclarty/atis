@@ -10,8 +10,11 @@
  * halo and thin ring in the category hue, a secondary's thick ring in the
  * leaders' grey (D72), each a sector like the rest, and every sector names
  * the notice whose light the scheduler moves it by, so the primary's stain
- * and halo breathe and flare where the scene anchors it (D148). Pure: no
- * three, no DOM, so a test reads the records straight.
+ * and halo breathe and flare where the scene anchors it (D148). A changed
+ * file the change made healthier wears the calm-positive hue in place of the
+ * change hue, and a renamed one's leader runs as dashed ribbons from where
+ * its base put it (D40, D97, D98). Pure: no three, no DOM, so a test reads
+ * the records straight.
  */
 
 import {
@@ -35,6 +38,7 @@ import {
   PRIMARY_RING_WIDTH,
   RENAME_DASH,
   RENAME_LABEL_GAP,
+  RENAME_LEADER_WIDTH,
   SECONDARY_RING_WIDTH,
   STANDING_STORM_SCALE,
   STITCH_LENGTH,
@@ -42,16 +46,17 @@ import {
   STITCH_WIDTH,
   STORM_LABEL_GAP,
   TEXTURE_MAX_OPACITY,
+  renameLeaderOf,
   slideCellOf,
   weatherOf,
 } from 'scene';
-import type { FileWeather, SceneWeather, Storm } from 'scene';
+import type { ChangeState, FileWeather, SceneWeather, Storm } from 'scene';
 import type { MapJson, Position } from 'core';
 
 import { runsOf } from './notices.js';
 
-/** The hues a mark can take, by what it means: the index the material's palette is read at. `category` is the map's flight category's, `leader` the chrome's leaders' grey. */
-export const HUES = ['change', 'reach', 'evidence', 'ifr', 'unlit', 'ghost', 'ink', 'lifr', 'standing', 'category', 'leader'] as const;
+/** The hues a mark can take, by what it means: the index the material's palette is read at. `category` is the map's flight category's, `leader` the chrome's leaders' grey, `improved` the calm-positive state (D98). */
+export const HUES = ['change', 'reach', 'evidence', 'ifr', 'unlit', 'ghost', 'ink', 'lifr', 'standing', 'category', 'leader', 'improved'] as const;
 export type Hue = (typeof HUES)[number];
 
 /** A texture laid over a mark: none, hatching for churn, stipple for bug-fix rate (C11). */
@@ -98,14 +103,20 @@ export type Sector = {
 /** A storm's bolt, flat on the skin where the scene hangs it, the change's full size and standing state smaller and graphite (D68). */
 export type Bolt = { readonly slot: string; readonly place: string; readonly x: number; readonly y: number; readonly scale: number; readonly hue: Hue };
 
-/** An exceptional edge as a ribbon: its points along the bow, its hue by kind, and the arrowhead's tip and heading at the imported end. */
+/**
+ * A line as a ribbon: an exceptional edge, its points along the bow, its hue
+ * by kind, and the arrowhead's tip and heading at the imported end; or one
+ * dash of a renamed file's leader, from its old path to its new, `renamed`
+ * by kind, its own width and no arrowhead (D40, D97).
+ */
 export type Ribbon = {
   readonly from: string;
   readonly to: string;
   readonly kind: string;
   readonly points: readonly (readonly [number, number])[];
   readonly hue: Hue;
-  readonly arrow: { readonly x: number; readonly y: number; readonly angle: number; readonly size: number };
+  readonly arrow?: { readonly x: number; readonly y: number; readonly angle: number; readonly size: number };
+  readonly width?: number;
 };
 
 /** Words the world writes beside a mark: a change storm's slot, a renamed file's old path (D40). */
@@ -191,12 +202,16 @@ const spoke = (kind: MarkKind, file: FileWeather, at: Position, angle: number, i
   bloom,
 });
 
-/** The change's stain by kind: a filled disc for an edit, the outline alone for a deletion, a dashed outline for a rename (D40). The stain shows at the far field, as the change's light, and a noticed file's follows its notice's light. */
+/** A changed file's state hue: the calm-positive one where the change made it healthier, the change hue otherwise; one state per file (D98). */
+const stateHue = (change: ChangeState): Hue => (change.improvements === undefined ? 'change' : 'improved');
+
+/** The change's stain by kind: a filled disc for an edit, the outline alone for a deletion, a dashed outline for a rename (D40), each in its state's hue. The stain shows at the far field, as the change's light, and a noticed file's follows its notice's light. */
 const stainOf = (file: FileWeather, at: Position, notice: number): readonly Sector[] => {
   const change = file.change;
   if (change === undefined) return [];
-  if (change.kind === 'added' || change.kind === 'modified') return [{ ...disc('stain', file, at, 0, 'change', 1, 1, true), notice }];
-  return [{ ...ring('outline', file, at, 0, CHANGE_OUTLINE_WIDTH, 'change', 1, 1, change.kind === 'renamed' ? dashOf(RENAME_DASH) : SOLID), notice }];
+  const hue = stateHue(change);
+  if (change.kind === 'added' || change.kind === 'modified') return [{ ...disc('stain', file, at, 0, hue, 1, 1, true), notice }];
+  return [{ ...ring('outline', file, at, 0, CHANGE_OUTLINE_WIDTH, hue, 1, 1, change.kind === 'renamed' ? dashOf(RENAME_DASH) : SOLID), notice }];
 };
 
 /**
@@ -331,13 +346,36 @@ const ribbonsOf = (map: MapJson, weather: SceneWeather): readonly Ribbon[] => {
   });
 };
 
-/** The old path beside each renamed file (D40). */
+/** The old path beside each renamed file (D40), in its state's hue. */
 const renamesOf = (map: MapJson, weather: SceneWeather): readonly Label[] => {
   const positions = map.terrain.layout?.positions ?? {};
   return weather.files.flatMap((file): Label[] => {
     const at = positions[file.path];
     if (at === undefined || file.change?.kind !== 'renamed' || file.change.from === undefined) return [];
-    return [{ kind: 'rename', target: file.path, text: file.change.from, x: at.x + at.r + RENAME_LABEL_GAP, y: at.y, hue: 'change' }];
+    return [{ kind: 'rename', target: file.path, text: file.change.from, x: at.x + at.r + RENAME_LABEL_GAP, y: at.y, hue: stateHue(file.change) }];
+  });
+};
+
+/** A dashed line as its dashes, each `on` long and `off` apart from `from` toward `to`, the last cut at the end. */
+const dashesOf = (from: readonly [number, number], to: readonly [number, number], [on, off]: readonly [number, number]): readonly (readonly [readonly [number, number], readonly [number, number]])[] => {
+  const length = Math.hypot(to[0] - from[0], to[1] - from[1]);
+  if (length === 0 || on <= 0) return [];
+  const at = (distance: number): readonly [number, number] => [from[0] + ((to[0] - from[0]) * distance) / length, from[1] + ((to[1] - from[1]) * distance) / length];
+  const dashes: (readonly [readonly [number, number], readonly [number, number]])[] = [];
+  for (let start = 0; start < length; start += on + off) dashes.push([at(start), at(Math.min(start + on, length))]);
+  return dashes;
+};
+
+/** Each renamed file's leader (D40, D97), the scene's (D90), as dashed ribbons in its state's hue under its outline, `RENAME_DASH` along it. */
+const leadersOf = (map: MapJson, weather: SceneWeather): readonly Ribbon[] => {
+  const positions = map.terrain.layout?.positions ?? {};
+  return weather.files.flatMap((file): readonly Ribbon[] => {
+    const at = positions[file.path];
+    const change = file.change;
+    const leader = at === undefined ? undefined : renameLeaderOf(change, at);
+    if (leader === undefined || change === undefined) return [];
+    const hue = stateHue(change);
+    return dashesOf(leader.from, leader.to, dashOf(RENAME_DASH)).map(([a, b]) => ({ from: change.from ?? file.path, to: file.path, kind: 'renamed', points: [a, b], hue, width: RENAME_LEADER_WIDTH }));
   });
 };
 
@@ -345,7 +383,7 @@ const renamesOf = (map: MapJson, weather: SceneWeather): readonly Label[] => {
 export const marksOf = (map: MapJson): Marks => {
   const weather = weatherOf(map);
   const { bolts, labels } = boltsOf(weather.storms);
-  return { sectors: sectorsOf(map, weather), bolts, ribbons: ribbonsOf(map, weather), labels: [...labels, ...renamesOf(map, weather)] };
+  return { sectors: sectorsOf(map, weather), bolts, ribbons: [...ribbonsOf(map, weather), ...leadersOf(map, weather)], labels: [...labels, ...renamesOf(map, weather)] };
 };
 
 /** The width a ribbon is drawn at, the only line on the map (§5.1). */

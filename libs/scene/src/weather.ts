@@ -376,6 +376,24 @@ function edgesOf(map: MapJson): readonly ExceptionalEdge[] {
     .toSorted((a, b) => byPath(a.from, b.from) || byPath(a.to, b.to) || byPath(a.kind, b.kind));
 }
 
+/** A renamed file's leader on the field: from the place its base's layout gave it to the rim of where it is. */
+export type RenameLeader = { readonly from: readonly [number, number]; readonly to: readonly [number, number] };
+
+/**
+ * A renamed file's leader (D40, D97): from the place the base's layout gave
+ * it to the rim of where the head's, relaxed from the base's, moved it,
+ * facing back along the way it came. None where the two places lie within
+ * the file's own body, or the layout relaxed from nothing (C2). Both
+ * renderers draw it from here, dashed in its state's hue (D90).
+ */
+export function renameLeaderOf(change: ChangeState | undefined, at: { readonly x: number; readonly y: number; readonly r: number }): RenameLeader | undefined {
+  const from = change?.kind === 'renamed' ? change.fromAt : undefined;
+  if (from === undefined) return undefined;
+  const length = Math.hypot(from.x - at.x, from.y - at.y);
+  if (length <= at.r) return undefined;
+  return { from: [from.x, from.y], to: [at.x + ((from.x - at.x) / length) * at.r, at.y + ((from.y - at.y) / length) * at.r] };
+}
+
 /** The minus sign a delta is written with, the chrome's own. */
 const MINUS = '−';
 

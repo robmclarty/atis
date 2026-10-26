@@ -3,9 +3,12 @@
  * mesh of flat ribbons draped on the skin (step 33): each edge's bow sampled
  * into a strip `EDGE_WIDTH` wide, ending in an arrowhead on the imported
  * file's rim, in the hue of its kind, a cycle or a boundary crossed in LIFR
- * and a new cross-module import in the change hue (C11). They show from LOD1,
- * and the bloom sees a small share of their light, so a tangle of cycles
- * reads as lines and not as haze.
+ * and a new cross-module import in the change hue (C11). A renamed file's
+ * leader runs in the same mesh, a ribbon per dash at its own width and with
+ * no arrowhead (D40, D97); widths are laid into the geometry when the world
+ * is built, so a moved width shows on the next map, not the next frame. They
+ * show from LOD1, and the bloom sees a small share of their light, so a
+ * tangle of cycles reads as lines and not as haze.
  */
 
 import { BufferAttribute, BufferGeometry, DataTexture, DoubleSide, Mesh, MeshBasicNodeMaterial } from 'three/webgpu';
@@ -26,7 +29,7 @@ const LIFT = 1;
 /** One ribbon's vertices: a strip along its points, and the arrowhead's three. */
 const lay = (ribbon: Ribbon, positions: number[], hues: number[], index: number[]): void => {
   const base = positions.length / 3;
-  const half = RIBBON_WIDTH / 2;
+  const half = (ribbon.width ?? RIBBON_WIDTH) / 2;
   ribbon.points.forEach(([x, y], i) => {
     const [px, py] = ribbon.points[Math.max(0, i - 1)] ?? [x, y];
     const [nx, ny] = ribbon.points[Math.min(ribbon.points.length - 1, i + 1)] ?? [x, y];
@@ -40,7 +43,8 @@ const lay = (ribbon: Ribbon, positions: number[], hues: number[], index: number[
     const a = base + i * 2;
     index.push(a, a + 2, a + 1, a + 1, a + 2, a + 3);
   }
-  // The arrowhead: a triangle whose tip is the ribbon's end, as wide at its base as it is long.
+  // The arrowhead: a triangle whose tip is the ribbon's end, as wide at its base as it is long; a leader's dash has none.
+  if (ribbon.arrow === undefined) return;
   const { x, y, angle, size } = ribbon.arrow;
   const tip = positions.length / 3;
   const bx = x - Math.cos(angle) * size;

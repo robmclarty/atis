@@ -69,6 +69,7 @@ import {
   STORM_LABEL_SIZE,
   TEXTURE_MAX_OPACITY,
   reachLuminance,
+  renameLeaderOf,
   stitchLook,
   weatherOf,
 } from 'scene';
@@ -148,20 +149,16 @@ function placedFiles(weather: SceneWeather, layout: Layout): readonly { readonly
   });
 }
 
-/**
- * A renamed file's leader (D40, D97): a dashed line in its state's hue from
- * the place the base's layout gave it to the rim of where it is now, which
- * the head's layout, relaxed from the base's, moved it to. None where the two
- * places lie within the file's own body.
- */
-function drawLeader(path: string, from: { readonly x: number; readonly y: number }, at: Position, hue: string | undefined): Markup | undefined {
-  if (Math.hypot(from.x - at.x, from.y - at.y) <= at.r) return undefined;
-  const [x2, y2] = toward(at, from, at.r);
+/** A renamed file's leader (D40, D97): the scene's, dashed in its state's hue, from where the base put it to the rim of where it is. */
+function drawLeader(path: string, change: ChangeState, at: Position, hue: string | undefined): Markup | undefined {
+  const leader = renameLeaderOf(change, at);
+  if (leader === undefined) return undefined;
+  const [[x1, y1], [x2, y2]] = [leader.from, leader.to];
   return el('line', {
     'data-id': path,
     'data-leader': 'renamed',
-    x1: from.x,
-    y1: from.y,
+    x1,
+    y1,
     x2,
     y2,
     fill: 'none',
@@ -195,7 +192,7 @@ function drawStain(path: string, change: ChangeState, at: Position): readonly Ma
   if (change.kind === 'added' || change.kind === 'modified') return [el('circle', { ...mark, fill: hue, stroke: 'none' })];
   if (change.kind === 'deleted') return [el('circle', { ...mark, fill: 'none', stroke: hue })];
   const outline = el('circle', { ...mark, fill: 'none', stroke: hue, 'stroke-dasharray': RENAME_DASH });
-  const leader = change.fromAt === undefined ? undefined : drawLeader(path, change.fromAt, at, hue);
+  const leader = drawLeader(path, change, at, hue);
   const marks = [...(leader === undefined ? [] : [leader]), outline];
   if (change.from === undefined) return marks;
   const label = el(

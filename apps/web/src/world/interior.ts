@@ -27,14 +27,14 @@
 import { BufferAttribute, BufferGeometry, Color, DoubleSide, DynamicDrawUsage, Mesh, MeshBasicNodeMaterial, Vector3 } from 'three/webgpu';
 import type { Camera, UniformNode } from 'three/webgpu';
 import { attribute, mrt, uniform, vec4 } from 'three/tsl';
-import { CHANGE_HUE, CHROME_GROUND, CHROME_INK, CHROME_MUTED, CHROME_STROKE_WIDTH, FONT_FAMILY, LABELING, LEADER_DASH, LEADER_INK, LEADER_WIDTH, RENAME_DASH, SHAPE_LEVELS, exportsWords, tagsOf } from 'scene';
+import { CHANGE_HUE, CHROME_GROUND, CHROME_INK, CHROME_MUTED, CHROME_STROKE_WIDTH, FONT_FAMILY, IMPROVED_HUE, LABELING, LEADER_DASH, LEADER_INK, LEADER_WIDTH, RENAME_DASH, SHAPE_LEVELS, exportsWords, tagsOf } from 'scene';
 import type { Body, Point, Slide } from 'scene';
 
 import type { SlideWords } from '../asked.js';
 import type { InteriorLook } from '../materials.js';
 
 /** The scene's tokens the slide's chrome and stains read live, at rest: the shape the registry's view takes (D156). */
-export const SLIDE_CHROME = { CHANGE_HUE, CHROME_GROUND, CHROME_INK, CHROME_MUTED, CHROME_STROKE_WIDTH, FONT_FAMILY, LEADER_DASH, LEADER_INK, LEADER_WIDTH };
+export const SLIDE_CHROME = { CHANGE_HUE, CHROME_GROUND, CHROME_INK, CHROME_MUTED, CHROME_STROKE_WIDTH, FONT_FAMILY, IMPROVED_HUE, LEADER_DASH, LEADER_INK, LEADER_WIDTH };
 export type SlideChrome = typeof SLIDE_CHROME;
 
 export type Interior = {
@@ -276,8 +276,8 @@ export const createInterior = (heightAt: (x: number, y: number) => number, step:
       const { ring, bulbs } = body.outline;
       const n = ring.length;
       const kind = body.stain?.kind;
-      // The stain: the change hue, lit by the file's notice, taken by the body's fill at the look's share.
-      lit.set(chrome.CHANGE_HUE).multiplyScalar(gainOf(body.id));
+      // The stain: its state's hue, the change's or the calm-positive one (D98), lit by the file's notice, taken by the body's fill at the look's share.
+      lit.set(body.stain?.improved === true ? chrome.IMPROVED_HUE : chrome.CHANGE_HUE).multiplyScalar(gainOf(body.id));
       stain.copy(bodyColour).lerp(lit, look.stainShare);
       const fillAt = (theta: number): Color => (kind === undefined || unstained(body, theta) ? bodyColour : stain);
       if (kind !== 'deleted') {

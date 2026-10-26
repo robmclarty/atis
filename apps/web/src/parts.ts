@@ -3,6 +3,7 @@
  * alone (D93): a red slot's named files, the uncovered lines per file, the
  * live mutants, the reach list with its hops and the interfaces crossed, the
  * changed files with their sizes, the slots the category was set by, the
+ * maintainability each changed file moved and what got better (D98), the
  * notices by rank, and the shore's `other` files. A block whose input the map
  * does not carry opens the one line that says so, never a number (C2). In
  * served mode a red slot also names the slot whose raw output the CLI serves
@@ -11,7 +12,8 @@
  */
 
 import { OTHER_GROUP, changeSize, readRedSplit } from 'core';
-import type { CheckSlot, MapJson } from 'core';
+import type { CheckSlot, Improvement, MapJson } from 'core';
+import { healthDeltaOf } from 'scene';
 
 import { rowsOf, tallyOf } from './notices.js';
 
@@ -117,6 +119,36 @@ const sizeParts = (map: MapJson): Parts => {
   return { block: 'size', parts };
 };
 
+/** `+3.4`, `−1.5`, `0.0`: a file's movement as the block writes the total. */
+const signed = (value: number): string => `${value > 0 ? '+' : value < 0 ? MINUS : ''}${Math.abs(value).toFixed(1)}`;
+
+/** What got better, in words: the function back under a threshold, the dent gone, the clone family dissolved, the cycle broken. */
+const improvementLine = (improvement: Improvement): string => {
+  const files = improvement.files.join(', ');
+  if (improvement.kind === 'threshold') return `${files} ${DOT} ${improvement.function ?? 'a function'} no longer over ${improvement.rule ?? 'a threshold'}`;
+  if (improvement.kind === 'dent') return `${files} ${DOT} breaks ${improvement.rule ?? 'a rule'} no longer`;
+  if (improvement.kind === 'clone-family') return `${files} ${DOT} no longer duplicate each other`;
+  return `${files} ${DOT} no longer import round in a cycle`;
+};
+
+/**
+ * Health Δ: each changed file both sides scored and the maintainability it
+ * moved, then what got better (D98). With no base side measured it opens the
+ * one line that says so, never a 0 (C2).
+ */
+const healthParts = (map: MapJson): Parts => {
+  const delta = map.weather.health_delta;
+  const improvements = map.weather.improvements ?? [];
+  if (delta === undefined && map.weather.improvements === undefined) return { block: 'health', parts: [], empty: 'no base side was measured, so the change has no delta' };
+  const parts: Part[] = [];
+  if (delta !== undefined) {
+    const heading = `${healthDeltaOf(map) ?? signed(delta.maintainability)} maintainability ${DOT} ${String(delta.files.length)} files both sides scored`;
+    parts.push({ heading, lines: delta.files.map((file) => `${file.path} ${DOT} ${signed(file.maintainability)}`) });
+  }
+  if (improvements.length > 0) parts.push({ heading: `${String(improvements.length)} got better`, lines: improvements.map(improvementLine) });
+  return { block: 'health', parts };
+};
+
 /** What a block opens, by its id. */
 export const partsOf = (map: MapJson, block: string): Parts => {
   switch (block) {
@@ -138,7 +170,7 @@ export const partsOf = (map: MapJson, block: string): Parts => {
     case 'standing':
       return redParts(map, block, true);
     case 'health':
-      return { block, parts: [], empty: 'the delta needs a base side this build does not take yet' };
+      return healthParts(map);
     case 'notices':
       return { block, parts: [{ heading: `${tallyOf(map)} by tier`, lines: rowsOf(map).map((row) => `${String(row.rank)} ${DOT} ${row.tier} ${DOT} ${row.kind} ${DOT} ${row.words}`) }] };
     case 'other': {

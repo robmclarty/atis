@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 53 — feat(svg): draw improvements, the live Health Δ and the rename leader
+**Current step:** 54 — feat(web): draw improvements, Health Δ and the rename leader
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -102,7 +102,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 50. perf(cli): draw a cached run's first frame within two seconds
 - ☑ 51. feat(cli): measure health, duplication and structure at the base
 - ☑ 52. feat(core): compute health deltas, introduced findings and improvements
-- ☐ 53. feat(svg): draw improvements, the live Health Δ and the rename leader
+- ☑ 53. feat(svg): draw improvements, the live Health Δ and the rename leader
 - ☐ 54. feat(web): draw improvements, Health Δ and the rename leader
 - ☐ 115. perf(core): reuse a cached base's layout for the ground the change did not touch
 - ☐ 55. feat(cli): resolve the trunk and the named bases
@@ -207,6 +207,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] the readLog test on this repo (git.test.ts) takes 4-5 s under the full check, against vitest's 5 s default timeout, and flaked once in step 48's run; git log --numstat over 135 commits costs ~1.8 s alone, which step 50's log timings and D50's --history cap should look at
 - [x] a cached run reuses its base's layout: pin the ground the change did not touch where the base put it, place only the change's files, recut only the skins near them, and scan the head without extracting the whole tree, so actual's cached first frame (11.2 s, 6.8 s of it the map's build) reaches about 2 s (C14 world-budget, D136 first-frame-clock); trades step 49's relaxed ground for a pinned one
 - [ ] key the calm-positive stain of an improved file and a renamed file's leader in both legends: steps 53 and 54 draw both marks, and neither legend keys them yet, as neither keys the rename's dashed outline
+- [ ] git.ts's showFile runs git show without piping stderr, so a manifest the change added prints git's 'fatal: path … exists on disk, but not in <sha>' to the terminal on every run; seen mapping d80907b at step 54
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -2005,3 +2006,4 @@ folder, so it rides the branch into the PR.)*
 
 - 2026-10-26 — step 51 checkpointed · f00c9f376 — feat(cli): measure health, duplication and structure at the base (1 drift, 11m)
 - 2026-10-26 — step 52 checkpointed · d423968d1 — feat(core): compute health deltas, introduced findings and improvements (1 drift, 16m)
+- 2026-10-26 — step 53 checkpointed · dd7cdba67 — feat(svg): draw improvements, the live Health Δ and the rename leader (1 red, 1 drift, 12m)

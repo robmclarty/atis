@@ -63,7 +63,8 @@ export type InteriorLayout = {
 export const INTERIOR_LAYOUT: InteriorLayout = { explodeSpread: 1.6, explodePush: 0.35, explodeGap: 3, exportsPerLine: 3, exportsShown: 12 };
 
 /** What the change did to a file, and the share of its body left unstained: its changed lines no test ran, or all of it when nobody measured (D80). */
-export type Stain = { readonly kind: ChangeKind; readonly from?: string; readonly open: number };
+/** `improved` where the change made the file healthier, which wears the calm-positive hue in place of the change hue (D98). */
+export type Stain = { readonly kind: ChangeKind; readonly from?: string; readonly open: number; readonly improved?: true };
 
 /** A file on the slide at rest: where the layout put it, the rules it breaks, its stain, its looseness, and where the exploded view takes it. */
 export type SlideFile = {
@@ -194,7 +195,8 @@ function stainsOf(map: MapJson): ReadonlyMap<string, Stain> {
     if (file.change === undefined) continue;
     const skin = file.evidence?.skin;
     const open = skin === undefined ? 0 : skin.measured ? skin.open : 1;
-    stains.set(file.path, { kind: file.change.kind, ...(file.change.from === undefined ? {} : { from: file.change.from }), open });
+    const improved = file.change.improvements === undefined ? {} : { improved: true as const };
+    stains.set(file.path, { kind: file.change.kind, ...(file.change.from === undefined ? {} : { from: file.change.from }), open, ...improved });
   }
   return stains;
 }

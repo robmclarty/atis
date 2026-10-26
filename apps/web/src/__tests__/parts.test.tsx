@@ -88,7 +88,7 @@ test('the reach opens by cell, nearest first, each file with its hops and the in
   expect(partsOf({ ...DEMO, weather: { ...DEMO.weather, reach: [] } }, 'reach').empty).toContain('reaches no cell');
 });
 
-test('size opens every changed file with its kind and lines, the category its slots, the notices their ranks, other its files, and health the line it waits on', () => {
+test('size opens every changed file with its kind and lines, the category its slots, the notices their ranks, other its files, and health its movement', () => {
   const size = partsOf(DEMO, 'size');
   // The terrain's files, which the block counts, then the shore's, named with their own tally and not counted in (D166).
   expect(size.parts.map((part) => part.heading)).toEqual(['4 files', 'the shore, not counted · 4 files · +33 −8']);
@@ -104,7 +104,23 @@ test('size opens every changed file with its kind and lines, the category its sl
   expect(notices.parts[0]?.lines[0]).toBe('1 · primary · red-check-slot · libs/core/src/pm/index.ts');
   expect(notices.parts[0]?.lines[5]).toBe('6 · tertiary · red-check-slot · +libs/core/src/pm/tools.ts');
   expect(partsOf(DEMO, 'other').parts).toEqual([{ heading: '1 files no group claims', lines: ['notes.xyz'] }]);
-  expect(partsOf(DEMO, 'health').empty).toContain('base side');
+  // Health Δ opens the maintainability each changed file moved, then what got better against the base (D98).
+  expect(partsOf(DEMO, 'health').parts).toEqual([
+    { heading: '+1.9 maintainability · 2 files both sides scored', lines: ['apps/cli/src/doctor.ts · +3.4', 'libs/core/src/pm/index.ts · −1.5'] },
+    {
+      heading: '5 got better',
+      lines: [
+        'libs/core/src/pm/legacy.ts, libs/core/src/pm/slots.ts · no longer duplicate each other',
+        'apps/cli/src/doctor.ts · breaks cognitive no longer',
+        'libs/core/src/pm/legacy.ts · breaks cyclomatic no longer',
+        'apps/cli/src/doctor.ts · runChecks no longer over cognitive',
+        'libs/core/src/pm/legacy.ts · resolveLegacy no longer over cyclomatic',
+      ],
+    },
+  ]);
+  // With no base side measured, it says so in one line, never a 0 (C2).
+  const { health_delta: _delta, improvements: _improvements, ...unmeasured } = DEMO.weather;
+  expect(partsOf({ ...DEMO, weather: unmeasured }, 'health').empty).toContain('no base side');
   expect(partsOf(DEMO, 'nothing').empty).toBe('nothing to open');
   for (const id of HUD_ORDER) expect(partsOf(DEMO, id).block).toBe(id);
 });
@@ -123,7 +139,7 @@ test('a click opens a block\'s parts beneath the row, another switches, and a se
   await click('[data-block="reach"]');
   expect(host.querySelector('[data-parts]')).toBeNull();
   await click('[data-block="health"]');
-  expect(host.querySelector('[data-parts="health"] [data-empty]')?.textContent).toContain('base side');
+  expect(host.querySelector('[data-parts="health"]')?.textContent).toContain('apps/cli/src/doctor.ts · +3.4');
   expect(host.innerHTML).not.toMatch(/gradient|shadow|blur|opacity/);
 });
 

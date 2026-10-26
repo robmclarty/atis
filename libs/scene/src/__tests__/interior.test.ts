@@ -152,10 +152,11 @@ test('each file is stained by what the change did to it, with the share of its c
   const stain = (id: string): unknown => slide.files.find((file) => file.id === id)?.stain;
   expect(stain(INDEX)).toEqual({ kind: 'modified', open: 5 / 9 });
   expect(stain(TOOLS)).toEqual({ kind: 'added', open: 2 / 9 });
-  expect(stain(LEGACY)).toEqual({ kind: 'deleted', open: 0 });
+  // The deleted legacy file left its threshold and its clone: an improved stain, the calm-positive hue's (D98).
+  expect(stain(LEGACY)).toEqual({ kind: 'deleted', open: 0, improved: true });
   expect(stain(SLOTS)).toBeUndefined();
-  // doctor.ts floats on its package's slide, and its stain rides with it there (D167).
-  expect(slideOf(CLI).files.find((file) => file.id === DOCTOR)?.stain).toEqual({ kind: 'modified', open: 1 });
+  // doctor.ts floats on its package's slide, and its stain rides with it there (D167); it eased a function too.
+  expect(slideOf(CLI).files.find((file) => file.id === DOCTOR)?.stain).toEqual({ kind: 'modified', open: 1, improved: true });
   const renamed: MapJson = { ...DEMO, weather: { ...DEMO.weather, changed: DEMO.weather.changed.map((file) => (file.path === INDEX ? { ...file, kind: 'renamed', from: 'libs/core/src/pm/main.ts' } : file)) } };
   expect(slideOf(PM, renamed).files.find((file) => file.id === INDEX)?.stain).toEqual({ kind: 'renamed', from: 'libs/core/src/pm/main.ts', open: 5 / 9 });
   // The rules each file breaks, and how loosely its cell holds it, ride with it.

@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import { assertMap } from 'core';
 import type { MapJson } from 'core';
-import { ARROW_SIZE, CROSSING_PAD, EMPHASIS_PAD, GHOST_PAD, INTEGRITY_GAP_WIDTH, INTEGRITY_PAD, MUTANT_NOTCH_DEPTH, PRIMARY_RING_WIDTH, SECONDARY_RING_WIDTH, STANDING_STORM_SCALE, STITCH_LENGTH, STITCH_TEAR, STORM_LABEL_GAP, weatherOf } from 'scene';
+import { ARROW_SIZE, CROSSING_PAD, EMPHASIS_PAD, GHOST_PAD, INTEGRITY_GAP_WIDTH, INTEGRITY_PAD, MUTANT_NOTCH_DEPTH, PRIMARY_RING_WIDTH, RENAME_DASH, RENAME_LEADER_WIDTH, SECONDARY_RING_WIDTH, STANDING_STORM_SCALE, STITCH_LENGTH, STITCH_TEAR, STORM_LABEL_GAP, renameLeaderOf, weatherOf } from 'scene';
 import { expect, test } from 'vitest';
 
 import { HUES, marksOf } from '../marks.js';
@@ -31,8 +31,10 @@ test('every changed placed file has one stain, the edits as discs shown at the f
     const changed = placedFiles(map).filter((file) => file.change !== undefined);
     const stains = [...ofKind(sectors, 'stain'), ...ofKind(sectors, 'outline')];
     expect(stains.map((stain) => stain.path).toSorted()).toEqual(changed.map((file) => file.path).toSorted());
+    const improved = new Set(changed.filter((file) => file.change?.improvements !== undefined).map((file) => file.path));
     for (const stain of ofKind(sectors, 'stain')) {
-      expect(stain.hue).toBe('change');
+      // One state per file: the change hue, or the calm-positive one where the change made it healthier (D98).
+      expect(stain.hue).toBe(improved.has(stain.path) ? 'improved' : 'change');
       expect(stain.far).toBe(true);
       expect(stain.inner).toBe(-stain.r);
       expect(stain.outer).toBe(0);
@@ -181,8 +183,47 @@ test('an exceptional edge is a ribbon along the bow, pulled back to each file, w
   });
 });
 
-test('the hues a mark can name are the eleven the palette holds, and a map with no weather or notices has no marks', () => {
-  expect(HUES).toHaveLength(11);
+test("a renamed file's leader is dashed ribbons from where its base put it to its rim, the scene's own, in its state's hue (D40, D90, D97)", () => {
+  const BARREL = 'libs/core/src/pm/index.ts';
+  const layout = DEMO.terrain.layout;
+  if (layout === undefined) throw new Error('the demo map is laid out');
+  const renamed = (improvements: MapJson['weather']['improvements']): MapJson => ({
+    ...DEMO,
+    terrain: { ...DEMO.terrain, layout: { ...layout, renamed_from: { [BARREL]: { x: 170, y: 380, r: 7.45 } } } },
+    weather: {
+      ...DEMO.weather,
+      changed: DEMO.weather.changed.map((file) => (file.path === BARREL ? { ...file, kind: 'renamed' as const, from: 'libs/core/src/pm/main.ts' } : file)),
+      ...(improvements === undefined ? {} : { improvements }),
+    },
+  });
+  const map = renamed(DEMO.weather.improvements);
+  const leader = renameLeaderOf(weatherOf(map).files.find((file) => file.path === BARREL)?.change, layout.positions[BARREL] ?? { x: 0, y: 0, r: 0 });
+  const dashes = marksOf(map).ribbons.filter((ribbon) => ribbon.kind === 'renamed');
+
+  // The SVG's golden draws this leader from (170, 380) to (206.66, 408.4); the world lays the same line in dashes.
+  expect(leader?.from).toEqual([170, 380]);
+  expect(dashes.length).toBeGreaterThan(3);
+  expect(dashes[0]?.points[0]).toEqual([170, 380]);
+  const end = dashes.at(-1)?.points[1];
+  expect(end?.[0]).toBeCloseTo(leader?.to[0] ?? 0, 6);
+  expect(end?.[1]).toBeCloseTo(leader?.to[1] ?? 0, 6);
+  const [on, off] = RENAME_DASH.split(' ').map(Number);
+  const [a, b] = dashes[0]?.points ?? [];
+  expect(Math.hypot((b?.[0] ?? 0) - (a?.[0] ?? 0), (b?.[1] ?? 0) - (a?.[1] ?? 0))).toBeCloseTo(on ?? 0, 6);
+  const next = dashes[1]?.points[0];
+  expect(Math.hypot((next?.[0] ?? 0) - (b?.[0] ?? 0), (next?.[1] ?? 0) - (b?.[1] ?? 0))).toBeCloseTo(off ?? 0, 6);
+  for (const dash of dashes) expect([dash.from, dash.to, dash.hue, dash.width, dash.arrow]).toEqual(['libs/core/src/pm/main.ts', BARREL, 'change', RENAME_LEADER_WIDTH, undefined]);
+  // Made healthier, the leader takes the calm-positive hue with its outline and its old path (D98).
+  const eased = marksOf(renamed([{ kind: 'dent', files: [BARREL], rule: 'cognitive' }]));
+  expect(new Set(eased.ribbons.filter((ribbon) => ribbon.kind === 'renamed').map((ribbon) => ribbon.hue))).toEqual(new Set(['improved']));
+  expect(eased.sectors.find((sector) => sector.path === BARREL && sector.kind === 'outline')?.hue).toBe('improved');
+  expect(eased.labels.find((label) => label.kind === 'rename')?.hue).toBe('improved');
+  // With no layout to relax from, no leader (C2).
+  expect(marksOf({ ...map, terrain: { ...map.terrain, layout } }).ribbons.some((ribbon) => ribbon.kind === 'renamed')).toBe(false);
+});
+
+test('the hues a mark can name are the twelve the palette holds, and a map with no weather or notices has no marks', () => {
+  expect(HUES).toHaveLength(12);
   const unhistoried = DEMO.terrain.organelles.map(({ churn_ratio: _churn, bugfix_rate: _bugfix, ...organelle }) => organelle);
   const quiet: MapJson = { ...DEMO, terrain: { ...DEMO.terrain, organelles: unhistoried, edges_exceptional: [] }, weather: { ...DEMO.weather, changed: [], reach: [], ghosts: [], evidence: {}, checks: { ...DEMO.weather.checks, slots: [] } }, notices: [] };
   expect(marksOf(quiet)).toEqual({ sectors: [], bolts: [], ribbons: [], labels: [] });
