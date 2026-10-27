@@ -95,6 +95,9 @@ const SEVERITY: Readonly<Record<NoticeKind, number>> = {
   'other-group': 2,
 };
 
+/** A throwaway export on a test branch, so `atis --comment` has an interface change to post about. Never merged. */
+export const COMMENT_TEST_MARKER = 'atis --comment test';
+
 export const DEFAULT_CONFIG: Config = {
   category: { high_reach_cells: 3 },
   notices: {
