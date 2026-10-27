@@ -58,7 +58,9 @@
  * chrome (step 41). The canvas says which backend drew it, when the skin has
  * settled, which cell is open and whether its wiring is drawn, and how many
  * files the surface draws where they floated, for the smoke test and a
- * screenshot to wait on. Under `prefers-reduced-motion` the
+ * screenshot to wait on. The page's `?time=` freezes the scheduler's clock
+ * at a set time, so a capture takes one frame (D105). Under
+ * `prefers-reduced-motion` the
  * scheduler stills the world (§5.5, C12): the primary keeps a static halo for
  * its load flare, nothing settles, breathes, flares or jiggles, the shapes and
  * the drift hold still, and a fly-to, a slide and the exploded view cut; the
@@ -427,8 +429,10 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     placeLabels = true;
   });
 
+  // A capture freezes the clock, so one seed and one time give one frame however long the page took (D94, D105).
+  const { time: frozen } = view;
   const scheduler = createScheduler({
-    clock: () => performance.now(),
+    clock: frozen === undefined ? () => performance.now() : () => frozen,
     seed: view.seed,
     tiers: map.notices.map((notice) => notice.tier),
     reduced,

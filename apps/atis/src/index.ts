@@ -2,12 +2,14 @@
  * atis: a weather map for code changes.
  *
  * The package's surface: the constants the command prints, `run`, which turns
- * a parsed set of flags into `map.json` on disk, `serveRun`, which serves the
- * world instead (D92), and `serve`, the loopback server beneath it.
+ * a parsed set of flags into `map.json` on disk, `pngRun`, which captures the
+ * world beside it as a PNG (D105), `serveRun`, which serves the world instead
+ * (D92), and `serve`, the loopback server beneath both.
  */
 
 import { SCHEMA_VERSION } from 'core';
 
+export * from './png.js';
 export * from './run.js';
 export * from './serve.js';
 
@@ -21,8 +23,8 @@ export const USAGE = `${NAME} ${VERSION}: a weather map for code changes.
   atis --range <from>..<to> [options]
   atis --whole-repo [--head <ref>] [options]
 
-With no --out or --svg, atis serves the world on 127.0.0.1 at a port of its own,
-opens it in a tab, and runs until interrupted.
+With no --out, --svg or --png, atis serves the world on 127.0.0.1 at a port of
+its own, opens it in a tab, and runs until interrupted.
 
   --repo <path>   the repository to read (default: the working directory)
   --base <ref>    the ref the change is measured from (default: the trunk, the
@@ -50,8 +52,13 @@ opens it in a tab, and runs until interrupted.
                   the one overlay --svg draws of the whole repo: trouble-spots
                   (the default), ugly-spots, coverage-gaps, dead-code,
                   duplication, cycles, recent-heat or baselined
-  --out <file>    write the map to <file> and exit (default with --svg: map.json)
+  --out <file>    write the map to <file> and exit (default with --svg or
+                  --png: map.json)
   --svg <file>    render the map as a static SVG at <file> and exit
+  --png <file>    capture the world as a PNG at <file> and exit, drawn headless
+                  at 1280 x 800 with motion stilled, in the installed Chrome,
+                  else a Chromium on the PATH, else the one
+                  \`npx playwright-core install chromium\` installs
   --open          open the rendered SVG in the platform viewer (needs --svg)
   --no-open       serve without opening the tab
   --no-cache      measure afresh, neither reading nor writing the terrain kept

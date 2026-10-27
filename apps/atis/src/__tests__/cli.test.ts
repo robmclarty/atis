@@ -197,6 +197,10 @@ test('the served default exits 2 and names pnpm build when the web app was never
   expect(result.stdout).toBe('');
   expect(result.stderr).toContain('pnpm build');
   expect(result.stderr).toContain('no built web app');
+  // --png serves the world too, so it needs the built app as well (D105).
+  const png = atis(['--repo', REPO, '--base', 'HEAD~1', '--png', join(temp('unbuilt-png'), 'atis.png')], { ATIS_WEB: join(temp('unbuilt'), 'web') });
+  expect(png.status).toBe(2);
+  expect(png.stderr).toContain('no built web app');
 
   const outcome = serveRun({ repo: REPO, base: 'HEAD~1', assets: join(temp('unbuilt-2'), 'web'), open: false, verbose: false });
   return outcome.then((served) => {

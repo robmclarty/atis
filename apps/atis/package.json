@@ -37,8 +37,12 @@
   ],
   "dependencies": {
     "core": "workspace:*",
+    "playwright-core": "1.64.1",
     "svg": "workspace:*",
     "typescript": "6.0.3"
+  },
+  "devDependencies": {
+    "vite": "8.3.5"
   },
   "engines": {
     "node": ">=22.18.0"

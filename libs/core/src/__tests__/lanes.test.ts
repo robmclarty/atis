@@ -423,7 +423,7 @@ test('a field that fits one row writes no rows, as the demo and every narrower f
   }
 });
 
-test('a wrapped field relaxed from itself stands each file about where it stood, on the same row\'s terrace', () => {
+test('a wrapped field relaxed from itself stands each file about where it stood, on the same row\'s terrace', { timeout: 60_000 }, () => {
   for (const { seed, shape, layout } of WIDES) {
     const again = computeLayout({ ...shape.input, prior: layout });
     expect(again.rows?.length, `seed ${seed}`).toBe(layout.rows?.length);

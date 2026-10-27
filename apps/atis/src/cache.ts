@@ -99,7 +99,7 @@ function sha256(text: string): string {
 }
 
 /** Write through a neighbouring temp file and rename, so nothing ever reads half a file. */
-export function writeAtomic(path: string, text: string): void {
+export function writeAtomic(path: string, text: string | Uint8Array): void {
   const directory = dirname(path);
   mkdirSync(directory, { recursive: true });
   const temp = join(directory, `.${basename(path)}.${String(process.pid)}.tmp`);

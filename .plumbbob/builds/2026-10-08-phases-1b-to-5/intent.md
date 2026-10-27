@@ -595,7 +595,7 @@ go, py, tf, sh (w5) ──────┘                                   .ati
 
 *Sharpened at the wave-3 boundary, where [Q38 (comment-image)](#q38) settles. [Q37 (png-browser)](#q37) settles earlier, at the wave-1 boundary ([D132 (world-smoke-test)](#d132)).*
 
-67. [ ] refactor(cli): give atis subcommands beside its map flags, **done when:** per [D104 (subcommands)](#d104), the CLI parses an optional leading verb, and no verb means the map as before. An unknown verb exits 2 with the usage. Tests pin that every existing flag behaves as it did
+67. [x] refactor(cli): give atis subcommands beside its map flags, **done when:** per [D104 (subcommands)](#d104), the CLI parses an optional leading verb, and no verb means the map as before. An unknown verb exits 2 with the usage. Tests pin that every existing flag behaves as it did
     - seam: `apps/atis/src/cli.ts`, `apps/atis/src/index.ts`, `apps/atis/src/__tests__/cli.test.ts`, `apps/atis/src/__tests__/index.test.ts`
     - model: sonnet
 68. [ ] feat(cli): capture the world headless as a PNG, **done when:** per [D105 (png-capture)](#d105), and [Q37 (png-browser)](#q37) as settled, `atis --png <file>` serves the world and drives a headless browser to the fixed viewport, with the scheduler frozen at a set time and reduced motion on. It waits for the app's ready flag, then writes the screenshot. Two captures of one fixture on one machine and backend are byte-identical. With no browser available it exits 2, naming what to install ([C4 (never-blocks)](#c4))

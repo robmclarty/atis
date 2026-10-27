@@ -37,12 +37,15 @@
  * and checkride's baseline as the head commits it, and core draws the whole
  * repository's overlays over that terrain in place of weather (D101).
  *
- * The map then goes one of two ways. `run` writes it atomically, and the still
- * SVG beside it, and exits. `serveRun` keeps it in memory and serves it with
- * the built web app on loopback, opening the tab (D92), until the process is
- * interrupted. Neither blocks on the weather: a map that was written or served
- * exits 0 whatever it says, and only misuse, a repository it cannot read or a
- * web app that was never built exits 2 (C4).
+ * The map then goes one of three ways. `run` writes it atomically, and the
+ * still SVG beside it, and exits. `pngRun` writes the same, then serves the
+ * world for as long as a headless browser takes to capture it as a PNG
+ * (D105), and exits. `serveRun` keeps it in memory and serves it with the
+ * built web app on loopback, opening the tab (D92), until the process is
+ * interrupted. None blocks on the weather: a map that was written or served
+ * exits 0 whatever it says, and only misuse, a repository it cannot read, a
+ * web app that was never built or a machine with no browser to capture with
+ * exits 2 (C4).
  */
 
 import { execFileSync, spawn } from 'node:child_process';
@@ -53,6 +56,7 @@ import { basename, join, relative, resolve } from 'node:path';
 
 import { DEFAULT_CONFIG, OVERLAY_NAMES, buildMap, buildRepoMap, layOutTerrain } from 'core';
 import type { CheckBaseline, Commit, FrameInputs, Layout, MapJson, OverlayName, Structure } from 'core';
+import type { Browser } from 'playwright-core';
 import { renderSvg } from 'svg';
 
 import {
@@ -70,6 +74,8 @@ import {
   writeStructure,
   writeTerrain,
 } from './cache.js';
+import { capturePng, launchBrowser } from './png.js';
+import type { BrowserCandidate, Captured } from './png.js';
 import { serve } from './serve.js';
 import type { BaseRequest, Rebuilt, Served } from './serve.js';
 import {
@@ -128,6 +134,13 @@ export type Options = {
   readonly cache?: boolean | undefined;
   /** How many commits of history to read, newest first; 5,000 unless a repository's log is too slow to (D50). */
   readonly history?: number | undefined;
+};
+
+/** The flags for a run that also captures the world as a PNG (D105): a file run's, the PNG's path, the built web app to serve, and the browsers to try, the installed ones unless a test names its own. */
+export type PngRunOptions = Options & {
+  readonly png: string;
+  readonly assets: string;
+  readonly browsers?: readonly BrowserCandidate[] | undefined;
 };
 
 /** The flags for the served run (D92, D133). */
@@ -632,29 +645,81 @@ function measure(repoPath: string, asked: Asked): Measured {
   }
 }
 
+/** Measure the repository and write the map, with the SVG beside it when asked; throws on a repository it cannot read. */
+function writeMap(options: Options): Measured {
+  const measured = measure(options.repo, { base: options.base, head: options.head, range: options.range, wholeRepo: options.wholeRepo, cache: options.cache !== false, history: options.history });
+  const { map, timings } = measured;
+  timed(timings, 'write', () => {
+    writeAtomic(resolve(options.out), serialize(map));
+  });
+  if (options.svg !== undefined) {
+    const svgOut = resolve(options.svg);
+    const svg = timed(timings, 'render', () => renderSvg(map, { overlay: options.overlay }));
+    timed(timings, 'write svg', () => {
+      writeAtomic(svgOut, svg);
+    });
+    if (options.open === true) openTarget(svgOut);
+  }
+  return measured;
+}
+
+/** The files a run wrote, as its summary line names them. */
+const wroteOf = (files: readonly (string | undefined)[]): string => {
+  const named = files.filter((file) => file !== undefined);
+  return named.length < 3 ? named.join(' and ') : `${named.slice(0, -1).join(', ')} and ${named.at(-1) ?? ''}`;
+};
+
 /** Read the repository, build the map and write it, with the SVG beside it when asked. Exits 0 on a written map, 2 on a repository it cannot read (C4). */
 export function run(options: Options): Outcome {
-  const out = resolve(options.out);
   try {
-    const measured = measure(options.repo, { base: options.base, head: options.head, range: options.range, wholeRepo: options.wholeRepo, cache: options.cache !== false, history: options.history });
-    const { map, timings } = measured;
-    timed(timings, 'write', () => {
-      writeAtomic(out, serialize(map));
-    });
-
-    if (options.svg !== undefined) {
-      const svgOut = resolve(options.svg);
-      const svg = timed(timings, 'render', () => renderSvg(map, { overlay: options.overlay }));
-      timed(timings, 'write svg', () => {
-        writeAtomic(svgOut, svg);
-      });
-      if (options.open === true) openTarget(svgOut);
-    }
-
-    const wrote = options.svg === undefined ? options.out : `${options.out} and ${options.svg}`;
-    return { exitCode: 0, stdout: `${summary(map)}, wrote ${wrote}\n`, stderr: options.verbose ? report(measured) : '' };
+    const measured = writeMap(options);
+    return { exitCode: 0, stdout: `${summary(measured.map)}, wrote ${wroteOf([options.out, options.svg])}\n`, stderr: options.verbose ? report(measured) : '' };
   } catch (error) {
     return failed(error);
+  }
+}
+
+/** The outcome of a run that needs the built web app and finds none (D133). */
+const unbuilt = (assets: string): Outcome => ({ exitCode: 2, stdout: '', stderr: `atis: no built web app at ${assets}; run \`pnpm build\` first\n` });
+
+/**
+ * Write the map as `run` does, then capture the world as a PNG (D105): a
+ * browser launched first, so a machine with none exits 2 before the scan is
+ * spent and with nothing written, then the map served on loopback with the
+ * built web app, as a fixture is, the map alone (D93), for as long as the
+ * capture takes. Exits 0 once the PNG is written, and 2 with no built app,
+ * no browser, a repository it cannot read or a world that never drew (C4).
+ */
+export async function pngRun(options: PngRunOptions): Promise<Outcome> {
+  const assets = resolve(options.assets);
+  if (!existsSync(join(assets, 'index.html'))) return unbuilt(assets);
+  let browser: Browser;
+  try {
+    browser = await launchBrowser(options.browsers);
+  } catch (error) {
+    return failed(error);
+  }
+  try {
+    const measured = writeMap(options);
+    const { map, timings } = measured;
+    const started = performance.now();
+    const served = await serve({ assets, map: serialize(map), token: randomBytes(16).toString('hex') });
+    let captured: Captured;
+    try {
+      captured = await capturePng(browser, served.url);
+    } finally {
+      await served.close();
+    }
+    timings.push({ source: 'capture', ms: Math.round(performance.now() - started) });
+    timed(timings, 'write png', () => {
+      writeAtomic(resolve(options.png), captured.png);
+    });
+    const drawn = captured.backend === undefined ? '' : `, drawn on ${captured.backend}`;
+    return { exitCode: 0, stdout: `${summary(map)}, wrote ${wroteOf([options.out, options.svg, options.png])}${drawn}\n`, stderr: options.verbose ? report(measured) : '' };
+  } catch (error) {
+    return failed(error);
+  } finally {
+    await browser.close();
   }
 }
 
@@ -684,9 +749,7 @@ function rebuilder(options: ServeRunOptions): (request: BaseRequest) => Promise<
  */
 export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
   const assets = resolve(options.assets);
-  if (!existsSync(join(assets, 'index.html'))) {
-    return { exitCode: 2, stdout: '', stderr: `atis: no built web app at ${assets}; run \`pnpm build\` first\n` };
-  }
+  if (!existsSync(join(assets, 'index.html'))) return unbuilt(assets);
   try {
     const measured = measure(options.repo, { base: options.base, head: options.head, range: options.range, wholeRepo: options.wholeRepo, cache: options.cache !== false, history: options.history });
     const { map, timings } = measured;

@@ -7,9 +7,12 @@
  * one scalar the levels of detail read (`lod.ts`), so 1 opens on the far field
  * and 1.7 enters the surface. `?tilt=35` tips the camera that many degrees
  * off overhead, where the wet sheen reads (D151). `?seed=7` seeds the
- * scheduler, so one seed and one time give one frame (D94, C3). `?centre=x,y`
- * opens the frame on that layout point rather than the layout's middle, so a
- * screenshot or the smoke test can frame one cell (step 40).
+ * scheduler, so one seed and one time give one frame (D94, C3), and
+ * `?time=0` freezes the scheduler's clock at that many milliseconds, which
+ * is how `--png` takes one frame however long the page took to load (D105).
+ * `?centre=x,y` opens the frame on that layout point rather than the
+ * layout's middle, so a screenshot or the smoke test can frame one cell
+ * (step 40).
  */
 
 import type { Point } from 'scene';
@@ -25,6 +28,8 @@ export type View = {
   readonly tilt: number;
   /** The scheduler's seed. */
   readonly seed: number;
+  /** The time the scheduler's clock is frozen at, in milliseconds; it runs when the page names none. */
+  readonly time?: number;
   /** The layout point the frame opens centred on; the layout's middle when the page names none. */
   readonly centre?: Point;
 };
@@ -51,12 +56,14 @@ const pointOr = (value: string | null): Point | undefined => {
 export const viewOf = (search: string): View => {
   const params = new URLSearchParams(search);
   const zoom = numberOr(params.get('zoom'), 1);
+  const time = numberOr(params.get('time'), Number.NaN);
   const centre = pointOr(params.get('centre'));
   return {
     backend: params.get('backend') === 'webgl' ? 'webgl' : 'webgpu',
     zoom: zoom > 0 ? zoom : 1,
     tilt: Math.min(MAX_TILT, Math.max(0, numberOr(params.get('tilt'), 0))),
     seed: Math.trunc(numberOr(params.get('seed'), DEFAULT_SEED)),
+    ...(Number.isFinite(time) && time >= 0 ? { time } : {}),
     ...(centre === undefined ? {} : { centre }),
   };
 };

@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 67 — refactor(cli): give atis subcommands beside its map flags
+**Current step:** 68 — feat(cli): capture the world headless as a PNG
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -119,7 +119,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 116. fix(core): wrap package lanes into rows so a repo of many large packages keeps near the screen's shape
 - ☑ 66. perf(web): collapse cells into composites past 5,000 files
 - ☑ 117. fix(core): refuse an editor link whose scheme runs a script however the template spells it
-- ☐ 67. refactor(cli): give atis subcommands beside its map flags
+- ☑ 67. refactor(cli): give atis subcommands beside its map flags
 - ☐ 68. feat(cli): capture the world headless as a PNG
 - ☐ 69. feat(cli): watch the repo and push new weather to the tab
 - ☐ 70. feat(cli): render the terrain fingerprint for a README
@@ -224,6 +224,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] editor links: parse the filled template with new URL() and check its protocol (refusing javascript:, data:, vbscript:, blob: and file:, or allowing known editor schemes and https), and refuse control characters in atis.config.json's editor, since browsers strip tabs and newlines so "java\tscript:" passes the denylist in libs/core/src/config.ts
 - [x] stars show through a cell wherever churny files' swells sink the skin below the stars' plane: on step 43's 20,000-file map whole packages read as star fields (seen at step 66)
 - [x] step 43's 20,000-file map draws its first frame about 5 s after it arrives on both backends, 0.7 s of it the composites' tissue and grid; C14 names no first frame at that size (step 66)
+- [ ] a PNG capture frames the tab's opening view, the far-zoom planet with the HUD and the notices' rail, where the numbered notice boxes are not drawn; a PR comment's image may read better framed at the surface (step 68)
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -2351,3 +2352,4 @@ folder, so it rides the branch into the PR.)*
   Step 59 maps the head with no change and records eight overlays, each absent with its reason when its source is (C2 (never-fake)). Baselined findings are matched by checkride's own key, never parsed. Step 60 draws one overlay in the still map in the channel C11 (one-meaning-per-channel) gives its measure. Step 61 toggles overlays in the world, and its base selector posts to `POST /base` only with the run's token and a matching Origin (D134 (loopback-trust)). Steps 62 to 64 build the file level (functions as granules, hunks, the coverage strip, live mutants) and the diff level, served read-only at `/diff/<path>`. Step 65's radar charts a changed file categorised against D9 (thresholds) or raw, its complexity spokes muted in the raw view because the map does not carry those numbers (P73).
 
 - 2026-10-27 — step 117 checkpointed · 1a1388f7c — fix(core): refuse an editor link whose scheme runs a script however the template spells it (4m)
+- 2026-10-27 — step 67 checkpointed · 5fc5adfc1 — refactor(cli): give atis subcommands beside its map flags (3m)

@@ -4,9 +4,9 @@
  * `run` and `serveRun` do the work and decide the exit code (C4). A leading
  * word that is no flag names a command that is not a map, which parses its
  * own flags; with none, the flags ask for a map, as they always have (D104).
- * With no `--out` or `--svg` the map is served as the world and opened in a
- * tab (D92), and this file is what waits for the interrupt that ends it,
- * exiting 0.
+ * With no `--out`, `--svg` or `--png` the map is served as the world and
+ * opened in a tab (D92), and this file is what waits for the interrupt that
+ * ends it, exiting 0.
  */
 
 import { parseArgs } from 'node:util';
@@ -16,7 +16,7 @@ import { OVERLAY_NAMES } from 'core';
 import type { OverlayName } from 'core';
 
 import { USAGE, VERSION } from './index.js';
-import { run, serveRun } from './run.js';
+import { pngRun, run, serveRun } from './run.js';
 import type { HeadAsked, Outcome, RangeAsked } from './run.js';
 import type { BaseAsked } from './sources/index.js';
 
@@ -32,6 +32,7 @@ const FLAGS = {
   overlay: { type: 'string' },
   out: { type: 'string' },
   svg: { type: 'string' },
+  png: { type: 'string' },
   open: { type: 'boolean' },
   cache: { type: 'boolean' },
   history: { type: 'string' },
@@ -55,6 +56,8 @@ type Flags = {
   readonly overlay?: string | undefined;
   readonly out?: string | undefined;
   readonly svg?: string | undefined;
+  /** `--png <file>`: capture the world headless as a PNG at <file> (D105). */
+  readonly png?: string | undefined;
   /** `--open` is true, `--no-open` false, and neither leaves it undefined. */
   readonly open?: boolean | undefined;
   /** Only `--no-cache` sets it, to false: the terrain cache is on unless told otherwise (D96). */
@@ -66,7 +69,7 @@ type Flags = {
   readonly help?: boolean | undefined;
 };
 
-/** Where the map goes when `--svg` asks for a file run but names no `--out`. */
+/** Where the map goes when `--svg` or `--png` asks for a file run but names no `--out`. */
 const DEFAULT_OUT = 'map.json';
 
 /**
@@ -202,11 +205,12 @@ async function mapCommand(argv: readonly string[]): Promise<Outcome> {
   if (history !== undefined && (!Number.isSafeInteger(history) || history < 1 || !/^\d+$/.test(flags.history ?? ''))) {
     return misuse('--history <n> takes a whole number of commits, at least 1');
   }
-  const serves = flags.out === undefined && flags.svg === undefined;
+  const serves = flags.out === undefined && flags.svg === undefined && flags.png === undefined;
   if (serves) return serveRun({ repo, base, head, range, wholeRepo, assets: webDir(), open: flags.open !== false, verbose, cache, history });
 
   if (flags.open === true && flags.svg === undefined) return misuse('--open needs --svg <file>');
-  return run({ repo, base, head, range, wholeRepo, out: flags.out ?? DEFAULT_OUT, svg: flags.svg, overlay, open: flags.open === true, verbose, cache, history });
+  const files = { repo, base, head, range, wholeRepo, out: flags.out ?? DEFAULT_OUT, svg: flags.svg, overlay, open: flags.open === true, verbose, cache, history };
+  return flags.png === undefined ? run(files) : pngRun({ ...files, png: flags.png, assets: webDir() });
 }
 
 /** A command that is not a map (D104): the words after its verb, parsed by the command itself. */

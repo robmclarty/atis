@@ -34,6 +34,15 @@ test('the seed is a whole number', () => {
   expect(viewOf('?seed=lucky').seed).toBe(DEFAULT_SEED);
 });
 
+test('the time freezes the scheduler at a number of milliseconds, none or nonsense leaving the clock to run', () => {
+  expect(viewOf('?time=0').time).toBe(0);
+  expect(viewOf('?time=1500.5').time).toBe(1500.5);
+  expect(viewOf('?time=-1')).not.toHaveProperty('time');
+  expect(viewOf('?time=now')).not.toHaveProperty('time');
+  expect(viewOf('?time=')).not.toHaveProperty('time');
+  expect(viewOf('')).not.toHaveProperty('time');
+});
+
 test('the centre is a layout point, `x,y`, else the frame opens on the layout\'s middle', () => {
   expect(viewOf('?centre=120,340').centre).toEqual([120, 340]);
   expect(viewOf('?centre=12.5,-4').centre).toEqual([12.5, -4]);
