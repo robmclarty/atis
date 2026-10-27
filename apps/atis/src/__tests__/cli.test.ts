@@ -265,6 +265,22 @@ test('--version and --help exit 0; an unknown flag, a stray positional and a --b
   }
 }, MINUTE);
 
+test('a leading word that is no flag names a command, an unknown one is misuse with the usage, and a word after the flags is still a stray positional (D104, C4)', () => {
+  for (const args of [['nope'], ['nope', '--base', 'main'], ['fingerprint-me', '--help']]) {
+    const result = atis(args);
+    expect(result.status).toBe(2);
+    expect(result.stdout).toBe('');
+    expect(result.stderr.startsWith(`atis: ${args[0] ?? ''} is no command atis knows; with none, atis maps a change\n`)).toBe(true);
+    expect(result.stderr).toContain('--help');
+  }
+  // The verb is read only first: past a flag, a word is the map's, refused as it always was.
+  const late = atis(['--base', 'main', 'nope']);
+  expect(late.status).toBe(2);
+  expect(late.stderr).toContain("Unexpected argument 'nope'");
+  // A flag first is the map's command, so the flags read as before verbs.
+  expect(atis(['--help']).stdout).toContain('--base <ref>');
+}, MINUTE);
+
 test('a directory that is no repository exits 2 and writes nothing (C4)', () => {
   const directory = temp('bare');
   const out = join(directory, 'map.json');

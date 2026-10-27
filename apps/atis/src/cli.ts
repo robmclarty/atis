@@ -1,9 +1,12 @@
 #!/usr/bin/env node
 /**
  * cli: the `bin`. It parses the flags with `util.parseArgs` and nothing else;
- * `run` and `serveRun` do the work and decide the exit code (C4). With no
- * `--out` or `--svg` the command serves the world and opens it in a tab (D92),
- * and this file is what waits for the interrupt that ends it, exiting 0.
+ * `run` and `serveRun` do the work and decide the exit code (C4). A leading
+ * word that is no flag names a command that is not a map, which parses its
+ * own flags; with none, the flags ask for a map, as they always have (D104).
+ * With no `--out` or `--svg` the map is served as the world and opened in a
+ * tab (D92), and this file is what waits for the interrupt that ends it,
+ * exiting 0.
  */
 
 import { parseArgs } from 'node:util';
@@ -168,7 +171,8 @@ function overlayOf(flags: Flags, wholeRepo: boolean): { readonly overlay: Overla
   return { overlay };
 }
 
-async function main(argv: readonly string[]): Promise<Outcome> {
+/** The map the flags ask for, written or served (D92); the command with no verb. */
+async function mapCommand(argv: readonly string[]): Promise<Outcome> {
   const parsed = parseFlags(argv);
   if ('reason' in parsed) return misuse(parsed.reason);
 
@@ -203,6 +207,26 @@ async function main(argv: readonly string[]): Promise<Outcome> {
 
   if (flags.open === true && flags.svg === undefined) return misuse('--open needs --svg <file>');
   return run({ repo, base, head, range, wholeRepo, out: flags.out ?? DEFAULT_OUT, svg: flags.svg, overlay, open: flags.open === true, verbose, cache, history });
+}
+
+/** A command that is not a map (D104): the words after its verb, parsed by the command itself. */
+type Command = (argv: readonly string[]) => Promise<Outcome>;
+
+/** The verbs atis takes ahead of its flags, each a command that is not a map (D104); `fingerprint` and `mcp` are to be the first. */
+const COMMANDS: ReadonlyMap<string, Command> = new Map();
+
+/**
+ * The command a leading verb names, or the map when the first word is a flag
+ * or there is none, so every flag reads as it did before verbs (D104). A verb
+ * atis does not know is misuse (C4); a word anywhere after the first flag is
+ * the map's, and `parseArgs` refuses it as a stray positional.
+ */
+function main(argv: readonly string[]): Promise<Outcome> {
+  const [verb, ...rest] = argv;
+  if (verb === undefined || verb.startsWith('-')) return mapCommand(argv);
+  const command = COMMANDS.get(verb);
+  if (command === undefined) return Promise.resolve(misuse(`${verb} is no command atis knows; with none, atis maps a change`));
+  return command(rest);
 }
 
 const outcome = await main(process.argv.slice(2));

@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 117 — fix(core): refuse an editor link whose scheme runs a script however the template spells it
+**Current step:** 67 — refactor(cli): give atis subcommands beside its map flags
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -118,7 +118,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 65. feat(web): open the health radar from the HUD
 - ☑ 116. fix(core): wrap package lanes into rows so a repo of many large packages keeps near the screen's shape
 - ☑ 66. perf(web): collapse cells into composites past 5,000 files
-- ☐ 117. fix(core): refuse an editor link whose scheme runs a script however the template spells it
+- ☑ 117. fix(core): refuse an editor link whose scheme runs a script however the template spells it
 - ☐ 67. refactor(cli): give atis subcommands beside its map flags
 - ☐ 68. feat(cli): capture the world headless as a PNG
 - ☐ 69. feat(cli): watch the repo and push new weather to the tab
@@ -2349,3 +2349,5 @@ folder, so it rides the branch into the PR.)*
   **5.** Wave 3's surfaces are ready for your review on this repo
 
   Step 59 maps the head with no change and records eight overlays, each absent with its reason when its source is (C2 (never-fake)). Baselined findings are matched by checkride's own key, never parsed. Step 60 draws one overlay in the still map in the channel C11 (one-meaning-per-channel) gives its measure. Step 61 toggles overlays in the world, and its base selector posts to `POST /base` only with the run's token and a matching Origin (D134 (loopback-trust)). Steps 62 to 64 build the file level (functions as granules, hunks, the coverage strip, live mutants) and the diff level, served read-only at `/diff/<path>`. Step 65's radar charts a changed file categorised against D9 (thresholds) or raw, its complexity spokes muted in the raw view because the map does not carry those numbers (P73).
+
+- 2026-10-27 — step 117 checkpointed · 1a1388f7c — fix(core): refuse an editor link whose scheme runs a script however the template spells it (4m)
