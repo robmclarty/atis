@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 66 — perf(web): collapse cells into composites past 5,000 files
+**Current step:** 117 — fix(core): refuse an editor link whose scheme runs a script however the template spells it
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -117,7 +117,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 64. feat(web): show a changed file's diff or open it in the editor
 - ☑ 65. feat(web): open the health radar from the HUD
 - ☑ 116. fix(core): wrap package lanes into rows so a repo of many large packages keeps near the screen's shape
-- ☐ 66. perf(web): collapse cells into composites past 5,000 files
+- ☑ 66. perf(web): collapse cells into composites past 5,000 files
+- ☐ 117. fix(core): refuse an editor link whose scheme runs a script however the template spells it
 - ☐ 67. refactor(cli): give atis subcommands beside its map flags
 - ☐ 68. feat(cli): capture the world headless as a PNG
 - ☐ 69. feat(cli): watch the repo and push new weather to the tab
@@ -214,15 +215,15 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] the checker's extractions (D118 inferred-shapes) cost 0.4 to 0.9 s of every cached corpus run and 1.1 s of atis's own; reading its program from git's objects, as the head scan now does, would drop them
 - [x] actual's world takes 1.1 s from the map's arrival to its first frame (C14 world-budget), so the command keeps only 0.9 s of a 2 s first frame; actual's last second is on the page side, in apps/web
 - [x] A long range has no cap: `--range` writes a whole weather frame per commit and runs the reviewed repo's fallow on each commit's extraction once (cached after), so a hundred-commit range is a hundred frames in map.json and a slow first run; decide whether to cap or thin long ranges
-- [ ] the world's range-scrubber test (step 58) read 6 notice boxes for frame 0 once under the full suite's load and passed alone and on rerun: it counts [data-labels] marks as soon as data-scrub reads settled, so the labels may redraw a beat after the frame settles
-- [ ] on a repo map the still map's legend still keys a change's marks: its hatching row reads 'how much of it was rewritten lately' while hatching there means the drawn overlay (trouble spots or recent heat), and no row keys an overlay's ring or echo
-- [ ] the world smoke test's range scrubber case flaked once under the full suite's load (6 label marks at frame 0, expected 0) and passed alone three times
-- [ ] the served run tells the page the branch's PR, so the diff sheet's PR link shows without a ?pr= parameter (step 71's gh lookup knows it)
-- [ ] record each changed file's raw cyclomatic, cognitive and CRAP (its functions' worst) in the map, so the health radar's raw view stops muting its three complexity spokes
-- [ ] core sets each package's block side by side, so a repo of many large packages lays out as a strip: step 43's generator gives 57,740 x 3,139 at 5,000 files (3,265 x 3,139 on 2026-10-24) and 207,173 x 6,245 at 20,000, which regressed the 5,000-file first frame to 4 s and blocks step 66's 20,000-file budget
-- [ ] editor links: parse the filled template with new URL() and check its protocol (refusing javascript:, data:, vbscript:, blob: and file:, or allowing known editor schemes and https), and refuse control characters in atis.config.json's editor, since browsers strip tabs and newlines so "java\tscript:" passes the denylist in libs/core/src/config.ts
-- [ ] stars show through a cell wherever churny files' swells sink the skin below the stars' plane: on step 43's 20,000-file map whole packages read as star fields (seen at step 66)
-- [ ] step 43's 20,000-file map draws its first frame about 5 s after it arrives on both backends, 0.7 s of it the composites' tissue and grid; C14 names no first frame at that size (step 66)
+- [x] the world's range-scrubber test (step 58) read 6 notice boxes for frame 0 once under the full suite's load and passed alone and on rerun: it counts [data-labels] marks as soon as data-scrub reads settled, so the labels may redraw a beat after the frame settles
+- [x] on a repo map the still map's legend still keys a change's marks: its hatching row reads 'how much of it was rewritten lately' while hatching there means the drawn overlay (trouble spots or recent heat), and no row keys an overlay's ring or echo
+- [x] the world smoke test's range scrubber case flaked once under the full suite's load (6 label marks at frame 0, expected 0) and passed alone three times
+- [x] the served run tells the page the branch's PR, so the diff sheet's PR link shows without a ?pr= parameter (step 71's gh lookup knows it)
+- [x] record each changed file's raw cyclomatic, cognitive and CRAP (its functions' worst) in the map, so the health radar's raw view stops muting its three complexity spokes
+- [x] core sets each package's block side by side, so a repo of many large packages lays out as a strip: step 43's generator gives 57,740 x 3,139 at 5,000 files (3,265 x 3,139 on 2026-10-24) and 207,173 x 6,245 at 20,000, which regressed the 5,000-file first frame to 4 s and blocks step 66's 20,000-file budget
+- [x] editor links: parse the filled template with new URL() and check its protocol (refusing javascript:, data:, vbscript:, blob: and file:, or allowing known editor schemes and https), and refuse control characters in atis.config.json's editor, since browsers strip tabs and newlines so "java\tscript:" passes the denylist in libs/core/src/config.ts
+- [x] stars show through a cell wherever churny files' swells sink the skin below the stars' plane: on step 43's 20,000-file map whole packages read as star fields (seen at step 66)
+- [x] step 43's 20,000-file map draws its first frame about 5 s after it arrives on both backends, 0.7 s of it the composites' tissue and grid; C14 names no first frame at that size (step 66)
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -329,6 +330,16 @@ Harvest results this boundary:
 - **tangent**: park 67 · actual's world takes 1.1 s from the map's arrival to its first frame (C14 world-budget), so the command keeps only 0.9 s of a 2 s first frame; actual's last second is on the page side, in apps/web → C14 holds from the map's arrival and the 2 s from the command is a target (D150), so the page side can wait for a perf pass
 - 2026-10-26, at range 17 of 32's stop: 1 parked idea, classified.
 - **tangent**: park 68 · A long range has no cap: `--range` writes a whole weather frame per commit and runs the reviewed repo's fallow on each commit's extraction once (cached after), so a hundred-commit range is a hundred frames in map.json and a slow first run; decide whether to cap or thin long ranges → a long range costs one cached fallow run per commit, and nothing ahead of wave 4 depends on capping it
+- 2026-10-27, at range 18 of 32's stop: 9 parked ideas, classified.
+- **tangent**: park 69 · the world's range-scrubber test (step 58) read 6 notice boxes for frame 0 once under the full suite's load and passed alone and on rerun: it counts [data-labels] marks as soon as data-scrub reads settled, so the labels may redraw a beat after the frame settles → the scrubber smoke test's one flake under the full suite's load; step 64 fixed the race it most likely was, and it has not recurred
+- **tangent**: park 70 · on a repo map the still map's legend still keys a change's marks: its hatching row reads 'how much of it was rewritten lately' while hatching there means the drawn overlay (trouble spots or recent heat), and no row keys an overlay's ring or echo → a repo map's still legend keys a change's marks; a copy fix for the next pass over the overlays, which nothing in wave 4 builds on
+- **tangent**: park 71 · the world smoke test's range scrubber case flaked once under the full suite's load (6 label marks at frame 0, expected 0) and passed alone three times → the same scrubber flake as P69, parked twice
+- **tangent**: park 72 · the served run tells the page the branch's PR, so the diff sheet's PR link shows without a ?pr= parameter (step 71's gh lookup knows it) → belongs to step 71's gh lookup, and the refine before range 19 can fold it there
+- **tangent**: park 73 · record each changed file's raw cyclomatic, cognitive and CRAP (its functions' worst) in the map, so the health radar's raw view stops muting its three complexity spokes → the radar's raw view mutes its complexity spokes honestly; an added key for when the radar is next tuned
+- **blocker**: park 74 · core sets each package's block side by side, so a repo of many large packages lays out as a strip: step 43's generator gives 57,740 x 3,139 at 5,000 files (3,265 x 3,139 on 2026-10-24) and 207,173 x 6,245 at 20,000, which regressed the 5,000-file first frame to 4 s and blocks step 66's 20,000-file budget → already folded as step 116 (Q73 lane-rows), which landed in this range, so nothing more to fold
+- **blocker**: park 75 · editor links: parse the filled template with new URL() and check its protocol (refusing javascript:, data:, vbscript:, blob: and file:, or allowing known editor schemes and https), and refuse control characters in atis.config.json's editor, since browsers strip tabs and newlines so "java\tscript:" passes the denylist in libs/core/src/config.ts → a repo's own atis.config.json can slip a script URL past the editor-link guard ("java\tscript:"), so fix it as a step before range 19's deliveries
+- **tangent**: park 76 · stars show through a cell wherever churny files' swells sink the skin below the stars' plane: on step 43's 20,000-file map whole packages read as star fields (seen at step 66) → a look issue over churny cells for the next world tuning pass; it predates this range
+- **tangent**: park 77 · step 43's 20,000-file map draws its first frame about 5 s after it arrives on both backends, 0.7 s of it the composites' tissue and grid; C14 names no first frame at that size (step 66) → C14 names no first frame at 20,000 files, and no real repo that size is in the corpus
 
 ## Log
 
@@ -2264,3 +2275,77 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-26 — step 65 checkpointed · a16cf123d — feat(web): open the health radar from the HUD (10m)
 - 2026-10-26 — step 66 abandoned · work kept in tree — perf(web): collapse cells into composites past 5,000 files
 - 2026-10-27 — step 116 checkpointed · 5866263a7 — fix(core): wrap package lanes into rows so a repo of many large packages keeps near the screen's shape (25m)
+- 2026-10-27 — step 66 checkpointed · b55db1113 — perf(web): collapse cells into composites past 5,000 files (1 drift, 40m)
+- 2026-10-27 — range 18 of 32's stop recorded — wave 3's boundary: review the whole-repo overlays, the file and diff levels, the health radar, the package lanes wrapped into rows, and the composites' budget; then `/plumbbob:refine` sharpens wave 4 and settles [Q38 (comment-image)](#q38)
+
+  **Summary**: Wave 3 is built. `atis --whole-repo` maps a repo with no change and draws one overlay at a time, in the still map and in the world, whose HUD toggles them and, when served, switches bases. Zooming past a cell now opens a file into its functions, hunks and coverage strip, then into its diff, and the Health Δ block opens a radar of the file's raw metrics. Last, the two steps the refine added for large repos: package lanes wrap into rows, so a repo of many big packages keeps near the screen's shape, and past 5,000 files each package stands at the surface as one composite until the view nears it. The world holds 30 fps at 20,000 files with room to spare.
+
+  1. Six of the nine steps strayed a few paths outside their seams, the last one into the budget script
+  2. Package lanes wrap into rows once one row would run wider than 1.6 times its terraces
+  3. Composites hold 30 fps at 20,000 files, but on this laptop they buy reading by package, not frame rate
+  4. At 20,000 files no file had ever drawn, and the minimap had crashed
+  5. Wave 3's surfaces are ready for your review on this repo
+
+  **Readout**:
+
+  ```text
+  steps        9 of 9 landed
+               - 59 20a0c0b · 60 1f78970 · 61 bc8c720 · 62 3e7093d · 63 73447ab
+               - 64 e5fbe48 · 65 a16cf12 · 116 5866263 · 66 b55db11
+  check        green: 1 of 1 checks, 9 landings
+  done-when    met
+  decisions    honored:
+               - D101 (whole-repo-mode), D102 (file-and-diff-levels)
+               - D103 (health-radar), D134 (loopback-trust)
+               - D172 (cached-layout-reuse), D85 (schema-bumps)
+  constraints  14 of 14 honored
+  seam         strayed: 18 paths outside 6 steps' seams
+               - step 59: apps/atis/src/__tests__/check.test.ts and 5 others
+               - step 60: apps/atis/src/__tests__/cli.test.ts and 7 others
+               - step 61: apps/atis/src/run.ts
+               - step 62: apps/atis/src/__tests__/cache.test.ts
+               - step 63: docs/design.md
+               - step 66: apps/web/scripts/budget.ts
+  diff         +7334 -400 across 84 files
+  spent        4h 52m · green first run at every landing · 6 drift warnings
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Harvested**: 9 of 77 parked ideas open
+
+  - P69 · the world's range-scrubber test (step 58) read 6 notice boxes for frame 0 once under the full suite's load and passed alone and on rerun: it counts [data-labels] marks as soon as data-scrub reads settled, so the labels may redraw a beat after the frame settles → lean: tangent, the scrubber smoke test's one flake under the full suite's load; step 64 fixed the race it most likely was, and it has not recurred
+  - P70 · on a repo map the still map's legend still keys a change's marks: its hatching row reads 'how much of it was rewritten lately' while hatching there means the drawn overlay (trouble spots or recent heat), and no row keys an overlay's ring or echo → lean: tangent, a repo map's still legend keys a change's marks; a copy fix for the next pass over the overlays, which nothing in wave 4 builds on
+  - P71 · the world smoke test's range scrubber case flaked once under the full suite's load (6 label marks at frame 0, expected 0) and passed alone three times → lean: tangent, the same scrubber flake as P69, parked twice
+  - P72 · the served run tells the page the branch's PR, so the diff sheet's PR link shows without a ?pr= parameter (step 71's gh lookup knows it) → lean: tangent, belongs to step 71's gh lookup, and the refine before range 19 can fold it there
+  - P73 · record each changed file's raw cyclomatic, cognitive and CRAP (its functions' worst) in the map, so the health radar's raw view stops muting its three complexity spokes → lean: tangent, the radar's raw view mutes its complexity spokes honestly; an added key for when the radar is next tuned
+  - P74 · core sets each package's block side by side, so a repo of many large packages lays out as a strip: step 43's generator gives 57,740 x 3,139 at 5,000 files (3,265 x 3,139 on 2026-10-24) and 207,173 x 6,245 at 20,000, which regressed the 5,000-file first frame to 4 s and blocks step 66's 20,000-file budget → lean: blocker, already folded as step 116 (Q73 lane-rows), which landed in this range, so nothing more to fold
+  - P75 · editor links: parse the filled template with new URL() and check its protocol (refusing javascript:, data:, vbscript:, blob: and file:, or allowing known editor schemes and https), and refuse control characters in atis.config.json's editor, since browsers strip tabs and newlines so "java\tscript:" passes the denylist in libs/core/src/config.ts → lean: blocker, a repo's own atis.config.json can slip a script URL past the editor-link guard ("java\tscript:"), so fix it as a step before range 19's deliveries
+  - P76 · stars show through a cell wherever churny files' swells sink the skin below the stars' plane: on step 43's 20,000-file map whole packages read as star fields (seen at step 66) → lean: tangent, a look issue over churny cells for the next world tuning pass; it predates this range
+  - P77 · step 43's 20,000-file map draws its first frame about 5 s after it arrives on both backends, 0.7 s of it the composites' tissue and grid; C14 names no first frame at that size (step 66) → lean: tangent, C14 names no first frame at 20,000 files, and no real repo that size is in the corpus
+
+  **Recommendation**: Review wave 3 on this repo, and the rows and composites on step 43's maps, then confirm the leans with P75 as the one blocker and run `/plumbbob:refine` for wave 4 and Q38 (comment-image). For the review: `pnpm build`, then `atis --whole-repo` (toggle the overlays; serve it and switch the base), and `atis --base HEAD~3` zoomed past a cell into a file, its diff, and the Health Δ radar. For the large maps: `cp $TMPDIR/atis-synthetic-20000-1.json .atis/ && pnpm --filter web dev`, then open `?map=/@fs/<repo>/.atis/atis-synthetic-20000-1.json&zoom=4` and zoom toward a package to watch it open. P75 lets a reviewed repo's own config put script in the page that holds the run's token, so it should land before range 19 starts publishing anything.
+
+  **1.** Six of the nine steps strayed a few paths outside their seams, the last one into the budget script
+
+  Step 59 (repo overlays) added optional parse fields to core's evidence types and the heat window to `config.ts`. Step 60 (overlays in the SVG) documented its tokens in `docs/design.md` and listed them in the dev panel's registry. Step 61 (overlay toggles and base switch) put the rebuild hook in `run.ts`. Step 62 (functions per file) updated the cache test's literal. Step 63 (file level) documented its plate's tokens. Step 66 (composites) taught `apps/web/scripts/budget.ts` a new reading: the surface (LOD1), on a page opened at `?zoom=4`, held still for ten seconds and then crossed by the pointer for five, which is where composites act. None of these widens what its step does. Steps 64, 65 and 116 landed plumb.
+
+  **2.** Package lanes wrap into rows once one row would run wider than 1.6 times its terraces
+
+  Step 116 builds Q73 (lane-rows) as settled. Lanes still settle on the one ladder of terraces. When the terrain's lanes would stand wider than 1.6 times that ladder, they wrap: the fewest rows whose path-order fill stays within 1.6 times the stacked height, each row a copy of the ladder lower down, a lane's pitch apart. The map records them as an added `layout.rows` key (D85 (schema-bumps)), and a field of one row writes none. Every multi-package fixture sits at 1.36 or under, so the demo, every fixture and the SVG goldens are byte-identical. Step 43's generator now lays out 5,000 files 19,427 × 12,508 in four rows and 20,000 files 46,560 × 30,801 in five, and lays them out in 9 s and 44 s. The SVG draws each row's terraces across that row alone, and the world rules each row's boundaries as a segment across its row. A change over a wrapped cached base holds its ground per row (D172 (cached-layout-reuse)), relaxing only when the ladder gains a terrace.
+
+  Rows fix the shape, not the area. These lanes are sparse, about 48,500 square units a file against 3,000 to 10,000 on the corpus repos, so the field is 24 times the area the budget was first recorded on. The skin sampled every 4 units held 15 million samples there, which cost about 5 s to the first frame and held WebGL to 45 fps. So `skinResolution` now caps the skin's grids at two million samples, coarsening a whole unit at a time past that: 12 units at 5,000 files, 27 at 20,000. Every real repo so far stays at 4. An opened cell on a map that large is softer than on a small repo.
+
+  **3.** Composites hold 30 fps at 20,000 files, but on this laptop they buy reading by package, not frame rate
+
+  Past 5,000 placed files each package stands at the surface as one composite. The skin wears the package's own tissue (its own skin over one body, none of its cells), it is lit as though its cells' mass lay flat, its files are drawn at no size, and the pointer finds the package. A package on the screen opens once its skin fills `LEVELS.compositeOpen` (0.35) of the free screen, holds open to `LEVELS.compositeClose` (0.25), and fades at the scheduler's cross-fade (C12 (motion-budget)). Every package is open from LOD2 on, so a cell opens as a slide only inside an open package. Both gates are live in the dev panel. The skin's shape is unchanged, so the composites cost the fragment stage alone. My first version also flattened the geometry, which put the stars through the bodies and cost the 5,000-file map nearly a second, so I took it out.
+
+  At 20,000 files with composites the surface holds 120 fps on WebGPU and 101 on WebGL 2. The sweep holds 77 and 76, and the far field 105 and 74. With composites switched off, the surface read 120 and 103. The composites add about 0.7 s to a first frame that is about 5 s at that size either way (parked as P77). The 5,000-file map's 5,006 files are past the threshold too, so its budget was re-recorded with composites on: 2.01 and 2.08 s to the first frame, 113 and 81 fps idle, 119 to 120 at the surface. A second tab with a world open had been costing every reading a third of its rate, which `docs/design.md` now warns of.
+
+  **4.** At 20,000 files no file had ever drawn, and the minimap had crashed
+
+  Each file's outline rode a texture with one row per file. That made 20,006 rows against the 8,192 a texture may have, so WebGPU refused the texture and drew no file at all, every frame logging a validation error. The 120 fps I first measured at that size was a world without files. The outlines now share a row once a map has more files than a texture has rows, and a map that fits keeps today's layout. The minimap spread every file's edges into one `Math.min` call and overflowed the stack, as the still map's world top did at 5,000; both now fold. Files are also no longer drawn at the far field, where they had been drawn at no opacity.
+
+  **5.** Wave 3's surfaces are ready for your review on this repo
+
+  Step 59 maps the head with no change and records eight overlays, each absent with its reason when its source is (C2 (never-fake)). Baselined findings are matched by checkride's own key, never parsed. Step 60 draws one overlay in the still map in the channel C11 (one-meaning-per-channel) gives its measure. Step 61 toggles overlays in the world, and its base selector posts to `POST /base` only with the run's token and a matching Origin (D134 (loopback-trust)). Steps 62 to 64 build the file level (functions as granules, hunks, the coverage strip, live mutants) and the diff level, served read-only at `/diff/<path>`. Step 65's radar charts a changed file categorised against D9 (thresholds) or raw, its complexity spokes muted in the raw view because the map does not carry those numbers (P73).

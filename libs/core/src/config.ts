@@ -93,8 +93,34 @@ export const TRUNK_CANDIDATES: readonly string[] = ['main', 'master', 'develop',
  */
 export const DEFAULT_EDITOR = 'vscode://file{root}/{path}:{line}';
 
-/** The schemes a link the page writes may never carry: each runs or embeds what it holds rather than opening it. */
-const UNSAFE_SCHEME = /^\s*(?:javascript|data|vbscript|blob):/i;
+/** The schemes a link the page writes may never carry: each runs, embeds or reads what it holds rather than opening it in an editor (D173). */
+const UNSAFE_SCHEMES: ReadonlySet<string> = new Set(['javascript', 'data', 'vbscript', 'blob', 'file']);
+
+/** A URL's scheme: a letter, then letters, digits, `+`, `-` and `.`, up to its first colon. */
+const SCHEME = /^([a-z][a-z0-9+.-]*):/i;
+
+/** Any control character, C0, DEL or C1: none belongs in a URL template a person typed. */
+const CONTROL = /\p{Cc}/u;
+
+/**
+ * A link's scheme as a browser reads it, by the WHATWG URL parser (D173):
+ * the C0 controls and spaces at either end trimmed, every tab and newline
+ * inside dropped, and the scheme lowercased; none when the link names none,
+ * which the page resolves against its own address.
+ */
+function schemeOf(link: string): string | undefined {
+  let start = 0;
+  let end = link.length;
+  while (start < end && link.charCodeAt(start) <= 0x20) start += 1;
+  while (end > start && link.charCodeAt(end - 1) <= 0x20) end -= 1;
+  return SCHEME.exec(link.slice(start, end).replaceAll(/[\t\n\r]/g, ''))?.[1]?.toLowerCase();
+}
+
+/** The scheme of a link that, read as a browser reads it, would run, embed or read what it holds rather than open an editor; none for any other link (D173). */
+const unsafeScheme = (link: string): string | undefined => {
+  const scheme = schemeOf(link);
+  return scheme !== undefined && UNSAFE_SCHEMES.has(scheme) ? scheme : undefined;
+};
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -129,16 +155,20 @@ export function configuredTrunk(text: string | undefined): string | undefined {
 /**
  * The editor template an `atis.config.json` names (D102), or undefined when
  * there is no file or it names none, so `DEFAULT_EDITOR` stands. One that
- * names no `{path}` opens no file, and one in a scheme that runs what it
- * holds would hand a reviewed repo's config a script in the page, so each
- * throws as misuse, as a broken file does (C4).
+ * names no `{path}` opens no file; one holding a control character is no
+ * template a person typed, and a browser drops its tabs and newlines; and
+ * one in a scheme that runs what it holds would hand a reviewed repo's
+ * config a script in the page that holds the run's token (D134, D173). So
+ * each throws as misuse, as a broken file does (C4).
  */
 export function configuredEditor(text: string | undefined): string | undefined {
   if (text === undefined) return undefined;
   const editor = configObject(text)['editor'];
   if (editor === undefined) return undefined;
   if (typeof editor !== 'string' || !editor.includes('{path}')) throw new Error(`${CONFIG_FILE}'s editor must be a URL template naming {path}`);
-  if (UNSAFE_SCHEME.test(editor)) throw new Error(`${CONFIG_FILE}'s editor must open a file, not run a script`);
+  if (CONTROL.test(editor)) throw new Error(`${CONFIG_FILE}'s editor must hold no control character`);
+  const unsafe = unsafeScheme(editor);
+  if (unsafe !== undefined) throw new Error(`${CONFIG_FILE}'s editor must open an editor, never a ${unsafe}: link, which runs or reads what it holds`);
   return editor;
 }
 
@@ -148,15 +178,16 @@ const escapedPath = (path: string): string => path.split('/').map(encodeURICompo
 /**
  * The link that opens `path` at `line` in the reader's editor: `template`
  * with its `{root}`, `{path}` and `{line}` filled, each segment of a path
- * escaped so a file's name cannot reshape the URL; none when the filled link
- * would run a script rather than open a file (D102).
+ * escaped so a file's name cannot reshape the URL; none when the filled link,
+ * read as a browser reads it, would run a script or read a page rather than
+ * open an editor (D102, D173).
  */
 export function editorLink(template: string, at: { readonly root: string; readonly path: string; readonly line: number }): string | undefined {
   const link = template
     .replaceAll('{root}', escapedPath(at.root.replace(/\/+$/, '')))
     .replaceAll('{path}', escapedPath(at.path))
     .replaceAll('{line}', String(Math.max(1, Math.trunc(at.line))));
-  return UNSAFE_SCHEME.test(link) ? undefined : link;
+  return unsafeScheme(link) === undefined ? link : undefined;
 }
 
 const IMAGES = ['*.png', '*.jpg', '*.jpeg', '*.gif', '*.webp', '*.avif', '*.ico'];

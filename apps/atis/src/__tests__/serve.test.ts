@@ -369,14 +369,17 @@ test("a diff reads the sides of the map a base put in place, never the map it re
   expect((await get(served.port, `/diff/src/square.ts?token=${TOKEN}`)).status).toBe(404);
 });
 
-test("the editor template is the repo's atis.config.json's, and one that would run a script, or names no path, fails the run before it serves (D102, C4)", async () => {
+test("the editor template is the repo's atis.config.json's, and one that would run a script, holds a control character, or names no path, fails the run before it serves (D102, D173, C4)", async () => {
   const repo = twoCommits();
   const map = changeMap(git(repo, 'rev-parse', 'v1'), git(repo, 'rev-parse', 'HEAD'), [{ path: 'src/square.ts', kind: 'added' }]);
   writeFileSync(join(repo, 'atis.config.json'), '{ "editor": "zed://file{root}/{path}:{line}" }\n');
   expect((await diffAt(await diffing(repo, map), 'src/square.ts')).editor).toBe('zed://file{root}/{path}:{line}');
   const broken = [
-    ['{ "editor": "javascript:alert(1)//{path}" }', 'not run a script'],
-    ['{ "editor": " Data:text/html,{path}" }', 'not run a script'],
+    ['{ "editor": "javascript:alert(1)//{path}" }', 'never a javascript: link'],
+    ['{ "editor": " Data:text/html,{path}" }', 'never a data: link'],
+    ['{ "editor": "FILE://{root}/{path}" }', 'never a file: link'],
+    // A browser drops the tab, so this reads as javascript: in the page; the config refuses it first.
+    ['{ "editor": "java\\tscript:alert(1)//{path}" }', 'no control character'],
     ['{ "editor": "vscode://file{root}" }', 'naming {path}'],
     ['{ "editor": 3 }', 'naming {path}'],
     ['{ "editor": ', 'not JSON'],
@@ -386,3 +389,12 @@ test("the editor template is the repo's atis.config.json's, and one that would r
     await expect(serve({ assets: stubApp(), map, token: TOKEN, rebase: { repo, rebuild: () => Promise.reject(new Error('no base here')) } })).rejects.toThrow(reason);
   }
 });
+
+test('a served run whose atis.config.json names an editor with a control character exits 2, naming it, and serves nothing (D173, C4)', async () => {
+  const repo = twoCommits();
+  writeFileSync(join(repo, 'atis.config.json'), '{ "editor": "java\\nscript:alert(1)//{path}" }\n');
+  const outcome = await serveRun({ repo, base: 'v1', assets: stubApp(), open: false, verbose: false, token: TOKEN });
+  expect(outcome.served).toBeUndefined();
+  expect(outcome.exitCode).toBe(2);
+  expect(outcome.stderr).toBe("atis: atis.config.json's editor must hold no control character\n");
+}, 60_000);
