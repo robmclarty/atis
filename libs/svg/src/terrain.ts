@@ -21,7 +21,7 @@
  */
 
 import { membraneThickness } from 'core';
-import type { Cell, Contour, Layout, Organelle, Position, Terrain } from 'core';
+import type { Cell, Contour, Layout, LayoutBand, Organelle, Position, Terrain } from 'core';
 import {
   FIELD_FILL,
   GLYPH_OFFSET,
@@ -76,26 +76,39 @@ export function drawField(layout: Layout, top: number): Markup {
   return el('rect', { id: 'field', x: 0, y: top, width: layout.width, height: layout.height - top, fill: FIELD_FILL });
 }
 
-/** One faint strip and one contour line per band, band 0 uppermost: the entry points are at the top (D13). */
+/**
+ * One faint strip and one contour line per band, band 0 uppermost: the entry
+ * points are at the top (D13). A field whose lanes wrap into rows draws each
+ * row's ladder across that row alone (Q73).
+ */
 export function drawTerraces(layout: Layout): Markup {
-  const bands = [...layout.bands].toSorted((a, b) => a.index - b.index);
-  return el(
-    'g',
-    { id: 'terraces' },
-    bands.map((band) =>
+  if (layout.rows !== undefined) {
+    return el(
+      'g',
+      { id: 'terraces' },
+      layout.rows.map((row, index) => el('g', { 'data-row': index }, ladderOf(row.bands, row.x0, row.x1))),
+    );
+  }
+  return el('g', { id: 'terraces' }, ladderOf(layout.bands, 0, layout.width));
+}
+
+/** A ladder's strips and lines, from `x0` across to `x1`. */
+function ladderOf(ladder: readonly LayoutBand[], x0: number, x1: number): readonly Markup[] {
+  return [...ladder]
+    .toSorted((a, b) => a.index - b.index)
+    .map((band) =>
       el('g', { 'data-band': band.index }, [
-        el('rect', { x: 0, y: band.y0, width: layout.width, height: band.y1 - band.y0, fill: TERRACE_FILL }),
+        el('rect', { x: x0, y: band.y0, width: x1 - x0, height: band.y1 - band.y0, fill: TERRACE_FILL }),
         el('line', {
-          x1: 0,
+          x1: x0,
           y1: band.y0,
-          x2: layout.width,
+          x2: x1,
           y2: band.y0,
           stroke: TERRACE_LINE,
           'stroke-width': TERRACE_LINE_WIDTH,
         }),
       ]),
-    ),
-  );
+    );
 }
 
 /** How many cells stand between a cell and the top of its tree, bounded so a malformed chain cannot loop. */

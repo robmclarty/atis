@@ -288,3 +288,201 @@ test('a crowded package places every file it holds, each on its own terrace', ()
     }
   }
 });
+
+/**
+ * A repo of many packages, each wider than its terraces are tall, stood its
+ * lanes in a strip far wider than any screen: step 43's generator laid 5,000
+ * files 57,740 units wide and 3,139 tall. So once one row of lanes would run
+ * wider than about 1.6 times its terraces' height, the lanes wrap into rows,
+ * filled in path order, each row carrying its own ladder of the same
+ * terraces lower down (Q73). The fixtures are seeded rows of small packages,
+ * each a barrel over a crowd of single-file cells on a few shallow
+ * terraces, with some files added and, in one, a package the change brings
+ * whole.
+ */
+const WIDE = 9;
+
+function wide(seed: number, whole: boolean): Shape {
+  const random = seededRandom(seed);
+  const pick = (count: number): number => Math.floor(random() * count);
+  const cells: MembraneCell[] = [];
+  const organelles: Organelle[] = [];
+  const packages = new Map<string, string>();
+  const edges: { from: string; to: string }[] = [];
+  const lay = (root: string): readonly string[] => {
+    const pkg = `package:${root}`;
+    const barrel = `${root}/src/index.ts`;
+    organelles.push(organelle(barrel, pkg, 0, 20 + pick(60)));
+    cells.push({ id: pkg, organelles: [barrel] });
+    packages.set(pkg, pkg);
+    const singles = Array.from({ length: 5 + pick(4) }, (_unused, at) => `${root}/src/s${String(at)}.ts`);
+    for (const path of singles) {
+      organelles.push(organelle(path, `single:${path}`, pick(3), 10 + pick(300)));
+      cells.push({ id: `single:${path}`, parent: pkg, organelles: [path] });
+      packages.set(`single:${path}`, pkg);
+      edges.push({ from: barrel, to: path });
+    }
+    return [barrel, ...singles];
+  };
+  const ground = Array.from({ length: WIDE }, (_unused, index) => lay(`libs/q${String(index)}`)).flat();
+  const brought = whole ? lay('libs/z') : [];
+  const added = new Set([...ground.filter(() => random() < 0.1), ...brought]);
+  const bands: readonly Band[] = Array.from({ length: 3 }, (_unused, index) => ({ index, depth_min: index, depth_max: index }));
+  return { input: { cells, organelles, edges, bands, groups: [], added }, packages };
+}
+
+const WIDES = SEEDS.flatMap((seed) =>
+  [false, true].map((whole) => {
+    const shape = wide(seed, whole);
+    return { seed: `${String(seed)}${whole ? ' with a package brought whole' : ''}`, shape, layout: computeLayout(shape.input) };
+  }),
+);
+
+/** The row a placed file stands in: the one whose terraces hold its centre. */
+function rowOf(layout: Layout, y: number): number {
+  return (layout.rows ?? []).findIndex((row) => row.bands.some((band) => y >= band.y0 && y < band.y1));
+}
+
+/** Each package's row, by the row its files stand in, and how far across it its files reach; undefined for a package split across rows. */
+function standings(layout: Layout, shape: Shape): ReadonlyMap<string, { readonly row: number | undefined; readonly left: number; readonly right: number }> {
+  const seen = new Map<string, { row: number | undefined; left: number; right: number }>();
+  for (const file of shape.input.organelles) {
+    const at = layout.positions[file.id];
+    if (at === undefined) continue;
+    const pkg = shape.packages.get(file.cell) ?? file.cell;
+    const row = rowOf(layout, at.y);
+    const was = seen.get(pkg);
+    seen.set(pkg, {
+      row: was === undefined || was.row === row ? row : undefined,
+      left: Math.min(was?.left ?? Number.POSITIVE_INFINITY, at.x - at.r),
+      right: Math.max(was?.right ?? Number.NEGATIVE_INFINITY, at.x + at.r),
+    });
+  }
+  return seen;
+}
+
+test('lanes that would run wider than about 1.6 times their terraces wrap into rows, each with its own copy of the ladder, near the screen\'s shape', () => {
+  for (const { seed, shape, layout } of WIDES) {
+    const rows = layout.rows ?? [];
+    expect(rows.length, `seed ${seed}`).toBeGreaterThan(1);
+    expect(rows[0]?.bands, `seed ${seed}`).toEqual(layout.bands);
+    const ladder = layout.bands.reduce((total, band) => total + (band.y1 - band.y0), 0);
+    rows.forEach((row, index) => {
+      const below = rows[index - 1]?.bands.at(-1)?.y1;
+      // Every row repeats the first's terraces, as tall, a gap below the row above it.
+      expect(row.bands.map((band) => [band.index, band.y1 - band.y0]), `seed ${seed}`).toEqual(layout.bands.map((band) => [band.index, band.y1 - band.y0]));
+      if (below !== undefined) expect(row.bands[0]?.y0, `seed ${seed}`).toBeGreaterThan(below);
+      expect(row.x0, `seed ${seed}`).toBeLessThan(row.x1);
+      expect(row.x1, `seed ${seed}`).toBeLessThanOrEqual(layout.width);
+    });
+    expect(layout.height, `seed ${seed}`).toBe(rows.at(-1)?.bands.at(-1)?.y1);
+    // Wrapped, the field keeps near the screen's shape: no wider than about twice its height, nor far taller than wide.
+    expect(layout.width, `seed ${seed}`).toBeLessThanOrEqual(2 * layout.height);
+    expect(layout.height, `seed ${seed}`).toBeLessThan(2 * layout.width);
+    // One row of the same lanes, side by side a lane's slack and gutter apart, would have run wider than 1.6 times its terraces.
+    const lanes = [...standings(layout, shape).values()];
+    const one = lanes.reduce((total, lane) => total + (lane.right - lane.left), 0) + (lanes.length - 1) * 24;
+    expect(one, `seed ${seed}`).toBeGreaterThan(1.6 * ladder);
+  }
+});
+
+test('in a wrapped field every file stands on its own terrace in its package\'s row, the packages fill the rows in path order, and the change\'s whole packages come after the ground', { timeout: 60_000 }, () => {
+  for (const { seed, shape, layout } of WIDES) {
+    const rows = layout.rows ?? [];
+    for (const file of shape.input.organelles) {
+      const at = layout.positions[file.id];
+      const row = rows[rowOf(layout, at?.y ?? Number.NaN)];
+      const band = row?.bands.find((strip) => strip.index === file.band);
+      expect(band, `seed ${seed}: ${file.id} stands on no terrace of its band`).toBeDefined();
+      expect(at?.y, `seed ${seed}: ${file.id}`).toBeGreaterThan(band?.y0 ?? 0);
+      expect(at?.y, `seed ${seed}: ${file.id}`).toBeLessThan(band?.y1 ?? 0);
+      expect((at?.x ?? 0) + (at?.r ?? 0), `seed ${seed}: ${file.id}`).toBeLessThanOrEqual(row?.x1 ?? 0);
+    }
+    const stood = [...standings(layout, shape)].toSorted(([a], [b]) => (a < b ? -1 : 1));
+    stood.forEach(([pkg, here], index) => {
+      expect(here.row, `seed ${seed}: ${pkg} is split across rows`).toBeDefined();
+      const next = stood[index + 1]?.[1];
+      if (next === undefined) return;
+      // In path order a package stands in the same row as the one before it, right of it, or in a row below.
+      expect(next.row ?? 0, `seed ${seed}: ${pkg}`).toBeGreaterThanOrEqual(here.row ?? 0);
+      if (next.row === here.row) expect(here.right, `seed ${seed}: ${pkg}`).toBeLessThan(next.left);
+    });
+    const brought = stood.find(([pkg]) => pkg === 'package:libs/z')?.[1];
+    if (brought !== undefined) expect(brought.row, `seed ${seed}`).toBe(Math.max(...stood.map(([, here]) => here.row ?? 0)));
+    // A row moves each lane whole, so its cells keep apart as they settled; what wrapping could break is two packages' skins meeting across rows.
+    expect(trouble(layout, shape.input.cells, shape.input.organelles, otherPackages(shape.packages)), `seed ${seed}`).toEqual([]);
+  }
+});
+
+test('a field that fits one row writes no rows, as the demo and every narrower field did before lanes wrapped', () => {
+  const inputs = JSON.parse(readFileSync(join(FIXTURES, 'demo', 'inputs.json'), 'utf8')) as BuildInputs;
+  expect(buildMap(inputs, DEFAULT_CONFIG).terrain.layout?.rows).toBeUndefined();
+  for (const { seed, layout } of [...FIELDS, ...CROWDS]) {
+    expect(layout.rows, `seed ${String(seed)}`).toBeUndefined();
+    expect(Object.keys(layout)).not.toContain('rows');
+  }
+});
+
+test('a wrapped field relaxed from itself stands each file about where it stood, on the same row\'s terrace', () => {
+  for (const { seed, shape, layout } of WIDES) {
+    const again = computeLayout({ ...shape.input, prior: layout });
+    expect(again.rows?.length, `seed ${seed}`).toBe(layout.rows?.length);
+    const moved = shape.input.organelles.map((file) => {
+      const [was, now] = [layout.positions[file.id], again.positions[file.id]];
+      return was === undefined || now === undefined ? Number.POSITIVE_INFINITY : Math.hypot(now.x - was.x, now.y - was.y);
+    });
+    expect(moved.reduce((total, by) => total + by, 0) / moved.length, `seed ${seed}`).toBeLessThan(12);
+  }
+});
+
+/** The base a wrapped field's change was made over: its input without the change's added files, and the field that base laid out, as the cache holds it (D172). */
+function baseOf(input: LayoutInput): { readonly input: LayoutInput; readonly ground: NonNullable<LayoutInput['ground']> } {
+  const organelles = input.organelles.filter((file) => !input.added.has(file.id));
+  const kept = new Set(organelles.map((file) => file.id));
+  const cells = input.cells.flatMap((cell) => {
+    const held = cell.organelles.filter((id) => kept.has(id));
+    return held.length === 0 && !input.cells.some((other) => other.parent === cell.id && other.organelles.some((id) => kept.has(id))) ? [] : [{ ...cell, organelles: held }];
+  });
+  const base: LayoutInput = { ...input, cells, organelles, edges: input.edges.filter((edge) => kept.has(edge.from) && kept.has(edge.to)), added: new Set() };
+  const files = organelles.map((file) => ({ id: file.id, cell: file.cell, band: file.band, loc: file.loc }));
+  return { input: base, ground: { layout: computeLayout(base), cells, organelles: files, bands: input.bands, groups: input.groups } };
+}
+
+test("a change over a wrapped base's own field holds every file it left alone where the base put it, and places its own files on their rows' terraces (D172)", { timeout: 60_000 }, () => {
+  for (const { seed, shape } of WIDES) {
+    const { input } = shape;
+    const { ground } = baseOf(input);
+    expect(ground.layout.rows?.length, `seed ${seed}`).toBeGreaterThan(1);
+    const held = computeLayout({ ...input, ground });
+    expect(held.rows?.length, `seed ${seed}`).toBe(ground.layout.rows?.length);
+    expect(held.bands, `seed ${seed}`).toEqual(ground.layout.bands);
+    expect(held.height, `seed ${seed}`).toBe(ground.layout.height);
+    for (const file of input.organelles) {
+      const at = held.positions[file.id];
+      if (!input.added.has(file.id)) {
+        expect(at, `seed ${seed}: ${file.id}`).toEqual(ground.layout.positions[file.id]);
+        continue;
+      }
+      // An added file stands on its own terrace in the row its package stands in, inside that row's reach.
+      const pkg = shape.packages.get(file.cell) ?? file.cell;
+      const sibling = input.organelles.find((other) => !input.added.has(other.id) && (shape.packages.get(other.cell) ?? other.cell) === pkg);
+      const row = held.rows?.[rowOf(held, (sibling === undefined ? undefined : ground.layout.positions[sibling.id])?.y ?? (held.rows.at(-1)?.bands[0]?.y0 ?? 0))];
+      const band = row?.bands.find((strip) => strip.index === file.band);
+      expect(at?.y, `seed ${seed}: ${file.id}`).toBeGreaterThan(band?.y0 ?? Number.POSITIVE_INFINITY);
+      expect(at?.y, `seed ${seed}: ${file.id}`).toBeLessThan(band?.y1 ?? Number.NEGATIVE_INFINITY);
+      expect((at?.x ?? 0) + (at?.r ?? 0), `seed ${seed}: ${file.id}`).toBeLessThanOrEqual(row?.x1 ?? 0);
+    }
+    expect(trouble(held, input.cells, input.organelles, otherPackages(shape.packages)), `seed ${seed}`).toEqual([]);
+    // One input, one field (C3).
+    expect(computeLayout({ ...input, ground }), `seed ${seed}`).toEqual(held);
+  }
+});
+
+test("a change that gives a wrapped base's ladder another terrace relaxes from the base, since every row below the first would move", () => {
+  const shape = WIDES[0]?.shape ?? wide(1, false);
+  const { ground } = baseOf(shape.input);
+  const deeper = shape.input.organelles.map((file, index) => (index === 1 ? { ...file, band: 3 } : file));
+  const bands: readonly Band[] = Array.from({ length: 4 }, (_unused, index) => ({ index, depth_min: index, depth_max: index }));
+  const input = { ...shape.input, organelles: deeper, bands };
+  expect(computeLayout({ ...input, ground })).toEqual(computeLayout({ ...input, prior: ground.layout }));
+});

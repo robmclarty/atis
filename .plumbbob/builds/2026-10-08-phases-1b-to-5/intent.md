@@ -577,9 +577,12 @@ go, py, tf, sh (w5) ──────┘                                   .ati
 64. [x] feat(web): show a changed file's diff or open it in the editor, **done when:** LOD4 shows a changed file's diff, which the CLI serves read-only from git at `/diff/<path>` ([D93 (app-reads-what-it-is-served)](#d93)), only for a path the map holds and only with the run's token ([D134 (loopback-trust)](#d134)). A link opens the file at a line through a configurable editor URL template, and opens the PR when one is known. A fixture with no server shows the hunks' line ranges alone
     - seam: `apps/web/src/`, `apps/atis/src/serve.ts`, `apps/atis/src/__tests__/serve.test.ts`, `libs/core/src/config.ts`
     - model: sonnet
-65. [ ] feat(web): open the health radar from the HUD, **done when:** per [D103 (health-radar)](#d103), a changed file's radar of raw metrics opens one click from the HUD, categorised against [D9 (thresholds)](#d9) or raw by a toggle, in the flat chrome. DOM tests cover it on fixture maps
+65. [x] feat(web): open the health radar from the HUD, **done when:** per [D103 (health-radar)](#d103), a changed file's radar of raw metrics opens one click from the HUD, categorised against [D9 (thresholds)](#d9) or raw by a toggle, in the flat chrome. DOM tests cover it on fixture maps
     - seam: `apps/web/src/`
     - model: sonnet
+116. [ ] fix(core): wrap package lanes into rows so a repo of many large packages keeps near the screen's shape, **done when:** per [Q73 (lane-rows)](#q73) as settled, the layout wraps package lanes into rows once one row would run wider than about 1.6 times its height, each row carrying its own ladder of depth terraces. Step 43's generator then lays out 5,000 and 20,000 files no wider than about twice their height. A field that already fits one row is written exactly as today, so the demo, every committed fixture and the SVG goldens stay byte-identical. Both renderers draw each row's band rules across that row alone. Tests pin the row break and the unchanged demo. `apps/web/scripts/budget.ts` re-records the 5,000-file budget in `docs/design.md`: about 2 s to the first frame and 60 fps through idle and the sweep, on both backends ([C14 (world-budget)](#c14), [D150 (first-frame-target)](#d150))
+    - seam: `libs/core/src/layout/`, `libs/core/src/schema.ts`, `libs/core/src/__tests__/`, `libs/scene/src/`, `libs/svg/src/`, `apps/web/src/`, `docs/design.md`
+    - model: opus
 66. [ ] perf(web): collapse cells into composites past 5,000 files, **done when:** above 5,000 files, LOD1 draws each package cell as one composite until the camera nears it, Nx style. It holds 30 fps at 20,000 files on step 43's generator ([C14 (world-budget)](#c14)), recorded in `docs/design.md`
     - seam: `apps/web/src/`, `libs/scene/src/`, `docs/design.md`
     - model: opus
@@ -659,7 +662,7 @@ go, py, tf, sh (w5) ──────┘                                   .ati
 
 ## Build order
 
-51, 52, 53, 54, 115, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87
+116, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87
 
 ## Build ranges
 
@@ -699,7 +702,7 @@ Drive the build with `/plumbbob:run`: each run lands one range and stops where t
     - model: opus
 17. `/plumbbob:build 55-58`, **stop:** scrub a range of this repo over one terrain (step 58's check), and try the trunk default, the named bases and the working tree's weather
     - model: opus
-18. `/plumbbob:build 59-66`, **stop:** wave 3's boundary: review the whole-repo overlays, the file and diff levels, the health radar and the composites' budget; then `/plumbbob:refine` sharpens wave 4 and settles [Q38 (comment-image)](#q38)
+18. `/plumbbob:build 59-65,116,66`, **stop:** wave 3's boundary: review the whole-repo overlays, the file and diff levels, the health radar, the package lanes wrapped into rows, and the composites' budget; then `/plumbbob:refine` sharpens wave 4 and settles [Q38 (comment-image)](#q38)
     - model: opus
 19. `/plumbbob:build 67-71`, **stop:** try the deliveries: a fixture's PNG captured twice, byte-identical; watch mode pushing a new commit's weather to an open tab; the fingerprint; and, only if you choose, one real `--comment` on a PR of yours, the one thing in this range that publishes
     - model: opus
@@ -848,6 +851,9 @@ Drive the build with `/plumbbob:run`: each run lands one range and stops where t
 - <a id="q72"></a>**Q72 (far-field-body)**: should the far field show the body itself, dimly, rather than only the change's lights? (Rob, 2026-10-25, at step 103's pause), *resolve by:* the refine after range 30
   - *plain:* at LOD0 the world draws only the changed set and the notices as points of light (§5.6), and the terraces §5.6 calls "barely there" do not show at all, so a change that touches no source file, as on `--base HEAD~` of this repo, opens on a black screen that reads as broken
   - *lean:* draw the body's silhouette and its terraces dimly at the far field, enough that a calm PR reads as a calm map of the repo, with the lights still the only bright things on it
+- <a id="q73"></a>**Q73 (lane-rows)**: how should the depth terraces read once package lanes wrap into rows? (from step 66's pause), *resolved:* 2026-10-26, the lean (Rob, at the refine after step 66's pause), built by step 116
+  - *plain:* since the package-lane fix (keep each package's cells together), every package stands in its own lane. The lanes stand side by side on one shared ladder of terraces, so the field is as wide as all the lanes together. Step 43's generator, whose packages hold about 300 files each, now lays out 5,000 files 57,740 units wide and 20,000 files 207,173 wide, and neither backend can draw a skin that size. Real repos keep their shape so far; the widest is 2,329 units. Wrapping the lanes into rows keeps the field near the screen's shape, but depth is one set of heights today: the map's `bands` and the faint rules drawn across the field.
+  - *lean:* wrap only when one row would run wider than about 1.6 times its height, filling rows in path order. Each row carries its own full ladder, so depth still reads top to bottom within a row, and its rules run across that row alone. The map records each row's bands as an added key ([D85 (schema-bumps)](#d85)), and a field that fits one row is written exactly as today.
 
 ## Verdicts
 

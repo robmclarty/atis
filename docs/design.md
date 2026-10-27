@@ -926,7 +926,7 @@ passes (D150). `apps/web/scripts/budget.ts` measures both on a seeded 5,000-file
 map, `syntheticMap({ files: 5000, seed: 1 })` in `libs/scene/src/synthetic.ts`,
 which core builds from a made-up repo of seventeen workspace packages: 5,006
 placed files in 618 cells over seven terraces, a 59-file change, six notices and
-an IFR category, 9.7 MB of `map.json`. The script builds the app as atis serves it,
+an IFR category, 7.2 MB of `map.json`. The script builds the app as atis serves it,
 serves the map beside it on loopback, and drives Chrome headed, since headless
 Chrome has no WebGPU here and paces its frames by no display:
 
@@ -941,25 +941,38 @@ reading is ten seconds of the settled opening frame; the sweep zooms in from the
 far field a wheel step at a time until the canvas reaches LOD2 and the cell under
 the centre opens. Each rate is read from the page's own animation frames.
 
-Measured on 2026-10-24 on an Apple M1 Pro with 32 GB, macOS (Darwin 25.6.0),
-Chrome 155 at 1,440 by 900 on the laptop's 120 Hz display:
+Measured on 2026-10-26 on an Apple M1 Pro with 32 GB, macOS (Darwin 25.6.0),
+Chrome 156 at 1,440 by 900 on the laptop's 120 Hz display:
 
 | backend | first frame | idle, ten seconds | zoom sweep, LOD0 to LOD2 |
 | --- | --- | --- | --- |
-| WebGPU | 1.87 s | 120 fps; p95 frame 9.1 ms, worst 9.4 ms | 115 fps; p95 frame 9.1 ms; one frame over 16.7 ms, 42 ms, where the first cell opens |
-| WebGL 2 | 1.92 s | 120 fps; p95 frame 9.0 ms, worst 9.4 ms | 114 fps; p95 frame 9.2 ms; one frame over 16.7 ms, 51 ms, where the first cell opens |
+| WebGPU | 1.27 s | 120 fps; p95 frame 9.0 ms, worst 17.0 ms | 120 fps; p95 frame 9.0 ms, worst 9.2 ms |
+| WebGL 2 | 1.30 s | 84 fps; p95 frame 17.2 ms; 3 of 838 frames over 17.7 ms, the worst 18.4 ms | 114 fps; p95 frame 16.0 ms, worst 17.0 ms |
 
-The first run drew its first frame in 13.4 s on WebGPU and 11.8 s on WebGL 2,
-nearly all of it laying the reach and the base tissue into the skin's grids: the
-scanline tested every edge of a contour against every row it spans, and a
-membrane's contour carries hundreds of points. `scanRing` in
-`libs/scene/src/raster.ts` now lays each edge into the rows it crosses, which
-visits the same samples on every contour of the fixtures and of this map, 44
-times faster.
+This map is laid out as package lanes wrapped into rows (Q73, step 116): 19,427
+by 12,508 units in four rows of five, five, six and one package, each row
+carrying its own copy of the seven terraces. Before the rows, the lanes stood
+side by side in one strip 57,740 by 3,139 units, which drew its first frame in
+about 5 s on both backends and held WebGL 2 to 45 fps at idle: the skin lays
+one sample, one texel and one vertex every 4 layout units, so its grids held
+15.2 million of each, against 642,000 on the 3,265 by 3,139 field this map had
+before lanes, when the table here read 1.87 s and 120 fps. Rows fix the
+field's shape, not its area: these lanes are sparse, about 48,500 square units
+a file against 3,000 to 10,000 on the corpus repos, so the field is 24 times
+the area it was. The skin now holds at most two million samples
+(`skinResolution` in `libs/scene/src/heightfield.ts`): it is laid at the
+spike's 4 units until a field would hold more, and coarsened a whole unit at a
+time past that, to 12 units on this map. Every real repo so far stays at 4,
+the largest, `corpus-5`, at about 580,000 samples. At this map's whole-field
+framing a pixel covers at least 14 units, so the far field loses nothing; an
+opened cell's skin is softer than a small repo's.
 
-Two things stand outside the table. The one long frame where the first cell
-opens is not the slide's shader compile, since drawing the slide's materials
-before the first frame left it at 34 to 42 ms; it is parked. And core takes
-291 s to lay this map out, mostly in the membranes' outline routing: a cost the
-CLI pays before the map arrives, outside the world's budget, and parked for wave
-3's cache beside it.
+WebGL 2's idle alternates 8.3 and 16.7 ms frames: its skin of two million
+vertices costs it about one 120 Hz refresh in three, which still holds 60 fps.
+Step 43's 20,000 files now lay out 46,560 by 30,801 units in five rows, the
+skin at 27 units; composites are step 66's.
+
+Two things stand outside the table. A first cell opening once cost a long frame
+of 34 to 51 ms, which is parked; this run's sweep met none. And core lays this
+map out in 9 s, the 20,000-file map in 44 s, a cost the CLI pays before the map
+arrives, outside the world's budget, and cached per base (D96).

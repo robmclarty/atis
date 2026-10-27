@@ -12,7 +12,11 @@
  * top where the entry points are, the deepest band at the bottom. Across them
  * each package stands in a lane of its own, so no package's skin runs between
  * another's cells (D166), and inside its lane each cell stands apart from its
- * siblings, so no two cells' skins cross (D171, `siblings.ts`). Terrain is
+ * siblings, so no two cells' skins cross (D171, `siblings.ts`). A repo of
+ * many large packages would stand its lanes in a strip far wider than any
+ * screen, so once one row of them would run wider than about the screen's
+ * shape over its terraces, the lanes wrap into rows, each carrying its own
+ * ladder of the same terraces lower down (Q73). Terrain is
  * settled first and added files second, with the terrain pinned, so that the
  * weather never moves the ground under it (D32). The membranes are cut last,
  * over the settled field, one per cell and one per shore group (D13).
@@ -31,12 +35,13 @@
  * into the room around them as the second pass places added files, and only
  * the skins near what moved are cut again. A change the base's field cannot
  * hold, one that gives a terrace another meaning or outgrows the shore's
- * room, relaxes from it instead.
+ * room, relaxes from it instead, and so does every change over a base whose
+ * lanes wrapped into rows.
  */
 
 import { classifyFile } from '../modules.js';
 import type { ImportEdge } from '../modules.js';
-import type { Band, Group, Layout, LayoutBand, Organelle, Position } from '../schema.js';
+import type { Band, Group, Layout, LayoutBand, LayoutRow, Organelle, Position } from '../schema.js';
 import { heightsOn, radiusOf, simulate } from './force.js';
 import type { Lane, LayoutFile, Placement, Point, Strip } from './force.js';
 import { computeMembranes, skinMembers } from './membranes.js';
@@ -71,6 +76,10 @@ const BAND_ROOM = 3;
  */
 const LANE_SLACK = 40;
 const LANE_GUTTER = 24;
+/** How far one lane's terrain stands from the next: its slack, the next one's, and the gutter between. */
+const LANE_PITCH = 2 * LANE_SLACK + LANE_GUTTER;
+/** Rows of lanes stand as far apart as lanes do, so one row's deepest skins keep from the next row's shallowest as one lane's keep from the next. */
+const ROW_GAP = LANE_PITCH;
 
 /** The shore's grid: a fixed pitch, blocks of at most this many columns, a gap between groups. */
 const SHORE_PITCH = 18;
@@ -101,8 +110,8 @@ export type LayoutInput = {
   readonly ground?: Ground;
 };
 
-/** What a layout before this one says: where each file was, and the terraces it was on. */
-export type Prior = Pick<Layout, 'positions' | 'bands'>;
+/** What a layout before this one says: where each file was, and the terraces it was on, in whichever row. */
+export type Prior = Pick<Layout, 'positions' | 'bands' | 'rows'>;
 
 /**
  * A base's own field, keyed by base path (D172): the layout its terrain was
@@ -269,9 +278,9 @@ function layOutShore(groups: readonly Group[], width: number): Shore {
   return { positions, ...shoreBounds(flow.rows) };
 }
 
-/** Slide a settled pass so its leftmost edge rests on the margin; the shape of it does not change. */
-function shift(placements: readonly Placement[], offset: number): readonly Placement[] {
-  return placements.map((placed) => roundPlacement({ ...placed, x: placed.x + offset }));
+/** Slide a settled pass along, and down into a row below the first; the shape of it does not change. */
+function shift(placements: readonly Placement[], offset: number, down = 0): readonly Placement[] {
+  return placements.map((placed) => roundPlacement({ ...placed, x: placed.x + offset, y: placed.y + down }));
 }
 
 function offsetFor(placements: readonly Placement[]): number {
@@ -496,9 +505,12 @@ function placeBeside(root: string, files: readonly LayoutFile[], terrain: readon
  * stand after every lane that has ground, so the change's new files and
  * packages take room beside the ground rather than shouldering it aside
  * (D32). Imports between packages pull nothing: the gap they cross is the
- * hop the skin already draws (D45).
+ * hop the skin already draws (D45). Every lane settles on the one ladder of
+ * terraces, and a lane in a row below the first is moved down onto that
+ * row's copy of it whole (Q73).
  */
-function settle(files: readonly LayoutFile[], input: LayoutInput, strips: ReadonlyMap<number, Strip>): readonly Placement[] {
+function settle(files: readonly LayoutFile[], input: LayoutInput, bands: readonly LayoutBand[]): Wrapped {
+  const strips = new Map(bands.map((band) => [band.index, band] as const));
   const field: Field = { input, strips, line: ancestry(input.cells), start: startsOf(files, input.prior, strips) };
   const lanes = new Map<string, LayoutFile[]>();
   for (const file of files) {
@@ -509,12 +521,83 @@ function settle(files: readonly LayoutFile[], input: LayoutInput, strips: Readon
     .toSorted(([a], [b]) => byPath(pathOf(a), pathOf(b)) || byPath(a, b))
     .map(([root, held]) => settleLane(root, held, field));
 
+  const ladder = ladderOf(bands);
+  const rows = wrap(
+    settled.filter((lane) => lane.grounded),
+    settled.filter((lane) => !lane.grounded),
+    ladder,
+  );
+  const [only] = rows;
+  if (rows.length === 1 && only !== undefined) return { placements: standInRow(only, 0) };
+  const placed = rows.map((row, index) => standInRow(row, index * (ladder + ROW_GAP)));
+  return {
+    placements: placed.flat(),
+    rows: placed.map(
+      (row, index): LayoutRow => ({
+        x0: 0,
+        x1: Math.ceil(row.reduce((edge, at) => Math.max(edge, at.x + at.r), 0)) + MARGIN,
+        bands: bands.map((band) => ({ index: band.index, y0: band.y0 + index * (ladder + ROW_GAP), y1: band.y1 + index * (ladder + ROW_GAP) })),
+      }),
+    ),
+  };
+}
+
+/** The settled field: every file's placement, and the rows its lanes wrapped into, when they wrapped. */
+type Wrapped = { readonly placements: readonly Placement[]; readonly rows?: readonly LayoutRow[] };
+
+/** How tall a ladder of terraces stands, top to bottom. */
+function ladderOf(bands: readonly LayoutBand[]): number {
+  return bands.reduce((total, band) => total + (band.y1 - band.y0), 0);
+}
+
+/** Stand lanes side by side from the margin, each its terrain's span and a pitch after the one before, moved `down` into their row. */
+function standInRow(lanes: readonly Settled[], down: number): readonly Placement[] {
   let left = MARGIN;
-  return [...settled.filter((lane) => lane.grounded), ...settled.filter((lane) => !lane.grounded)].flatMap((lane) => {
+  return lanes.flatMap((lane) => {
     const offset = left - MARGIN;
-    left = Math.ceil(left + lane.span + 2 * LANE_SLACK + LANE_GUTTER);
-    return offset === 0 ? lane.placements : shift(lane.placements, offset);
+    left = Math.ceil(left + lane.span + LANE_PITCH);
+    return offset === 0 && down === 0 ? lane.placements : shift(lane.placements, offset, down);
   });
+}
+
+/** How wide a row of lanes stood as `standInRow` stands them runs: its last lane's terrain's right edge, and the margin past it. */
+function rowWidth(lanes: readonly Settled[]): number {
+  let [left, right] = [MARGIN, MARGIN];
+  for (const lane of lanes) {
+    right = left + lane.span;
+    left = Math.ceil(left + lane.span + LANE_PITCH);
+  }
+  return right + MARGIN;
+}
+
+/** Lanes filled on, in the order they stand, into rows no wider than `most`: a lane opens a row when the last holds one already and would run past it. */
+function fill(lanes: readonly Settled[], most: number, rows: readonly (readonly Settled[])[] = []): readonly (readonly Settled[])[] {
+  return lanes.reduce<readonly (readonly Settled[])[]>((filled, lane) => {
+    const last = filled.at(-1);
+    return last !== undefined && rowWidth([...last, lane]) <= most ? [...filled.slice(0, -1), [...last, lane]] : [...filled, [lane]];
+  }, rows);
+}
+
+/**
+ * The rows the lanes stand in (Q73). One, as the field always stood, while
+ * the lanes fit one row no wider than `ASPECT` times its terraces' height.
+ * Past that, the fewest rows at which the lanes, filled in the order they
+ * stand into rows no wider than `ASPECT` times the height those rows stack
+ * to, take no more rows than that: the field nearest the screen's shape that
+ * still never splits a lane. The breaks are measured off the lanes with
+ * ground alone, as a lane's place is measured off the terrain before it
+ * (D32), so the lanes of packages a change brings whole fill on after the
+ * ground's rather than splitting its rows.
+ */
+function wrap(grounded: readonly Settled[], fresh: readonly Settled[], ladder: number): readonly (readonly Settled[])[] {
+  const [basis, rest] = grounded.length > 0 ? [grounded, fresh] : [fresh, []];
+  if (basis.length < 2 || rowWidth(basis) <= ASPECT * ladder) return [[...grounded, ...fresh]];
+  // It ends by the time `count` reaches the lanes' own count, since no row is ever left empty.
+  for (let count = 2; ; count += 1) {
+    const most = ASPECT * (count * ladder + (count - 1) * ROW_GAP);
+    const rows = fill(basis, most);
+    if (rows.length <= count) return fill(rest, most, rows);
+  }
 }
 
 /**
@@ -522,16 +605,18 @@ function settle(files: readonly LayoutFile[], input: LayoutInput, strips: Readon
  * kept in the prior's frame, which the passes carry their new files into; its
  * height keeps its share of the terrace it stood on, set on the terrace it
  * stands on now, since terraces grow and move with what stands on them and a
- * file's height within one says nothing (D13).
+ * file's height within one says nothing (D13). A prior whose lanes wrapped
+ * into rows is read on whichever row's terrace the file stood (Q73).
  */
 function startsOf(files: readonly LayoutFile[], prior: Prior | undefined, strips: ReadonlyMap<number, Strip>): ReadonlyMap<string, Point> {
   if (prior === undefined) return new Map();
+  const ladders = prior.rows?.flatMap((row) => row.bands) ?? prior.bands;
   return new Map(
     files.flatMap((file) => {
       const was = prior.positions[file.id];
       const strip = strips.get(file.band);
       if (was === undefined || strip === undefined) return [];
-      const stood = prior.bands.find((band) => was.y >= band.y0 && was.y < band.y1);
+      const stood = ladders.find((band) => was.y >= band.y0 && was.y < band.y1);
       const share = stood === undefined || stood.y1 <= stood.y0 ? 0.5 : (was.y - stood.y0) / (stood.y1 - stood.y0);
       return [[file.id, { x: was.x, y: strip.y0 + share * (strip.y1 - strip.y0) }] as const];
     }),
@@ -679,6 +764,13 @@ function changedPlaces(before: Readonly<Record<string, Position>>, after: Readon
  * the shore are the base's, and a skin whose members and neighbourhood did
  * not change is the base's skin. None when the base's terraces or shore
  * cannot hold the change, which then relaxes from the base instead (D97).
+ *
+ * Over a base whose lanes wrapped into rows (Q73), each lane's files are
+ * placed on its own row's terraces, the lanes the base never had stand after
+ * the last row's last lane, and the rows stand as the base had them, a row
+ * reaching further right only as far as its new files do. A change that
+ * gives the ladder another terrace would move every row below the first, so
+ * it relaxes instead.
  */
 function holdGround(input: LayoutInput, ground: Ground): Layout | undefined {
   const files = filesOf(input.organelles);
@@ -686,7 +778,12 @@ function holdGround(input: LayoutInput, ground: Ground): Layout | undefined {
   const bands = heldStrips(input, ground, files, width);
   const shore = heldShore(input.groups, ground, width);
   if (bands === undefined || shore === undefined) return undefined;
+  const { rows } = ground.layout;
+  if (rows !== undefined && !sameLadder(bands, ground.layout.bands)) return undefined;
   const strips = new Map(bands.map((band) => [band.index, band] as const));
+  // Each row's terraces, the first row's the one ladder, and the row a base position stands in.
+  const ladders = rows === undefined ? [strips] : rows.map((row) => new Map(row.bands.map((band) => [band.index, band] as const)));
+  const rowAt = (y: number): number => (rows === undefined ? 0 : Math.max(0, rows.findIndex((row) => row.bands.some((band) => y >= band.y0 && y < band.y1))));
 
   const line = ancestry(input.cells);
   const before = ancestry(ground.cells);
@@ -726,16 +823,19 @@ function holdGround(input: LayoutInput, ground: Ground): Layout | undefined {
       continue;
     }
     const { x0, x1 } = extentOf(laid.get(root) ?? terrain);
-    placements.push(...placeBeside(root, held, terrain, { x0: x0 - LANE_SLACK, x1: x1 + LANE_SLACK }, field));
+    const row = ladders[rowAt(terrain[0]?.y ?? 0)] ?? strips;
+    placements.push(...placeBeside(root, held, terrain, { x0: x0 - LANE_SLACK, x1: x1 + LANE_SLACK }, row === strips ? field : { ...field, strips: row }));
   }
 
-  // The lanes the base never had, or whose every file the change moved, stand after the base's last, as a cold field stands its new lanes (D32).
-  const end = extentOf([...laid.values()].flat()).x1;
-  let left = Number.isFinite(end) ? Math.ceil(end + 2 * LANE_SLACK + LANE_GUTTER) : MARGIN;
+  // The lanes the base never had, or whose every file the change moved, stand after the base's last, as a cold field stands its new lanes (D32), in its last row.
+  const last = rows === undefined ? 0 : rows.length - 1;
+  const down = rows === undefined ? 0 : (rows[last]?.bands[0]?.y0 ?? 0) - (bands[0]?.y0 ?? 0);
+  const end = extentOf([...laid.values()].flat().filter((at) => rowAt(at.y) === last)).x1;
+  let left = Number.isFinite(end) ? Math.ceil(end + LANE_PITCH) : MARGIN;
   for (const [root, held] of unheld) {
     const lane = settleLane(root, held, field);
-    placements.push(...shift(lane.placements, left - MARGIN));
-    left = Math.ceil(left + lane.span + 2 * LANE_SLACK + LANE_GUTTER);
+    placements.push(...shift(lane.placements, left - MARGIN, down));
+    left = Math.ceil(left + lane.span + LANE_PITCH);
   }
 
   const right = placements.reduce((edge, placed) => Math.max(edge, placed.x + placed.r), 0);
@@ -748,15 +848,22 @@ function holdGround(input: LayoutInput, ground: Ground): Layout | undefined {
     members: skinMembers({ cells: ground.cells, groups: ground.groups, positions: ground.layout.positions }),
     changed: changedPlaces(ground.layout.positions, positions),
   };
+  const reach = (row: number): number => placements.reduce((edge, placed) => (rowAt(placed.y) === row ? Math.max(edge, placed.x + placed.r) : edge), 0);
   return {
     width: Math.max(MIN_WIDTH, ground.layout.width, shore.extent, Math.ceil(right) + MARGIN),
-    height: shore.height + bands.reduce((total, band) => total + (band.y1 - band.y0), 0),
+    height: rows === undefined ? shore.height + bands.reduce((total, band) => total + (band.y1 - band.y0), 0) : ground.layout.height,
     shore: { y0: 0, y1: shore.height },
     bands,
+    ...(rows === undefined ? {} : { rows: rows.map((row, index) => ({ ...row, x1: Math.max(row.x1, Math.ceil(reach(index)) + MARGIN) })) }),
     positions,
     ...(Object.keys(renamedFromBase).length === 0 ? {} : { renamed_from: renamedFromBase }),
     contours: computeMembranes({ cells: input.cells, groups: input.groups, positions }, kept),
   };
+}
+
+/** Whether two ladders hold the same terraces at the same heights. */
+function sameLadder(one: readonly LayoutBand[], other: readonly LayoutBand[]): boolean {
+  return one.length === other.length && one.every((band, index) => band.index === other[index]?.index && band.y0 === other[index]?.y0 && band.y1 === other[index]?.y1);
 }
 
 /**
@@ -775,8 +882,8 @@ export function computeLayout(input: LayoutInput): Layout {
   const spread = spreadWidth(files);
   const shore = layOutShore(input.groups, spread);
   const bands = stripsFor(input.bands, files, spread, shore.height);
-  const strips = new Map(bands.map((band) => [band.index, band] as const));
-  const placements = settle(files, input, strips);
+  const { placements, rows } = settle(files, input, bands);
+  const stacked = rows === undefined ? 0 : (rows.length - 1) * (ladderOf(bands) + ROW_GAP);
 
   const right = placements.reduce((edge, placed) => Math.max(edge, placed.x + placed.r), 0);
   const entries: readonly (readonly [string, Position])[] = [
@@ -789,9 +896,10 @@ export function computeLayout(input: LayoutInput): Layout {
 
   return {
     width: Math.max(MIN_WIDTH, shore.extent, Math.ceil(right) + MARGIN),
-    height: shore.height + bands.reduce((total, band) => total + (band.y1 - band.y0), 0),
+    height: shore.height + bands.reduce((total, band) => total + (band.y1 - band.y0), 0) + stacked,
     shore: { y0: 0, y1: shore.height },
     bands,
+    ...(rows === undefined ? {} : { rows }),
     positions,
     ...(Object.keys(renamed).length === 0 ? {} : { renamed_from: renamed }),
     contours: computeMembranes({ cells: input.cells, groups: input.groups, positions }),

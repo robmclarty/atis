@@ -8,7 +8,7 @@ import { GLYPH_OFFSET, MEMBRANE_DENT_PULL, outlineOf, rulesOf } from 'scene';
 import { expect, test } from 'vitest';
 
 import { renderSvg } from '../render.js';
-import { pathOf } from '../terrain.js';
+import { drawTerraces, pathOf } from '../terrain.js';
 
 /**
  * The fixture map is core's own demo golden, read across the workspace rather
@@ -164,6 +164,34 @@ test('one faint strip and one contour line per band, with band 0 uppermost', () 
   const ys = tops.map(([, y]) => y);
   expect(ys).toEqual(ys.toSorted((a, b) => a - b));
   expect(tops[0]?.[1]).toBe(map.terrain.layout?.shore.y1);
+});
+
+test("a field whose lanes wrap into rows draws each row's ladder across that row alone, and a field of one row draws as it did (Q73)", () => {
+  const map = demo();
+  const layout = map.terrain.layout;
+  if (layout === undefined) throw new Error('the demo has a layout');
+  const ladder = layout.bands.reduce((total, band) => total + (band.y1 - band.y0), 0);
+  const lower = layout.bands.map((band) => ({ ...band, y0: band.y0 + ladder + 104, y1: band.y1 + ladder + 104 }));
+  const rows = [
+    { x0: 0, x1: layout.width, bands: layout.bands },
+    { x0: 0, x1: 200, bands: lower },
+  ];
+  // The map carries its rows as an added key, which the schema reads (D85).
+  const wrapped = assertMap({ ...map, terrain: { ...map.terrain, layout: { ...layout, height: layout.height + ladder + 104, rows } } });
+  const terraces = drawTerraces(wrapped.terrain.layout ?? layout).markup;
+  expect(count(terraces, /<g data-row="\d+">/g)).toBe(2);
+  expect(count(terraces, /<rect /g)).toBe(2 * layout.bands.length);
+  const second = terraces.slice(terraces.indexOf('data-row="1"'));
+  // The lower row's strips and lines run from its own left to its own right, at its own heights.
+  for (const band of lower) {
+    expect(second).toContain(`<rect x="0" y="${String(band.y0)}" width="200" height="${String(band.y1 - band.y0)}"`);
+    expect(second).toContain(`<line x1="0" y1="${String(band.y0)}" x2="200" y2="${String(band.y0)}"`);
+  }
+  expect(count(second, new RegExp(`width="${String(layout.width)}"`, 'g'))).toBe(0);
+  // One row writes no rows and draws the one ladder across the whole field.
+  expect(drawTerraces(layout).markup).not.toContain('data-row');
+  expect(layer(renderSvg(wrapped), 'terraces')).toContain('data-row="1"');
+  expect(() => assertMap({ ...map, terrain: { ...map.terrain, layout: { ...layout, rows: rows.slice(0, 1) } } })).toThrow(/two rows or more/);
 });
 
 test('one membrane path per cell, stroked as thick as its interface', () => {

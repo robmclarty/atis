@@ -777,7 +777,8 @@ function worldTopOf(map: MapJson, layout: Layout): number {
     ...map.terrain.cells.flatMap((cell) => (contours[cell.id] ?? []).map(([, y]) => y)),
     ...weatherOf(map).storms.map((storm) => storm.y - BOLT_HALF),
   ];
-  return tops.length === 0 ? layout.shore.y1 : Math.max(0, Math.min(...tops) - CHROME_PAD);
+  // Folded rather than spread: a large map's skins hold more points than a call takes arguments.
+  return tops.length === 0 ? layout.shore.y1 : Math.max(0, tops.reduce((top, y) => Math.min(top, y)) - CHROME_PAD);
 }
 
 /**

@@ -37,17 +37,16 @@
 import { BufferAttribute, BufferGeometry, Color, DataTexture, DataUtils, HalfFloatType, LinearFilter, Mesh, MeshPhysicalNodeMaterial, RGBAFormat } from 'three/webgpu';
 import type { Node, UniformNode } from 'three/webgpu';
 import { clamp, float, mix, mrt, normalize, positionLocal, pow, texture, transformNormalToView, uniform, uv, vec2, vec3, vec4 } from 'three/tsl';
-import { heightfield, reachField, tissue } from 'scene';
+import { heightfield, reachField, skinResolution, tissue } from 'scene';
 import type { Grid, Heightfield, Relief, Tissue } from 'scene';
 import type { MapJson } from 'core';
 
 import type { SkinLook, WeatherLook } from '../materials.js';
 
-/** Layout units between the heightfield's samples and the mesh's vertices: the spike's, a skin of about 116k vertices on retake-3. */
-export const RESOLUTION = 4;
-
 export type Skin = {
   readonly mesh: Mesh;
+  /** Layout units between the heightfield's samples and the mesh's vertices: the spike's, or coarser on a field too large for it (`skinResolution`). */
+  readonly resolution: number;
   /** The relief as the GPU reads it, which the organelles ride too. */
   readonly relief: DataTexture;
   /** The scheduler's amplitude on the cells' mass, 1 at rest. */
@@ -177,12 +176,12 @@ const gridGeometry = (grid: Grid, width: number, height: number): BufferGeometry
 
 /** The skin for a map over a look, the weather's look and a relief, all read live: its mesh, and the uniforms the render loop moves each frame. */
 export const createSkin = (map: MapJson, look: SkinLook, weather: WeatherLook, reachGlow: { readonly REACH_GLOW: string; readonly REACH_ORIGIN_OPACITY: number }, relief: Relief): Skin => {
-  const field = heightfield(map, RESOLUTION, { ...relief });
+  const field = heightfield(map, skinResolution(map), { ...relief });
   const { columns, rows, resolution } = field.height;
   const data = new Uint16Array(columns * rows * 4);
   fillRelief(data, field);
   const reliefMap = softTexture(new DataTexture(data, columns, rows, RGBAFormat, HalfFloatType));
-  const tissueMap = tissueTexture(tissue(map, RESOLUTION), soften(reachField(map, RESOLUTION), Math.round(weather.reachSoften)));
+  const tissueMap = tissueTexture(tissue(map, resolution), soften(reachField(map, resolution), Math.round(weather.reachSoften)));
 
   const amp = uniform(1);
   const lift = uniform(0);
@@ -256,14 +255,14 @@ export const createSkin = (map: MapJson, look: SkinLook, weather: WeatherLook, r
   restyle();
 
   const relayer = (): void => {
-    fillRelief(data, heightfield(map, RESOLUTION, { ...relief }));
+    fillRelief(data, heightfield(map, resolution, { ...relief }));
     reliefMap.needsUpdate = true;
   };
 
   const reach = (next: MapJson): void => {
     const { data: texels } = tissueMap.image;
     if (!(texels instanceof Uint16Array)) return;
-    takeReach(texels, soften(reachField(next, RESOLUTION), Math.round(weather.reachSoften)), reachMix.value);
+    takeReach(texels, soften(reachField(next, resolution), Math.round(weather.reachSoften)), reachMix.value);
     reachMix.value = 0;
     tissueMap.needsUpdate = true;
   };
@@ -272,5 +271,5 @@ export const createSkin = (map: MapJson, look: SkinLook, weather: WeatherLook, r
   const mesh = new Mesh(gridGeometry(field.height, width, height), material);
   // The vertex stage moves the skin, so its resting bounds would cull it wrongly.
   mesh.frustumCulled = false;
-  return { mesh, relief: reliefMap, amp, lift, surface, restyle, relayer, reach, reachMix };
+  return { mesh, resolution, relief: reliefMap, amp, lift, surface, restyle, relayer, reach, reachMix };
 };

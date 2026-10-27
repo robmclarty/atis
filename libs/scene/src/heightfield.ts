@@ -85,6 +85,34 @@ function clamp01(value: number): number {
   return Math.min(1, Math.max(0, value));
 }
 
+/** Layout units between the skin's samples: the spike's, a skin of about 116k samples on retake-3. */
+export const SKIN_RESOLUTION = 4;
+
+/**
+ * The most samples the skin's grids hold. Every one is filled, packed into a
+ * texture and given a vertex on the first frame, so past this the skin's
+ * cost, not the map's, sets the first frame and the frame rate (C14). It is
+ * above every real repo's field so far, the largest of them about 600k at the
+ * spike's resolution.
+ */
+export const SKIN_SAMPLES = 2_000_000;
+
+/**
+ * The resolution a map's skin is laid at: the spike's, coarsened only as far
+ * as keeps a grid over the whole layout under `SKIN_SAMPLES`, a whole layout
+ * unit at a time. A field the spike's resolution covers in fewer samples is
+ * laid at it exactly, so a field as large as a repo of many big packages, its
+ * lanes wrapped into rows (Q73), costs the skin no more than a smaller one.
+ */
+export function skinResolution(map: MapJson): number {
+  const layout = map.terrain.layout;
+  if (layout === undefined) return SKIN_RESOLUTION;
+  const samples = (resolution: number): number => (Math.ceil(layout.width / resolution) + 1) * (Math.ceil(layout.height / resolution) + 1);
+  let resolution = Math.max(SKIN_RESOLUTION, Math.floor(Math.sqrt((layout.width * layout.height) / SKIN_SAMPLES)));
+  while (samples(resolution) > SKIN_SAMPLES) resolution += 1;
+  return resolution;
+}
+
 /** An empty grid covering the map's layout at `resolution`; a map with no layout gets a single sample (C2: nothing is drawn there). */
 export function gridFor(map: MapJson, resolution: number): Grid {
   if (!(resolution > 0)) throw new Error(`a grid needs a positive resolution, got ${String(resolution)}`);

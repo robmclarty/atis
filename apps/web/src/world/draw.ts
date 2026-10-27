@@ -133,7 +133,7 @@ import { createRibbons } from './ribbons.js';
 import type { Ribbons } from './ribbons.js';
 import { createSectors } from './sectors.js';
 import type { Sectors } from './sectors.js';
-import { RESOLUTION, createSkin } from './skin.js';
+import { createSkin } from './skin.js';
 import { createSky } from './sky.js';
 import { createSpace } from './space.js';
 
@@ -202,7 +202,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   // The field is space (D169): faint stars on the open ground and past it, and a rule at each band's boundary over the canvas.
   const space = createSpace(map, registry.view(SPACE, 'SPACE'));
   scene.add(space.mesh);
-  const grid = gridFor(map, RESOLUTION);
+  const grid = gridFor(map, skin.resolution);
   const organelles = createOrganelles(map, skin.relief, grid, skin.amp, skin.lift, tokens);
   scene.add(...organelles.meshes);
   // The tags over the canvas: a layer of their own between the canvas and the chrome, at each point's resting height on the skin.
@@ -240,7 +240,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   const hover = createHover(heightAt, hoverLook, registry.view(TAG_LOOK));
   // The opened cell's slide (step 40): its meshes in the scene, its tags and leaders under the labels.
   const interiorLook = registry.view(INTERIOR, 'INTERIOR');
-  const interior = createInterior(heightAt, RESOLUTION, interiorLook, registry.view(SLIDE_CHROME));
+  const interior = createInterior(heightAt, skin.resolution, interiorLook, registry.view(SLIDE_CHROME));
   scene.add(...interior.meshes);
   // The far zoom's planet (D170): over the rules, which are the flat world's, and under everything else.
   const planet = createPlanet(map, registry.view(PLANET, 'PLANET'), () => ({ change: tokens.CHANGE_HUE, ifr: tokens.IFR_HUE, category: categoryHue(current.map.weather.checks.category, tokens), field: tokens.FIELD_FILL }));

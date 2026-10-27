@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 65 — feat(web): open the health radar from the HUD
+**Current step:** 116 — fix(core): wrap package lanes into rows so a repo of many large packages keeps near the screen's shape
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -115,7 +115,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 62. feat(core): record each file's functions for the file level
 - ☑ 63. feat(web): open a file into its functions, hunks and coverage strip
 - ☑ 64. feat(web): show a changed file's diff or open it in the editor
-- ☐ 65. feat(web): open the health radar from the HUD
+- ☑ 65. feat(web): open the health radar from the HUD
+- ☐ 116. fix(core): wrap package lanes into rows so a repo of many large packages keeps near the screen's shape
 - ☐ 66. perf(web): collapse cells into composites past 5,000 files
 - ☐ 67. refactor(cli): give atis subcommands beside its map flags
 - ☐ 68. feat(cli): capture the world headless as a PNG
@@ -218,6 +219,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [ ] the world smoke test's range scrubber case flaked once under the full suite's load (6 label marks at frame 0, expected 0) and passed alone three times
 - [ ] the served run tells the page the branch's PR, so the diff sheet's PR link shows without a ?pr= parameter (step 71's gh lookup knows it)
 - [ ] record each changed file's raw cyclomatic, cognitive and CRAP (its functions' worst) in the map, so the health radar's raw view stops muting its three complexity spokes
+- [ ] core sets each package's block side by side, so a repo of many large packages lays out as a strip: step 43's generator gives 57,740 x 3,139 at 5,000 files (3,265 x 3,139 on 2026-10-24) and 207,173 x 6,245 at 20,000, which regressed the 5,000-file first frame to 4 s and blocks step 66's 20,000-file budget
+- [ ] editor links: parse the filled template with new URL() and check its protocol (refusing javascript:, data:, vbscript:, blob: and file:, or allowing known editor schemes and https), and refuse control characters in atis.config.json's editor, since browsers strip tabs and newlines so "java\tscript:" passes the denylist in libs/core/src/config.ts
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -2256,3 +2259,5 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-26 — step 62 checkpointed · 3e7093def — feat(core): record each file's functions for the file level (1 drift, 10m)
 - 2026-10-26 — step 63 checkpointed · 73447abce — feat(web): open a file into its functions, hunks and coverage strip (1 drift, 9m)
 - 2026-10-26 — step 64 checkpointed · e5fbe48de — feat(web): show a changed file's diff or open it in the editor (77m)
+- 2026-10-26 — step 65 checkpointed · a16cf123d — feat(web): open the health radar from the HUD (10m)
+- 2026-10-26 — step 66 abandoned · work kept in tree — perf(web): collapse cells into composites past 5,000 files

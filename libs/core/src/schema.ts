@@ -115,12 +115,22 @@ export type History = { readonly window_commits: number; readonly cochange: read
 
 export type LayoutBand = { readonly index: number; readonly y0: number; readonly y1: number };
 
+/** One row of package lanes in a field that wraps them (Q73): the stretch of `x` it stands across, and its own ladder of terraces. */
+export type LayoutRow = { readonly x0: number; readonly x1: number; readonly bands: readonly LayoutBand[] };
+
 export type Layout = {
   readonly width: number;
   readonly height: number;
   /** The shore strip, above band 0: land above the abyss (D48). */
   readonly shore: { readonly y0: number; readonly y1: number };
+  /** The terraces, top to bottom; the first row's when the lanes wrap into rows. */
   readonly bands: readonly LayoutBand[];
+  /**
+   * The rows the package lanes wrap into, top to bottom, each carrying its
+   * own ladder of the same terraces lower down (Q73). Absent while the lanes
+   * fit one row, which is a field `bands` alone describes.
+   */
+  readonly rows?: readonly LayoutRow[];
   readonly positions: Readonly<Record<string, Position>>;
   /**
    * Where each renamed file stood before, by its head path: its place in the
@@ -548,6 +558,24 @@ function assertFunctions(value: unknown, path: string): void {
   });
 }
 
+/** The rows a field wraps its lanes into (Q73): two or more, each a stretch of `x` and a ladder of terraces, one under the next. */
+function assertRows(value: unknown, path: string): void {
+  const rows = expectArray(value, path);
+  if (rows.length < 2) fail(path, 'expected two rows or more; a field of one row writes none');
+  let above = Number.NEGATIVE_INFINITY;
+  rows.forEach((raw, index) => {
+    const at = `${path}[${String(index)}]`;
+    const row = expectRecord(raw, at);
+    if (expectFinite(row['x1'], `${at}.x1`) < expectFinite(row['x0'], `${at}.x0`)) fail(`${at}.x1`, 'expected the row to end right of where it starts');
+    expectArray(row['bands'], `${at}.bands`).forEach((band, n) => {
+      const strip = expectRecord(band, `${at}.bands[${String(n)}]`);
+      const y0 = expectFinite(strip['y0'], `${at}.bands[${String(n)}].y0`);
+      if (y0 < above) fail(`${at}.bands[${String(n)}].y0`, 'expected each terrace below the one before it');
+      above = expectFinite(strip['y1'], `${at}.bands[${String(n)}].y1`);
+    });
+  });
+}
+
 /** Ties are two counts of edges, whole and never negative. */
 function assertTies(value: unknown, path: string): void {
   const ties = expectRecord(value, path);
@@ -719,6 +747,7 @@ function assertShape(value: unknown): asserts value is MapJson {
         if (positions[path] === undefined) fail(`terrain.layout.renamed_from["${path}"]`, `no position for "${path}"`);
       }
     }
+    if (layoutRecord['rows'] !== undefined) assertRows(layoutRecord['rows'], 'terrain.layout.rows');
   }
 
   const placed: Placed = { cells: cellIds, groups: groupIds, files: new Set([...organelleIds, ...groupFiles]) };

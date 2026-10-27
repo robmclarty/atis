@@ -8,7 +8,8 @@
  * screen's footprint of the ground rather than the ground itself, and it
  * never blooms. The rules are an SVG over the canvas, beneath every other
  * layer: one line a band boundary, through where the boundary meets the
- * level ground, run out to the screen's edges, in a translucent ink. The
+ * level ground, run out to the screen's edges, or in a field whose lanes
+ * wrap into rows across its row alone (Q73), in a translucent ink. The
  * look comes through the registry (D156), and the field is drawn again from
  * a new seed or density on the frame after one moves.
  */
@@ -19,7 +20,7 @@ import { float, floor, fwidth, length, max, mrt, positionWorld, smoothstep, text
 import type { MapJson } from 'core';
 
 import type { SpaceLook } from '../materials.js';
-import { STAR_GRID, across, bandRules, starField } from '../space.js';
+import { STAR_GRID, across, bandRules, between, starField } from '../space.js';
 
 export type Space = {
   /** The stars' plane, in the scene. */
@@ -114,11 +115,14 @@ export const createSpace = (map: MapJson, look: SpaceLook): Space => {
       sized = [width, height];
     }
     for (const { rule, line } of lines) {
+      const [x0, x1] = rule.row ?? [0, layout.width];
       const [left, right] = ends.map((end, side) => {
-        end.set(side === 0 ? 0 : layout.width, 0, rule.y).project(camera);
+        end.set(side === 0 ? x0 : x1, 0, rule.y).project(camera);
         return [((end.x + 1) / 2) * width, ((1 - end.y) / 2) * height] as const;
       });
-      const run = left === undefined || right === undefined ? undefined : across(left, right, width, height);
+      // A row's rule runs across its row alone; the camera is orthographic, so its ends never fold behind it.
+      const clipped = rule.row === undefined ? across : between;
+      const run = left === undefined || right === undefined ? undefined : clipped(left, right, width, height);
       line.style.display = run === undefined ? 'none' : '';
       if (run === undefined) continue;
       // A level rule sits on a pixel's middle, so its one pixel is drawn whole.

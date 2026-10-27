@@ -6,7 +6,7 @@ import { assertMap } from 'core';
 import type { Cell, MapJson, Organelle, Stability } from 'core';
 import { expect, test } from 'vitest';
 
-import { RELIEF, bumpProfile, bumps, gridFor, heightfield, sampleGrid } from '../heightfield.js';
+import { RELIEF, SKIN_RESOLUTION, SKIN_SAMPLES, bumpProfile, bumps, gridFor, heightfield, sampleGrid, skinResolution } from '../heightfield.js';
 import type { Grid } from '../heightfield.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -110,6 +110,33 @@ test('the grid covers the layout at the resolution asked for, with a sample on e
   expect(grid.rows).toBe((40 + 3 * BAND_HEIGHT) / 10 + 1);
   expect(grid.values).toHaveLength(grid.columns * grid.rows);
   expect(() => gridFor(mapOf([]), 0)).toThrow(/positive resolution/);
+});
+
+test("the skin is laid at the spike's resolution until a field is too large for it, then coarsened only as far as keeps its grids under the cap (C14)", () => {
+  expect(skinResolution(DEMO)).toBe(SKIN_RESOLUTION);
+  const { layout: _layout, ...unlaid } = DEMO.terrain;
+  expect(skinResolution({ ...DEMO, terrain: unlaid })).toBe(SKIN_RESOLUTION);
+  const sized = (width: number, height: number): MapJson => {
+    const layout = DEMO.terrain.layout;
+    if (layout === undefined) throw new Error('the demo has a layout');
+    return { ...DEMO, terrain: { ...DEMO.terrain, layout: { ...layout, width, height } } };
+  };
+  // The largest real field so far, corpus-5's, keeps the spike's resolution.
+  expect(skinResolution(sized(2329, 3994))).toBe(SKIN_RESOLUTION);
+  // Step 43's 5,000 files wrapped into rows, and its 20,000.
+  for (const [width, height] of [
+    [19_427, 12_508],
+    [46_560, 30_801],
+  ] as const) {
+    const map = sized(width, height);
+    const resolution = skinResolution(map);
+    expect(resolution).toBeGreaterThan(SKIN_RESOLUTION);
+    const grid = gridFor(map, resolution);
+    expect(grid.columns * grid.rows).toBeLessThanOrEqual(SKIN_SAMPLES);
+    // A whole unit finer would have held more than the cap.
+    const finer = gridFor(map, resolution - 1);
+    expect(finer.columns * finer.rows).toBeGreaterThan(SKIN_SAMPLES);
+  }
 });
 
 test('no band steps the skin: with no file swelling it and no body rising, the field is level across every band boundary (D169)', () => {
