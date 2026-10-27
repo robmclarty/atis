@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 118 — feat(svg): draw the comment's image and the fingerprint as the minimap zoomed in
+**Current step:** 72 — build(atis): bundle the workspace into a package that installs
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -124,7 +124,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 69. feat(cli): watch the repo and push new weather to the tab
 - ☑ 70. feat(cli): render the terrain fingerprint for a README
 - ☑ 71. feat(cli): post the map to a pull request through gh
-- ☐ 118. feat(svg): draw the comment's image and the fingerprint as the minimap zoomed in
+- ☑ 118. feat(svg): draw the comment's image and the fingerprint as the minimap zoomed in
 - ☐ 72. build(atis): bundle the workspace into a package that installs
 - ☐ 73. docs(atis): write the user's README with the legend and the fingerprint
 - ☐ 74. feat(cli): serve MCP tools that point at the open map
@@ -227,6 +227,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] step 43's 20,000-file map draws its first frame about 5 s after it arrives on both backends, 0.7 s of it the composites' tissue and grid; C14 names no first frame at that size (step 66)
 - [x] a PNG capture frames the tab's opening view, the far-zoom planet with the HUD and the notices' rail, where the numbered notice boxes are not drawn; a PR comment's image may read better framed at the surface (step 68)
 - [x] draw the comment's image and the fingerprint the way the minimap draws the field (flat skins and files, the notices' numbered boxes), as if the minimap could be zoomed in, rather than the world's lit still and the SVG's terrain (Rob at range 19's stop)
+- [ ] the web app the tarball ships under web/ inlines three, react, camera-controls and elkjs (EPL-2.0) with no license file beside it; apps/web's Vite build could set build.license as the CLI's bundle now does (step 72)
+- [ ] the packed declarations (dist/run.d.ts, comment.d.ts, cache.d.ts) import types from core, which the tarball carries only as bundled JavaScript, so a TypeScript consumer of @robmclarty/atis's library entry reads those types unresolved (step 72)
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -2491,3 +2493,51 @@ folder, so it rides the branch into the PR.)*
   **5.** Your two PNG captures came out the same, and PR 2 is still open
 
   You captured `a.png` and `b.png` from one commit and found them the same, which is the stop's first check. `atis` is on your PATH as a wrapper around this checkout's build. `pnpm build` has been run. PR 2, its `test/atis-comment` branch, the `atis-maps` branch and the `~/Projects/atis/code/atis-comment-test` worktree all stay until you say. Cleaning up is `gh pr close 2`, `git push origin --delete test/atis-comment atis-maps` and `git worktree remove ../atis-comment-test`.
+
+- 2026-10-27 — step 118 checkpointed · 15506e9fd — feat(svg): draw the comment's image and the fingerprint as the minimap zoomed in (620m)
+
+  **Summary**: The comment's image now holds three things: the flat map, the weather, and labels for the files the notices name. Each label sits on empty ground off the body, holds the target's numbered boxes and its short name, and a dotted line runs back to the target. Every label stays inside the image. No other file is named, and the boxes no longer sit on the targets themselves. The fingerprint is unchanged from the last look: the whole terrain at 480 by 300, no weather, no words. Both are still SVG drawn in `libs/svg` with no browser, and the demo's goldens are rewritten for both. Previews for PR 2, atis's own map, the demo and the crowded retake-3 are in `/tmp/atis-118/out/`.
+
+  1. Labels name only the notices' targets, set off the body with a leader, and always inside the image
+  2. The comment's image and the fingerprint draw from one function, the minimap's
+  3. The comment's image is now an SVG, with no browser, in place of a PNG captured from the world
+  4. The world and the comment's image frame a change the same way, from one function in the scene
+  5. The inset itself now draws the skins' hairlines, and every file at least 1.5 pixels across
+
+  **Readout**:
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored:
+               - D175 (minimap-stills), D174 (comment-image), D107 (fingerprint)
+               - D154 (minimap), D86 (svg-stays-the-fixture)
+  constraints  14 of 14 honored
+  seam         held: 8 of 9 declared, no strays
+  diff         +1158 -676 across 35 files
+  spent        10h 20m · 2 turns · 98s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Rerun `atis --comment` in `~/Projects/atis/code/atis-comment-test` to see PR 2's image with its label (the CLI is already built and needs no web app), check `/tmp/atis-118/out/atis-cinema.png` for a change with six labels, then say `looks good`. The image now carries the three things you named and nothing else. The one reading to confirm is "salient": labels go to the notices' targets only, not every changed file, which keeps the image down to at most six names that match the comment's list.
+
+  **1.** Labels name only the notices' targets, set off the body with a leader, and always inside the image
+
+  I read "salient files" as the targets of the notices the image frames, the same ones the comment's numbered list names. A changed file no notice names gets no label. Placement is the scene's new `calloutsOf`. In rank order, each label steps outward from its target and takes the first spot that is inside the image, clear of every label already placed, and off every cell's skin. If no such spot exists, it takes ground off its own cell and clear of every file. Failing that, it takes any free spot in the image. A notice whose target sits outside the image gets no label, so the image never names a file you can't find in it. A target that is a cell gets its leader ended on a small dot at the cell's middle. The label block is flat chrome in existing tokens: the notice row's type and box, the leaders' dotted ink, and the world labels' padding. On retake-3, where the body fills most of the image, all six still found empty ground, with the primary's leader running a long way across the body.
+
+  **2.** The comment's image and the fingerprint draw from one function, the minimap's
+
+  The scene's minimap model now also carries every file the terrain places, with its radius in pixels. A new `minimapIn` lays the model out in any frame, not just the inset's, and drops what falls outside it, so a still framed on one corner of a big repo draws only that corner. `libs/svg/src/minimap.ts` draws the model as SVG: the body, the reach, the skins' hairlines, the files, and the changed dots. `renderCinema` adds the labels on top. `renderFingerprint` draws the body, the skins and the files only. Both sit on the chrome's ground with nothing that glows (D12 (materials)).
+
+  **3.** The comment's image is now an SVG, with no browser, in place of a PNG captured from the world
+
+  The image is now drawn by `libs/svg`, so a browser would only have turned the same drawing into pixels. `--comment` now writes `<head>.svg` to `atis-maps` and links it the same way, one file per head commit (D174 (comment-image)). It no longer takes the web app's path or a list of browsers, and `capturePng` loses the `cinema` option nobody calls now. I checked that GitHub serves a raw SVG as `image/svg+xml`, which is what lets a comment show it. The cost: some email clients don't show SVG, so a PR's notification email may lose the picture. Turning the SVG into a PNG in a headless browser would bring that back, at the price of the browser dependency. The `?cinema` page stays in the web app for P78, the parked question of whether `--png` should frame the same way.
+
+  **4.** The world and the comment's image frame a change the same way, from one function in the scene
+
+  The framing moved out of `apps/web/src/cinema.ts` into `libs/scene/src/cinema.ts`. `cinemaFocus` gives the zoom and the centre, and `cinemaFrame` turns them into a flat frame. The world's `?cinema` page stands its camera at the focus, and the comment's image is drawn in the frame. The zoom is measured against the fit, so a 480 by 300 image frames the same stretch of the map as the 1280 by 800 tab. The image is drawn at 480 by 300 of the minimap's pixels and shown at twice that size (`CINEMA_STILL`), so the boxes and the names read at about 15 to 18 pixels in a comment's column.
+
+  **5.** The inset itself now draws the skins' hairlines, and every file at least 1.5 pixels across
+
+  For the stills to be the inset zoomed in, the inset has to draw what they draw. It still hangs its boxes on the targets, since it has no room for labels. `MINIMAP` moved into `libs/scene/src/minimap.ts` so `libs/svg` can read it, and it gained three tokens: `skin`, `file` and `fileFloor`. All three are live in the dev panel and have rows in `docs/design.md`. On retake-3 the inset is busier, a fine speckle over the body (`/tmp/atis-118/out/inset-*.png`). Setting `MINIMAP.skin` to the body's grey and raising `MINIMAP.fileFloor` gives back the old flat silhouette, live. Panel tuning reaches the stills only once the value is copied into `minimap.ts`. The two still sizes are fixed, not tokens, and `docs/design.md` says so.
