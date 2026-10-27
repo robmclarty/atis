@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 72 — build(atis): bundle the workspace into a package that installs
+**Current step:** 73 — docs(atis): write the user's README with the legend and the fingerprint
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -125,7 +125,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 70. feat(cli): render the terrain fingerprint for a README
 - ☑ 71. feat(cli): post the map to a pull request through gh
 - ☑ 118. feat(svg): draw the comment's image and the fingerprint as the minimap zoomed in
-- ☐ 72. build(atis): bundle the workspace into a package that installs
+- ☑ 72. build(atis): bundle the workspace into a package that installs
 - ☐ 73. docs(atis): write the user's README with the legend and the fingerprint
 - ☐ 74. feat(cli): serve MCP tools that point at the open map
 - ☐ 75. feat(core): reach exported names through the files that import them
@@ -2541,3 +2541,5 @@ folder, so it rides the branch into the PR.)*
   **5.** The inset itself now draws the skins' hairlines, and every file at least 1.5 pixels across
 
   For the stills to be the inset zoomed in, the inset has to draw what they draw. It still hangs its boxes on the targets, since it has no room for labels. `MINIMAP` moved into `libs/scene/src/minimap.ts` so `libs/svg` can read it, and it gained three tokens: `skin`, `file` and `fileFloor`. All three are live in the dev panel and have rows in `docs/design.md`. On retake-3 the inset is busier, a fine speckle over the body (`/tmp/atis-118/out/inset-*.png`). Setting `MINIMAP.skin` to the body's grey and raising `MINIMAP.fileFloor` gives back the old flat silhouette, live. Panel tuning reaches the stills only once the value is copied into `minimap.ts`. The two still sizes are fixed, not tokens, and `docs/design.md` says so.
+
+- 2026-10-27 — step 72 checkpointed · d77781992 — build(atis): bundle the workspace into a package that installs (1 drift, 14m)
