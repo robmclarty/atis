@@ -185,6 +185,8 @@ export type MotionFrame = {
   readonly weather: number;
   /** The levels of detail, when the frame was given the zoom. */
   readonly lod?: LodPlan;
+  /** How open each composite stands, 0 drawn as one to 1 drawn cell by cell, in the order the frame was last told which are open (step 66). */
+  readonly composites: readonly number[];
 };
 
 export type Scheduler = {
@@ -198,8 +200,13 @@ export type Scheduler = {
   readonly hover: (on: boolean) => void;
   /** Start a fly-to. */
   readonly flyTo: () => void;
-  /** The frame at the clock's time; given the camera's zoom, its levels of detail too, through the gates handed in or `LOD_GATES`. */
-  readonly frame: (zoom?: number, gates?: readonly LodGate[]) => MotionFrame;
+  /**
+   * The frame at the clock's time; given the camera's zoom, its levels of
+   * detail too, through the gates handed in or `LOD_GATES`; and given which
+   * composites are open, each eased toward it, a composite first told
+   * standing where it is told.
+   */
+  readonly frame: (zoom?: number, gates?: readonly LodGate[], composites?: readonly boolean[]) => MotionFrame;
   /** How a shape breaking `rules` rules moves at the clock's time, inside an opened cell (D147). */
   readonly shape: (rules: number) => ShapeMotion;
   /** Open a cell now, or close the open one with `undefined`; its slide fades in or out from here, and its exploded view gathers. */
@@ -288,6 +295,7 @@ export function createScheduler({ clock, seed, tiers: loaded, reduced, tokens: T
   let flyStart: number | undefined;
   let lastFrame: number | undefined;
   let lod: LodPlan | undefined;
+  let composites: readonly number[] = [];
   let opened: string | undefined;
   let openedAt = 0;
   // The slide: the cell it shows until it has faded out, and how far it has faded in.
@@ -365,7 +373,7 @@ export function createScheduler({ clock, seed, tiers: loaded, reduced, tokens: T
     retire(now);
   };
 
-  const frame = (zoom?: number, gates?: readonly LodGate[]): MotionFrame => {
+  const frame = (zoom?: number, gates?: readonly LodGate[], open?: readonly boolean[]): MotionFrame => {
     const now = clock();
     const elapsed = lastFrame === undefined ? 0 : now - lastFrame;
     lastFrame = now;
@@ -378,9 +386,16 @@ export function createScheduler({ clock, seed, tiers: loaded, reduced, tokens: T
     shown = approach(shown, opened === undefined ? 0 : 1, elapsed);
     exploded = approach(exploded, explodeTarget, elapsed);
     weather = approach(weather, 1, elapsed);
+    if (open !== undefined) {
+      const was = composites;
+      composites = open.map((on, index) => {
+        const value = was[index];
+        return value === undefined ? (on ? 1 : 0) : approach(value, on ? 1 : 0, elapsed);
+      });
+    }
     if (shown === 0 && opened === undefined) shownCell = undefined;
-    const open: OpenFrame = { cell: shownCell, shown, exploded };
-    const shared = { t: since, hover: hoverValue, fly: flying, open, weather, ...(lod === undefined || zoom === undefined ? {} : { lod }) };
+    const slide: OpenFrame = { cell: shownCell, shown, exploded };
+    const shared = { t: since, hover: hoverValue, fly: flying, open: slide, weather, composites, ...(lod === undefined || zoom === undefined ? {} : { lod }) };
 
     if (reduced || loadAt === undefined) {
       return { ...shared, amp: 1, lift: 0, notices: tiers.map(() => ({ gain: 1, scale: 1 })), flaring: undefined, halo: reduced && tiers.includes('primary') };

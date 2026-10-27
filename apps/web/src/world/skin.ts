@@ -29,16 +29,28 @@
  * mixes the two as the scheduler cross-fades the weather, the relief and the
  * tissue beneath it never moving (D100, P2).
  *
+ * Past 5,000 files each package stands as one composite until the camera
+ * nears it (step 66). The relief texture's two spare channels hold the tissue
+ * a composite wears, its own skin over one body with none of its cells; a
+ * third texture says which package's skin each sample lies under, and a row
+ * of texels says how open each package stands this frame, which the loop
+ * sets from the scheduler. A package that is closed wears its composite
+ * tissue and is lit as though its cells' mass lay flat, so no cell reads
+ * through it; the swells, the weather's reach and the skin's shape, which
+ * the stars and every mark on it rest on, stay as they are, and the
+ * composite costs the fragment stage alone. A map of fewer files has no
+ * composites, and its skin is shaded exactly as before.
+ *
  * The look, the weather's look and the relief come through the registry
  * (D156): the albedos, the sheen and the lights are uniforms the loop re-reads
  * each frame, and the relief is laid again when one of its tokens moves.
  */
 
-import { BufferAttribute, BufferGeometry, Color, DataTexture, DataUtils, HalfFloatType, LinearFilter, Mesh, MeshPhysicalNodeMaterial, RGBAFormat } from 'three/webgpu';
+import { BufferAttribute, BufferGeometry, Color, DataTexture, DataUtils, HalfFloatType, LinearFilter, Mesh, MeshPhysicalNodeMaterial, NearestFilter, RGBAFormat } from 'three/webgpu';
 import type { Node, UniformNode } from 'three/webgpu';
 import { clamp, float, mix, mrt, normalize, positionLocal, pow, texture, transformNormalToView, uniform, uv, vec2, vec3, vec4 } from 'three/tsl';
-import { heightfield, reachField, skinResolution, tissue } from 'scene';
-import type { Grid, Heightfield, Relief, Tissue } from 'scene';
+import { compositeGrid, compositeTissue, heightfield, reachField, skinResolution, tissue } from 'scene';
+import type { Composite, Grid, Heightfield, Relief, Tissue } from 'scene';
 import type { MapJson } from 'core';
 
 import type { SkinLook, WeatherLook } from '../materials.js';
@@ -63,16 +75,48 @@ export type Skin = {
   readonly reach: (map: MapJson) => void;
   /** How far the skin has faded from the reach it showed to the one it took last, 0 to 1. */
   readonly reachMix: UniformNode<'float', number>;
+  /** How open each composite stands, a texel each by its number from 1, the first texel always open: the organelles read it too. */
+  readonly composites: DataTexture;
+  /** Take how open each composite stands this frame, in composite order. */
+  readonly openComposites: (shares: readonly number[]) => void;
 };
 
-/** Fill the relief as the GPU reads it: red the resting swells, green the cells' mass, half floats so both backends filter it. */
-const fillRelief = (data: Uint16Array, field: Heightfield): void => {
+/** How open each composite stands, by its number: texel 0 stands for no composite and is always open. */
+const compositeShares = (count: number): DataTexture => {
+  const data = new Uint16Array((count + 1) * 4).fill(DataUtils.toHalfFloat(1));
+  const shares = new DataTexture(data, count + 1, 1, RGBAFormat, HalfFloatType);
+  return nearestTexture(shares);
+};
+
+/** A data texture read at its texels, never between: a number, or a share by number. */
+const nearestTexture = (map: DataTexture): DataTexture => {
+  map.minFilter = NearestFilter;
+  map.magFilter = NearestFilter;
+  map.generateMipmaps = false;
+  map.needsUpdate = true;
+  return map;
+};
+
+/** Which composite each sample lies under, by its number, in the red channel. */
+const partsTexture = (grid: Grid): DataTexture => {
+  const data = new Uint16Array(grid.columns * grid.rows * 4);
+  for (let i = 0; i < grid.columns * grid.rows; i += 1) {
+    data[i * 4] = DataUtils.toHalfFloat(grid.values[i] ?? 0);
+    data[i * 4 + 3] = DataUtils.toHalfFloat(1);
+  }
+  return nearestTexture(new DataTexture(data, grid.columns, grid.rows, RGBAFormat, HalfFloatType));
+};
+
+
+
+/** Fill the relief as the GPU reads it: red the resting swells, green the cells' mass, half floats so both backends filter it; and, past 5,000 files, blue and alpha the body and the membrane line a composite wears (step 66). */
+const fillRelief = (data: Uint16Array, field: Heightfield, worn: Tissue | undefined): void => {
   const { columns, rows } = field.height;
   for (let i = 0; i < columns * rows; i += 1) {
     data[i * 4] = DataUtils.toHalfFloat(field.swell.values[i] ?? 0);
     data[i * 4 + 1] = DataUtils.toHalfFloat(field.mass.values[i] ?? 0);
-    data[i * 4 + 2] = 0;
-    data[i * 4 + 3] = DataUtils.toHalfFloat(1);
+    data[i * 4 + 2] = worn === undefined ? 0 : DataUtils.toHalfFloat(worn.body.values[i] ?? 0);
+    data[i * 4 + 3] = DataUtils.toHalfFloat(worn === undefined ? 1 : (worn.membrane.values[i] ?? 0));
   }
 };
 
@@ -175,11 +219,13 @@ const gridGeometry = (grid: Grid, width: number, height: number): BufferGeometry
 };
 
 /** The skin for a map over a look, the weather's look and a relief, all read live: its mesh, and the uniforms the render loop moves each frame. */
-export const createSkin = (map: MapJson, look: SkinLook, weather: WeatherLook, reachGlow: { readonly REACH_GLOW: string; readonly REACH_ORIGIN_OPACITY: number }, relief: Relief): Skin => {
+export const createSkin = (map: MapJson, look: SkinLook, weather: WeatherLook, reachGlow: { readonly REACH_GLOW: string; readonly REACH_ORIGIN_OPACITY: number }, relief: Relief, composites: readonly Composite[] = []): Skin => {
   const field = heightfield(map, skinResolution(map), { ...relief });
   const { columns, rows, resolution } = field.height;
+  // The tissue a composite wears, laid into the relief beside it (step 66).
+  const worn = composites.length === 0 ? undefined : compositeTissue(map, composites, resolution);
   const data = new Uint16Array(columns * rows * 4);
-  fillRelief(data, field);
+  fillRelief(data, field, worn);
   const reliefMap = softTexture(new DataTexture(data, columns, rows, RGBAFormat, HalfFloatType));
   const tissueMap = tissueTexture(tissue(map, resolution), soften(reachField(map, resolution), Math.round(weather.reachSoften)));
 
@@ -201,28 +247,48 @@ export const createSkin = (map: MapJson, look: SkinLook, weather: WeatherLook, r
   const reachBodyGain = uniform(weather.reachBodyGain);
   const reachMix = uniform(1);
 
+  // The composites' side (step 66): which one each sample lies under, and how open each stands.
+  const shares = compositeShares(composites.length);
+  const parts = composites.length === 0 ? undefined : partsTexture(compositeGrid(map, composites, resolution));
+  /** How open the composite at a texture coordinate stands, 1 under none; none to read with no composites. */
+  const openAt = (at: Node) => (parts === undefined ? undefined : texture(shares, vec2(texture(parts, at).r.add(0.5).div(composites.length + 1), 0.5)).r);
+
   /** The skin's height at a texture coordinate: the resting swells, and the cells' mass at the scheduler's amplitude. */
   const heightAt = (at: Node) => {
     const sample = texture(reliefMap, at);
     return sample.r.add(sample.g.mul(amp));
+  };
+  /** The height the skin is lit as: its own, but a closed composite's cells' mass laid flat by how open it stands, `open`, so none of them reads through it. */
+  const litAt = (at: Node, open: ReturnType<typeof openAt>) => {
+    if (open === undefined) return heightAt(at);
+    const sample = texture(reliefMap, at);
+    return sample.r.add(sample.g.mul(amp).mul(open));
   };
 
   const material = new MeshPhysicalNodeMaterial();
   material.positionNode = vec3(positionLocal.x, heightAt(uv()).add(lift), positionLocal.z);
 
   // The normal from the height's gradient, one texel either side, so the relief reads smoothly however the mesh is cut.
+  // How open the composite under this fragment stands is read once, since a texel either side lies under the same package.
+  const open = openAt(uv());
   const du = 1 / columns;
   const dv = 1 / rows;
-  const dx = heightAt(uv().add(vec2(du, 0))).sub(heightAt(uv().sub(vec2(du, 0))));
-  const dz = heightAt(uv().add(vec2(0, dv))).sub(heightAt(uv().sub(vec2(0, dv))));
+  const dx = litAt(uv().add(vec2(du, 0)), open).sub(litAt(uv().sub(vec2(du, 0)), open));
+  const dz = litAt(uv().add(vec2(0, dv)), open).sub(litAt(uv().sub(vec2(0, dv)), open));
   const normalInView = transformNormalToView(normalize(vec3(dx.div(-2 * resolution), 1, dz.div(-2 * resolution))));
   material.normalNode = normalInView;
   material.clearcoatNormalNode = normalInView;
 
   // Blue-grey where a cell's body lies under the skin, near-black on the field between, the membrane line laid over; a trace of it all at the far field.
+  // A closed composite wears its own tissue in place of its cells'.
   const base = texture(tissueMap, uv());
-  const body = clamp(base.r, 0, 1);
-  const albedo = mix(fieldAlbedo, tissueAlbedo, body).add(membraneLine.mul(base.g));
+  const wearing = worn === undefined || open === undefined ? undefined : texture(reliefMap, uv());
+  // The worn tissue rides the relief's blue and alpha.
+  const wornBody = wearing?.b;
+  const wornLine = wearing?.a;
+  const body = clamp(wornBody === undefined || open === undefined ? base.r : mix(wornBody, base.r, open), 0, 1);
+  const line = wornLine === undefined || open === undefined ? base.g : mix(wornLine, base.g, open);
+  const albedo = mix(fieldAlbedo, tissueAlbedo, body).add(membraneLine.mul(line));
   material.colorNode = albedo.mul(mix(farAlbedo, float(1), surface));
 
   // The tissue's own faint light, which never blooms (D151): a rim where the skin slopes away, and each cell's own glow over its body.
@@ -255,7 +321,7 @@ export const createSkin = (map: MapJson, look: SkinLook, weather: WeatherLook, r
   restyle();
 
   const relayer = (): void => {
-    fillRelief(data, heightfield(map, resolution, { ...relief }));
+    fillRelief(data, heightfield(map, resolution, { ...relief }), worn);
     reliefMap.needsUpdate = true;
   };
 
@@ -271,5 +337,17 @@ export const createSkin = (map: MapJson, look: SkinLook, weather: WeatherLook, r
   const mesh = new Mesh(gridGeometry(field.height, width, height), material);
   // The vertex stage moves the skin, so its resting bounds would cull it wrongly.
   mesh.frustumCulled = false;
-  return { mesh, resolution, relief: reliefMap, amp, lift, surface, restyle, relayer, reach, reachMix };
+  const openComposites = (next: readonly number[]): void => {
+    const { data: texels } = shares.image;
+    if (!(texels instanceof Uint16Array)) return;
+    let moved = false;
+    next.forEach((share, index) => {
+      const value = DataUtils.toHalfFloat(share);
+      if (texels[(index + 1) * 4] === value) return;
+      texels[(index + 1) * 4] = value;
+      moved = true;
+    });
+    if (moved) shares.needsUpdate = true;
+  };
+  return { mesh, resolution, relief: reliefMap, amp, lift, surface, restyle, relayer, reach, reachMix, composites: shares, openComposites };
 };

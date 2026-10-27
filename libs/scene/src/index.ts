@@ -6,6 +6,7 @@
  * inside the render are tested where they are made.
  */
 
+export * from './composites.js';
 export * from './drift.js';
 export * from './file.js';
 export * from './heightfield.js';

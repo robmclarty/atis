@@ -86,13 +86,19 @@
  * CLI answers at `/diff/<path>` with the run's token, its hunks' heads linked
  * to the file in the reader's editor beside the PR the page was told of, or,
  * for a fixture with no server, the hunks' line ranges alone (D93, D102); the
- * canvas names the file whose diff it shows.
+ * canvas names the file whose diff it shows. Past 5,000 files each package
+ * stands at the surface as one composite, Nx style, until the view nears it
+ * (step 66, C14): the skin wears the package's own tissue with its cells'
+ * mass laid flat, its files give way, and the pointer finds the package; a
+ * package opens into its cells once its skin fills the composite gate's share
+ * of the free screen, at the scheduler's cross-fade, and every package is
+ * open from the cell's level on. The canvas says how many stand closed.
  */
 
 import { AgXToneMapping, AmbientLight, Color, DataUtils, DirectionalLight, RenderPipeline, Scene, Vector3, WebGPUCoordinateSystem, WebGPURenderer } from 'three/webgpu';
 import { emissive, mrt, output, pass } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
-import { FIELD_FILL, LOD_GATES, MOTION_TOKENS, REACH_ORIGIN_OPACITY, RELIEF, cellSlide, cellWiring, createPicker, createScheduler, fileLevelOf, fillOf, gridFor, instances, interiorOf, planetShown, slideCellOf, surfacePoint } from 'scene';
+import { FIELD_FILL, LOD_GATES, MOTION_TOKENS, REACH_ORIGIN_OPACITY, RELIEF, cellSlide, cellWiring, compositesOf, compositesOpen, createPicker, createScheduler, fileLevelOf, fillOf, gridFor, instances, interiorOf, planetShown, slideCellOf, surfacePoint } from 'scene';
 import type { FileLevel, Lod, Pick, Point, Slide } from 'scene';
 import type { MapJson, OverlayName } from 'core';
 
@@ -197,13 +203,15 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   scene.add(key, key.target);
   const ambient = new AmbientLight(lighting.ambient, lighting.ambientIntensity);
   scene.add(ambient);
-  const skin = createSkin(map, skinLook, weatherLook, tokens, relief);
+  // Past 5,000 files each package stands as one composite at the surface until the camera nears it (step 66).
+  const composites = compositesOf(map);
+  const skin = createSkin(map, skinLook, weatherLook, tokens, relief, composites);
   scene.add(skin.mesh);
   // The field is space (D169): faint stars on the open ground and past it, and a rule at each band's boundary over the canvas.
   const space = createSpace(map, registry.view(SPACE, 'SPACE'));
   scene.add(space.mesh);
   const grid = gridFor(map, skin.resolution);
-  const organelles = createOrganelles(map, skin.relief, grid, skin.amp, skin.lift, tokens);
+  const organelles = createOrganelles(map, skin.relief, grid, skin.amp, skin.lift, tokens, composites, skin.composites);
   scene.add(...organelles.meshes);
   // The tags over the canvas: a layer of their own between the canvas and the chrome, at each point's resting height on the skin.
   const heightAt = (x: number, y: number): number => {
@@ -318,6 +326,8 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     const box = canvas.getBoundingClientRect();
     return surfacePoint(...rayAt(camera, ((at.x - box.left) / box.width) * 2 - 1, 1 - ((at.y - box.top) / box.height) * 2), heightAt, top);
   };
+  // The packages drawn as one this frame, which answer the pointer as one (step 66).
+  let closedComposites: ReadonlySet<string> = new Set();
   // Each placed file's cell and radius, for a file the surface draws where it last floated.
   const placed = new Map(instances(map).map((file) => [file.id, file] as const));
   // The files of a closed cell the surface draws where they last floated (D165), as the scheduler last said.
@@ -348,7 +358,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     if (body !== undefined && slide !== undefined) return { kind: 'organelle', path: body.id, cell: slide.cell, x: body.x, y: body.y, r: body.r };
     const floated = lod === 0 ? undefined : floatedAt(ground, slop);
     if (floated !== undefined) return floated;
-    const pick = picker.pick(ground, lod, slop);
+    const pick = picker.pick(ground, lod, slop, closedComposites);
     // Under the open slide, a module that floats on it answers as the slide's ground, its skin and its file's place alike (D167).
     const shown = slide !== undefined && opening.open === slide.cell ? slide.cell : undefined;
     if (pick !== undefined && shown !== undefined && slideCellOf(map, pick.cell) === shown && (pick.kind === 'organelle' || pick.cell !== shown)) return { kind: 'membrane', cell: shown };
@@ -471,10 +481,14 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     if (!cellBoxes.has(cell)) cellBoxes.set(cell, walk.box({ kind: 'cell', cell }, 1));
     return cellBoxes.get(cell);
   };
+  /** The share of the free screen a stretch of the ground fills at the camera's zoom. */
+  const fillOfBox = (box: Box): number => {
+    const screen = { width: Math.max(1, canvas.clientWidth - RAIL_WIDTH), height: canvas.clientHeight, pixelsPerUnit: pixelsPerUnit(camera, canvas.clientWidth) };
+    return fillOf({ width: box.x1 - box.x0, height: box.y1 - box.y0 }, screen);
+  };
   const fillOfCell = (cell: string): number => {
     const box = cellBox(cell);
-    const screen = { width: Math.max(1, canvas.clientWidth - RAIL_WIDTH), height: canvas.clientHeight, pixelsPerUnit: pixelsPerUnit(camera, canvas.clientWidth) };
-    return box === undefined ? 0 : fillOf({ width: box.x1 - box.x0, height: box.y1 - box.y0 }, screen);
+    return box === undefined ? 0 : fillOfBox(box);
   };
   // A cell whose slide shows no files, a package whose files all sit in the folders it holds, has nothing to show but holes, so it never opens and its ground is open ground; a package of modules shows them (D167).
   const withFiles = new Set([...placed.values()].map((file) => slideCellOf(map, file.cell)));
@@ -603,6 +617,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
 
   // The loop's passes so far: the first draws the first complete frame, and the second finds it on the screen.
   let passes = 0;
+  let compositeOpen: readonly boolean[] = [];
   let shownLod: Lod | undefined;
   let floatedShown: number | undefined;
   let planetOn: boolean | undefined;
@@ -630,8 +645,26 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     // The minimap hears the view's outline only when it moved.
     const outline = outlineOf(camera, canvas.clientWidth, chrome);
     nav.show(outline);
+    // Which composites are open: those the view has neared, from the last frame's level, and every one past the surface (step 66).
+    const seen = boxOf(outline);
+    compositeOpen = compositesOpen(
+      compositeOpen,
+      composites.map((composite) => ({ fill: fillOfBox(composite.box), seen: seen !== undefined && overlaps(composite.box, seen) })),
+      lastLod,
+      { open: levels.compositeOpen, close: levels.compositeClose },
+    );
     // The camera's zoom over the fit is the one scalar the levels of detail read.
-    const frame = scheduler.frame(camera.zoom, levels.gates);
+    const frame = scheduler.frame(camera.zoom, levels.gates, compositeOpen);
+    if (composites.length > 0) {
+      skin.openComposites(frame.composites);
+      const closed = new Set(composites.flatMap((composite, index) => ((frame.composites[index] ?? 1) < 0.5 ? [composite.id] : [])));
+      if (closed.size !== closedComposites.size || [...closed].some((id) => !closedComposites.has(id))) {
+        closedComposites = closed;
+        pickAgain = true;
+      }
+      const shown = `${String(compositeOpen.filter((open) => !open).length)}/${String(composites.length)}`;
+      if (canvas.dataset['composites'] !== shown) canvas.dataset['composites'] = shown;
+    }
     // The surface's layer: 0 at the far field, 1 from LOD1 on, cross-faded between (D151).
     const surface = frame.lod?.opacity[1] ?? 0;
     const lod = frame.lod?.lod ?? 0;
@@ -705,6 +738,8 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     skin.restyle();
     space.restyle();
     organelles.surface.value = surface;
+    // At the far field the files are not drawn at all, rather than drawn at no opacity, once the first frame has drawn them and laid their pipeline.
+    for (const mesh of organelles.meshes) mesh.visible = surface > 0 || passes < 2;
     organelles.restyle();
     for (const layer of layers()) {
       layer.palette.restyle();

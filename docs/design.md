@@ -556,6 +556,8 @@ from the space ground's rules (D169, amending D151's terraces).
 | `LEVELS.cellOpen` | `0.6` | the share of the free screen, in whichever of its width and height it fills first, at which the cell under the view's centre opens as a slide, from the surface on, so the whole cell is seen as it opens (D165) |
 | `LEVELS.cellClose` | `0.45` | the share it holds open at while the view stays on it, and closes under as the view zooms out |
 | `LEVELS.cellHome` | `0.15` | the share at which a closed cell's files are home: the surface draws them where they last floated down to `LEVELS.cellClose`, and eases them home between the two |
+| `LEVELS.compositeOpen` | `0.35` | past 5,000 files, the share of the free screen at which a package on the screen opens from one composite into its cells and files at the surface (step 66); below `LEVELS.cellOpen`, so a package is open before any cell in it can open as a slide |
+| `LEVELS.compositeClose` | `0.25` | the share a package holds open at, and closes back into one composite under as the view zooms out; every package is open from LOD2 on |
 | `CAMERA.smooth` | `0.1` | how long, in seconds, the camera settles on an input: a wheel's steps read as one continuous zoom, and nothing coasts once the pointer stops; reduced motion settles at once |
 | `CAMERA.dragSmooth` | `0.05` | the shorter settle a drag takes |
 
@@ -921,8 +923,9 @@ The verdict leaves five rulings for the refine before wave 2:
 ## The world's budget
 
 C14 holds the world to 60 fps at 5,000 files and to a first frame about 2 s after
-the map arrives; the frame rates are held, and a first frame a little over 2 s
-passes (D150). `apps/web/scripts/budget.ts` measures both on a seeded 5,000-file
+the map arrives, and to 30 fps at 20,000 files with composites; the frame rates
+are held, and a first frame a little over 2 s passes (D150).
+`apps/web/scripts/budget.ts` measures them on a seeded 5,000-file
 map, `syntheticMap({ files: 5000, seed: 1 })` in `libs/scene/src/synthetic.ts`,
 which core builds from a made-up repo of seventeen workspace packages: 5,006
 placed files in 618 cells over seven terraces, a 59-file change, six notices and
@@ -931,7 +934,7 @@ serves the map beside it on loopback, and drives Chrome headed, since headless
 Chrome has no WebGPU here and paces its frames by no display:
 
 ```sh
-pnpm exec tsc --build && node apps/web/scripts/budget.ts
+pnpm exec tsc --build && node apps/web/scripts/budget.ts [files]
 ```
 
 The first frame is the page's `atis:ready` mark, which the world sets once its
@@ -939,15 +942,24 @@ first complete frame is on the screen (the flag a capture waits on, D105), less
 the moment the map's bytes arrived, its resource timing's `responseEnd`. The idle
 reading is ten seconds of the settled opening frame; the sweep zooms in from the
 far field a wheel step at a time until the canvas reaches LOD2 and the cell under
-the centre opens. Each rate is read from the page's own animation frames.
+the centre opens. The surface is read on a page of its own opened at
+`?zoom=4`, inside LOD1 with a few packages across the screen: ten seconds held
+still, then five with the pointer crossing it. Each rate is read from the
+page's own animation frames. Any other window drawing on the GPU, such as a
+second tab with a world open, costs every reading a third or more of its rate.
 
 Measured on 2026-10-26 on an Apple M1 Pro with 32 GB, macOS (Darwin 25.6.0),
-Chrome 156 at 1,440 by 900 on the laptop's 120 Hz display:
+Chrome 156 at 1,440 by 900 on the laptop's 120 Hz display. This map's 5,006
+placed files are past the composites' threshold, so its packages stand as
+composites at the surface, 14 of the 17 closed at the surface's zoom:
 
-| backend | first frame | idle, ten seconds | zoom sweep, LOD0 to LOD2 |
-| --- | --- | --- | --- |
-| WebGPU | 1.27 s | 120 fps; p95 frame 9.0 ms, worst 17.0 ms | 120 fps; p95 frame 9.0 ms, worst 9.2 ms |
-| WebGL 2 | 1.30 s | 84 fps; p95 frame 17.2 ms; 3 of 838 frames over 17.7 ms, the worst 18.4 ms | 114 fps; p95 frame 16.0 ms, worst 17.0 ms |
+| backend | first frame | idle, ten seconds | zoom sweep, LOD0 to LOD2 | surface, ten seconds | surface, pointer crossing |
+| --- | --- | --- | --- | --- | --- |
+| WebGPU | 2.01 s | 113 fps; p95 frame 16.1 ms, worst 17.5 ms | 118 fps; p95 frame 9.3 ms, worst 17.3 ms | 120 fps; p95 frame 9.1 ms, worst 9.4 ms | 120 fps; worst 16.9 ms |
+| WebGL 2 | 2.08 s | 81 fps; p95 frame 17.3 ms; 19 of 807 frames over 17.7 ms, the worst 33.3 ms | 112 fps; p95 frame 16.6 ms, worst 16.8 ms | 119 fps; p95 frame 9.2 ms, worst 16.8 ms | 118 fps; worst 17.4 ms |
+
+Step 116's run, before composites, drew the first frame in 1.27 s on WebGPU
+and 1.30 s on WebGL 2, idling at 120 and 84 fps and sweeping at 120 and 114.
 
 This map is laid out as package lanes wrapped into rows (Q73, step 116): 19,427
 by 12,508 units in four rows of five, five, six and one package, each row
@@ -969,8 +981,47 @@ opened cell's skin is softer than a small repo's.
 
 WebGL 2's idle alternates 8.3 and 16.7 ms frames: its skin of two million
 vertices costs it about one 120 Hz refresh in three, which still holds 60 fps.
-Step 43's 20,000 files now lay out 46,560 by 30,801 units in five rows, the
-skin at 27 units; composites are step 66's.
+
+### Twenty thousand files, as composites
+
+Past 5,000 placed files each package stands at the surface as one composite,
+Nx style, until the view nears it (step 66, `libs/scene/src/composites.ts`):
+the skin wears the package's own tissue, its own skin over one body with none
+of its cells, it is lit as though its cells' mass lay flat, its files are
+drawn at no size, and the pointer finds the package. A package on the screen
+opens into its cells and files once its skin fills `LEVELS.compositeOpen` of
+the free screen, closes under `LEVELS.compositeClose`, and fades between at
+the scheduler's cross-fade (C12); every package is open from LOD2 on, so a
+cell opens as a slide only inside an open package. The skin's shape is the
+same open or closed, so the stars and every mark rest on it as before, and
+the composite costs the fragment stage alone.
+
+Step 43's 20,000 files lay out 46,560 by 30,801 units in five rows, 20,006
+placed files in 2,569 cells across 67 packages, the skin at 27 units.
+Measured as above, `node apps/web/scripts/budget.ts 20000`, 59 of the 67
+packages closed at the surface's zoom:
+
+| backend | first frame | idle, ten seconds | zoom sweep, LOD0 to LOD2 | surface, ten seconds | surface, pointer crossing |
+| --- | --- | --- | --- | --- | --- |
+| WebGPU | 5.11 s | 105 fps; p95 frame 16.7 ms, worst 17.6 ms | 77 fps; p95 frame 17.2 ms, worst 33.9 ms | 120 fps; p95 frame 9.1 ms, worst 9.4 ms | 120 fps; worst 16.9 ms |
+| WebGL 2 | 5.06 s | 74 fps; p95 frame 19.8 ms, worst 26.7 ms | 76 fps; p95 frame 20.2 ms, worst 29.8 ms | 101 fps; p95 frame 16.8 ms, worst 23.5 ms | 100 fps; worst 17.6 ms |
+
+Every rate holds 30 fps with room. With composites switched off, the same run
+read 4.29 and 4.45 s to the first frame, 107 and 78 fps idle, and 120 and
+103 fps at the surface: on this laptop the files and the cells inside a
+package cost the surface nothing it misses, so the composites buy the reading
+of a 20,000-file repo as its packages, not frame rate, and they add about
+0.7 s to the first frame, laying the composite tissue and the grid of which
+package each sample lies under. The first frame at this size is past 2 s
+either way; C14 holds 20,000 files to the frame rate alone.
+
+Two limits gave way before this could be read. Every file's outline rode a
+texture one row a file, 20,006 rows against the 8,192 a texture may have, so
+at this size WebGPU refused it and drew no file at all; the outlines now share
+a row once a map has more files than a texture has rows. And the minimap
+spread every file's edges into one call, past the arguments a call takes; it
+now folds them. The files are also no longer drawn at the far field, where
+they were drawn at no opacity.
 
 Two things stand outside the table. A first cell opening once cost a long frame
 of 34 to 51 ms, which is parked; this run's sweep met none. And core lays this

@@ -2,7 +2,10 @@
  * budget: measure the world against its budget (C14, D150) on step 43's
  * seeded 5,000-file map: the first complete frame after the map arrives, on
  * WebGPU and on the WebGL 2 fallback, and the frame rate through ten seconds
- * of idle and a zoom sweep from the far field to the cell's level.
+ * of idle and a zoom sweep from the far field to the cell's level; and, on a
+ * page opened at the surface (LOD1, `?zoom=4`), ten seconds held still and
+ * five under a pointer crossing it, where past 5,000 files the packages stand
+ * as composites (step 66).
  *
  * It builds the app as atis serves it, serves the map beside it on loopback,
  * and drives Google Chrome headed, since headless Chrome has no WebGPU here
@@ -41,6 +44,10 @@ const WHEEL_STEP = -60;
 const WHEEL_PAUSE_MS = 55;
 /** The level the sweep zooms to: §6's cell. */
 const SWEEP_TO = 2;
+/** The zoom over the fit the surface is read at: inside LOD1, a few packages across the screen. */
+const SURFACE_ZOOM = 4;
+/** How long the pointer crosses the surface. */
+const CROSS_MS = 5_000;
 /** The longest frame 60 fps allows, with a millisecond of a display's jitter. */
 const HELD_MS = 1000 / 60 + 1;
 
@@ -114,6 +121,15 @@ const wheelIn = async (page: Page, until: number): Promise<void> => {
   await wheelIn(page, until);
 };
 
+/** Cross the screen left of the rail with the pointer, a step about a frame apart, until `until`. */
+const crossing = async (page: Page, until: number, step = 0): Promise<void> => {
+  if (Date.now() >= until) return;
+  const share = (step % 120) / 120;
+  await page.mouse.move(80 + share * (VIEWPORT.width - 460), VIEWPORT.height / 2 + 200 * Math.sin(share * 2 * Math.PI));
+  await page.waitForTimeout(16);
+  await crossing(page, until, step + 1);
+};
+
 /** A reading's rate: frames a second, the median, 95th-percentile and worst frame, and every frame over 60 fps's, with the level it ended at. */
 type Rate = { readonly fps: number; readonly median: number; readonly p95: number; readonly worst: number; readonly over: readonly Frame[]; readonly frames: number };
 
@@ -124,7 +140,17 @@ const rateOf = (frames: readonly Frame[]): Rate => {
   return { fps: total === 0 ? 0 : (frames.length * 1000) / total, median: at(0.5), p95: at(0.95), worst: sorted.at(-1) ?? 0, over: frames.filter((frame) => frame.ms > HELD_MS), frames: frames.length };
 };
 
-type Reading = { readonly asked: string; readonly drawn: string; readonly firstFrame: number; readonly idle: Rate; readonly sweep: Rate; readonly reached: number };
+type Reading = {
+  readonly asked: string;
+  readonly drawn: string;
+  readonly firstFrame: number;
+  readonly idle: Rate;
+  readonly sweep: Rate;
+  readonly reached: number;
+  readonly surface: Rate;
+  readonly hover: Rate;
+  readonly composites: string;
+};
 
 /** One backend's reading, in a window of its own. */
 const read = async (browser: Browser, url: string, backend: 'webgpu' | 'webgl'): Promise<Reading> => {
@@ -145,7 +171,23 @@ const read = async (browser: Browser, url: string, backend: 'webgpu' | 'webgl'):
     const [frames] = await Promise.all([sample(page, { ms: SWEEP_MS, lod: SWEEP_TO }), wheelIn(page, Date.now() + SWEEP_MS)]);
     const sweep = rateOf(frames);
     const reached = Number((await page.getAttribute('#world', 'data-lod')) ?? 0);
-    return { asked: backend, drawn, firstFrame, idle, sweep, reached };
+    return { asked: backend, drawn, firstFrame, idle, sweep, reached, ...(await readSurface(browser, url, backend)) };
+  } finally {
+    await page.close();
+  }
+};
+
+/** The surface's reading, on a page of its own opened at the surface: held still, then crossed by the pointer, and how many composites stand closed. */
+const readSurface = async (browser: Browser, url: string, backend: 'webgpu' | 'webgl'): Promise<Pick<Reading, 'surface' | 'hover' | 'composites'>> => {
+  const page = await browser.newPage({ viewport: VIEWPORT });
+  try {
+    await page.goto(`${url}/?zoom=${String(SURFACE_ZOOM)}${backend === 'webgl' ? '&backend=webgl' : ''}`);
+    await page.waitForSelector('#world[data-world="settled"]', { timeout: 180_000 });
+    await page.waitForTimeout(1000);
+    const surface = rateOf(await sample(page, { ms: IDLE_MS }));
+    const composites = (await page.getAttribute('#world', 'data-composites')) ?? 'none';
+    const [crossed] = await Promise.all([sample(page, { ms: CROSS_MS }), crossing(page, Date.now() + CROSS_MS)]);
+    return { surface, hover: rateOf(crossed), composites };
   } finally {
     await page.close();
   }
@@ -169,6 +211,8 @@ try {
     process.stdout.write(`  first frame  ${ms(reading.firstFrame)} after the map arrived\n`);
     process.stdout.write(`  idle         ${rate(reading.idle)}\n`);
     process.stdout.write(`  sweep        ${rate(reading.sweep)}, reached LOD${String(reading.reached)}\n`);
+    process.stdout.write(`  surface      ${rate(reading.surface)}; composites ${reading.composites}\n`);
+    process.stdout.write(`  hover        ${rate(reading.hover)}\n`);
   }
 } finally {
   await browser.close();

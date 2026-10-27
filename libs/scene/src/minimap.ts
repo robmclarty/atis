@@ -98,6 +98,15 @@ export function minimapFrame(bounds: Bounds, box: MinimapBox): MinimapFrame {
   return { width: width * scale + 2 * box.pad, height: height * scale + 2 * box.pad, scale, x: bounds.x0 - box.pad / scale, y: bounds.y0 - box.pad / scale };
 }
 
+/** The least and the most of some numbers, folded rather than spread: a repo of many thousand files holds more edges than a call takes arguments. */
+function low(values: readonly number[]): number {
+  return values.reduce((least, value) => Math.min(least, value));
+}
+
+function high(values: readonly number[]): number {
+  return values.reduce((most, value) => Math.max(most, value));
+}
+
 /** The body's bounds: every cell's contour and every placed terrain file, or the layout's box when neither is drawn. */
 function boundsOf(map: MapJson): Bounds | undefined {
   const layout = map.terrain.layout;
@@ -117,7 +126,7 @@ function boundsOf(map: MapJson): Bounds | undefined {
     ys.push(at.y - at.r, at.y + at.r);
   }
   if (xs.length === 0) return { x0: 0, y0: 0, x1: layout.width, y1: layout.height };
-  return { x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys) };
+  return { x0: low(xs), y0: low(ys), x1: high(xs), y1: high(ys) };
 }
 
 /** Twice a ring's signed area, positive when it runs clockwise on a y-down page. */

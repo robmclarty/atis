@@ -14,7 +14,8 @@
  * answers before the cell that holds it. The shore is the rail's (D153), and
  * the rail's blocks take the pointer themselves as DOM, so no shore group is
  * ever picked here, and a test file, which the layout never places (D4),
- * answers as nothing of its own.
+ * answers as nothing of its own. A package drawn as one composite (step 66)
+ * answers as its own skin, none of its files or the cells it holds drawn.
  *
  * The point under the pointer is where its ray meets the skin, not the flat
  * ground, so a tilted view picks the file the reviewer sees on a raised
@@ -38,8 +39,8 @@ export type Pick =
   | { readonly kind: 'membrane'; readonly cell: string };
 
 export type Picker = {
-  /** What lies under a layout point at a level of detail, a file reaching `slop` layout units past its edge; none on open ground. */
-  readonly pick: (point: Point, lod: Lod, slop: number) => Pick | undefined;
+  /** What lies under a layout point at a level of detail, a file reaching `slop` layout units past its edge, the packages drawn as composites answering as one; none on open ground. */
+  readonly pick: (point: Point, lod: Lod, slop: number, composites?: ReadonlySet<string>) => Pick | undefined;
 };
 
 /** A cell's skin as the picker reads it: its triangles' corners, its bounding box, and its area, by which nested cells are ordered. */
@@ -110,11 +111,19 @@ export function createPicker(map: MapJson): Picker {
   const files = instances(map);
   const lit = litOf(map);
   const skins = skinsOf(map);
-  const pick = ([x, y]: Point, lod: Lod, slop: number): Pick | undefined => {
+  // The package each cell lies in, for a package drawn as one.
+  const parentOf = new Map(map.terrain.cells.flatMap((cell) => (cell.parent === undefined ? [] : [[cell.id, cell.parent] as const])));
+  const packageOf = (cell: string): string => {
+    let at = cell;
+    for (let up = parentOf.get(at), steps = 0; up !== undefined && steps <= parentOf.size; up = parentOf.get(at), steps += 1) at = up;
+    return at;
+  };
+  const pick = ([x, y]: Point, lod: Lod, slop: number, composites: ReadonlySet<string> = new Set()): Pick | undefined => {
     let best: (typeof files)[number] | undefined;
     let bestGap = Number.POSITIVE_INFINITY;
     for (const file of files) {
       if (lod === 0 && !lit.has(file.id)) continue;
+      if (composites.size > 0 && composites.has(packageOf(file.cell))) continue;
       // How far past the file's edge the point lies; inside it, below nothing.
       const gap = Math.hypot(x - file.x, y - file.y) - file.r;
       if (gap <= slop && gap < bestGap) {
@@ -123,7 +132,7 @@ export function createPicker(map: MapJson): Picker {
       }
     }
     if (best !== undefined) return { kind: 'organelle', path: best.id, cell: best.cell, x: best.x, y: best.y, r: best.r };
-    const skin = skins.find((each) => holds(each, x, y));
+    const skin = skins.find((each) => (composites.size === 0 || each.cell === packageOf(each.cell) || !composites.has(packageOf(each.cell))) && holds(each, x, y));
     return skin === undefined ? undefined : { kind: 'membrane', cell: skin.cell };
   };
   return { pick };
