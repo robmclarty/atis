@@ -74,8 +74,13 @@ export type Captured = { readonly png: Buffer; readonly backend: string | undefi
 /** Two frames, the first so the chrome renders what the ready frame told it, the second so it is on the screen; a string, since this package's types know no DOM. */
 const TWO_FRAMES = 'new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(() => done(true))))';
 
-/** Open the served world at `url` in `browser` at the capture's frame and take it, once its ready flag is up (D105). */
-export const capturePng = async (browser: Browser, url: string): Promise<Captured> => {
+/**
+ * Open the served world at `url` in `browser` at the capture's frame and take
+ * it, once its ready flag is up (D105): the tab as it opens, or, for a pull
+ * request's comment, a cinema still, the world alone framed on what the
+ * change is about (`?cinema`, D108).
+ */
+export const capturePng = async (browser: Browser, url: string, { cinema = false }: { readonly cinema?: boolean } = {}): Promise<Captured> => {
   const context = await browser.newContext({ viewport: { width: CAPTURE.width, height: CAPTURE.height }, deviceScaleFactor: 1, reducedMotion: 'reduce' });
   try {
     const page = await context.newPage();
@@ -83,6 +88,7 @@ export const capturePng = async (browser: Browser, url: string): Promise<Capture
     page.on('pageerror', (error) => faults.push(error.message));
     const frozen = new URL(url);
     frozen.searchParams.set('time', String(CAPTURE.time));
+    if (cinema) frozen.searchParams.set('cinema', '1');
     await page.goto(frozen.href);
     try {
       await page.waitForSelector('#world[data-ready="true"]', { state: 'attached', timeout: CAPTURE.timeout_ms });

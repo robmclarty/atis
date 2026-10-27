@@ -37,6 +37,7 @@ import {
   CHROME_PAD,
   CHROME_RULE,
   CHROME_STROKE_WIDTH,
+  DEFAULT_OVERLAY,
   EMPHASIS_PAD,
   HUD_BLOCK_GAP,
   HUD_BLOCK_HEIGHT,
@@ -350,6 +351,19 @@ function blocksOf(map: MapJson, notices: readonly Notice[], overlay?: OverlayNam
   });
 }
 
+/** One HUD block as the sheet words it: its label, its value and the tail after it, muted with a reason when the map lacks its input. */
+export type HudBlock = Block;
+
+/**
+ * The HUD row as the sheet words it, every notice the map holds counted
+ * (D33): what `--comment` writes as its table, so the comment, the still
+ * map and the world say the same thing (D108). A `repo` map's row names the
+ * overlay given, trouble spots unless another is named (D101).
+ */
+export function hudBlocks(map: MapJson, overlay?: OverlayName): readonly HudBlock[] {
+  return blocksOf(map, map.notices, map.overlays === undefined ? undefined : (overlay ?? DEFAULT_OVERLAY));
+}
+
 function isCategory(placed: Block): boolean {
   return placed.id === 'category';
 }
@@ -494,8 +508,8 @@ function budgetFor(size: number): number {
   return Math.floor((NOTICE_COLUMN - 2 * CHROME_PAD - NOTICE_BOX - NOTICE_TEXT_GAP) / (size * MONO_ADVANCE));
 }
 
-/** The thresholds that produced a notice, as `key value` pairs in the map's order (D9). */
-function thresholdsOf(notice: Notice): string {
+/** The thresholds that produced a notice, as `key value` pairs in the map's order (D9); `--comment` writes them as the sheet does. */
+export function thresholdsOf(notice: Notice): string {
   return Object.entries(notice.thresholds)
     .map(([key, value]) => `${key} ${String(value)}`)
     .join(` ${DOT} `);

@@ -38,7 +38,9 @@
  * told of (D102). Opened watching, the world takes the maps the watch pushes
  * over its socket, stood in for here by the browser's own: one on the ground
  * it draws cross-fades its weather in without the page reloading, and one on
- * other ground is drawn afresh where the reader stood (D106).
+ * other ground is drawn afresh where the reader stood (D106). As a still for
+ * a pull request's comment (`?cinema`), it draws no chrome and stands at the
+ * surface framed on the change, never the planet, opening no slide (D108).
  */
 
 import { accessSync, constants, readFileSync } from 'node:fs';
@@ -187,8 +189,9 @@ test('the world draws the demo map headless on WebGL 2, lit at the surface, with
       return { lit, shades: shades.size, pixels: data.length / 4 };
     }, png);
 
-    // A blank frame is the field alone: nothing clear of it, in one shade. The lit skin covers the frame in hundreds.
-    expect(reading.lit / reading.pixels).toBeGreaterThan(0.2);
+    // A blank frame is the field alone: nothing clear of it, in one shade. The cells' lit tissue covers a share of the frame in hundreds of shades,
+    // the open field between them as dark as the space it is (D169, `SKIN.fieldSheen`), so a share well clear of none is a world drawn.
+    expect(reading.lit / reading.pixels).toBeGreaterThan(0.05);
     expect(reading.shades).toBeGreaterThan(64);
 
     // The world writes no word unasked (D168): at load no label and no storm's slot, only the numbered boxes; the pointer
@@ -682,6 +685,32 @@ test('opened watching, a pushed map on the ground drawn cross-fades its weather 
     expect(framed.get('watch')).toBe('1');
     await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
     expect(await page.evaluate(() => document.body.dataset['before'])).toBeUndefined();
+    expect(complaints).toEqual([]);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+test("as a still for a pull request's comment, the world draws no chrome and stands at the surface on the change, never the planet, opening no slide, with a clean console (D108)", { timeout: 120_000 }, async () => {
+  const { server, url } = await serve();
+  const browser = await launch();
+  try {
+    const page = await browser.newPage({ viewport: { width: 1280, height: 800 }, reducedMotion: 'reduce' });
+    const complaints: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error' || message.type() === 'warning') complaints.push(`${message.type()}: ${message.text()}`);
+    });
+    page.on('pageerror', (error) => complaints.push(`pageerror: ${error.message}`));
+
+    await page.goto(`${url}/?backend=webgl&cinema=1&time=0`);
+    await page.waitForSelector('#world[data-ready="true"]', { timeout: 90_000 });
+    expect(await page.evaluate(() => document.querySelector<HTMLElement>('#chrome')?.style.display)).toBe('none');
+    expect(await page.getAttribute('#world', 'data-lod')).toBe('1');
+    expect(await page.getAttribute('#world', 'data-planet')).toBe('off');
+    expect(await page.getAttribute('#world', 'data-open')).toBeNull();
+    // The notices' numbered boxes are the world's, not the chrome's, so the comment's list still points into the still.
+    expect(await page.$$eval('[data-labels] [data-mark]', (elements) => elements.length)).toBe(6);
     expect(complaints).toEqual([]);
   } finally {
     await browser.close();

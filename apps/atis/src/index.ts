@@ -4,12 +4,14 @@
  * The package's surface: the constants the command prints, `run`, which turns
  * a parsed set of flags into `map.json` on disk, `pngRun`, which captures the
  * world beside it as a PNG (D105), `serveRun`, which serves the world instead
- * (D92), `serve`, the loopback server beneath both, and `fingerprintRun`,
- * which writes the terrain alone for a README (D107).
+ * (D92), `serve`, the loopback server beneath both, `fingerprintRun`, which
+ * writes the terrain alone for a README (D107), and `commentRun`, which posts
+ * the map to the branch's pull request (D108).
  */
 
 import { SCHEMA_VERSION } from 'core';
 
+export * from './comment.js';
 export * from './png.js';
 export * from './run.js';
 export * from './serve.js';
@@ -67,6 +69,12 @@ atis fingerprint writes the terrain alone, no weather and no notices, as a
                   \`npx playwright-core install chromium\` installs
   --open          open the rendered SVG in the platform viewer (needs --svg)
   --no-open       serve without opening the tab
+  --comment       post the map to this branch's pull request through gh, or
+                  update the comment it posted there before: the HUD as a
+                  table, the notices with their whys and thresholds, and the
+                  image, kept on the repository's atis-maps branch; measured
+                  over the PR's base unless --base names one. One of the two
+                  commands that reach the network, and only when typed
   --watch         keep serving the world and, when HEAD, the index or
                   .check/summary.json changes, rebuild the map and push its
                   weather to the open tab over the terrain it already shows

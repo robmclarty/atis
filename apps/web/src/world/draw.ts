@@ -59,7 +59,9 @@
  * settled, which cell is open and whether its wiring is drawn, and how many
  * files the surface draws where they floated, for the smoke test and a
  * screenshot to wait on. The page's `?time=` freezes the scheduler's clock
- * at a set time, so a capture takes one frame (D105). Under
+ * at a set time, so a capture takes one frame (D105), and its `?cinema`
+ * frames a still for a pull request's comment on what the change is about,
+ * across the whole canvas, opening no slide (D108). Under
  * `prefers-reduced-motion` the
  * scheduler stills the world (§5.5, C12): the primary keeps a static halo for
  * its load flare, nothing settles, breathes, flares or jiggles, the shapes and
@@ -106,6 +108,7 @@ import { FIELD_FILL, LOD_GATES, MOTION_TOKENS, REACH_ORIGIN_OPACITY, RELIEF, cel
 import type { FileLevel, Lod, Pick, Point, Slide } from 'scene';
 import type { MapJson, OverlayName } from 'core';
 
+import { cinemaView } from '../cinema.js';
 import { RAIL_WIDTH, zoomFor } from '../fit.js';
 import { askedOf, slideWords } from '../asked.js';
 import { diffLevelOf, loadDiff } from '../diff.js';
@@ -113,7 +116,7 @@ import type { DiffAnswer, DiffLevel } from '../diff.js';
 import { hoverOf } from '../hover.js';
 import type { Hovered } from '../hover.js';
 import { marksOf } from '../marks.js';
-import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, NOTICE, PLANET, SKIN, SKY, SPACE, WALK, WEATHER } from '../materials.js';
+import { BLOOM, CAMERA, CINEMA, HOVER, INTERIOR, LEVELS, LIGHTING, NOTICE, PLANET, SKIN, SKY, SPACE, WALK, WEATHER } from '../materials.js';
 import type { Nav } from '../nav.js';
 import { frameMap, lastFrame as ownFrame } from '../frames.js';
 import { shownOverlay } from '../overlays.js';
@@ -292,18 +295,22 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   let rowTarget: string | undefined;
   const barrelOf = new Map(map.terrain.cells.map((cell) => [cell.id, cell.barrel] as const));
   let placedLod: number | undefined;
+  // The free screen beside the rail, or the whole canvas in a still for a comment, which draws no chrome (D108).
+  const chrome = { right: view.cinema === true ? 0 : RAIL_WIDTH };
   const fit = (): void => {
     const { clientWidth, clientHeight } = canvas;
     renderer.setPixelRatio(globalThis.devicePixelRatio);
     renderer.setSize(clientWidth, clientHeight, false);
-    fitCamera(camera, map, clientWidth, clientHeight, { right: RAIL_WIDTH });
+    fitCamera(camera, map, clientWidth, clientHeight, chrome);
     placeLabels = true;
   };
   fit();
   globalThis.addEventListener('resize', fit);
   const reduced = globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches;
   canvas.dataset['motion'] = reduced ? 'reduced' : 'full';
-  const controls = createControls(camera, canvas, map, view, { right: RAIL_WIDTH }, reduced);
+  // A still for a comment opens on what the change is about, the rail's room given to the world (D108).
+  const opened = view.cinema === true ? cinemaView(map, view, canvas.clientWidth, canvas.clientHeight, registry.view(CINEMA, 'CINEMA')) : view;
+  const controls = createControls(camera, canvas, map, opened, chrome, reduced);
   const cameraLook = registry.view(CAMERA, 'CAMERA');
   const levels = registry.view(LEVELS, 'LEVELS');
   // The labels ride their anchors while the camera moves and are laid out afresh once it rests.
@@ -481,7 +488,6 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   const walk = createWalk(map);
   const walkLook = registry.view(WALK, 'WALK');
   const layout = map.terrain.layout ?? { width: 1, height: 1 };
-  const chrome = { right: RAIL_WIDTH };
 
   // The cell's gate (D165): a cell's box, the share of the free screen its skin fills at the camera's zoom, the cell to open under a point, and whether a cell holds open.
   const cellBoxes = new Map<string, Box | undefined>();
@@ -491,7 +497,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   };
   /** The share of the free screen a stretch of the ground fills at the camera's zoom. */
   const fillOfBox = (box: Box): number => {
-    const screen = { width: Math.max(1, canvas.clientWidth - RAIL_WIDTH), height: canvas.clientHeight, pixelsPerUnit: pixelsPerUnit(camera, canvas.clientWidth) };
+    const screen = { width: Math.max(1, canvas.clientWidth - chrome.right), height: canvas.clientHeight, pixelsPerUnit: pixelsPerUnit(camera, canvas.clientWidth) };
     return fillOf({ width: box.x1 - box.x0, height: box.y1 - box.y0 }, screen);
   };
   const fillOfCell = (cell: string): number => {
@@ -502,6 +508,8 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   const withFiles = new Set([...placed.values()].map((file) => slideCellOf(map, file.cell)));
   /** The innermost cell under a layout point, or the package a single-file module there floats in (D167), once its skin fills the gate's share of the free screen and its slide shows files: the cell that opens there. A cell that holds it never opens in its stead, so zooming in on a folder opens the folder. */
   const openableAt = (point: Point): string | undefined => {
+    // A still for a comment stays on the surface: a slide opens only to a reader's zoom.
+    if (view.cinema === true) return undefined;
     const under = picker.pick(point, 1, 0)?.cell;
     const cell = under === undefined ? undefined : slideCellOf(map, under);
     return cell !== undefined && withFiles.has(cell) && fillOfCell(cell) >= levels.cellOpen ? cell : undefined;
@@ -732,7 +740,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       placeLabels = true;
     }
     // The float (D165): measured on the free screen's shorter side, and a closed cell's files held where they floated until the view climbs on.
-    const free = Math.max(1, canvas.clientWidth - RAIL_WIDTH);
+    const free = Math.max(1, canvas.clientWidth - chrome.right);
     const floated = scheduler.float(map, { screen: Math.min(free, canvas.clientHeight) / pixelsPerUnit(camera, canvas.clientWidth), fill: fillOfCell, gate: { open: levels.cellOpen, close: levels.cellClose, home: levels.cellHome } });
     floatedOnSurface = floated.surface;
     if (floated.surface.size !== floatedShown) {
@@ -835,7 +843,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     filePlate.render(camera, canvas.clientWidth, canvas.clientHeight, free, focus === undefined ? undefined : new Vector3(focus.x, heightAt(focus.x, focus.y), focus.y), fileLevel, fileShown * (1 - diffShown));
     diffSheet.render(canvas.clientHeight, free, diffLevel, diffShown);
     const words = slideWords(open.exploded, fieldTarget, slide === undefined ? undefined : barrelOf.get(slide.cell));
-    interior.render(camera, canvas.clientWidth, canvas.clientHeight, canvas.clientWidth - RAIL_WIDTH, pixelsPerUnit(camera, canvas.clientWidth), open.exploded, words);
+    interior.render(camera, canvas.clientWidth, canvas.clientHeight, canvas.clientWidth - chrome.right, pixelsPerUnit(camera, canvas.clientWidth), open.exploded, words);
     // A slide's files float under a still pointer, so the hover follows them each frame while one shows.
     if (pickAgain || lod !== pickedLod || (bodies.length > 0 && !reduced)) {
       // On the planet the flat ground lies under it, so nothing there answers the pointer (D170).

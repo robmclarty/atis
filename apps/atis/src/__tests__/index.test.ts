@@ -28,6 +28,7 @@ test('the usage text names every flag the bin parses', () => {
     '--open',
     '--no-open',
     '--watch',
+    '--comment',
     '--no-cache',
     '--history <n>',
     '--verbose',

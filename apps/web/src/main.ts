@@ -4,7 +4,8 @@
  * trusted draws the world under it. Every token the world and the chrome read
  * comes through one registry (D156), which the dev panel writes and the tab's
  * session keeps. A page opened watching listens for the maps the watch
- * pushes, and hands each new one to the world and the chrome (D106).
+ * pushes, and hands each new one to the world and the chrome (D106). A page
+ * opened as a still for a comment draws no chrome (`?cinema`, D108).
  */
 
 import { createElement } from 'react';
@@ -25,6 +26,9 @@ const chromeRoot = document.querySelector<HTMLElement>('#chrome');
 if (!canvas || !chromeRoot) throw new Error('index.html lost its #world canvas or its #chrome root');
 // The chrome's root lies over the canvas as wide as its blocks; the pointer passes through it to the camera's controls (step 37), and each block that takes the pointer says so itself.
 chromeRoot.style.pointerEvents = 'none';
+// A still for a pull request's comment shows the world alone (D108).
+const view = viewOf(location.search);
+if (view.cinema === true) chromeRoot.style.display = 'none';
 
 const registry = createRegistry(sessionStore());
 const field = (): void => {
@@ -46,7 +50,7 @@ show({ status: 'loading', url });
 const state = await loadMap(url, (target) => fetch(target));
 show(state);
 if (state.status === 'ready') {
-  await drawWorld(canvas, state.map, viewOf(location.search), registry, nav, { token, pr: prOf(location.search) });
+  await drawWorld(canvas, state.map, view, registry, nav, { token, pr: prOf(location.search) });
   const socket = watchUrl(location.search, location.host);
   // Each map the watch pushes that is not the one shown: its weather swapped in by the world, or its new ground drawn afresh where the reader stands (D106).
   let shown = state.map;

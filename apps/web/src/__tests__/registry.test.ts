@@ -6,7 +6,7 @@ import * as scene from 'scene';
 import { MOTION_TOKENS, createScheduler } from 'scene';
 import { expect, test } from 'vitest';
 
-import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, MINIMAP, NOTICE, PLANET, SKIN, SKY, SPACE, WALK, WEATHER } from '../materials.js';
+import { BLOOM, CAMERA, CINEMA, HOVER, INTERIOR, LEVELS, LIGHTING, MINIMAP, NOTICE, PLANET, SKIN, SKY, SPACE, WALK, WEATHER } from '../materials.js';
 import { MATERIALS_TITLE, SECTIONS, createRegistry, kindOf } from '../registry.js';
 import type { Store } from '../registry.js';
 
@@ -63,6 +63,7 @@ test("the materials section lists every field of the world's skin, space, planet
     ...fields('RELIEF', scene.RELIEF),
     ...fields('LEVELS', LEVELS),
     ...fields('CAMERA', CAMERA),
+    ...fields('CINEMA', CINEMA),
     ...fields('HOVER', HOVER),
     ...fields('WALK', WALK),
     ...fields('MINIMAP', MINIMAP),

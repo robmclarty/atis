@@ -16,7 +16,7 @@ import { OVERLAY_NAMES } from 'core';
 import type { OverlayName } from 'core';
 
 import { USAGE, VERSION } from './index.js';
-import { fingerprintRun, pngRun, run, serveRun } from './run.js';
+import { commentRun, fingerprintRun, pngRun, run, serveRun } from './run.js';
 import type { HeadAsked, Outcome, RangeAsked } from './run.js';
 import type { BaseAsked } from './sources/index.js';
 
@@ -35,6 +35,7 @@ const FLAGS = {
   png: { type: 'string' },
   open: { type: 'boolean' },
   watch: { type: 'boolean' },
+  comment: { type: 'boolean' },
   cache: { type: 'boolean' },
   history: { type: 'string' },
   verbose: { type: 'boolean' },
@@ -63,6 +64,8 @@ type Flags = {
   readonly open?: boolean | undefined;
   /** `--watch`: rebuild the served map as the head side moves, and push it to the tab (D106). */
   readonly watch?: boolean | undefined;
+  /** `--comment`: post the map to the branch's pull request through gh (D108), one of the two networked commands (C5). */
+  readonly comment?: boolean | undefined;
   /** Only `--no-cache` sets it, to false: the terrain cache is on unless told otherwise (D96). */
   readonly cache?: boolean | undefined;
   /** `--history <n>`, as typed: read as a whole number of commits, at least one (D50). */
@@ -207,6 +210,11 @@ async function mapCommand(argv: readonly string[]): Promise<Outcome> {
   const history = flags.history === undefined ? undefined : Number(flags.history);
   if (history !== undefined && (!Number.isSafeInteger(history) || history < 1 || !/^\d+$/.test(flags.history ?? ''))) {
     return misuse('--history <n> takes a whole number of commits, at least 1');
+  }
+  if (flags.comment === true) {
+    const beside = [flags.out === undefined ? [] : ['--out'], flags.svg === undefined ? [] : ['--svg'], flags.png === undefined ? [] : ['--png'], flags.watch === true ? ['--watch'] : [], wholeRepo ? ['--whole-repo'] : [], typeof head === 'object' ? ['--working-tree'] : []].flat();
+    if (beside.length > 0) return misuse(`--comment posts the change at a commit to its pull request and exits; drop ${beside.join(' and ')}`);
+    return commentRun({ repo, base, head: typeof head === 'string' ? head : undefined, range, assets: webDir(), verbose, cache, history });
   }
   const serves = flags.out === undefined && flags.svg === undefined && flags.png === undefined;
   if (serves) return serveRun({ repo, base, head, range, wholeRepo, assets: webDir(), open: flags.open !== false, verbose, cache, history, watch: flags.watch === true });

@@ -240,6 +240,8 @@ export const createSkin = (map: MapJson, look: SkinLook, weather: WeatherLook, r
   const rimGain = uniform(look.rimGain);
   const rimPower = uniform(look.rimPower);
   const cellLight = uniform(look.cellLight);
+  const sheen = uniform(look.clearcoat);
+  const fieldSheen = uniform(look.fieldSheen);
   const reachColour = uniform(new Color(reachGlow.REACH_GLOW));
   const reachGain = uniform(weather.reachGain);
   const reachOrigin = uniform(reachGlow.REACH_ORIGIN_OPACITY);
@@ -290,6 +292,10 @@ export const createSkin = (map: MapJson, look: SkinLook, weather: WeatherLook, r
   const line = wornLine === undefined || open === undefined ? base.g : mix(wornLine, base.g, open);
   const albedo = mix(fieldAlbedo, tissueAlbedo, body).add(membraneLine.mul(line));
   material.colorNode = albedo.mul(mix(farAlbedo, float(1), surface));
+  // The shine, the key light's highlight and the wet sheen, lies on the cells' bodies; the open field keeps only its share, so the field reads as the space it is (D169).
+  const shine = mix(fieldSheen, float(1), body);
+  material.specularIntensityNode = shine;
+  material.clearcoatNode = sheen.mul(shine);
 
   // The tissue's own faint light, which never blooms (D151): a rim where the skin slopes away, and each cell's own glow over its body.
   const facing = clamp(normalInView.z, 0, 1);
@@ -316,6 +322,8 @@ export const createSkin = (map: MapJson, look: SkinLook, weather: WeatherLook, r
     reachBodyGain.value = weather.reachBodyGain;
     material.roughness = look.roughness;
     material.clearcoat = look.clearcoat;
+    sheen.value = look.clearcoat;
+    fieldSheen.value = look.fieldSheen;
     material.clearcoatRoughness = look.clearcoatRoughness;
   };
   restyle();

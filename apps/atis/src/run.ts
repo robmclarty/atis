@@ -43,7 +43,9 @@
  * (D105), and exits. `serveRun` keeps it in memory and serves it with the
  * built web app on loopback, opening the tab (D92), until the process is
  * interrupted, and under `--watch` rebuilds it when the head side moves and
- * pushes it to the tab (D106). None blocks on the weather: a map that was written or served
+ * pushes it to the tab (D106). `commentRun` posts it to the branch's pull
+ * request through `gh` (D108), one of the two commands that reach the
+ * network (C5). None blocks on the weather: a map that was written or served
  * exits 0 whatever it says, and only misuse, a repository it cannot read, a
  * web app that was never built or a machine with no browser to capture with
  * exits 2 (C4).
@@ -75,6 +77,8 @@ import {
   writeStructure,
   writeTerrain,
 } from './cache.js';
+import { MAPS_BRANCH, commentBody, findPullRequest, imageUrl, keepImage, postComment, scratchFile } from './comment.js';
+import type { CommentImage } from './comment.js';
 import { capturePng, launchBrowser } from './png.js';
 import type { BrowserCandidate, Captured } from './png.js';
 import { serve } from './serve.js';
@@ -143,6 +147,20 @@ export type PngRunOptions = Options & {
   readonly png: string;
   readonly assets: string;
   readonly browsers?: readonly BrowserCandidate[] | undefined;
+};
+
+/** The flags for `--comment` (D108): the change asked for, the built web app the image is captured from, the browsers to try, and the `gh` to run, `gh` itself unless a test names its own. */
+export type CommentRunOptions = {
+  readonly repo: string;
+  readonly base?: BaseAsked | undefined;
+  readonly head?: string | undefined;
+  readonly range?: RangeAsked | undefined;
+  readonly assets: string;
+  readonly verbose: boolean;
+  readonly cache?: boolean | undefined;
+  readonly history?: number | undefined;
+  readonly browsers?: readonly BrowserCandidate[] | undefined;
+  readonly gh?: string | undefined;
 };
 
 /** The flags for the served run (D92, D133). */
@@ -710,6 +728,87 @@ export function fingerprintRun(options: FingerprintOptions): Outcome {
   }
 }
 
+/** The world captured for a map: served on loopback with the built app, the map alone as a fixture is (D93), for as long as the capture takes (D105). */
+async function captureMap(browser: Browser, assets: string, map: MapJson, cinema = false): Promise<Captured> {
+  const served = await serve({ assets, map: serialize(map), token: randomBytes(16).toString('hex') });
+  try {
+    return await capturePng(browser, served.url, { cinema });
+  } finally {
+    await served.close();
+  }
+}
+
+/** The base a pull request is measured from when none is typed: its base branch, local if there is one, else as `origin` has it. */
+function prBase(repo: string, branch: string): string {
+  for (const ref of [branch, `origin/${branch}`]) {
+    try {
+      git(repo, 'rev-parse', '--verify', '--quiet', '--end-of-options', `${ref}^{commit}`);
+      return ref;
+    } catch {
+      // Not here; the remote's may be.
+    }
+  }
+  return branch;
+}
+
+/**
+ * The comment's image, written to `dir`: the world captured as a cinema
+ * still, framed on what the change is about with no chrome, when the built
+ * app is there and a browser launches, else the still SVG, the comment's
+ * image with no browser (D86, D145).
+ */
+async function commentImage(options: CommentRunOptions, map: MapJson, dir: string): Promise<{ readonly file: string; readonly kind: CommentImage['kind'] }> {
+  const assets = resolve(options.assets);
+  if (existsSync(join(assets, 'index.html'))) {
+    const browser = await launchBrowser(options.browsers).catch(() => undefined);
+    if (browser !== undefined) {
+      try {
+        return { file: scratchFile(dir, 'map.png', (await captureMap(browser, assets, map, true)).png), kind: 'png' };
+      } finally {
+        await browser.close();
+      }
+    }
+  }
+  return { file: scratchFile(dir, 'map.svg', renderSvg(map)), kind: 'svg' };
+}
+
+/**
+ * Post the map to the branch's pull request (D108): the PR found with `gh`
+ * before anything is measured, the change measured over the PR's base unless
+ * the flags name one, its image kept on `origin`'s `atis-maps` branch (Q38),
+ * and one comment posted, or the one posted before updated. A push the
+ * remote refuses leaves the comment its text alone, and says why. Exits 0
+ * once the comment is posted, and 2 with no `gh`, no PR, a repository it
+ * cannot read, or a post `gh` could not make (C4).
+ */
+export async function commentRun(options: CommentRunOptions): Promise<Outcome> {
+  const gh = options.gh ?? 'gh';
+  const repo = resolve(options.repo);
+  const scratch = mkdtempSync(join(tmpdir(), 'atis-comment-'));
+  try {
+    const pr = await findPullRequest(gh, repo);
+    const base = options.range === undefined ? (options.base ?? prBase(repo, pr.base)) : undefined;
+    const measured = measure(options.repo, { base, head: options.head, range: options.range, cache: options.cache !== false, history: options.history });
+    const { map } = measured;
+    const image = await commentImage(options, map, scratch);
+    let linked: CommentImage | undefined;
+    let unkept = '';
+    try {
+      const commit = await keepImage(repo, map.meta.head, image.file, image.kind);
+      linked = { url: imageUrl(pr, commit, map.meta.head, image.kind), kind: image.kind };
+    } catch (error) {
+      unkept = `atis: the comment carries no image, since ${MAPS_BRANCH} could not be pushed: ${messageOf(error)}\n`;
+    }
+    const url = await postComment(gh, repo, pr, commentBody(map, linked));
+    const kept = linked === undefined ? '' : ` with its ${linked.kind.toUpperCase()} on ${MAPS_BRANCH}`;
+    return { exitCode: 0, stdout: `${summary(map)}, commented on ${url}${kept}\n`, stderr: `${unkept}${options.verbose ? report(measured) : ''}` };
+  } catch (error) {
+    return failed(error);
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+}
+
 /** The outcome of a run that needs the built web app and finds none (D133). */
 const unbuilt = (assets: string): Outcome => ({ exitCode: 2, stdout: '', stderr: `atis: no built web app at ${assets}; run \`pnpm build\` first\n` });
 
@@ -734,13 +833,7 @@ export async function pngRun(options: PngRunOptions): Promise<Outcome> {
     const measured = writeMap(options);
     const { map, timings } = measured;
     const started = performance.now();
-    const served = await serve({ assets, map: serialize(map), token: randomBytes(16).toString('hex') });
-    let captured: Captured;
-    try {
-      captured = await capturePng(browser, served.url);
-    } finally {
-      await served.close();
-    }
+    const captured = await captureMap(browser, assets, map);
     timings.push({ source: 'capture', ms: Math.round(performance.now() - started) });
     timed(timings, 'write png', () => {
       writeAtomic(resolve(options.png), captured.png);

@@ -12,7 +12,8 @@
  * is how `--png` takes one frame however long the page took to load (D105).
  * `?centre=x,y` opens the frame on that layout point rather than the
  * layout's middle, so a screenshot or the smoke test can frame one cell
- * (step 40).
+ * (step 40). `?cinema` frames the world as a still for a pull request's
+ * comment, with no chrome, on what the change is about (`cinema.ts`, D108).
  */
 
 import type { Point } from 'scene';
@@ -32,6 +33,8 @@ export type View = {
   readonly time?: number;
   /** The layout point the frame opens centred on; the layout's middle when the page names none. */
   readonly centre?: Point;
+  /** A still for a comment: no chrome, the frame on what the change is about, and no cell opening as a slide (D108). */
+  readonly cinema?: true;
 };
 
 /** How far the camera tips off overhead, where the materials spike's controls stopped; step 37's camera keeps the bound. */
@@ -65,5 +68,6 @@ export const viewOf = (search: string): View => {
     seed: Math.trunc(numberOr(params.get('seed'), DEFAULT_SEED)),
     ...(Number.isFinite(time) && time >= 0 ? { time } : {}),
     ...(centre === undefined ? {} : { centre }),
+    ...(params.get('cinema') === null ? {} : { cinema: true as const }),
   };
 };

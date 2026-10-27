@@ -15,6 +15,8 @@
 import { CELL_GATE, COMPOSITE_GATE, INTERIOR_LAYOUT, LOD_GATES, PLANET_LAYOUT } from 'scene';
 import type { InteriorLayout, LodGate, PlanetLayout } from 'scene';
 
+import type { CinemaLook } from './cinema.js';
+
 /** The skin's material: the albedos, the membrane line, how rough and how wet it is, the share of its albedo kept at the far field, and the tissue's own faint light. */
 export type SkinLook = {
   /** The skin where it lies on the open field: near-black, the ground space is (D169). */
@@ -27,6 +29,8 @@ export type SkinLook = {
   /** The wet sheen: a clearcoat, and how soft its reflection is. */
   readonly clearcoat: number;
   readonly clearcoatRoughness: number;
+  /** The share of the shine, the key light's highlight and the wet sheen, the open field keeps between the cells' bodies; at none it is matte, the space it is (D169), and no lit slab marks the layout's extent. */
+  readonly fieldSheen: number;
   /** The share of the albedo the far field keeps, lit only by the ambient's floor. */
   readonly farAlbedo: number;
   /** Base tissue's faint light, which never blooms (D151): a rim where the skin slopes away, in this colour, this strong, falling off this sharply with the facing, and each cell's own faint light over its body, this strong. */
@@ -43,6 +47,7 @@ export const SKIN: SkinLook = {
   roughness: 0.46,
   clearcoat: 1,
   clearcoatRoughness: 0.14,
+  fieldSheen: 0,
   farAlbedo: 0.05,
   rimColour: '#7f93a6',
   rimGain: 0.05,
@@ -247,6 +252,15 @@ export type CameraLook = {
 };
 
 export const CAMERA: CameraLook = { smooth: 0.1, dragSmooth: 0.05 };
+
+/**
+ * A still for a pull request's comment (`?cinema`, D108): the share of the
+ * screen the box round the change's notices and files fills, and the
+ * farthest and nearest zoom over the fit the still may stand at, just past
+ * the surface's gate (`LEVELS.gates`, 1.7) and short of the cells' level (6),
+ * so it is never the far field's planet nor a file's plate (`cinema.ts`).
+ */
+export const CINEMA: CinemaLook = { share: 0.7, farthest: 2, nearest: 3 };
 
 /**
  * The levels of detail's gates (§6): the zoom over the fit each of LOD1 to

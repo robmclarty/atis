@@ -405,6 +405,7 @@ the planet stands over it all (D170).
 | `SKIN.roughness` | `0.46` | the skin's roughness under the key light |
 | `SKIN.clearcoat` | `1` | the wet sheen: a clearcoat over the albedo |
 | `SKIN.clearcoatRoughness` | `0.14` | how soft the sheen's reflection of the sky is |
+| `SKIN.fieldSheen` | `0` | the share of the shine, the key light's highlight and the wet sheen, the open field keeps between the cells' bodies: at `0` the field is matte, the space it is (D169), where the key light's highlight on it had lit the layout's whole extent as a slate rectangle against the space past its edge |
 | `SKIN.farAlbedo` | `0.05` | the share of the albedo the far field keeps, lit only by the ambient's floor |
 | `SKIN.rimColour` | `#7f93a6` | the base tissue's faint rim where the skin slopes away from the eye |
 | `SKIN.rimGain` | `0.05` | how strong the rim is; it never blooms |
@@ -560,6 +561,9 @@ from the space ground's rules (D169, amending D151's terraces).
 | `LEVELS.compositeClose` | `0.25` | the share a package holds open at, and closes back into one composite under as the view zooms out; every package is open from LOD2 on |
 | `CAMERA.smooth` | `0.1` | how long, in seconds, the camera settles on an input: a wheel's steps read as one continuous zoom, and nothing coasts once the pointer stops; reduced motion settles at once |
 | `CAMERA.dragSmooth` | `0.05` | the shorter settle a drag takes |
+| `CINEMA.share` | `0.7` | in a still for a pull request's comment (`?cinema`, D108), the share of the screen the box round the change's notices and changed files fills, in whichever of its width and height it fills first; no chrome stands beside it |
+| `CINEMA.farthest` | `2` | the farthest zoom over the fit the still stands at, just past the surface's gate, so a change spread over the whole field is never drawn as the far zoom's planet; a box too wide for it is centred and cropped |
+| `CINEMA.nearest` | `3` | the nearest it stands at, well short of the cells' level, so a change of one small file is framed with its cell and its neighbours round it rather than as a file's plate |
 
 ### The hover and the walk
 
