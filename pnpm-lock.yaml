@@ -56,7 +56,13 @@ importers:
       typescript:
         specifier: 6.0.3
         version: 6.0.3
+      ws:
+        specifier: 8.22.0
+        version: 8.22.0
     devDependencies:
+      '@types/ws':
+        specifier: 8.18.2
+        version: 8.18.2
       vite:
         specifier: 8.3.5
         version: 8.3.5(@types/node@22.20.1)(yaml@2.9.1)
@@ -876,6 +882,9 @@ packages:
 
   '@types/webxr@0.5.24':
     resolution: {integrity: sha512-h8fgEd/DpoS9CBrjEQXR+dIDraopAEfu4wYVNY2tEPwk60stPWhvZMf4Foo5FakuQ7HFZoa8WceaWFervK2Ovg==}
+
+  '@types/ws@8.18.2':
+    resolution: {integrity: sha512-67MQl+fpWKVTT1NYdnmo3U4sc/xPo/zQBncVnI74qmQa0z/b+1g6iYqNmGCPbxO+zz2aklb08a0oHfegiVd0/w==}
 
   '@typescript/typescript-aix-ppc64@7.0.2':
     resolution: {integrity: sha512-MTKKkWB7p/0E9xi1d1tHtZ5PiLkGEMIq88pK2CubZjOsLtYTLqhgIgi6zepFa+9GHZ6h05NMCkQxGKiPXMxXtQ==}
@@ -1948,6 +1957,18 @@ packages:
     engines: {node: '>=8'}
     hasBin: true
 
+  ws@8.22.0:
+    resolution: {integrity: sha512-Ydggc987+RO0AnWtZ/7Wq9FtNvcrL1b/RO0ud9mWjUPgDrsAAwQSF51sm2hm1XofbU/4jkpGEsLFsZZxU+1DOg==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+
   xdg-basedir@5.1.0:
     resolution: {integrity: sha512-GCPAHLvrIH13+c0SuacwvRYj2SxJXQ4kaVTT5xgL3kPrz56XxkF21IGhjSE1+W0aw7gpBWRGXLCPnPby6lSpmQ==}
     engines: {node: '>=12'}
@@ -2503,6 +2524,10 @@ snapshots:
   '@types/unist@2.0.11': {}
 
   '@types/webxr@0.5.24': {}
+
+  '@types/ws@8.18.2':
+    dependencies:
+      '@types/node': 22.20.1
 
   '@typescript/typescript-aix-ppc64@7.0.2':
     optional: true
@@ -3577,6 +3602,8 @@ snapshots:
     dependencies:
       siginfo: 2.0.0
       stackback: 0.0.2
+
+  ws@8.22.0: {}
 
   xdg-basedir@5.1.0: {}
 

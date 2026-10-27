@@ -3,7 +3,8 @@
  * it, says where the load is in the chrome, and once the map is read and
  * trusted draws the world under it. Every token the world and the chrome read
  * comes through one registry (D156), which the dev panel writes and the tab's
- * session keeps.
+ * session keeps. A page opened watching listens for the maps the watch
+ * pushes, and hands each new one to the world and the chrome (D106).
  */
 
 import { createElement } from 'react';
@@ -16,6 +17,7 @@ import type { MapState } from './load.js';
 import { createNav } from './nav.js';
 import { createRegistry, sessionStore } from './registry.js';
 import { viewOf } from './view.js';
+import { framedUrl, pushedMap, sameBuild, watchUrl } from './watch.js';
 import { drawWorld } from './world/index.js';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#world');
@@ -43,4 +45,22 @@ const url = mapUrl(location.search);
 show({ status: 'loading', url });
 const state = await loadMap(url, (target) => fetch(target));
 show(state);
-if (state.status === 'ready') await drawWorld(canvas, state.map, viewOf(location.search), registry, nav, { token, pr: prOf(location.search) });
+if (state.status === 'ready') {
+  await drawWorld(canvas, state.map, viewOf(location.search), registry, nav, { token, pr: prOf(location.search) });
+  const socket = watchUrl(location.search, location.host);
+  // Each map the watch pushes that is not the one shown: its weather swapped in by the world, or its new ground drawn afresh where the reader stands (D106).
+  let shown = state.map;
+  if (socket !== undefined) {
+    new WebSocket(socket).addEventListener('message', (event: MessageEvent<unknown>) => {
+      const next = typeof event.data === 'string' ? pushedMap(event.data) : undefined;
+      if (next === undefined || sameBuild(shown, next)) return;
+      const framing = nav.swap(next);
+      if (framing !== undefined) {
+        location.replace(framedUrl(location.href, framing));
+        return;
+      }
+      shown = next;
+      show({ status: 'ready', url, map: next });
+    });
+  }
+}

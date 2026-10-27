@@ -34,6 +34,7 @@ const FLAGS = {
   svg: { type: 'string' },
   png: { type: 'string' },
   open: { type: 'boolean' },
+  watch: { type: 'boolean' },
   cache: { type: 'boolean' },
   history: { type: 'string' },
   verbose: { type: 'boolean' },
@@ -60,6 +61,8 @@ type Flags = {
   readonly png?: string | undefined;
   /** `--open` is true, `--no-open` false, and neither leaves it undefined. */
   readonly open?: boolean | undefined;
+  /** `--watch`: rebuild the served map as the head side moves, and push it to the tab (D106). */
+  readonly watch?: boolean | undefined;
   /** Only `--no-cache` sets it, to false: the terrain cache is on unless told otherwise (D96). */
   readonly cache?: boolean | undefined;
   /** `--history <n>`, as typed: read as a whole number of commits, at least one (D50). */
@@ -206,7 +209,8 @@ async function mapCommand(argv: readonly string[]): Promise<Outcome> {
     return misuse('--history <n> takes a whole number of commits, at least 1');
   }
   const serves = flags.out === undefined && flags.svg === undefined && flags.png === undefined;
-  if (serves) return serveRun({ repo, base, head, range, wholeRepo, assets: webDir(), open: flags.open !== false, verbose, cache, history });
+  if (serves) return serveRun({ repo, base, head, range, wholeRepo, assets: webDir(), open: flags.open !== false, verbose, cache, history, watch: flags.watch === true });
+  if (flags.watch === true) return misuse('--watch keeps the served world fresh; it takes no --out, --svg or --png');
 
   if (flags.open === true && flags.svg === undefined) return misuse('--open needs --svg <file>');
   const files = { repo, base, head, range, wholeRepo, out: flags.out ?? DEFAULT_OUT, svg: flags.svg, overlay, open: flags.open === true, verbose, cache, history };

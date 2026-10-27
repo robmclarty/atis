@@ -53,7 +53,7 @@ reasoning behind each borrowing is in [prior-art.md](./prior-art.md).
 | **Stryker** mutation reports and dashboard. <https://stryker-mutator.io> | Per-mutant status as a per-line signal | Survived mutants as soft dents (§5.2) |
 | **fallow** (npm), the analyzer behind checkride's `dead`, `dupes` and `health` slots | The four complexity thresholds; `--impact-closure`, `--trace-file`, `audit --base` | Conformance dents (§5.1); reach (§5.2); data sources (§9.1) |
 | **checkride**, Rob McLarty. <https://github.com/robmclarty/checkride>, Apache-2.0 | The `.check/` contract, the deep-module convention, and the aviation lineage | Data sources (§9.1); the whole premise |
-| **weft**, Rob McLarty | Studio shell, watch loop over a JSON file, embeddable canvas | Watch mode (§12 phase 4) |
+| **weft**, Rob McLarty. `packages/watch` (`@robmclarty/weft-watch`), Apache-2.0 | The watch loop's shape: a loopback WebSocket that sends the state it holds as a client connects, messages told apart by a `kind` the client reads only when it knows it, the last good state kept when a reread fails, and a change handed on once the write has settled | `--watch` (D106): `apps/atis/src/watch.ts`, the socket in `apps/atis/src/serve.ts`, and the page's side in `apps/web/src/watch.ts` |
 | **PlumbBob**, Rob McLarty, *Attention-First Development* | Attention as the scarce resource the process is designed around | The reason the tool exists (§1, P1) |
 
 ## 3. Creative and cultural references
@@ -89,7 +89,8 @@ rest are evaluated or held in reserve.
 | `elkjs` 0.12.0 | Ulf Rüegg and the Eclipse Layout Kernel team, Kiel University | EPL-2.0 OR GPL-3.0-or-later | The LOD2 wiring overlay only: `layWiring` in `libs/scene/src/wiring.ts` lays a cell's change-only subgraph out as a layered drawing, its bundle a chunk of its own |
 | `react`, `react-dom` 19.3.1 | Meta and contributors | MIT | The chrome: the HUD and its parts, the breadcrumb, the notices and the shore rail, the legend inset, the minimap, the wiring plate and the dev panel, in `apps/web/src/chrome/` and `apps/web/src/dev/` |
 | `vite` 8.3.5, `@vitejs/plugin-react` 6.1.2 | Evan You and Vite contributors | MIT | Building `apps/web` into the assets the CLI serves (`apps/web/vite.config.ts`), and serving the app from source for the world's smoke test and the budget script (`apps/web/scripts/budget.ts`) |
-| `playwright-core` | Microsoft | Apache-2.0 | Driving the installed Chrome headless, downloading no browser of its own (D145): the world's smoke test (D132) and `--png` |
+| `playwright-core` 1.64.1 | Microsoft | Apache-2.0 | Driving the installed Chrome headless, downloading no browser of its own (D145): the world's smoke test (D132) and `--png` (`apps/atis/src/png.ts`) |
+| `ws` 8.22.0 | Einar Otto Stangvik and contributors | MIT | The WebSocket server `--watch` pushes each rebuilt map to the tab over, on the served port (`apps/atis/src/serve.ts`, D106) |
 | `deck.gl` | vis.gl / OpenJS Foundation | MIT | Evaluated, not chosen (§15) |
 
 ## 5. Fixtures (trees and reviews, no code taken)

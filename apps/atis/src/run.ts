@@ -42,7 +42,8 @@
  * world for as long as a headless browser takes to capture it as a PNG
  * (D105), and exits. `serveRun` keeps it in memory and serves it with the
  * built web app on loopback, opening the tab (D92), until the process is
- * interrupted. None blocks on the weather: a map that was written or served
+ * interrupted, and under `--watch` rebuilds it when the head side moves and
+ * pushes it to the tab (D106). None blocks on the weather: a map that was written or served
  * exits 0 whatever it says, and only misuse, a repository it cannot read, a
  * web app that was never built or a machine with no browser to capture with
  * exits 2 (C4).
@@ -78,6 +79,7 @@ import { capturePng, launchBrowser } from './png.js';
 import type { BrowserCandidate, Captured } from './png.js';
 import { serve } from './serve.js';
 import type { BaseRequest, Rebuilt, Served } from './serve.js';
+import { WATCH_EVERY_MS, signatureOf, watchRepo, watchedIn } from './watch.js';
 import {
   BASELINE_FILE,
   HISTORY_WINDOW,
@@ -159,6 +161,12 @@ export type ServeRunOptions = {
   readonly history?: number | undefined;
   /** The run's token (D134); drawn at random unless a test names one. */
   readonly token?: string | undefined;
+  /** Rebuild the map when the head side moves, and push it to the tab (D106). */
+  readonly watch?: boolean | undefined;
+  /** How often the watch reads the repository, in milliseconds; a test shortens it. */
+  readonly watchEvery?: number | undefined;
+  /** Where the watch says what it did: a line per map pushed, or kept when a rebuild failed; stderr unless a test listens. */
+  readonly watchLog?: ((line: string) => void) | undefined;
 };
 
 /** What the command prints and how it exits: 0 when it wrote or served a map, 2 on misuse or an unreadable repo (C4); `served` while a server runs. */
@@ -730,28 +738,40 @@ export async function pngRun(options: PngRunOptions): Promise<Outcome> {
  * kept draws the ground it drew before (P2). A range or a whole-repo map
  * gives way to one change over the base asked for.
  */
-function rebuilder(options: ServeRunOptions): (request: BaseRequest) => Promise<Rebuilt> {
-  return (request) => {
-    const base = request.last === undefined ? request.base : { last: request.last };
-    const head = request.working_tree === true ? { workingTree: true as const } : options.head;
-    const { map } = measure(options.repo, { base, head, cache: options.cache !== false, history: options.history });
-    return Promise.resolve({ map: serialize(map), slots: map.weather.checks.slots.map((slot) => slot.name) });
-  };
+function mapOver(options: ServeRunOptions, request: BaseRequest): MapJson {
+  const base = request.last === undefined ? request.base : { last: request.last };
+  const head = request.working_tree === true ? { workingTree: true as const } : options.head;
+  return measure(options.repo, { base, head, cache: options.cache !== false, history: options.history }).map;
 }
+
+/** A map as the server holds it: its JSON text, and the slots its raw output may be served for. */
+const rebuiltOf = (map: MapJson): Rebuilt => ({ map: serialize(map), slots: map.weather.checks.slots.map((slot) => slot.name) });
+
+/** The short form of a commit's sha a watch's line writes. */
+const shortSha = (sha: string): string => (SHA.test(sha) ? sha.slice(0, 7) : sha);
 
 /**
  * Read the repository, build the map and serve it with the built web app on
  * loopback (D92, D133, D134), opening the tab unless told not to, and rebuild
- * it over another base when the page asks (`POST /base`). The outcome
- * carries the server, which the caller closes on interrupt; its exit code is
- * 0 once serving, and 2 with no built app to serve or a repository it cannot
- * read (C4).
+ * it over another base when the page asks (`POST /base`). Under `--watch` it
+ * reads the head side's signature before it measures, so a commit landing
+ * mid-scan is never missed, and each time the signature moves it rebuilds
+ * the map over the base the page last switched to, else as the flags asked,
+ * through the terrain cache, and pushes it to the tab; a rebuild that fails
+ * keeps the map the tab holds and says why (D106). The outcome carries the
+ * server, which the caller closes on interrupt, the watch with it; its exit
+ * code is 0 once serving, and 2 with no built app to serve or a repository
+ * it cannot read (C4).
  */
 export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
   const assets = resolve(options.assets);
   if (!existsSync(join(assets, 'index.html'))) return unbuilt(assets);
   try {
-    const measured = measure(options.repo, { base: options.base, head: options.head, range: options.range, wholeRepo: options.wholeRepo, cache: options.cache !== false, history: options.history });
+    const repo = resolve(options.repo);
+    const watched = options.watch === true ? watchedIn(repo) : undefined;
+    const from = watched === undefined ? undefined : await signatureOf(watched);
+    const asTyped = { base: options.base, head: options.head, range: options.range, wholeRepo: options.wholeRepo, cache: options.cache !== false, history: options.history };
+    const measured = measure(options.repo, asTyped);
     const { map, timings } = measured;
     const token = options.token ?? randomBytes(16).toString('hex');
     const started = performance.now();
@@ -761,15 +781,44 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
       map: serialize(map),
       token,
       checks: { dir: join(options.repo, '.check'), slots: map.weather.checks.slots.map((slot) => slot.name) },
-      rebase: { repo: resolve(options.repo), rebuild: rebuilder(options) },
+      rebase: { repo, rebuild: (request) => Promise.resolve(rebuiltOf(mapOver(options, request))) },
+      watch: watched !== undefined,
     });
     timings.push({ source: 'serve', ms: Math.round(performance.now() - started) });
+    const log = options.watchLog ?? ((line: string) => process.stderr.write(line));
+    const watching =
+      watched === undefined || from === undefined
+        ? undefined
+        : watchRepo(
+            watched,
+            from,
+            async () => {
+              try {
+                const switched = served.asked();
+                const next = switched === undefined ? measure(options.repo, asTyped).map : mapOver(options, switched);
+                served.push(rebuiltOf(next));
+                log(`atis: watched ${shortSha(next.meta.head)}: ${summary(next)}\n`);
+              } catch (error) {
+                log(`atis: the watch kept the last map: ${messageOf(error)}\n`);
+              }
+            },
+            options.watchEvery ?? WATCH_EVERY_MS,
+          );
     if (options.open) openTarget(served.url);
     return {
       exitCode: 0,
-      stdout: `${summary(map)}, serving at ${served.url} (Ctrl-C to stop)\n`,
+      stdout: `${summary(map)}, serving at ${served.url}${watching === undefined ? '' : ', watching'} (Ctrl-C to stop)\n`,
       stderr: options.verbose ? report(measured) : '',
-      served,
+      served:
+        watching === undefined
+          ? served
+          : {
+              ...served,
+              close: () => {
+                watching.close();
+                return served.close();
+              },
+            },
     };
   } catch (error) {
     return failed(error);

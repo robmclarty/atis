@@ -35,7 +35,10 @@
  * its diff: a page with no token shows its hunk's line range alone, and one
  * served with the token shows the diff `/diff/<path>` answers, its hunk's head
  * and its head linked to the file in the editor, beside the PR the page was
- * told of (D102).
+ * told of (D102). Opened watching, the world takes the maps the watch pushes
+ * over its socket, stood in for here by the browser's own: one on the ground
+ * it draws cross-fades its weather in without the page reloading, and one on
+ * other ground is drawn afresh where the reader stood (D106).
  */
 
 import { accessSync, constants, readFileSync } from 'node:fs';
@@ -622,6 +625,63 @@ test("past LOD4 the changed file's plate gives way to its diff: its hunk's line 
     expect(await page.getAttribute('[data-diff-sheet] [data-diff-row="hunk"]', 'href')).toBe(`vscode://file/work/demo/${path}:1`);
     expect(await page.getAttribute('[data-diff-sheet] [data-editor]', 'href')).toBe(`vscode://file/work/demo/${path}:1`);
     expect(await page.getAttribute('[data-diff-sheet] [data-pr]', 'href')).toBe('https://github.com/o/r/pull/4');
+    expect(complaints).toEqual([]);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+test('opened watching, a pushed map on the ground drawn cross-fades its weather in without a reload, and one on other ground is drawn afresh where the reader stood, with a clean console (D106)', { timeout: 120_000 }, async () => {
+  const text = readFileSync(DEMO, 'utf8');
+  const demo = JSON.parse(text) as { meta: { generated_at: string; head: string }; notices: unknown[]; terrain: { layout: { positions: Record<string, { x: number; y: number }> } } };
+  const { server, url } = await serve(text);
+  const browser = await launch();
+  try {
+    const page = await browser.newPage({ viewport: { width: 960, height: 720 } });
+    const complaints: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error' || message.type() === 'warning') complaints.push(`${message.type()}: ${message.text()}`);
+    });
+    page.on('pageerror', (error) => complaints.push(`pageerror: ${error.message}`));
+    // The browser stands in for the server's socket: it hears each connection, and the test says what it pushes.
+    const sockets: { send: (message: string) => void }[] = [];
+    await page.routeWebSocket(/\/watch\?token=watched$/, (socket) => {
+      sockets.push(socket);
+      // As the server does, the map held is sent as the page connects: the one the page drew, so it is dropped.
+      if (sockets.length === 1) socket.send(JSON.stringify({ kind: 'map', map: demo }));
+    });
+
+    await page.goto(`${url}/?backend=webgl&zoom=2&token=watched&watch=1`);
+    await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
+    await expect.poll(() => sockets.length).toBe(1);
+    expect(await page.$$eval('[data-labels] [data-mark]', (elements) => elements.length)).toBe(6);
+    await page.evaluate(() => {
+      document.body.dataset['before'] = 'push';
+    });
+
+    // A later commit on the same ground: its three notices take the place of the six, and the page never reloads.
+    const later = { ...demo, meta: { ...demo.meta, head: 'f'.repeat(40), generated_at: '2026-10-27T09:00:00.000Z' }, notices: demo.notices.slice(0, 3) };
+    sockets[0]?.send(JSON.stringify({ kind: 'map', map: later }));
+    await page.waitForSelector('#world[data-pushed="1"]', { timeout: 30_000 });
+    await expect.poll(() => page.$$eval('[data-labels] [data-mark]', (elements) => elements.length), { timeout: 30_000 }).toBe(3);
+    expect(await page.evaluate(() => document.body.dataset['before'])).toBe('push');
+    expect(await page.getAttribute('#world', 'data-world')).toBe('settled');
+
+    // A commit that moves a file is other ground: the page is drawn afresh at the zoom and the tilt the reader stood at.
+    const [first] = Object.keys(demo.terrain.layout.positions);
+    const moved = first === undefined ? undefined : demo.terrain.layout.positions[first];
+    if (first === undefined || moved === undefined) throw new Error('the demo places no file');
+    const elsewhere = { ...later, meta: { ...later.meta, generated_at: '2026-10-27T09:05:00.000Z' }, terrain: { ...demo.terrain, layout: { ...demo.terrain.layout, positions: { ...demo.terrain.layout.positions, [first]: { ...moved, x: moved.x + 1 } } } } };
+    sockets[0]?.send(JSON.stringify({ kind: 'map', map: elsewhere }));
+    await page.waitForURL(/centre=/, { timeout: 30_000 });
+    const framed = new URL(page.url()).searchParams;
+    expect(Number(framed.get('zoom'))).toBeCloseTo(2, 3);
+    expect(framed.get('tilt')).toBe('0');
+    expect(framed.get('token')).toBe('watched');
+    expect(framed.get('watch')).toBe('1');
+    await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
+    expect(await page.evaluate(() => document.body.dataset['before'])).toBeUndefined();
     expect(complaints).toEqual([]);
   } finally {
     await browser.close();

@@ -261,7 +261,7 @@ test('--version and --help exit 0; an unknown flag, a stray positional and a --b
   expect(atis(['-V']).status).toBe(0);
   expect(atis(['--help']).stdout).toContain('--base <ref>');
 
-  for (const args of [['--nope'], ['--base'], ['main'], ['--base', 'main', 'extra'], ['--base', 'main', '--history', '0'], ['--base', 'main', '--history', '2.5'], ['--base', 'main', '--history', 'all']]) {
+  for (const args of [['--nope'], ['--base'], ['main'], ['--base', 'main', 'extra'], ['--base', 'main', '--history', '0'], ['--base', 'main', '--history', '2.5'], ['--base', 'main', '--history', 'all'], ['--watch', '--svg', 'atis.svg']]) {
     const result = atis(args);
     expect(result.status).toBe(2);
     expect(result.stdout).toBe('');

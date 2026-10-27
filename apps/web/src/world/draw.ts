@@ -76,7 +76,9 @@
  * the planet's lights mixing the same way, at the scheduler's cross-fade and
  * cut under reduced motion (C12), the relief, the tissue and the files never
  * moving (P2); the canvas says which frame it shows and when the fade has
- * settled. On a whole repo's map the overlay the HUD's toggles show is laid
+ * settled. A map a watch pushes on the ground drawn cross-fades its weather
+ * in the same way, and the canvas counts the maps it took (D106). On a
+ * whole repo's map the overlay the HUD's toggles show is laid
  * with the weather's marks, and a toggle cross-fades to the next the same way
  * (D101); the canvas says which overlay it shows and when that fade has
  * settled. Past LOD3's gate the file nearest the view's centre, a floating
@@ -123,6 +125,8 @@ import type { Registry } from '../registry.js';
 import type { View } from '../view.js';
 import { FIELD, createWalk, ownsKey } from '../walk.js';
 import type { Stop } from '../walk.js';
+import { sameGround } from '../watch.js';
+import type { Framing } from '../watch.js';
 import { createBolts } from './bolts.js';
 import type { Bolts } from './bolts.js';
 import { DIFF_LOOK, createDiffSheet } from './diff.js';
@@ -540,8 +544,10 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   });
   // The open cell's wiring is drawn only where some of the change's wiring reaches it, as the breadcrumb offers it only there.
   const wire = (): void => {
-    if (opening.open !== undefined && cellWiring(map, opening.open) !== undefined) apply(openedBy(opening, { kind: 'wire' }));
+    if (opening.open !== undefined && cellWiring(source, opening.open) !== undefined) apply(openedBy(opening, { kind: 'wire' }));
   };
+  // The map the weather comes from: the one drawn, until a watch pushes another over the same ground (D106).
+  let source = map;
   // A step of the scrubber lays its frame's weather as the layer shown, and the one shown before fades out beneath it; a step taken mid-fade drops the layer already fading (D100).
   let shownFrame = ownFrame(map);
   let relaySlide = false;
@@ -565,15 +571,34 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     if (index === shownFrame) return;
     shownFrame = index;
     canvas.dataset['frame'] = String(index);
-    relay(frameMap(map, index));
+    relay(frameMap(source, index));
   };
   // A toggle shows another overlay of a whole repo's map, or none, cross-faded as a scrub is (D101).
   const overlay = (asked: OverlayAsk): void => {
-    const name = shownOverlay(map, asked);
+    const name = shownOverlay(source, asked);
     if (name === shownName) return;
     shownName = name;
     canvas.dataset['overlay'] = name ?? 'none';
-    relay(frameMap(map, shownFrame));
+    relay(frameMap(source, shownFrame));
+  };
+  /**
+   * A map a watch pushed (D106): on the ground the world draws, its weather
+   * cross-fades in as a scrub's does, at its own frame, and the terrain never
+   * moves (P2); the canvas counts the maps it took. On other ground, a file
+   * added or gone, it names where the reader stands, so the page draws the
+   * new ground afresh there.
+   */
+  const swap = (next: MapJson): Framing | undefined => {
+    if (!sameGround(source, next)) {
+      return { zoom: camera.zoom, tilt: (controls.polarAngle * 180) / Math.PI, centre: standOf(controls, camera, canvas.clientWidth, chrome)?.centre };
+    }
+    source = next;
+    shownFrame = ownFrame(next);
+    if (shownFrame === undefined) delete canvas.dataset['frame'];
+    else canvas.dataset['frame'] = String(shownFrame);
+    canvas.dataset['pushed'] = String(Number(canvas.dataset['pushed'] ?? '0') + 1);
+    relay(frameMap(next, shownFrame));
+    return undefined;
   };
   // The minimap asks for a place and the camera eases there (D154); a notice's row asks for a stop and the camera flies there; the breadcrumb's buttons ask for the exploded view and the wiring; the scrubber asks for a frame.
   nav.steer({
@@ -591,6 +616,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     },
     scrub,
     overlay,
+    swap,
   });
   // The arrows walk to a sibling, Enter descends and Escape ascends, unless the key is the focused element's own or the chrome already took it (an open legend folds away on Escape); with a cell open, Escape closes it first, x spreads or gathers its exploded view (D155), and w draws or takes away its wiring.
   globalThis.addEventListener('keydown', (event) => {

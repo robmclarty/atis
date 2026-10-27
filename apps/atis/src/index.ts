@@ -61,6 +61,9 @@ its own, opens it in a tab, and runs until interrupted.
                   \`npx playwright-core install chromium\` installs
   --open          open the rendered SVG in the platform viewer (needs --svg)
   --no-open       serve without opening the tab
+  --watch         keep serving the world and, when HEAD, the index or
+                  .check/summary.json changes, rebuild the map and push its
+                  weather to the open tab over the terrain it already shows
   --no-cache      measure afresh, neither reading nor writing the terrain kept
                   per base commit in .atis/terrain/ or the structure fallow
                   measured per commit in .atis/structure/

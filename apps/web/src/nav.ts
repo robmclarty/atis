@@ -11,18 +11,22 @@
  * the scrubber stands at, too (D100): the chrome steps it, and the world
  * cross-fades to that frame's weather, and the overlay of a whole repo's
  * map the HUD's toggles ask for (D101), which the world cross-fades to the
- * same way. Neither imports the
+ * same way, and a map a watch pushed (D106), whose weather the world
+ * cross-fades in over the ground it shows, or whose new ground it names the
+ * framing to draw afresh at. Neither imports the
  * other: `main.ts` hands both the same line, and an ask made before the world
  * is drawn, or with no world at all, as in a DOM test, goes nowhere. Pure, so
  * a test reads it straight.
  */
 
+import type { MapJson } from 'core';
 import type { Point } from 'scene';
 
 import type { Opened } from './opened.js';
 import type { OverlayAsk } from './overlays.js';
 import { FIELD } from './walk.js';
 import type { Stop } from './walk.js';
+import type { Framing } from './watch.js';
 
 /** What the world does when the chrome asks: centre the view on a layout point, fly to a stop, spread or gather the open cell's exploded view, draw or take away its wiring, or write the words of the target the pointer is over in the chrome, or none. */
 export type Steering = {
@@ -33,6 +37,8 @@ export type Steering = {
   readonly hover?: (target: string | undefined) => void;
   readonly scrub?: (frame: number) => void;
   readonly overlay?: (asked: OverlayAsk) => void;
+  /** Take a map a watch pushed: none when its weather now shows over the ground drawn, else the framing to draw its new ground afresh at. */
+  readonly swap?: (map: MapJson) => Framing | undefined;
 };
 
 export type Nav = {
@@ -68,6 +74,13 @@ export type Nav = {
   readonly overlay: () => OverlayAsk;
   /** Ask for an overlay, or none: the chrome hears it, and the world cross-fades to it. */
   readonly showOverlay: (asked: OverlayAsk) => void;
+  /**
+   * Hand the world a map a watch pushed (D106): the scrubber stands at its
+   * own weather again, and the world says none when it cross-faded the
+   * weather in over the ground it draws, else the framing to draw the new
+   * ground afresh at; none too with no world drawn.
+   */
+  readonly swap: (map: MapJson) => Framing | undefined;
   /** The world takes the chrome's asks; the latest to steer is the one asked, until it lets go. */
   readonly steer: (steering: Steering) => () => void;
 };
@@ -128,6 +141,13 @@ export const createNav = (): Nav => {
       overlay = next;
       tell();
       steering?.overlay?.(next);
+    },
+    swap: (map) => {
+      if (frame !== undefined) {
+        frame = undefined;
+        tell();
+      }
+      return steering?.swap?.(map);
     },
     steer: (next) => {
       steering = next;

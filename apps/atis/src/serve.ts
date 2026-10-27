@@ -20,17 +20,25 @@
  * URL carries. The write checks the `Origin` too, since a form in another
  * tab could send one, and takes only a ref `git rev-parse --verify` resolves
  * to a commit, never one opening with `-`, which git would read as a flag.
+ * Under `--watch` it takes one socket path too, `/watch`, on the same port
+ * (D106): a WebSocket the page opens with the run's token, from its own
+ * `Origin`, over which every map the watch rebuilds is pushed as
+ * `{ "kind": "map", "map": … }`, a message kind as weft's watch sends, the
+ * page reading only the kinds it knows; as weft's does, it sends the map it
+ * holds as the page connects. The page sends nothing on it.
  * The asset directory is an argument, so a test serves a stub `index.html`
  * and no test needs a Vite build (D133).
  */
 
 import { execFile } from 'node:child_process';
 import { readFile, stat } from 'node:fs/promises';
-import { createServer } from 'node:http';
+import { STATUS_CODES, createServer } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import type { Duplex } from 'node:stream';
 import { extname, join, resolve, sep } from 'node:path';
 
 import { CONFIG_FILE, DEFAULT_EDITOR, configuredEditor } from 'core';
+import { WebSocket, WebSocketServer } from 'ws';
 
 /** The run's check artifacts: where checkride wrote them, and the slots the map holds, the only ones served. */
 export type ServedChecks = {
@@ -72,6 +80,8 @@ export type ServeOptions = {
   readonly checks?: ServedChecks | undefined;
   /** How `POST /base` rebuilds the map, and the repository `/diff/<path>` reads; left out, neither is served. */
   readonly rebase?: Rebase | undefined;
+  /** Take the page's socket at `/watch`, and name it in the URL to open, so the watch can push each map it rebuilds (D106); left out, no socket is taken. */
+  readonly watch?: boolean | undefined;
 };
 
 export type Served = {
@@ -80,6 +90,10 @@ export type Served = {
   readonly port: number;
   /** The interface the socket is bound to: always the loopback address. */
   readonly address: string;
+  /** The base the page last switched to over `POST /base`, which a rebuild keeps to; none while the run's own base stands. */
+  readonly asked: () => BaseRequest | undefined;
+  /** Hold a rebuilt map in place of the one held, and push it to every open socket (D106). */
+  readonly push: (rebuilt: Rebuilt) => void;
   /** Stop answering and drop every connection. */
   readonly close: () => Promise<void>;
 };
@@ -111,6 +125,11 @@ const RAW_FILES = ['.stdout.txt', '.json'] as const;
 
 /** The most a `POST /base` body may hold: a ref and two words, never a file. */
 const BODY_LIMIT = 4096;
+
+/** The path the page opens its socket at, under `--watch` (D106). */
+const WATCH_PATH = '/watch';
+/** The most one message from the page may hold on the socket, which carries nothing from it. */
+const SOCKET_LIMIT = 1024;
 
 /** The most one file's diff may run to before git's answer is cut off as a failure. */
 const DIFF_LIMIT = 32 * 1024 * 1024;
@@ -267,15 +286,31 @@ const editorOf = async (repo: string): Promise<string> => {
   return configuredEditor(text) ?? DEFAULT_EDITOR;
 };
 
-/** Serve the app, the map and the raw check output on loopback at a port of the system's choosing, and take `POST /base` and serve the diffs when handed a way to rebuild; resolves once it is listening. */
-export const serve = async ({ assets, map: first, token, checks: given, rebase }: ServeOptions): Promise<Served> => {
+/** Refuse a socket's upgrade with a status and no body, and drop the connection. */
+const refuseUpgrade = (socket: Duplex, status: number): void => {
+  socket.end(`HTTP/1.1 ${String(status)} ${STATUS_CODES[status] ?? ''}\r\nconnection: close\r\ncontent-length: 0\r\n\r\n`);
+};
+
+/** Serve the app, the map and the raw check output on loopback at a port of the system's choosing, take `POST /base` and serve the diffs when handed a way to rebuild, and take the page's socket under a watch; resolves once it is listening. */
+export const serve = async ({ assets, map: first, token, checks: given, rebase, watch = false }: ServeOptions): Promise<Served> => {
   const root = resolve(assets);
   let port = 0;
   let map = first;
   let checks = given;
+  // The base the page last switched to, which a watch's rebuild keeps to (D106).
+  let switched: BaseRequest | undefined;
+  // The page's sockets, under a watch alone; each hears every map pushed and is heard from not at all.
+  const sockets = watch ? new WebSocketServer({ noServer: true, maxPayload: SOCKET_LIMIT }) : undefined;
   // The diff's repository and editor, read once, so a broken editor fails the run before it serves (C4).
   const repo = rebase === undefined ? undefined : resolve(rebase.repo);
   const editor = repo === undefined ? undefined : await editorOf(repo);
+  /** The held map as the socket carries it, a kind and the map, without parsing the map the server only serves. */
+  const pushed = (): string => `{"kind":"map","map":${map.trimEnd()}}`;
+  /** Hold a rebuilt map in place of the one held, its raw output served for the slots it holds. */
+  const hold = (rebuilt: Rebuilt): void => {
+    map = rebuilt.map;
+    checks = checks === undefined ? undefined : { dir: checks.dir, slots: rebuilt.slots };
+  };
   // The held map's sides, read again only when a base replaces it.
   let sidesRead: { readonly text: string; readonly sides: Sides | undefined } | undefined;
   const sides = (): Sides | undefined => {
@@ -334,8 +369,8 @@ export const serve = async ({ assets, map: first, token, checks: given, rebase }
       answer(request, response, 400, PLAIN, `${messageOf(error)}\n`);
       return;
     }
-    map = rebuilt.map;
-    checks = checks === undefined ? undefined : { dir: checks.dir, slots: rebuilt.slots };
+    hold(rebuilt);
+    switched = asked;
     answer(request, response, 200, TYPES['.json'] ?? OCTETS, map);
   };
 
@@ -404,16 +439,50 @@ export const serve = async ({ assets, map: first, token, checks: given, rebase }
     server.once('error', failed);
     server.listen(0, LOOPBACK, () => listening());
   });
+  /**
+   * The page's socket at `/watch` (D106, D134): the loopback host, the run's
+   * token and an `Origin` of this server's own, as the write asks, since a
+   * socket has no same-origin rule and any tab could open one; anything else
+   * is refused before it is upgraded.
+   */
+  server.on('upgrade', (request: IncomingMessage, socket: Duplex, head: Buffer) => {
+    const host = request.headers.host;
+    if (host !== `${LOOPBACK}:${String(port)}` && host !== `localhost:${String(port)}`) {
+      refuseUpgrade(socket, 403);
+      return;
+    }
+    const url = new URL(request.url ?? '/', `http://${host}`);
+    if (sockets === undefined || url.pathname !== WATCH_PATH) {
+      refuseUpgrade(socket, 404);
+      return;
+    }
+    if (url.searchParams.get('token') !== token || request.headers.origin !== `http://${host}`) {
+      refuseUpgrade(socket, 403);
+      return;
+    }
+    sockets.handleUpgrade(request, socket, head, (client) => {
+      client.on('error', () => client.terminate());
+      client.send(pushed());
+    });
+  });
   const bound = server.address();
   if (bound === null || typeof bound === 'string') throw new Error('the server bound no TCP port');
   port = bound.port;
 
   return {
-    url: `http://${LOOPBACK}:${String(port)}/?token=${token}`,
+    url: `http://${LOOPBACK}:${String(port)}/?token=${token}${watch ? '&watch=1' : ''}`,
     port,
     address: bound.address,
+    asked: () => switched,
+    push: (rebuilt) => {
+      hold(rebuilt);
+      const message = pushed();
+      for (const client of sockets?.clients ?? []) if (client.readyState === WebSocket.OPEN) client.send(message);
+    },
     close: () =>
       new Promise<void>((closed, failed) => {
+        for (const client of sockets?.clients ?? []) client.terminate();
+        sockets?.close();
         server.closeAllConnections();
         server.close((error) => (error === undefined ? closed() : failed(error)));
       }),
