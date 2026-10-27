@@ -60,7 +60,7 @@ import { basename, join, relative, resolve } from 'node:path';
 import { DEFAULT_CONFIG, OVERLAY_NAMES, buildMap, buildRepoMap, layOutTerrain } from 'core';
 import type { CheckBaseline, Commit, FrameInputs, Layout, MapJson, OverlayName, Structure } from 'core';
 import type { Browser } from 'playwright-core';
-import { renderFingerprint, renderSvg } from 'svg';
+import { renderCinema, renderFingerprint, renderSvg } from 'svg';
 
 import {
   codeKey,
@@ -149,17 +149,15 @@ export type PngRunOptions = Options & {
   readonly browsers?: readonly BrowserCandidate[] | undefined;
 };
 
-/** The flags for `--comment` (D108): the change asked for, the built web app the image is captured from, the browsers to try, and the `gh` to run, `gh` itself unless a test names its own. */
+/** The flags for `--comment` (D108): the change asked for, and the `gh` to run, `gh` itself unless a test names its own. */
 export type CommentRunOptions = {
   readonly repo: string;
   readonly base?: BaseAsked | undefined;
   readonly head?: string | undefined;
   readonly range?: RangeAsked | undefined;
-  readonly assets: string;
   readonly verbose: boolean;
   readonly cache?: boolean | undefined;
   readonly history?: number | undefined;
-  readonly browsers?: readonly BrowserCandidate[] | undefined;
   readonly gh?: string | undefined;
 };
 
@@ -729,10 +727,10 @@ export function fingerprintRun(options: FingerprintOptions): Outcome {
 }
 
 /** The world captured for a map: served on loopback with the built app, the map alone as a fixture is (D93), for as long as the capture takes (D105). */
-async function captureMap(browser: Browser, assets: string, map: MapJson, cinema = false): Promise<Captured> {
+async function captureMap(browser: Browser, assets: string, map: MapJson): Promise<Captured> {
   const served = await serve({ assets, map: serialize(map), token: randomBytes(16).toString('hex') });
   try {
-    return await capturePng(browser, served.url, { cinema });
+    return await capturePng(browser, served.url);
   } finally {
     await served.close();
   }
@@ -749,27 +747,6 @@ function prBase(repo: string, branch: string): string {
     }
   }
   return branch;
-}
-
-/**
- * The comment's image, written to `dir`: the world captured as a cinema
- * still, framed on what the change is about with no chrome, when the built
- * app is there and a browser launches, else the still SVG, the comment's
- * image with no browser (D86, D145).
- */
-async function commentImage(options: CommentRunOptions, map: MapJson, dir: string): Promise<{ readonly file: string; readonly kind: CommentImage['kind'] }> {
-  const assets = resolve(options.assets);
-  if (existsSync(join(assets, 'index.html'))) {
-    const browser = await launchBrowser(options.browsers).catch(() => undefined);
-    if (browser !== undefined) {
-      try {
-        return { file: scratchFile(dir, 'map.png', (await captureMap(browser, assets, map, true)).png), kind: 'png' };
-      } finally {
-        await browser.close();
-      }
-    }
-  }
-  return { file: scratchFile(dir, 'map.svg', renderSvg(map)), kind: 'svg' };
 }
 
 /**
@@ -790,12 +767,13 @@ export async function commentRun(options: CommentRunOptions): Promise<Outcome> {
     const base = options.range === undefined ? (options.base ?? prBase(repo, pr.base)) : undefined;
     const measured = measure(options.repo, { base, head: options.head, range: options.range, cache: options.cache !== false, history: options.history });
     const { map } = measured;
-    const image = await commentImage(options, map, scratch);
+    // The image is the cinema still, the minimap zoomed in on the change, drawn with no browser (D174, D175).
+    const image = scratchFile(scratch, 'map.svg', renderCinema(map));
     let linked: CommentImage | undefined;
     let unkept = '';
     try {
-      const commit = await keepImage(repo, map.meta.head, image.file, image.kind);
-      linked = { url: imageUrl(pr, commit, map.meta.head, image.kind), kind: image.kind };
+      const commit = await keepImage(repo, map.meta.head, image, 'svg');
+      linked = { url: imageUrl(pr, commit, map.meta.head, 'svg'), kind: 'svg' };
     } catch (error) {
       unkept = `atis: the comment carries no image, since ${MAPS_BRANCH} could not be pushed: ${messageOf(error)}\n`;
     }

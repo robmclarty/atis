@@ -214,7 +214,7 @@ async function mapCommand(argv: readonly string[]): Promise<Outcome> {
   if (flags.comment === true) {
     const beside = [flags.out === undefined ? [] : ['--out'], flags.svg === undefined ? [] : ['--svg'], flags.png === undefined ? [] : ['--png'], flags.watch === true ? ['--watch'] : [], wholeRepo ? ['--whole-repo'] : [], typeof head === 'object' ? ['--working-tree'] : []].flat();
     if (beside.length > 0) return misuse(`--comment posts the change at a commit to its pull request and exits; drop ${beside.join(' and ')}`);
-    return commentRun({ repo, base, head: typeof head === 'string' ? head : undefined, range, assets: webDir(), verbose, cache, history });
+    return commentRun({ repo, base, head: typeof head === 'string' ? head : undefined, range, verbose, cache, history });
   }
   const serves = flags.out === undefined && flags.svg === undefined && flags.png === undefined;
   if (serves) return serveRun({ repo, base, head, range, wholeRepo, assets: webDir(), open: flags.open !== false, verbose, cache, history, watch: flags.watch === true });

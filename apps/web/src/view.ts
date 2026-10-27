@@ -12,8 +12,9 @@
  * is how `--png` takes one frame however long the page took to load (D105).
  * `?centre=x,y` opens the frame on that layout point rather than the
  * layout's middle, so a screenshot or the smoke test can frame one cell
- * (step 40). `?cinema` frames the world as a still for a pull request's
- * comment, with no chrome, on what the change is about (`cinema.ts`, D108).
+ * (step 40). `?cinema` frames the world as a still, with no chrome, on what
+ * the change is about, where the scene frames the comment's flat still
+ * (`libs/scene/src/cinema.ts`, D108, D175).
  */
 
 import type { Point } from 'scene';

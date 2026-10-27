@@ -121,14 +121,14 @@ export function noticeAnchors(map: MapJson): readonly AnchoredNotice[] {
   });
 }
 
-/** A file's short name, `+` before it when the change added it (D120). */
-function nameOf(path: string, added: boolean): string {
+/** A file's short name, `+` before it when the change added it (D120), or a cell's last segment. */
+export function nameOf(path: string, added: boolean): string {
   const base = path.slice(path.lastIndexOf('/') + 1);
   return added ? `${ADDED}${base}` : base;
 }
 
 /** The eight spots a label tries round a point, `reach` pixels out: right, left, above, below, then the corners. */
-function spotsAround(px: number, py: number, reach: number, width: number, height: number): readonly LabelBox[] {
+export function spotsAround(px: number, py: number, reach: number, width: number, height: number): readonly LabelBox[] {
   const right = { x: px + reach, y: py - height / 2 };
   const left = { x: px - reach - width, y: py - height / 2 };
   const above = { x: px - width / 2, y: py - reach - height };
@@ -146,7 +146,8 @@ function spotsAround(px: number, py: number, reach: number, width: number, heigh
   ].map((spot) => ({ ...spot, width, height }));
 }
 
-function overlaps(a: LabelBox, b: LabelBox): boolean {
+/** Whether two boxes overlap. */
+export function overlaps(a: LabelBox, b: LabelBox): boolean {
   return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
 }
 
@@ -172,7 +173,7 @@ function crosses(a: readonly [number, number], b: readonly [number, number], c: 
 }
 
 /** Whether a box falls on the ground a ring bounds: a corner of the box inside it, a point of it inside the box, or an edge of each crossing. */
-function onRing(box: LabelBox, ring: Ring): boolean {
+export function onRing(box: LabelBox, ring: Ring): boolean {
   const corners: readonly (readonly [number, number])[] = [
     [box.x, box.y],
     [box.x + box.width, box.y],

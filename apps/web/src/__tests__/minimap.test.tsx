@@ -7,13 +7,12 @@ import { assertMap } from 'core';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
-import { CHANGE_HUE, REACH_DECAY, REACH_GLOW, minimapOf, toInset, toLayout } from 'scene';
+import { CHANGE_HUE, MINIMAP, REACH_DECAY, REACH_GLOW, minimapOf, toInset, toLayout } from 'scene';
 import type { Point } from 'scene';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 
 import { Chrome, Minimap } from '../chrome/index.js';
 import { over } from '../hud.js';
-import { MINIMAP } from '../materials.js';
 import { createNav } from '../nav.js';
 import { createRegistry } from '../registry.js';
 

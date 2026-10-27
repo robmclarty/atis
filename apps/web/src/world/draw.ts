@@ -60,8 +60,8 @@
  * files the surface draws where they floated, for the smoke test and a
  * screenshot to wait on. The page's `?time=` freezes the scheduler's clock
  * at a set time, so a capture takes one frame (D105), and its `?cinema`
- * frames a still for a pull request's comment on what the change is about,
- * across the whole canvas, opening no slide (D108). Under
+ * frames a still on what the change is about, as the comment's flat still is
+ * framed, across the whole canvas, opening no slide (D108, D175). Under
  * `prefers-reduced-motion` the
  * scheduler stills the world (§5.5, C12): the primary keeps a static halo for
  * its load flare, nothing settles, breathes, flares or jiggles, the shapes and
@@ -104,11 +104,10 @@
 import { AgXToneMapping, AmbientLight, Color, DataUtils, DirectionalLight, RenderPipeline, Scene, Vector3, WebGPUCoordinateSystem, WebGPURenderer } from 'three/webgpu';
 import { emissive, mrt, output, pass } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
-import { FIELD_FILL, LOD_GATES, MOTION_TOKENS, REACH_ORIGIN_OPACITY, RELIEF, cellSlide, cellWiring, compositesOf, compositesOpen, createPicker, createScheduler, fileLevelOf, fillOf, gridFor, instances, interiorOf, planetShown, slideCellOf, surfacePoint } from 'scene';
+import { CINEMA, FIELD_FILL, LOD_GATES, MOTION_TOKENS, REACH_ORIGIN_OPACITY, RELIEF, cellSlide, cellWiring, cinemaFocus, compositesOf, compositesOpen, createPicker, createScheduler, fileLevelOf, fillOf, gridFor, instances, interiorOf, planetShown, slideCellOf, surfacePoint } from 'scene';
 import type { FileLevel, Lod, Pick, Point, Slide } from 'scene';
 import type { MapJson, OverlayName } from 'core';
 
-import { cinemaView } from '../cinema.js';
 import { RAIL_WIDTH, zoomFor } from '../fit.js';
 import { askedOf, slideWords } from '../asked.js';
 import { diffLevelOf, loadDiff } from '../diff.js';
@@ -116,7 +115,7 @@ import type { DiffAnswer, DiffLevel } from '../diff.js';
 import { hoverOf } from '../hover.js';
 import type { Hovered } from '../hover.js';
 import { marksOf } from '../marks.js';
-import { BLOOM, CAMERA, CINEMA, HOVER, INTERIOR, LEVELS, LIGHTING, NOTICE, PLANET, SKIN, SKY, SPACE, WALK, WEATHER } from '../materials.js';
+import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, NOTICE, PLANET, SKIN, SKY, SPACE, WALK, WEATHER } from '../materials.js';
 import type { Nav } from '../nav.js';
 import { frameMap, lastFrame as ownFrame } from '../frames.js';
 import { shownOverlay } from '../overlays.js';
@@ -308,8 +307,8 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   globalThis.addEventListener('resize', fit);
   const reduced = globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches;
   canvas.dataset['motion'] = reduced ? 'reduced' : 'full';
-  // A still for a comment opens on what the change is about, the rail's room given to the world (D108).
-  const opened = view.cinema === true ? cinemaView(map, view, canvas.clientWidth, canvas.clientHeight, registry.view(CINEMA, 'CINEMA')) : view;
+  // A still opens on what the change is about, the rail's room given to the world, framed as the comment's flat still frames it (D108, D175).
+  const opened = view.cinema === true ? { ...view, ...cinemaFocus(map, canvas.clientWidth, canvas.clientHeight, registry.view(CINEMA, 'CINEMA')) } : view;
   const controls = createControls(camera, canvas, map, opened, chrome, reduced);
   const cameraLook = registry.view(CAMERA, 'CAMERA');
   const levels = registry.view(LEVELS, 'LEVELS');

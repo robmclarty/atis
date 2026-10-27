@@ -541,8 +541,8 @@ function layOutRows(ranked: readonly Ranked[], top: number): readonly Row[] {
   });
 }
 
-/** The numbered box: solid in the hue for the primary, a thick ink frame for a secondary, a thin muted frame for a tertiary. */
-function drawBox(rank: number, tier: NoticeTier, x: number, y: number, hue: string): Markup {
+/** The numbered box: solid in the hue for the primary, a thick ink frame for a secondary, a thin muted frame for a tertiary; the minimap's stills hang the same box (D175). */
+export function drawBox(rank: number, tier: NoticeTier, x: number, y: number, hue: string): Markup {
   const solid = tier === 'primary';
   return el('g', { 'data-mark': rank, 'data-tier': tier }, [
     el('rect', {

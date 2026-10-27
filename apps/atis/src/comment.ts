@@ -11,13 +11,14 @@
  * A PR comment can link an image but not upload one, so the image is kept in
  * the repository itself, as Q38's lean has it: one file per head commit on an
  * orphan branch, `atis-maps`, written with git's plumbing so the working tree
- * and the index are never touched, and pushed to `origin`. It is the PNG the
- * headless world captures (D105) as a cinema still, the world alone framed
- * on what the change is about, when a browser and the built app are there,
- * else the still SVG (D86, D145). The comment links it by the commit that
- * holds it, so a later push never changes an older comment's picture, and its
- * footer says where it lives. With no image to link, the push refused, the
- * comment carries the HUD and the notices as text alone.
+ * and the index are never touched, and pushed to `origin`. It is the cinema
+ * still (D174), drawn as the minimap draws the field, as if it could be
+ * zoomed in on what the change is about, with the notices' numbered boxes
+ * the list points to (`renderCinema`, D175): an SVG no browser draws. The
+ * comment links it by the commit that holds it, so a later push never
+ * changes an older comment's picture, and its footer says where it lives.
+ * With no image to link, the push refused, the comment carries the HUD and
+ * the notices as text alone.
  */
 
 import { execFile } from 'node:child_process';

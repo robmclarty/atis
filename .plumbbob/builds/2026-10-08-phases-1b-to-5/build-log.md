@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 71 — feat(cli): post the map to a pull request through gh
+**Current step:** 118 — feat(svg): draw the comment's image and the fingerprint as the minimap zoomed in
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -123,7 +123,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 68. feat(cli): capture the world headless as a PNG
 - ☑ 69. feat(cli): watch the repo and push new weather to the tab
 - ☑ 70. feat(cli): render the terrain fingerprint for a README
-- ☐ 71. feat(cli): post the map to a pull request through gh
+- ☑ 71. feat(cli): post the map to a pull request through gh
+- ☐ 118. feat(svg): draw the comment's image and the fingerprint as the minimap zoomed in
 - ☐ 72. build(atis): bundle the workspace into a package that installs
 - ☐ 73. docs(atis): write the user's README with the legend and the fingerprint
 - ☐ 74. feat(cli): serve MCP tools that point at the open map
@@ -224,7 +225,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] editor links: parse the filled template with new URL() and check its protocol (refusing javascript:, data:, vbscript:, blob: and file:, or allowing known editor schemes and https), and refuse control characters in atis.config.json's editor, since browsers strip tabs and newlines so "java\tscript:" passes the denylist in libs/core/src/config.ts
 - [x] stars show through a cell wherever churny files' swells sink the skin below the stars' plane: on step 43's 20,000-file map whole packages read as star fields (seen at step 66)
 - [x] step 43's 20,000-file map draws its first frame about 5 s after it arrives on both backends, 0.7 s of it the composites' tissue and grid; C14 names no first frame at that size (step 66)
-- [ ] a PNG capture frames the tab's opening view, the far-zoom planet with the HUD and the notices' rail, where the numbered notice boxes are not drawn; a PR comment's image may read better framed at the surface (step 68)
+- [x] a PNG capture frames the tab's opening view, the far-zoom planet with the HUD and the notices' rail, where the numbered notice boxes are not drawn; a PR comment's image may read better framed at the surface (step 68)
+- [x] draw the comment's image and the fingerprint the way the minimap draws the field (flat skins and files, the notices' numbered boxes), as if the minimap could be zoomed in, rather than the world's lit still and the SVG's terrain (Rob at range 19's stop)
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -341,6 +343,9 @@ Harvest results this boundary:
 - **blocker**: park 75 · editor links: parse the filled template with new URL() and check its protocol (refusing javascript:, data:, vbscript:, blob: and file:, or allowing known editor schemes and https), and refuse control characters in atis.config.json's editor, since browsers strip tabs and newlines so "java\tscript:" passes the denylist in libs/core/src/config.ts → a repo's own atis.config.json can slip a script URL past the editor-link guard ("java\tscript:"), so fix it as a step before range 19's deliveries
 - **tangent**: park 76 · stars show through a cell wherever churny files' swells sink the skin below the stars' plane: on step 43's 20,000-file map whole packages read as star fields (seen at step 66) → a look issue over churny cells for the next world tuning pass; it predates this range
 - **tangent**: park 77 · step 43's 20,000-file map draws its first frame about 5 s after it arrives on both backends, 0.7 s of it the composites' tissue and grid; C14 names no first frame at that size (step 66) → C14 names no first frame at 20,000 files, and no real repo that size is in the corpus
+- 2026-10-27, at range 19 of 33's stop: 2 parked ideas, classified.
+- **tangent**: park 78 · a PNG capture frames the tab's opening view, the far-zoom planet with the HUD and the notices' rail, where the numbered notice boxes are not drawn; a PR comment's image may read better framed at the surface (step 68) → the comment's image now takes the cinema framing (D174 (comment-image)), and whether `--png` should too can wait for the README (step 73), the next place a PNG is shown
+- **blocker**: park 79 · draw the comment's image and the fingerprint the way the minimap draws the field (flat skins and files, the notices' numbered boxes), as if the minimap could be zoomed in, rather than the world's lit still and the SVG's terrain (Rob at range 19's stop) → it amends D174 (comment-image) and D107 (fingerprint), and step 73's README shows the fingerprint, so it becomes step 118 in a bare range of its own ahead of range 20, where you judge the look at its pause
 
 ## Log
 
@@ -2356,3 +2361,133 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-27 — step 68 checkpointed · 2211f6a66 — feat(cli): capture the world headless as a PNG (2 red, 1 drift, 24m)
 - 2026-10-27 — step 69 checkpointed · 0f6791ad8 — feat(cli): watch the repo and push new weather to the tab (1 drift, 14m)
 - 2026-10-27 — step 70 checkpointed · 63b37d69c — feat(cli): render the terrain fingerprint for a README (1 drift, 9m)
+- 2026-10-27 — step 71 checkpointed · 13570faa5 — feat(cli): post the map to a pull request through gh (1 drift, 82m)
+
+  **Summary**: The comment's image is now a cinema still. The world draws no chrome, and the frame centres on the change's notices and changed files at a zoom between the surface and the cell level, so it is never the far-zoom planet. The light rectangle is gone: the open field between the cells is now as black as the space past the layout's edge, in the tab as well as the still. Your try on PR 2 showed the rest works as Q38 (comment-image) leans: one comment, updated in place on the second run, its image served from the `atis-maps` branch.
+
+  1. A `?cinema` page frames a still on what the change is about, with no chrome
+  2. Shore files would have pulled the frame into empty sky, so only the terrain counts
+  3. The light rectangle was the key light's highlight on the open field, now kept to the cells' bodies
+  4. The framing is three live tokens
+
+  **Readout**:
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored:
+               - D108 (pr-comment), D145 (png-browser)
+               - D86 (svg-stays-the-fixture), D120 (added-vs-modified)
+  constraints  14 of 14 honored
+  seam         strayed: 15 paths outside the seam
+               - apps/atis/src/__tests__/index.test.ts
+               - apps/atis/src/index.ts
+               - apps/atis/src/png.ts
+               - apps/web/src/__tests__/registry.test.ts
+               - apps/web/src/__tests__/world.test.ts
+               - apps/web/src/main.ts
+               - apps/web/src/materials.ts
+               - apps/web/src/registry.ts
+               - apps/web/src/view.ts
+               - apps/web/src/world/draw.ts
+               - apps/web/src/world/skin.ts
+               - docs/design.md
+               - libs/svg/src/chrome.ts
+               - apps/web/src/__tests__/cinema.test.ts
+               - apps/web/src/cinema.ts
+  diff         +880 -32 across 21 files
+  spent        82 min · 5 turns · 212s gate · green first run
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Recommendation**: Rerun `atis --comment` in `~/Projects/atis/code/atis-comment-test` to see the darker still on PR 2 (I have run `pnpm build`), then say `looks good`, which takes Q38 (comment-image) as its lean. Your tries showed the flow, the format and the in-place update work, and the framing and the rectangle were the two things wrong in the still. Approving lands the step and brings range 19's stop card, where P78 asks whether `--png` should take the same framing.
+
+  **1.** A `?cinema` page frames a still on what the change is about, with no chrome
+
+  A comment's reader cannot zoom, so the tab's opening frame, the far-zoom planet, was a dot at a comment's size. `apps/web/src/cinema.ts` computes the box around every notice's target and every changed file the terrain places, and frames it to fill 70% of the screen. The zoom is held between 2, just past the surface's gate, so it is never the planet, and 3, so a one-file change keeps its cell and neighbours around it rather than becoming a close-up. A change too wide for the surface frames its notices alone. If even those spread too wide, it centres on the first notice at the widest surface frame.
+
+  The page hides the chrome, and the world fits the whole canvas with no rail and opens no cell as a slide. The notices' numbered boxes are the world's own, not the chrome's, so they stay, and the comment's numbered list points into the picture. `--comment` captures with `?cinema`. `--png` still captures the tab as it opens (parked as P78).
+
+  **2.** Shore files would have pulled the frame into empty sky, so only the terrain counts
+
+  My first frames sat off-centre over empty space. A changed doc or test has a position in the layout's strip above the terraces, but the world draws the shore in the rail, not on the field. So the box now counts only files and cells on the terrain.
+
+  On this repo's last three commits the still frames all six notices, numbered. On PR 2's one-file change it frames `config.ts` inside its cell. Both are in `/tmp/atis-cine/` (`wide.png` and `pr.png`) if you want to look before posting again.
+
+  **3.** The light rectangle was the key light's highlight on the open field, now kept to the cells' bodies
+
+  The rectangle was the layout's whole extent rendering at about (28, 32, 36) against (2, 3, 5) past its edge, though the field's albedo is near-black (7, 9, 12). I ruled out the albedo, the ambient light and the wet sheen by overriding each token live: only switching off the key light took the field to black. Its specular highlight lit every unit of the open field. A new token, `SKIN.fieldSheen`, sets the share of that shine, the highlight and the wet sheen together, that the open field keeps between the cells' bodies. At its default of 0 the field renders at about (1, 2, 3), which is the space D169 (dark-space-field) says it is. The cells keep their full shine, and the band lines stay, since you said they help you orient.
+
+  This is a world-wide look change, not a still-only one: the tab's surface loses the rectangle too. The token is live in the dev panel, and it has a row in `docs/design.md`. The world smoke test's first case judged a "lit" frame as more than 20% of pixels clear of the field, and the field itself had been supplying many of them. It now asks for 5%, still well clear of a blank frame's none.
+
+  **4.** The framing is three live tokens
+
+  `CINEMA.share`, `CINEMA.farthest` and `CINEMA.nearest` are in the registry, so the dev panel tunes them live on a `?cinema=1` page. They also have rows under "The levels of detail and the camera" in `docs/design.md`, which is a stray beside `libs/svg/src/chrome.ts`'s two exports. Tests pin the framing on the demo, a smoke case pins the still (no chrome, the surface, no planet, no slide, a clean console), and the pure `commentBody` goldens are unchanged.
+
+- 2026-10-27 — range 19 of 33's stop recorded — try the deliveries: a fixture's PNG captured twice, byte-identical; watch mode pushing a new commit's weather to an open tab; the fingerprint; and, only if you choose, one real `--comment` on a PR of yours, the one thing in this range that publishes
+
+  **Summary**: Wave 4's deliveries are built. The editor-link guard now reads a link's scheme the way a browser does, so a repo's config can no longer slip a script past it. `atis` takes subcommands. `--png` captures the world headless, the same bytes twice. `--watch` pushes each new commit's map to the open tab, and the weather swaps in place over the same terrain. `atis fingerprint` draws the terrain alone for a README. `--comment` posts the map to the branch's PR, which you tried on PR 2. Its image became a cinema still at the pause, which settled Q38 (comment-image) as D174 (comment-image).
+
+  1. Step 71 settled Q38 at its pause, and its image work reached the world's look
+  2. Four of the six steps strayed a few paths each, none widening what its step does
+  3. A capture and a watch both hold still by freezing or reading one thing
+  4. The fingerprint and the editor-link fix are small and settled
+  5. Your two PNG captures came out the same, and PR 2 is still open
+
+  **Readout**:
+
+  ```text
+  steps        6 of 6 landed
+               - 117 1a1388f · 67 5fc5adf · 68 2211f6a · 69 0f6791a · 70 63b37d6
+               - 71 13570fa
+  check        green: 1 of 1 checks, 6 landings
+  done-when    met
+  decisions    honored:
+               - D173 (editor-link-scheme), D104 (subcommands)
+               - D105 (png-capture), D145 (png-browser)
+               - D106 (watch-mode), D134 (loopback-trust)
+               - D107 (fingerprint), D108 (pr-comment)
+               - D174 (comment-image)
+  constraints  14 of 14 honored
+  seam         strayed: 25 paths outside 4 steps' seams
+               - step 68: apps/atis/src/__tests__/cli.test.ts and 3 others
+               - step 69: apps/atis/src/__tests__/cli.test.ts and 3 others
+               - step 70: apps/atis/src/__tests__/cli.test.ts and 1 other
+               - step 71: apps/atis/src/__tests__/index.test.ts and 14 others
+  diff         +2794 -137 across 45 files
+  spent        2h 17m · 2 red runs · 4 drift warnings
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Harvested**: 2 of 79 parked ideas open
+
+  - P78 · a PNG capture frames the tab's opening view, the far-zoom planet with the HUD and the notices' rail, where the numbered notice boxes are not drawn; a PR comment's image may read better framed at the surface (step 68) → lean: tangent, the comment's image now takes the cinema framing (D174 (comment-image)), and whether `--png` should too can wait for the README (step 73), the next place a PNG is shown
+  - P79 · draw the comment's image and the fingerprint the way the minimap draws the field (flat skins and files, the notices' numbered boxes), as if the minimap could be zoomed in, rather than the world's lit still and the SVG's terrain (Rob at range 19's stop) → lean: blocker, it amends D174 (comment-image) and D107 (fingerprint), and step 73's README shows the fingerprint, so it becomes step 118 in a bare range of its own ahead of range 20, where you judge the look at its pause
+
+  **Recommendation**: Confirm P78 as a tangent and P79 as a blocker, then run the next run, which will be step 118 on its own. You found the two PNG captures alike, the stop's first check, and the comment was tried on PR 2. A minimap-style still is a look you will want to judge before the README shows it, so it gets a pause of its own rather than riding range 20. The watch is the one delivery still untried: run `atis --watch` on a branch of any repo with a commit to make, then commit and watch the tab's weather change without the ground moving.
+
+  **1.** Step 71 settled Q38 at its pause, and its image work reached the world's look
+
+  Q38 was still open when the range reached it, so step 71 stopped at its pause instead of landing. Your try on PR 2 settled it as its lean, recorded as D174 (comment-image) in `intent.md`. The image is kept on an orphan `atis-maps` branch pushed to origin, one file per head commit, linked by the commit that holds it.
+
+  Your two looks reshaped the image. It is now a cinema still. A `?cinema` page draws no chrome, frames the notices' targets and the changed files on the terrain at a zoom between 2 and 3 (the `CINEMA.*` tokens), and opens no slide. The light rectangle turned out to be the key light's highlight on the whole open field, so a new token, `SKIN.fieldSheen` (default 0), keeps the shine to the cells' bodies. That changes the tab's surface too: the field now reads as the space D169 (dark-space-field) says it is. The step strayed 15 paths outside its seam, most of them in `apps/web/src/` for the still and the field.
+
+  **2.** Four of the six steps strayed a few paths each, none widening what its step does
+
+  Step 68 (PNG) let `cache.ts`'s `writeAtomic` take bytes, and added `vite` as a dev dependency so its test builds the real app into a temp directory. It also gave a layout test the 60 s timeout its two siblings carry, after another session's load on this machine pushed that test past vitest's 5 s once. Step 69 (watch) drove the watch from `run.ts`, outside its seam, and added a usage line. Step 70 (fingerprint) put its demo golden under `libs/svg/fixtures/`. Step 71 is highlight 1. Steps 117 and 67 landed plumb.
+
+  **3.** A capture and a watch both hold still by freezing or reading one thing
+
+  `--png` opens the world at 1280 × 800, reduced motion on. A new `?time=` parameter freezes the scheduler's clock, and the capture waits for the ready flag and two more frames. The test captures the demo fixture twice in two fresh browsers and gets the same bytes. By hand on this repo, twice gave the same bytes on WebGPU, the second run in 2.3 s. With no browser it exits 2, naming `npx playwright-core install chromium`.
+
+  `--watch` reads one signature on a 500 ms timer: HEAD's commit, plus the stamps of the index and `.check/summary.json`. It rebuilds once that signature has held still a tick. It polls rather than watching files because git renames lock files over HEAD, the index and its refs. The new map goes over a socket at `/watch` that answers only the run's token from the page's own origin (D134 (loopback-trust)). The page swaps in a map on the same ground through the scrubber's cross-fade, terrain unmoved, and redraws one on new ground at your zoom, tilt and centre.
+
+  **4.** The fingerprint and the editor-link fix are small and settled
+
+  `atis fingerprint --out <svg>` maps the whole repository at the head without the cache, so one commit gives one image wherever it runs. It draws the terraces, skins and files alone at 480 × 300, framed on the terraces. The README shows atis's own fingerprint, and `docs/fingerprint.md` documents a daily GitHub Actions refresh that atis never installs. Step 117 (D173 (editor-link-scheme)) trims C0 controls, drops tabs and newlines, and lowercases a link's scheme before refusing `javascript:`, `data:`, `vbscript:`, `blob:` and `file:`. An `editor` holding a control character now stops the run before it serves.
+
+  **5.** Your two PNG captures came out the same, and PR 2 is still open
+
+  You captured `a.png` and `b.png` from one commit and found them the same, which is the stop's first check. `atis` is on your PATH as a wrapper around this checkout's build. `pnpm build` has been run. PR 2, its `test/atis-comment` branch, the `atis-maps` branch and the `~/Projects/atis/code/atis-comment-test` worktree all stay until you say. Cleaning up is `gh pr close 2`, `git push origin --delete test/atis-comment atis-maps` and `git worktree remove ../atis-comment-test`.

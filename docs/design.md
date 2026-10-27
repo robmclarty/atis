@@ -373,8 +373,10 @@ the world, the relief, the levels of detail and the camera, and the chrome the
 world alone draws (the hover, the walk's framing, the minimap, an opened cell's
 slide and its wiring plate). Each is a field of one object, defined once: the
 skin, the space ground, the planet, lights, sky, bloom, weather, notices, levels, camera,
-hover, walk, minimap and slide in `apps/web/src/materials.ts`, the relief in
-`libs/scene/src/heightfield.ts` (`RELIEF`), the planet's shape in
+hover, walk and slide in `apps/web/src/materials.ts`, the relief in
+`libs/scene/src/heightfield.ts` (`RELIEF`), a still's framing in
+`libs/scene/src/cinema.ts` (`CINEMA`), the minimap's look in
+`libs/scene/src/minimap.ts` (`MINIMAP`), the planet's shape in
 `libs/scene/src/planet.ts` (`PLANET_LAYOUT`), the slide's layout in
 `libs/scene/src/interior.ts` (`INTERIOR_LAYOUT`) and the wiring plate's spacing
 in `libs/scene/src/wiring.ts` (`WIRING_SPACING`). The world reads every one
@@ -561,7 +563,7 @@ from the space ground's rules (D169, amending D151's terraces).
 | `LEVELS.compositeClose` | `0.25` | the share a package holds open at, and closes back into one composite under as the view zooms out; every package is open from LOD2 on |
 | `CAMERA.smooth` | `0.1` | how long, in seconds, the camera settles on an input: a wheel's steps read as one continuous zoom, and nothing coasts once the pointer stops; reduced motion settles at once |
 | `CAMERA.dragSmooth` | `0.05` | the shorter settle a drag takes |
-| `CINEMA.share` | `0.7` | in a still for a pull request's comment (`?cinema`, D108), the share of the screen the box round the change's notices and changed files fills, in whichever of its width and height it fills first; no chrome stands beside it |
+| `CINEMA.share` | `0.7` | in a still for a pull request's comment, the minimap's flat still the comment posts (D174, D175) and the world's `?cinema` page alike, the share of the picture the box round the change's notices and changed files on the terrain fills, in whichever of its width and height it fills first; no chrome stands beside it |
 | `CINEMA.farthest` | `2` | the farthest zoom over the fit the still stands at, just past the surface's gate, so a change spread over the whole field is never drawn as the far zoom's planet; a box too wide for it is centred and cropped |
 | `CINEMA.nearest` | `3` | the nearest it stands at, well short of the cells' level, so a change of one small file is framed with its cell and its neighbours round it rather than as a file's plate |
 
@@ -578,14 +580,38 @@ from the space ground's rules (D169, amending D151's terraces).
 
 ### The minimap
 
+The inset at the chrome's bottom left (D154), and the two stills drawn as if it
+could be zoomed in (D175): the image `atis --comment` posts, the change's
+stretch of the minimap at the cinema framing above, and the fingerprint
+`atis fingerprint` writes, the whole terrain's body, skins and files with no
+weather. The comment's image writes one kind of word: each notice's target it
+frames is named in a callout set off the body on the empty ground, a flat
+block holding the target's numbered boxes, the ones the comment's list points
+to, and its short name, joined back to the target by a dotted leader, all
+inside the frame. Both are SVG from `libs/svg` (`cinema.ts`,
+`fingerprint.ts`), drawn with these tokens and the chrome's: `CHROME_GROUND`
+under them, `CHANGE_HUE`, and for a callout the notice row's
+`NOTICE_TEXT_SIZE`, `NOTICE_BOX` and `NOTICE_TEXT_GAP`, the leaders'
+`LEADER_INK`, `LEADER_WIDTH` and `LEADER_DASH`, and the world labels' padding
+and gap (`LABELING`).
+The dev panel moves the tokens live in the inset only, so a look tuned there
+reaches the stills once its value is written back into `minimap.ts`. Two sizes
+are baked, as the stills' footprint rather than a look: the comment's still is
+480 by 300 of the minimap's pixels shown at twice that (`CINEMA_STILL`), so its
+boxes and dots read at the inset's own sizes in a comment's column, and the
+fingerprint is 480 by 300 with an 8-pixel margin (`FINGERPRINT`).
+
 | Token | Value | Use |
 | --- | --- | --- |
 | `MINIMAP.width` | `240` | the most room the inset takes across, in pixels (D154) |
 | `MINIMAP.height` | `180` | and down |
 | `MINIMAP.pad` | `6` | the margin inside its frame |
 | `MINIMAP.body` | `#333c47` | the body, drawn flat in one grey |
+| `MINIMAP.skin` | `#4b5664` | each cell's skin, drawn round the body's grey in a hairline (`CHROME_STROKE_WIDTH`), so the cells read apart in the inset and the stills |
 | `MINIMAP.reachShare` | `0.55` | the share of a reached cell's luminance its ground takes in the reach's hue, flattened as the legend flattens the world's one translucent ink |
-| `MINIMAP.changedR` | `1.5` | a changed file's dot |
+| `MINIMAP.file` | `#5a6573` | every file the terrain places, a flat disc at its own size (its mass, C11) in a grey lighter than the body |
+| `MINIMAP.fileFloor` | `1.5` | how many pixels across a file must be to be drawn, so the inset draws only the files it can hold and a still draws them all |
+| `MINIMAP.changedR` | `1.5` | a changed file's dot, at least; a changed file wider than it is drawn at its own size in the change hue |
 | `MINIMAP.view` | `#e6edf3` | the ink the view's outline is drawn in |
 | `MINIMAP.viewWidth` | `1` | its width |
 

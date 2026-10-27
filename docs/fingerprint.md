@@ -1,10 +1,11 @@
 # The terrain fingerprint
 
-`atis fingerprint` draws a repository's terrain alone, small, for a README:
-the depth terraces, each cell's skin and the files on them, as the still map
-draws its ground. It draws no weather, no notices, no overlay and no shore,
-and it writes no text. It is a picture of the shape of the code, and of
-nothing anyone asked about it.
+`atis fingerprint` draws a repository's terrain alone, small, for a README,
+the way the world's minimap draws the field, as if it could be zoomed in: each
+cell's skin flat in one grey and drawn round in a hairline, and every file a
+flat disc at its own size. It draws no weather, no notices, no overlay and no
+shore, and it writes no text. It is a flat map of the shape of the code to
+orient on, and of nothing anyone asked about it.
 
 ![atis's own terrain fingerprint](img/fingerprint.svg)
 
@@ -13,11 +14,12 @@ atis fingerprint --out docs/img/fingerprint.svg
 atis fingerprint --repo ../other --head v2.0.0 --out other.svg
 ```
 
-The image is always 480 by 300, so it never changes the space it takes on a
-page. It maps the whole repository at the head (`HEAD` unless `--head` names
-another commit), measured afresh: the fingerprint neither reads nor writes
-the terrain cache under `.atis/`, so one commit gives one layout and the same
-bytes wherever it is drawn. The terrain only changes when the structure does,
+The image is always 480 by 300, the whole terrain fitted inside it and
+centred, so it never changes the space it takes on a page. It maps the whole
+repository at the head (`HEAD` unless `--head` names another commit),
+measured afresh: the fingerprint neither reads nor writes the terrain cache
+under `.atis/`, so one commit gives one layout and the same bytes wherever it
+is drawn. The terrain only changes when the structure does,
 which is the point. GitHub Next's repo-visualizer found that a picture of a
 repository seen every day makes its structural change noticeable by
 familiarity: a new package, a module that grew, a cell that split.

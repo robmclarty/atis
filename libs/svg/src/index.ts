@@ -5,9 +5,11 @@
  */
 
 export * from './chrome.js';
+export * from './cinema.js';
 export * from './el.js';
 export * from './fingerprint.js';
 export * from './legend.js';
+export * from './minimap.js';
 export * from './overlays.js';
 export * from './patterns.js';
 export * from './practice.js';

@@ -6,16 +6,14 @@
  * import so the registry (D156) and its tests read them in Node; `world/`
  * reads each through the registry, so the dev panel moves them live, and
  * `docs/design.md` records every field under "World materials". The levels of
- * detail's gates and the camera's give ride with them (step 44), and so do the
- * minimap's look (D154), the one piece of chrome the scene's tokens do not
- * already dress, an opened cell's slide (step 40), and the planet the far
- * zoom draws (D170).
+ * detail's gates and the camera's give ride with them (step 44), and so do an
+ * opened cell's slide (step 40) and the planet the far zoom draws (D170). The
+ * minimap's look and a still's framing are the scene's (`MINIMAP`, `CINEMA`),
+ * since the comment's still and the fingerprint draw with them too (D175).
  */
 
 import { CELL_GATE, COMPOSITE_GATE, INTERIOR_LAYOUT, LOD_GATES, PLANET_LAYOUT } from 'scene';
 import type { InteriorLayout, LodGate, PlanetLayout } from 'scene';
-
-import type { CinemaLook } from './cinema.js';
 
 /** The skin's material: the albedos, the membrane line, how rough and how wet it is, the share of its albedo kept at the far field, and the tissue's own faint light. */
 export type SkinLook = {
@@ -254,15 +252,6 @@ export type CameraLook = {
 export const CAMERA: CameraLook = { smooth: 0.1, dragSmooth: 0.05 };
 
 /**
- * A still for a pull request's comment (`?cinema`, D108): the share of the
- * screen the box round the change's notices and files fills, and the
- * farthest and nearest zoom over the fit the still may stand at, just past
- * the surface's gate (`LEVELS.gates`, 1.7) and short of the cells' level (6),
- * so it is never the far field's planet nor a file's plate (`cinema.ts`).
- */
-export const CINEMA: CinemaLook = { share: 0.7, farthest: 2, nearest: 3 };
-
-/**
  * The levels of detail's gates (§6): the zoom over the fit each of LOD1 to
  * LOD4 is entered at and left at; the cell's gate beside them (D165): the
  * share of the free screen a cell opens at, the share it holds open at, and
@@ -288,27 +277,6 @@ export const LEVELS: LevelsLook = {
   compositeOpen: COMPOSITE_GATE.open,
   compositeClose: COMPOSITE_GATE.close,
 };
-
-/**
- * The minimap at the chrome's bottom left (D154): flat chrome, never glowing
- * (D12). It takes at most this much room, keeps this margin inside its frame,
- * and draws the body flat in one grey; a reached cell's own ground lays the
- * reach's hue over it at its luminance times this share, flattened as the
- * legend flattens the world's one translucent ink; a changed file is a dot of
- * this radius; and the view is outlined in this ink at this width.
- */
-export type MinimapLook = {
-  readonly width: number;
-  readonly height: number;
-  readonly pad: number;
-  readonly body: string;
-  readonly reachShare: number;
-  readonly changedR: number;
-  readonly view: string;
-  readonly viewWidth: number;
-};
-
-export const MINIMAP: MinimapLook = { width: 240, height: 180, pad: 6, body: '#333c47', reachShare: 0.55, changedR: 1.5, view: '#e6edf3', viewWidth: 1 };
 
 /**
  * The hover (step 38): the thing under the pointer is outlined in this ink at

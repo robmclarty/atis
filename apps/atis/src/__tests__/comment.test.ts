@@ -151,13 +151,10 @@ const fakeGh = (): FakeGh => {
   return { path, state: () => JSON.parse(readFileSync(join(dir, 'state.json'), 'utf8')) as ReturnType<FakeGh['state']> };
 };
 
-/** No built app beside it, so the image is the still SVG and no browser is launched (D86). */
-const unbuilt = (): string => join(temp('web'), 'web');
-
 test("a --comment run keeps the image on origin's atis-maps, posts one comment on the branch's PR, and updates it on the next run (D108, Q38)", async () => {
   const repo = branch();
   const gh = fakeGh();
-  const outcome = await commentRun({ repo, assets: unbuilt(), verbose: false, gh: gh.path });
+  const outcome = await commentRun({ repo, verbose: false, gh: gh.path });
   expect(outcome.stderr).toBe('');
   expect(outcome.exitCode).toBe(0);
   expect(outcome.stdout).toBe(`NOINST, 1 file changed, 0 notices, commented on https://github.com/owner/repo/pull/7#issuecomment-1 with its SVG on ${MAPS_BRANCH}\n`);
@@ -167,7 +164,11 @@ test("a --comment run keeps the image on origin's atis-maps, posts one comment o
   const origin = git(repo, 'remote', 'get-url', 'origin');
   const kept = git(origin, 'rev-parse', `refs/heads/${MAPS_BRANCH}`);
   expect(git(origin, 'ls-tree', '--name-only', kept)).toBe(`${head}.svg`);
-  expect(git(origin, 'show', `${kept}:${head}.svg`)).toMatch(/^<svg /);
+  // The image is the cinema still, the minimap zoomed in on the change, drawn with no browser (D175).
+  const image = git(origin, 'show', `${kept}:${head}.svg`);
+  expect(image).toMatch(/^<svg /);
+  expect(image).toContain('<g id="minimap">');
+  expect(image).not.toContain('id="world"');
   expect(git(repo, 'status', '--porcelain')).toBe('');
   expect(git(origin, 'rev-list', '--count', kept)).toBe('1');
 
@@ -177,7 +178,7 @@ test("a --comment run keeps the image on origin's atis-maps, posts one comment o
   expect(comment?.body).toContain('`main` → `');
 
   // A second run updates the comment it posted rather than posting another, and keeps its image over the branch's tip.
-  const again = await commentRun({ repo, assets: unbuilt(), verbose: false, gh: gh.path });
+  const again = await commentRun({ repo, verbose: false, gh: gh.path });
   expect(again.exitCode).toBe(0);
   expect(again.stdout).toContain('commented on https://github.com/owner/repo/pull/7#issuecomment-1 ');
   const state = gh.state();
@@ -191,7 +192,7 @@ test("a --comment run keeps the image on origin's atis-maps, posts one comment o
 
 test('with no origin to keep the image on, the comment carries the map as text alone and says why (Q38)', async () => {
   const gh = fakeGh();
-  const outcome = await commentRun({ repo: branch(false), assets: unbuilt(), verbose: false, gh: gh.path });
+  const outcome = await commentRun({ repo: branch(false), verbose: false, gh: gh.path });
   expect(outcome.exitCode).toBe(0);
   expect(outcome.stdout).not.toContain(MAPS_BRANCH);
   expect(outcome.stderr).toMatch(/^atis: the comment carries no image, since atis-maps could not be pushed: /);
@@ -200,13 +201,13 @@ test('with no origin to keep the image on, the comment carries the map as text a
 
 test('with no gh, or no pull request for the branch, --comment exits 2 naming why, before it measures or posts anything (C4)', async () => {
   const repo = branch();
-  const none = await commentRun({ repo, assets: unbuilt(), verbose: false, gh: join(temp('nowhere'), 'gh') });
+  const none = await commentRun({ repo, verbose: false, gh: join(temp('nowhere'), 'gh') });
   expect(none.exitCode).toBe(2);
   expect(none.stderr).toMatch(/^atis: --comment needs the GitHub CLI, gh, on the PATH \(https:\/\/cli\.github\.com\)/);
 
   const gh = fakeGh();
   writeFileSync(join(dirname(gh.path), 'no-pr'), '');
-  const nopr = await commentRun({ repo, assets: unbuilt(), verbose: false, gh: gh.path });
+  const nopr = await commentRun({ repo, verbose: false, gh: gh.path });
   expect(nopr.exitCode).toBe(2);
   expect(nopr.stderr).toBe('atis: --comment found no pull request for this branch: no pull requests found for branch "feature"\n');
   expect(gh.state().calls.map((call) => call.slice(0, 2).join(' '))).toEqual(['--version', 'pr view']);

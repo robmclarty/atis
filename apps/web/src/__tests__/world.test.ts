@@ -38,9 +38,10 @@
  * told of (D102). Opened watching, the world takes the maps the watch pushes
  * over its socket, stood in for here by the browser's own: one on the ground
  * it draws cross-fades its weather in without the page reloading, and one on
- * other ground is drawn afresh where the reader stood (D106). As a still for
- * a pull request's comment (`?cinema`), it draws no chrome and stands at the
- * surface framed on the change, never the planet, opening no slide (D108).
+ * other ground is drawn afresh where the reader stood (D106). As a still
+ * (`?cinema`), it draws no chrome and stands at the surface framed on the
+ * change where the comment's flat still is framed, never the planet, opening
+ * no slide (D108, D175).
  */
 
 import { accessSync, constants, readFileSync } from 'node:fs';

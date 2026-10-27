@@ -123,7 +123,7 @@ function channel(hex: string, at: number): number {
 }
 
 /** A `#rrggbb` colour laid at `share` over another, flattened to the colour the eye sees. */
-function over(top: string, under: string, share: number): string {
+export function over(top: string, under: string, share: number): string {
   return `#${[1, 3, 5]
     .map((at) => Math.round(channel(top, at) * share + channel(under, at) * (1 - share)))
     .map((value) => value.toString(16).padStart(2, '0'))

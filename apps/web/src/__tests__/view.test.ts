@@ -52,3 +52,8 @@ test('the centre is a layout point, `x,y`, else the frame opens on the layout\'s
   expect(viewOf('?centre=1,2,3').centre).toBeUndefined();
   expect(viewOf('')).not.toHaveProperty('centre');
 });
+
+test('the page asks for a still with ?cinema, framed by the scene as the comment frames its own (D175)', () => {
+  expect(viewOf('?cinema=1').cinema).toBe(true);
+  expect(viewOf('')).not.toHaveProperty('cinema');
+});
