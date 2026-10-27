@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 69 — feat(cli): watch the repo and push new weather to the tab
+**Current step:** 70 — feat(cli): render the terrain fingerprint for a README
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -121,7 +121,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 117. fix(core): refuse an editor link whose scheme runs a script however the template spells it
 - ☑ 67. refactor(cli): give atis subcommands beside its map flags
 - ☑ 68. feat(cli): capture the world headless as a PNG
-- ☐ 69. feat(cli): watch the repo and push new weather to the tab
+- ☑ 69. feat(cli): watch the repo and push new weather to the tab
 - ☐ 70. feat(cli): render the terrain fingerprint for a README
 - ☐ 71. feat(cli): post the map to a pull request through gh
 - ☐ 72. build(atis): bundle the workspace into a package that installs
@@ -2354,3 +2354,4 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-27 — step 117 checkpointed · 1a1388f7c — fix(core): refuse an editor link whose scheme runs a script however the template spells it (4m)
 - 2026-10-27 — step 67 checkpointed · 5fc5adfc1 — refactor(cli): give atis subcommands beside its map flags (3m)
 - 2026-10-27 — step 68 checkpointed · 2211f6a66 — feat(cli): capture the world headless as a PNG (2 red, 1 drift, 24m)
+- 2026-10-27 — step 69 checkpointed · 0f6791ad8 — feat(cli): watch the repo and push new weather to the tab (1 drift, 14m)

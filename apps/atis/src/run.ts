@@ -58,7 +58,7 @@ import { basename, join, relative, resolve } from 'node:path';
 import { DEFAULT_CONFIG, OVERLAY_NAMES, buildMap, buildRepoMap, layOutTerrain } from 'core';
 import type { CheckBaseline, Commit, FrameInputs, Layout, MapJson, OverlayName, Structure } from 'core';
 import type { Browser } from 'playwright-core';
-import { renderSvg } from 'svg';
+import { renderFingerprint, renderSvg } from 'svg';
 
 import {
   codeKey,
@@ -304,6 +304,9 @@ function openTarget(target: string): void {
     /* the outputs are written or served; a viewer that will not launch is not a failure */
   }
 }
+
+/** The short form of a commit's sha a line names it by. */
+const shortSha = (sha: string): string => (SHA.test(sha) ? sha.slice(0, 7) : sha);
 
 function counted(total: number, noun: string): string {
   return `${String(total)} ${noun}${total === 1 ? '' : 's'}`;
@@ -687,6 +690,26 @@ export function run(options: Options): Outcome {
   }
 }
 
+/** The flags `atis fingerprint` takes (D107): the repository, the commit to draw, `HEAD` unless named, and the SVG to write. */
+export type FingerprintOptions = { readonly repo: string; readonly head?: string | undefined; readonly out: string };
+
+/**
+ * Write the terrain fingerprint for a README (D107): the whole repository at
+ * the head, measured afresh, neither reading nor writing the terrain cache,
+ * so one commit gives one layout and one image wherever it runs, and drawn
+ * as its terrain alone. Exits 0 once written, 2 on a repository it cannot
+ * read (C4).
+ */
+export function fingerprintRun(options: FingerprintOptions): Outcome {
+  try {
+    const { map } = measure(options.repo, { head: options.head, wholeRepo: true, cache: false });
+    writeAtomic(resolve(options.out), renderFingerprint(map));
+    return { exitCode: 0, stdout: `terrain of ${counted(map.terrain.organelles.length, 'file')} at ${shortSha(map.meta.head)}, wrote ${options.out}\n`, stderr: '' };
+  } catch (error) {
+    return failed(error);
+  }
+}
+
 /** The outcome of a run that needs the built web app and finds none (D133). */
 const unbuilt = (assets: string): Outcome => ({ exitCode: 2, stdout: '', stderr: `atis: no built web app at ${assets}; run \`pnpm build\` first\n` });
 
@@ -746,9 +769,6 @@ function mapOver(options: ServeRunOptions, request: BaseRequest): MapJson {
 
 /** A map as the server holds it: its JSON text, and the slots its raw output may be served for. */
 const rebuiltOf = (map: MapJson): Rebuilt => ({ map: serialize(map), slots: map.weather.checks.slots.map((slot) => slot.name) });
-
-/** The short form of a commit's sha a watch's line writes. */
-const shortSha = (sha: string): string => (SHA.test(sha) ? sha.slice(0, 7) : sha);
 
 /**
  * Read the repository, build the map and serve it with the built web app on

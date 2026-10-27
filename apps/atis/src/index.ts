@@ -4,7 +4,8 @@
  * The package's surface: the constants the command prints, `run`, which turns
  * a parsed set of flags into `map.json` on disk, `pngRun`, which captures the
  * world beside it as a PNG (D105), `serveRun`, which serves the world instead
- * (D92), and `serve`, the loopback server beneath both.
+ * (D92), `serve`, the loopback server beneath both, and `fingerprintRun`,
+ * which writes the terrain alone for a README (D107).
  */
 
 import { SCHEMA_VERSION } from 'core';
@@ -22,9 +23,14 @@ export const USAGE = `${NAME} ${VERSION}: a weather map for code changes.
        [--head <ref> | --working-tree] [options]
   atis --range <from>..<to> [options]
   atis --whole-repo [--head <ref>] [options]
+  atis fingerprint --out <svg> [--repo <path>] [--head <ref>]
 
 With no --out, --svg or --png, atis serves the world on 127.0.0.1 at a port of
 its own, opens it in a tab, and runs until interrupted.
+
+atis fingerprint writes the terrain alone, no weather and no notices, as a
+480 x 300 SVG for a README: the whole repository at the head (HEAD unless
+--head names another), measured afresh, the same bytes for one commit.
 
   --repo <path>   the repository to read (default: the working directory)
   --base <ref>    the ref the change is measured from (default: the trunk, the

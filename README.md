@@ -5,6 +5,10 @@ mass, health. The weather is what one change does to it: what moved, how far it
 ripples, what evidence covers it, what to look at first. A reviewer reads the
 weather in ten seconds, then descends only where the weather is bad.
 
+![atis's own terrain, drawn by atis fingerprint](docs/img/fingerprint.svg)
+
+atis's own terrain, drawn by `atis fingerprint` ([docs/fingerprint.md](./docs/fingerprint.md)).
+
 - [SPEC.md](./SPEC.md): the design, phase by phase.
 - [docs/prior-art.md](./docs/prior-art.md) and
   [docs/inspiration.md](./docs/inspiration.md): what it borrows, and from whom.

@@ -285,6 +285,26 @@ test('a leading word that is no flag names a command, an unknown one is misuse w
   expect(atis(['--help']).stdout).toContain('--base <ref>');
 }, MINUTE);
 
+test('atis fingerprint writes the terrain alone for one commit, the same bytes on a second run, and needs --out (D107, D104)', () => {
+  const dir = temp('fingerprint');
+  const [first, second] = [join(dir, 'a.svg'), join(dir, 'b.svg')];
+  const drawn = atis(['fingerprint', '--repo', REPO, '--head', 'HEAD~1', '--out', first]);
+  expect(drawn.status).toBe(0);
+  expect(drawn.stdout).toMatch(/^terrain of \d+ files at [0-9a-f]{7}, wrote .*a\.svg\n$/);
+  expect(atis(['fingerprint', '--repo', REPO, '--head', 'HEAD~1', '--out', second]).status).toBe(0);
+  const svg = readFileSync(first, 'utf8');
+  expect(readFileSync(second, 'utf8')).toBe(svg);
+  expect(svg).toContain('viewBox="0 0 480 300"');
+  expect(svg).not.toContain('id="weather"');
+
+  expect(atis(['fingerprint', '--help']).stdout).toContain('atis fingerprint --out <svg>');
+  for (const args of [['fingerprint'], ['fingerprint', '--svg', 'x.svg'], ['fingerprint', 'extra', '--out', 'x.svg']]) {
+    const result = atis(args);
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain('--help');
+  }
+}, 2 * MINUTE);
+
 test('a directory that is no repository exits 2 and writes nothing (C4)', () => {
   const directory = temp('bare');
   const out = join(directory, 'map.json');

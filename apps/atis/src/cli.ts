@@ -16,7 +16,7 @@ import { OVERLAY_NAMES } from 'core';
 import type { OverlayName } from 'core';
 
 import { USAGE, VERSION } from './index.js';
-import { pngRun, run, serveRun } from './run.js';
+import { fingerprintRun, pngRun, run, serveRun } from './run.js';
 import type { HeadAsked, Outcome, RangeAsked } from './run.js';
 import type { BaseAsked } from './sources/index.js';
 
@@ -220,8 +220,29 @@ async function mapCommand(argv: readonly string[]): Promise<Outcome> {
 /** A command that is not a map (D104): the words after its verb, parsed by the command itself. */
 type Command = (argv: readonly string[]) => Promise<Outcome>;
 
-/** The verbs atis takes ahead of its flags, each a command that is not a map (D104); `fingerprint` and `mcp` are to be the first. */
-const COMMANDS: ReadonlyMap<string, Command> = new Map();
+/** The flags `atis fingerprint` takes: the repository, the commit and the SVG to write (D107). */
+const FINGERPRINT_FLAGS = {
+  repo: { type: 'string' },
+  head: { type: 'string' },
+  out: { type: 'string' },
+  help: { type: 'boolean', short: 'h' },
+} as const;
+
+/** `atis fingerprint --out <svg>`: the terrain alone, small, for a README (D107); with no `--out` it is misuse (C4). */
+function fingerprintCommand(argv: readonly string[]): Promise<Outcome> {
+  let values: { readonly repo?: string | undefined; readonly head?: string | undefined; readonly out?: string | undefined; readonly help?: boolean | undefined };
+  try {
+    ({ values } = parseArgs({ args: [...argv], options: FINGERPRINT_FLAGS, allowPositionals: false }));
+  } catch (error) {
+    return Promise.resolve(misuse(error instanceof Error ? error.message : String(error)));
+  }
+  if (values.help === true) return Promise.resolve({ exitCode: 0, stdout: USAGE, stderr: '' });
+  if (values.out === undefined) return Promise.resolve(misuse('fingerprint needs --out <svg>'));
+  return Promise.resolve(fingerprintRun({ repo: values.repo ?? process.cwd(), head: values.head, out: values.out }));
+}
+
+/** The verbs atis takes ahead of its flags, each a command that is not a map (D104). */
+const COMMANDS: ReadonlyMap<string, Command> = new Map([['fingerprint', fingerprintCommand]]);
 
 /**
  * The command a leading verb names, or the map when the first word is a flag

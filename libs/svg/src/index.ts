@@ -6,6 +6,7 @@
 
 export * from './chrome.js';
 export * from './el.js';
+export * from './fingerprint.js';
 export * from './legend.js';
 export * from './overlays.js';
 export * from './patterns.js';
