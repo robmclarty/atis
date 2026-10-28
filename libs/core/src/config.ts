@@ -413,7 +413,9 @@ export const DEFAULT_CONFIG: Config = {
         '.dockerignore',
       ],
     },
-    { id: 'scripts', patterns: ['scripts/**', 'bin/**', 'hooks/**', '.husky/**', '*.sh', '*.mjs'] },
+    // The shell producer reads `.sh`, `.bash` and `.bats` files as terrain and tests (D117), so these
+    // three patterns hold only what it leaves: every one of them, when it is switched off.
+    { id: 'scripts', patterns: ['scripts/**', 'bin/**', 'hooks/**', '.husky/**', '*.sh', '*.bash', '*.bats', '*.mjs'] },
     { id: 'examples', patterns: ['examples/**', 'templates/**'], outside_members: true },
     { id: 'assets', patterns: ['site/**', 'www/**', ...IMAGES, ...FONTS, '*.css', '*.html', '*.svg', 'robots.txt'] },
     // Only non-test files reach the table, so `test/**` holds just the fixtures and data beside the tests.

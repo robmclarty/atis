@@ -173,6 +173,13 @@ test.each(OTHER_LANGUAGES)('the default table puts another language\'s %s file t
   expect(groupOf(path)).toBe(id);
 });
 
+test("the scripts row's shell patterns hold only what the shell producer leaves, every script and bats test when it is switched off (D117)", () => {
+  const unread = ['lib/log.sh', 'lib/net.bash', 'test/deploy.bats'];
+  expect(identifyGroups(unread.map((path) => ({ path, kind: 'other' })), DEFAULT_CONFIG.groups)).toEqual([{ id: 'scripts', files: unread }]);
+  // Read, they are terrain and a test, and the shore holds none of them.
+  expect(identifyGroups([{ path: 'lib/log.sh', kind: 'source' }, { path: 'lib/net.bash', kind: 'source' }, { path: 'test/deploy.bats', kind: 'test' }], DEFAULT_CONFIG.groups)).toEqual([]);
+});
+
 test('a root config folder is tool config, but its TypeScript and a nested config folder are not', () => {
   expect(groupOf('config/jest/react-dom-17-client.js')).toBe('config');
   expect(groupOf('config/build.ts')).toBeUndefined();

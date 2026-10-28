@@ -11,8 +11,8 @@
  * that cannot run here, reads nothing: its files stay where the shore table
  * puts them, and the scan says which producer and why (C2).
  *
- * TypeScript is the first producer, then Go (D113), Python (D115) and
- * Terraform (D116).
+ * TypeScript is the first producer, then Go (D113), Python (D115),
+ * Terraform (D116) and shell (D117).
  * Another language is a module of its own beside them and one more entry
  * in `PRODUCERS`, never a change to core.
  */
@@ -24,6 +24,7 @@ import type { EntryPointLookup, UnreadProducer } from 'core';
 import { GO_EXTENSIONS, goUnavailable, readGo } from './go.js';
 import { TYPESCRIPT_EXTENSIONS, fallowEntryPoints, readTypeScript } from './imports.js';
 import { PYTHON_EXTENSIONS, pythonUnavailable, readPython } from './python.js';
+import { SHELL_EXTENSIONS, readShell, shellUnavailable } from './shell.js';
 import { TERRAFORM_EXTENSIONS, readTerraform } from './terraform.js';
 import type { EntryPoints, ParsedFiles, Prior } from './imports.js';
 import { gitTree, walk } from './scan.js';
@@ -92,8 +93,16 @@ const TERRAFORM: Producer = {
   read: ({ tree, files }) => ({ scan: readTerraform(tree, files), parsed: {} }),
 };
 
+/** The shell producer: the bash grammar it parses with ships with atis (C9), so it runs wherever that grammar loaded (D117). */
+const SHELL: Producer = {
+  id: 'shell',
+  extensions: SHELL_EXTENSIONS,
+  unavailable: shellUnavailable,
+  read: ({ tree, files }) => ({ scan: readShell(tree, files), parsed: {} }),
+};
+
 /** Every producer atis runs, in the order a file's extension is offered to them. */
-export const PRODUCERS: readonly Producer[] = [TYPESCRIPT, GO, PYTHON, TERRAFORM];
+export const PRODUCERS: readonly Producer[] = [TYPESCRIPT, GO, PYTHON, TERRAFORM, SHELL];
 
 /** Why a producer `atis.config.json` switched off read nothing. */
 const SWITCHED_OFF = 'switched off in atis.config.json';

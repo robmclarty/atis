@@ -11,7 +11,7 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 
@@ -25,6 +25,9 @@ const ARCHIVE_PATHS = 500;
 /** The tar block, and the git modes of a symbolic link and of a submodule. */
 const TAR_BLOCK = 512;
 const SYMLINK_MODE = '120000';
+/** The git mode of a file that may run, and the mode bits that let one run. */
+const EXECUTABLE_MODE = '100755';
+const EXECUTE_BITS = 0o111;
 
 function byPath(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
@@ -98,15 +101,17 @@ export type Scan = {
 
 /**
  * A commit's files as a producer reads them: every file in path order, every
- * directory, a file's text by its path, and a way to draw out many files at
- * once before they are read. `root` is where a producer is told the files
- * stand; it reads none of them but through `read`.
+ * directory, a file's text by its path, whether its mode lets it run, and a
+ * way to draw out many files at once before they are read. `root` is where a
+ * producer is told the files stand; it reads none of them but through `read`.
  */
 export type Tree = {
   readonly root: string;
   readonly files: readonly string[];
   readonly directories: ReadonlySet<string>;
   readonly read: (path: string) => string;
+  /** Whether the commit records the file as executable, which makes a script nothing sources an entry point (D117). */
+  readonly executable: (path: string) => boolean;
   readonly want?: (paths: readonly string[]) => void;
 };
 
@@ -125,7 +130,13 @@ export function walk(root: string): Tree {
       } else if (entry.isFile()) files.push(path);
     }
   }
-  return { root, files: files.toSorted(byPath), directories, read: (path) => readFileSync(join(root, path), 'utf8') };
+  return {
+    root,
+    files: files.toSorted(byPath),
+    directories,
+    read: (path) => readFileSync(join(root, path), 'utf8'),
+    executable: (path) => (statSync(join(root, path)).mode & EXECUTE_BITS) !== 0,
+  };
 }
 
 function gitBytes(repo: string, args: readonly string[], input?: string): Buffer {
@@ -231,6 +242,7 @@ export function gitTree(repo: string, sha: string): Tree {
   const kept = listed.filter((entry) => !ignored(entry.path));
   const files = kept.filter((entry) => entry.type === 'blob' && entry.mode !== SYMLINK_MODE && !skipped(entry.path, false)).map((entry) => entry.path);
   const directories = new Set(['', ...kept.filter((entry) => entry.type !== 'blob' && !skipped(entry.path, true)).map((entry) => entry.path)]);
+  const executables = new Set(kept.filter((entry) => entry.mode === EXECUTABLE_MODE).map((entry) => entry.path));
 
   const drawn = new Map<string, string>();
   const want = (paths: readonly string[]): void => {
@@ -246,7 +258,7 @@ export function gitTree(repo: string, sha: string): Tree {
     if (content === undefined) throw new Error(`${path} is not a file of ${sha}`);
     return content;
   };
-  return { root: resolve(repo), files: files.toSorted(byPath), directories, read, want };
+  return { root: resolve(repo), files: files.toSorted(byPath), directories, read, executable: (path) => executables.has(path), want };
 }
 
 /**

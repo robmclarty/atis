@@ -5,6 +5,8 @@ packages:
 allowBuilds:
   '@ast-grep/cli': true
   fallow: true
+  # The shell producer reads only the grammar's WASM, so its native binding is never built.
+  tree-sitter-bash: false
 
 # checkride is Rob's own package, so its releases are taken as soon as they land.
 minimumReleaseAgeExclude:

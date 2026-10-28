@@ -14,4 +14,5 @@ export * from './producers.js';
 export * from './python.js';
 export * from './scan.js';
 export * from './shapes.js';
+export * from './shell.js';
 export * from './terraform.js';

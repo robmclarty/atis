@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 83 — feat(cli): scan Terraform modules into the same scan shape
+**Current step:** 84 — feat(cli): scan shell scripts into the same scan shape
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -138,7 +138,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 80. fix(core): sort other languages' manifests and settings onto the shore
 - ☑ 81. feat(cli): scan a Go module into the same scan shape
 - ☑ 82. feat(cli): scan a Python project into the same scan shape
-- ☐ 83. feat(cli): scan Terraform modules into the same scan shape
+- ☑ 83. feat(cli): scan Terraform modules into the same scan shape
 - ☐ 84. feat(cli): scan shell scripts into the same scan shape
 - ☐ 119. fix(cli): read checkride's targets, each artifact by its check's adapter
 - ☐ 85. feat(cli): read each language's evidence as checkride writes it
@@ -243,6 +243,9 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [ ] a Go module with no main package (a library) has no entry points, so every file of it sits in the deepest band, unreachable (D26); a Go library's non-internal packages may be its entry points as a TypeScript package's exports are
 - [ ] Go files go list never lists, under testdata/ or vendor/ or in no module, land in the shore's other group, loud; a testdata/ row in data and a vendor/ row would sort them by kind
 - [ ] a Python src layout folds every subpackage into its top package's folder cell, since core's src/ convention (D45) makes src/<name>/ one folder module, while a flat layout gives each package a cell of its own; D115 wants each package with an __init__.py a cell
+- [ ] hcl2-parser 1.0.3, step 83's HCL reader, has had no release since 2022-05 and has one maintainer, the staleness Rob ruled out; the maintained choice is HashiCorp's @cdktf/hcl2json (WASM, asynchronous), which the same worker bridge step 84 builds for sh-syntax could run
+- [ ] a for loop that sources every script a glob matches (for f in "$DIR"/lib/*.sh; do source "$f"; done) reaches none of them; matching the glob against the tracked scripts would give each an edge
+- [ ] an extensionless script with a shell shebang (bin/deploy, .husky/pre-commit) stays on the shore's scripts row, since a producer claims files by extension alone (D114); claiming by shebang too would bring such scripts into the terrain
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -2878,3 +2881,56 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-28 — step 80 checkpointed · 2fa9a8385 — fix(core): sort other languages' manifests and settings onto the shore (4m)
 - 2026-10-28 — step 81 checkpointed · a256463cb — feat(cli): scan a Go module into the same scan shape (1 drift)
 - 2026-10-28 — step 82 checkpointed · 607e031c2 — feat(cli): scan a Python project into the same scan shape (1 drift)
+- 2026-10-28 — step 83 checkpointed · 6f1081f65 — feat(cli): scan Terraform modules into the same scan shape (1 red, 1 drift, 148m)
+
+  **Summary**: Terraform is the fourth producer. `hcl2-parser` 1.0.3, HashiCorp's `hcl` compiled to plain JavaScript, reads every `.tf` and `.tftest.hcl` file synchronously, with no `terraform` and no `terraform init`. Each directory of `.tf` files is a module cell with its files as organelles. A local `module` source is an edge to every file of the module it calls, root modules are the entry points, `variable` and `output` blocks are the interface, shaped by type and default, and `*.tftest.hcl` files are tests. Registry and git module sources and provider version constraints join the dependency delta. The parser is a devDependency the bundle inlines, so the installed package's `dependencies` are still `playwright-core`, `typescript` and `ws`.
+
+  1. The parser reads the values, and a walk of its own finds the lines
+  2. What a module's interface and edges are
+  3. The dependency delta, through git at both ends
+  4. Checked on the built bundle, and the paths outside the seam
+
+  **Readout**:
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored:
+               - D116 (terraform-producer), D114 (producers-compose)
+               - D47 (dependency-delta), D83 (security-on-change), D76 (interface-shape)
+  constraints  14 of 14 honored
+  seam         strayed: 3 paths outside the seam
+               - apps/atis/src/sources/git.ts
+               - apps/atis/src/sources/producers.ts
+               - pnpm-workspace.yaml
+  diff         +795 -6 across 10 files
+               - apps/atis/package.json +2 -0
+               - apps/atis/src/__tests__/terraform.test.ts +265 -0
+               - apps/atis/src/run.ts +28 -1
+               - apps/atis/src/sources/git.ts +1 -1
+               - apps/atis/src/sources/index.ts +1 -0
+               - apps/atis/src/sources/producers.ts +14 -4
+               - apps/atis/src/sources/terraform.ts +461 -0
+               - and 3 more
+  spent        2h 28m · 6 turns · 112s gate · 1 red run
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Recommendation**: Approve step 83, then before `/plumbbob:run` carries on, install the shell parser step 84 needs: `pnpm --filter @robmclarty/atis add -D mvdan-sh@0.10.1`. Like `hcl2-parser`, it is mvdan/sh compiled to plain JavaScript by GopherJS, so it parses synchronously and inlines. `sh-syntax`, the WASM build, answers only through a Promise.
+
+  **1.** The parser reads the values, and a walk of its own finds the lines
+
+  `hcl2-parser` hands back each file as an object of blocks with no positions. So `terraformBlocks` walks each file for where its top-level blocks start and end. It counts braces outside strings, comments and heredocs, and counts a string's `${…}` as code, so a quote inside an interpolation does not end the string. Those lines give the edges their lines and each file its code spans for the file level. A file the parser cannot read keeps the blocks the walk found, each shape uncompared (C2 (never-fake)). Its own `index.d.ts` is a loose ambient declaration that types the module as `any`, so its one call is narrowed with a type guard.
+
+  **2.** What a module's interface and edges are
+
+  A variable exports as `var.<name>` and an output as `output.<name>`. A variable's shape is its type, its default and its `sensitive` flag: retyping it moves the shape, and its description does not. An output's shape is its name and its `sensitive` flag (D76 (interface-shape)). A `module` block with a local source reaches every file of the module it calls with `*`, since a call reads its whole interface. A file reading another file's call's output reaches the file that declares that output. Within a module, each `var`, `local`, `module`, `data` or resource reference reaches the file that declares it. A `.tftest.hcl` reaches the module it sits in, or the one above its `tests/` folder, and any local module its `run` blocks name. All root modules' files sit on one member at the root. Depth falls along the longest path, so a called module sits below the root module that calls it.
+
+  **3.** The dependency delta, through git at both ends
+
+  `diffTerraform` reads one `.tf` file's two texts the way `diffManifests` reads a `package.json` (D47 (dependency-delta), D83 (security-on-change)). A registry module is named by its address and pinned by `version`. A git module is named without `git::` and its query, and pinned by `ref`. A provider is named by its `source`, or `hashicorp/<name>` with none, and pinned by `version`. `readTerraformDependencies` reads every `.tf` file the diff touched at both ends through `showFile`, which `git.ts` now exports. `run.ts` merges that into the npm delta unless `atis.config.json` switches Terraform off, so a moved provider and an added module reach `weather.dependencies` as `moved` and `added`. Each file also records them as its outside packages (D170).
+
+  **4.** Checked on the built bundle, and the paths outside the seam
+
+  After `pnpm build`, the bundle inlines the parser, its licence in `dist/licenses.md`. It mapped checkride's `examples/terraform-roots`: `envs/production` and `envs/staging` as root modules at band 0, the `modules/naming` module they call at band 1, and each `.tflint.hcl` on the shore's `config` row from step 80. `docs/inspiration.md` gained the parser's row, noting that the MIT package carries MPL-2.0 `hcl` compiled inside it. Outside the seam: the registration in `producers.ts`, the export of `showFile` in `git.ts`, and the checkride 0.19.1 install with its `minimumReleaseAgeExclude` line in `pnpm-workspace.yaml`, which Rob asked for during this pause and which step 119 (checkride's targets) will use.
