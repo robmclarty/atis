@@ -358,6 +358,12 @@ export type Instruments = {
   readonly muted?: readonly string[];
   /** How the base and the head extractions' health, duplication and structure were measured, absent when the run never asked (D98). */
   readonly structure?: { readonly base: StructureSide; readonly head: StructureSide };
+  /**
+   * The language producers that left the files they claim on the shore, each
+   * as `producer: reason`, switched off in `atis.config.json` or unable to
+   * run; absent when every producer the tree needs ran (D114, C2).
+   */
+  readonly unread?: readonly string[];
 };
 
 /**
@@ -697,6 +703,13 @@ function assertShape(value: unknown): asserts value is MapJson {
   if (instruments['structure'] !== undefined) {
     const structure = expectRecord(instruments['structure'], 'meta.instruments.structure');
     for (const side of ['base', 'head']) assertStructureSide(structure[side], `meta.instruments.structure.${side}`);
+  }
+  if (instruments['unread'] !== undefined) {
+    expectArray(instruments['unread'], 'meta.instruments.unread').forEach((entry, index) => {
+      if (!expectString(entry, `meta.instruments.unread[${String(index)}]`).includes(': ')) {
+        fail(`meta.instruments.unread[${String(index)}]`, 'expected producer: reason');
+      }
+    });
   }
 
   assertNotices(root['notices'], 'notices');

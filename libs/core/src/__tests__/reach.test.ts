@@ -12,6 +12,7 @@ import { TESTS_GROUP, computeReach } from '../reach.js';
 import type { DiffFile, ReachEdge, ReachInputs, ReachResult } from '../reach.js';
 import { assertMap } from '../schema.js';
 import type { ChangeKind, Hunk } from '../schema.js';
+import { typed } from './scanned.js';
 
 /** `'a > b'`: `a` imports `b`. */
 function edges(...pairs: readonly string[]): ImportEdge[] {
@@ -22,7 +23,7 @@ function edges(...pairs: readonly string[]): ImportEdge[] {
 }
 
 function scan(paths: readonly string[]): ScannedFile[] {
-  return paths.map((path) => ({ path, loc: 10, exports: [] }));
+  return paths.map((path) => ({ ...typed(path), loc: 10, exports: [] }));
 }
 
 function change(path: string, kind: ChangeKind = 'modified'): DiffFile {
@@ -367,7 +368,7 @@ test("a deleted file's names reach the files the base graph has take them, and a
 /** A scanned file with the names it exports, their shapes where read, its functions as `name@line+lines`, and its code as `start-end` spans. */
 function scanned(path: string, exports: readonly string[], options: { readonly shapes?: Readonly<Record<string, string | null>>; readonly functions?: readonly string[]; readonly code?: readonly string[] } = {}): ScanFileOf {
   return {
-    path,
+    ...typed(path),
     loc: 100,
     exports,
     ...(options.shapes === undefined ? {} : { shapes: options.shapes }),

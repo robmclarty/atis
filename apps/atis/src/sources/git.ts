@@ -271,6 +271,11 @@ function branchOf(repo: string, name: string): string | undefined {
   return undefined;
 }
 
+/** The reviewed repo's `atis.config.json` as `sha` commits it (D28), or `undefined` when the commit holds none. */
+export function configText(repo: string, sha: string): string | undefined {
+  return showFile(repo, sha, CONFIG_FILE);
+}
+
 /**
  * The trunk (D99): the branch the repo's `atis.config.json` names at the head
  * (D28), else the first of `main`, `master`, `develop` and `trunk` that

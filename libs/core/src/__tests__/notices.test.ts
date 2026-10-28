@@ -13,6 +13,7 @@ import type { ExportShapes, NamedEdge, NoticeInputs, PassedName, PublishingMembe
 import { computeReach } from '../reach.js';
 import type { DiffFile } from '../reach.js';
 import type { Cell, ChangedFile, CheckSlot, Checks, Cochange, DepAdded, DepMoved, Hunk, Notice } from '../schema.js';
+import { typed } from './scanned.js';
 
 /**
  * One repository for every scenario: the chain of §5.2, where `pm` is entered
@@ -167,7 +168,7 @@ function withShapes(file: ScannedFile, shapes: ExportShapes | undefined): ScanFi
 /** The composition `buildMap` will use: place the change, read its evidence, split its red, then rank the notices off all three. */
 function inputsFor(scenario: Scenario): NoticeInputs {
   const paths = [...WORLD, ...(scenario.files ?? [])].toSorted();
-  const scanned = paths.map((path): ScannedFile => ({ path, loc: 20, exports: scenario.exports?.[path] ?? [] }));
+  const scanned = paths.map((path): ScannedFile => ({ ...typed(path), loc: 20, exports: scenario.exports?.[path] ?? [] }));
   const headEdges = edgesOf(scenario, false);
   const baseEdges = edgesOf(scenario, true);
   const modules = identifyModules(scanned, headEdges, []);
@@ -1182,7 +1183,7 @@ test('an export whose shape could not be compared alone raises interface-uncompa
 });
 
 function scanOf(path: string, exports: readonly string[]): ScanFile {
-  return { path, loc: 10, exports };
+  return { ...typed(path), loc: 10, exports };
 }
 
 /** A re-export edge: it takes what it passes on (D75). */

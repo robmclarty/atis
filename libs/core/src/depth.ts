@@ -7,7 +7,6 @@
  * a file no entry point reaches sits in the deepest one, unreachable (D26).
  */
 
-import { classifyFile } from './modules.js';
 import type { ImportEdge } from './modules.js';
 import type { Band } from './schema.js';
 
@@ -31,10 +30,6 @@ export type Depths = {
 
 type Mark = { readonly index: number; low: number; onStack: boolean };
 type Frame = { readonly node: string; readonly mark: Mark; next: number };
-
-function isTerrain(path: string): boolean {
-  return classifyFile(path) === 'source';
-}
 
 function byPath(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
@@ -135,17 +130,22 @@ function bandsUpTo(maxDepth: number): Band[] {
   return bands;
 }
 
+/** Handed no kinds, every path is terrain. */
+const ALL_TERRAIN = (): boolean => true;
+
 /**
- * Place every terrain file on a terrace. The nodes are the source files among
- * `files`, the edge ends and the entry points; tests and non-TypeScript paths
- * are dropped wherever they appear, so a test is never an entry point and
- * never a node (D4). `files` names the terrain files no edge touches, which
- * would otherwise go missing.
+ * Place every terrain file on a terrace. The nodes are the terrain files among
+ * `files`, the edge ends and the entry points; `isTerrain` says which paths
+ * the scan called source (D114), and every other path, a test above all, is
+ * dropped wherever it appears, so a test is never an entry point and never a
+ * node (D4). `files` names the terrain files no edge touches, which would
+ * otherwise go missing.
  */
 export function computeDepth(
   edges: readonly ImportEdge[],
   entryPoints: readonly string[],
   files: readonly string[] = [],
+  isTerrain: (path: string) => boolean = ALL_TERRAIN,
 ): Depths {
   const entries = new Set(entryPoints.filter(isTerrain));
   const links = edges.filter(({ from, to }) => from !== to && isTerrain(from) && isTerrain(to));

@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 
-import { DEFAULT_EDITOR, configuredEditor, editorLink } from '../config.js';
+import { DEFAULT_CONFIG, DEFAULT_EDITOR, configuredEditor, configuredProducersOff, editorLink } from '../config.js';
 
 /**
  * The editor link (D102) read as a browser reads it (D173): a browser trims
@@ -59,4 +59,17 @@ test("atis.config.json's editor holding a control character is misuse, a tab or 
   for (const editor of ['java\tscript:alert(1)//{path}', 'java\nscript:alert(1)//{path}', 'vscode://file{root}/{path}:{line}\r', '\u0000vscode://file{root}/{path}', 'vscode://file{root}/{path}\u007f', 'vscode://file{root}/{path}\u0085']) {
     expect(() => configured(editor), JSON.stringify(editor)).toThrow('must hold no control character');
   }
+});
+
+test("atis.config.json switches producers off by id, each set to false, and switches none by default (D114)", () => {
+  expect(DEFAULT_CONFIG.producers_off).toEqual([]);
+  expect(configuredProducersOff(undefined)).toEqual([]);
+  expect(configuredProducersOff('{ "trunk": "main" }')).toEqual([]);
+  expect(configuredProducersOff('{ "producers": { "typescript": false, "go": true, "python": false } }')).toEqual(['python', 'typescript']);
+});
+
+test("atis.config.json's producers that are not an object of true and false are misuse (C4)", () => {
+  expect(() => configuredProducersOff('{ "producers": ["typescript"] }')).toThrow(/producers must be an object/);
+  expect(() => configuredProducersOff('{ "producers": { "typescript": "off" } }')).toThrow(/producers\.typescript must be true or false/);
+  expect(() => configuredProducersOff('{ "producers": ')).toThrow(/is not JSON/);
 });

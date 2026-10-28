@@ -23,6 +23,7 @@ import type { ImportEdge, ScannedFile } from '../modules.js';
 import { computeCellsReached, computeReach } from '../reach.js';
 import type { DiffFile, ReachInputs } from '../reach.js';
 import type { ChangeKind, Checks, Hunk } from '../schema.js';
+import { typed } from './scanned.js';
 
 const TIMESTAMP = '2026-09-17T05:52:40.668Z';
 
@@ -152,7 +153,7 @@ function inputsFor(
   check: CheckArtifacts,
   code: Code = NO_CODE,
 ): EvidenceInputs {
-  const scanned = world.files.map((path): ScannedFile => ({ path, loc: 10, exports: [] }));
+  const scanned = world.files.map((path): ScannedFile => ({ ...typed(path), loc: 10, exports: [] }));
   const modules = identifyModules(scanned, world.head, []);
   const groups = identifyGroups(scanned, DEFAULT_CONFIG.groups, []);
   const baseEdges = world.base ?? world.head;
@@ -1113,7 +1114,7 @@ test('a change of more files than one word of bits holds counts each file its ow
   // Forty single-file cells in a chain, each importing the one before it, all changed: file k reaches k to 39.
   const paths = Array.from({ length: 40 }, (_unused, index) => `src/m${String(index).padStart(2, '0')}/a.ts`);
   const head = imports(...paths.slice(1).map((path, index) => `${path} > ${paths[index] ?? ''}`));
-  const scanned = paths.map((path): ScannedFile => ({ path, loc: 10, exports: [] }));
+  const scanned = paths.map((path): ScannedFile => ({ ...typed(path), loc: 10, exports: [] }));
   const modules = identifyModules(scanned, head, []);
   const groups = identifyGroups(scanned, DEFAULT_CONFIG.groups, []);
   const inputs: ReachInputs = { changed: paths.map((path) => change(path)), modules, groups, headEdges: head, baseEdges: head };

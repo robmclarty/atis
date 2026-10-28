@@ -156,6 +156,14 @@ test('rejects an entry-point source it does not know, and a reason that does not
   ).toThrow(/meta\.instruments\.entry_points_reason/);
 });
 
+test('accepts the producers that left their files unread, each as producer: reason, and rejects anything else (D114)', () => {
+  const unread = withInstruments({ mode: 'git-only', unread: ['go: no go toolchain on the PATH', 'typescript: switched off in atis.config.json'] });
+  expect(assertMap(unread)).toEqual(unread);
+  expect(() => assertMap(withInstruments({ mode: 'git-only', unread: 'go' }))).toThrow(/meta\.instruments\.unread: expected an array/);
+  expect(() => assertMap(withInstruments({ mode: 'git-only', unread: [2] }))).toThrow(/meta\.instruments\.unread\[0\]: expected a string/);
+  expect(() => assertMap(withInstruments({ mode: 'git-only', unread: ['go'] }))).toThrow(/meta\.instruments\.unread\[0\]: expected producer: reason/);
+});
+
 test('accepts the base as typed beside the base as resolved, and rejects either when it is not a string (D99)', () => {
   const typed = { ...minimalMap(), meta: { ...minimalMap().meta, base: 'v1.2.0', base_typed: '--last-tag' } };
   expect(assertMap(typed)).toEqual(typed);

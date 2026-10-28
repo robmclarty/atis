@@ -15,7 +15,6 @@
  */
 
 import type { Config } from './config.js';
-import { classifyFile } from './modules.js';
 import type { ImportEdge, Modules } from './modules.js';
 import { computeCellsReached } from './reach.js';
 import type { DiffFile, ReachInputs } from './reach.js';
@@ -425,11 +424,12 @@ function escapedInterface(file: ChangedFile, cells: ReadonlyMap<string, string>,
 function stitchesFor(inputs: EvidenceInputs, report: TestReport): readonly Stitch[] {
   const deleted = new Set(inputs.changed.filter((file) => file.kind === 'deleted').map((file) => file.path));
   const changed = new Set(inputs.changed.map((file) => file.path));
+  const tests = new Set(inputs.modules.tests);
   const targets = new Map<string, string[]>();
 
   const collect = (edges: readonly ImportEdge[], wantDeleted: boolean): void => {
     for (const { from, to } of edges) {
-      if (!changed.has(to) || deleted.has(to) !== wantDeleted || classifyFile(from) !== 'test') continue;
+      if (!changed.has(to) || deleted.has(to) !== wantDeleted || !tests.has(from)) continue;
       const list = targets.get(from) ?? [];
       if (!list.includes(to)) list.push(to);
       targets.set(from, list);

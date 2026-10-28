@@ -25,7 +25,8 @@ import type { DiffFile, ExportShapes } from 'core';
 import ts from 'typescript';
 
 import { declaredShapes, treeResolver } from './imports.js';
-import type { Scan, ScannedFile, TreeResolver } from './imports.js';
+import type { TreeResolver } from './imports.js';
+import type { Scan, ScannedFile } from './scan.js';
 
 /**
  * The checker's settings, the same on both sides of a change so a printed

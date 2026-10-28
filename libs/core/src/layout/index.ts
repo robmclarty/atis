@@ -39,8 +39,8 @@
  * lanes wrapped into rows.
  */
 
-import { classifyFile } from '../modules.js';
 import type { ImportEdge } from '../modules.js';
+import { TESTS_GROUP } from '../reach.js';
 import type { Band, Group, Layout, LayoutBand, LayoutRow, Organelle, Position } from '../schema.js';
 import { heightsOn, radiusOf, simulate } from './force.js';
 import type { Lane, LayoutFile, Placement, Point, Strip } from './force.js';
@@ -205,9 +205,9 @@ type Flow = {
   readonly rows: readonly ShoreRow[];
 };
 
-/** A group's shore files: every one but its tests, which are evidence (D4). */
+/** A group's shore files: none of the tests', which are evidence (D4). */
 function shoreFilesOf(group: Group): readonly string[] {
-  return group.files.filter((file) => classifyFile(file) !== 'test');
+  return group.id === TESTS_GROUP ? [] : group.files;
 }
 
 function columnsFor(count: number): number {

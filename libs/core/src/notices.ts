@@ -25,7 +25,6 @@ import { broughtAdvisories, healthSpan, placeOnChange, readRedSplit, severityRan
 import type { Advisory, BroughtPackage, CheckArtifacts, CodeSpan, FileEvidence, FindingPlace, MadeFunction, RedSplit, StructureChange } from './evidence.js';
 import { OTHER_GROUP } from './groups.js';
 import type { FileHistory } from './history.js';
-import { classifyFile } from './modules.js';
 import type { ImportEdge, ScannedFile } from './modules.js';
 import type {
   Cell,
@@ -648,16 +647,22 @@ function passedAs(pass: PassedName, name: string): string | undefined {
   return pass.as === STAR ? name : pass.as;
 }
 
+/** The files a scan named tests (D4, D114). */
+function testsOf(files: readonly ScannedFile[]): ReadonlySet<string> {
+  return new Set(files.filter((file) => file.kind === 'test').map((file) => file.path));
+}
+
 /**
  * The in-repo files that read any of `names` out of `path` (D82): each file
  * whose import of it takes the name or the whole module, and, through every
  * re-export that passes a name on, the files that read it from the
  * re-exporter, followed by name as D75 walks a public name. A re-exporter
  * only passes the name along, so it is followed rather than counted, and a
- * test is evidence rather than a reader (D4). The walk is on the head graph,
- * where who the change reaches lives (D124).
+ * test, among `tests` as the head scan named them, is evidence rather than a
+ * reader (D4). The walk is on the head graph, where who the change reaches
+ * lives (D124).
  */
-function readersOf(path: string, names: readonly string[], edges: readonly NamedEdge[]): ReadonlySet<string> {
+function readersOf(path: string, names: readonly string[], edges: readonly NamedEdge[], tests: ReadonlySet<string>): ReadonlySet<string> {
   const into = new Map<string, NamedEdge[]>();
   for (const edge of edges) into.set(edge.to, [...(into.get(edge.to) ?? []), edge]);
   const readers = new Set<string>();
@@ -673,7 +678,7 @@ function readersOf(path: string, names: readonly string[], edges: readonly Named
       for (const as of passes) pending.push([edge.from, as]);
       // An import that also passes the name on is followed for it; one that only takes it reads it (D82).
       const takes = edge.names.includes(name) || edge.names.includes(STAR);
-      if (takes && passes.length === 0 && edge.from !== path && classifyFile(edge.from) !== 'test') readers.add(edge.from);
+      if (takes && passes.length === 0 && edge.from !== path && !tests.has(edge.from)) readers.add(edge.from);
     }
   }
   return readers;
@@ -731,6 +736,7 @@ function interfaceCandidates(
   const entrances = interfaceFiles(inputs.headEdges, home);
   const baseFiles = new Map(inputs.baseFiles.map((file) => [file.path, file] as const));
   const headFiles = new Map(inputs.headFiles.map((file) => [file.path, file] as const));
+  const tests = testsOf(inputs.headFiles);
 
   return inputs.changed.flatMap((file): Candidate[] => {
     const cell = file.cell === undefined ? undefined : cells.get(file.cell);
@@ -747,7 +753,7 @@ function interfaceCandidates(
     const kind = interfaceKind(moves);
     if (kind === undefined) return [];
     // A removed name no live importer takes has no reader by definition; the ones one does are deleted-export's (D124).
-    const readers = readersOf(file.path, [...moves.added, ...moves.reshaped, ...moves.uncompared], inputs.headEdges);
+    const readers = readersOf(file.path, [...moves.added, ...moves.reshaped, ...moves.uncompared], inputs.headEdges, tests);
     const reasons = joined([
       ...(readInRepo ? [`${String(cell.fan_in ?? 0)} files read it`] : []),
       ...(published === undefined ? [] : [publishes(published)]),
@@ -993,6 +999,7 @@ type LiveConsumers = ReadonlyMap<string, ReadonlyMap<string, ReadonlySet<string>
  */
 function liveConsumers(inputs: NoticeInputs, changed: ReadonlyMap<string, ChangedFile>): LiveConsumers {
   const headExports = new Map(inputs.headFiles.map((file) => [file.path, new Set(file.exports)] as const));
+  const tests = testsOf(inputs.headFiles);
   const headTakes = new Map<string, ReadonlySet<string>>();
   for (const edge of inputs.headEdges) headTakes.set(`${edge.from}\n${edge.to}`, new Set(edge.names));
 
@@ -1000,7 +1007,7 @@ function liveConsumers(inputs: NoticeInputs, changed: ReadonlyMap<string, Change
   for (const { from, to, names } of inputs.baseEdges) {
     const file = changed.get(to);
     if (file === undefined || file.kind === 'added' || file.cell === undefined) continue;
-    if (!headExports.has(from) || classifyFile(from) === 'test') continue;
+    if (!headExports.has(from) || tests.has(from)) continue;
     const exported = headExports.get(to);
     const missing = names.filter((name) => name !== STAR && exported?.has(name) !== true);
     const taken = headTakes.get(`${from}\n${to}`);

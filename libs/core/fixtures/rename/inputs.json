@@ -9,7 +9,7 @@
   "base": {
     "files": [
       { "path": "README.md", "loc": 0, "kind": "other", "exports": [] },
-      { "path": "src/index.ts", "loc": 9, "kind": "source", "exports": ["helper"] },
+      { "path": "src/index.ts", "loc": 9, "kind": "source", "barrel": true, "exports": ["helper"] },
       { "path": "src/old-name.ts", "loc": 36, "kind": "source", "exports": ["helper"] }
     ],
     "edges": [{ "from": "src/index.ts", "to": "src/old-name.ts", "names": ["helper"], "line": 1 }],
@@ -19,7 +19,7 @@
   "head": {
     "files": [
       { "path": "README.md", "loc": 0, "kind": "other", "exports": [] },
-      { "path": "src/index.ts", "loc": 9, "kind": "source", "exports": ["helper"] },
+      { "path": "src/index.ts", "loc": 9, "kind": "source", "barrel": true, "exports": ["helper"] },
       { "path": "src/new-name.ts", "loc": 38, "kind": "source", "exports": ["helper"] }
     ],
     "edges": [{ "from": "src/index.ts", "to": "src/new-name.ts", "names": ["helper"], "line": 1 }],

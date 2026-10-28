@@ -5,12 +5,18 @@ import { shoreMatcher } from '../groups.js';
 import { buildMap } from '../map.js';
 import { classifyFile, identifyModules, memberOf } from '../modules.js';
 import type { ImportEdge, ModuleCell, Modules, ScannedFile } from '../modules.js';
+import { typed } from './scanned.js';
 
 const isConfig = shoreMatcher(DEFAULT_CONFIG.groups);
 
-/** A scanned file with `loc` lines and `exports` exported names. */
+/** A scanned file with `loc` lines and `exports` exported names, its kind and barrel as the TypeScript producer gives them. */
 function file(path: string, loc = 10, exports = 0): ScannedFile {
-  return { path, loc, exports: Array.from({ length: exports }, (_, index) => `name${String(index)}`) };
+  return { ...typed(path), loc, exports: Array.from({ length: exports }, (_, index) => `name${String(index)}`) };
+}
+
+/** `classifyFile` of a path, with the kind the TypeScript producer gives it. */
+function classify(path: string, isShore?: (path: string) => boolean): string {
+  return classifyFile(typed(path), isShore);
 }
 
 function edge(from: string, to: string): ImportEdge {
@@ -27,50 +33,37 @@ function cellIds(modules: Modules): readonly string[] {
   return modules.cells.map((cell) => cell.id);
 }
 
-test.each([
-  ['src/doctor.ts', 'source'],
-  ['src/components/Canvas.tsx', 'source'],
-  ['src/latest.ts', 'source'],
-  ['src/contest/index.ts', 'source'],
-  ['src/__tests__/doctor.test.ts', 'test'],
-  ['src/__tests__/helpers.ts', 'test'],
-  ['src/doctor.test.ts', 'test'],
-  ['src/view.spec.tsx', 'test'],
-  ['test/e2e/run.ts', 'test'],
-  ['packages/core/test/fixtures/tree.ts', 'test'],
-  ['benchmarks/handle-event/index.mts', 'source'],
-  ['src/loader.cts', 'source'],
-  ['src/types.d.mts', 'source'],
-  ['src/index.d.cts', 'source'],
-  ['src/handler.test.mts', 'test'],
-  ['src/loader.spec.cts', 'test'],
-  ['README.md', 'other'],
-  ['scripts/release.mjs', 'other'],
-  ['test/fixtures/biome.json', 'other'],
-])('classifyFile(%s) is %s', (path, kind) => {
-  expect(classifyFile(path)).toBe(kind);
+test('classifyFile takes the kind the scan gave and knows no extension (D114)', () => {
+  // Any language's file is what its producer said it is: core reads no name.
+  expect(classifyFile({ path: 'cmd/atis/main.go', kind: 'source' })).toBe('source');
+  expect(classifyFile({ path: 'pkg/reach/reach_test.go', kind: 'test' })).toBe('test');
+  expect(classifyFile({ path: 'src/doctor.ts', kind: 'other' })).toBe('other');
+  // The shore's config and build rows take a source file, never a test or one already other.
+  expect(classifyFile({ path: 'vitest.config.ts', kind: 'source' }, isConfig)).toBe('other');
+  expect(classifyFile({ path: 'src/theme.config.test.ts', kind: 'test' }, isConfig)).toBe('test');
+  expect(classifyFile({ path: 'eslint.config.go', kind: 'source' }, isConfig)).toBe('other');
 });
 
 test('a .ts that configures a tool is shore, not terrain, once the config table is in hand (D57)', () => {
   // `*.config.*` and the `config` row's other patterns, at the root or nested.
-  expect(classifyFile('vitest.config.ts', isConfig)).toBe('other');
-  expect(classifyFile('packages/app/vite.config.tsx', isConfig)).toBe('other');
-  expect(classifyFile('.eslintrc.cts', isConfig)).toBe('other');
+  expect(classify('vitest.config.ts', isConfig)).toBe('other');
+  expect(classify('packages/app/vite.config.tsx', isConfig)).toBe('other');
+  expect(classify('.eslintrc.cts', isConfig)).toBe('other');
   // A test under the config row is still evidence: the test read comes first (D4).
-  expect(classifyFile('src/theme.config.test.ts', isConfig)).toBe('test');
+  expect(classify('src/theme.config.test.ts', isConfig)).toBe('test');
   // A name that merely contains "config" is ordinary terrain.
-  expect(classifyFile('src/config.ts', isConfig)).toBe('source');
-  // Without the table, the name-only read leaves it terrain, the fallback the graph sources take.
-  expect(classifyFile('vitest.config.ts')).toBe('source');
+  expect(classify('src/config.ts', isConfig)).toBe('source');
+  // Without the table, the kind the scan gave it stands.
+  expect(classify('vitest.config.ts')).toBe('source');
 });
 
 test('a rules folder\'s TypeScript is terrain at the root and deep in a package (D164)', () => {
   // An eslint plugin keeps its source in `rules/`, and so does a package's lint layer.
-  expect(classifyFile('rules/sort-enums/build-comparator.ts', isConfig)).toBe('source');
-  expect(classifyFile('packages/eslint-plugin/src/rules/no-raw-fetch.ts', isConfig)).toBe('source');
-  expect(classifyFile('packages/lint/rules/deep/nested/check.mts', isConfig)).toBe('source');
+  expect(classify('rules/sort-enums/build-comparator.ts', isConfig)).toBe('source');
+  expect(classify('packages/eslint-plugin/src/rules/no-raw-fetch.ts', isConfig)).toBe('source');
+  expect(classify('packages/lint/rules/deep/nested/check.mts', isConfig)).toBe('source');
   // A test beside them is still evidence.
-  expect(classifyFile('rules/sort-enums/build-comparator.test.ts', isConfig)).toBe('test');
+  expect(classify('rules/sort-enums/build-comparator.test.ts', isConfig)).toBe('test');
 });
 
 test('a .mts or .cts file sorts as a .ts does: an organelle, a test, or tool config (D77)', () => {
@@ -86,7 +79,7 @@ test('a .mts or .cts file sorts as a .ts does: an organelle, a test, or tool con
     isConfig,
   );
 
-  expect(classifyFile('vite.config.mts', isConfig)).toBe('other');
+  expect(classify('vite.config.mts', isConfig)).toBe('other');
   expect(modules.organelles.map((organelle) => [organelle.path, organelle.cell])).toEqual([
     ['benchmarks/handle-event/index.mts', 'directory:benchmarks/handle-event'],
     ['src/loader.cts', 'single:src/loader.cts'],
@@ -154,6 +147,7 @@ test('a flat src/ is one package: its barrel alone is direct, each file a single
       { id: 'src/index.ts', path: 'src/index.ts', cell: 'package:.', loc: 5 },
       { id: 'src/orchestrator.ts', path: 'src/orchestrator.ts', cell: 'single:src/orchestrator.ts', loc: 60 },
     ],
+    tests: ['src/__tests__/doctor.test.ts', 'src/doctor.spec.ts', 'test/e2e/cli.ts'],
   });
 });
 
@@ -267,8 +261,8 @@ test('a committed dist/ founds no cell and enters no band, while a hand-written 
     isShore,
   );
 
-  expect(classifyFile('dist/index.d.ts', isShore)).toBe('other');
-  expect(classifyFile('src/types.d.ts', isShore)).toBe('source');
+  expect(classify('dist/index.d.ts', isShore)).toBe('other');
+  expect(classify('src/types.d.ts', isShore)).toBe('source');
   const organelles = modules.organelles.map((organelle) => organelle.path);
   expect(organelles).toEqual(['lib/index.ts', 'lib/util/format.ts', 'src/index.ts', 'src/types.d.ts']);
   expect(modules.cells.flatMap((cell) => cell.organelles)).not.toContain('dist/index.d.ts');

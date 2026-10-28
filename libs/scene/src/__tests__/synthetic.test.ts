@@ -1,4 +1,4 @@
-import { assertMap, classifyFile } from 'core';
+import { assertMap } from 'core';
 import { expect, test } from 'vitest';
 
 import { syntheticInputs, syntheticMap } from '../synthetic.js';
@@ -13,11 +13,11 @@ import { syntheticInputs, syntheticMap } from '../synthetic.js';
 
 test('the inputs hold exactly the terrain files asked for at 5,000, in packages with barrels, and change a pull request of every kind', () => {
   const inputs = syntheticInputs({ files: 5000 });
-  const terrain = inputs.base.files.filter((file) => classifyFile(file.path) === 'source');
+  const terrain = inputs.base.files.filter((file) => file.kind === 'source');
   expect(terrain).toHaveLength(5000);
   expect(inputs.base.members.length).toBeGreaterThan(10);
   expect(inputs.base.members.slice(1).every((member) => member.entry.length === 1 && inputs.base.files.some((file) => file.path === member.entry[0]))).toBe(true);
-  expect(inputs.base.files.some((file) => classifyFile(file.path) === 'test')).toBe(true);
+  expect(inputs.base.files.some((file) => file.kind === 'test')).toBe(true);
   expect(new Set(inputs.diff.map((file) => file.kind))).toEqual(new Set(['modified', 'added', 'deleted', 'renamed']));
   expect(inputs.diff.length).toBeGreaterThan(40);
   expect(inputs.diff.length).toBeLessThan(80);

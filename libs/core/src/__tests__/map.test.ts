@@ -8,7 +8,7 @@ import { DEFAULT_CONFIG } from '../config.js';
 import { COVERAGE_UNNAMED } from '../evidence.js';
 import type { CheckArtifacts, Dead, Health, Structure } from '../evidence.js';
 import { buildMap } from '../map.js';
-import type { BuildInputs, EntryPointLookup, FrameInputs } from '../map.js';
+import type { BuildInputs, EntryPointLookup, FrameInputs, UnreadProducer } from '../map.js';
 import type { ExportShapes } from '../notices.js';
 import { assertMap } from '../schema.js';
 import type { Instruments, Organelle } from '../schema.js';
@@ -128,8 +128,8 @@ test('a config `.ts` lands in the config shore, founding no cell and no empty ro
   const base = inputsFor('demo');
   const withConfig: BuildInputs = {
     ...base,
-    base: { ...base.base, files: [...base.base.files, { path: 'vitest.config.ts', loc: 20, exports: [] }] },
-    head: { ...base.head, files: [...base.head.files, { path: 'vitest.config.ts', loc: 20, exports: [] }] },
+    base: { ...base.base, files: [...base.base.files, { path: 'vitest.config.ts', loc: 20, kind: 'source', exports: [] }] },
+    head: { ...base.head, files: [...base.head.files, { path: 'vitest.config.ts', loc: 20, kind: 'source', exports: [] }] },
   };
   const map = buildMap(withConfig, DEFAULT_CONFIG);
 
@@ -527,6 +527,23 @@ test('the entry points read fallow only when both scans did, and name the side t
     entry_points: 'manifests',
     entry_points_reason: 'base: fallow list timed out after 60 s; head: fallow list exited 2: bad config',
   });
+});
+
+test('a producer that left its files unread is named once when both scans say so, and by side when one does; none, and the key is absent (D114, C2)', () => {
+  const inputs = inputsFor('demo');
+  const off: UnreadProducer = { producer: 'typescript', reason: 'switched off in atis.config.json' };
+  const missing: UnreadProducer = { producer: 'go', reason: 'no go toolchain on the PATH' };
+  const unread = (base: readonly UnreadProducer[], head: readonly UnreadProducer[]): Instruments['unread'] => {
+    const map = buildMap({ ...inputs, base: { ...inputs.base, unread: base }, head: { ...inputs.head, unread: head } }, DEFAULT_CONFIG);
+    expect(() => assertMap(map)).not.toThrow();
+    return map.meta.instruments.unread;
+  };
+
+  expect(buildMap(inputs, DEFAULT_CONFIG).meta.instruments).not.toHaveProperty('unread');
+  expect(unread([], [])).toBeUndefined();
+  expect(unread([off], [off])).toEqual(['typescript: switched off in atis.config.json']);
+  expect(unread([off, missing], [off])).toEqual(['base: go: no go toolchain on the PATH', 'typescript: switched off in atis.config.json']);
+  expect(unread([], [missing])).toEqual(['head: go: no go toolchain on the PATH']);
 });
 
 /** A boundary violation on a file this change touched: the rung §5.3 calls LIFR. */

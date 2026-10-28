@@ -71,6 +71,13 @@ export type ScanMember = PublishingMember & { readonly dir: string; readonly ent
 /** How a scan's entry points were looked up: through the reviewed repo's fallow (D22), or the manifests alone and why (C2). */
 export type EntryPointLookup = { readonly source: 'fallow' } | { readonly source: 'manifests'; readonly reason: string };
 
+/**
+ * A language producer that left the files it claims unread (D114): switched
+ * off in `atis.config.json`, or unable to run here, and why. Its files stay
+ * where the shore table puts them (C2).
+ */
+export type UnreadProducer = { readonly producer: string; readonly reason: string };
+
 /** One named function of a scanned file (D102): its name, the line it starts on and how many lines it spans. */
 export type ScanFunction = { readonly name: string; readonly line: number; readonly line_count: number };
 
@@ -78,16 +85,21 @@ export type ScanFunction = { readonly name: string; readonly line: number; reado
 export type ScanFileOf = ScanFile & { readonly functions?: readonly ScanFunction[] };
 
 /**
- * One extracted commit, as the CLI's import scan read it (D21). The shape is
- * declared here rather than beside the scanner because core cannot import the
- * CLI (C1): core owns the contract and the reader conforms to it, the way
- * `history.ts` owns `Commit` and `evidence.ts` owns `CheckArtifacts`.
+ * One extracted commit, as the CLI's producers read it and merged it (D21,
+ * D114): every tracked file with the kind its producer gave it, the edges and
+ * members each producer found, and the producers that left their files unread.
+ * The shape is declared here rather than beside the scanner because core
+ * cannot import the CLI (C1): core owns the contract and the reader conforms
+ * to it, the way `history.ts` owns `Commit` and `evidence.ts` owns
+ * `CheckArtifacts`.
  */
 export type Scan = {
   readonly files: readonly ScanFileOf[];
   readonly edges: readonly NamedEdge[];
   readonly members: readonly ScanMember[];
   readonly entry_points: EntryPointLookup;
+  /** The producers whose files no producer read, and why; absent when every one the tree needs ran (C2). */
+  readonly unread?: readonly UnreadProducer[];
 };
 
 /** What the map is of: the commits it spans, and the clock a pure `buildMap` cannot read for itself (C3). */
@@ -229,7 +241,7 @@ type Standing = {
 
 /**
  * The terrain a change stands on: the base tree with the change's added files
- * (D32), its cells and shore, and the terraces of its files. A `.ts`/`.tsx`
+ * (D32), its cells and shore, and the terraces of its files. A source file
  * that configures a tool (D57), or that a build committed (D84), is shore, not
  * terrain: it founds no cell above and never sits on a terrace or ties one
  * below, so depth is handed neither the file nor an edge that touches it.
@@ -240,11 +252,13 @@ function standingOf(base: Scan, head: Scan, added: ReadonlySet<string>, config: 
   const roots = sortUnique([...base.members, ...head.members].map((member) => member.dir));
   const isShore = shoreMatcher(config.groups, roots);
   const modules = identifyModules(files, edges, roots, isShore);
-  const groups = shoreGroups(files, roots, config);
+  const groups = shoreGroups(files, roots, config, modules.tests);
+  const sources = new Set(files.filter((file) => file.kind === 'source').map((file) => file.path));
   const depths = computeDepth(
     edges.filter((edge) => !isShore(edge.from) && !isShore(edge.to)),
     entryPoints(base, head, added),
     files.filter((file) => !isShore(file.path)).map((file) => file.path),
+    (path) => sources.has(path),
   );
   return { files, edges, roots, isShore, modules, groups, depths };
 }
@@ -304,9 +318,8 @@ function entryPoints(base: Scan, head: Scan, added: ReadonlySet<string>): readon
  * names exactly one group (D48), so `terrain.groups` carries the group it
  * names; the SVG draws them as stitches, never as a shore contour.
  */
-function shoreGroups(files: readonly ScannedFile[], roots: readonly string[], config: Config): readonly Group[] {
+function shoreGroups(files: readonly ScannedFile[], roots: readonly string[], config: Config, tests: readonly string[]): readonly Group[] {
   const shore = identifyGroups(files, config.groups, roots);
-  const tests = files.filter((file) => classifyFile(file.path) === 'test').map((file) => file.path);
   const named: readonly Group[] = tests.length === 0 ? [] : [{ id: TESTS_GROUP, files: sortUnique(tests) }];
   return [
     ...shore.filter((group) => group.id !== OTHER_GROUP),
@@ -644,10 +657,28 @@ function structureSide(structure: Structure): StructureSide {
   return { fallow: structure.fallow, ...(muted.length === 0 ? {} : { muted }) };
 }
 
-/** What the map was measured with, and what it could not be: the muted channels say so by name (C2, D41, D98, D122). */
-function instrumentsOf(check: CheckArtifacts, entries: EntryPointsRead, muted: readonly string[], structure: BuildInputs['structure']): Instruments {
+/** What one scan says of the producers that left their files unread, each as `producer: reason`. */
+function unreadSaid(scan: Scan): ReadonlySet<string> {
+  return new Set((scan.unread ?? []).map(({ producer, reason }) => `${producer}: ${reason}`));
+}
+
+/**
+ * The producers that left their files unread, said once when the two scans
+ * agree and by side where only one says it, as the entry points are (D114, C2).
+ */
+function unreadOf(base: Scan, head: Scan): readonly string[] {
+  const [atBase, atHead] = [unreadSaid(base), unreadSaid(head)];
+  return sortUnique([
+    ...[...atBase].map((line) => (atHead.has(line) ? line : `base: ${line}`)),
+    ...[...atHead].map((line) => (atBase.has(line) ? line : `head: ${line}`)),
+  ]);
+}
+
+/** What the map was measured with, and what it could not be: the muted channels and the unread producers say so by name (C2, D41, D98, D114, D122). */
+function instrumentsOf(check: CheckArtifacts, entries: EntryPointsRead, muted: readonly string[], structure: BuildInputs['structure'], unread: readonly string[]): Instruments {
   const measured = structure === undefined ? {} : { structure: { base: structureSide(structure.base), head: structureSide(structure.head) } };
-  if (check.mode === 'git-only') return { mode: 'git-only', reason: check.reason, ...entries, ...measured };
+  const producers = unread.length === 0 ? {} : { unread };
+  if (check.mode === 'git-only') return { mode: 'git-only', reason: check.reason, ...entries, ...measured, ...producers };
   const stale = check.stale
     .map((channel) => `${channel.slot}: ${channel.file}, ${String(channel.age_ms)} ms older than the run`)
     .toSorted(byPath);
@@ -658,6 +689,7 @@ function instrumentsOf(check: CheckArtifacts, entries: EntryPointsRead, muted: r
     ...(stale.length === 0 ? {} : { stale }),
     ...(muted.length === 0 ? {} : { muted: [...muted].toSorted(byPath) }),
     ...measured,
+    ...producers,
   };
 }
 
@@ -777,7 +809,7 @@ function assemble(inputs: BuildInputs, config: Config): Assembled {
   // other tree's, and is muted rather than read as every file unmeasured (D122).
   const trusted = trustCoverage(
     inputs.check,
-    new Set(head.files.filter((file) => classifyFile(file.path, isShore) === 'source').map((file) => file.path)),
+    new Set(head.files.filter((file) => classifyFile(file, isShore) === 'source').map((file) => file.path)),
   );
   const check = trusted.check;
   const graphs = { modules, groups, headEdges: head.edges, baseEdges: base.edges } as const;
@@ -852,6 +884,7 @@ function assemble(inputs: BuildInputs, config: Config): Assembled {
         entryPointsOf(inputs.base.entry_points, head.entry_points),
         trusted.muted === undefined ? [] : [trusted.muted],
         inputs.structure,
+        unreadOf(inputs.base, head),
       ),
     },
     terrain: {

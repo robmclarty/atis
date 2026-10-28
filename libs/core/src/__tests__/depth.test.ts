@@ -124,7 +124,8 @@ test('bandOf keeps depths up to six and slices deeper graphs evenly', () => {
   }
 });
 
-test('tests are never entry points and never nodes (D4)', () => {
+test('tests are never entry points and never nodes, nor any path the scan did not call source (D4, D114)', () => {
+  const sources = new Set(['src/a.ts', 'src/b.ts', 'src/c.ts']);
   const depths = computeDepth(
     [
       { from: 'src/__tests__/b.test.ts', to: 'src/b.ts' },
@@ -133,6 +134,7 @@ test('tests are never entry points and never nodes (D4)', () => {
     ],
     ['src/__tests__/b.test.ts', 'src/a.ts'],
     ['src/b.ts', 'src/b.spec.ts'],
+    (path) => sources.has(path),
   );
   expect(placement(depths)).toEqual({ a: 0, b: 'unreachable@1', c: 1 });
 });

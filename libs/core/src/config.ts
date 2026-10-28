@@ -68,6 +68,13 @@ export type OverlayConfig = {
 };
 
 export type Config = {
+  /**
+   * The language producers `atis.config.json` switches off, by id, sorted
+   * (D114): their files stay where the shore table puts them. Core reads no
+   * producer; the switch rides here so a terrain kept per base is kept per
+   * switch too (D96).
+   */
+  readonly producers_off: readonly string[];
   /** The shore's first-match table (D48); a file no row matches lands in `other`. */
   readonly groups: readonly GroupRule[];
   /** The flight-category thresholds of §5.3 (D27). */
@@ -78,7 +85,7 @@ export type Config = {
   readonly overlays: OverlayConfig;
 };
 
-/** The file D28 names at the reviewed repo's root; for now atis reads only its `trunk` (D99) and its `editor` (D102). */
+/** The file D28 names at the reviewed repo's root; for now atis reads only its `trunk` (D99), its `editor` (D102) and its `producers` (D114). */
 export const CONFIG_FILE = 'atis.config.json';
 
 /** The branches tried for the trunk when the repo configures none, in order, each local and then on `origin/` (D99). */
@@ -172,6 +179,26 @@ export function configuredEditor(text: string | undefined): string | undefined {
   return editor;
 }
 
+/**
+ * The language producers an `atis.config.json` switches off (D114), by id and
+ * sorted: each key of its `producers` object set to `false`, as in
+ * `{ "producers": { "typescript": false } }`; none when there is no file or it
+ * names none. A `producers` that is not an object, or a value that is not a
+ * boolean, throws as misuse, as a broken file does (C4). Which ids name a
+ * producer is the CLI's to check, since core knows no language.
+ */
+export function configuredProducersOff(text: string | undefined): readonly string[] {
+  if (text === undefined) return [];
+  const producers = configObject(text)['producers'];
+  if (producers === undefined) return [];
+  if (!isRecord(producers)) throw new Error(`${CONFIG_FILE}'s producers must be an object of producer ids to true or false`);
+  const off = Object.entries(producers).flatMap(([id, on]) => {
+    if (typeof on !== 'boolean') throw new Error(`${CONFIG_FILE}'s producers.${id} must be true or false`);
+    return on ? [] : [id];
+  });
+  return off.toSorted((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+}
+
 /** A path's segments each escaped for a URL, its slashes kept. */
 const escapedPath = (path: string): string => path.split('/').map(encodeURIComponent).join('/');
 
@@ -225,6 +252,7 @@ const SEVERITY: Readonly<Record<NoticeKind, number>> = {
 };
 
 export const DEFAULT_CONFIG: Config = {
+  producers_off: [],
   category: { high_reach_cells: 3 },
   notices: {
     severity: SEVERITY,

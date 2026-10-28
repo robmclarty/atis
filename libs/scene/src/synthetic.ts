@@ -77,15 +77,16 @@ type Repo = {
   readonly tests: string[];
 };
 
-/** A source file of so many lines exporting a few names drawn from its stem. */
+/** A source file of so many lines exporting a few names drawn from its stem, its folder's barrel when it is an `index.ts`, as a TypeScript scan marks one (D114). */
 function source(path: string, draw: Draw): ScanFile {
   const stem = path.slice(path.lastIndexOf('/') + 1).replace(/\.ts$/, '');
   const loc = draw.int(20, 360);
-  return { path, loc, exports: Array.from({ length: draw.int(1, 4) }, (_, at) => `${stem}${String.fromCodePoint(65 + at)}`), code: [{ start: 1, end: loc }] };
+  const exports = Array.from({ length: draw.int(1, 4) }, (_, at) => `${stem}${String.fromCodePoint(65 + at)}`);
+  return { path, loc, kind: 'source', ...(stem === 'index' ? { barrel: true } : {}), exports, code: [{ start: 1, end: loc }] };
 }
 
 function shore(path: string, loc: number): ScanFile {
-  return { path, loc, exports: [], code: [] };
+  return { path, loc, kind: 'other', exports: [], code: [] };
 }
 
 /** One package: its barrel, then folders, loose directories and single files until its share is spent. */
@@ -119,7 +120,7 @@ function layPackage(repo: Repo, index: number, share: number, draw: Draw): void 
       modules.push({ barrel: front, files });
       if (draw.chance() < 0.3) {
         const test = `${dir}/src/${name}/__tests__/${name}.test.ts`;
-        repo.files.set(test, { ...source(test, draw), exports: [] });
+        repo.files.set(test, { ...source(test, draw), kind: 'test', exports: [] });
         repo.tests.push(test);
       }
     } else modules.push({ files });

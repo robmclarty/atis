@@ -21,7 +21,6 @@
  */
 
 import { OTHER_GROUP } from './groups.js';
-import { classifyFile } from './modules.js';
 import type { ImportEdge, Modules } from './modules.js';
 import type { ChangedFile, ExceptionalEdge, Group, ReachEntry } from './schema.js';
 
@@ -238,16 +237,16 @@ function newCrossModule(inputs: ReachInputs, cells: CellIndex): readonly Excepti
   return introduced.toSorted((a, b) => byPath(a.from, b.from) || byPath(a.to, b.to));
 }
 
-/** The one group a changed file that is not terrain belongs to (D48); a test is never shore (D4). */
-function shoreGroup(path: string, groupOf: ReadonlyMap<string, string>): string {
-  if (classifyFile(path) === 'test') return TESTS_GROUP;
+/** The one group a changed file that is not terrain belongs to (D48); a test, as the scan named it, is never shore (D4). */
+function shoreGroup(path: string, groupOf: ReadonlyMap<string, string>, tests: ReadonlySet<string>): string {
+  if (tests.has(path)) return TESTS_GROUP;
   return groupOf.get(path) ?? OTHER_GROUP;
 }
 
-function place(file: DiffFile, cells: CellIndex, groupOf: ReadonlyMap<string, string>): ChangedFile {
+function place(file: DiffFile, cells: CellIndex, groupOf: ReadonlyMap<string, string>, tests: ReadonlySet<string>): ChangedFile {
   const cell = cells.cellOf.get(file.path);
   return cell === undefined
-    ? { ...file, group: shoreGroup(file.path, groupOf), is_barrel: false }
+    ? { ...file, group: shoreGroup(file.path, groupOf, tests), is_barrel: false }
     : { ...file, cell, is_barrel: cells.barrelOf.get(cell) === file.path };
 }
 
@@ -264,8 +263,9 @@ export function computeReach(inputs: ReachInputs): ReachResult {
     for (const file of group.files) groupOf.set(file, group.id);
   }
 
+  const tests = new Set(inputs.modules.tests);
   const changed = inputs.changed
-    .map((file) => place(file, cells, groupOf))
+    .map((file) => place(file, cells, groupOf, tests))
     .toSorted((a, b) => byPath(a.path, b.path));
   const seeds = (deleted: boolean): readonly string[] =>
     changed.filter((file) => (file.kind === 'deleted') === deleted).map((file) => file.path);

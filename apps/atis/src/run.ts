@@ -57,8 +57,8 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:f
 import { platform, tmpdir } from 'node:os';
 import { basename, join, relative, resolve } from 'node:path';
 
-import { DEFAULT_CONFIG, OVERLAY_NAMES, buildMap, buildRepoMap, layOutTerrain } from 'core';
-import type { CheckBaseline, Commit, FrameInputs, Layout, MapJson, OverlayName, Structure } from 'core';
+import { DEFAULT_CONFIG, OVERLAY_NAMES, buildMap, buildRepoMap, configuredProducersOff, layOutTerrain } from 'core';
+import type { CheckBaseline, Commit, Config, FrameInputs, Layout, MapJson, OverlayName, Structure } from 'core';
 import type { Browser } from 'playwright-core';
 import { renderCinema, renderFingerprint, renderSvg } from 'svg';
 
@@ -90,9 +90,11 @@ import {
   NO_LOCAL_FALLOW,
   checkInferredShapes,
   commitOf,
+  configText,
   localFallow,
   measureStructure,
   parseBaseline,
+  producersOff,
   readCheck,
   readDiff,
   readLog,
@@ -103,7 +105,7 @@ import {
   shapePaths,
   workingTree,
 } from './sources/index.js';
-import type { BaseAsked, CheckInputs, Diff, EntryPoints, LocalFallow, ParsedFiles, Scan, ScanOptions, ScannedTree } from './sources/index.js';
+import type { BaseAsked, CheckInputs, Diff, EntryPoints, LocalFallow, ParsedFiles, Prior, Scan, ScannedTree } from './sources/index.js';
 
 /** How the reviewer asked for the head (D99): a ref `--head` named, or the working tree, `--working-tree`. */
 export type HeadAsked = string | { readonly workingTree: true };
@@ -354,8 +356,16 @@ type Measured = {
   readonly entries?: string;
 };
 
-/** The config every run measures with: core's defaults, since no `atis.config.json` is read yet. */
-const CONFIG = DEFAULT_CONFIG;
+/**
+ * The config a run measures with (D28): core's defaults, with the language
+ * producers the reviewed repo's `atis.config.json` switches off at the head
+ * commit (D114). A file that will not parse, or that switches off a producer
+ * atis does not run, throws as misuse (C4).
+ */
+function configAt(repo: string, sha: string): Config {
+  const off = producersOff(configuredProducersOff(configText(repo, sha)));
+  return off.length === 0 ? DEFAULT_CONFIG : { ...DEFAULT_CONFIG, producers_off: off };
+}
 
 /**
  * The base side of a run: the base tree's scan, the history window at it and
@@ -371,13 +381,14 @@ type Ground = {
   readonly cache: string;
 };
 
-/** How a run reaches the repository: its path, its timings, and the scan of an extracted commit. */
+/** How a run reaches the repository: its path, its timings, the scan of an extracted commit, and the config it measures with. */
 type Reader = {
   readonly repo: string;
   readonly timings: Timing[];
   readonly scanAt: (source: string, sha: string) => Side;
   /** How many commits of history to read (D50). */
   readonly history: number;
+  readonly config: Config;
 };
 
 /**
@@ -390,8 +401,8 @@ type Reader = {
  * map never depended on it (C4).
  */
 function groundAt(reader: Reader, sha: string, cache: boolean, side: string = 'base'): Ground {
-  const { repo, timings, history } = reader;
-  const key = cache ? { code: codeKey(), config: configKey(CONFIG, history) } : undefined;
+  const { repo, timings, history, config } = reader;
+  const key = cache ? { code: codeKey(), config: configKey(config, history) } : undefined;
   const read = key === undefined ? undefined : timed(timings, 'cache read', () => readTerrain(repo, sha, key));
   if (read?.hit === true) {
     const { terrain } = read;
@@ -401,7 +412,7 @@ function groundAt(reader: Reader, sha: string, cache: boolean, side: string = 'b
   const scanned = reader.scanAt(`scan ${side}`, sha);
   const commits = timed(timings, `log ${side}`, () => readLog(repo, sha, history));
   const nearest = key === undefined ? undefined : timed(timings, 'cache near', () => nearestTerrain(repo, sha, key));
-  const layout = timed(timings, `layout ${side}`, () => layOutTerrain(scanned.scan, CONFIG, nearest?.terrain.layout));
+  const layout = timed(timings, `layout ${side}`, () => layOutTerrain(scanned.scan, config, nearest?.terrain.layout));
   if (key === undefined || read === undefined) return { ...scanned, commits, layout, cache: 'off (--no-cache)' };
   const from = nearest === undefined ? 'laid out cold' : `relaxed from ${nearest.sha}`;
   try {
@@ -453,10 +464,10 @@ type HeadRead = { readonly side: ScannedTree; readonly entries: string };
  * change extracts the head for nothing; a cache that will not write leaves
  * the run as it was (C4).
  */
-function headAt(repo: string, sha: string, prior: NonNullable<ScanOptions['prior']>, tree: () => string, fallow: LocalFallow | undefined, cache: boolean): HeadRead {
+function headAt(repo: string, sha: string, prior: Prior, tree: () => string, fallow: LocalFallow | undefined, cache: boolean, config: Config): HeadRead {
   const key = cache && fallow?.version !== undefined ? { code: codeKey(), fallow: fallow.version } : undefined;
   const kept: EntryPoints | undefined = key === undefined ? undefined : readEntries(repo, sha, key);
-  const side = readCommit(sha, { repo, prior, entryPoints: kept, extracted: tree });
+  const side = readCommit(sha, { repo, prior, entryPoints: kept, extracted: tree, off: config.producers_off });
   if (fallow === undefined) return { side, entries: 'none (no local fallow)' };
   if (kept !== undefined) return { side, entries: `hit, ${relative(repo, entriesPath(repo, sha))}` };
   if (!cache) return { side, entries: 'off (--no-cache)' };
@@ -526,18 +537,19 @@ function measureRepo(repoPath: string, asked: Asked): Measured {
   const repo = resolve(repoPath);
   const timings: Timing[] = [];
   const extractions: Extraction[] = [];
-  const scanAt = (source: string, sha: string): Side =>
-    timed(timings, source, () => {
-      const extraction = extract(repo, sha);
-      extractions.push(extraction);
-      return { tree: extraction.tree, ...readTree(extraction.tree, { repo }) };
-    });
 
   try {
     const checkedOut = commitAt(repo, HEAD);
     const named = typeof asked.head === 'string' ? asked.head : HEAD;
     const head = named === HEAD ? checkedOut : commitAt(repo, named);
-    const ground = groundAt({ repo, timings, scanAt, history }, head.sha, cache, 'head');
+    const config = configAt(repo, head.sha);
+    const scanAt = (source: string, sha: string): Side =>
+      timed(timings, source, () => {
+        const extraction = extract(repo, sha);
+        extractions.push(extraction);
+        return { tree: extraction.tree, ...readTree(extraction.tree, { repo, off: config.producers_off }) };
+      });
+    const ground = groundAt({ repo, timings, scanAt, history, config }, head.sha, cache, 'head');
     const check = timed(timings, 'check', () => checkFor(repo, `the head ${named}`, head, checkedOut, false));
     const baseline = timed(timings, 'baseline', () => committedBaseline(repo, head.sha));
     const map = timed(timings, 'build', () =>
@@ -551,7 +563,7 @@ function measureRepo(repoPath: string, asked: Asked): Measured {
           baseline,
           ground: ground.layout,
         },
-        CONFIG,
+        config,
       ),
     );
     return { map, timings, cache: ground.cache };
@@ -573,11 +585,6 @@ function measure(repoPath: string, asked: Asked): Measured {
     extractions.push(extraction);
     return extraction.tree;
   };
-  const scanAt = (source: string, sha: string): Side =>
-    timed(timings, source, () => {
-      const tree = treeAt(sha);
-      return { tree, ...readTree(tree, { repo }) };
-    });
 
   try {
     const checkedOut = commitAt(repo, HEAD);
@@ -585,11 +592,17 @@ function measure(repoPath: string, asked: Asked): Measured {
     const working = typeof asked.head === 'object';
     const headRef = range?.to ?? (typeof asked.head === 'string' ? asked.head : HEAD);
     const head = headRef === HEAD ? checkedOut : commitAt(repo, headRef, range === undefined ? '--head' : '--range');
+    const config = configAt(repo, head.sha);
+    const scanAt = (source: string, sha: string): Side =>
+      timed(timings, source, () => {
+        const tree = treeAt(sha);
+        return { tree, ...readTree(tree, { repo, off: config.producers_off }) };
+      });
     const base = timed(timings, 'base', () => (range === undefined ? resolveBase(repo, asked.base, headRef) : rangeBase(repo, range)));
     // The head side's tree: the head commit's, or the working tree's, staged, unstaged and untracked (D99).
     const tree = working ? timed(timings, 'working tree', () => workingTree(repo)) : head.sha;
     const diff = timed(timings, 'diff', () => readDiff(repo, base.ref, head.sha, tree));
-    const ground = groundAt({ repo, timings, scanAt, history }, diff.merge_base, cache);
+    const ground = groundAt({ repo, timings, scanAt, history, config }, diff.merge_base, cache);
     // No tree is extracted unless something reads it from disk: the checker, or the reviewed repo's fallow.
     const trees = new Map<string, string>(ground.tree === undefined ? [] : [[diff.merge_base, ground.tree]]);
     const treeOf = (sha: string): string => {
@@ -604,7 +617,7 @@ function measure(repoPath: string, asked: Asked): Measured {
     // Each head reads only what its diff touched; every other file holds the base's bytes (D136).
     const sideAt = (sideTree: string, changed: Diff['changed']): HeadSide => {
       const touched = new Set(changed.map((file) => file.path));
-      return { tree: sideTree, changed, read: headAt(repo, sideTree, { parsed: ground.parsed, touched }, () => treeOf(sideTree), fallow, cache) };
+      return { tree: sideTree, changed, read: headAt(repo, sideTree, { parsed: ground.parsed, touched }, () => treeOf(sideTree), fallow, cache, config) };
     };
     const top = timed(timings, 'scan head', () => sideAt(tree, diff.changed));
     // A range reads each commit as a head over the one base, its last the map's own head (D100).
@@ -666,7 +679,7 @@ function measure(repoPath: string, asked: Asked): Measured {
         // The map holds the base's own layout wherever the change left the ground alone (D32, D172).
         ground: ground.layout,
         ...(frames === undefined ? {} : { frames }),
-      }, CONFIG),
+      }, config),
     );
     return { map, timings, cache: ground.cache, structure: { base: baseStructure.cache, head: structureCache }, entries: top.read.entries };
   } finally {

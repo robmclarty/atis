@@ -1,11 +1,14 @@
 /**
  * modules: which cell every terrain file lives in (§5.1).
  *
- * Checkride's convention comes first, inside every package: `src/index.ts` is
- * the package barrel, `src/<name>.ts` a single-file cell and `src/<name>/` with
- * an `index.ts` a folder cell. Every other terrain file falls back to its own
- * directory, whose interface is whatever is imported from outside it, so
- * nothing here depends on a barrel existing (D45).
+ * Checkride's convention comes first, inside every package: the barrel of
+ * `src/` is the package barrel, a file directly in `src/` a single-file cell,
+ * and `src/<name>/` with a barrel of its own a folder cell. Every other
+ * terrain file falls back to its own directory, whose interface is whatever is
+ * imported from outside it, so nothing here depends on a barrel existing
+ * (D45). Which files are terrain, which are tests, and which file is its
+ * directory's barrel are the scan's to say, since each language has its own
+ * rules for them (D114): core reads no extension.
  */
 
 import type { CellKind } from './schema.js';
@@ -13,10 +16,17 @@ import type { CellKind } from './schema.js';
 /** What a tracked file is to the map: terrain, evidence (D4), or shore (D48). */
 export type FileKind = 'source' | 'test' | 'other';
 
-/** The parts of a scanned file that module identification reads. */
+/**
+ * The parts of a scanned file that module identification reads: its kind as
+ * its language's producer gave it (D114), and whether it is the barrel its
+ * directory is entered through, where the language has one (`index.ts`,
+ * `__init__.py`).
+ */
 export type ScannedFile = {
   readonly path: string;
   readonly loc: number;
+  readonly kind: FileKind;
+  readonly barrel?: boolean;
   readonly exports: readonly string[];
 };
 
@@ -51,31 +61,24 @@ export type ModuleOrganelle = {
 export type Modules = {
   readonly cells: readonly ModuleCell[];
   readonly organelles: readonly ModuleOrganelle[];
+  /** The files the scan named tests, sorted: evidence, set aside rather than placed (D4). */
+  readonly tests: readonly string[];
 };
 
-/** `.ts`, `.tsx`, and the `.mts` and `.cts` NodeNext modules, declarations included (D77). */
-const TYPESCRIPT = /\.(?:[cm]?ts|tsx)$/;
-const TEST_NAME = /\.(?:test|spec)\.(?:[cm]?ts|tsx)$/;
-const TEST_DIR = /(?:^|\/)(?:__tests__|test)\//;
-
-/** No shore table in hand: a name-only read, where no TypeScript counts as shore. */
+/** No shore table in hand: every source file the scan named stays terrain. */
 const NOT_SHORE = (): boolean => false;
 
 /**
- * Classify a tracked path: TypeScript (`.mts` and `.cts` too, D77) is terrain
- * unless it is a test (D4), and one that configures a tool (D57) or that a
- * build committed (D84) is shore too, so a `vitest.config.ts`, a
- * `vite.config.mts` or a `dist/index.d.ts` founds no cell. `isShore` is the
- * shore's `config` and `build` rows, compiled by `shoreMatcher`; `buildMap`
- * threads the reviewed repo's own table through, so an `atis.config.json`
- * override moves that boundary with it. The graph sources that read a scanned
- * tree and have no table (depth, reach, the import scan) fall back to the
- * name, where such a file founds no cell anyway.
+ * What a scanned file is to the map: the kind its producer gave it (D114),
+ * except that a source file the shore's `config` or `build` row takes is
+ * shore, since it configures a tool (D57) or a build committed it (D84), so a
+ * `vitest.config.ts` or a `dist/index.d.ts` founds no cell. `isShore` is those
+ * rows, compiled by `shoreMatcher`; `buildMap` threads the reviewed repo's own
+ * table through, so an `atis.config.json` override moves that boundary with
+ * it. A test stays a test wherever it sits (D4).
  */
-export function classifyFile(path: string, isShore: (path: string) => boolean = NOT_SHORE): FileKind {
-  if (!TYPESCRIPT.test(path)) return 'other';
-  if (TEST_NAME.test(path) || TEST_DIR.test(path)) return 'test';
-  return isShore(path) ? 'other' : 'source';
+export function classifyFile(file: Pick<ScannedFile, 'path' | 'kind'>, isShore: (path: string) => boolean = NOT_SHORE): FileKind {
+  return file.kind === 'source' && isShore(file.path) ? 'other' : file.kind;
 }
 
 function normalizeRoot(root: string): string {
@@ -116,26 +119,35 @@ function dirname(path: string): string {
   return slash < 0 ? '.' : path.slice(0, slash);
 }
 
-function barrelOf(dir: string, terrain: ReadonlySet<string>): string | undefined {
-  return [`${dir}/index.ts`, `${dir}/index.tsx`].find((path) => terrain.has(path));
+/**
+ * Each directory's barrel: the terrain file in it the scan marked as one, the
+ * first by path where it marked two (`index.ts` before `index.tsx`).
+ */
+function barrelsOf(sorted: readonly ScannedFile[]): ReadonlyMap<string, string> {
+  const barrels = new Map<string, string>();
+  for (const file of sorted) {
+    const dir = dirname(file.path);
+    if (file.barrel === true && !barrels.has(dir)) barrels.set(dir, file.path);
+  }
+  return barrels;
 }
 
 type Placement = { readonly kind: CellKind; readonly path: string; readonly barrel?: string };
 
 /** Where checkride's convention puts a file inside its package; its directory otherwise. */
-function place(path: string, member: string | undefined, terrain: ReadonlySet<string>): Placement {
+function place(path: string, member: string | undefined, barrels: ReadonlyMap<string, string>): Placement {
   const fallback: Placement = { kind: 'directory', path: dirname(path) };
   if (member === undefined) return fallback;
   const src = member === '' ? 'src' : `${member}/src`;
   if (!path.startsWith(`${src}/`)) return fallback;
   const [name = '', ...rest] = path.slice(src.length + 1).split('/');
   if (rest.length === 0) {
-    return path === barrelOf(src, terrain)
+    return path === barrels.get(src)
       ? { kind: 'package', path: displayPath(member), barrel: path }
       : { kind: 'single', path };
   }
   const folder = `${src}/${name}`;
-  const barrel = barrelOf(folder, terrain);
+  const barrel = barrels.get(folder);
   return barrel === undefined ? fallback : { kind: 'folder', path: folder, barrel };
 }
 
@@ -183,12 +195,12 @@ function finish(draft: Draft, importers: ReadonlyMap<string, readonly string[]>)
 
 /**
  * Group the terrain into cells. `files` may hold every tracked file: tests,
- * non-TypeScript paths and the `config` and `build` shore (D57, D84) are
- * skipped here. `edges` only decide the interface of a cell without a barrel,
- * and only edges between terrain files count. `roots` are the workspace
- * members' directories, repo-relative. `isShore` is the shore's `config` and
- * `build` rows, so a `.ts` that configures a tool, or a `.d.ts` a build
- * committed, founds no cell of its own.
+ * the files the scan called other and the `config` and `build` shore (D57,
+ * D84) are skipped here, the tests listed apart. `edges` only decide the
+ * interface of a cell without a barrel, and only edges between terrain files
+ * count. `roots` are the workspace members' directories, repo-relative.
+ * `isShore` is the shore's `config` and `build` rows, so a source file that
+ * configures a tool, or one a build committed, founds no cell of its own.
  */
 export function identifyModules(
   files: readonly ScannedFile[],
@@ -197,11 +209,15 @@ export function identifyModules(
   isShore: (path: string) => boolean = NOT_SHORE,
 ): Modules {
   const byPath = new Map<string, ScannedFile>();
+  const tests = new Set<string>();
   for (const file of files) {
-    if (classifyFile(file.path, isShore) === 'source' && !byPath.has(file.path)) byPath.set(file.path, file);
+    const kind = classifyFile(file, isShore);
+    if (kind === 'test') tests.add(file.path);
+    if (kind === 'source' && !byPath.has(file.path)) byPath.set(file.path, file);
   }
   const sorted = [...byPath.values()].toSorted((a, b) => (a.path < b.path ? -1 : 1));
   const terrain = new Set(byPath.keys());
+  const barrels = barrelsOf(sorted);
   const members = packageRoots(roots, [...terrain]);
   const drafts = new Map<string, Draft>();
   const organelles: ModuleOrganelle[] = [];
@@ -211,7 +227,7 @@ export function identifyModules(
     const member = memberOf(path, members);
     const pkg = member === undefined ? undefined : draftFor(drafts, 'package', displayPath(member));
     pkg?.inside.set(path, file);
-    const placement = place(path, member, terrain);
+    const placement = place(path, member, barrels);
     const cell = draftFor(drafts, placement.kind, placement.path, placement.kind === 'package' ? undefined : pkg?.id);
     if (placement.barrel !== undefined) cell.barrel = placement.barrel;
     cell.organelles.push(path);
@@ -230,5 +246,5 @@ export function identifyModules(
   const cells = [...drafts.values()]
     .toSorted((a, b) => (a.id < b.id ? -1 : 1))
     .map((draft) => finish(draft, importers));
-  return { cells, organelles };
+  return { cells, organelles, tests: [...tests].toSorted((a, b) => (a < b ? -1 : 1)) };
 }

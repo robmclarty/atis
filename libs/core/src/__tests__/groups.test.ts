@@ -3,9 +3,12 @@ import { expect, test } from 'vitest';
 import { DEFAULT_CONFIG } from '../config.js';
 import { identifyGroups, OTHER_GROUP } from '../groups.js';
 import type { GroupRule } from '../groups.js';
+import type { ScannedFile } from '../modules.js';
+import { typed } from './scanned.js';
 
-function tracked(...paths: readonly string[]): readonly { path: string }[] {
-  return paths.map((path) => ({ path }));
+/** Tracked paths, each with the kind the TypeScript producer gives it (D114). */
+function tracked(...paths: readonly string[]): readonly Pick<ScannedFile, 'path' | 'kind'>[] {
+  return paths.map(typed);
 }
 
 function groupOf(path: string, roots: readonly string[] = []): string | undefined {

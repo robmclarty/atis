@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 78 — feat(web): play a tour's stops with fly-to
+**Current step:** 79 — refactor(cli): run every producer a repo needs and merge their scans
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -132,7 +132,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 76. feat(web): light a symbol's reach where it crosses a membrane
 - ☑ 121. fix(web): draw an opened cell's words on top, and open the Reach block on its lit names
 - ☑ 77. feat(tour): write an opt-in reviewer's tour with fascicle
-- ☐ 78. feat(web): play a tour's stops with fly-to
+- ☑ 78. feat(web): play a tour's stops with fly-to
 - ☐ 79. refactor(cli): run every producer a repo needs and merge their scans
 - ☐ 120. feat(cli): read JavaScript as terrain through the TypeScript producer
 - ☐ 80. fix(core): sort other languages' manifests and settings onto the shore
@@ -236,6 +236,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] an opened cell's export list draws beneath the world's other layers (Rob, range 21's stop): the notice labels' layer is laid over the interior's, its numbered boxes at z-index 1, and the list stays translucent until the exploded view has spread; asked-for words should sit on top
 - [x] the Reach block opens on every name the change carried, 22 on checkride PR 4 with 22 more files at the file level, so the four names lit on src/pm's membrane are lost among them (Rob, range 21's stop): with a cell open, open on the names lit on its membrane
 - [x] two runs serving one repository overwrite each other's .atis/serve.json, and the later one's exit removes it, so atis mcp loses the tab that is still open
+- [ ] the web tour test (world.test.ts, served with a tour) timed out at 30 s waiting on the breadcrumb under the full suite's load once in step 79's check, and passed alone in 5 s and on the rerun: a flake in the gate
+- [ ] steps 81 to 84 each register their producer in apps/atis/src/sources/producers.ts's PRODUCERS, which their seams omit (they name sources/index.ts); step 87's contract should say where a producer is registered
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -2701,3 +2703,76 @@ folder, so it rides the branch into the PR.)*
 
 - 2026-10-28 — step 121 checkpointed · 184236a8a — fix(web): draw an opened cell's words on top, and open the Reach block on its lit names (1 drift, 17m)
 - 2026-10-28 — step 77 checkpointed · 5da70cf67 — feat(tour): write an opt-in reviewer's tour with fascicle (16m)
+- 2026-10-28 — step 78 checkpointed · 2d4406297 — feat(web): play a tour's stops with fly-to (1 drift, 14m)
+- 2026-10-28 — range 22 of 33's stop recorded — open `src/pm` on checkride PR 4 served live and see its lit names on top and the Reach block on them alone (step 121's check, [D185 (asked-words-on-top)](#d185), [D186 (reach-follows-open-cell)](#d186)); then run a real tour on a map of yours only if you choose to spend the model calls (the tests ran fascicle's stub engine), and watch the world play its stops
+
+  **Summary**: An opened cell's words now draw over everything else the world lays over the canvas: the export list sits on an opaque ground, and only its words fade in with the spread. While a cell is open, the Reach block opens on the names lit on that cell's membrane alone. A new private workspace app, `apps/tour`, writes a reviewer's tour of a map through fascicle, sending the model the map and never the code. `atis --tour <file>` plays that tour in the served world with a stepper that flies to each stop. A tour written for another base or head exits 2. I already ran the stop's first check on PR 4, headless, and it holds. No model has been called yet: the tests ran fascicle's stub engine.
+
+  1. Two steps each strayed one line outside their seams, both to keep the gate honest
+  2. PR 4 already passes the stop's first check, headless, and one interaction is yours to call
+  3. fascicle is pinned at 0.17.0, because pnpm's release-age guard refuses 0.17.1 for another day
+  4. The tour sends the model the map alone, and a real run is three commands
+  5. The world plays a stop the way it plays an agent's highlight
+
+  **Readout**:
+
+  ```text
+  steps        3 of 3 landed
+               - 121 184236a · 77 5da70cf · 78 2d44062
+  check        green: 1 of 1 checks, 3 landings
+  done-when    met
+  decisions    honored
+               - D185 (asked-words-on-top), D186 (reach-follows-open-cell)
+               - D112 (tour-is-separate), D177 (tour-provider)
+               - D182 (tour-input), D183 (tour-package), D178 (highlight-channel)
+  constraints  bent: C9 (deps-earn-their-place)
+               → fascicle is pinned at 0.17.0, one release behind; see section 3
+  seam         strayed: 2 paths outside 2 steps' seams
+               - step 121: .markdownlint-cli2.jsonc
+               - step 78: apps/atis/src/index.ts
+  diff         +2223 -58 across 43 files
+               - .markdownlint-cli2.jsonc +1 -1
+               - apps/atis/src/__tests__/cli.test.ts +12 -0
+               - apps/atis/src/__tests__/serve.test.ts +57 -0
+               - apps/atis/src/cli.ts +6 -1
+               - apps/atis/src/index.ts +5 -1
+               - apps/atis/src/run.ts +37 -1
+               - apps/atis/src/serve.ts +19 -5
+               - and 36 more
+  spent        47 min · green first run at every landing · 2 drift warnings
+  ```
+
+  **Verdict**: ○ Out of plumb (constraints bent)
+
+  **Recommendation**: Accept the first check from section 2, and either confirm it live or have the words drawn over the chrome too. On the tour, spend the one call on PR 4 with the commands in section 4 if you want to see a real model's ordering before wave 5's producers. The stub-engine golden and the browser test already show the world playing a tour's stops. The fascicle pin and the two one-line strays need nothing now beyond the 0.17.1 bump after 2026-10-29.
+
+  **1.** Two steps each strayed one line outside their seams, both to keep the gate honest
+
+  Step 121 (fix(web): draw an opened cell's words on top) changed `.markdownlint-cli2.jsonc` from `dist/**` to `**/dist/**`. The docs slot had started linting `apps/atis/dist/licenses.md`, the gitignored file the package test writes, because the old glob matched only a root `dist/`. That file first appeared during step 76's checkpoint run, so every check after it was red. Step 78 (feat(web): play a tour's stops with fly-to) added the `--tour <file>` line to atis's usage text in `apps/atis/src/index.ts`, because otherwise `--help` would not name the flag. Step 77 stayed inside its seam.
+
+  **2.** PR 4 already passes the stop's first check, headless, and one interaction is yours to call
+
+  I rebuilt atis (`pnpm build`), so the `atis` on your PATH carries this range. I served PR 4 from the kept worktree with `atis --base fee5ed6 --no-open` and opened `folder:src/pm` in headless Chrome at zoom 8. Its membrane lights 4 of its 8 exports: `execTool`, `execUsesGlobalCache`, `installCommand` and `resolveSlotTool`. The list's ground read opaque (`rgb(26, 31, 39)`, opacity 1). I laid a numbered box and the hover tag over each of its 5 words, and nothing covered any of them. With `src/pm` open, the Reach block opened on those 4 names alone, each over the files outside `src/pm` it reached: `src/doctor.ts` and `src/orchestrator.ts` at 0 hops. With the cell closed again, it opened on all 30 parts. The console stayed clean. The screenshots are `/tmp/atis-stop-check/pm-exploded.png` and `/tmp/atis-stop-check/pm-reach.png`.
+
+  The call is this. I kept the chrome (the HUD, its panels, the notice column, the minimap) above every world layer. "Every other layer the world lays" then means the notice labels and their boxes, the hover tag, the file plate and the diff sheet. Keeping the chrome above has a cost: the open Reach panel covers the export list on PR 4 at that framing, though it names the same 4 names. To keep the chrome above, the hover tag lost the `z-index: 2` that let it draw over the HUD. It now sits beneath the chrome and beneath the opened cell's words. If asked-for words should sit over the chrome too, it is one z-index on the words layer.
+
+  **3.** fascicle is pinned at 0.17.0, because pnpm's release-age guard refuses 0.17.1 for another day
+
+  C9 (deps-earn-their-place) asks for the latest release. pnpm's `minimumReleaseAge` here is 2,880 minutes. fascicle 0.17.1 was published 2026-10-27 at 05:37 UTC, so the guard refuses it until 2026-10-29 at 05:37 UTC. I took 0.17.0, the newest release the guard accepts, rather than add fascicle to the exclusion list, since lifting a supply-chain guard is your call. 0.17.1's one change is in the engine's tool loop, which the tour does not use. `pnpm --filter tour add fascicle@0.17.1` bumps it once the guard clears. fascicle's optional peers zod and the MCP SDK resolve to the copies `apps/atis` already holds, so nothing else was installed.
+
+  **4.** The tour sends the model the map alone, and a real run is three commands
+
+  The prompt is a digest of the map. It holds the base and head, the notices with their whys, inputs and thresholds, the changed files with their hunks' line numbers, the reach and its names, the touched cells' export names, and the touched files' functions by name and line. A test checks that every string in the prompt is one the map holds. On `claude_cli`, the default, the CLI runs with your logged-in session and no API key. It starts in an empty scratch directory outside the repository, with `--tools ""` and `--strict-mcp-config`, so it cannot read the code. The model's answer is held to a hand-written Standard Schema: every notice explained once, at a target the world can fly to. A bad answer gets fascicle's repair pass, then exits 1 and writes nothing. The tour is kept at `<repo>/.atis/tours/<head>.json` and reused only for the same base and head. A map from `--working-tree` names no commit, so its tour is never kept. To spend one sonnet call on PR 4's 3 notices:
+
+  ```bash
+  cd /private/tmp/atis-symbol-hPJ0/checkride
+  atis --base fee5ed6 --out "$PWD/map.json"
+  pnpm -C ~/Projects/atis/code/atis --filter tour start "$PWD/map.json"
+  atis --base fee5ed6 --tour "$PWD/tour.json"
+  ```
+
+  The tour command prints the provider and model before the call, and again as the engine reports them after it. `--provider anthropic` with `ANTHROPIC_API_KEY` set takes the API instead. When you are done with PR 4: `git -C ~/Projects/checkride/code/checkride worktree remove --force /private/tmp/atis-symbol-hPJ0/checkride`.
+
+  **5.** The world plays a stop the way it plays an agent's highlight
+
+  A stop goes to the world as a new highlight kind, `stop`, which only the chrome's stepper sends: the socket still carries only `file` and `notice`. The camera flies to the stop's target, which is a file or a cell the map places, or wherever the notice's row leads when the target is the notice's own. The target's labels are written as an asked target's (D168 (labels-on-demand)), and the notice flares. The stepper opens on the count of stops and writes each stop's notice rank, target and sentence. The page plays a tour only over the map it was written for. After a pushed map or a switched base, it says what the tour was written for in one muted line instead. A run with no tour makes no request and shows nothing new. One look is baked: the sentence's 60-character measure, since a new token would need a row in `docs/design.md`, outside the seam. The browser test steps the demo's tour golden to its first stop and then its fifth, another file, and checks the flight, the labels, the breadcrumb and the sentence.
