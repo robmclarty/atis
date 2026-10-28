@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 84 — feat(cli): scan shell scripts into the same scan shape
+**Current step:** 119 — fix(cli): read checkride's targets, each artifact by its check's adapter
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -139,7 +139,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 81. feat(cli): scan a Go module into the same scan shape
 - ☑ 82. feat(cli): scan a Python project into the same scan shape
 - ☑ 83. feat(cli): scan Terraform modules into the same scan shape
-- ☐ 84. feat(cli): scan shell scripts into the same scan shape
+- ☑ 84. feat(cli): scan shell scripts into the same scan shape
 - ☐ 119. fix(cli): read checkride's targets, each artifact by its check's adapter
 - ☐ 85. feat(cli): read each language's evidence as checkride writes it
 - ☐ 86. chore(fixtures): render one reviewed PR per new language
@@ -246,6 +246,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [ ] hcl2-parser 1.0.3, step 83's HCL reader, has had no release since 2022-05 and has one maintainer, the staleness Rob ruled out; the maintained choice is HashiCorp's @cdktf/hcl2json (WASM, asynchronous), which the same worker bridge step 84 builds for sh-syntax could run
 - [ ] a for loop that sources every script a glob matches (for f in "$DIR"/lib/*.sh; do source "$f"; done) reaches none of them; matching the glob against the tracked scripts would give each an edge
 - [ ] an extensionless script with a shell shebang (bin/deploy, .husky/pre-commit) stays on the shore's scripts row, since a producer claims files by extension alone (D114); claiming by shebang too would bring such scripts into the terrain
+- [ ] serve a split repo's raw slot output from each target's directory: the HUD part for lint asks serve.ts for .check/lint.*, which a run split into targets writes as .check/<target>/lint.json, so it opens empty
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -2934,3 +2935,97 @@ folder, so it rides the branch into the PR.)*
   **4.** Checked on the built bundle, and the paths outside the seam
 
   After `pnpm build`, the bundle inlines the parser, its licence in `dist/licenses.md`. It mapped checkride's `examples/terraform-roots`: `envs/production` and `envs/staging` as root modules at band 0, the `modules/naming` module they call at band 1, and each `.tflint.hcl` on the shore's `config` row from step 80. `docs/inspiration.md` gained the parser's row, noting that the MIT package carries MPL-2.0 `hcl` compiled inside it. Outside the seam: the registration in `producers.ts`, the export of `showFile` in `git.ts`, and the checkride 0.19.1 install with its `minimumReleaseAgeExclude` line in `pnpm-workspace.yaml`, which Rob asked for during this pause and which step 119 (checkride's targets) will use.
+
+- 2026-10-28 — step 84 checkpointed · 4b337ffa2 — feat(cli): scan shell scripts into the same scan shape (1 drift, 64m)
+
+  **Summary**: Shell is the fifth producer. Each `.sh` and `.bash` script is an organelle in its directory's cell, and each `*.bats` file is a test. Edges come from `source` and `.` lines, bats `load`, and commands that run a tracked script by its path. Executable scripts nothing sources are the entry points, and a sourced script's functions are its exports, shaped by name. It reads with tree-sitter's bash grammar, not the `sh-syntax` you installed. `sh-syntax`'s syntax tree stops at each statement's start and end and holds none of its words, so it cannot find a `source` line or a function. That swap is the call this pause holds.
+
+  1. The parser you installed reads no commands, so this step reads with tree-sitter's bash grammar
+  2. The grammar loads once, as the module loads, so no worker bridge was needed
+  3. How a script's paths resolve, and what an edge names
+  4. Read, shell is terrain; switched off, every file it leaves is on the scripts row
+  5. Checked on the shipped bundle, and the paths outside the seam
+
+  **Readout**:
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored:
+               - D117 (shell-producer), D114 (producers-compose)
+               - D76 (interface-shape), D30 (pure-parsers), D109 (installable-package)
+  constraints  14 of 14 honored
+  seam         strayed: 5 paths outside the seam
+               - apps/atis/scripts/bundle.ts
+               - apps/atis/src/sources/producers.ts
+               - apps/atis/src/sources/scan.ts
+               - fallow.toml
+               - pnpm-workspace.yaml
+  diff         +792 -16 across 13 files
+               - apps/atis/package.json +2 -0
+               - apps/atis/scripts/bundle.ts +29 -4
+               - apps/atis/src/__tests__/shell.test.ts +273 -0
+               - apps/atis/src/sources/index.ts +1 -0
+               - apps/atis/src/sources/producers.ts +12 -3
+               - apps/atis/src/sources/scan.ts +18 -6
+               - apps/atis/src/sources/shell.ts +404 -0
+               - and 6 more
+  spent        64 min · 1 turn · 106s gate · green first run
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Recommendation**: Approve the switch to `web-tree-sitter` and `tree-sitter-bash`, and land step 84. `sh-syntax` can say where each statement is but not what it says, so it cannot find a `source` line, a function or a command. tree-sitter's grammar is the maintained full parser, and it already passes every shell test and the shipped-bundle run.
+
+  **1.** The parser you installed reads no commands, so this step reads with tree-sitter's bash grammar
+
+  A probe of `sh-syntax` 0.7.0 parsed synchronously in 8 ms. But each statement in its tree carries only its start and end positions. There is no command name, no argument, and no nested statement. A function body or an `if` branch is one opaque span. Reading shell with it would mean a lexer of atis's own doing the real work, with the parser only checking syntax.
+
+  The alternatives, checked on npm today:
+
+  - `mvdan-sh` is deprecated (mvdan/sh issue 1145).
+  - `bash-parser` has had no release since 2017.
+  - `web-tree-sitter` 0.27.1 (2026-10-08) with `tree-sitter-bash` 0.25.1 (2025-12-02), both MIT, gives the full tree: commands with their words, function definitions, and nesting. bash-language-server reads shell the same way.
+
+  The cost is two devDependencies in place of one. `tree-sitter-bash` also ships a native binding and an install script. atis reads only its prebuilt `tree-sitter-bash.wasm` (1.3 MB), and `pnpm-workspace.yaml` denies the build. `sh-syntax` is removed, since the `dead` slot fails on an unused devDependency.
+
+  To keep `sh-syntax` instead, say so. I would then read each statement's words with a lexer of atis's own, and nested statements would need the same.
+
+  **2.** The grammar loads once, as the module loads, so no worker bridge was needed
+
+  tree-sitter's runtime starts only asynchronously, while every producer reads synchronously. A top-level `await` in `shell.ts` loads both WASM files once, in about 7 ms, before any scan runs. After that, each parse is synchronous.
+
+  A grammar that fails to load does not crash atis. It leaves the shell producer unread, with the reason in `meta.instruments` (C2 (never-fake)).
+
+  P93 (HCL parser staleness) names "the worker bridge step 84 builds for sh-syntax". No worker was built. HashiCorp's `@cdktf/hcl2json` could load the same way, provided its calls are synchronous once it has started.
+
+  **3.** How a script's paths resolve, and what an edge names
+
+  A path spelled from the script's own place resolves against that script: `$0`, `${BASH_SOURCE[0]}` or `$BATS_TEST_DIRNAME`, through `dirname`, `realpath`, `readlink`, `cd … && pwd` and the variables that keep them. `git rev-parse --show-toplevel` resolves against the tree's root.
+
+  - A relative path resolves against the script's directory, then the root.
+  - A path whose start no reading can know, such as `$LIB_HOME/log.sh`, resolves by its end, but only when exactly one tracked script ends that way.
+  - A `# shellcheck source=` directive names the path outright, and `source=/dev/null` sources nothing.
+  - A path two scripts end with, one outside the tree, or `bash -c` reaches nothing, never a guess.
+
+  A source edge names the target's functions the sourcing file calls. A run edge names nothing.
+
+  Entry points need the executable bit, so `Tree` gained `executable`: git's `100755` for a commit read from git, and the mode bits for a walked tree. A table test covers eight spellings of a path to a library.
+
+  **4.** Read, shell is terrain; switched off, every file it leaves is on the scripts row
+
+  The `scripts` row gains `*.bash` and `*.bats` beside `*.sh`. Switched off, all three kinds land there together rather than `.bash` falling into `other`. Read, none of them is shore, since only the `config` and `build` rows ever make a source file shore. One groups test pins both cases, and a shell test pins the switched-off map.
+
+  **5.** Checked on the shipped bundle, and the paths outside the seam
+
+  `scripts/bundle.ts` copies both WASM files beside the bundle and adds the grammar's licence to `dist/licenses.md`. It also filters Rolldown's direct-`eval` warning for `web-tree-sitter`'s Emscripten runtime alone. I copied the bundle outside the repo with only its three runtime dependencies installed. It mapped a two-commit shell repo: `bin/run.sh` at band 0 sources `lib/log.sh` at band 1, each in its own directory cell.
+
+  Outside the seam:
+
+  - `scan.ts`: `executable` on `Tree`.
+  - `producers.ts`: the registration.
+  - `bundle.ts`: the WASM copy and the licence.
+  - `fallow.toml`: `tree-sitter-bash` is read only by its path, so fallow is told to ignore it.
+  - `pnpm-workspace.yaml`: pnpm 11 refused the install until the native build was denied.
+
+  Two gaps are parked: P94 (glob-sourcing loops) and P95 (extensionless shebang scripts).

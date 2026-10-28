@@ -573,7 +573,7 @@ test('--range beside a flag that names the base or the head, or not two refs, is
  */
 function writeCheck(repo: string, files: Readonly<Record<string, unknown>>): void {
   const slots = ['dead', 'dupes', 'health'];
-  const summary = { schema_version: 1, ok: true, checks_run: slots.length, timestamp: new Date().toISOString(), total_duration_ms: 3_600_000, checks: slots.map((name) => ({ name, ok: true })) };
+  const summary = { schema_version: 1, ok: true, checks_run: slots.length, timestamp: new Date().toISOString(), total_duration_ms: 3_600_000, checks: slots.map((name) => ({ name, adapter: 'fallow', ok: true })) };
   write(repo, '.check/summary.json', JSON.stringify(summary));
   for (const [name, value] of Object.entries(files)) write(repo, `.check/${name}`, JSON.stringify(value));
 }

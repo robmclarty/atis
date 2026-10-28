@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,11 +19,13 @@ import {
   parseTest,
   readCheck,
   readCheckDir,
+  slotsOf,
 } from '../sources/index.js';
-import type { CheckInputs } from '../sources/index.js';
+import type { CheckInputs, SummaryCheck } from '../sources/index.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FIXTURE_REPO = join(HERE, '..', '..', 'fixtures', 'check');
+const TARGETS_FIXTURE = join(HERE, '..', '..', 'fixtures', 'check-targets');
 
 function writeTree(root: string, tree: Readonly<Record<string, string>>): string {
   for (const [path, content] of Object.entries(tree)) {
@@ -85,11 +87,33 @@ test('parseSummary reads a schema-1 summary into ok, checks_run, timestamp, tota
       timestamp: '2026-01-01T00:00:00.000Z',
       total_duration_ms: 1000,
       checks: [
-        { name: 'health', ok: true, skipped: false },
-        { name: 'test', ok: true, skipped: false },
+        { name: 'health', slot: 'health', adapter: 'fallow', ok: true, skipped: false },
+        { name: 'test', slot: 'test', adapter: 'vitest', ok: true, skipped: false },
       ],
     },
   });
+});
+
+test("parseSummary keeps a target's check whole: its slot, adapter, target and the directory it ran from (D180)", () => {
+  const parsed = parseSummary(
+    JSON.stringify({
+      schema_version: 1,
+      ok: false,
+      checks_run: 2,
+      timestamp: '2026-01-01T00:00:00.000Z',
+      total_duration_ms: 1000,
+      checks: [
+        { name: 'api:lint', target: 'api', slot: 'lint', pack: 'go', cwd: 'api', adapter: 'golangci-lint', ok: false, exit_code: 1, duration_ms: 9, output_file: 'api/lint.json' },
+        { name: 'web:lint', target: 'web', slot: 'lint', pack: 'ts', cwd: 'web', adapter: null, ok: true, skipped: true, exit_code: null, duration_ms: 0, output_file: null },
+        { name: 'struct', slot: 'struct', pack: 'repo', adapter: 'ast-grep', ok: true, exit_code: 0, duration_ms: 9, output_file: 'struct.json' },
+      ],
+    }),
+  );
+  expect(parsed.kind === 'ok' ? parsed.summary.checks : parsed).toEqual([
+    { name: 'api:lint', slot: 'lint', adapter: 'golangci-lint', ok: false, skipped: false, target: 'api', cwd: 'api' },
+    { name: 'web:lint', slot: 'lint', adapter: null, ok: true, skipped: true, target: 'web', cwd: 'web' },
+    { name: 'struct', slot: 'struct', adapter: 'ast-grep', ok: true, skipped: false },
+  ]);
 });
 
 test('parseSummary is invalid on unparseable JSON, a missing schema_version or the wrong one, never rejecting on the number elsewhere', () => {
@@ -97,6 +121,16 @@ test('parseSummary is invalid on unparseable JSON, a missing schema_version or t
   expect(parseSummary(JSON.stringify({ ok: true }))).toEqual({ kind: 'invalid' });
   expect(parseSummary(JSON.stringify({ schema_version: 2, ok: true }))).toEqual({ kind: 'invalid' });
 });
+
+/** A one-check schema-1 summary: an oxlint `lint` with `check`'s fields over it. */
+function shaped(check: Readonly<Record<string, unknown>>): string {
+  return JSON.stringify({ schema_version: 1, ok: true, checks_run: 1, timestamp: 't', total_duration_ms: 1, checks: [{ name: 'lint', ok: true, adapter: 'oxlint', ...check }] });
+}
+
+/** A check of `slot` as the reader keeps it: one that sat out names no adapter. */
+function summaryCheck(name: string, slot: string, ok: boolean, skipped = false): SummaryCheck {
+  return { name, slot, adapter: skipped ? null : 'x', ok, skipped };
+}
 
 test('parseSummary is harness_broken when schema_version: 1 but the rest of the shape does not match (D41)', () => {
   expect(parseSummary(JSON.stringify({ schema_version: 1, ok: true }))).toEqual({ kind: 'harness_broken' });
@@ -108,6 +142,30 @@ test('parseSummary is harness_broken when schema_version: 1 but the rest of the 
       JSON.stringify({ schema_version: 1, ok: true, checks_run: 1, timestamp: 't', total_duration_ms: 1, checks: [{ adapter: 'x' }] }),
     ),
   ).toEqual({ kind: 'harness_broken' });
+  // Every schema-1 check records its adapter, which picks its parser, and a target and a cwd are places inside the repo (D180).
+  for (const broken of [{ adapter: undefined }, { adapter: 7 }, { target: '../elsewhere' }, { target: 'a/b' }, { cwd: '../up' }, { cwd: '/abs' }, { slot: 3 }]) {
+    expect(parseSummary(shaped(broken)), JSON.stringify(broken)).toEqual({ kind: 'harness_broken' });
+  }
+  expect(parseSummary(shaped({ target: 'web', cwd: 'apps/web' })).kind).toBe('ok');
+});
+
+test("slotsOf reads every target's check of a slot as the one slot: red when any is red, skipped only when all sat out (D180)", () => {
+  expect(
+    slotsOf([
+      summaryCheck('web:types', 'types', true),
+      summaryCheck('api:types', 'types', false),
+      summaryCheck('web:lint', 'lint', true, true),
+      summaryCheck('api:lint', 'lint', true),
+      summaryCheck('web:dead', 'dead', true, true),
+      summaryCheck('api:dead', 'dead', true, true),
+      summaryCheck('struct', 'struct', true),
+    ]),
+  ).toEqual([
+    { name: 'types', ok: false, skipped: false },
+    { name: 'lint', ok: true, skipped: false },
+    { name: 'dead', ok: true, skipped: true },
+    { name: 'struct', ok: true, skipped: false },
+  ]);
 });
 
 // ---------------------------------------------------------------------------
@@ -330,8 +388,8 @@ test('lint.json and struct.json are read when their slots ran and were not skipp
       timestamp: '2026-01-01T00:00:00.000Z',
       total_duration_ms: 1000,
       checks: [
-        { name: 'lint', ok: false, skipped: false },
-        { name: 'struct', ok: false },
+        { name: 'lint', adapter: 'oxlint', ok: false, skipped: false },
+        { name: 'struct', adapter: 'ast-grep', ok: false },
       ],
     }),
     '.check/lint.json': OXLINT_REPORT,
@@ -399,9 +457,9 @@ beforeAll(() => {
       timestamp: '2026-01-01T00:00:00.000Z',
       total_duration_ms: 1000,
       checks: [
-        { name: 'mutation', ok: true, skipped: false },
-        { name: 'security', ok: true, skipped: true },
-        { name: 'struct', ok: true, skipped: true },
+        { name: 'mutation', adapter: 'stryker', ok: true, skipped: false },
+        { name: 'security', adapter: 'pnpm-audit', ok: true, skipped: true },
+        { name: 'struct', adapter: 'ast-grep', ok: true, skipped: true },
       ],
     }),
     '.check/mutation.json': JSON.stringify({ files: { 'src/a.ts': { mutants: [{ status: 'Survived', location: { start: { line: 1 } } }] } } }),
@@ -457,6 +515,8 @@ test('reads the trimmed checkride fixture: mode check, the summary, and every fa
   expect(result.summary.checks_run).toBe(19);
   expect(result.summary.checks.some((slot) => slot.name === 'test' && slot.ok)).toBe(true);
   expect(result.fallow_schemas).toEqual({ health: 9, dead: 9, dupes: 9 });
+  // Every check here ran an adapter atis has a parser for, so none is muted and the reading is the one it always was (D180).
+  expect(result.muted).toBeUndefined();
 });
 
 test('health.json: file_scores, findings by path with the exceeded threshold and their lines, and fan_in_p95', () => {
@@ -522,4 +582,172 @@ test('coverage/coverage-final.json and test.json: read because the test slot ran
 test('mutation.json exists on disk but "mutation" never appears in checks[]: never read (D41)', () => {
   const result = expectCheck(fixtureResult);
   expect(result.mutation).toBeUndefined();
+});
+
+// ---------------------------------------------------------------------------
+// readCheck against checkride 0.19's own polyglot-stack, split into targets (D180)
+// ---------------------------------------------------------------------------
+
+let targetsResult: CheckInputs;
+
+beforeAll(() => {
+  targetsResult = readCheckDir(TARGETS_FIXTURE);
+});
+
+test("the polyglot capture reads as one summary: each target's checks of a slot are that slot, red where any is", () => {
+  const result = expectCheck(targetsResult);
+  expect(result.summary.ok).toBe(false);
+  expect(result.summary.checks_run).toBe(8);
+  expect(result.summary.checks).toEqual([
+    { name: 'types', ok: false, skipped: false },
+    { name: 'lint', ok: false, skipped: false },
+    { name: 'struct', ok: false, skipped: false },
+    { name: 'dead', ok: true, skipped: true },
+    { name: 'test', ok: false, skipped: false },
+    { name: 'docs', ok: true, skipped: true },
+    { name: 'links', ok: true, skipped: false },
+    { name: 'spell', ok: true, skipped: true },
+    { name: 'unclaimed', ok: true, skipped: false },
+  ]);
+});
+
+test("golangci-lint's, shellcheck's and go test's files never reach a parser written for another tool: each channel is muted, its adapter named (D180, C2)", () => {
+  const result = expectCheck(targetsResult);
+  // Read by the slot's name alone, oxlint's parser would be handed api/lint.json; it is there, and never read.
+  expect(existsSync(join(TARGETS_FIXTURE, 'api', 'lint.json'))).toBe(true);
+  expect(result.muted).toEqual([
+    'test: atis has no parser for go-test, which api:test ran',
+    'lint: atis has no parser for golangci-lint, which api:lint ran',
+    'lint: atis has no parser for shellcheck, which scripts:lint ran',
+  ]);
+  expect(result.lint).toBeUndefined();
+  expect(result.test).toBeUndefined();
+  expect(result.coverage).toBeUndefined();
+});
+
+test("a check of the repo as a whole reads from .check/'s root, its paths already on it: ast-grep's dot import in the Go service", () => {
+  const result = expectCheck(targetsResult);
+  expect(result.struct).toEqual({ matches: [{ path: 'api/internal/greet/dot.go', severity: 'error' }] });
+  expect(result.stale).toEqual([]);
+});
+
+// ---------------------------------------------------------------------------
+// readCheck: targets' directories, rebased paths and the merge (synthetic, D180)
+// ---------------------------------------------------------------------------
+
+/** A target's check as checkride 0.19 writes it into a split summary. */
+function targetCheck(target: string, cwd: string, slot: string, adapter: string, ok = true): Readonly<Record<string, unknown>> {
+  return { name: `${target}:${slot}`, target, slot, pack: 'ts', cwd, adapter, ok, exit_code: ok ? 0 : 1, duration_ms: 1, output_file: null };
+}
+
+/** A schema-1 summary of `checks`, written now with a run window an hour wide, so every file written beside it is this run's. */
+function splitSummary(checks: readonly Readonly<Record<string, unknown>>[]): string {
+  const ok = checks.every((check) => check['ok'] === true);
+  return JSON.stringify({ schema_version: 1, ok, checks_run: checks.length, timestamp: new Date().toISOString(), total_duration_ms: 3_600_000, checks });
+}
+
+test("a target's files are read from its directory under .check/, and their paths put on the repo's root from where its check ran (D180)", () => {
+  const root = tempRepo('targets');
+  const at = (path: string): string => join(root, path);
+  writeTree(root, {
+    '.check/summary.json': splitSummary([
+      targetCheck('web', 'apps/web', 'lint', 'oxlint', false),
+      targetCheck('docs', 'docs', 'lint', 'oxlint'),
+      targetCheck('web', 'apps/web', 'health', 'fallow'),
+      targetCheck('web', 'apps/web', 'dead', 'fallow'),
+      targetCheck('web', 'apps/web', 'test', 'vitest'),
+      targetCheck('web', 'apps/web', 'security', 'pnpm-audit'),
+    ]),
+    '.check/web/lint.json': OXLINT_REPORT,
+    '.check/docs/lint.json': JSON.stringify({ diagnostics: [{ filename: 'scripts/build.ts', severity: 'warning' }] }),
+    '.check/web/health.json': JSON.stringify({
+      schema_version: 9,
+      file_scores: [{ path: 'src/a.ts', lines: 10, function_count: 1, maintainability_index: 80, crap_max: 2 }],
+      findings: [{ path: './src/a.ts', exceeded: 'cyclomatic', line: 3, line_count: 5 }],
+      target_thresholds: { fan_in_p95: 4 },
+    }),
+    '.check/web/dead.json': JSON.stringify({
+      circular_dependencies: [{ files: ['src/a.ts', 'src/b.ts'], edges: [{ path: 'src/a.ts', line: 1 }] }],
+      re_export_cycles: [],
+      boundary_violations: [],
+      unused_exports: [{ path: 'src/b.ts', export_name: 'gone', line: 2 }],
+    }),
+    '.check/web/test.json': JSON.stringify({ testResults: [{ name: at('apps/web/src/a.test.ts'), status: 'passed' }] }),
+    '.check/web/coverage/coverage-final.json': JSON.stringify({ [at('apps/web/src/a.ts')]: { statementMap: { 0: { start: { line: 3 }, end: { line: 3 } } }, s: { 0: 1 } } }),
+    '.check/web/security.json': JSON.stringify({
+      metadata: { vulnerabilities: { high: 1 } },
+      advisories: { 1: { module_name: 'qs', severity: 'high', findings: [{ paths: ['.>express>qs'] }] } },
+    }),
+  });
+  const result = expectCheck(readCheck(root));
+  rmSync(root, { recursive: true, force: true });
+
+  expect(result.muted).toBeUndefined();
+  expect(result.summary.checks.find((slot) => slot.name === 'lint')).toEqual({ name: 'lint', ok: false, skipped: false });
+  expect(result.lint?.diagnostics).toEqual([
+    { path: 'apps/web/src/a.ts', severity: 'warning' },
+    { path: 'apps/web/src/b.ts', severity: 'error' },
+    { path: 'docs/scripts/build.ts', severity: 'warning' },
+  ]);
+  expect(result.health?.file_scores.map((score) => score.path)).toEqual(['apps/web/src/a.ts']);
+  expect(result.health?.findings.map((finding) => finding.path)).toEqual(['apps/web/src/a.ts']);
+  expect(result.health?.fan_in_p95).toBe(4);
+  expect(result.fallow_schemas).toEqual({ health: 9 });
+  expect(result.dead?.circular_dependencies).toEqual([{ files: ['apps/web/src/a.ts', 'apps/web/src/b.ts'], edges: [{ path: 'apps/web/src/a.ts', line: 1 }] }]);
+  expect(result.dead?.unused_exports).toEqual([{ path: 'apps/web/src/b.ts', export_name: 'gone', line: 2 }]);
+  // istanbul's and vitest's absolute paths are made relative to the repo, which is the root already.
+  expect(result.test?.results).toEqual([{ path: 'apps/web/src/a.test.ts', status: 'passed' }]);
+  expect(result.coverage?.map((file) => file.path)).toEqual(['apps/web/src/a.ts']);
+  // pnpm's importer `.` is the target's own manifest.
+  expect(result.security?.advisories).toEqual([{ module: 'qs', severity: 'high', paths: [{ manifest: 'apps/web/package.json', packages: ['express', 'qs'] }] }]);
+});
+
+test("a slot one target fills with a tool atis cannot read is muted whole, and a channel one target never wrote is absent, so no target's files read as measured and clean (C2, D180)", () => {
+  const root = tempRepo('targets-partial');
+  const at = (path: string): string => join(root, path);
+  const report = (path: string): string => JSON.stringify({ testResults: [{ name: at(path), status: 'passed' }] });
+  writeTree(root, {
+    '.check/summary.json': splitSummary([
+      targetCheck('web', 'web', 'lint', 'oxlint', false),
+      targetCheck('api', 'api', 'lint', 'golangci-lint'),
+      targetCheck('web', 'web', 'test', 'vitest'),
+      targetCheck('docs', 'docs', 'test', 'vitest'),
+    ]),
+    '.check/web/lint.json': OXLINT_REPORT,
+    '.check/api/lint.json': JSON.stringify({ Issues: [] }),
+    '.check/web/test.json': report('web/src/a.test.ts'),
+    '.check/web/coverage/coverage-final.json': JSON.stringify({ [at('web/src/a.ts')]: { statementMap: {}, s: {} } }),
+    '.check/docs/test.json': report('docs/src/b.test.ts'),
+  });
+  const result = expectCheck(readCheck(root));
+  rmSync(root, { recursive: true, force: true });
+
+  // web's oxlint report is readable, but the red it would scope may be the Go service's, which the reader cannot place.
+  expect(result.lint).toBeUndefined();
+  expect(result.muted).toEqual(['lint: atis has no parser for golangci-lint, which api:lint ran']);
+  // Both targets wrote a test report; only web wrote coverage, so docs' files would read as unmeasured gaps against it.
+  expect(result.test?.results.map((entry) => entry.path)).toEqual(['docs/src/b.test.ts', 'web/src/a.test.ts']);
+  expect(result.coverage).toBeUndefined();
+});
+
+test("a summary that never split still reads each file by its adapter: biome's lint.json never reaches oxlint's parser, knip's dead.json never fallow's, and jest's report reads as vitest's (D180)", () => {
+  const root = tempRepo('adapters');
+  writeTree(root, {
+    '.check/summary.json': splitSummary([
+      { name: 'lint', adapter: 'biome', ok: false, exit_code: 1, duration_ms: 1, output_file: 'lint.json' },
+      { name: 'dead', adapter: 'knip', ok: true, exit_code: 0, duration_ms: 1, output_file: 'dead.json' },
+      { name: 'test', adapter: 'jest', ok: true, exit_code: 0, duration_ms: 1, output_file: null },
+    ]),
+    // Biome's reporter has a diagnostics list too, so read by the slot's name it would pass for a clean oxlint run.
+    '.check/lint.json': JSON.stringify({ summary: { errors: 1 }, diagnostics: [{ category: 'lint/style/useConst', severity: 'error', location: { path: { file: 'src/a.ts' } } }] }),
+    '.check/dead.json': JSON.stringify({ files: ['src/old.ts'], issues: [] }),
+    '.check/test.json': JSON.stringify({ numFailedTests: 0, testResults: [{ name: join(root, 'src/a.test.ts'), status: 'passed', assertionResults: [] }] }),
+  });
+  const result = expectCheck(readCheck(root));
+  rmSync(root, { recursive: true, force: true });
+
+  expect(result.lint).toBeUndefined();
+  expect(result.dead).toBeUndefined();
+  expect(result.muted).toEqual(['dead: atis has no parser for knip', 'lint: atis has no parser for biome']);
+  expect(result.test?.results).toEqual([{ path: 'src/a.test.ts', status: 'passed' }]);
 });

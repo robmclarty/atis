@@ -215,6 +215,12 @@ export type CheckArtifacts =
       readonly summary: CheckSummary;
       readonly fallow_schemas: FallowSchemas;
       readonly stale: readonly StaleChannel[];
+      /**
+       * Channels the reader muted for a check whose adapter it has no parser
+       * for, each as `channel: reason` naming the adapter; absent when it
+       * muted none (D180, C2).
+       */
+      readonly muted?: readonly string[];
       readonly health?: Health;
       readonly dead?: Dead;
       readonly dupes?: Dupes;
@@ -623,6 +629,30 @@ export function pathsOf(finding: unknown): readonly string[] {
     if (Array.isArray(value)) paths.push(...value.flatMap(pathsOf));
   }
   return paths;
+}
+
+/**
+ * One fallow finding with every file `pathsOf` reads put through `at`, and
+ * every other key kept as fallow wrote it. A target's fallow runs from the
+ * target's root and names its files from there, so the reader puts them on
+ * the repo's root this way, by the same keys core reads them by (D180).
+ */
+export function rebaseFinding(finding: unknown, at: (path: string) => string): unknown {
+  if (!isRecord(finding)) return finding;
+  const rebased: Record<string, unknown> = { ...finding };
+  for (const key of PATH_KEYS) {
+    const value = finding[key];
+    if (typeof value === 'string') rebased[key] = at(value);
+  }
+  for (const key of PATH_LIST_KEYS) {
+    const value = finding[key];
+    if (Array.isArray(value)) rebased[key] = value.map((entry: unknown) => (typeof entry === 'string' ? at(entry) : entry));
+  }
+  for (const key of NESTED_KEYS) {
+    const value = finding[key];
+    if (Array.isArray(value)) rebased[key] = value.map((entry: unknown) => rebaseFinding(entry, at));
+  }
+  return rebased;
 }
 
 /** A positive whole line number under `line`, read by key (D41); anything else is no line. */

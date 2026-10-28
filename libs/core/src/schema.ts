@@ -354,7 +354,7 @@ export type Instruments = {
   readonly entry_points_reason?: string;
   readonly fallow_schemas?: FallowSchemas;
   readonly stale?: readonly string[];
-  /** Channels muted for what they hold rather than their age, each as `channel: reason` (D122). */
+  /** Channels muted for what they hold rather than their age, each as `channel: reason`: a report naming none of the tree (D122), or a check whose adapter atis has no parser for (D180). */
   readonly muted?: readonly string[];
   /** How the base and the head extractions' health, duplication and structure were measured, absent when the run never asked (D98). */
   readonly structure?: { readonly base: StructureSide; readonly head: StructureSide };

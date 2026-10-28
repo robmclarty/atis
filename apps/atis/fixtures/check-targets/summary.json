@@ -1,0 +1,288 @@
+{
+  "schema_version": 1,
+  "timestamp": "2026-10-28T19:02:09.600Z",
+  "ok": false,
+  "checks_run": 8,
+  "total_duration_ms": 1747,
+  "run": {
+    "partial": false
+  },
+  "git": {
+    "head": "39dfabd46c6cd7e45dd6d101ea93218f312c821d",
+    "dirty": false
+  },
+  "targets": [
+    {
+      "name": "web",
+      "pack": "ts",
+      "root": "web"
+    },
+    {
+      "name": "api",
+      "pack": "go",
+      "root": "api"
+    },
+    {
+      "name": "scripts",
+      "pack": "bash",
+      "root": "scripts"
+    }
+  ],
+  "checks": [
+    {
+      "name": "web:types",
+      "target": "web",
+      "slot": "types",
+      "pack": "ts",
+      "cwd": "web",
+      "adapter": "tsc",
+      "description": "TypeScript type checking (incremental, via project references)",
+      "ok": false,
+      "exit_code": 1,
+      "duration_ms": 920,
+      "output_file": null,
+      "origin": "detected",
+      "detected_by": "tsconfig.json",
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "tsc",
+        "--build"
+      ],
+      "pin_source": "js-lockfile",
+      "tool_version": "6.0.3"
+    },
+    {
+      "name": "api:types",
+      "target": "api",
+      "slot": "types",
+      "pack": "go",
+      "cwd": "api",
+      "adapter": "go-build",
+      "description": "go build: Go compilation",
+      "ok": true,
+      "exit_code": 0,
+      "duration_ms": 562,
+      "output_file": null,
+      "origin": "detected",
+      "detected_by": "go.mod",
+      "argv": [
+        "go",
+        "build",
+        "-o",
+        "/dev/null",
+        "-json",
+        "./..."
+      ],
+      "pin_source": "path",
+      "toolchain_version": "1.26.1"
+    },
+    {
+      "name": "web:lint",
+      "target": "web",
+      "slot": "lint",
+      "pack": "ts",
+      "cwd": "web",
+      "adapter": null,
+      "description": "lint",
+      "ok": true,
+      "skipped": true,
+      "reason": "no tool detected for slot",
+      "exit_code": null,
+      "duration_ms": 0,
+      "output_file": null
+    },
+    {
+      "name": "api:lint",
+      "target": "api",
+      "slot": "lint",
+      "pack": "go",
+      "cwd": "api",
+      "adapter": "golangci-lint",
+      "description": "golangci-lint: Go linters",
+      "ok": false,
+      "exit_code": 1,
+      "duration_ms": 1403,
+      "output_file": "api/lint.json",
+      "origin": "detected",
+      "detected_by": ".golangci.yml",
+      "argv": [
+        "golangci-lint",
+        "run",
+        "--output.json.path=stdout",
+        "--show-stats=false",
+        "--max-issues-per-linter=0",
+        "--max-same-issues=0",
+        "--uniq-by-line=false",
+        "--allow-serial-runners",
+        "./..."
+      ],
+      "pin_source": "path",
+      "toolchain_version": "1.26.1"
+    },
+    {
+      "name": "scripts:lint",
+      "target": "scripts",
+      "slot": "lint",
+      "pack": "bash",
+      "cwd": "scripts",
+      "adapter": "shellcheck",
+      "description": "ShellCheck: shell script analysis",
+      "ok": false,
+      "exit_code": 1,
+      "duration_ms": 83,
+      "output_file": "scripts/lint.json",
+      "origin": "detected",
+      "detected_by": ".shellcheckrc",
+      "argv": [
+        "shellcheck",
+        "-f",
+        "json1",
+        "deploy.sh"
+      ],
+      "pin_source": "path"
+    },
+    {
+      "name": "struct",
+      "slot": "struct",
+      "pack": "repo",
+      "adapter": "ast-grep",
+      "description": "Structural rules (ast-grep)",
+      "ok": false,
+      "exit_code": 1,
+      "duration_ms": 1407,
+      "output_file": "struct.json",
+      "origin": "detected",
+      "detected_by": "sgconfig.yml",
+      "argv": [
+        "pnpm",
+        "--config.verify-deps-before-run=false",
+        "exec",
+        "ast-grep",
+        "scan",
+        "--json=compact"
+      ],
+      "pin_source": "js-lockfile",
+      "tool_version": "0.45.3"
+    },
+    {
+      "name": "web:dead",
+      "target": "web",
+      "slot": "dead",
+      "pack": "ts",
+      "cwd": "web",
+      "adapter": null,
+      "description": "dead",
+      "ok": true,
+      "skipped": true,
+      "reason": "no tool detected for slot",
+      "exit_code": null,
+      "duration_ms": 0,
+      "output_file": null
+    },
+    {
+      "name": "api:dead",
+      "target": "api",
+      "slot": "dead",
+      "pack": "go",
+      "cwd": "api",
+      "adapter": null,
+      "description": "dead",
+      "ok": true,
+      "skipped": true,
+      "reason": "no tool detected for slot",
+      "exit_code": null,
+      "duration_ms": 0,
+      "output_file": null
+    },
+    {
+      "name": "web:test",
+      "target": "web",
+      "slot": "test",
+      "pack": "ts",
+      "cwd": "web",
+      "adapter": null,
+      "description": "test",
+      "ok": true,
+      "skipped": true,
+      "reason": "no tool detected for slot",
+      "exit_code": null,
+      "duration_ms": 0,
+      "output_file": null
+    },
+    {
+      "name": "api:test",
+      "target": "api",
+      "slot": "test",
+      "pack": "go",
+      "cwd": "api",
+      "adapter": "go-test",
+      "description": "go test: Go tests",
+      "ok": false,
+      "exit_code": 1,
+      "duration_ms": 1173,
+      "output_file": "api/test.jsonl",
+      "origin": "detected",
+      "detected_by": "go.mod",
+      "argv": [
+        "go",
+        "test",
+        "-json",
+        "./..."
+      ],
+      "pin_source": "path",
+      "toolchain_version": "1.26.1"
+    },
+    {
+      "name": "docs",
+      "slot": "docs",
+      "pack": "repo",
+      "adapter": null,
+      "description": "docs",
+      "ok": true,
+      "skipped": true,
+      "reason": "no tool detected for slot",
+      "exit_code": null,
+      "duration_ms": 0,
+      "output_file": null
+    },
+    {
+      "name": "links",
+      "slot": "links",
+      "pack": "repo",
+      "adapter": "links",
+      "description": "Relative markdown link targets exist on disk",
+      "ok": true,
+      "exit_code": 0,
+      "duration_ms": 2,
+      "output_file": "links.json",
+      "origin": "built-in"
+    },
+    {
+      "name": "spell",
+      "slot": "spell",
+      "pack": "repo",
+      "adapter": null,
+      "description": "spell",
+      "ok": true,
+      "skipped": true,
+      "reason": "no tool detected for slot",
+      "exit_code": null,
+      "duration_ms": 0,
+      "output_file": null
+    },
+    {
+      "name": "unclaimed",
+      "slot": "unclaimed",
+      "pack": "repo",
+      "adapter": "unclaimed",
+      "description": "Every toolchain marker sits inside a target that checks it",
+      "ok": true,
+      "exit_code": 0,
+      "duration_ms": 21,
+      "output_file": "unclaimed.json",
+      "origin": "built-in"
+    }
+  ]
+}

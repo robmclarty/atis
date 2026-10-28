@@ -11,7 +11,9 @@ import {
   UNKNOWN_STATUS,
   computeCategory,
   computeEvidence,
+  pathsOf,
   readRedSplit,
+  rebaseFinding,
   splitRedSlots,
   trustCoverage,
 } from '../evidence.js';
@@ -394,6 +396,31 @@ test('an unmeasured file is a gap: never VFR, MVFR on its own, IFR at high reach
   // `tools.ts` reaches three cells; unmeasured there, it is IFR, as an uncovered line would be.
   const others = ran({ coverage: [{ path: 'src/pm/util.ts', statements: [{ line: 10, hits: 1 }] }] });
   expect(categoryFor(CHAIN, [change('src/pm/tools.ts')], others, ALL_CODE).category).toBe('IFR');
+});
+
+/** A path a target's fallow wrote from `web/`, put on the repo's root. */
+function inWeb(path: string): string {
+  return `web/${path}`;
+}
+
+test('rebaseFinding puts every file pathsOf reads through its mapping and keeps every other key as fallow wrote it (D180)', () => {
+  const at = inWeb;
+  const cycle = { files: ['src/a.ts', 'src/b.ts'], edges: [{ path: 'src/a.ts', line: 3 }, { path: 'src/b.ts', line: 7 }], length: 2 };
+  const violation = { from_path: 'src/ui/x.ts', to_path: 'src/db/y.ts', import_line: 4 };
+  const family = { groups: [{ instances: [{ file: 'src/c.ts', start_line: 1, end_line: 9 }] }], files: ['src/c.ts'] };
+  const unused = { path: 'src/d.ts', export_name: 'gone', line: 12 };
+
+  for (const finding of [cycle, violation, family, unused]) {
+    expect(pathsOf(rebaseFinding(finding, at))).toEqual(pathsOf(finding).map(at));
+  }
+  expect(rebaseFinding(cycle, at)).toEqual({
+    files: ['web/src/a.ts', 'web/src/b.ts'],
+    edges: [{ path: 'web/src/a.ts', line: 3 }, { path: 'web/src/b.ts', line: 7 }],
+    length: 2,
+  });
+  expect(rebaseFinding(violation, at)).toEqual({ from_path: 'web/src/ui/x.ts', to_path: 'web/src/db/y.ts', import_line: 4 });
+  // A finding that is no record, as one fallow never wrote, passes through as it came.
+  expect(rebaseFinding('src/e.ts', at)).toBe('src/e.ts');
 });
 
 test("a report naming none of the tree's source files is muted with its reason; one naming any of them is trusted (D122)", () => {

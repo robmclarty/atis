@@ -87,13 +87,16 @@ function str(value: unknown): string {
 
 /**
  * Why a channel of `.check/` was not read: no trusted `.check/` at all, a
- * slot that never ran, or a file that was stale or missing (D41).
+ * slot that never ran, an adapter atis has no parser for, or a file that was
+ * stale or missing (D41, D180).
  */
 function unread(check: CheckArtifacts, slot: string, file: string): string {
   if (check.mode === 'git-only') return check.reason;
   const ran = check.summary.checks.find((entry) => entry.name === slot);
   if (ran === undefined) return `.check/ ran no ${slot} slot`;
   if (ran.skipped) return `the ${slot} slot was skipped`;
+  const silenced = (check.muted ?? []).find((line) => line.startsWith(`${slot}: `));
+  if (silenced !== undefined) return silenced.slice(slot.length + 2);
   if (check.stale.some((stale) => stale.file === file)) return `.check/${file} is stale`;
   return `.check/${file} is missing or unreadable`;
 }

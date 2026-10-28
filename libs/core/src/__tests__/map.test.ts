@@ -215,6 +215,11 @@ test("the demo's doctor.ts, which its coverage report leaves out, is unmeasured,
   expect(muted.meta.instruments.muted).toEqual([COVERAGE_UNNAMED]);
   expect(muted.weather.evidence.patch_coverage).toBeUndefined();
   expect(muted.weather.evidence.unmeasured).toBeUndefined();
+
+  // The reader's own mutes, for an adapter it has no parser for, sit beside core's, sorted (D180).
+  const unparsed = ['test: atis has no parser for go-test, which api:test ran', 'lint: atis has no parser for golangci-lint, which api:lint ran'];
+  const both = buildMap({ ...inputs, check: { ...check, coverage: elsewhere, muted: unparsed } }, DEFAULT_CONFIG);
+  expect(both.meta.instruments.muted).toEqual([COVERAGE_UNNAMED, unparsed[1], unparsed[0]]);
 });
 
 test('buildMap threads the stitches to the category, so a torn one makes the change IFR and a held one does not (D69)', () => {

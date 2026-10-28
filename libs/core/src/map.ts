@@ -682,12 +682,14 @@ function instrumentsOf(check: CheckArtifacts, entries: EntryPointsRead, muted: r
   const stale = check.stale
     .map((channel) => `${channel.slot}: ${channel.file}, ${String(channel.age_ms)} ms older than the run`)
     .toSorted(byPath);
+  // The reader's own mutes, for an adapter it has no parser for, sit beside core's (D180).
+  const silenced = [...(check.muted ?? []), ...muted];
   return {
     mode: 'check',
     ...entries,
     ...(Object.keys(check.fallow_schemas).length === 0 ? {} : { fallow_schemas: check.fallow_schemas }),
     ...(stale.length === 0 ? {} : { stale }),
-    ...(muted.length === 0 ? {} : { muted: [...muted].toSorted(byPath) }),
+    ...(silenced.length === 0 ? {} : { muted: silenced.toSorted(byPath) }),
     ...measured,
     ...producers,
   };

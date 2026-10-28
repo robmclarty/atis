@@ -1,0 +1,12 @@
+{"Time":"2026-10-28T12:02:08.622372-07:00","Action":"start","Package":"example.com/stack/api/cmd/api"}
+{"Time":"2026-10-28T12:02:08.622447-07:00","Action":"output","Package":"example.com/stack/api/cmd/api","Output":"?   \texample.com/stack/api/cmd/api\t[no test files]\n"}
+{"Time":"2026-10-28T12:02:08.622452-07:00","Action":"skip","Package":"example.com/stack/api/cmd/api","Elapsed":0}
+{"Time":"2026-10-28T12:02:08.906314-07:00","Action":"start","Package":"example.com/stack/api/internal/greet"}
+{"Time":"2026-10-28T12:02:09.580809-07:00","Action":"run","Package":"example.com/stack/api/internal/greet","Test":"TestHello"}
+{"Time":"2026-10-28T12:02:09.580838-07:00","Action":"output","Package":"example.com/stack/api/internal/greet","Test":"TestHello","Output":"=== RUN   TestHello\n"}
+{"Time":"2026-10-28T12:02:09.58087-07:00","Action":"output","Package":"example.com/stack/api/internal/greet","Test":"TestHello","Output":"    greet_test.go:7: Hello(\"gopher\") = \"Hello, gopher!\", want \"Hello, gopher!\"\n"}
+{"Time":"2026-10-28T12:02:09.58088-07:00","Action":"output","Package":"example.com/stack/api/internal/greet","Test":"TestHello","Output":"--- FAIL: TestHello (0.00s)\n"}
+{"Time":"2026-10-28T12:02:09.580883-07:00","Action":"fail","Package":"example.com/stack/api/internal/greet","Test":"TestHello","Elapsed":0}
+{"Time":"2026-10-28T12:02:09.580886-07:00","Action":"output","Package":"example.com/stack/api/internal/greet","Output":"FAIL\n"}
+{"Time":"2026-10-28T12:02:09.581631-07:00","Action":"output","Package":"example.com/stack/api/internal/greet","Output":"FAIL\texample.com/stack/api/internal/greet\t0.675s\n"}
+{"Time":"2026-10-28T12:02:09.581644-07:00","Action":"fail","Package":"example.com/stack/api/internal/greet","Elapsed":0.675}
