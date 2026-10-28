@@ -6,7 +6,9 @@
  * bodies on it never fight the skin: warm and clinical ground where the
  * surface is dark, unlit, and never blooming. Its membrane is drawn round it
  * as the frame, as thick as the cell's interface, with the barrel's exports
- * written on it as a tag: the count, then the names a few to a line (D162). Each file is a body laid again every frame where
+ * written on it as a tag: the count, then the names a few to a line (D162),
+ * those the reach crossed the membrane by lit in the chrome's ink among the
+ * muted rest, since luminance is reach (C11, D181). Each file is a body laid again every frame where
  * the scene has it, in its morphed outline as the scheduler moves it (D146,
  * D147), drifting by its looseness (D157): filled in the body's colour, the
  * change hue where the change stained it with the share no test ran left
@@ -27,8 +29,8 @@
 import { BufferAttribute, BufferGeometry, Color, DoubleSide, DynamicDrawUsage, Mesh, MeshBasicNodeMaterial, Vector3 } from 'three/webgpu';
 import type { Camera, UniformNode } from 'three/webgpu';
 import { attribute, mrt, uniform, vec4 } from 'three/tsl';
-import { CHANGE_HUE, CHROME_GROUND, CHROME_INK, CHROME_MUTED, CHROME_STROKE_WIDTH, FONT_FAMILY, IMPROVED_HUE, LABELING, LEADER_DASH, LEADER_INK, LEADER_WIDTH, RENAME_DASH, SHAPE_LEVELS, exportsWords, tagsOf } from 'scene';
-import type { Body, Point, Slide } from 'scene';
+import { CHANGE_HUE, CHROME_GROUND, CHROME_INK, CHROME_MUTED, CHROME_STROKE_WIDTH, EXPORTS_GAP, FONT_FAMILY, IMPROVED_HUE, LABELING, LEADER_DASH, LEADER_INK, LEADER_WIDTH, RENAME_DASH, SHAPE_LEVELS, exportsTable, tagsOf } from 'scene';
+import type { Body, ExportsTable, Point, Slide } from 'scene';
 
 import type { SlideWords } from '../asked.js';
 import type { InteriorLook } from '../materials.js';
@@ -184,6 +186,32 @@ export const createInterior = (heightAt: (x: number, y: number) => number, step:
   const exportsTag = tagElement();
   exportsTag.dataset['interiorExports'] = '';
   layer.append(exportsTag);
+  // The exports as last written, so the tag is written again only when the names or the inks move.
+  let exportsWritten = '';
+  /** Write the exports' table into the tag, a row to a line, each name the reach crossed by in the lit ink (D181). */
+  const writeExports = (table: ExportsTable, ink: string): void => {
+    const key = JSON.stringify([table, ink]);
+    if (key === exportsWritten) return;
+    exportsWritten = key;
+    const nodes: Node[] = [document.createTextNode(table.head)];
+    for (const row of table.rows) {
+      nodes.push(document.createTextNode('\n'));
+      row.forEach((cell, column) => {
+        if (column > 0) nodes.push(document.createTextNode(EXPORTS_GAP));
+        if (!cell.reached) {
+          nodes.push(document.createTextNode(cell.text));
+          return;
+        }
+        const name = document.createElement('span');
+        name.dataset['reached'] = cell.name;
+        name.style.color = ink;
+        name.textContent = cell.text;
+        nodes.push(name);
+      });
+    }
+    if (table.tail !== undefined) nodes.push(document.createTextNode(`\n${table.tail}`));
+    exportsTag.replaceChildren(...nodes);
+  };
 
   let slide: Slide | undefined;
   let top = 0;
@@ -405,7 +433,7 @@ export const createInterior = (heightAt: (x: number, y: number) => number, step:
       held.spread.setAttribute('y2', String(distance <= rim ? by : by - (dy / distance) * rim));
     }
     const [ex, ey] = project(slide.exports.x, slide.exports.y);
-    exportsTag.textContent = exportsWords(slide.exports, look).join('\n');
+    writeExports(exportsTable(slide.exports, look), chrome.CHROME_INK);
     Object.assign(exportsTag.style, {
       display: words.exports > 0 ? '' : 'none',
       opacity: String(words.exports),

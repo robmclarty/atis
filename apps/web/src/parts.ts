@@ -1,7 +1,8 @@
 /**
  * parts: what each HUD block opens on click (§7, step 36), read from the map
  * alone (D93): a red slot's named files, the uncovered lines per file, the
- * live mutants, the reach list with its hops and the interfaces crossed, the
+ * live mutants, the reach list with its hops and the interfaces crossed,
+ * grouped under the names that carried it where the map records them, the
  * changed files with their sizes, the slots the category was set by, the
  * maintainability each changed file moved and what got better (D98), the
  * notices by rank, and the shore's `other` files. A block whose input the map
@@ -14,7 +15,7 @@
  */
 
 import { OTHER_GROUP, OVERLAY_NAMES, changeSize, readRedSplit } from 'core';
-import type { CheckSlot, Improvement, MapJson } from 'core';
+import type { CheckSlot, Improvement, MapJson, ReachEntry } from 'core';
 import { healthDeltaOf, overlayOf } from 'scene';
 import type { OverlayUnit } from 'scene';
 
@@ -87,19 +88,36 @@ const mutantParts = (map: MapJson): Parts => {
   return { block, parts: [...byFile].map(([path, lines]) => ({ heading: path, lines })) };
 };
 
-/** The reach by cell, nearest first: each file with its hops and the interfaces the reach crossed to get there (D5, D45). */
+/** `1 file`, `2 files`. */
+const filesOf = (count: number): string => `${String(count)} ${count === 1 ? 'file' : 'files'}`;
+
+/**
+ * The reach (D5, D45): each file with its hops and the interfaces the reach
+ * crossed to get there. Where the map records the names that carried it
+ * (D111), the files come under each name, in the names' order, and the files
+ * the reach got to at the file level alone, past the importers, come after,
+ * by cell and marked so (D181); with no names, by cell alone. Cells nearest
+ * first.
+ */
 const reachParts = (map: MapJson): Parts => {
   const block = 'reach';
+  const entries = [...map.weather.reach].toSorted((a, b) => a.hops - b.hops || byPath(a.path, b.path));
+  if (entries.length === 0) return { block, parts: [], empty: 'the change reaches no cell' };
+  const lineOf = (entry: ReachEntry): string => (entry.via.length === 0 ? `${entry.path} ${DOT} ${hopsOf(entry.hops)}` : `${entry.path} ${DOT} ${hopsOf(entry.hops)} via ${entry.via.join(' › ')}`);
+  const byName = new Map<string, string[]>();
   const byCell = new Map<string, { hops: number; readonly lines: string[] }>();
-  for (const entry of [...map.weather.reach].toSorted((a, b) => a.hops - b.hops || byPath(a.path, b.path))) {
+  for (const entry of entries) {
+    for (const name of entry.names ?? []) byName.set(name, [...(byName.get(name) ?? []), lineOf(entry)]);
+    if (entry.names !== undefined) continue;
     const held = byCell.get(entry.cell) ?? { hops: entry.hops, lines: [] };
     held.hops = Math.min(held.hops, entry.hops);
-    held.lines.push(entry.via.length === 0 ? `${entry.path} ${DOT} ${hopsOf(entry.hops)}` : `${entry.path} ${DOT} ${hopsOf(entry.hops)} via ${entry.via.join(' › ')}`);
+    held.lines.push(lineOf(entry));
     byCell.set(entry.cell, held);
   }
-  if (byCell.size === 0) return { block, parts: [], empty: 'the change reaches no cell' };
-  const parts = [...byCell].toSorted(([a, ha], [b, hb]) => ha.hops - hb.hops || byPath(a, b)).map(([cell, { hops, lines }]) => ({ heading: `${cell} ${DOT} ${hopsOf(hops)}`, lines }));
-  return { block, parts };
+  const named = [...byName].toSorted(([a], [b]) => byPath(a, b)).map(([name, lines]) => ({ heading: `${name} ${DOT} ${filesOf(lines.length)}`, lines }));
+  const level = named.length === 0 ? '' : ` ${DOT} file-level`;
+  const cells = [...byCell].toSorted(([a, ha], [b, hb]) => ha.hops - hb.hops || byPath(a, b)).map(([cell, { hops, lines }]) => ({ heading: `${cell} ${DOT} ${hopsOf(hops)}${level}`, lines }));
+  return { block, parts: [...named, ...cells] };
 };
 
 /**

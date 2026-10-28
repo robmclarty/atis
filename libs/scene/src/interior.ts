@@ -8,7 +8,9 @@
  * the frame round the files, and the barrel's exports are written on it, the
  * names the map records under their count, a few to a line and the rest
  * counted past a dozen, or the count alone where the map records no names
- * (D162, C2). Each file is a body in
+ * (D162, C2). The names the reach crossed the membrane by, those a reach
+ * entry outside the cell carries (D111), are marked to be lit among them, and
+ * are never the ones a long list counts away (D181). Each file is a body in
  * its morphed outline (D146), moved by the rules it breaks (D147) and floating
  * by its looseness (D157, D165) through the scheduler, and stained by what the
  * change did to it (hue is state, C11): added and modified through, the share
@@ -77,8 +79,29 @@ export type SlideFile = {
   readonly exploded: Point;
 };
 
-/** The barrel's exports as the membrane writes them: how many, their names where the map records them (D162), the barrel's name when the cell has one, and the point of the membrane they sit at. */
-export type Exports = { readonly count: number; readonly names?: readonly string[]; readonly barrel?: string; readonly x: number; readonly y: number };
+/**
+ * The barrel's exports as the membrane writes them: how many, their names
+ * where the map records them (D162), those of them the reach crossed the
+ * membrane by (D181), the barrel's name when the cell has one, and the point
+ * of the membrane they sit at.
+ */
+export type Exports = {
+  readonly count: number;
+  readonly names?: readonly string[];
+  readonly reached?: readonly string[];
+  readonly barrel?: string;
+  readonly x: number;
+  readonly y: number;
+};
+
+/** One name the membrane writes, padded to its column, and whether the reach crossed the membrane by it (D181). */
+export type ExportName = { readonly name: string; readonly text: string; readonly reached: boolean };
+
+/** The membrane's exports as written: the barrel and the count, the names shown in rows, and how many more there are, where any are. */
+export type ExportsTable = { readonly head: string; readonly rows: readonly (readonly ExportName[])[]; readonly tail?: string };
+
+/** What lies between two names on a row of the membrane's exports. */
+export const EXPORTS_GAP = '  ';
 
 /** An opened cell at rest, laid once when it opens. */
 export type Slide = {
@@ -240,6 +263,18 @@ function explodedOf(files: readonly { readonly id: string; readonly rest: Positi
 }
 
 /**
+ * Which of a cell's exported names the reach crossed its membrane by (D181):
+ * those a reach entry for a file outside the cell carries (D111), a file in a
+ * cell it holds, however deep, being inside it.
+ */
+function reachedNames(map: MapJson, cell: string, names: readonly string[]): readonly string[] {
+  const parentOf = new Map(map.terrain.cells.flatMap((each) => (each.parent === undefined ? [] : [[each.id, each.parent] as const])));
+  const inside = (id: string | undefined): boolean => id !== undefined && (id === cell || inside(parentOf.get(id)));
+  const carried = new Set(map.weather.reach.flatMap((entry) => (inside(entry.cell) ? [] : (entry.names ?? []))));
+  return names.filter((name) => carried.has(name));
+}
+
+/**
  * The slide an opened cell shows, laid once as it opens: none for a cell the
  * map lacks, the layout drew no skin for, or whose file floats on its
  * package's slide (D167). The barrel's exports sit on the
@@ -286,9 +321,11 @@ export function cellSlide(map: MapJson, cell: string, layout: InteriorLayout = I
   const barrel = found.barrel === undefined ? undefined : files.find((file) => file.id === found.barrel);
   const [ex, ey] = barrel === undefined ? topOf(ring) : nearestOn(ring, barrel.rest.x, barrel.rest.y);
   // The names are the head's, so they are counted as they stand there; the count alone is the terrain's (D162).
+  const reached = found.exports === undefined ? [] : reachedNames(map, cell, found.exports);
   const exports: Exports = {
     count: found.exports?.length ?? found.interface_size,
     ...(found.exports === undefined ? {} : { names: found.exports }),
+    ...(reached.length === 0 ? {} : { reached }),
     ...(found.barrel === undefined ? {} : { barrel: nameOf(found.barrel, false) }),
     x: ex,
     y: ey,
@@ -390,21 +427,35 @@ export function tagsOf(slide: Slide, bodies: readonly Body[], project: Projectio
 }
 
 /**
- * The lines the membrane writes for a cell's exports (D162): first the
- * barrel's name and the count, `index.ts · 3 exports`, or the count alone for
- * a cell with no barrel; then the names, a few to a line in columns as wide
- * as their longest name, the chrome's monospace table; and past the names
- * shown, how many more there are, `and 8 more`.
+ * The membrane's exports as a table (D162): first the barrel's name and the
+ * count, `index.ts · 3 exports`, or the count alone for a cell with no
+ * barrel; then the names, a few to a line in columns as wide as their
+ * longest name, the chrome's monospace table, each marked where the reach
+ * crossed the membrane by it (D181); and past the names shown, how many more
+ * there are, `and 8 more`. The names the reach crossed by are kept among
+ * those shown before any other, so a long list never counts one away, and
+ * the names keep their own order.
  */
-export function exportsWords(exports: Exports, layout: InteriorLayout = INTERIOR_LAYOUT): readonly string[] {
+export function exportsTable(exports: Exports, layout: InteriorLayout = INTERIOR_LAYOUT): ExportsTable {
   const count = `${String(exports.count)} ${exports.count === 1 ? 'export' : 'exports'}`;
   const head = exports.barrel === undefined ? count : `${exports.barrel} · ${count}`;
   const names = exports.names ?? [];
+  const reached = new Set(exports.reached ?? []);
   const perLine = Math.max(1, Math.floor(layout.exportsPerLine));
-  const shown = names.slice(0, Math.max(0, Math.floor(layout.exportsShown)));
+  const kept = new Set([...names.filter((name) => reached.has(name)), ...names.filter((name) => !reached.has(name))].slice(0, Math.max(0, Math.floor(layout.exportsShown))));
+  const shown = names.filter((name) => kept.has(name));
   const rows = Array.from({ length: Math.ceil(shown.length / perLine) }, (_, row) => shown.slice(row * perLine, (row + 1) * perLine));
   const widths = Array.from({ length: perLine }, (_, column) => Math.max(0, ...rows.map((row) => row[column]?.length ?? 0)));
-  const lines = rows.map((row) => row.map((name, column) => (column === row.length - 1 ? name : name.padEnd(widths[column] ?? 0))).join('  '));
   const rest = names.length - shown.length;
-  return [head, ...lines, ...(rest > 0 ? [`and ${String(rest)} more`] : [])];
+  return {
+    head,
+    rows: rows.map((row) => row.map((name, column) => ({ name, text: column === row.length - 1 ? name : name.padEnd(widths[column] ?? 0), reached: reached.has(name) }))),
+    ...(rest > 0 ? { tail: `and ${String(rest)} more` } : {}),
+  };
+}
+
+/** The lines the membrane writes for a cell's exports: its table, a row to a line (D162). */
+export function exportsWords(exports: Exports, layout: InteriorLayout = INTERIOR_LAYOUT): readonly string[] {
+  const { head, rows, tail } = exportsTable(exports, layout);
+  return [head, ...rows.map((row) => row.map((cell) => cell.text).join(EXPORTS_GAP)), ...(tail === undefined ? [] : [tail])];
 }

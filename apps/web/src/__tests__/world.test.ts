@@ -11,7 +11,8 @@
  * opens on one cell where it fills the screen, and
  * the cell opens as a stained slide (step 40, D165): the canvas names the
  * open cell, the slide tags each of its files but shows a tag only for the
- * pointer on its body or in the exploded view (D168), a click on a floating file
+ * pointer on its body or in the exploded view (D168), its exports light the
+ * names the reach crossed its membrane by (D181), a click on a floating file
  * keeps it open, `x` spreads the exploded view, and `w` lays the cell's wiring
  * out on a plate in the chrome (step 41); Esc closes it, the surface holds its
  * files where they floated, and zooming out toward the field brings them
@@ -319,6 +320,8 @@ test("framed on one cell where it fills the screen, the world opens it as a slid
     const tags = await page.$$eval('[data-interior-tag]', (elements) => elements.map((element) => element.textContent));
     expect(tags.toSorted()).toEqual(['+tools.ts · 2', 'index.ts', 'legacy.ts', 'slots.ts']);
     expect(await page.textContent('[data-interior-exports]')).toBe('index.ts · 3 exports\nlistSlots  resolveSlot  resolveTool');
+    // Among them, the names the reach crossed pm's membrane by are lit in the chrome's ink (D181): on the demo, all three, each taken from outside.
+    expect(await page.$$eval('[data-interior-exports] [data-reached]', (names) => names.map((name) => name.getAttribute('data-reached')))).toEqual(['listSlots', 'resolveSlot', 'resolveTool']);
     const shownTags = async (): Promise<readonly (string | null)[]> =>
       page.$$eval('[data-interior-tag], [data-interior-exports]', (elements) => elements.filter((element) => element instanceof HTMLElement && element.style.display !== 'none').map((element) => element.textContent));
     expect(await shownTags()).toEqual([]);

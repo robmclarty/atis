@@ -80,12 +80,39 @@ test('coverage opens the uncovered lines per file and the unmeasured files; muta
   expect(partsOf({ ...DEMO, weather: { ...DEMO.weather, evidence: { ...DEMO.weather.evidence, mutants: [] } } }, 'mutants').empty).toContain('live');
 });
 
-test('the reach opens by cell, nearest first, each file with its hops and the interfaces crossed (D5, D45)', () => {
+test('the reach opens under each name that carried it, then the files it got to at the file level alone by cell, each with its hops and the interfaces crossed (D5, D45, D111, D181)', () => {
   const reach = partsOf(DEMO, 'reach');
+  expect(reach.parts.map((part) => part.heading)).toEqual([
+    'legacyResolve · 2 files',
+    'listSlots · 1 file',
+    'resolveSlot · 2 files',
+    'resolveTool · 2 files',
+    'runDoctor · 1 file',
+    'folder:libs/core/src/pm · 0 hops · file-level',
+  ]);
+  // A file sits under every name that reached it, nearest first.
+  expect(reach.parts[2]?.lines).toEqual(['apps/cli/src/doctor.ts · 0 hops', 'libs/core/src/index.ts · 1 hop via libs/core/src/pm/index.ts']);
+  expect(reach.parts[4]?.lines).toEqual(['apps/cli/src/index.ts · 1 hop via apps/cli/src/doctor.ts']);
+  // The changed files no moved name reached keep their cell.
+  expect(reach.parts[5]?.lines).toEqual(['libs/core/src/pm/legacy.ts · 0 hops', 'libs/core/src/pm/tools.ts · 0 hops']);
+  expect(partsOf({ ...DEMO, weather: { ...DEMO.weather, reach: [] } }, 'reach').empty).toContain('reaches no cell');
+});
+
+test('a reach that carries no names opens by cell alone, nearest first, as before symbol reach (D5, D45)', () => {
+  const unnamed = {
+    ...DEMO,
+    weather: {
+      ...DEMO.weather,
+      reach: DEMO.weather.reach.map((named) => {
+        const { names: _, ...entry } = named;
+        return entry;
+      }),
+    },
+  };
+  const reach = partsOf(unnamed, 'reach');
   expect(reach.parts.map((part) => part.heading)).toEqual(['folder:libs/core/src/pm · 0 hops', 'single:apps/cli/src/doctor.ts · 0 hops', 'package:apps/cli · 1 hop', 'package:libs/core · 1 hop']);
   expect(reach.parts[2]?.lines).toEqual(['apps/cli/src/index.ts · 1 hop via apps/cli/src/doctor.ts']);
   expect(reach.parts[0]?.lines[0]).toBe('libs/core/src/pm/index.ts · 0 hops');
-  expect(partsOf({ ...DEMO, weather: { ...DEMO.weather, reach: [] } }, 'reach').empty).toContain('reaches no cell');
 });
 
 test('size opens every changed file with its kind and lines, the category its slots, the notices their ranks, other its files, and health its movement', () => {

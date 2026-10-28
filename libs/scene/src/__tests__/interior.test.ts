@@ -7,7 +7,7 @@ import type { MapJson } from 'core';
 import { expect, test } from 'vitest';
 
 import { driftOf } from '../drift.js';
-import { INTERIOR_LAYOUT, cellSlide, exportsWords, interiorOf, tagsOf } from '../interior.js';
+import { INTERIOR_LAYOUT, cellSlide, exportsTable, exportsWords, interiorOf, tagsOf } from '../interior.js';
 import type { Body, Slide } from '../interior.js';
 import { LABELING } from '../labels.js';
 import { dentedRing } from '../membranes.js';
@@ -145,6 +145,52 @@ test("the membrane writes the names a few to a line in columns as wide as their 
   const bare = slideOf(PM, { ...DEMO, terrain: { ...DEMO.terrain, cells } });
   expect(bare.exports.names).toBeUndefined();
   expect(exportsWords(bare.exports)).toEqual(['index.ts · 3 exports']);
+});
+
+/** The demo with each reach entry's names as given, by path, and none on any other. */
+const namedReach = (names: Readonly<Record<string, readonly string[]>>): MapJson => ({
+  ...DEMO,
+  weather: {
+    ...DEMO.weather,
+    reach: DEMO.weather.reach.map((named) => {
+      const { names: _, ...entry } = named;
+      const carried = names[entry.path];
+      return carried === undefined ? entry : { ...entry, names: carried };
+    }),
+  },
+});
+
+test('an opened cell marks the names its membrane writes that the reach crossed it by: those a reach entry outside the cell carries, never one inside (D181, D111)', () => {
+  // On the demo, doctor.ts and libs/core's barrel take all three of pm's names from outside it.
+  expect(slideOf(PM).exports.reached).toEqual(['listSlots', 'resolveSlot', 'resolveTool']);
+  // doctor.ts alone carries two of them out; the barrel inside pm carries names too, which crossed no membrane of pm's.
+  const doctorOnly = namedReach({ 'apps/cli/src/doctor.ts': ['resolveSlot', 'resolveTool'], 'libs/core/src/pm/index.ts': ['listSlots', 'resolveTool'] });
+  expect(slideOf(PM, doctorOnly).exports.reached).toEqual(['resolveSlot', 'resolveTool']);
+  expect(exportsTable(slideOf(PM, doctorOnly).exports).rows).toEqual([
+    [
+      { name: 'listSlots', text: 'listSlots', reached: false },
+      { name: 'resolveSlot', text: 'resolveSlot', reached: true },
+      { name: 'resolveTool', text: 'resolveTool', reached: true },
+    ],
+  ]);
+  // Names carried only inside the cell, or by no entry at all, mark none.
+  expect(slideOf(PM, namedReach({ 'libs/core/src/pm/index.ts': ['listSlots'] })).exports.reached).toBeUndefined();
+  expect(slideOf(PM, namedReach({})).exports.reached).toBeUndefined();
+  // libs/core's barrel is outside pm and inside libs/core: the names it carries cross pm's membrane, and none of libs/core's.
+  const coreBarrel = namedReach({ 'libs/core/src/index.ts': ['listSlots', 'resolveSlot'] });
+  expect(slideOf(PM, coreBarrel).exports.reached).toEqual(['listSlots', 'resolveSlot']);
+  expect(slideOf(CORE, coreBarrel).exports.reached).toBeUndefined();
+});
+
+test('the names the reach crossed by are kept among those a long list shows, in the list\'s own order, and the lines read as they did (D181)', () => {
+  const names = Array.from({ length: 14 }, (_, index) => `name${String(index).padStart(2, '0')}`);
+  const table = exportsTable({ count: names.length, names, reached: ['name13', 'name05'], barrel: 'index.ts', x: 0, y: 0 });
+  const shown = table.rows.flat();
+  expect(shown.map((cell) => cell.name)).toEqual([...names.slice(0, 11).filter((name) => name !== 'name11'), 'name13'].toSorted().slice(0, 12));
+  expect(shown.filter((cell) => cell.reached).map((cell) => cell.name)).toEqual(['name05', 'name13']);
+  expect(table.tail).toBe('and 2 more');
+  // With nothing reached, the table writes the lines exportsWords always wrote.
+  expect(exportsWords({ count: names.length, names, x: 0, y: 0 })).toEqual(['14 exports', 'name00  name01  name02', 'name03  name04  name05', 'name06  name07  name08', 'name09  name10  name11', 'and 2 more']);
 });
 
 test('each file is stained by what the change did to it, with the share of its changed lines no test ran unstained, a file nobody measured unstained whole (C11, D71, D80)', () => {
