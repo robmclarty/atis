@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 120 — feat(cli): read JavaScript as terrain through the TypeScript producer
+**Current step:** 80 — fix(core): sort other languages' manifests and settings onto the shore
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -134,7 +134,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 77. feat(tour): write an opt-in reviewer's tour with fascicle
 - ☑ 78. feat(web): play a tour's stops with fly-to
 - ☑ 79. refactor(cli): run every producer a repo needs and merge their scans
-- ☐ 120. feat(cli): read JavaScript as terrain through the TypeScript producer
+- ☑ 120. feat(cli): read JavaScript as terrain through the TypeScript producer
 - ☐ 80. fix(core): sort other languages' manifests and settings onto the shore
 - ☐ 81. feat(cli): scan a Go module into the same scan shape
 - ☐ 82. feat(cli): scan a Python project into the same scan shape
@@ -2870,3 +2870,5 @@ folder, so it rides the branch into the PR.)*
   **5.** One flake in the gate, parked
 
   The first full check failed one test, the web tour stepper's (from step 78, the tour's fly-to). It timed out at 30 s waiting on the breadcrumb while the CLI suite ran beside it, then passed alone in 5 s and in both later full runs. Nothing in this step reaches the tour, so I parked it as P86 rather than touch it.
+
+- 2026-10-28 — step 120 checkpointed · 7ef67c5dc — feat(cli): read JavaScript as terrain through the TypeScript producer (10m)

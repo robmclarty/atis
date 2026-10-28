@@ -145,6 +145,34 @@ test.each(CENSUS)('the census puts a %s file there: %s', (id, path, roots = []) 
   expect(groupOf(path, roots)).toBe(id);
 });
 
+// One path per pattern for the manifests, lockfiles and tool settings of the other languages
+// the producers read: Go, Python, Terraform and shell (D114).
+const OTHER_LANGUAGES: readonly [string, string][] = [
+  ['deps', 'services/api/go.mod'],
+  ['deps', 'services/api/go.sum'],
+  ['deps', 'go.work'],
+  ['deps', 'pyproject.toml'],
+  ['deps', 'requirements-dev.txt'],
+  ['deps', 'uv.lock'],
+  ['deps', 'poetry.lock'],
+  ['deps', 'Pipfile'],
+  ['deps', 'Pipfile.lock'],
+  ['deps', 'infra/.terraform.lock.hcl'],
+  ['config', 'infra/envs/prod.tfvars'],
+  ['config', 'setup.cfg'],
+  ['config', 'tox.ini'],
+  ['config', 'pytest.ini'],
+  ['config', 'mypy.ini'],
+  ['config', 'ruff.toml'],
+  ['config', 'infra/.tflint.hcl'],
+  ['config', '.shellcheckrc'],
+  ['settings', '.python-version'],
+];
+
+test.each(OTHER_LANGUAGES)('the default table puts another language\'s %s file there: %s', (id, path) => {
+  expect(groupOf(path)).toBe(id);
+});
+
 test('a root config folder is tool config, but its TypeScript and a nested config folder are not', () => {
   expect(groupOf('config/jest/react-dom-17-client.js')).toBe('config');
   expect(groupOf('config/build.ts')).toBeUndefined();

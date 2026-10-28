@@ -275,8 +275,10 @@ export const DEFAULT_CONFIG: Config = {
   // and skills, while `.mcp.json`, `.ridgeline/` and `.codegraph/` configure a tool the
   // way `fallow.toml` does. A schema and a benchmark corpus are data wherever they sit.
   // The rows below `.codegraph/**` and their like in the later groups come from the retake's
-  // census of five outside repos; code the scan cannot read (`.svelte`, `.vue`, loose
-  // JavaScript) is left to `other` on purpose, so the residual stays loud about it.
+  // census of five outside repos; code the scan cannot read (`.svelte`, `.vue`) is left to
+  // `other` on purpose, so the residual stays loud about it. JavaScript is read since D184.
+  // The Go, Python, Terraform and shell rows sort those languages' manifests, lockfiles and
+  // tool settings by kind, as the npm ones are, beside the producers that read their code (D114).
   groups: [
     // Build output directly beneath a package or the repo root: a second copy of the code, never terrain (D84).
     { id: 'build', patterns: ['/dist/**', '/build/**', '/out/**'], at_member_root: true },
@@ -323,6 +325,14 @@ export const DEFAULT_CONFIG: Config = {
         '.changeset/**',
         'vitest.workspace.*',
         '/config/**',
+        '*.tfvars',
+        'setup.cfg',
+        'tox.ini',
+        'pytest.ini',
+        'mypy.ini',
+        'ruff.toml',
+        '.tflint.hcl',
+        '.shellcheckrc',
       ],
       // A root `config/` holds a tool's settings beside the build code that reads them, and
       // this row is also what makes a `.ts` file tool config rather than terrain (D57). So the
@@ -356,6 +366,7 @@ export const DEFAULT_CONFIG: Config = {
         '.env',
         '.git-blame-ignore-revs',
         '.gitkeep',
+        '.python-version',
       ],
     },
     {
@@ -372,6 +383,16 @@ export const DEFAULT_CONFIG: Config = {
         'deno.*.json',
         'deno.lock',
         'package.cjs.json',
+        'go.mod',
+        'go.sum',
+        'go.work',
+        'pyproject.toml',
+        'requirements*.txt',
+        'uv.lock',
+        'poetry.lock',
+        'Pipfile',
+        'Pipfile.lock',
+        '.terraform.lock.hcl',
       ],
     },
     {
