@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** none (at the boundary)
+**Current step:** 83 — feat(cli): scan Terraform modules into the same scan shape
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -137,7 +137,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 120. feat(cli): read JavaScript as terrain through the TypeScript producer
 - ☑ 80. fix(core): sort other languages' manifests and settings onto the shore
 - ☑ 81. feat(cli): scan a Go module into the same scan shape
-- ☐ 82. feat(cli): scan a Python project into the same scan shape
+- ☑ 82. feat(cli): scan a Python project into the same scan shape
 - ☐ 83. feat(cli): scan Terraform modules into the same scan shape
 - ☐ 84. feat(cli): scan shell scripts into the same scan shape
 - ☐ 119. fix(cli): read checkride's targets, each artifact by its check's adapter
@@ -2877,3 +2877,4 @@ folder, so it rides the branch into the PR.)*
 - 2026-10-28 — step 120 checkpointed · 7ef67c5dc — feat(cli): read JavaScript as terrain through the TypeScript producer (10m)
 - 2026-10-28 — step 80 checkpointed · 2fa9a8385 — fix(core): sort other languages' manifests and settings onto the shore (4m)
 - 2026-10-28 — step 81 checkpointed · a256463cb — feat(cli): scan a Go module into the same scan shape (1 drift)
+- 2026-10-28 — step 82 checkpointed · 607e031c2 — feat(cli): scan a Python project into the same scan shape (1 drift)

@@ -5,3 +5,7 @@ packages:
 allowBuilds:
   '@ast-grep/cli': true
   fallow: true
+
+# checkride is Rob's own package, so its releases are taken as soon as they land.
+minimumReleaseAgeExclude:
+  - checkride

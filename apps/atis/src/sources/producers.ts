@@ -11,9 +11,10 @@
  * that cannot run here, reads nothing: its files stay where the shore table
  * puts them, and the scan says which producer and why (C2).
  *
- * TypeScript is the first producer, then Go (D113) and Python (D115).
- * Another language is a module of its own beside them and one more entry in
- * `PRODUCERS`, never a change to core.
+ * TypeScript is the first producer, then Go (D113), Python (D115) and
+ * Terraform (D116).
+ * Another language is a module of its own beside them and one more entry
+ * in `PRODUCERS`, never a change to core.
  */
 
 import { resolve } from 'node:path';
@@ -23,6 +24,7 @@ import type { EntryPointLookup, UnreadProducer } from 'core';
 import { GO_EXTENSIONS, goUnavailable, readGo } from './go.js';
 import { TYPESCRIPT_EXTENSIONS, fallowEntryPoints, readTypeScript } from './imports.js';
 import { PYTHON_EXTENSIONS, pythonUnavailable, readPython } from './python.js';
+import { TERRAFORM_EXTENSIONS, readTerraform } from './terraform.js';
 import type { EntryPoints, ParsedFiles, Prior } from './imports.js';
 import { gitTree, walk } from './scan.js';
 import type { Scan, ScannedFile, Tree } from './scan.js';
@@ -82,8 +84,16 @@ const PYTHON: Producer = {
   read: ({ tree, files }) => ({ ...readPython(tree, files), parsed: {} }),
 };
 
+/** The Terraform producer: the HCL parser it reads with ships with atis (C9), so it can always run (D116). */
+const TERRAFORM: Producer = {
+  id: 'terraform',
+  extensions: TERRAFORM_EXTENSIONS,
+  unavailable: () => undefined,
+  read: ({ tree, files }) => ({ scan: readTerraform(tree, files), parsed: {} }),
+};
+
 /** Every producer atis runs, in the order a file's extension is offered to them. */
-export const PRODUCERS: readonly Producer[] = [TYPESCRIPT, GO, PYTHON];
+export const PRODUCERS: readonly Producer[] = [TYPESCRIPT, GO, PYTHON, TERRAFORM];
 
 /** Why a producer `atis.config.json` switched off read nothing. */
 const SWITCHED_OFF = 'switched off in atis.config.json';

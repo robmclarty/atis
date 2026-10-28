@@ -59,7 +59,7 @@ function quietGit(repo: string, args: readonly string[]): string {
 }
 
 /** `undefined` when `path` does not exist at `sha`, never a thrown error (C2). */
-function showFile(repo: string, sha: string, path: string): string | undefined {
+export function showFile(repo: string, sha: string, path: string): string | undefined {
   try {
     return quietGit(repo, ['show', `${sha}:${path}`]);
   } catch {

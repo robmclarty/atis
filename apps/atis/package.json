@@ -46,7 +46,9 @@
   "devDependencies": {
     "@modelcontextprotocol/sdk": "1.32.2",
     "@types/ws": "8.18.2",
+    "checkride": "0.19.1",
     "core": "workspace:*",
+    "hcl2-parser": "1.0.3",
     "svg": "workspace:*",
     "vite": "8.3.5",
     "zod": "4.6.7"

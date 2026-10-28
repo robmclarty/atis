@@ -100,6 +100,7 @@ import {
   readLog,
   readCommit,
   readManifests,
+  readTerraformDependencies,
   readTree,
   resolveBase,
   shapePaths,
@@ -355,6 +356,32 @@ type Measured = {
   readonly structure?: { readonly base: string; readonly head: string };
   readonly entries?: string;
 };
+
+/**
+ * What the head did to the dependencies (D47, D83): the workspace manifests'
+ * delta, and the Terraform modules and providers its touched `.tf` files
+ * declare unless `atis.config.json` switches the producer off (D116), each in
+ * manifest and name order.
+ */
+function dependencyDelta(repo: string, mergeBase: string, touched: readonly string[], head: string, config: Config): ReturnType<typeof readManifests> {
+  const npm = readManifests(repo, mergeBase, touched, head);
+  if (config.producers_off.includes('terraform')) return npm;
+  const terraform = readTerraformDependencies(repo, mergeBase, touched, head);
+  if (terraform.deps_added.length + terraform.deps_moved.length === 0) return npm;
+  return {
+    deps_added: [...npm.deps_added, ...terraform.deps_added].toSorted(byManifest),
+    deps_moved: [...npm.deps_moved, ...terraform.deps_moved].toSorted(byManifest),
+  };
+}
+
+function byText(a: string, b: string): number {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+/** A dependency's place in the delta: by the manifest that declares it, then by its name. */
+function byManifest(a: { readonly manifest: string; readonly name: string }, b: { readonly manifest: string; readonly name: string }): number {
+  return byText(a.manifest, b.manifest) || byText(a.name, b.name);
+}
 
 /**
  * The config a run measures with (D28): core's defaults, with the language
@@ -649,7 +676,7 @@ function measure(repoPath: string, asked: Asked): Measured {
       const scan = clock('shapes head', () => (inferred.size === 0 ? headScan : checkInferredShapes(treeOf(side.tree), headScan, inferred)));
       const structure = clock('structure head', () => structureAt(repo, side.tree, () => treeOf(side.tree), fallow, cache));
       const manifests = side.changed.flatMap((file) => (file.from === undefined ? [file.path] : [file.path, file.from]));
-      const { deps_added, deps_moved } = clock('manifests', () => readManifests(repo, diff.merge_base, manifests, side.tree));
+      const { deps_added, deps_moved } = clock('manifests', () => dependencyDelta(repo, diff.merge_base, manifests, side.tree, config));
       // The window at the base, with the change's own commits on top, newest first (D8); a working tree adds none.
       const window = clock('log', () => [...readLog(repo, `${diff.merge_base}..${commit}`, history), ...ground.commits].slice(0, history));
       const inputs = { head: scan, diff: side.changed, deps_added, deps_moved, commits: window, check: clock('check', check), structure: { base: baseStructure.structure, head: structure.structure } };
