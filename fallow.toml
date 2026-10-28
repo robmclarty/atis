@@ -4,6 +4,7 @@
 entry = [
   "apps/*/src/index.ts",
   "apps/atis/src/cli.ts",
+  "apps/tour/src/cli.ts",
   "apps/web/src/main.ts",
   "libs/*/src/index.ts",
   "apps/*/src/**/*.test.{ts,tsx}",

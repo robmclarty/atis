@@ -1,0 +1,24 @@
+{
+  "name": "tour",
+  "version": "0.0.0",
+  "private": true,
+  "description": "An opt-in reviewer's tour of an atis map: ordered stops, each a target, one sentence and the notice it explains, written by a model through fascicle.",
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "start": "tsc --build && node dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "source": "./src/index.ts",
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "core": "workspace:*",
+    "fascicle": "0.17.0"
+  }
+}

@@ -1,0 +1,392 @@
+The atis map of one code change, as JSON. A hunk is [first line, line count]; a function is [name, first line, line count]; a notice is named by its rank.
+
+{
+  "change": {
+    "repo": "demo",
+    "base": "main",
+    "head": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+    "mode": "change",
+    "category": "IFR"
+  },
+  "notices": [
+    {
+      "rank": 1,
+      "tier": "primary",
+      "kind": "red-check-slot",
+      "target": "libs/core/src/pm/index.ts",
+      "why": "the `test` check is red on this changed file",
+      "inputs": {
+        "cells_reached": 4,
+        "uncovered_fraction": 0.556,
+        "history_weight": 3.163,
+        "slots": 1
+      },
+      "thresholds": {
+        "severity": 10
+      }
+    },
+    {
+      "rank": 2,
+      "tier": "secondary",
+      "kind": "deleted-export",
+      "target": "libs/core/src/pm/index.ts",
+      "why": "`legacyResolve` no longer exported, and 1 file still imports it",
+      "inputs": {
+        "cells_reached": 4,
+        "uncovered_fraction": 0.556,
+        "history_weight": 3.163,
+        "names": 1,
+        "consumers": 1,
+        "readers": 1
+      },
+      "thresholds": {
+        "severity": 8
+      }
+    },
+    {
+      "rank": 3,
+      "tier": "secondary",
+      "kind": "uncovered-high-reach",
+      "target": "libs/core/src/pm/index.ts",
+      "why": "5 changed lines are uncovered and the change reaches 4 cells",
+      "inputs": {
+        "cells_reached": 4,
+        "uncovered_fraction": 0.556,
+        "history_weight": 3.163,
+        "uncovered_lines": 5
+      },
+      "thresholds": {
+        "severity": 7,
+        "high_reach_cells": 3
+      }
+    },
+    {
+      "rank": 4,
+      "tier": "tertiary",
+      "kind": "interface-added",
+      "target": "libs/core/src/pm/index.ts",
+      "why": "the interface of `libs/core/src/pm` grew (`resolveTool` added) and 2 files read it; the shape of `listSlots` and `resolveSlot` could not be compared",
+      "inputs": {
+        "cells_reached": 4,
+        "uncovered_fraction": 0.556,
+        "history_weight": 3.163,
+        "band": 3,
+        "fan_in": 2,
+        "names_added": 1,
+        "names_removed": 0,
+        "names_reshaped": 0,
+        "names_uncompared": 2,
+        "readers": 2
+      },
+      "thresholds": {
+        "severity": 3,
+        "fan_in_high": 2,
+        "deep_band": 4
+      }
+    },
+    {
+      "rank": 5,
+      "tier": "tertiary",
+      "kind": "large-hot-change",
+      "target": "apps/cli/src/doctor.ts",
+      "why": "136 lines changed in a file with churn 3.366 and a bug-fix rate of 0.5",
+      "inputs": {
+        "cells_reached": 2,
+        "uncovered_fraction": 1,
+        "history_weight": 3.866,
+        "unmeasured": 1,
+        "lines": 136
+      },
+      "thresholds": {
+        "severity": 4,
+        "large_lines": 100,
+        "hot_churn_ratio": 2,
+        "hot_bugfix_rate": 0.3
+      }
+    },
+    {
+      "rank": 6,
+      "tier": "tertiary",
+      "kind": "red-check-slot",
+      "target": "libs/core/src/pm/tools.ts",
+      "why": "the `test` check is red on this changed file",
+      "inputs": {
+        "cells_reached": 4,
+        "uncovered_fraction": 0.222,
+        "history_weight": 1,
+        "slots": 1
+      },
+      "thresholds": {
+        "severity": 10
+      }
+    }
+  ],
+  "changed": [
+    {
+      "path": "README.md",
+      "kind": "modified",
+      "added": 6,
+      "deleted": 2,
+      "hunks": [
+        [
+          12,
+          6
+        ]
+      ]
+    },
+    {
+      "path": "apps/cli/src/doctor.ts",
+      "kind": "modified",
+      "cell": "single:apps/cli/src/doctor.ts",
+      "added": 96,
+      "deleted": 40,
+      "hunks": [
+        [
+          31,
+          28
+        ],
+        [
+          150,
+          68
+        ]
+      ]
+    },
+    {
+      "path": "libs/core/src/__tests__/pm.test.ts",
+      "kind": "modified",
+      "added": 22,
+      "deleted": 5,
+      "hunks": [
+        [
+          52,
+          22
+        ]
+      ]
+    },
+    {
+      "path": "libs/core/src/pm/index.ts",
+      "kind": "modified",
+      "cell": "folder:libs/core/src/pm",
+      "added": 18,
+      "deleted": 9,
+      "hunks": [
+        [
+          6,
+          4
+        ],
+        [
+          19,
+          14
+        ]
+      ]
+    },
+    {
+      "path": "libs/core/src/pm/legacy.ts",
+      "kind": "deleted",
+      "cell": "folder:libs/core/src/pm",
+      "added": 0,
+      "deleted": 45,
+      "hunks": []
+    },
+    {
+      "path": "libs/core/src/pm/tools.ts",
+      "kind": "added",
+      "cell": "folder:libs/core/src/pm",
+      "added": 96,
+      "deleted": 0,
+      "hunks": [
+        [
+          1,
+          96
+        ]
+      ]
+    },
+    {
+      "path": "notes.xyz",
+      "kind": "modified",
+      "added": 3,
+      "deleted": 1,
+      "hunks": [
+        [
+          2,
+          3
+        ]
+      ]
+    },
+    {
+      "path": "package.json",
+      "kind": "modified",
+      "added": 2,
+      "deleted": 0,
+      "hunks": [
+        [
+          18,
+          2
+        ]
+      ]
+    }
+  ],
+  "reach": [
+    {
+      "path": "apps/cli/src/doctor.ts",
+      "cell": "single:apps/cli/src/doctor.ts",
+      "hops": 0,
+      "via": [],
+      "names": [
+        "resolveSlot",
+        "resolveTool"
+      ]
+    },
+    {
+      "path": "apps/cli/src/index.ts",
+      "cell": "package:apps/cli",
+      "hops": 1,
+      "via": [
+        "apps/cli/src/doctor.ts"
+      ],
+      "names": [
+        "runDoctor"
+      ]
+    },
+    {
+      "path": "libs/core/src/index.ts",
+      "cell": "package:libs/core",
+      "hops": 1,
+      "via": [
+        "libs/core/src/pm/index.ts"
+      ],
+      "names": [
+        "legacyResolve",
+        "listSlots",
+        "resolveSlot"
+      ]
+    },
+    {
+      "path": "libs/core/src/pm/index.ts",
+      "cell": "folder:libs/core/src/pm",
+      "hops": 0,
+      "via": [],
+      "names": [
+        "legacyResolve",
+        "resolveTool"
+      ]
+    },
+    {
+      "path": "libs/core/src/pm/legacy.ts",
+      "cell": "folder:libs/core/src/pm",
+      "hops": 0,
+      "via": []
+    },
+    {
+      "path": "libs/core/src/pm/tools.ts",
+      "cell": "folder:libs/core/src/pm",
+      "hops": 0,
+      "via": []
+    }
+  ],
+  "cells": [
+    {
+      "id": "folder:libs/core/src/pm",
+      "path": "libs/core/src/pm",
+      "kind": "folder",
+      "exports": [
+        "listSlots",
+        "resolveSlot",
+        "resolveTool"
+      ]
+    },
+    {
+      "id": "package:apps/cli",
+      "path": "apps/cli",
+      "kind": "package",
+      "exports": [
+        "main"
+      ]
+    },
+    {
+      "id": "package:libs/core",
+      "path": "libs/core",
+      "kind": "package",
+      "exports": [
+        "legacyResolve",
+        "listSlots",
+        "resolveSlot"
+      ]
+    },
+    {
+      "id": "single:apps/cli/src/doctor.ts",
+      "path": "apps/cli/src/doctor.ts",
+      "kind": "single",
+      "exports": [
+        "runDoctor"
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "path": "apps/cli/src/doctor.ts",
+      "functions": [
+        [
+          "runDoctor",
+          12,
+          64
+        ],
+        [
+          "checkSlot",
+          80,
+          42
+        ],
+        [
+          "report",
+          130,
+          36
+        ]
+      ]
+    },
+    {
+      "path": "apps/cli/src/index.ts",
+      "functions": [
+        [
+          "main",
+          5,
+          18
+        ]
+      ]
+    },
+    {
+      "path": "libs/core/src/pm/index.ts",
+      "functions": [
+        [
+          "resolveSlot",
+          6,
+          20
+        ],
+        [
+          "listSlots",
+          28,
+          10
+        ]
+      ]
+    },
+    {
+      "path": "libs/core/src/pm/tools.ts",
+      "functions": [
+        [
+          "localBin",
+          4,
+          30
+        ],
+        [
+          "resolveTool",
+          41,
+          38
+        ],
+        [
+          "toolName",
+          82,
+          10
+        ]
+      ]
+    }
+  ]
+}

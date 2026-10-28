@@ -93,6 +93,7 @@ rest are evaluated or held in reserve.
 | `ws` 8.22.0 | Einar Otto Stangvik and contributors | MIT | The page's socket on the served port, which `--watch` pushes each rebuilt map over (D106) and `atis mcp`'s highlights ride (D178), in `apps/atis/src/serve.ts` |
 | `@modelcontextprotocol/sdk` 1.32.2 | Anthropic, PBC | MIT | `atis mcp`'s stdio server and its three tools, on its `McpServer` (`apps/atis/src/mcp.ts`, D110). A devDependency the bundle inlines, its licence with it, so the installed package carries none of the packages its HTTP transports need (D179) |
 | `zod` 4.6.7 | Colin McDonnell | MIT | The input schemas of `atis mcp`'s tools, as the MCP SDK's `McpServer` takes them, the SDK's required peer; inlined with it (D179) |
+| `fascicle` 0.17.0 | Rob McLarty | Apache-2.0 | The opt-in reviewer's tour, in `apps/tour` alone (D112, D177): one `model_call` through its engine, by default on its `claude_cli` provider, the answer held to a schema written by hand as a Standard Schema, so no schema library comes with it, and tested on its stub engine from `fascicle/testing`. atis never imports it, and it needs Node 24 |
 | `deck.gl` | vis.gl / OpenJS Foundation | MIT | Evaluated, not chosen (§15) |
 
 ## 5. Fixtures (trees and reviews, no code taken)

@@ -1,0 +1,36 @@
+{
+  "base": "main",
+  "head": "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+  "stops": [
+    {
+      "target": "libs/core/src/pm/index.ts",
+      "sentence": "Start at pm's barrel, which no longer exports legacyResolve while a file still imports it, because the rest of the change hangs off that interface.",
+      "notice": 2
+    },
+    {
+      "target": "libs/core/src/pm/index.ts",
+      "sentence": "The same barrel adds resolveTool for the two files that read it, so read the new name against the one it drops.",
+      "notice": 4
+    },
+    {
+      "target": "libs/core/src/pm/index.ts",
+      "sentence": "The test check is red on the barrel, and it comes after the interface because the dropped export may be what breaks it.",
+      "notice": 1
+    },
+    {
+      "target": "libs/core/src/pm/index.ts",
+      "sentence": "Five changed lines there ran under no test while the change reaches four cells, so the uncovered reach starts at the barrel too.",
+      "notice": 3
+    },
+    {
+      "target": "libs/core/src/pm/tools.ts",
+      "sentence": "tools.ts is red as well, and it comes once the barrel that exports its names is read.",
+      "notice": 6
+    },
+    {
+      "target": "apps/cli/src/doctor.ts",
+      "sentence": "doctor.ts changed 136 lines in a file that churns and often takes fixes, and it comes last as the caller the change lands on.",
+      "notice": 5
+    }
+  ]
+}

@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 121 — fix(web): draw an opened cell's words on top, and open the Reach block on its lit names
+**Current step:** 77 — feat(tour): write an opt-in reviewer's tour with fascicle
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -130,7 +130,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 74. feat(cli): serve MCP tools that point at the open map
 - ☑ 75. feat(core): reach exported names through the files that import them
 - ☑ 76. feat(web): light a symbol's reach where it crosses a membrane
-- ☐ 121. fix(web): draw an opened cell's words on top, and open the Reach block on its lit names
+- ☑ 121. fix(web): draw an opened cell's words on top, and open the Reach block on its lit names
 - ☐ 77. feat(tour): write an opt-in reviewer's tour with fascicle
 - ☐ 78. feat(web): play a tour's stops with fly-to
 - ☐ 79. refactor(cli): run every producer a repo needs and merge their scans
@@ -2698,3 +2698,5 @@ folder, so it rides the branch into the PR.)*
   **5.** zod rides in with the SDK, inlined, and the package still installs three dependencies
 
   The SDK's low-level `Server` is marked deprecated in 1.32.2, so `atis mcp` sits on `McpServer`, which takes zod schemas. zod 4.6.7 is the SDK's required peer, so it joins `apps/atis` as a second devDependency the bundle inlines, with a row in `docs/inspiration.md` beside the SDK's. C9 (deps-earn-their-place) names the SDK alone among the inlined devDependencies. The package test now asserts the packed manifest's dependencies are exactly `playwright-core`, `typescript` and `ws`, finds both licences in `dist/licenses.md`, and drives the unpacked bin's `atis mcp` over stdio, which exits 0 when stdin closes.
+
+- 2026-10-28 — step 121 checkpointed · 184236a8a — fix(web): draw an opened cell's words on top, and open the Reach block on its lit names (1 drift, 17m)

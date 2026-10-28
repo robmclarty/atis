@@ -6,6 +6,7 @@
     { "path": "./libs/svg" },
     { "path": "./apps/atis" },
     { "path": "./apps/atis/scripts" },
+    { "path": "./apps/tour" },
     { "path": "./apps/web" },
     { "path": "./apps/web/scripts" },
     { "path": "./scripts" }
