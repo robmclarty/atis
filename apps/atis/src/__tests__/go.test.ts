@@ -172,10 +172,8 @@ function mapOf(scan: Scan): MapJson {
 }
 
 test('Go is the second producer, claiming .go files, and it runs only where a go command answers (D113, D114)', () => {
-  expect(PRODUCERS.map((producer) => [producer.id, producer.extensions])).toEqual([
-    ['typescript', ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs']],
-    ['go', ['.go']],
-  ]);
+  expect(PRODUCERS.map((producer) => producer.id).slice(0, 2)).toEqual(['typescript', 'go']);
+  expect(PRODUCERS.find((producer) => producer.id === 'go')?.extensions).toEqual(['.go']);
 });
 
 test("parseGoMod reads the module's path and every module it requires, alone or in a block", () => {

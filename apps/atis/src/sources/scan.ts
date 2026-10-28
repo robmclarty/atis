@@ -11,8 +11,9 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { readFileSync, readdirSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
 
 import type { CodeSpan, EntryPointLookup, ExportShapes, FileKind, PassedName, ScanFunction, UnreadProducer } from 'core';
 
@@ -246,4 +247,21 @@ export function gitTree(repo: string, sha: string): Tree {
     return content;
   };
   return { root: resolve(repo), files: files.toSorted(byPath), directories, read, want };
+}
+
+/**
+ * `paths` of `tree` written beneath a fresh temp directory named by `prefix`,
+ * and that directory: what a producer whose toolchain reads files from disk
+ * hands it, so the toolchain sees the commit's bytes and no other file of the
+ * reviewed tree (D139). The caller removes it.
+ */
+export function drawOut(tree: Tree, paths: readonly string[], prefix: string): string {
+  tree.want?.(paths);
+  const root = mkdtempSync(join(tmpdir(), prefix));
+  for (const path of paths) {
+    const file = join(root, path);
+    mkdirSync(dirname(file), { recursive: true });
+    writeFileSync(file, tree.read(path));
+  }
+  return root;
 }

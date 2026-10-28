@@ -136,7 +136,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 79. refactor(cli): run every producer a repo needs and merge their scans
 - ☑ 120. feat(cli): read JavaScript as terrain through the TypeScript producer
 - ☑ 80. fix(core): sort other languages' manifests and settings onto the shore
-- ☐ 81. feat(cli): scan a Go module into the same scan shape
+- ☑ 81. feat(cli): scan a Go module into the same scan shape
 - ☐ 82. feat(cli): scan a Python project into the same scan shape
 - ☐ 83. feat(cli): scan Terraform modules into the same scan shape
 - ☐ 84. feat(cli): scan shell scripts into the same scan shape
@@ -242,6 +242,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [ ] the config row's except list names only TypeScript (D164), so a root config/ of JavaScript code and a JavaScript eslint plugin's rules/ stay config shore while TypeScript in the same places is terrain
 - [ ] a Go module with no main package (a library) has no entry points, so every file of it sits in the deepest band, unreachable (D26); a Go library's non-internal packages may be its entry points as a TypeScript package's exports are
 - [ ] Go files go list never lists, under testdata/ or vendor/ or in no module, land in the shore's other group, loud; a testdata/ row in data and a vendor/ row would sort them by kind
+- [ ] a Python src layout folds every subpackage into its top package's folder cell, since core's src/ convention (D45) makes src/<name>/ one folder module, while a flat layout gives each package a cell of its own; D115 wants each package with an __init__.py a cell
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -2875,3 +2876,4 @@ folder, so it rides the branch into the PR.)*
 
 - 2026-10-28 — step 120 checkpointed · 7ef67c5dc — feat(cli): read JavaScript as terrain through the TypeScript producer (10m)
 - 2026-10-28 — step 80 checkpointed · 2fa9a8385 — fix(core): sort other languages' manifests and settings onto the shore (4m)
+- 2026-10-28 — step 81 checkpointed · a256463cb — feat(cli): scan a Go module into the same scan shape (1 drift)

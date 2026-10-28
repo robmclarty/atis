@@ -23,13 +23,14 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 
 import type { CodeSpan, ExportShapes, ScanFunction } from 'core';
 
 import { GO_HELPER_MAIN, GO_HELPER_MOD } from './go-helper/index.js';
+import { drawOut } from './scan.js';
 import type { Scan, ScannedEdge, ScannedFile, ScannedMember, Tree } from './scan.js';
 
 /** The extension the Go producer claims. */
@@ -396,17 +397,6 @@ export function goUnavailable(): string | undefined {
 /** What the Go producer read of a tree: its scan, and why any module of it was left unread. */
 export type GoRead = { readonly scan: Scan; readonly unread?: string };
 
-/** `paths` of `tree` written beneath a fresh directory, and that directory. */
-function drawOut(tree: Tree, paths: readonly string[]): string {
-  const root = mkdtempSync(join(tmpdir(), 'atis-go-tree-'));
-  for (const path of paths) {
-    const file = join(root, path);
-    mkdirSync(dirname(file), { recursive: true });
-    writeFileSync(file, tree.read(path));
-  }
-  return root;
-}
-
 /** The helper written into a directory of its own, run on `paths` under `root`, and its read of each. */
 function runHelper(root: string, paths: readonly string[]): readonly GoFileRead[] {
   const helper = mkdtempSync(join(tmpdir(), 'atis-go-helper-'));
@@ -438,9 +428,7 @@ function runHelper(root: string, paths: readonly string[]): readonly GoFileRead[
  */
 export function readGo(tree: Tree, files: readonly string[]): GoRead {
   const mods = tree.files.filter((path) => basename(path) === GO_MOD);
-  const drawn = [...files, ...tree.files.filter((path) => MODULE_FILES.has(basename(path)))];
-  tree.want?.(drawn);
-  const root = drawOut(tree, drawn);
+  const root = drawOut(tree, [...files, ...tree.files.filter((path) => MODULE_FILES.has(basename(path)))], 'atis-go-tree-');
   try {
     const roots = [root, realpathSync(root)];
     const modules: GoModule[] = [];

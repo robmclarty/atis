@@ -1,0 +1,407 @@
+[
+  {
+    "path": "src/shop/__init__.py",
+    "loc": 5,
+    "imports": [
+      {
+        "module": "store",
+        "level": 1,
+        "names": [
+          {
+            "name": "Store",
+            "bound": "Store"
+          },
+          {
+            "name": "make",
+            "bound": "make"
+          }
+        ],
+        "line": 2,
+        "top": true
+      },
+      {
+        "module": "",
+        "level": 1,
+        "names": [
+          {
+            "name": "money",
+            "bound": "money"
+          }
+        ],
+        "line": 3,
+        "top": true
+      }
+    ],
+    "decls": [
+      {
+        "name": "VERSION",
+        "shape": "VERSION = '1.0'"
+      }
+    ],
+    "all": [
+      "Store",
+      "make",
+      "money",
+      "VERSION"
+    ],
+    "main_guard": false,
+    "functions": [],
+    "code": [
+      {
+        "start": 5,
+        "end": 5
+      },
+      {
+        "start": 7,
+        "end": 7
+      }
+    ]
+  },
+  {
+    "path": "src/shop/__main__.py",
+    "loc": 2,
+    "imports": [
+      {
+        "module": "cli",
+        "level": 1,
+        "names": [
+          {
+            "name": "main",
+            "bound": "main"
+          }
+        ],
+        "line": 1,
+        "top": true
+      }
+    ],
+    "decls": [],
+    "all": null,
+    "main_guard": false,
+    "functions": [],
+    "code": [
+      {
+        "start": 3,
+        "end": 3
+      }
+    ]
+  },
+  {
+    "path": "src/shop/cli.py",
+    "loc": 6,
+    "imports": [
+      {
+        "module": "argparse",
+        "level": 0,
+        "names": [],
+        "bound": "argparse",
+        "line": 1,
+        "top": true
+      },
+      {
+        "module": "shop",
+        "level": 0,
+        "names": [
+          {
+            "name": "Store",
+            "bound": "Store"
+          }
+        ],
+        "line": 3,
+        "top": true
+      }
+    ],
+    "decls": [
+      {
+        "name": "main",
+        "shape": "def main(argv: list[str] | None=...) -> int:\n..."
+      }
+    ],
+    "all": null,
+    "main_guard": false,
+    "functions": [
+      {
+        "name": "main",
+        "line": 6,
+        "line_count": 4
+      }
+    ],
+    "code": [
+      {
+        "start": 6,
+        "end": 9
+      }
+    ]
+  },
+  {
+    "path": "src/shop/money.py",
+    "loc": 6,
+    "imports": [
+      {
+        "module": "requests",
+        "level": 0,
+        "names": [],
+        "bound": "requests",
+        "line": 1,
+        "top": true
+      },
+      {
+        "module": "shop.store.core",
+        "level": 0,
+        "names": [
+          {
+            "name": "Store",
+            "bound": "Store"
+          },
+          {
+            "name": "make",
+            "bound": "make"
+          }
+        ],
+        "line": 3,
+        "top": true
+      }
+    ],
+    "decls": [
+      {
+        "name": "total",
+        "shape": "def total(store: Store) -> int:\n..."
+      }
+    ],
+    "all": null,
+    "main_guard": true,
+    "functions": [
+      {
+        "name": "total",
+        "line": 6,
+        "line_count": 2
+      }
+    ],
+    "code": [
+      {
+        "start": 6,
+        "end": 7
+      },
+      {
+        "start": 10,
+        "end": 11
+      }
+    ]
+  },
+  {
+    "path": "src/shop/plugins/loader.py",
+    "loc": 3,
+    "imports": [
+      {
+        "module": "store",
+        "level": 2,
+        "names": [
+          {
+            "name": "make",
+            "bound": "make"
+          }
+        ],
+        "line": 1,
+        "top": true
+      }
+    ],
+    "decls": [
+      {
+        "name": "load",
+        "shape": "def load():\n..."
+      }
+    ],
+    "all": null,
+    "main_guard": false,
+    "functions": [
+      {
+        "name": "load",
+        "line": 4,
+        "line_count": 2
+      }
+    ],
+    "code": [
+      {
+        "start": 4,
+        "end": 5
+      }
+    ]
+  },
+  {
+    "path": "src/shop/store/__init__.py",
+    "loc": 1,
+    "imports": [
+      {
+        "module": "core",
+        "level": 1,
+        "names": [
+          {
+            "name": "*",
+            "bound": "*"
+          }
+        ],
+        "line": 1,
+        "top": true
+      }
+    ],
+    "decls": [],
+    "all": null,
+    "main_guard": false,
+    "functions": [],
+    "code": []
+  },
+  {
+    "path": "src/shop/store/core.py",
+    "loc": 15,
+    "imports": [
+      {
+        "module": "json",
+        "level": 0,
+        "names": [],
+        "bound": "json",
+        "line": 1,
+        "top": true
+      },
+      {
+        "module": "dataclasses",
+        "level": 0,
+        "names": [
+          {
+            "name": "dataclass",
+            "bound": "dataclass"
+          }
+        ],
+        "line": 2,
+        "top": true
+      }
+    ],
+    "decls": [
+      {
+        "name": "Store",
+        "shape": "@dataclass\nclass Store:\nname: str\nitems: list[str] = ...\ndef add(self, item: str, count: int=...) -> None:\n..."
+      },
+      {
+        "name": "make",
+        "shape": "def make(name: str=...) -> Store:\n..."
+      },
+      {
+        "name": "LIMIT",
+        "shape": "LIMIT = 100"
+      },
+      {
+        "name": "_hidden",
+        "shape": "_hidden = 1"
+      }
+    ],
+    "all": null,
+    "main_guard": false,
+    "functions": [
+      {
+        "name": "add",
+        "line": 10,
+        "line_count": 3
+      },
+      {
+        "name": "_secret",
+        "line": 14,
+        "line_count": 2
+      },
+      {
+        "name": "make",
+        "line": 18,
+        "line_count": 2
+      }
+    ],
+    "code": [
+      {
+        "start": 5,
+        "end": 15
+      },
+      {
+        "start": 18,
+        "end": 19
+      },
+      {
+        "start": 22,
+        "end": 22
+      },
+      {
+        "start": 23,
+        "end": 23
+      }
+    ]
+  },
+  {
+    "path": "tests/conftest.py",
+    "loc": 4,
+    "imports": [
+      {
+        "module": "pytest",
+        "level": 0,
+        "names": [],
+        "bound": "pytest",
+        "line": 1,
+        "top": true
+      }
+    ],
+    "decls": [
+      {
+        "name": "store",
+        "shape": "@pytest.fixture\ndef store():\n..."
+      }
+    ],
+    "all": null,
+    "main_guard": false,
+    "functions": [
+      {
+        "name": "store",
+        "line": 5,
+        "line_count": 2
+      }
+    ],
+    "code": [
+      {
+        "start": 4,
+        "end": 6
+      }
+    ]
+  },
+  {
+    "path": "tests/test_store.py",
+    "loc": 3,
+    "imports": [
+      {
+        "module": "shop.store",
+        "level": 0,
+        "names": [
+          {
+            "name": "make",
+            "bound": "make"
+          }
+        ],
+        "line": 1,
+        "top": true
+      }
+    ],
+    "decls": [
+      {
+        "name": "test_make",
+        "shape": "def test_make():\n..."
+      }
+    ],
+    "all": null,
+    "main_guard": false,
+    "functions": [
+      {
+        "name": "test_make",
+        "line": 4,
+        "line_count": 2
+      }
+    ],
+    "code": [
+      {
+        "start": 4,
+        "end": 5
+      }
+    ]
+  }
+]

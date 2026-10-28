@@ -11,5 +11,6 @@ export * from './git.js';
 export * from './go.js';
 export * from './imports.js';
 export * from './producers.js';
+export * from './python.js';
 export * from './scan.js';
 export * from './shapes.js';
