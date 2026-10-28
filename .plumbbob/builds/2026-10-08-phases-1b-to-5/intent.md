@@ -71,7 +71,7 @@ js, go, py, tf, sh (w5) ──┘                                   .atis/terrai
 | 2 | 2, the 2.5D world | 23 to 47, and 88 | glance round two in the world |
 | 3 | 3, bases and overlays | 48 to 66 | the trunk by default, a cached first frame, a live Health Δ |
 | 4 | 4, delivery | 67 to 73 | PNG, watch, fingerprint, comment, an installable package |
-| 5 | 5, later | 74 to 87, 119 and 120 | MCP, symbol reach, the tour, JavaScript as terrain, producers for Go, Python, Terraform and shell, and each language's evidence |
+| 5 | 5, later | 74 to 87, 119, 120 and 121 | MCP, symbol reach, the tour, JavaScript as terrain, producers for Go, Python, Terraform and shell, and each language's evidence |
 
 ## Decisions
 
@@ -260,6 +260,8 @@ js, go, py, tf, sh (w5) ──┘                                   .atis/terrai
 - <a id="d182"></a>**D182 (tour-input)**: the tour sends its model the map alone: paths, export and function names, line numbers, and the notices' whys and thresholds, never the code or its diff. Each stop's sentence says why its notice matters and why it comes where it does in the order, and the command prints the provider and the model it called, *because* through `claude_cli` the call leaves the machine under the user's account, and the map already shows that structure, while the diff would send the reviewed code itself (resolves [Q78 (tour-input)](#q78)).
 - <a id="d183"></a>**D183 (tour-package)**: `apps/tour` stays a private workspace app in this build, run as `pnpm --filter tour start <map.json>`, and packaging it is a later call. `tour.json` records the base and head of the map it was written for, and `atis --tour` handed a tour for another map exits 2 naming both ([C4 (never-blocks)](#c4)), amending [D112 (tour-is-separate)](#d112), *because* nothing said how a tour runs outside the workspace while fascicle needs Node 24, and a tour written for another base or head would fly to files the served map does not place, or to notices it does not hold (resolves [Q79 (tour-package)](#q79)).
 - <a id="d184"></a>**D184 (javascript-terrain)**: JavaScript is terrain, read by the TypeScript producer. After step 79 it claims `.js`, `.jsx`, `.mjs` and `.cjs`, reading ES modules and CommonJS alike: `import` and `export`, `require()` with a literal specifier, `module.exports` and `exports.<name>`. The shore table still takes build output and `*.config.*` files first. JavaScript's shapes read uncompared, so its interface notices weigh names added and removed, never reshaped. The Frame names six languages, amending [D126 (typescript-corpus)](#d126), and the precision corpus and the round-two fixtures stay TypeScript, *because* a JavaScript repo's map had no cells, the scan's per-file syntax parse reads JavaScript as easily as TypeScript, and a CommonJS repo read without `require()` and `module.exports` would draw cells with no reach between them, a calm the code does not have (resolves [Q80 (javascript-terrain)](#q80)).
+- <a id="d185"></a>**D185 (asked-words-on-top)**: an opened cell's words, its export list and its files' tags, draw over every other layer the world lays over the canvas, the notice labels and their numbered boxes included, and the export list's ground is opaque while its words fade in with the exploded view's spread, amending [D168 (labels-on-demand)](#d168), *because* at range 21's stop the list sat beneath the world's own layers and was see-through as it spread, which hid the names [D181 (symbol-reach-still)](#d181) lights, and words the reader asked for are the last thing anything should cover (Rob, 2026-10-27, P83).
+- <a id="d186"></a>**D186 (reach-follows-open-cell)**: while a cell is open, the Reach block's parts open on the names lit on its membrane, each with the files it reached, nearest first, or on the one line that says no name the reach carried crossed it; with no cell open, they open by name across the whole map as step 76 left them, amending [D181 (symbol-reach-still)](#d181), *because* on checkride PR 4 the four names lit on `src/pm` sat among 22 names and 22 more files, so the panel buried what the membrane showed (Rob, 2026-10-27, P84).
 
 ## Constraints
 
@@ -641,9 +643,12 @@ js, go, py, tf, sh (w5) ──┘                                   .atis/terrai
 75. [x] feat(core): reach exported names through the files that import them, **done when:** per [D111 (symbol-reach)](#d111), each changed exported name reaches the files that import it, followed through re-exports by name, and `weather.reach[]` entries gain the `names` that carried them. `fallow dead-code --type-aware --symbol-impact <file>:<export>` (fallow 3.22) on checkride PR 4 is the spot-check oracle, recorded in `docs/spike.md` the way `--impact-closure` was. Tests run from strings
     - seam: `libs/core/src/reach.ts`, `libs/core/src/map.ts`, `libs/core/src/schema.ts`, `libs/core/src/__tests__/reach.test.ts`, `libs/core/fixtures/demo/`, `docs/spike.md`
     - model: opus
-76. [ ] feat(web): light a symbol's reach where it crosses a membrane, **done when:** per [D181 (symbol-reach-still)](#d181), in an opened cell's exploded view, or while a body is hovered ([D168 (labels-on-demand)](#d168)), the export names that carried the reach light among the names its membrane writes ([D162 (export-names)](#d162)), and the Reach block's parts group the reached files under those names. The still map is unchanged, its goldens byte-identical. Range 21's stop checks it on checkride PR 4's fixture
+76. [x] feat(web): light a symbol's reach where it crosses a membrane, **done when:** per [D181 (symbol-reach-still)](#d181), in an opened cell's exploded view, or while a body is hovered ([D168 (labels-on-demand)](#d168)), the export names that carried the reach light among the names its membrane writes ([D162 (export-names)](#d162)), and the Reach block's parts group the reached files under those names. The still map is unchanged, its goldens byte-identical. Range 21's stop checks it on checkride PR 4's fixture
     - seam: `apps/web/src/`, `libs/scene/src/`
     - model: sonnet
+121. [ ] fix(web): draw an opened cell's words on top, and open the Reach block on its lit names, **done when:** per [D185 (asked-words-on-top)](#d185), an opened cell's export list and its files' tags draw over every other layer the world lays over the canvas, the notice labels' numbered boxes included, and the list's ground is opaque while its words fade in with the spread. Per [D186 (reach-follows-open-cell)](#d186), while a cell is open the Reach block opens on the names lit on its membrane, each with the files it reached, nearest first, or on the one line that says none crossed it, and with no cell open it opens as step 76 left it. The browser test checks the stacking on the demo's opened cell, and a parts test the open cell's names. Range 22's stop checks both on checkride PR 4 served live
+    - seam: `apps/web/src/`, `libs/scene/src/`
+    - model: sonnet (a layer order and a filter, fully specified)
 77. [ ] feat(tour): write an opt-in reviewer's tour with fascicle, **done when:** per [D112 (tour-is-separate)](#d112), [D177 (tour-provider)](#d177), [D182 (tour-input)](#d182) and [D183 (tour-package)](#d183), a private workspace app, `apps/tour`, with Node 24 in its engines and run as `pnpm --filter tour start <map.json>`, writes `tour.json` through fascicle: the base and head of the map it read, then ordered stops, each a target, one sentence, and the notice it explains. It sends the model the map alone, never the code, defaults to fascicle's `claude_cli` provider, takes `--provider` with a key from the environment, prints the provider and the model it called, and caches the tour by head sha under `.atis/tours/`. It is never a dependency of `@robmclarty/atis`. A run against fascicle's stub engine is golden-tested, and nothing in `apps/atis` calls a model ([C5 (no-network)](#c5))
     - seam: `apps/tour/`, `package.json`, `pnpm-lock.yaml`, `tsconfig.json`, `fallow.toml`, `cspell.json`, `docs/inspiration.md`
     - model: opus
@@ -686,7 +691,7 @@ js, go, py, tf, sh (w5) ──┘                                   .atis/terrai
 
 ## Build order
 
-74, 75, 76, 77, 78, 79, 120, 80, 81, 82, 83, 84, 119, 85, 86, 87
+121, 77, 78, 79, 120, 80, 81, 82, 83, 84, 119, 85, 86, 87
 
 ## Build ranges
 
@@ -734,7 +739,7 @@ Drive the build with `/plumbbob:run`: each run lands one range and stops where t
     - model: opus
 21. `/plumbbob:build 74-76`, **stop:** drive `atis mcp`'s three tools against a tab served without `--watch` ([D178 (highlight-channel)](#d178)), and check symbol reach in the world on checkride PR 4's fixture (step 76's check, [D181 (symbol-reach-still)](#d181))
     - model: opus
-22. `/plumbbob:build 77-78`, **stop:** run a real tour on a map of yours only if you choose to spend the model calls (the tests ran fascicle's stub engine), and watch the world play its stops
+22. `/plumbbob:build 121,77-78`, **stop:** open `src/pm` on checkride PR 4 served live and see its lit names on top and the Reach block on them alone (step 121's check, [D185 (asked-words-on-top)](#d185), [D186 (reach-follows-open-cell)](#d186)); then run a real tour on a map of yours only if you choose to spend the model calls (the tests ran fascicle's stub engine), and watch the world play its stops
     - model: opus
 23. `/plumbbob:build 79-79`, **stop:** review the producer seam before JavaScript and four producers build on it: every existing map and golden unchanged, and `classifyFile` knowing no extension
     - model: opus

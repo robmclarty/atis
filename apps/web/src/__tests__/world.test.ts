@@ -12,7 +12,9 @@
  * the cell opens as a stained slide (step 40, D165): the canvas names the
  * open cell, the slide tags each of its files but shows a tag only for the
  * pointer on its body or in the exploded view (D168), its exports light the
- * names the reach crossed its membrane by (D181), a click on a floating file
+ * names the reach crossed its membrane by (D181), its words lie over every
+ * other layer the world lays over the canvas and the exports' ground is whole
+ * while their words fade in (D185), a click on a floating file
  * keeps it open, `x` spreads the exploded view, and `w` lays the cell's wiring
  * out on a plate in the chrome (step 41); Esc closes it, the surface holds its
  * files where they floated, and zooming out toward the field brings them
@@ -345,12 +347,69 @@ test("framed on one cell where it fills the screen, the world opens it as a slid
     expect(await page.getAttribute('#world', 'data-open')).toBe(cell);
     expect(await page.$$eval('[data-interior-tag]', (elements) => elements.length)).toBe(4);
     expect(await page.textContent('[data-explode]')).toBe('explode');
-    // The exploded view spreads on x, and the breadcrumb's button reads so.
+    // The exploded view spreads on x, and the breadcrumb's button reads so. As it spreads, the exports' ground is whole, and only its words fade in (D185).
+    const spreading = page.waitForFunction(
+      () => {
+        const tag = document.querySelector('[data-interior-exports]');
+        const words = tag?.firstElementChild;
+        if (!(tag instanceof HTMLElement) || !(words instanceof HTMLElement) || tag.style.display === 'none') return false;
+        const strength = Number(words.style.opacity);
+        return strength > 0 && strength < 1 ? { ground: getComputedStyle(tag).opacity, background: getComputedStyle(tag).backgroundColor } : false;
+      },
+      undefined,
+      { polling: 'raf', timeout: 30_000 },
+    );
     await page.keyboard.press('x');
+    expect(await (await spreading).jsonValue()).toEqual({ ground: '1', background: 'rgb(26, 31, 39)' });
     await page.waitForSelector('#world[data-exploded="on"]', { timeout: 30_000 });
     expect(await page.textContent('[data-explode]')).toBe('gather');
     // Spread, the slide writes every tag and the exports.
     expect(new Set(await shownTags())).toEqual(new Set(['+tools.ts · 2', 'index.ts', 'index.ts · 3 exports\nlistSlots  resolveSlot  resolveTool', 'legacy.ts', 'slots.ts']));
+    // And they lie over everything else the world lays over the canvas (D185): a notice's numbered box, a label the world has placed and the hover's tag,
+    // each laid over the middle of every tag and of the exports in turn, lie under it there. The chrome is left out of the reading, and lies over them all.
+    const covered = await page.evaluate(() => {
+      const box = document.querySelector('[data-mark]');
+      const run = box?.closest('[data-run]');
+      const hoverTag = document.querySelector('[data-hover-tag]');
+      if (!(box instanceof HTMLElement) || !(run instanceof HTMLElement) || !(hoverTag instanceof HTMLElement)) return ['the demo lost its numbered boxes or the hover tag'];
+      // What each probe measures, and what is moved to lay it over a word.
+      const probes: (readonly [HTMLElement, HTMLElement])[] = [
+        [box, run],
+        [hoverTag, hoverTag],
+      ];
+      const label = document.querySelector('[data-label] > div');
+      if (label instanceof HTMLElement && label.parentElement instanceof HTMLElement) probes.push([label, label.parentElement]);
+      const words = [...document.querySelectorAll('[data-interior-tag], [data-interior-exports]')].filter((word) => word instanceof HTMLElement && word.style.display !== 'none');
+      const hit = document.createElement('style');
+      hit.textContent = 'body > :not(#chrome), body > :not(#chrome) * { pointer-events: auto !important; } #chrome { visibility: hidden; }';
+      document.head.append(hit);
+      try {
+        return words.flatMap((word) => {
+          if (!(word instanceof HTMLElement)) return [];
+          // A word laid off the screen at this framing is brought to its middle: where a layer lies never moves what it lies over.
+          const laid = word.getBoundingClientRect();
+          const [wx, wy] = [laid.left + laid.width / 2, laid.top + laid.height / 2];
+          if (wx < 0 || wy < 0 || wx > innerWidth || wy > innerHeight) word.style.setProperty('translate', `${String(innerWidth / 2 - wx)}px ${String(innerHeight / 2 - wy)}px`);
+          const shown = word.getBoundingClientRect();
+          const [px, py] = [shown.left + shown.width / 2, shown.top + shown.height / 2];
+          const found = probes.flatMap(([measured, moved]) => {
+            const was = { display: moved.style.display, translate: moved.style.getPropertyValue('translate') };
+            moved.style.display = '';
+            const from = measured.getBoundingClientRect();
+            moved.style.setProperty('translate', `${String(px - (from.left + from.width / 2))}px ${String(py - (from.top + from.height / 2))}px`);
+            const top = document.elementFromPoint(px, py);
+            moved.style.display = was.display;
+            moved.style.setProperty('translate', was.translate);
+            return top !== null && word.contains(top) ? [] : [`${word.textContent ?? ''} lies under ${top?.outerHTML.slice(0, 80) ?? 'nothing'}`];
+          });
+          word.style.removeProperty('translate');
+          return found;
+        });
+      } finally {
+        hit.remove();
+      }
+    });
+    expect(covered).toEqual([]);
     const sockets = await page.$$eval('[data-interior-socket]', (elements) => elements.filter((element) => element instanceof SVGElement && element.style.display !== 'none').length);
     expect(sockets).toBe(4);
     // The wiring is laid on w, its plate drawing a box per wired file and a line per wire, and taken away on w again.

@@ -93,6 +93,8 @@ export const Chrome = ({ state, registry, nav: given, dev, token, load = loadPan
   // The overlay a whole repo's map shows, as the toggles asked (D101).
   const asked = useSyncExternalStore(nav.subscribe, nav.overlay, nav.overlay);
   const overlay = map === undefined ? undefined : shownOverlay(map, asked);
+  // The cell the world has open, which the HUD's reach opens on (D186).
+  const opened = useSyncExternalStore(nav.subscribe, nav.opened, nav.opened);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
@@ -107,7 +109,7 @@ export const Chrome = ({ state, registry, nav: given, dev, token, load = loadPan
   return (
     <>
       <div style={COLUMN}>
-        {map !== undefined && <Hud map={map} registry={registry} token={token} overlay={overlay} />}
+        {map !== undefined && <Hud map={map} registry={registry} token={token} overlay={overlay} cell={opened?.cell} />}
         {ranged !== undefined && <Scrubber map={ranged} registry={registry} nav={nav} />}
         {map !== undefined && <OverlayToggles map={map} registry={registry} nav={nav} />}
         {ranged !== undefined && token !== undefined && <Bases map={ranged} registry={registry} token={token} {...(post === undefined ? {} : { post })} {...(reload === undefined ? {} : { reload })} />}

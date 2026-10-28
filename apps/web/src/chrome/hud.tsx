@@ -76,13 +76,28 @@ const LOOK = {
 /** What the `key` block opens: the legend, beneath the row where a grade block's parts would be. No grade block has this id. */
 const KEY = 'key';
 
-/** The grade blocks for a map, read live from the registry, with the run's token when the map is served (D134), for the raw output a red slot links to, and the overlay a whole repo's map shows (D101). */
-export const Hud = ({ map, registry, token, overlay }: { readonly map: MapJson; readonly registry: Registry; readonly token?: string | undefined; readonly overlay?: OverlayName | undefined }): ReactElement => {
+/**
+ * The grade blocks for a map, read live from the registry, with the run's token when the map is served (D134), for the raw output a red slot links
+ * to, the overlay a whole repo's map shows (D101), and the cell the world has open, which the reach opens on (D186).
+ */
+export const Hud = ({
+  map,
+  registry,
+  token,
+  overlay,
+  cell,
+}: {
+  readonly map: MapJson;
+  readonly registry: Registry;
+  readonly token?: string | undefined;
+  readonly overlay?: OverlayName | undefined;
+  readonly cell?: string | undefined;
+}): ReactElement => {
   useLive(registry);
   const look = registry.view(LOOK);
   const blocks = useMemo(() => blocksOf(map, overlay), [map, overlay]);
   const [open, setOpen] = useState<string | undefined>(undefined);
-  const parts = useMemo(() => (open === undefined || open === KEY ? undefined : partsOf(map, open)), [map, open]);
+  const parts = useMemo(() => (open === undefined || open === KEY ? undefined : partsOf(map, open, cell)), [map, open, cell]);
   const hue = categoryHue(map.weather.checks.category, look);
   const type = hudType(look);
   const keyOpen = open === KEY;

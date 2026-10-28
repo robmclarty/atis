@@ -13,6 +13,7 @@ import { afterEach, beforeEach, expect, test } from 'vitest';
 import { Chrome, Hud, rawOutputHref } from '../chrome/index.js';
 import { HUD_ORDER } from '../hud.js';
 import { servedToken } from '../load.js';
+import { createNav } from '../nav.js';
 import { partsOf } from '../parts.js';
 import { createRegistry } from '../registry.js';
 
@@ -113,6 +114,57 @@ test('a reach that carries no names opens by cell alone, nearest first, as befor
   expect(reach.parts.map((part) => part.heading)).toEqual(['folder:libs/core/src/pm · 0 hops', 'single:apps/cli/src/doctor.ts · 0 hops', 'package:apps/cli · 1 hop', 'package:libs/core · 1 hop']);
   expect(reach.parts[2]?.lines).toEqual(['apps/cli/src/index.ts · 1 hop via apps/cli/src/doctor.ts']);
   expect(reach.parts[0]?.lines[0]).toBe('libs/core/src/pm/index.ts · 0 hops');
+});
+
+test('while a cell is open, the reach opens on the names lit on its membrane, each over the files outside it they reached, nearest first, or on the one line saying none crossed it (D186)', () => {
+  const opened = (cell: string): readonly (readonly [string, readonly string[]])[] => partsOf(DEMO, 'reach', cell).parts.map((part) => [part.heading, part.lines]);
+  // pm lights all three of its names; pm/index.ts, inside it, carries resolveTool too, but crossed no membrane of pm's to get there.
+  expect(opened('folder:libs/core/src/pm')).toEqual([
+    ['listSlots · 1 file', ['libs/core/src/index.ts · 1 hop via libs/core/src/pm/index.ts']],
+    ['resolveSlot · 2 files', ['apps/cli/src/doctor.ts · 0 hops', 'libs/core/src/index.ts · 1 hop via libs/core/src/pm/index.ts']],
+    ['resolveTool · 1 file', ['apps/cli/src/doctor.ts · 0 hops']],
+  ]);
+  // libs/core holds pm, so only doctor.ts lies outside it, by the one of libs/core's names it takes.
+  expect(opened('package:libs/core')).toEqual([['resolveSlot · 1 file', ['apps/cli/src/doctor.ts · 0 hops']]]);
+  expect(partsOf(DEMO, 'reach', 'directory:libs/core/src/util')).toEqual({ block: 'reach', parts: [], empty: 'no name the reach carried crossed the membrane of directory:libs/core/src/util' });
+  // With no cell open, the reach opens by name across the whole map, as before.
+  expect(partsOf(DEMO, 'reach', undefined)).toEqual(partsOf(DEMO, 'reach'));
+  // A membrane with nothing to light names by opens as with no cell open: the map records no names the reach carried, or none for the cell's interface (C2).
+  const unnamedReach = {
+    ...DEMO,
+    weather: {
+      ...DEMO.weather,
+      reach: DEMO.weather.reach.map((named) => {
+        const { names: _, ...entry } = named;
+        return entry;
+      }),
+    },
+  };
+  expect(partsOf(unnamedReach, 'reach', 'folder:libs/core/src/pm')).toEqual(partsOf(unnamedReach, 'reach'));
+  const unnamedCell = {
+    ...DEMO,
+    terrain: {
+      ...DEMO.terrain,
+      cells: DEMO.terrain.cells.map((named) => {
+        const { exports: _, ...cell } = named;
+        return cell;
+      }),
+    },
+  };
+  expect(partsOf(unnamedCell, 'reach', 'folder:libs/core/src/pm')).toEqual(partsOf(DEMO, 'reach'));
+  expect(partsOf({ ...DEMO, weather: { ...DEMO.weather, reach: [] } }, 'reach', 'folder:libs/core/src/pm').empty).toContain('reaches no cell');
+});
+
+test('the open Reach block follows the cell the world opens and closes (D186)', async () => {
+  const nav = createNav();
+  await act(async () => root.render(<Chrome state={{ status: 'ready', url: '/map.json', map: DEMO }} registry={createRegistry()} nav={nav} dev={false} />));
+  await click('[data-block="reach"]');
+  const headings = (): readonly (string | null)[] => all('[data-parts="reach"] [data-part] h4').map((heading) => heading.textContent);
+  expect(headings()).toEqual(partsOf(DEMO, 'reach').parts.map((part) => part.heading));
+  await act(async () => nav.open({ cell: 'folder:libs/core/src/pm', exploded: false, wired: false }));
+  expect(headings()).toEqual(['listSlots · 1 file', 'resolveSlot · 2 files', 'resolveTool · 1 file']);
+  await act(async () => nav.open(undefined));
+  expect(headings()).toEqual(partsOf(DEMO, 'reach').parts.map((part) => part.heading));
 });
 
 test('size opens every changed file with its kind and lines, the category its slots, the notices their ranks, other its files, and health its movement', () => {

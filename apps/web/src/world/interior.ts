@@ -22,8 +22,11 @@
  * the exploded view, a dotted leader from each body's socket, its place at
  * rest, to where it has spread. The tags and the exports are written only
  * when asked (D168): in the exploded view, as it spreads, or a tag at a time
- * while the pointer is over its body. The look comes through the registry
- * (D156).
+ * while the pointer is over its body. Words the reader asked for are the last
+ * thing anything covers (D185): the tags and the exports lie in a layer of
+ * their own over every other layer the world lays over the canvas, and the
+ * exports' ground is opaque the moment they show, while their words fade in
+ * with the spread. The look comes through the registry (D156).
  */
 
 import { BufferAttribute, BufferGeometry, Color, DoubleSide, DynamicDrawUsage, Mesh, MeshBasicNodeMaterial, Vector3 } from 'three/webgpu';
@@ -42,8 +45,10 @@ export type SlideChrome = typeof SLIDE_CHROME;
 export type Interior = {
   /** The slide, its frame and its bodies, in the order they stack. */
   readonly meshes: readonly Mesh[];
-  /** The layers over the canvas: the leaders, then the tags. */
-  readonly elements: readonly Element[];
+  /** The leaders' layer over the canvas, which lies under the labels. */
+  readonly leaders: Element;
+  /** The words' layer, the tags and the exports, which lies over every other layer the world lays over the canvas (D185). */
+  readonly words: HTMLElement;
   /** Lay the slide for a cell, or take it away. */
   readonly slide: (slide: Slide | undefined) => void;
   /** Lay the bodies where the scene has them this frame, at the slide's fade, each stain lit by its notice's gain. */
@@ -185,6 +190,9 @@ export const createInterior = (heightAt: (x: number, y: number) => number, step:
   Object.assign(layer.style, { position: 'fixed', inset: '0', pointerEvents: 'none', display: 'none' });
   const exportsTag = tagElement();
   exportsTag.dataset['interiorExports'] = '';
+  // The exports' words in a span of their own, so they fade in with the spread over a ground that does not (D185).
+  const exportsText = document.createElement('span');
+  exportsTag.append(exportsText);
   layer.append(exportsTag);
   // The exports as last written, so the tag is written again only when the names or the inks move.
   let exportsWritten = '';
@@ -210,7 +218,7 @@ export const createInterior = (heightAt: (x: number, y: number) => number, step:
       });
     }
     if (table.tail !== undefined) nodes.push(document.createTextNode(`\n${table.tail}`));
-    exportsTag.replaceChildren(...nodes);
+    exportsText.replaceChildren(...nodes);
   };
 
   let slide: Slide | undefined;
@@ -434,9 +442,10 @@ export const createInterior = (heightAt: (x: number, y: number) => number, step:
     }
     const [ex, ey] = project(slide.exports.x, slide.exports.y);
     writeExports(exportsTable(slide.exports, look), chrome.CHROME_INK);
+    // The ground and its frame show whole as soon as the exports are asked for at all, and the words over it at how strongly they are.
+    exportsText.style.opacity = String(words.exports);
     Object.assign(exportsTag.style, {
       display: words.exports > 0 ? '' : 'none',
-      opacity: String(words.exports),
       whiteSpace: 'pre',
       transform: `translate(${String(ex)}px, ${String(ey)}px) translate(-50%, -50%)`,
       padding: `${String(LABELING.pad)}px`,
@@ -449,5 +458,5 @@ export const createInterior = (heightAt: (x: number, y: number) => number, step:
     });
   };
 
-  return { meshes: [slideMesh, frameMesh, bodyMesh], elements: [leaders, layer], slide: lay, show, render, bodies: () => laid };
+  return { meshes: [slideMesh, frameMesh, bodyMesh], leaders, words: layer, slide: lay, show, render, bodies: () => laid };
 };

@@ -7,7 +7,7 @@ import type { MapJson } from 'core';
 import { expect, test } from 'vitest';
 
 import { driftOf } from '../drift.js';
-import { INTERIOR_LAYOUT, cellSlide, exportsTable, exportsWords, interiorOf, tagsOf } from '../interior.js';
+import { INTERIOR_LAYOUT, cellSlide, crossingsOf, exportsTable, exportsWords, interiorOf, tagsOf } from '../interior.js';
 import type { Body, Slide } from '../interior.js';
 import { LABELING } from '../labels.js';
 import { dentedRing } from '../membranes.js';
@@ -180,6 +180,34 @@ test('an opened cell marks the names its membrane writes that the reach crossed 
   const coreBarrel = namedReach({ 'libs/core/src/index.ts': ['listSlots', 'resolveSlot'] });
   expect(slideOf(PM, coreBarrel).exports.reached).toEqual(['listSlots', 'resolveSlot']);
   expect(slideOf(CORE, coreBarrel).exports.reached).toBeUndefined();
+});
+
+/** A cell's crossings as each name and the paths of the entries it carried. */
+const crossed = (map: MapJson, cell: string): readonly (readonly [string, readonly string[]])[] | undefined => crossingsOf(map, cell)?.map(({ name, entries }) => [name, entries.map((entry) => entry.path)]);
+
+test('each name the reach crossed a membrane by comes with the entries outside the cell that carried it, in the membrane\'s order, and a cell the map records no names for has none to give (D181, D186)', () => {
+  // On the demo, pm/index.ts carries resolveTool too, but from inside pm, so only doctor.ts's crossing counts.
+  expect(crossed(DEMO, PM)).toEqual([
+    ['listSlots', ['libs/core/src/index.ts']],
+    ['resolveSlot', ['apps/cli/src/doctor.ts', 'libs/core/src/index.ts']],
+    ['resolveTool', ['apps/cli/src/doctor.ts']],
+  ]);
+  // Everything in libs/core is inside it, so only doctor.ts crosses its membrane, by the one name libs/core exports.
+  expect(crossed(DEMO, CORE)).toEqual([['resolveSlot', ['apps/cli/src/doctor.ts']]]);
+  expect(crossed(DEMO, 'directory:libs/core/src/util')).toEqual([]);
+  const unnamed: MapJson = {
+    ...DEMO,
+    terrain: {
+      ...DEMO.terrain,
+      cells: DEMO.terrain.cells.map((cell) => {
+        if (cell.id !== PM) return cell;
+        const { exports: _, ...bare } = cell;
+        return bare;
+      }),
+    },
+  };
+  expect(crossingsOf(unnamed, PM)).toBeUndefined();
+  expect(crossingsOf(DEMO, 'folder:nowhere')).toBeUndefined();
 });
 
 test('the names the reach crossed by are kept among those a long list shows, in the list\'s own order, and the lines read as they did (D181)', () => {

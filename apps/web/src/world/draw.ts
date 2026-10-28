@@ -258,16 +258,17 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   // The hover's outline lies under the labels and its tag over them (step 38).
   const hoverLook = registry.view(HOVER, 'HOVER');
   const hover = createHover(heightAt, hoverLook, registry.view(TAG_LOOK));
-  // The opened cell's slide (step 40): its meshes in the scene, its tags and leaders under the labels.
+  // The opened cell's slide (step 40): its meshes in the scene, its leaders under the labels, and its words over every other layer the world lays over the canvas (D185).
   const interiorLook = registry.view(INTERIOR, 'INTERIOR');
   const interior = createInterior(heightAt, skin.resolution, interiorLook, registry.view(SLIDE_CHROME));
   scene.add(...interior.meshes);
   // The far zoom's planet (D170): over the rules, which are the flat world's, and under everything else.
   const planet = createPlanet(map, registry.view(PLANET, 'PLANET'), () => ({ change: tokens.CHANGE_HUE, ifr: tokens.IFR_HUE, category: categoryHue(current.map.weather.checks.category, tokens), field: tokens.FIELD_FILL }));
-  // The file level's plate (§6's LOD3, D102): over the slide and its labels, under the hover's tag; the diff level's sheet over the plate it cross-fades from.
+  // The file level's plate (§6's LOD3, D102): over the slide's leaders and the labels, under the hover's tag and the slide's words; the diff level's sheet over the plate it cross-fades from.
   const filePlate = createFilePlate(registry.view(FILE_LOOK));
   const diffSheet = createDiffSheet(registry.view(DIFF_LOOK));
-  canvas.after(space.rules, planet.element, ...interior.elements, hover.outline, ...current.labels.elements, filePlate.element, diffSheet.element, hover.tag);
+  // The layers over the canvas in the order they stack, each over the one before it and all of them under the chrome.
+  canvas.after(space.rules, planet.element, interior.leaders, hover.outline, ...current.labels.elements, filePlate.element, diffSheet.element, hover.tag, interior.words);
   // Which cell is open, the slide laid for it, and the level the last frame was drawn at, which a click is read against.
   let opening: OpenState = CLOSED;
   let slide: Slide | undefined;

@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 76 — feat(web): light a symbol's reach where it crosses a membrane
+**Current step:** 121 — fix(web): draw an opened cell's words on top, and open the Reach block on its lit names
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -129,7 +129,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 73. docs(atis): write the user's README with the legend and the fingerprint
 - ☑ 74. feat(cli): serve MCP tools that point at the open map
 - ☑ 75. feat(core): reach exported names through the files that import them
-- ☐ 76. feat(web): light a symbol's reach where it crosses a membrane
+- ☑ 76. feat(web): light a symbol's reach where it crosses a membrane
+- ☐ 121. fix(web): draw an opened cell's words on top, and open the Reach block on its lit names
 - ☐ 77. feat(tour): write an opt-in reviewer's tour with fascicle
 - ☐ 78. feat(web): play a tour's stops with fly-to
 - ☐ 79. refactor(cli): run every producer a repo needs and merge their scans
@@ -231,7 +232,10 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] draw the comment's image and the fingerprint the way the minimap draws the field (flat skins and files, the notices' numbered boxes), as if the minimap could be zoomed in, rather than the world's lit still and the SVG's terrain (Rob at range 19's stop)
 - [x] the web app the tarball ships under web/ inlines three, react, camera-controls and elkjs (EPL-2.0) with no license file beside it; apps/web's Vite build could set build.license as the CLI's bundle now does (step 72)
 - [x] the packed declarations (dist/run.d.ts, comment.d.ts, cache.d.ts) import types from core, which the tarball carries only as bundled JavaScript, so a TypeScript consumer of @robmclarty/atis's library entry reads those types unresolved (step 72)
-- [ ] the user's README (root and apps/atis) says nothing of atis mcp: an agent's MCP config launching it in the repo, its three tools, and --map for a map with no tab open
+- [x] the user's README (root and apps/atis) says nothing of atis mcp: an agent's MCP config launching it in the repo, its three tools, and --map for a map with no tab open
+- [x] an opened cell's export list draws beneath the world's other layers (Rob, range 21's stop): the notice labels' layer is laid over the interior's, its numbered boxes at z-index 1, and the list stays translucent until the exploded view has spread; asked-for words should sit on top
+- [x] the Reach block opens on every name the change carried, 22 on checkride PR 4 with 22 more files at the file level, so the four names lit on src/pm's membrane are lost among them (Rob, range 21's stop): with a cell open, open on the names lit on its membrane
+- [x] two runs serving one repository overwrite each other's .atis/serve.json, and the later one's exit removes it, so atis mcp loses the tab that is still open
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -354,6 +358,11 @@ Harvest results this boundary:
 - 2026-10-28, at range 20 of 33's stop: 2 parked ideas, classified.
 - **tangent**: park 80 · the web app the tarball ships under web/ inlines three, react, camera-controls and elkjs (EPL-2.0) with no license file beside it; apps/web's Vite build could set build.license as the CLI's bundle now does (step 72) → nothing in wave 5 depends on it, and it needs doing only before you publish by hand (D53 (pnpm-and-stub))
 - **tangent**: park 81 · the packed declarations (dist/run.d.ts, comment.d.ts, cache.d.ts) import types from core, which the tarball carries only as bundled JavaScript, so a TypeScript consumer of @robmclarty/atis's library entry reads those types unresolved (step 72) → the package is a command, and nothing imports its library entry, in the workspace or out of it
+- 2026-10-28, at range 21 of 33's stop: 4 parked ideas, classified.
+- **tangent**: park 82 · the user's README (root and apps/atis) says nothing of atis mcp: an agent's MCP config launching it in the repo, its three tools, and --map for a map with no tab open → `atis --help` already documents the command, and the README can take it with the producer docs at the build's end
+- **blocker**: park 83 · an opened cell's export list draws beneath the world's other layers (Rob, range 21's stop): the notice labels' layer is laid over the interior's, its numbered boxes at z-index 1, and the list stays translucent until the exploded view has spread; asked-for words should sit on top → the light step 76 shipped can be covered by the world's own layers, so one web fix step goes first in range 22, with P84
+- **blocker**: park 84 · the Reach block opens on every name the change carried, 22 on checkride PR 4 with 22 more files at the file level, so the four names lit on src/pm's membrane are lost among them (Rob, range 21's stop): with a cell open, open on the names lit on its membrane → step 76 grouped the Reach block by every name map-wide, and an opened cell's reader wants that cell's lit names; it joins P83's step
+- **tangent**: park 85 · two runs serving one repository overwrite each other's .atis/serve.json, and the later one's exit removes it, so atis mcp loses the tab that is still open → two `atis` serving one repository at once is rare, and keying the file per run can wait for a later step
 
 ## Log
 
@@ -2620,3 +2629,72 @@ folder, so it rides the branch into the PR.)*
 
 - 2026-10-28 — step 74 checkpointed · 1185c6540 — feat(cli): serve MCP tools that point at the open map (1 drift, 7m)
 - 2026-10-28 — step 75 checkpointed · 676f2eb24 — feat(core): reach exported names through the files that import them (22m)
+- 2026-10-28 — step 76 checkpointed · 157ccee29 — feat(web): light a symbol's reach where it crosses a membrane (10m)
+- 2026-10-28 — range 21 of 33's stop recorded — drive `atis mcp`'s three tools against a tab served without `--watch` ([D178 (highlight-channel)](#d178)), and check symbol reach in the world on checkride PR 4's fixture (step 76's check, [D181 (symbol-reach-still)](#d181))
+
+  **Summary**: An agent can now point at the open map. `atis mcp` serves three tools over stdio: `highlight` flies the tab to a file or a notice and lights it, `reach` says how the change reaches a file, and `explain` gives a notice's why, inputs and thresholds. It finds the tab through `.atis/serve.json`, which every served run keeps owner-only, and every served run now opens the page's socket. Reach also gained a symbol level: entries carry the exported names that reached them, which agree with fallow's `--symbol-impact` on checkride PR 4. An opened cell lights those names on its membrane, and the Reach block groups its files under them.
+
+  1. The always-open socket moved a test outside step 74's seam, and renamed the socket's path
+  2. I drove the stop's first check once already, on the built binary and a real page
+  3. A moved name is what the change can point to, and a helper edit counts every export
+  4. PR 4's fixture is frozen without names, so the world check is a live serve of the same PR
+  5. zod rides in with the SDK, inlined, and the package still installs three dependencies
+
+  **Readout**:
+
+  ```text
+  steps        3 of 3 landed
+               - 74 1185c65 · 75 676f2eb · 76 157ccee
+  check        green: 1 of 1 checks, 3 landings
+  done-when    met
+  decisions    honored
+               - D110 (mcp-tools), D138 (mcp-finds-tab)
+               - D178 (highlight-channel), D179 (mcp-sdk-bundled)
+               - D111 (symbol-reach), D181 (symbol-reach-still)
+  constraints  14 of 14 honored
+  seam         strayed: 1 path outside step 74's seam
+               → apps/atis/src/__tests__/watch.test.ts
+  diff         +2526 -159 across 32 files
+               - apps/atis/package.json +3 -1
+               - apps/atis/src/__tests__/mcp.test.ts +210 -0
+               - apps/atis/src/__tests__/package.test.ts +51 -4
+               - apps/atis/src/__tests__/serve.test.ts +158 -4
+               - apps/atis/src/__tests__/watch.test.ts +24 -15
+               - apps/atis/src/cli.ts +24 -1
+               - apps/atis/src/index.ts +14 -2
+               - and 25 more
+  spent        39 min · green first run at every landing · 1 drift warning
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Harvested**: 4 of 85 parked ideas open
+
+  | Park | What it is | Why it matters | Lean |
+  | --- | --- | --- | --- |
+  | P82 · README omits atis mcp | the user's README (root and apps/atis) says nothing of atis mcp: an agent's MCP config launching it in the repo, its three tools, and --map for a map with no tab open | a user wiring an agent finds no line on how its MCP config launches `atis mcp` in the repo | tangent: `atis --help` already documents the command, and the README can take it with the producer docs at the build's end |
+  | P83 · Export list sits under labels | an opened cell's export list draws beneath the world's other layers (Rob, range 21's stop): the notice labels' layer is laid over the interior's, its numbered boxes at z-index 1, and the list stays translucent until the exploded view has spread; asked-for words should sit on top | the names lit on a membrane are the point of D181, and nothing should draw over words the reader asked for | blocker: the light step 76 shipped can be covered by the world's own layers, so one web fix step goes first in range 22, with P84 |
+  | P84 · Reach block ignores the open cell | the Reach block opens on every name the change carried, 22 on checkride PR 4 with 22 more files at the file level, so the four names lit on src/pm's membrane are lost among them (Rob, range 21's stop): with a cell open, open on the names lit on its membrane | on PR 4, the four names lit on `src/pm` sit among 22 names and 22 more files, so the panel buries what the membrane shows | blocker: step 76 grouped the Reach block by every name map-wide, and an opened cell's reader wants that cell's lit names; it joins P83's step |
+  | P85 · Two runs clobber serve.json | two runs serving one repository overwrite each other's .atis/serve.json, and the later one's exit removes it, so atis mcp loses the tab that is still open | the later run's exit deletes the file, so `atis mcp` loses the tab still open | tangent: two `atis` serving one repository at once is rare, and keying the file per run can wait for a later step |
+
+  **Recommendation**: Take P83 and P84 as blockers, folded into one web fix step at the head of range 22, and P82 and P85 as tangents. The step would draw an opened cell's words over every other layer of the world, and open the Reach block, while a cell is open, on the names lit on its membrane with the files each one reached. The map-wide list by name stays for when no cell is open. Both checks themselves held on PR 4: `atis mcp` moved the tab and answered, and the four names `tools.ts` added light on `src/pm`. What failed was reading them, which is why the fix belongs before the tour adds more to the same world. The over-read on `orchestrator.ts` (section 3) is one cause of the long list; P84's step shortens what you see without touching the rule.
+
+  **1.** The always-open socket moved a test outside step 74's seam, and renamed the socket's path
+
+  Under D178 (highlight-channel), every served run takes the page's socket, not only `--watch`. `apps/atis/src/__tests__/watch.test.ts` pinned the old rule (a non-watching server answered the socket with a 404), so it changed with the code: its socket is now at `/socket`, and a non-watching server accepts the page and sends it nothing on connect. I renamed the path from `/watch` to `/socket` and dropped `&watch=1` from the served URL, because a socket every run opens is no longer the watch's. Only `--watch` still sends the held map as a page connects. The browser test's diff case now stands in a socket of its own, since a served page opens one and an unanswered socket puts an error in the console.
+
+  **2.** I drove the stop's first check once already, on the built binary and a real page
+
+  After `pnpm build` (so the `atis` on your PATH has `mcp`), I served PR 4 from a worktree at `ae5078c` with `--no-open` and no `--watch`. `.atis/serve.json` appeared as `-rw-------`. Over stdio, `atis mcp` answered `explain 1` (the `src/pm` interface-added primary, with its inputs and thresholds) and `reach src/pm/index.ts` (its hunks, its reach entry with four names, and the files the reach went on to), both read from the served tab. With no page open, `highlight` said `no tab is open: … but no page is connected to it`. With headless Chrome opened on the served URL, `highlight notice 1` answered `pages: 1`, the page flew there and wrote the label for `src/pm/index.ts`, and `highlight file src/orchestrator.ts` lit that file, with a clean console. Interrupting the server took `serve.json` away. A lit file gets its labels and the flight; only a notice also flares, because the flare is a notice's channel under C12 (motion-budget).
+
+  **3.** A moved name is what the change can point to, and a helper edit counts every export
+
+  A changed file's moved names are: every name of an added or deleted file; for a modified one, the names it added, removed or reshaped, plus each exported function a hunk meets. When a hunk lands in a helper no export holds, or in module code while no name moved, the change can't be held to a name, so every export counts. That is the file-level reading again, never fewer names than were touched. Comments alone move none. The cost shows on PR 4: `src/pm` lights exactly the four names `tools.ts` added, but `src/orchestrator.ts` lights 14 of its 22, because its change touched a helper. Narrowing that would need each export's declaration span from the scan, which sits outside this range's seam. A cell lights a name when any reach entry outside it carries that name, so two cells exporting the same name could both light; the map doesn't record which interface a name came through.
+
+  **4.** PR 4's fixture is frozen without names, so the world check is a live serve of the same PR
+
+  `fixtures/checkride-pr4/` is one of round one's five glance fixtures, kept as that reading's record under D61 (round-one-fixtures-frozen). It predates `names`, so the world would light nothing on it. I left it alone. The same PR served live lights as it should, and the worktree is kept at `/private/tmp/atis-symbol-hPJ0/checkride` (dependencies installed) for your check. Once you're done: `git -C ~/Projects/checkride/code/checkride worktree remove --force /private/tmp/atis-symbol-hPJ0/checkride`.
+
+  **5.** zod rides in with the SDK, inlined, and the package still installs three dependencies
+
+  The SDK's low-level `Server` is marked deprecated in 1.32.2, so `atis mcp` sits on `McpServer`, which takes zod schemas. zod 4.6.7 is the SDK's required peer, so it joins `apps/atis` as a second devDependency the bundle inlines, with a row in `docs/inspiration.md` beside the SDK's. C9 (deps-earn-their-place) names the SDK alone among the inlined devDependencies. The package test now asserts the packed manifest's dependencies are exactly `playwright-core`, `typescript` and `ws`, finds both licences in `dist/licenses.md`, and drives the unpacked bin's `atis mcp` over stdio, which exits 0 when stdin closes.

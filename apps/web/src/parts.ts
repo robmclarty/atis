@@ -2,7 +2,8 @@
  * parts: what each HUD block opens on click (§7, step 36), read from the map
  * alone (D93): a red slot's named files, the uncovered lines per file, the
  * live mutants, the reach list with its hops and the interfaces crossed,
- * grouped under the names that carried it where the map records them, the
+ * grouped under the names that carried it where the map records them, or
+ * while a cell is open under the names lit on its membrane (D186), the
  * changed files with their sizes, the slots the category was set by, the
  * maintainability each changed file moved and what got better (D98), the
  * notices by rank, and the shore's `other` files. A block whose input the map
@@ -16,7 +17,7 @@
 
 import { OTHER_GROUP, OVERLAY_NAMES, changeSize, readRedSplit } from 'core';
 import type { CheckSlot, Improvement, MapJson, ReachEntry } from 'core';
-import { healthDeltaOf, overlayOf } from 'scene';
+import { crossingsOf, healthDeltaOf, overlayOf } from 'scene';
 import type { OverlayUnit } from 'scene';
 
 import { rowsOf, tallyOf } from './notices.js';
@@ -91,19 +92,43 @@ const mutantParts = (map: MapJson): Parts => {
 /** `1 file`, `2 files`. */
 const filesOf = (count: number): string => `${String(count)} ${count === 1 ? 'file' : 'files'}`;
 
+/** Reach entries nearest first, ties by path. */
+const nearestFirst = (entries: readonly ReachEntry[]): readonly ReachEntry[] => [...entries].toSorted((a, b) => a.hops - b.hops || byPath(a.path, b.path));
+
+/** A reached file as its line: its path, its hops, and the files it was reached through. */
+const lineOf = (entry: ReachEntry): string => (entry.via.length === 0 ? `${entry.path} ${DOT} ${hopsOf(entry.hops)}` : `${entry.path} ${DOT} ${hopsOf(entry.hops)} via ${entry.via.join(' › ')}`);
+
+/**
+ * The reach while a cell is open (D186): the names lit on its membrane, in
+ * its own order, each over the files outside the cell it reached, nearest
+ * first, or the one line saying no name the reach carried crossed it. None
+ * where the cell's membrane can light nothing to read by, the map recording
+ * no names for its interface or no names the reach carried (C2).
+ */
+const openReachParts = (map: MapJson, cell: string): Parts | undefined => {
+  const block = 'reach';
+  if (!map.weather.reach.some((entry) => entry.names !== undefined)) return undefined;
+  const crossings = crossingsOf(map, cell);
+  if (crossings === undefined) return undefined;
+  if (crossings.length === 0) return { block, parts: [], empty: `no name the reach carried crossed the membrane of ${cell}` };
+  return { block, parts: crossings.map(({ name, entries }) => ({ heading: `${name} ${DOT} ${filesOf(entries.length)}`, lines: nearestFirst(entries).map(lineOf) })) };
+};
+
 /**
  * The reach (D5, D45): each file with its hops and the interfaces the reach
- * crossed to get there. Where the map records the names that carried it
+ * crossed to get there. While a cell is open, the names lit on its membrane
+ * alone (D186). Otherwise, where the map records the names that carried it
  * (D111), the files come under each name, in the names' order, and the files
  * the reach got to at the file level alone, past the importers, come after,
  * by cell and marked so (D181); with no names, by cell alone. Cells nearest
  * first.
  */
-const reachParts = (map: MapJson): Parts => {
+const reachParts = (map: MapJson, cell: string | undefined): Parts => {
   const block = 'reach';
-  const entries = [...map.weather.reach].toSorted((a, b) => a.hops - b.hops || byPath(a.path, b.path));
+  const entries = nearestFirst(map.weather.reach);
   if (entries.length === 0) return { block, parts: [], empty: 'the change reaches no cell' };
-  const lineOf = (entry: ReachEntry): string => (entry.via.length === 0 ? `${entry.path} ${DOT} ${hopsOf(entry.hops)}` : `${entry.path} ${DOT} ${hopsOf(entry.hops)} via ${entry.via.join(' › ')}`);
+  const open = cell === undefined ? undefined : openReachParts(map, cell);
+  if (open !== undefined) return open;
   const byName = new Map<string, string[]>();
   const byCell = new Map<string, { hops: number; readonly lines: string[] }>();
   for (const entry of entries) {
@@ -116,7 +141,7 @@ const reachParts = (map: MapJson): Parts => {
   }
   const named = [...byName].toSorted(([a], [b]) => byPath(a, b)).map(([name, lines]) => ({ heading: `${name} ${DOT} ${filesOf(lines.length)}`, lines }));
   const level = named.length === 0 ? '' : ` ${DOT} file-level`;
-  const cells = [...byCell].toSorted(([a, ha], [b, hb]) => ha.hops - hb.hops || byPath(a, b)).map(([cell, { hops, lines }]) => ({ heading: `${cell} ${DOT} ${hopsOf(hops)}${level}`, lines }));
+  const cells = [...byCell].toSorted(([a, ha], [b, hb]) => ha.hops - hb.hops || byPath(a, b)).map(([held, { hops, lines }]) => ({ heading: `${held} ${DOT} ${hopsOf(hops)}${level}`, lines }));
   return { block, parts: [...named, ...cells] };
 };
 
@@ -170,7 +195,6 @@ const healthParts = (map: MapJson): Parts => {
   return { block: 'health', parts };
 };
 
-/** What a block opens, by its id. */
 /** An overlay's unit, counted more than once. */
 const PLURALS: Readonly<Record<OverlayUnit, string>> = { file: 'files', finding: 'findings', family: 'families', cycle: 'cycles' };
 
@@ -184,7 +208,8 @@ const overlayParts = (map: MapJson): Parts => {
   return lines.length === 0 ? { block: 'overlay', parts: [], empty: 'a map of a change holds no overlays' } : { block: 'overlay', parts: [{ heading: 'the whole repo\'s overlays', lines }] };
 };
 
-export const partsOf = (map: MapJson, block: string): Parts => {
+/** What a block opens, by its id, with the cell the world has open, if any, which the reach opens on (D186). */
+export const partsOf = (map: MapJson, block: string, cell?: string): Parts => {
   switch (block) {
     case 'category': {
       const { slots } = map.weather.checks;
@@ -196,7 +221,7 @@ export const partsOf = (map: MapJson, block: string): Parts => {
     case 'mutants':
       return mutantParts(map);
     case 'reach':
-      return reachParts(map);
+      return reachParts(map, cell);
     case 'size':
       return sizeParts(map);
     case 'gate':

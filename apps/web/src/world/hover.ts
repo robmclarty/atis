@@ -44,7 +44,7 @@ export const createHover = (heightAt: (x: number, y: number) => number, look: Ho
   outline.append(path);
   const tag = document.createElement('div');
   tag.dataset['hoverTag'] = '';
-  Object.assign(tag.style, { position: 'fixed', left: '0', top: '0', pointerEvents: 'none', whiteSpace: 'nowrap', display: 'none', zIndex: '2' });
+  Object.assign(tag.style, { position: 'fixed', left: '0', top: '0', pointerEvents: 'none', whiteSpace: 'nowrap', display: 'none' });
 
   let shown: Hovered | undefined;
   let lifted: readonly Vector3[] = [];

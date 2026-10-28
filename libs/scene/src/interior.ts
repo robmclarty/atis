@@ -30,7 +30,7 @@
 
 import earcut from 'earcut';
 import { membraneThickness } from 'core';
-import type { ChangeKind, MapJson, Position } from 'core';
+import type { ChangeKind, MapJson, Position, ReachEntry } from 'core';
 
 import { heldCellsOf, slideCellOf, slideFilesOf } from './drift.js';
 import type { Drifted } from './drift.js';
@@ -262,16 +262,28 @@ function explodedOf(files: readonly { readonly id: string; readonly rest: Positi
   return bodies.map((body): Point => [body.x, body.y]);
 }
 
+/** A name the reach crossed a cell's membrane by, and the reach entries outside the cell that it carried, in the map's order (D181). */
+export type Crossing = { readonly name: string; readonly entries: readonly ReachEntry[] };
+
 /**
- * Which of a cell's exported names the reach crossed its membrane by (D181):
- * those a reach entry for a file outside the cell carries (D111), a file in a
- * cell it holds, however deep, being inside it.
+ * The names the reach crossed a cell's membrane by, in the membrane's own
+ * order (D181): each of the cell's exported names that a reach entry for a
+ * file outside the cell carries (D111), a file in a cell it holds, however
+ * deep, being inside it, with the entries that carried it. None for a cell
+ * the map lacks or records no names for (D162, C2). What the membrane lights
+ * and what the Reach block opens on while the cell is open (D186) both read
+ * it.
  */
-function reachedNames(map: MapJson, cell: string, names: readonly string[]): readonly string[] {
+export function crossingsOf(map: MapJson, cell: string): readonly Crossing[] | undefined {
+  const names = map.terrain.cells.find((each) => each.id === cell)?.exports;
+  if (names === undefined) return undefined;
   const parentOf = new Map(map.terrain.cells.flatMap((each) => (each.parent === undefined ? [] : [[each.id, each.parent] as const])));
   const inside = (id: string | undefined): boolean => id !== undefined && (id === cell || inside(parentOf.get(id)));
-  const carried = new Set(map.weather.reach.flatMap((entry) => (inside(entry.cell) ? [] : (entry.names ?? []))));
-  return names.filter((name) => carried.has(name));
+  const outside = map.weather.reach.filter((entry) => !inside(entry.cell));
+  return names.flatMap((name) => {
+    const entries = outside.filter((entry) => entry.names?.includes(name) === true);
+    return entries.length === 0 ? [] : [{ name, entries }];
+  });
 }
 
 /**
@@ -321,7 +333,7 @@ export function cellSlide(map: MapJson, cell: string, layout: InteriorLayout = I
   const barrel = found.barrel === undefined ? undefined : files.find((file) => file.id === found.barrel);
   const [ex, ey] = barrel === undefined ? topOf(ring) : nearestOn(ring, barrel.rest.x, barrel.rest.y);
   // The names are the head's, so they are counted as they stand there; the count alone is the terrain's (D162).
-  const reached = found.exports === undefined ? [] : reachedNames(map, cell, found.exports);
+  const reached = (crossingsOf(map, cell) ?? []).map((crossing) => crossing.name);
   const exports: Exports = {
     count: found.exports?.length ?? found.interface_size,
     ...(found.exports === undefined ? {} : { names: found.exports }),
