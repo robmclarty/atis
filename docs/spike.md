@@ -125,6 +125,56 @@ against 10). The map's
 answer to "what should I look at" is the barrel, and the red gate slot is reported without
 being allowed to shout down a change it has nothing to do with. That reads correct.
 
+## A fifth row: symbol reach
+
+Added by step 75 of the phases 1b to 5 build, which gives reach a symbol level (D111):
+each exported name a changed file's change moved reaches the files that import it,
+followed through re-exports by name, and `weather.reach[]` entries carry the names that
+reached them. The oracle is fallow 3.22's `--symbol-impact`, as `--impact-closure` was for
+row 2.
+
+| # | What was checked | Oracle | Verdict |
+| --- | --- | --- | --- |
+| 5 | the files each moved name reaches | `fallow dead-code --type-aware --symbol-impact` | ✓ 8 of 8 names, exact but for the re-exporters |
+
+### ✓ 5. Each moved name reaches the files fallow names as its consumers
+
+```sh
+cd /tmp/atis-symbol/checkride        # a worktree at ae5078c, after pnpm install
+pnpm exec fallow dead-code --type-aware --symbol-impact src/pm/tools.ts:resolveSlotTool --format json
+```
+
+`--symbol-impact` needs `--type-aware`, and the type-aware backend needs the worktree's
+`node_modules`: without `pnpm install` it reports `status: unavailable` with a blocking
+diagnostic rather than an empty answer. The map was built over the same worktree with
+`--base fee5ed6 --no-cache` by the bundle `apps/atis/scripts/bundle.ts` writes from source,
+with no `.check/`, since reach reads the scans alone.
+
+For each name, fallow's `direct_consumers` beside the files whose `weather.reach` entry
+carries the name. No consumer was a test, and fallow's `affected_files` was empty for all
+eight: like atis, it stops at the importers.
+
+| name | fallow | atis, beside fallow's |
+| --- | --- | --- |
+| `src/pm/tools.ts:resolveSlotTool` | `src/doctor.ts`, `src/orchestrator.ts` | `src/pm/index.ts` |
+| `src/pm/tools.ts:execTool` | `src/doctor.ts`, `src/orchestrator.ts` | `src/pm/index.ts` |
+| `src/pm/tools.ts:execUsesGlobalCache` | `src/orchestrator.ts` | `src/pm/index.ts` |
+| `src/pm/tools.ts:installCommand` | `src/doctor.ts`, `src/orchestrator.ts` | `src/pm/index.ts` |
+| `src/doctor.ts:runDoctor` | `src/cli.ts` | `src/index.ts` |
+| `src/orchestrator.ts:runChecks` | `src/baseline-command.ts`, `src/cli.ts`, `src/init.ts` | `src/index.ts` |
+| `src/orchestrator.ts:selectChecks` | `src/doctor.ts`, `src/init.ts` | `src/index.ts` |
+| `src/orchestrator.ts:SummaryCheck` | `src/artifacts/summary.ts`, `src/digest/digest.ts`, `src/triage/triage.ts` | `src/index.ts` |
+
+Every file fallow names, atis names, and the one file more each time is a re-exporter:
+`src/pm/index.ts` passes `tools.ts`'s four names on, and `src/index.ts`, the package's
+barrel, passes on the rest. fallow counts a re-exporter as no consumer; atis marks it with
+the names it passes on, because that is where a reach crosses a membrane by name, which is
+what the world lights (D181). Setting the re-exporters aside, the two sets are equal for
+all eight names.
+
+Of the 33 entries in the map, 11 carry names. The other 22 are reached at the file level
+alone, past an importer, and the file-level glow still draws them.
+
 ## What the spike found
 
 Four ✓ rows and three problems, all parked for `/plumbbob:refine`. None of them is a

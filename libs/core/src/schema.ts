@@ -175,6 +175,13 @@ export type ReachEntry = {
   readonly cell: string;
   readonly hops: number;
   readonly via: readonly string[];
+  /**
+   * The exported names the change moved that reached it (D111), as the file
+   * it imported them from exports them, sorted: the names it takes, or passes
+   * on as a re-exporter. Absent where no moved name carried it, the
+   * file-level reach alone, added under D85.
+   */
+  readonly names?: readonly string[];
 };
 
 export type PatchCoverage = {
@@ -986,6 +993,15 @@ function assertWeather(value: unknown, path: string, placed: Placed, unplaced: R
     const entry = expectRecord(raw, `${path}.reach[${String(index)}]`);
     const cell = expectString(entry['cell'], `${path}.reach[${String(index)}].cell`);
     if (!placed.cells.has(cell)) fail(`${path}.reach[${String(index)}].cell`, `unknown cell "${cell}"`);
+    if (entry['names'] === undefined) return;
+    // The names that carried it, sorted and unique, and never an empty list: no name is an absent key (D111, C2).
+    const names = expectArray(entry['names'], `${path}.reach[${String(index)}].names`);
+    if (names.length === 0) fail(`${path}.reach[${String(index)}].names`, 'expected at least one name, or no names key');
+    names.reduce<string | undefined>((previous, each, at) => {
+      const name = expectString(each, `${path}.reach[${String(index)}].names[${String(at)}]`);
+      if (previous !== undefined && previous >= name) fail(`${path}.reach[${String(index)}].names[${String(at)}]`, `expected the names sorted and unique, got "${name}" after "${previous}"`);
+      return name;
+    }, undefined);
   });
 
   const changed = expectArray(weather['changed'], `${path}.changed`);

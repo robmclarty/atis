@@ -9,6 +9,15 @@
  * directly. Added, modified and renamed files walk the head graph; a deleted
  * file walks the base graph, where the consumers it breaks still import it
  * (D39).
+ *
+ * Reach has a symbol level too (D111): each exported name a changed file's
+ * change moved reaches the files that import it, followed through re-exports
+ * by name as D75 walks a public name, and an entry carries the names that
+ * reached it, spelled as the file it imported them from exports them. A
+ * re-exporter is reached by the names it passes on. The walk by name stops at
+ * the importers, as fallow's `--symbol-impact` does: what an importer exports
+ * in turn did not move by name, so the file-level reach beyond it carries
+ * none, and the file-level glow stays the default.
  */
 
 import { OTHER_GROUP } from './groups.js';
@@ -18,6 +27,12 @@ import type { ChangedFile, ExceptionalEdge, Group, ReachEntry } from './schema.j
 
 /** A changed file as the diff knows it, before the map places it on the terrain or the shore. */
 export type DiffFile = Omit<ChangedFile, 'cell' | 'group' | 'is_barrel'>;
+
+/** A name a re-export passes on (D75): `name` as the target exports it, `as` the name the re-exporting file gives it, `*` for every name. */
+type Passed = { readonly name: string; readonly as: string };
+
+/** An import edge, with the names it took out of `to` and the names it passes on where the scan read them (D75); the walk by name reads no more (D111). */
+export type ReachEdge = ImportEdge & { readonly names?: readonly string[]; readonly reexports?: readonly Passed[] };
 
 /**
  * Where a changed test file lands in `changed[]`. Tests are evidence, never
@@ -36,9 +51,11 @@ export type ReachInputs = {
   /** The shore, for the changed files that are not terrain (D48). */
   readonly groups: readonly Group[];
   /** The head graph: added, modified and renamed files walk it, and `new-cross-module` is found in it (D39). */
-  readonly headEdges: readonly ImportEdge[];
+  readonly headEdges: readonly ReachEdge[];
   /** The base graph: a deleted file's consumers live only here, since no head edge can import it (D39). */
-  readonly baseEdges: readonly ImportEdge[];
+  readonly baseEdges: readonly ReachEdge[];
+  /** The exported names each changed file's change moved, by its head path (D111); a file left out moved none the walk by name can follow. */
+  readonly moved?: ReadonlyMap<string, readonly string[]>;
 };
 
 export type ReachResult = {
@@ -50,6 +67,9 @@ export type ReachResult = {
 
 /** How far a file sits from the changed set, and the interfaces crossed to get there; one `via` entry per hop. */
 type Label = { readonly hops: number; readonly via: readonly string[] };
+
+/** A whole module, as an import takes it (`import * as ns`) or a re-export passes it on (`export *`). */
+const STAR = '*';
 
 const ORIGIN: Label = { hops: 0, via: [] };
 
@@ -158,6 +178,45 @@ function merge(walks: readonly ReadonlyMap<string, Label>[]): Map<string, Label>
   return best;
 }
 
+/** Where one name a re-export passes on goes, and under what name: `{ a as b }` hands `a` on as `b`, and `export *` every name as itself (D75). */
+function passedAs(pass: Passed, name: string): string | undefined {
+  if (pass.name !== name && pass.name !== STAR) return undefined;
+  return pass.as === STAR ? name : pass.as;
+}
+
+/**
+ * The names that reach each terrain file from the names `moved` holds, over
+ * the terrain's edges (D111). An edge that takes a name out of the file the
+ * walk stands on, or takes the whole module, reaches its importer by that
+ * name; one that passes the name on reaches its re-exporter by it too, and
+ * the walk goes on from the re-exporter under the name it gives it. The
+ * names are spelled as the file each was imported from exports them.
+ */
+function namesReaching(moved: ReadonlyMap<string, readonly string[]>, edges: readonly ReachEdge[], cells: CellIndex): Map<string, Set<string>> {
+  const into = new Map<string, ReachEdge[]>();
+  for (const edge of edges) {
+    if (edge.from === edge.to || !cells.cellOf.has(edge.from) || !cells.cellOf.has(edge.to)) continue;
+    into.set(edge.to, [...(into.get(edge.to) ?? []), edge]);
+  }
+  const reached = new Map<string, Set<string>>();
+  const seen = new Set<string>();
+  const pending = [...moved].flatMap(([path, names]) => names.map((name) => [path, name] as const));
+  for (let next = pending.pop(); next !== undefined; next = pending.pop()) {
+    const [file, name] = next;
+    const key = `${file}\n${name}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    for (const edge of into.get(file) ?? []) {
+      const passes = (edge.reexports ?? []).flatMap((pass) => passedAs(pass, name) ?? []);
+      const takes = edge.names !== undefined && (edge.names.includes(name) || edge.names.includes(STAR));
+      if (!takes && passes.length === 0) continue;
+      reached.set(edge.from, (reached.get(edge.from) ?? new Set<string>()).add(name));
+      for (const as of passes) pending.push([edge.from, as]);
+    }
+  }
+  return reached;
+}
+
 function edgeKey({ from, to }: ImportEdge): string {
   return `${from}\n${to}`;
 }
@@ -195,7 +254,8 @@ function place(file: DiffFile, cells: CellIndex, groupOf: ReadonlyMap<string, st
 /**
  * Place the changed set on the map and walk what it reaches. Every list comes
  * back sorted by path (C3), `reach` holds terrain files only, and the changed
- * files themselves sit in it at zero hops, where the glow is brightest.
+ * files themselves sit in it at zero hops, where the glow is brightest. An
+ * entry the walk by name reached carries those names, sorted (D111).
  */
 export function computeReach(inputs: ReachInputs): ReachResult {
   const cells = indexCells(inputs.modules);
@@ -214,13 +274,19 @@ export function computeReach(inputs: ReachInputs): ReachResult {
     walk(seeds(false), importersOf(inputs.headEdges, cells), cells),
     walk(seeds(true), importersOf(inputs.baseEdges, cells), cells),
   ]);
+  // A deleted file's names are walked on the base graph, where its importers still take them (D39).
+  const deleted = new Set(seeds(true));
+  const movedBy = (gone: boolean): ReadonlyMap<string, readonly string[]> => new Map([...(inputs.moved ?? [])].filter(([path]) => deleted.has(path) === gone));
+  const named = [namesReaching(movedBy(false), inputs.headEdges, cells), namesReaching(movedBy(true), inputs.baseEdges, cells)];
+  const namesOf = (path: string): readonly string[] => [...new Set(named.flatMap((walked) => [...(walked.get(path) ?? [])]))].toSorted(byPath);
 
   return {
     changed,
     reach: [...reached]
       .flatMap(([path, label]): ReachEntry[] => {
         const cell = cells.cellOf.get(path);
-        return cell === undefined ? [] : [{ path, cell, hops: label.hops, via: label.via }];
+        const names = namesOf(path);
+        return cell === undefined ? [] : [{ path, cell, hops: label.hops, via: label.via, ...(names.length === 0 ? {} : { names }) }];
       })
       .toSorted((a, b) => byPath(a.path, b.path)),
     edges_exceptional: newCrossModule(inputs, cells),

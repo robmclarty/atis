@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 74 — feat(cli): serve MCP tools that point at the open map
+**Current step:** 75 — feat(core): reach exported names through the files that import them
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -127,7 +127,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 118. feat(svg): draw the comment's image and the fingerprint as the minimap zoomed in
 - ☑ 72. build(atis): bundle the workspace into a package that installs
 - ☑ 73. docs(atis): write the user's README with the legend and the fingerprint
-- ☐ 74. feat(cli): serve MCP tools that point at the open map
+- ☑ 74. feat(cli): serve MCP tools that point at the open map
 - ☐ 75. feat(core): reach exported names through the files that import them
 - ☐ 76. feat(web): light a symbol's reach where it crosses a membrane
 - ☐ 77. feat(tour): write an opt-in reviewer's tour with fascicle
@@ -2617,3 +2617,5 @@ folder, so it rides the branch into the PR.)*
   **5.** The two READMEs share one user-facing body, and differ in their links and one section
 
   `apps/atis/README.md` is the npm page, so its links and the fingerprint image are absolute GitHub URLs; npm renders it away from the repo. The root `README.md` has the same body with relative links, plus a "Working on atis" section for the workspace. The reading is `docs/glance-test.md`'s legend made general. It covers the category, the HUD with Health Δ now live, the field, the key's fourteen marks and the few it leaves to the map, the notices, and how to move through the world. An edit to either body belongs in both.
+
+- 2026-10-28 — step 74 checkpointed · 1185c6540 — feat(cli): serve MCP tools that point at the open map (1 drift, 7m)

@@ -3706,7 +3706,11 @@
         "path": "apps/cli/src/doctor.ts",
         "cell": "single:apps/cli/src/doctor.ts",
         "hops": 0,
-        "via": []
+        "via": [],
+        "names": [
+          "resolveSlot",
+          "resolveTool"
+        ]
       },
       {
         "path": "apps/cli/src/index.ts",
@@ -3714,6 +3718,9 @@
         "hops": 1,
         "via": [
           "apps/cli/src/doctor.ts"
+        ],
+        "names": [
+          "runDoctor"
         ]
       },
       {
@@ -3722,13 +3729,22 @@
         "hops": 1,
         "via": [
           "libs/core/src/pm/index.ts"
+        ],
+        "names": [
+          "legacyResolve",
+          "listSlots",
+          "resolveSlot"
         ]
       },
       {
         "path": "libs/core/src/pm/index.ts",
         "cell": "folder:libs/core/src/pm",
         "hops": 0,
-        "via": []
+        "via": [],
+        "names": [
+          "legacyResolve",
+          "resolveTool"
+        ]
       },
       {
         "path": "libs/core/src/pm/legacy.ts",

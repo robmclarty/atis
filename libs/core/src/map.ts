@@ -7,7 +7,8 @@
  * (C1), so the clock is an input too, and it decides nothing the parts have
  * not already settled: it rekeys the base terrain by the diff's renames
  * (D40), names the graph each computation runs on (D39), and composes
- * modules, depth, history, reach, evidence and notices in that order, counts
+ * modules, depth, history, reach (down to the names each change moved,
+ * D111), evidence and notices in that order, counts
  * the outside packages the terrain imports (D170), and finally lays the
  * terrain out on the field every renderer draws (D24). Every list leaves
  * sorted (C3). Handed a range's commits, it runs the same assembly at each,
@@ -23,7 +24,7 @@ import type { Config } from './config.js';
 import { computeDependencies } from './dependencies.js';
 import { computeDepth } from './depth.js';
 import type { Depths, FileDepth } from './depth.js';
-import { compareStructure, computeCategory, computeEvidence, dentsFrom, rulesOf, trustCoverage } from './evidence.js';
+import { compareStructure, computeCategory, computeEvidence, dentsFrom, rulesOf, spanOnChange, trustCoverage } from './evidence.js';
 import type { CheckArtifacts, Dupes, Health, HealthFinding, Structure } from './evidence.js';
 import { OTHER_GROUP, identifyGroups, shoreMatcher } from './groups.js';
 import { computeHistory } from './history.js';
@@ -698,6 +699,58 @@ function frameOver(inputs: BuildInputs, frame: FrameInputs, terrain: Terrain, co
   return { commit, subject, weather: kept, notices, ...(unplaced.length === 0 ? {} : { unplaced }) };
 }
 
+/** A named function's lines in a file, first to last, as a hunk is held against them. */
+const linesOf = (path: string, { line, line_count }: ScanFunction): { readonly path: string; readonly start: number; readonly end: number } => ({ path, start: line, end: line + line_count - 1 });
+
+/** The shape one side of a file prints for a name, or `null` where it printed none (D76). */
+const shapeOf = (side: ScanFileOf | undefined, name: string): string | null => side?.shapes?.[name] ?? null;
+
+/** Whether function `inner` lies within function `outer`. */
+const within = (inner: ScanFunction, outer: ScanFunction): boolean => outer.line <= inner.line && inner.line + inner.line_count <= outer.line + outer.line_count;
+
+/**
+ * The exported names one modified or renamed file's change moved (D111):
+ * those it added or removed, those whose shape it changed where both sides
+ * printed one (D76), and each exported function whose lines a hunk meets.
+ * Where a hunk meets a named function that is not exported and lies in no
+ * exported one, a helper any export may call, or meets the file's code while
+ * no name moved, the change cannot be held to a name, so every name the file
+ * exports carries it, as the file-level reach does. A file whose hunks meet
+ * no code, comments alone, moved none.
+ */
+function movedIn(file: DiffFile, was: ScanFileOf | undefined, is: ScanFileOf): readonly string[] {
+  const before = new Set(was?.exports ?? []);
+  const after = new Set(is.exports);
+  const reshaped = [...after].filter((name) => {
+    const [then, now] = [shapeOf(was, name), shapeOf(is, name)];
+    return before.has(name) && then !== null && now !== null && then !== now;
+  });
+  const surface = [...[...after].filter((name) => !before.has(name)), ...[...before].filter((name) => !after.has(name)), ...reshaped];
+  const hunks = new Map([[file.path, file.hunks]] as const);
+  const functions = is.functions ?? [];
+  const exported = functions.filter((fn) => after.has(fn.name));
+  const met = (fn: ScanFunction): boolean => spanOnChange(linesOf(file.path, fn), hunks);
+  const helper = functions.some((fn) => !after.has(fn.name) && met(fn) && !exported.some((outer) => within(fn, outer)));
+  const named = [...surface, ...exported.filter(met).map((fn) => fn.name)];
+  // A scan that read no statements leaves the code unknown, and the change is held to no name narrower than the file (C2).
+  const code = is.code === undefined || is.code.some((span) => spanOnChange({ path: file.path, ...span }, hunks));
+  return sortUnique(helper || (named.length === 0 && code) ? [...after, ...surface] : named);
+}
+
+/** The exported names each changed file's change moved, by head path (D111): every name of a file it added or deleted, and what `movedIn` holds it to for one it modified or renamed. */
+export function movedNames(base: Scan, head: Scan, diff: readonly DiffFile[]): ReadonlyMap<string, readonly string[]> {
+  const baseFiles = new Map(base.files.map((file) => [file.path, file] as const));
+  const headFiles = new Map(head.files.map((file) => [file.path, file] as const));
+  return new Map(
+    diff.flatMap((file): (readonly [string, readonly string[]])[] => {
+      const was = baseFiles.get(file.path);
+      const is = headFiles.get(file.path);
+      const names = file.kind === 'deleted' ? (was?.exports ?? []) : is === undefined ? [] : file.kind === 'added' ? is.exports : movedIn(file, was, is);
+      return names.length === 0 ? [] : [[file.path, sortUnique(names)]];
+    }),
+  );
+}
+
 /** Everything `buildMap` derives from one change but the layout, and the layout itself held back until asked for, since a range's frames never lay out (D100). */
 type Assembled = Omit<MapJson, 'terrain' | 'sequence'> & {
   readonly terrain: Omit<Terrain, 'layout'>;
@@ -728,7 +781,7 @@ function assemble(inputs: BuildInputs, config: Config): Assembled {
   );
   const check = trusted.check;
   const graphs = { modules, groups, headEdges: head.edges, baseEdges: base.edges } as const;
-  const reach = computeReach({ ...graphs, changed: inputs.diff });
+  const reach = computeReach({ ...graphs, changed: inputs.diff, moved: movedNames(base, head, inputs.diff) });
   const code = new Map(head.files.flatMap((file) => (file.code === undefined ? [] : [[file.path, file.code] as const])));
   const evidence = computeEvidence({ ...graphs, changed: reach.changed, check, code });
   // What fallow measured the change did against its base, where it measured both sides (D98).
