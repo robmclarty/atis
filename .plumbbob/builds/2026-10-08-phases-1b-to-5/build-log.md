@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 79 — refactor(cli): run every producer a repo needs and merge their scans
+**Current step:** 120 — feat(cli): read JavaScript as terrain through the TypeScript producer
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -133,7 +133,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 121. fix(web): draw an opened cell's words on top, and open the Reach block on its lit names
 - ☑ 77. feat(tour): write an opt-in reviewer's tour with fascicle
 - ☑ 78. feat(web): play a tour's stops with fly-to
-- ☐ 79. refactor(cli): run every producer a repo needs and merge their scans
+- ☑ 79. refactor(cli): run every producer a repo needs and merge their scans
 - ☐ 120. feat(cli): read JavaScript as terrain through the TypeScript producer
 - ☐ 80. fix(core): sort other languages' manifests and settings onto the shore
 - ☐ 81. feat(cli): scan a Go module into the same scan shape
@@ -236,8 +236,10 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] an opened cell's export list draws beneath the world's other layers (Rob, range 21's stop): the notice labels' layer is laid over the interior's, its numbered boxes at z-index 1, and the list stays translucent until the exploded view has spread; asked-for words should sit on top
 - [x] the Reach block opens on every name the change carried, 22 on checkride PR 4 with 22 more files at the file level, so the four names lit on src/pm's membrane are lost among them (Rob, range 21's stop): with a cell open, open on the names lit on its membrane
 - [x] two runs serving one repository overwrite each other's .atis/serve.json, and the later one's exit removes it, so atis mcp loses the tab that is still open
-- [ ] the web tour test (world.test.ts, served with a tour) timed out at 30 s waiting on the breadcrumb under the full suite's load once in step 79's check, and passed alone in 5 s and on the rerun: a flake in the gate
-- [ ] steps 81 to 84 each register their producer in apps/atis/src/sources/producers.ts's PRODUCERS, which their seams omit (they name sources/index.ts); step 87's contract should say where a producer is registered
+- [x] the web tour test (world.test.ts, served with a tour) timed out at 30 s waiting on the breadcrumb under the full suite's load once in step 79's check, and passed alone in 5 s and on the rerun: a flake in the gate
+- [x] steps 81 to 84 each register their producer in apps/atis/src/sources/producers.ts's PRODUCERS, which their seams omit (they name sources/index.ts); step 87's contract should say where a producer is registered
+- [ ] vendored or minified JavaScript (vendor/thing/dist/thing.min.js, a public/vendor/jquery.js) is terrain since step 120, since only the build row at a member's root and the config row take JavaScript back to the shore; a bundle of thousands of lines founds a directory cell of its own
+- [ ] the config row's except list names only TypeScript (D164), so a root config/ of JavaScript code and a JavaScript eslint plugin's rules/ stay config shore while TypeScript in the same places is terrain
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -365,6 +367,9 @@ Harvest results this boundary:
 - **blocker**: park 83 · an opened cell's export list draws beneath the world's other layers (Rob, range 21's stop): the notice labels' layer is laid over the interior's, its numbered boxes at z-index 1, and the list stays translucent until the exploded view has spread; asked-for words should sit on top → the light step 76 shipped can be covered by the world's own layers, so one web fix step goes first in range 22, with P84
 - **blocker**: park 84 · the Reach block opens on every name the change carried, 22 on checkride PR 4 with 22 more files at the file level, so the four names lit on src/pm's membrane are lost among them (Rob, range 21's stop): with a cell open, open on the names lit on its membrane → step 76 grouped the Reach block by every name map-wide, and an opened cell's reader wants that cell's lit names; it joins P83's step
 - **tangent**: park 85 · two runs serving one repository overwrite each other's .atis/serve.json, and the later one's exit removes it, so atis mcp loses the tab that is still open → two `atis` serving one repository at once is rare, and keying the file per run can wait for a later step
+- 2026-10-28, at range 23 of 33's stop: 2 parked ideas, classified.
+- **tangent**: park 86 · the web tour test (world.test.ts, served with a tour) timed out at 30 s waiting on the breadcrumb under the full suite's load once in step 79's check, and passed alone in 5 s and on the rerun: a flake in the gate → a load-sensitive timeout in a test this range never touched, green alone and on two full reruns
+- **tangent**: park 87 · steps 81 to 84 each register their producer in apps/atis/src/sources/producers.ts's PRODUCERS, which their seams omit (they name sources/index.ts); step 87's contract should say where a producer is registered → seams are orientation, so steps 81 to 84 still land; the stray just shows on each checkpoint
 
 ## Log
 
@@ -2776,3 +2781,92 @@ folder, so it rides the branch into the PR.)*
   **5.** The world plays a stop the way it plays an agent's highlight
 
   A stop goes to the world as a new highlight kind, `stop`, which only the chrome's stepper sends: the socket still carries only `file` and `notice`. The camera flies to the stop's target, which is a file or a cell the map places, or wherever the notice's row leads when the target is the notice's own. The target's labels are written as an asked target's (D168 (labels-on-demand)), and the notice flares. The stepper opens on the count of stops and writes each stop's notice rank, target and sentence. The page plays a tour only over the map it was written for. After a pushed map or a switched base, it says what the tour was written for in one muted line instead. A run with no tour makes no request and shows nothing new. One look is baked: the sentence's 60-character measure, since a new token would need a row in `docs/design.md`, outside the seam. The browser test steps the demo's tour golden to its first stop and then its fifth, another file, and checks the flight, the labels, the breadcrumb and the sentence.
+
+- 2026-10-28 — step 79 checkpointed · 90876511e — refactor(cli): run every producer a repo needs and merge their scans (1 drift, 21m)
+- 2026-10-28 — range 23 of 33's stop recorded — review the producer seam before JavaScript and four producers build on it: every existing map and golden unchanged, and `classifyFile` knowing no extension
+
+  **Summary**: The TypeScript scan is now the first producer behind one interface: a producer claims files by extension and returns their files, edges, members and entry-point lookup, every producer whose files a commit tracks runs, and their reads merge into one `Scan`. Each file's kind and barrel now come from the scan, so core's `classifyFile` reads no extension. `atis.config.json` can switch a producer off, and one that is off or cannot run leaves its files on the shore and is named in a new optional `meta.instruments.unread`. Every existing map is byte-identical, the goldens included.
+
+  1. The seam strayed into nine paths, each one the done-when needed
+  2. Every existing map is byte-identical, measured beyond the goldens
+  3. The producer contract, as step 120 (JavaScript as terrain) and steps 81 to 84 will meet it
+  4. The switch, and the one new map key
+  5. One flake in the gate, parked
+
+  **Readout**:
+
+  ```text
+  steps        1 of 1 landed
+               - 79 9087651
+  check        green: 1 of 1 checks, 1 landing
+  done-when    met
+  decisions    honored:
+               - D114 (producers-compose), D85 (schema-bumps)
+               - D30 (pure-parsers), D96 (terrain-cache)
+  constraints  14 of 14 honored
+  seam         strayed: 9 paths outside step 79's seam
+               - libs/core/fixtures/demo/inputs.json
+               - libs/core/fixtures/rename/inputs.json
+               - libs/core/src/depth.ts
+               - libs/core/src/evidence.ts
+               - libs/core/src/layout/index.ts
+               - libs/core/src/notices.ts
+               - libs/core/src/reach.ts
+               - libs/scene/src/__tests__/synthetic.test.ts
+               - libs/scene/src/synthetic.ts
+  diff         +1171 -484 across 32 files
+               - apps/atis/src/__tests__/producers.test.ts +259 -0
+               - apps/atis/src/run.ts +40 -27
+               - apps/atis/src/sources/git.ts +5 -0
+               - apps/atis/src/sources/imports.ts +62 -294
+               - apps/atis/src/sources/index.ts +4 -1
+               - apps/atis/src/sources/producers.ts +224 -0
+               - apps/atis/src/sources/scan.ts +249 -0
+               - and 25 more
+  spent        21 min · green first run at every landing · 1 drift warning
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Harvested**: 2 of 87 parked ideas open
+
+  | Park | What it is | Why it matters | Lean |
+  | --- | --- | --- | --- |
+  | P86 · Tour test flakes under load | the web tour test (world.test.ts, served with a tour) timed out at 30 s waiting on the breadcrumb under the full suite's load once in step 79's check, and passed alone in 5 s and on the rerun: a flake in the gate | a 30 s browser wait under the full suite's load can turn a later landing red for nothing | tangent: a load-sensitive timeout in a test this range never touched, green alone and on two full reruns |
+  | P87 · Producer registry outside later seams | steps 81 to 84 each register their producer in apps/atis/src/sources/producers.ts's PRODUCERS, which their seams omit (they name sources/index.ts); step 87's contract should say where a producer is registered | each new producer adds a line to `PRODUCERS` in `sources/producers.ts`, which the next range's seams leave out | tangent: seams are orientation, so steps 81 to 84 still land; the stray just shows on each checkpoint |
+
+  **Recommendation**: Approve the producer seam and take both parks as tangents, then run range 24. The stop asked for two things, and both hold: every golden passes and five fresh maps of two real repositories, plus an SVG, are byte-identical to the pre-refactor source, and `classifyFile` now takes the scan's kind and applies only the shore's config and build rows. If you want the next range's checkpoints free of the seam advisory, make P87 a blocker and I will add `apps/atis/src/sources/producers.ts` to steps 81 to 84's seams before it runs.
+
+  **1.** The seam strayed into nine paths, each one the done-when needed
+
+  The plan's seam named `modules.ts`, `groups.ts`, `map.ts`, `config.ts` and `schema.ts` in core, but `classifyFile` was also called by five more core files: `depth.ts`, `reach.ts`, `evidence.ts`, `notices.ts` and `layout/index.ts`. A function that knows no extension cannot answer "is this path a test?" from a path alone, so each now reads tests from the scan instead. Depth is handed a terrain predicate. Reach and evidence read `modules.tests`, a new sorted list that module identification sets aside. Notices read the head scan's kinds. Layout skips the `tests` group by its id.
+
+  The demo and rename fixture inputs (`libs/core/fixtures/*/inputs.json`) gained `"barrel": true` on their `index.ts` files, since core no longer infers a barrel from the name. The synthetic 5,000-file repo in `libs/scene/src/synthetic.ts` gives its files kinds and barrels, and its test reads `file.kind`. Its random draws are unchanged, so it builds the same repo. Nothing here is scope beyond the step: each path is a caller or a fixture of the contract the step changed.
+
+  **2.** Every existing map is byte-identical, measured beyond the goldens
+
+  The core demo `map.json` golden and every SVG golden pass unchanged. Before touching code I wrote five maps from the pre-refactor source, then wrote them again from the refactor and compared:
+
+  - this repo's change, `--base HEAD~6 --head HEAD~1`
+  - this repo's whole-repo map
+  - this repo's `--range HEAD~4..HEAD~1`
+  - checkride's change, `--base HEAD~5 --head HEAD~1`
+  - this repo's change again, with `--svg`
+
+  All five came out identical but for `generated_at`, and the SVG was identical byte for byte. Every run was `--no-cache`, so no cached terrain stood in for a fresh scan.
+
+  **3.** The producer contract, as step 120 (JavaScript as terrain) and steps 81 to 84 will meet it
+
+  `apps/atis/src/sources/scan.ts` holds the shape every producer reads into, and the `Tree` it reads a commit through, from an extraction or from git's objects. `imports.ts` is the TypeScript producer. It owns the name rule core used to hold (`typescriptKind`: a test by its name or by a `__tests__/` or `test/` folder, `.mts` and `.cts` too) and marks `index.ts` or `index.tsx` as a barrel. `producers.ts` holds the `Producer` interface (`id`, `extensions`, `unavailable()`, `read()`), the `PRODUCERS` list with TypeScript first, and a pure `mergeScans`.
+
+  The merge keeps every tracked path in order: each file as the producer that read it gave it, every other file `other`, with nothing read from it. A tree no producer reads gets the entry-point lookup "no producer read the tree" and no members. That only differs from before for a repository with no TypeScript at all, which no existing map is, and step 120 brings JavaScript repos back under the TypeScript producer. Tests drive a second, hand-built `.fake` producer through the real merge: its barrel makes a folder cell core found by no extension. With that producer unable to run, its files land in `other` and the map names it.
+
+  **4.** The switch, and the one new map key
+
+  `atis.config.json` takes `{ "producers": { "typescript": false } }`. Core parses it purely (`configuredProducersOff`, beside the trunk and editor readers). The CLI reads it at the head commit, as it reads the trunk, and an id that names no producer exits 2. The switched-off list rides on core's `Config` as `producers_off`, so the terrain cache, keyed by the config's hash, never serves a terrain scanned under another switch. A side effect: every existing cache entry misses once, which a code change does anyway.
+
+  `meta.instruments.unread` lists each producer that read nothing as `producer: reason`, once when both scans say it and prefixed `base:` or `head:` when only one does, as the entry points are. It is optional and absent when every producer ran, so `schema_version` stays 1 under D85 (schema-bumps), and `assertMap` checks its shape.
+
+  **5.** One flake in the gate, parked
+
+  The first full check failed one test, the web tour stepper's (from step 78, the tour's fly-to). It timed out at 30 s waiting on the breadcrumb while the CLI suite ran beside it, then passed alone in 5 s and in both later full runs. Nothing in this step reaches the tour, so I parked it as P86 rather than touch it.

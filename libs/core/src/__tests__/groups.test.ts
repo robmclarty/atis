@@ -24,7 +24,7 @@ const ONE_PATH_PER_GROUP: readonly [string, string][] = [
   ['deps', 'pnpm-lock.yaml'],
   ['ci', '.github/workflows/ci.yml'],
   ['scripts', 'scripts/release.sh'],
-  ['examples', 'examples/basic/run.js'],
+  ['examples', 'examples/basic/index.html'],
   ['assets', 'site/fonts/inter.woff2'],
   ['data', 'test/fixtures/existing-biome/biome.json'],
   [OTHER_GROUP, 'notes.xyz'],
@@ -49,8 +49,6 @@ test('agent instructions are prompts, not docs, though *.md would match them', (
 
 test('hook folders under .claude/, a skill or a plugin are scripts, whatever their extension', () => {
   expect(groupOf('examples/agent-loop/.claude/hooks/checkride-gate.sh')).toBe('scripts');
-  expect(groupOf('examples/agent-loop/.claude/hooks/checkride-protect.cjs')).toBe('scripts');
-  expect(groupOf('skills/lodestar/hooks/session-capture.mjs')).toBe('scripts');
   expect(groupOf('plugins/ast-grep-rules/hooks/hooks.json')).toBe('scripts');
   expect(groupOf('.claude/hooks/README.md')).toBe('docs');
   expect(groupOf('.claude/settings.json')).toBe('prompts');
@@ -77,7 +75,8 @@ test('a schema or a benchmark corpus is data wherever it sits', () => {
 });
 
 // One path per pattern the retake's census of five outside repos added, each from that census
-// except `.node-version` and a snapshot folder's non-`.snap` file, which it named by kind only.
+// except `.node-version` and a snapshot folder's non-`.snap` file, which it named by kind only,
+// and `benchmarks/**`'s, whose census file was JavaScript and is terrain now (D184).
 // A third column names the workspace member a census file sat in, where `examples/**` would claim it.
 const CENSUS: readonly [string, string, (readonly string[])?][] = [
   ['docs', 'www/blog/2025-03-21-announcing-trpc-11.mdx'],
@@ -128,7 +127,7 @@ const CENSUS: readonly [string, string, (readonly string[])?][] = [
   ['data', 'integration-tests/api.har'],
   ['data', 'examples/next-sse-chat/src/server/db/migrations/0000_lyrical_khan.sql', ['examples/next-sse-chat']],
   ['data', 'examples/next-prisma-starter/prisma/schema.prisma', ['examples/next-prisma-starter']],
-  ['data', 'benchmarks/utils/src/loop.js'],
+  ['data', 'benchmarks/utils/results.json'],
   // The rows parked at the map-and-svg build's step 50, one path per pattern from the retake's own `other`.
   ['ci', 'examples/next-sse-chat/docker-compose.yaml', ['examples/next-sse-chat']],
   ['ci', 'docker-compose.test.yml'],
@@ -172,7 +171,17 @@ test('a .gitkeep is a git file wherever it sits, even under a folder row below s
 test('code the scan cannot read stays loud in other', () => {
   expect(groupOf('packages/svelte-form/src/Field.svelte')).toBe(OTHER_GROUP);
   expect(groupOf('src/App.vue')).toBe(OTHER_GROUP);
-  expect(groupOf('integration-tests/node/test-cjs.cjs')).toBe(OTHER_GROUP);
+});
+
+test('JavaScript the census found on the shore is terrain, read as TypeScript is, and only the build and config rows take it back (D184)', () => {
+  expect(groupOf('integration-tests/node/test-cjs.cjs')).toBeUndefined();
+  expect(groupOf('examples/agent-loop/.claude/hooks/checkride-protect.cjs')).toBeUndefined();
+  expect(groupOf('skills/lodestar/hooks/session-capture.mjs')).toBeUndefined();
+  expect(groupOf('benchmarks/utils/src/loop.js')).toBeUndefined();
+  expect(groupOf('scripts/release.mjs')).toBeUndefined();
+  expect(groupOf('dist/index.js')).toBe('build');
+  expect(groupOf('eslint.config.mjs')).toBe('config');
+  expect(groupOf('.size-limit.cjs')).toBe('config');
 });
 
 test("hono's runtime-test static files are a kind the census cannot name, so they stay loud in other", () => {
@@ -212,7 +221,7 @@ test('committed build output directly beneath a member or the root is the build 
       'lib/util/format.ts',
       // A `dist/` deeper than a package's root is not its build output, nor is one under a folder no member owns.
       'packages/core/src/dist/helper.json',
-      'vendor/thing/dist/thing.min.js',
+      'vendor/thing/dist/thing.min.css',
     ),
     DEFAULT_CONFIG.groups,
     roots,
@@ -230,15 +239,15 @@ test('committed build output directly beneath a member or the root is the build 
   expect(groups.flatMap((group) => group.files)).not.toContain('src/types.d.ts');
   expect(groups.flatMap((group) => group.files)).not.toContain('lib/index.ts');
   expect(groupOf('packages/core/src/dist/helper.json', roots)).toBe(OTHER_GROUP);
-  expect(groupOf('vendor/thing/dist/thing.min.js', roots)).toBe(OTHER_GROUP);
+  expect(groupOf('vendor/thing/dist/thing.min.css', roots)).toBe('assets');
 });
 
 test('examples and templates inside a workspace member fall through to the later rules', () => {
   const roots = ['', 'examples/pr-improve'];
   expect(groupOf('examples/pr-improve/fixtures/pr-sample.patch', roots)).toBe('data');
   expect(groupOf('examples/pr-improve/notes.bin', roots)).toBe(OTHER_GROUP);
-  expect(groupOf('examples/loose/run.js', roots)).toBe('examples');
-  expect(groupOf('templates/starter/main.js', roots)).toBe('examples');
+  expect(groupOf('examples/loose/index.html', roots)).toBe('examples');
+  expect(groupOf('templates/starter/main.html', roots)).toBe('examples');
 });
 
 test('every shore file lands in exactly one group; terrain, tests and repeats are skipped', () => {

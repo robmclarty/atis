@@ -7,7 +7,11 @@
  * `.ts`, `.tsx`, `.mts` and `.cts` files are parsed for their exports and for
  * every static import, `export … from` and `import()` specifier, and each
  * specifier is resolved with `ts.resolveModuleName` under NodeNext, so
- * `./foo.js` lands on `foo.ts` and `./foo.mjs` on `foo.mts`. Workspace
+ * `./foo.js` lands on `foo.ts` and `./foo.mjs` on `foo.mts`. JavaScript is
+ * read the same way (D184): `.js`, `.jsx`, `.mjs` and `.cjs` files, ES
+ * modules and CommonJS alike, `require()` with a literal specifier and
+ * `module.exports` and `exports.<name>` read as imports and exports, and
+ * never run. Workspace
  * packages resolve by name through `pnpm-workspace.yaml`, or the root
  * manifest's `workspaces` when there is none, and their own manifests; bare
  * npm packages resolve to no file, and each file records instead the outside
@@ -17,7 +21,8 @@
  * Beside each exported name the scan records the shape the compiler declares
  * for it (D76): the file's emitted declarations, printed, so a body-only edit
  * moves nothing and a tuple gaining an element does. A name whose type the
- * compiler would have to infer is recorded as not compared (C2).
+ * compiler would have to infer is recorded as not compared (C2), and so is
+ * every name a JavaScript file exports, since it declares no types (D184).
  *
  * Each member's manifest is read for whether it publishes (not `private:
  * true`, or carrying `publishConfig`) and for the files it publishes through
@@ -26,7 +31,8 @@
  * that declares it.
  *
  * Each file it claims is given its kind, source or test, and an `index.ts`
- * or `index.tsx` is marked as its directory's barrel, so core reads neither
+ * or `index.tsx` is marked as its directory's barrel, or an `index.js` or
+ * `index.jsx` where the directory has no TypeScript one, so core reads neither
  * from a name (D114). One process reads the whole tree, so the graph that
  * feeds depth, layout, reach and stitches is scanned once, not once per file.
  * Handed an earlier commit's reads, it parses only the files the diff touched
@@ -64,14 +70,21 @@ export type TypeScriptRead = { readonly scan: Scan; readonly parsed: ParsedFiles
 
 /** The name a namespace import takes, and the one `export * from` takes. */
 const STAR = '*';
-/** The extensions the TypeScript producer claims: `.ts`, `.tsx`, and the `.mts` and `.cts` NodeNext modules, declarations included (D77, D114). */
-export const TYPESCRIPT_EXTENSIONS: readonly string[] = ['.ts', '.tsx', '.mts', '.cts'];
+/**
+ * The extensions the TypeScript producer claims: `.ts`, `.tsx`, and the `.mts`
+ * and `.cts` NodeNext modules, declarations included (D77, D114), and
+ * JavaScript's `.js`, `.jsx`, `.mjs` and `.cjs` (D184).
+ */
+export const TYPESCRIPT_EXTENSIONS: readonly string[] = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs'];
 const TYPESCRIPT = /\.(?:[cm]?ts|tsx)$/;
-/** A test by its name, `.test.ts` or `.spec.tsx`, or by its folder, `__tests__/` or `test/` (D4). */
-const TEST_NAME = /\.(?:test|spec)\.(?:[cm]?ts|tsx)$/;
+const JAVASCRIPT = /\.(?:[cm]?js|jsx)$/;
+/** A test by its name, `.test.ts` or `.spec.jsx`, or by its folder, `__tests__/` or `test/` (D4). */
+const TEST_NAME = /\.(?:test|spec)\.(?:[cm]?[jt]s|[jt]sx)$/;
 const TEST_DIR = /(?:^|\/)(?:__tests__|test)\//;
 /** The barrel a directory is entered through (D45): its `index.ts`, or its `index.tsx`. */
 const BARREL = /(?:^|\/)index\.tsx?$/;
+/** A JavaScript directory's barrel, the `index.js` or `index.jsx` `require('./dir')` lands on: one only where no TypeScript barrel sits beside it (D184). */
+const JAVASCRIPT_BARREL = /(?:^|\/)index\.jsx?$/;
 const MANIFEST = 'package.json';
 const WORKSPACE_FILE = 'pnpm-workspace.yaml';
 /** The reviewed repo's own fallow, relative to its working tree (D22). */
@@ -96,10 +109,11 @@ const PUBLISHED_FIELDS = ['main', 'types', 'module'];
 /** fallow's tags for the entries it read from those same fields; it reads no `types` (D75). */
 const PUBLISHED_TAGS: ReadonlySet<string> = new Set(['package.json exports', 'package.json main', 'package.json module']);
 
+/** NodeNext, reaching JavaScript files too (D184); a TypeScript file still wins over the JavaScript beside it, as the compiler's own lookup orders them. */
 const RESOLUTION: ts.CompilerOptions = {
   module: ts.ModuleKind.NodeNext,
   moduleResolution: ts.ModuleResolutionKind.NodeNext,
-  allowJs: false,
+  allowJs: true,
 };
 
 function byPath(a: string, b: string): number {
@@ -110,16 +124,29 @@ function sorted(values: Iterable<string>): readonly string[] {
   return [...new Set(values)].toSorted(byPath);
 }
 
+/** Whether a path is JavaScript, read by this producer without its types (D184). */
+function isJavaScript(path: string): boolean {
+  return JAVASCRIPT.test(path);
+}
+
 /**
  * What the TypeScript producer makes of a path (D114): TypeScript (`.mts`
- * and `.cts` too, D77) is source unless its name or its folder says it is a
- * test (D4), and any other path is none of its own. The shore's `config` and
- * `build` rows may still take a source file, which is core's to apply (D57,
- * D84).
+ * and `.cts` too, D77) and JavaScript (D184) are source unless a name or a
+ * folder says it is a test (D4), and any other path is none of its own. The
+ * shore's `config` and `build` rows may still take a source file, which is
+ * core's to apply (D57, D84).
  */
 export function typescriptKind(path: string): FileKind {
-  if (!TYPESCRIPT.test(path)) return 'other';
+  if (!TYPESCRIPT.test(path) && !isJavaScript(path)) return 'other';
   return TEST_NAME.test(path) || TEST_DIR.test(path) ? 'test' : 'source';
+}
+
+/** Whether a source file is its directory's barrel: an `index.ts` or `index.tsx`, or an `index.js` or `index.jsx` with neither beside it (D45, D184). */
+function isBarrel(path: string, claimed: ReadonlySet<string>): boolean {
+  if (BARREL.test(path)) return true;
+  if (!JAVASCRIPT_BARREL.test(path)) return false;
+  const dir = path.slice(0, path.lastIndexOf('/') + 1);
+  return !claimed.has(`${dir}index.ts`) && !claimed.has(`${dir}index.tsx`);
 }
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
@@ -277,6 +304,184 @@ function dynamicImports(source: ts.SourceFile): readonly Reference[] {
   };
   ts.forEachChild(source, visit);
   return found;
+}
+
+/** The specifier of `require('./x')`: a call of the bare `require` on a string literal; any other argument is left out, as a non-literal `import()` is (D184). */
+function requiredSpecifier(node: ts.Node): string | undefined {
+  if (!ts.isCallExpression(node) || !ts.isIdentifier(node.expression) || node.expression.text !== 'require') return undefined;
+  return specifierOf(node.arguments[0]);
+}
+
+/** The name a property is written under, or nothing for a computed one. */
+function propertyName(name: ts.PropertyName | undefined): string | undefined {
+  if (name === undefined) return undefined;
+  return ts.isIdentifier(name) || ts.isPrivateIdentifier(name) || ts.isStringLiteral(name) || ts.isNumericLiteral(name) ? name.text : undefined;
+}
+
+/** The names a destructuring takes, `const { a, b: c } = …` taking `a` and `b`; a rest or a computed key takes the whole. */
+function patternNames(pattern: ts.ObjectBindingPattern): readonly string[] {
+  return pattern.elements.map((element) => {
+    if (element.dotDotDotToken !== undefined) return STAR;
+    if (element.propertyName !== undefined) return propertyName(element.propertyName) ?? STAR;
+    return ts.isIdentifier(element.name) ? element.name.text : STAR;
+  });
+}
+
+/**
+ * The names a `require()` takes out of its target, read from where the call
+ * stands: `const { a, b: c } = require(…)` takes `a` and `b`, `require(…).a`
+ * takes `a`, a call on a line of its own takes nothing, as a side-effect
+ * import does, and any other use takes the whole module, as a namespace
+ * import does.
+ */
+function requiredNames(call: ts.CallExpression): readonly string[] {
+  const { parent } = call;
+  if (ts.isExpressionStatement(parent)) return [];
+  if (ts.isPropertyAccessExpression(parent) && parent.expression === call) return [parent.name.text];
+  if (ts.isElementAccessExpression(parent) && parent.expression === call) return [specifierOf(parent.argumentExpression) ?? STAR];
+  if (ts.isVariableDeclaration(parent) && parent.initializer === call && ts.isObjectBindingPattern(parent.name)) return patternNames(parent.name);
+  return [STAR];
+}
+
+function isModuleExports(node: ts.Expression): boolean {
+  return ts.isPropertyAccessExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'module' && node.name.text === 'exports';
+}
+
+function isExportsObject(node: ts.Expression): boolean {
+  return isModuleExports(node) || (ts.isIdentifier(node) && node.text === 'exports');
+}
+
+/** What an assignment's left side writes of a CommonJS module: the whole of `module.exports`, one name of it or of `exports`, or nothing of either. */
+type Written = { readonly whole: true } | { readonly whole: false; readonly name: string };
+
+function writtenBy(left: ts.Expression): Written | undefined {
+  if (isModuleExports(left)) return { whole: true };
+  if (ts.isPropertyAccessExpression(left) && isExportsObject(left.expression)) return { whole: false, name: left.name.text };
+  if (ts.isElementAccessExpression(left) && isExportsObject(left.expression)) {
+    const name = specifierOf(left.argumentExpression);
+    return name === undefined ? undefined : { whole: false, name };
+  }
+  return undefined;
+}
+
+function isAssignment(node: ts.Node): node is ts.BinaryExpression {
+  return ts.isBinaryExpression(node) && node.operatorToken.kind === ts.SyntaxKind.EqualsToken;
+}
+
+/** One `require()`, and the name it binds where it stands: the whole module, or the one name `require(…).a` reads. */
+type Required = { readonly call: ts.CallExpression; readonly name: string };
+
+/** What a value written to the exports takes from a `require()`: the call itself, a name read off it, or a local a `require()` bound. */
+function requiredBy(value: ts.Expression, bound: ReadonlyMap<string, Required>): Required | undefined {
+  if (requiredSpecifier(value) !== undefined && ts.isCallExpression(value)) return { call: value, name: STAR };
+  if (ts.isPropertyAccessExpression(value) && ts.isCallExpression(value.expression) && requiredSpecifier(value.expression) !== undefined) {
+    return { call: value.expression, name: value.name.text };
+  }
+  return ts.isIdentifier(value) ? bound.get(value.text) : undefined;
+}
+
+/** The locals a top-level `require()` binds: `const x = require(…)` the whole module, `const { a, b: c } = require(…)` its `a` as `a` and its `b` as `c`. */
+function requireBindings(statements: readonly ts.Statement[]): ReadonlyMap<string, Required> {
+  const bound = new Map<string, Required>();
+  for (const statement of statements) {
+    if (!ts.isVariableStatement(statement)) continue;
+    for (const { name, initializer } of statement.declarationList.declarations) {
+      const required = initializer === undefined ? undefined : requiredBy(initializer, bound);
+      if (required === undefined) continue;
+      if (ts.isIdentifier(name)) bound.set(name.text, required);
+      else if (ts.isObjectBindingPattern(name) && required.name === STAR) {
+        for (const element of name.elements) {
+          const taken = element.propertyName === undefined ? (ts.isIdentifier(element.name) ? element.name.text : undefined) : propertyName(element.propertyName);
+          if (taken !== undefined && element.dotDotDotToken === undefined && ts.isIdentifier(element.name)) bound.set(element.name.text, { call: required.call, name: taken });
+        }
+      }
+    }
+  }
+  return bound;
+}
+
+/** What a JavaScript file's CommonJS says: the names `module.exports` and `exports.<name>` give it, and every literal `require()` (D184). */
+type CommonJs = { readonly exports: readonly string[]; readonly references: readonly Reference[]; readonly stars: readonly Star[] };
+
+/**
+ * A JavaScript file's CommonJS, read from its source and never run (D184).
+ * A top-level `exports.a = …` or `module.exports.a = …` exports `a`;
+ * `module.exports = { a, b }` exports `a` and `b`, and any other value written
+ * to `module.exports` is the module's `default`. A value taken from a
+ * `require()` is passed on, as `export … from` passes a name (D75):
+ * `module.exports = require('./x')` and `...require('./x')` pass every name of
+ * `x` on, as `export *` does, and `exports.a = require('./a')` passes `a`
+ * whole, as `export * as a` does. Every `require()` with a literal specifier,
+ * wherever it stands, is an import of the names it takes.
+ */
+function readCommonJs(source: ts.SourceFile): CommonJs {
+  const bound = requireBindings(source.statements);
+  const exports: string[] = [];
+  const passes = new Map<ts.CallExpression, PassedName[]>();
+  const starred = new Set<ts.CallExpression>();
+  const pass = (value: ts.Expression, as: string): void => {
+    const required = requiredBy(value, bound);
+    if (required === undefined) return;
+    const list = passes.get(required.call) ?? [];
+    passes.set(required.call, [...list, { name: required.name, as }]);
+  };
+  const star = (value: ts.Expression): boolean => {
+    const required = requiredBy(value, bound);
+    if (required?.name !== STAR) return false;
+    starred.add(required.call);
+    pass(value, STAR);
+    return true;
+  };
+  const writeWhole = (value: ts.Expression): void => {
+    if (!ts.isObjectLiteralExpression(value)) {
+      if (star(value)) return;
+      exports.push('default');
+      pass(value, 'default');
+      return;
+    }
+    for (const property of value.properties) {
+      if (ts.isSpreadAssignment(property)) {
+        star(property.expression);
+        continue;
+      }
+      const name = propertyName(property.name);
+      if (name === undefined) continue;
+      exports.push(name);
+      if (ts.isPropertyAssignment(property)) pass(property.initializer, name);
+      else if (ts.isShorthandPropertyAssignment(property)) pass(property.name, name);
+    }
+  };
+  for (const statement of source.statements) {
+    if (!ts.isExpressionStatement(statement)) continue;
+    // `module.exports = exports = x` writes one value through each target of the chain.
+    const written: Written[] = [];
+    let value: ts.Expression = statement.expression;
+    while (isAssignment(value)) {
+      const target = writtenBy(value.left);
+      if (target !== undefined) written.push(target);
+      value = value.right;
+    }
+    for (const target of written) {
+      if (target.whole) writeWhole(value);
+      else {
+        exports.push(target.name);
+        pass(value, target.name);
+      }
+    }
+  }
+  const references: Reference[] = [];
+  const stars: Star[] = [];
+  const visit = (node: ts.Node): void => {
+    const specifier = requiredSpecifier(node);
+    if (specifier !== undefined && ts.isCallExpression(node)) {
+      const reexports = passes.get(node);
+      references.push({ specifier, names: requiredNames(node), line: lineOf(source, node), ...(reexports === undefined ? {} : { reexports }) });
+      if (starred.has(node)) stars.push({ specifier, shape: boundShape({ name: STAR, specifier, typeOnly: false }) });
+    }
+    ts.forEachChild(node, visit);
+  };
+  ts.forEachChild(source, visit);
+  return { exports, references, stars };
 }
 
 /**
@@ -565,19 +770,27 @@ function passedThrough(statement: ts.ImportDeclaration, exported: ReadonlyMap<st
 }
 
 /** What a function-like node is called where it is declared, or nothing for one bound to no name. */
-function nameOfFunction(node: ts.Node, source: ts.SourceFile): string | undefined {
-  if (ts.isFunctionDeclaration(node) || ts.isFunctionExpression(node)) return node.name?.text ?? boundName(node, source);
+function nameOfFunction(node: ts.Node, source: ts.SourceFile, commonJs: boolean): string | undefined {
+  if (ts.isFunctionDeclaration(node) || ts.isFunctionExpression(node)) return node.name?.text ?? boundName(node, source, commonJs);
   if (ts.isConstructorDeclaration(node)) return 'constructor';
   if (ts.isMethodDeclaration(node) || ts.isGetAccessorDeclaration(node) || ts.isSetAccessorDeclaration(node)) return node.name.getText(source);
-  if (ts.isArrowFunction(node)) return boundName(node, source);
+  if (ts.isArrowFunction(node)) return boundName(node, source, commonJs);
   return undefined;
 }
 
-/** The name a function expression or an arrow is bound to: the variable, the property or the class field it initialises. */
-function boundName(node: ts.Node, source: ts.SourceFile): string | undefined {
+/**
+ * The name a function expression or an arrow is bound to: the variable, the
+ * property or the class field it initialises, and in JavaScript the name of
+ * `exports` it is written to, so `exports.a = function () {}` is `a` (D184).
+ */
+function boundName(node: ts.Node, source: ts.SourceFile, commonJs: boolean): string | undefined {
   const { parent } = node;
   if ((ts.isVariableDeclaration(parent) || ts.isPropertyAssignment(parent) || ts.isPropertyDeclaration(parent)) && parent.initializer === node) {
     return ts.isIdentifier(parent.name) || ts.isPrivateIdentifier(parent.name) ? parent.name.text : parent.name.getText(source);
+  }
+  if (commonJs && isAssignment(parent) && parent.right === node) {
+    const written = writtenBy(parent.left);
+    return written === undefined || written.whole ? undefined : written.name;
   }
   return undefined;
 }
@@ -590,10 +803,10 @@ function boundName(node: ts.Node, source: ts.SourceFile): string | undefined {
  * and a callback bound to no name is not recorded here; fallow names one that
  * breaks a threshold, and core adds it from there.
  */
-function functionsOf(source: ts.SourceFile): readonly ScanFunction[] {
+function functionsOf(source: ts.SourceFile, commonJs: boolean): readonly ScanFunction[] {
   const found: ScanFunction[] = [];
   const visit = (node: ts.Node): void => {
-    const name = ts.isFunctionLike(node) && 'body' in node && node.body !== undefined ? nameOfFunction(node, source) : undefined;
+    const name = ts.isFunctionLike(node) && 'body' in node && node.body !== undefined ? nameOfFunction(node, source, commonJs) : undefined;
     if (name !== undefined) {
       const { start, end } = spanOf(source, node);
       found.push({ name, line: start, line_count: end - start + 1 });
@@ -604,11 +817,26 @@ function functionsOf(source: ts.SourceFile): readonly ScanFunction[] {
   return found.toSorted((a, b) => a.line - b.line || byPath(a.name, b.name));
 }
 
+/**
+ * How the compiler parses a file: `.tsx` and `.jsx` with JSX, JavaScript as
+ * script with no types (D184), and the rest as TypeScript. The compiler gives
+ * `.mts` and `.cts` no kind of their own: they parse as `.ts` does, and a
+ * `.d.mts` or `.d.cts` is a declaration file by its name (D77).
+ */
+function scriptKind(path: string): ts.ScriptKind {
+  if (path.endsWith('.tsx')) return ts.ScriptKind.TSX;
+  if (path.endsWith('.jsx')) return ts.ScriptKind.JSX;
+  return isJavaScript(path) ? ts.ScriptKind.JS : ts.ScriptKind.TS;
+}
+
+/** Every one of `names` beside a shape that cannot be compared (C2): what a JavaScript file's names carry, since it declares no types (D184). */
+function uncompared(names: readonly string[]): ExportShapes {
+  return Object.fromEntries(names.map((name) => [name, null]));
+}
+
 function parseSource(path: string, content: string): ParsedFile {
-  // The compiler gives `.mts` and `.cts` no kind of their own: they parse as
-  // `.ts` does, and a `.d.mts` or `.d.cts` is a declaration file by its name (D77).
-  const kind = path.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
-  const source = ts.createSourceFile(path, content, ts.ScriptTarget.Latest, true, kind);
+  const javascript = isJavaScript(path);
+  const source = ts.createSourceFile(path, content, ts.ScriptTarget.Latest, true, scriptKind(path));
   const exports: string[] = [];
   const references: Reference[] = [];
   const stars: Star[] = [];
@@ -639,8 +867,9 @@ function parseSource(path: string, content: string): ParsedFile {
       exports.push(...declaredNames(statement));
     }
   }
-  const names = sorted(exports);
-  const { shapes, inferred } = shapesOf(source, names);
+  const commonJs = javascript ? readCommonJs(source) : undefined;
+  const names = sorted([...exports, ...(commonJs?.exports ?? [])]);
+  const { shapes, inferred } = javascript ? { shapes: uncompared(names), inferred: [] } : shapesOf(source, names);
   return {
     loc: content.split('\n').filter((line) => line.trim() !== '').length,
     // A declaration file is all types by its name, whatever it holds (D77).
@@ -648,9 +877,9 @@ function parseSource(path: string, content: string): ParsedFile {
     exports: names,
     shapes,
     inferred,
-    references: [...references, ...dynamicImports(source)],
-    stars,
-    functions: source.isDeclarationFile ? [] : functionsOf(source),
+    references: [...references, ...dynamicImports(source), ...(commonJs?.references ?? [])],
+    stars: [...stars, ...(commonJs?.stars ?? [])],
+    functions: source.isDeclarationFile ? [] : functionsOf(source, javascript),
   };
 }
 
@@ -827,9 +1056,27 @@ function exportsEntry(value: unknown, subpath: string): unknown {
  * each module format and its declarations (D75), and may write the formats
  * side by side in a folder each, which the source tree does not have.
  */
-/** The sources a built stem may come from: an `.mjs` or `.d.mts` from a NodeNext `.mts` as well as from a bundled `.ts`, and a `.cjs` from a `.cts` (D77). */
+/**
+ * The sources a built stem may come from: an `.mjs` or `.d.mts` from a
+ * NodeNext `.mts` as well as from a bundled `.ts`, and a `.cjs` from a `.cts`
+ * (D77); then JavaScript a build copied or transpiled, which a TypeScript
+ * source beside it outranks (D184).
+ */
 function sourcesOf(stem: string): readonly string[] {
-  return [`${stem}.ts`, `${stem}.tsx`, `${stem}.mts`, `${stem}.cts`, `${stem}/index.ts`, `${stem}/index.mts`, `${stem}/index.cts`];
+  return [
+    `${stem}.ts`,
+    `${stem}.tsx`,
+    `${stem}.mts`,
+    `${stem}.cts`,
+    `${stem}/index.ts`,
+    `${stem}/index.mts`,
+    `${stem}/index.cts`,
+    `${stem}.js`,
+    `${stem}.jsx`,
+    `${stem}.mjs`,
+    `${stem}.cjs`,
+    `${stem}/index.js`,
+  ];
 }
 
 function candidates(target: string): readonly string[] {
@@ -841,7 +1088,7 @@ function candidates(target: string): readonly string[] {
   return [...stems.flatMap(sourcesOf), clean];
 }
 
-/** The scanned TypeScript file a manifest target names, tests and other paths dropped. */
+/** The scanned TypeScript or JavaScript file a manifest target names, tests and other paths dropped. */
 function sourceFor(dir: string, target: string, paths: ReadonlySet<string>): string | undefined {
   for (const candidate of candidates(target)) {
     const path = dir === '.' ? candidate : `${dir}/${candidate}`;
@@ -919,6 +1166,9 @@ function resolveWorkspace(specifier: string, context: Context): string | undefin
       const path = sourceFor(member.dir, target, context.paths);
       if (path !== undefined) return path;
     }
+    // A package that names no entry Node enters through its own `index.js` (D184).
+    const index = member.dir === '.' ? 'index.js' : `${member.dir}/index.js`;
+    if (subpath === '.' && context.paths.has(index) && typescriptKind(index) === 'source') return index;
   }
   return undefined;
 }
@@ -1156,11 +1406,12 @@ function memberEntries(context: Context, fallow: readonly FallowEntry[]): Readon
 }
 
 /**
- * Read the TypeScript files of one commit's tree into the scan's parts (D21,
- * D114): `files` are the ones the producer claims, in path order; the
- * manifests and every other path of `tree` resolve specifiers and name the
- * members. Handed `prior`, a file the diff left alone is not parsed again
- * (D136). `entryPoints` is the reviewed repo's fallow, asked only here.
+ * Read the TypeScript and JavaScript files of one commit's tree into the
+ * scan's parts (D21, D114, D184): `files` are the ones the producer claims,
+ * in path order; the manifests and every other path of `tree` resolve
+ * specifiers and name the members. Handed `prior`, a file the diff left alone
+ * is not parsed again (D136). `entryPoints` is the reviewed repo's fallow,
+ * asked only here.
  */
 export function readTypeScript(tree: Tree, files: readonly string[], prior: Prior | undefined, entryPoints: () => EntryPoints): TypeScriptRead {
   const kept = (path: string): ParsedFile | undefined =>
@@ -1210,9 +1461,10 @@ export function readTypeScript(tree: Tree, files: readonly string[], prior: Prio
       path,
       loc: parsed.get(path)?.loc ?? 0,
       kind,
-      ...(kind === 'source' && BARREL.test(path) ? { barrel: true } : {}),
+      ...(kind === 'source' && isBarrel(path, claimed) ? { barrel: true } : {}),
       exports: names,
-      shapes: withStars(names, parsed.get(path)?.shapes ?? {}, stars.get(path) ?? [], exports),
+      // A name a star passes on into JavaScript is as uncompared as the file's own (D184).
+      shapes: isJavaScript(path) ? uncompared(names) : withStars(names, parsed.get(path)?.shapes ?? {}, stars.get(path) ?? [], exports),
       inferred: parsed.get(path)?.inferred ?? [],
       code: parsed.get(path)?.code ?? [],
       packages: packages.get(path) ?? [],

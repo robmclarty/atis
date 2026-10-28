@@ -219,7 +219,7 @@ test('--tour plays in the served world alone, so beside --out, --svg, --png or -
   expect(comment.status).toBe(2);
   expect(comment.stderr).toContain('--comment posts a still, so drop --tour');
   expect(atis(['--help']).stdout).toContain('--tour <file>');
-});
+}, MINUTE);
 
 test('--open is a no-op under a test run, and needs --svg', () => {
   const dir = temp('open');

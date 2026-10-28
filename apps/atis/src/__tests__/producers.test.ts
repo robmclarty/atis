@@ -102,17 +102,23 @@ test.each([
   ['src/index.d.cts', 'source'],
   ['src/handler.test.mts', 'test'],
   ['src/loader.spec.cts', 'test'],
+  ['scripts/release.mjs', 'source'],
+  ['lib/legacy.cjs', 'source'],
+  ['src/App.jsx', 'source'],
+  ['src/math.test.js', 'test'],
+  ['src/App.spec.jsx', 'test'],
+  ['src/__tests__/setup.cjs', 'test'],
   ['README.md', 'other'],
-  ['scripts/release.mjs', 'other'],
+  ['data/points.json', 'other'],
   ['test/fixtures/biome.json', 'other'],
-])('the TypeScript producer reads %s as %s (D4, D77)', (path, kind) => {
+])('the TypeScript producer reads %s as %s (D4, D77, D184)', (path, kind) => {
   expect(typescriptKind(path)).toBe(kind);
 });
 
-test('TypeScript is the first producer, claiming its four extensions, and it can always run (D114)', () => {
+test("TypeScript is the first producer, claiming its four extensions and JavaScript's four, and it can always run (D114, D184)", () => {
   const [typescript] = PRODUCERS;
   expect(typescript?.id).toBe('typescript');
-  expect(typescript?.extensions).toEqual(['.ts', '.tsx', '.mts', '.cts']);
+  expect(typescript?.extensions).toEqual(['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs']);
   expect(typescript?.unavailable()).toBeUndefined();
 });
 
