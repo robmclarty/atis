@@ -11,14 +11,16 @@
  * that cannot run here, reads nothing: its files stay where the shore table
  * puts them, and the scan says which producer and why (C2).
  *
- * TypeScript is the first producer. Another language is a module of its own
- * beside it and one more entry in `PRODUCERS`, never a change to core.
+ * TypeScript is the first producer, and Go the second (D113). Another
+ * language is a module of its own beside them and one more entry in
+ * `PRODUCERS`, never a change to core.
  */
 
 import { resolve } from 'node:path';
 
 import type { EntryPointLookup, UnreadProducer } from 'core';
 
+import { GO_EXTENSIONS, goUnavailable, readGo } from './go.js';
 import { TYPESCRIPT_EXTENSIONS, fallowEntryPoints, readTypeScript } from './imports.js';
 import type { EntryPoints, ParsedFiles, Prior } from './imports.js';
 import { gitTree, walk } from './scan.js';
@@ -37,8 +39,12 @@ export type ProducerInput = {
   readonly entryPoints: () => EntryPoints;
 };
 
-/** What a producer read: the scan of its own files, what it parsed from each for a later read to reuse, and the entry points it asked for. */
-export type Produced = { readonly scan: Scan; readonly parsed: ParsedFiles; readonly entryPoints?: EntryPoints };
+/**
+ * What a producer read: the scan of its own files, what it parsed from each
+ * for a later read to reuse, the entry points it asked for, and why it left
+ * any of its files unread after all, as a module its toolchain refused (C2).
+ */
+export type Produced = { readonly scan: Scan; readonly parsed: ParsedFiles; readonly entryPoints?: EntryPoints; readonly unread?: string };
 
 /** One language's reader of a commit (D114). */
 export type Producer = {
@@ -59,8 +65,16 @@ const TYPESCRIPT: Producer = {
   read: ({ tree, files, prior, entryPoints }) => readTypeScript(tree, files, prior, entryPoints),
 };
 
+/** The Go producer: it runs on the repo's own toolchain, so it cannot run where no `go` answers (D113, D139). */
+const GO: Producer = {
+  id: 'go',
+  extensions: GO_EXTENSIONS,
+  unavailable: goUnavailable,
+  read: ({ tree, files }) => ({ ...readGo(tree, files), parsed: {} }),
+};
+
 /** Every producer atis runs, in the order a file's extension is offered to them. */
-export const PRODUCERS: readonly Producer[] = [TYPESCRIPT];
+export const PRODUCERS: readonly Producer[] = [TYPESCRIPT, GO];
 
 /** Why a producer `atis.config.json` switched off read nothing. */
 const SWITCHED_OFF = 'switched off in atis.config.json';
@@ -185,6 +199,8 @@ function scanTree(tree: Tree, run: Run): ScannedTree {
       continue;
     }
     const produced = producer.read({ tree, files, prior: run.prior, entryPoints: run.entryPoints });
+    if (produced.unread !== undefined) unread.push({ producer: producer.id, reason: produced.unread });
+    if (produced.scan.files.length === 0 && produced.unread !== undefined) continue;
     read.push({ producer: producer.id, scan: produced.scan });
     Object.assign(parsed, produced.parsed);
     entryPoints ??= produced.entryPoints;

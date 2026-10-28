@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 80 — fix(core): sort other languages' manifests and settings onto the shore
+**Current step:** none (at the boundary)
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -135,7 +135,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 78. feat(web): play a tour's stops with fly-to
 - ☑ 79. refactor(cli): run every producer a repo needs and merge their scans
 - ☑ 120. feat(cli): read JavaScript as terrain through the TypeScript producer
-- ☐ 80. fix(core): sort other languages' manifests and settings onto the shore
+- ☑ 80. fix(core): sort other languages' manifests and settings onto the shore
 - ☐ 81. feat(cli): scan a Go module into the same scan shape
 - ☐ 82. feat(cli): scan a Python project into the same scan shape
 - ☐ 83. feat(cli): scan Terraform modules into the same scan shape
@@ -240,6 +240,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] steps 81 to 84 each register their producer in apps/atis/src/sources/producers.ts's PRODUCERS, which their seams omit (they name sources/index.ts); step 87's contract should say where a producer is registered
 - [ ] vendored or minified JavaScript (vendor/thing/dist/thing.min.js, a public/vendor/jquery.js) is terrain since step 120, since only the build row at a member's root and the config row take JavaScript back to the shore; a bundle of thousands of lines founds a directory cell of its own
 - [ ] the config row's except list names only TypeScript (D164), so a root config/ of JavaScript code and a JavaScript eslint plugin's rules/ stay config shore while TypeScript in the same places is terrain
+- [ ] a Go module with no main package (a library) has no entry points, so every file of it sits in the deepest band, unreachable (D26); a Go library's non-internal packages may be its entry points as a TypeScript package's exports are
+- [ ] Go files go list never lists, under testdata/ or vendor/ or in no module, land in the shore's other group, loud; a testdata/ row in data and a vendor/ row would sort them by kind
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -2872,3 +2874,4 @@ folder, so it rides the branch into the PR.)*
   The first full check failed one test, the web tour stepper's (from step 78, the tour's fly-to). It timed out at 30 s waiting on the breadcrumb while the CLI suite ran beside it, then passed alone in 5 s and in both later full runs. Nothing in this step reaches the tour, so I parked it as P86 rather than touch it.
 
 - 2026-10-28 — step 120 checkpointed · 7ef67c5dc — feat(cli): read JavaScript as terrain through the TypeScript producer (10m)
+- 2026-10-28 — step 80 checkpointed · 2fa9a8385 — fix(core): sort other languages' manifests and settings onto the shore (4m)

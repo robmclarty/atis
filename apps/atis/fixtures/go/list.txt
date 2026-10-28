@@ -1,0 +1,34 @@
+{
+	"Dir": "/repo/cmd/shop",
+	"ImportPath": "example.com/shop/cmd/shop",
+	"Name": "main",
+	"GoFiles": [
+		"main.go"
+	]
+}
+{
+	"Dir": "/repo/internal/store",
+	"ImportPath": "example.com/shop/internal/store",
+	"Name": "store",
+	"GoFiles": [
+		"items.go",
+		"store.go"
+	],
+	"TestGoFiles": [
+		"store_test.go"
+	],
+	"XTestGoFiles": [
+		"new_test.go"
+	]
+}
+{
+	"Dir": "/repo/pkg/money",
+	"ImportPath": "example.com/shop/pkg/money",
+	"Name": "money",
+	"GoFiles": [
+		"money.go"
+	],
+	"IgnoredGoFiles": [
+		"money_windows.go"
+	]
+}

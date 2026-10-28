@@ -1,0 +1,413 @@
+[
+  {
+    "path": "cmd/shop/main.go",
+    "loc": 11,
+    "package": "main",
+    "imports": [
+      {
+        "path": "fmt",
+        "alias": "",
+        "line": 4
+      },
+      {
+        "path": "example.com/shop/internal/store",
+        "alias": "",
+        "line": 6
+      },
+      {
+        "path": "github.com/google/uuid",
+        "alias": "",
+        "line": 7
+      }
+    ],
+    "decls": [
+      {
+        "name": "main",
+        "exported": false,
+        "shape": null
+      }
+    ],
+    "uses": [
+      {
+        "qualifier": "store",
+        "name": "New",
+        "line": 11
+      },
+      {
+        "qualifier": "uuid",
+        "name": "NewString",
+        "line": 12
+      },
+      {
+        "qualifier": "fmt",
+        "name": "Println",
+        "line": 13
+      }
+    ],
+    "unresolved": [
+      {
+        "name": "store",
+        "line": 11
+      },
+      {
+        "name": "uuid",
+        "line": 12
+      },
+      {
+        "name": "fmt",
+        "line": 13
+      }
+    ],
+    "functions": [
+      {
+        "name": "main",
+        "line": 10,
+        "line_count": 5
+      }
+    ],
+    "code": [
+      {
+        "start": 10,
+        "end": 14
+      }
+    ]
+  },
+  {
+    "path": "internal/store/items.go",
+    "loc": 11,
+    "package": "store",
+    "imports": [],
+    "decls": [
+      {
+        "name": "defaultName",
+        "exported": false,
+        "shape": null
+      },
+      {
+        "name": "Store.Add",
+        "exported": true,
+        "shape": "func (*Store) Add(item string)",
+        "receiver": "Store"
+      },
+      {
+        "name": "Store.Len",
+        "exported": true,
+        "shape": "func (*Store) Len() int",
+        "receiver": "Store"
+      },
+      {
+        "name": "Limit",
+        "exported": true,
+        "shape": null
+      }
+    ],
+    "uses": [],
+    "unresolved": [
+      {
+        "name": "Store",
+        "line": 6
+      },
+      {
+        "name": "string",
+        "line": 6
+      },
+      {
+        "name": "append",
+        "line": 7
+      },
+      {
+        "name": "int",
+        "line": 11
+      },
+      {
+        "name": "len",
+        "line": 12
+      }
+    ],
+    "functions": [
+      {
+        "name": "Store.Add",
+        "line": 6,
+        "line_count": 3
+      },
+      {
+        "name": "Store.Len",
+        "line": 11,
+        "line_count": 3
+      }
+    ],
+    "code": [
+      {
+        "start": 6,
+        "end": 8
+      },
+      {
+        "start": 11,
+        "end": 13
+      },
+      {
+        "start": 15,
+        "end": 15
+      }
+    ]
+  },
+  {
+    "path": "internal/store/new_test.go",
+    "loc": 10,
+    "package": "store_test",
+    "imports": [
+      {
+        "path": "testing",
+        "alias": "",
+        "line": 4
+      },
+      {
+        "path": "example.com/shop/internal/store",
+        "alias": "",
+        "line": 6
+      }
+    ],
+    "decls": [
+      {
+        "name": "TestNew",
+        "exported": true,
+        "shape": "func TestNew(t *testing.T)"
+      }
+    ],
+    "uses": [
+      {
+        "qualifier": "testing",
+        "name": "T",
+        "line": 9
+      },
+      {
+        "qualifier": "store",
+        "name": "New",
+        "line": 10
+      }
+    ],
+    "unresolved": [
+      {
+        "name": "testing",
+        "line": 9
+      },
+      {
+        "name": "store",
+        "line": 10
+      }
+    ],
+    "functions": [
+      {
+        "name": "TestNew",
+        "line": 9,
+        "line_count": 5
+      }
+    ],
+    "code": [
+      {
+        "start": 9,
+        "end": 13
+      }
+    ]
+  },
+  {
+    "path": "internal/store/store.go",
+    "loc": 11,
+    "package": "store",
+    "imports": [],
+    "decls": [
+      {
+        "name": "Store",
+        "exported": true,
+        "shape": "type Store struct {\nName string\n}"
+      },
+      {
+        "name": "New",
+        "exported": true,
+        "shape": "func New() *Store"
+      }
+    ],
+    "uses": [],
+    "unresolved": [
+      {
+        "name": "string",
+        "line": 6
+      },
+      {
+        "name": "defaultName",
+        "line": 12
+      }
+    ],
+    "functions": [
+      {
+        "name": "New",
+        "line": 11,
+        "line_count": 3
+      }
+    ],
+    "code": [
+      {
+        "start": 11,
+        "end": 13
+      }
+    ]
+  },
+  {
+    "path": "internal/store/store_test.go",
+    "loc": 9,
+    "package": "store",
+    "imports": [
+      {
+        "path": "testing",
+        "alias": "",
+        "line": 3
+      }
+    ],
+    "decls": [
+      {
+        "name": "TestAdd",
+        "exported": true,
+        "shape": "func TestAdd(t *testing.T)"
+      }
+    ],
+    "uses": [
+      {
+        "qualifier": "testing",
+        "name": "T",
+        "line": 5
+      }
+    ],
+    "unresolved": [
+      {
+        "name": "testing",
+        "line": 5
+      },
+      {
+        "name": "New",
+        "line": 6
+      },
+      {
+        "name": "len",
+        "line": 9
+      }
+    ],
+    "functions": [
+      {
+        "name": "TestAdd",
+        "line": 5,
+        "line_count": 7
+      }
+    ],
+    "code": [
+      {
+        "start": 5,
+        "end": 11
+      }
+    ]
+  },
+  {
+    "path": "pkg/money/money.go",
+    "loc": 10,
+    "package": "money",
+    "imports": [
+      {
+        "path": "golang.org/x/text/currency",
+        "alias": "",
+        "line": 3
+      }
+    ],
+    "decls": [
+      {
+        "name": "Amount",
+        "exported": true,
+        "shape": "type Amount int64"
+      },
+      {
+        "name": "Cents",
+        "exported": true,
+        "shape": "const Cents Amount"
+      },
+      {
+        "name": "Dollars",
+        "exported": true,
+        "shape": "const Dollars Amount"
+      },
+      {
+        "name": "Format",
+        "exported": true,
+        "shape": "func Format(a Amount) string"
+      }
+    ],
+    "uses": [
+      {
+        "qualifier": "currency",
+        "name": "USD",
+        "line": 13
+      }
+    ],
+    "unresolved": [
+      {
+        "name": "int64",
+        "line": 5
+      },
+      {
+        "name": "iota",
+        "line": 8
+      },
+      {
+        "name": "string",
+        "line": 12
+      },
+      {
+        "name": "currency",
+        "line": 13
+      }
+    ],
+    "functions": [
+      {
+        "name": "Format",
+        "line": 12,
+        "line_count": 3
+      }
+    ],
+    "code": [
+      {
+        "start": 12,
+        "end": 14
+      }
+    ]
+  },
+  {
+    "path": "pkg/money/money_windows.go",
+    "loc": 3,
+    "package": "money",
+    "imports": [],
+    "decls": [
+      {
+        "name": "platform",
+        "exported": false,
+        "shape": null
+      }
+    ],
+    "uses": [],
+    "unresolved": [
+      {
+        "name": "string",
+        "line": 5
+      }
+    ],
+    "functions": [
+      {
+        "name": "platform",
+        "line": 5,
+        "line_count": 1
+      }
+    ],
+    "code": [
+      {
+        "start": 5,
+        "end": 5
+      }
+    ]
+  }
+]

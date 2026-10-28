@@ -258,8 +258,8 @@ test('atis.config.json switches the TypeScript producer off: the run maps no cel
 });
 
 test('an atis.config.json that switches off a producer atis does not run is misuse: exit 2, naming it (C4)', { timeout: MINUTE }, () => {
-  const repo = configured('{ "producers": { "go": false } }\n');
+  const repo = configured('{ "producers": { "cobol": false } }\n');
   const outcome = run({ repo, base: 'HEAD~1', out: join(temp('maps'), 'map.json'), cache: false, verbose: false });
   expect(outcome.exitCode).toBe(2);
-  expect(outcome.stderr).toContain('switches off go, which names no producer');
+  expect(outcome.stderr).toContain('switches off cobol, which names no producer');
 });
