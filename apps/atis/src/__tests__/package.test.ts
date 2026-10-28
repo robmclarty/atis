@@ -132,12 +132,13 @@ test('the tarball carries the bundled bin and library entry, the licenses of wha
   expect(stray).toEqual([]);
   expect(packed.files.filter((path) => path.includes('__tests__') || (path.endsWith('.ts') && !path.endsWith('.d.ts')))).toEqual([]);
 
-  // Core reaches d3-force and bubblesets-js, and `atis mcp` the MCP SDK and zod, which ride inside the bundle with their licenses (D179).
+  // Core reaches d3-force and bubblesets-js, `atis mcp` the MCP SDK and zod, and the check reader checkride's findings parsers, which ride inside the bundle with their licenses (D179, D176).
   const licenses = readFileSync(join(packed.root, 'dist', 'licenses.md'), 'utf8');
   expect(licenses).toContain('## d3-force');
   expect(licenses).toContain('## bubblesets-js');
   expect(licenses).toContain('## @modelcontextprotocol/sdk');
   expect(licenses).toContain('## zod');
+  expect(licenses).toContain('## checkride');
   expect(readFileSync(join(packed.root, 'dist', 'cli.js'), 'utf8')).toMatch(/^#!\/usr\/bin\/env node\n/);
 });
 

@@ -18,7 +18,7 @@
  */
 
 import type { OverlayConfig } from './config.js';
-import { pathsOf, rulesOf } from './evidence.js';
+import { coverageSpeaksFor, pathsOf, rulesOf } from './evidence.js';
 import type { CheckArtifacts, CodeSpan, Coverage, Dead, Dupes, Health, HealthFinding } from './evidence.js';
 import type { Commit } from './history.js';
 import type {
@@ -166,16 +166,22 @@ function uglySpots(health: Health, placed: ReadonlySet<string>): readonly UglySp
  * Coverage gaps (§8): every file the report counts a statement of that never
  * ran, and every terrain file holding code that the report never names, a
  * gap of unknown size (D80, D141). A file of types alone holds no code, so it
- * is never unmeasured.
+ * is never unmeasured, and neither is a file of a kind the report cannot
+ * name (D176).
  */
-function coverageGaps(coverage: Coverage, terrain: ReadonlyMap<string, readonly CodeSpan[]>, placed: ReadonlySet<string>): readonly CoverageGap[] {
+function coverageGaps(
+  coverage: Coverage,
+  terrain: ReadonlyMap<string, readonly CodeSpan[]>,
+  placed: ReadonlySet<string>,
+  extensions: readonly string[] | undefined,
+): readonly CoverageGap[] {
   const named = new Set(coverage.map((file) => file.path));
   const measured = coverage.flatMap((file): readonly CoverageGap[] => {
     const uncovered = file.statements.filter((statement) => statement.hits === 0).length;
     return placed.has(file.path) && uncovered > 0 ? [{ path: file.path, statements: file.statements.length, uncovered }] : [];
   });
   const unmeasured = [...terrain]
-    .filter(([path, spans]) => !named.has(path) && spans.length > 0)
+    .filter(([path, spans]) => !named.has(path) && spans.length > 0 && coverageSpeaksFor(extensions, path))
     .map(([path]): CoverageGap => ({ path, unmeasured: true }));
   return [...measured, ...unmeasured].toSorted((a, b) => byPath(a.path, b.path));
 }
@@ -454,7 +460,8 @@ export function computeOverlays(inputs: OverlayInputs): Overlays {
 
   const trouble = from(health, (read) => troubleSpots(read, inputs.commits, placed));
   const ugly = from(health, (read) => ({ value: uglySpots(read, placed) }));
-  const gaps = from(coverage, (read) => ({ value: coverageGaps(read, inputs.terrain, placed) }));
+  const extensions = check.mode === 'check' ? check.coverage_extensions : undefined;
+  const gaps = from(coverage, (read) => ({ value: coverageGaps(read, inputs.terrain, placed, extensions) }));
   const unused = from(dead, (read) => ({ value: deadCode(read, placed) }));
   const families = from(dupes, (read) => ({ value: duplication(read, placed) }));
   const loops = from(dead, (read) => ({ value: cycles(read, placed) }));

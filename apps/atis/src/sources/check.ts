@@ -18,6 +18,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, sep } from 'node:path';
 
+import { parseFindings } from 'checkride/findings';
 import { rebaseFinding } from 'core';
 import type {
   Advisory,
@@ -45,6 +46,9 @@ import type {
   TestReport,
   TestResult,
 } from 'core';
+
+import { readGoTestResults } from './gotest.js';
+import { TYPESCRIPT_EXTENSIONS } from './imports.js';
 
 const CHECK_DIR = '.check';
 const SUMMARY_FILE = 'summary.json';
@@ -103,7 +107,8 @@ function byPath(a: string, b: string): number {
  * fills, which is `slot` where the run split into targets and its name
  * otherwise. A target's check also names the target whose directory under
  * `.check/` holds its files, and the directory it ran from when that is not
- * the repo's root.
+ * the repo's root. A check that spawned its tool keeps the argv it ran, which
+ * says which of its findings could fail it (D176).
  */
 export type SummaryCheck = {
   readonly name: string;
@@ -113,6 +118,7 @@ export type SummaryCheck = {
   readonly skipped: boolean;
   readonly target?: string;
   readonly cwd?: string;
+  readonly argv?: readonly string[];
 };
 
 /** A schema-1 summary as the reader keeps it: core's summary, with each check's adapter and place (D180). */
@@ -138,6 +144,9 @@ function summaryCheck(raw: unknown): SummaryCheck | undefined {
   if (typeof adapter !== 'string' && adapter !== null) return undefined;
   if (target !== undefined && (typeof target !== 'string' || !isPlainName(target))) return undefined;
   if (cwd !== undefined && (typeof cwd !== 'string' || !isInsideRepo(cwd))) return undefined;
+  // An argv only decides which findings gate; one that is not a list of words is left out, and the parser reads the tool's usual args.
+  const { argv } = raw;
+  const words = Array.isArray(argv) && argv.length > 0 && argv.every((word) => typeof word === 'string') ? (argv as readonly string[]) : undefined;
   return {
     name,
     slot,
@@ -146,6 +155,7 @@ function summaryCheck(raw: unknown): SummaryCheck | undefined {
     skipped: raw['skipped'] === true,
     ...(target === undefined ? {} : { target }),
     ...(cwd === undefined ? {} : { cwd }),
+    ...(words === undefined ? {} : { argv: words }),
   };
 }
 
@@ -523,10 +533,13 @@ function resolveSummary(dir: string): { readonly summary: CheckRun } | { readonl
 }
 
 /** A channel core reads from `.check/`, each one file a check's tool writes. */
-type Channel = 'health' | 'dead' | 'dupes' | 'coverage' | 'test' | 'mutation' | 'security' | 'lint' | 'struct';
+type Channel = 'health' | 'dead' | 'dupes' | 'coverage' | 'test' | 'mutation' | 'security' | 'lint' | 'types' | 'struct';
 
-/** The test runners' two files: their report, and the istanbul coverage the repo's config writes beside it. */
-const TEST_FILES: Readonly<Partial<Record<Channel, string>>> = { test: 'test.json', coverage: 'coverage/coverage-final.json' };
+/** The files one adapter writes that atis reads, by the channel each feeds. */
+type Files = Readonly<Partial<Record<Channel, string>>>;
+
+/** The JavaScript test runners' two files: their report, and the istanbul coverage the repo's config writes beside it. */
+const TEST_FILES: Files = { test: 'test.json', coverage: 'coverage/coverage-final.json' };
 
 /**
  * The files each adapter atis has a parser for writes, by the slot it fills:
@@ -534,29 +547,79 @@ const TEST_FILES: Readonly<Partial<Record<Channel, string>>> = { test: 'test.jso
  * a different tool in each pack, so a file is read by the adapter that wrote
  * it and never by its name alone: golangci-lint's `lint.json` is not oxlint's.
  * Jest's `--json` report is the one vitest's JSON reporter copies, which is
- * all `parseTest` reads.
+ * all `parseTest` reads. The other packs' linters, type checkers and config
+ * scanner are read through checkride's own parsers (`FINDINGS`), Go's test
+ * events through atis's own, and pytest writes nothing, so its run counts as
+ * its check's verdict alone (D176). tsc and go-build are type checkers atis
+ * does not read: a red they report cannot be placed, so it stays standing.
  */
-const READERS: Readonly<Record<string, Readonly<Record<string, Readonly<Partial<Record<Channel, string>>>>>>> = {
+const READERS: Readonly<Record<string, Readonly<Record<string, Files>>>> = {
   health: { fallow: { health: 'health.json' } },
   dead: { fallow: { dead: 'dead.json' } },
   dupes: { fallow: { dupes: 'dupes.json' } },
-  test: { vitest: TEST_FILES, jest: TEST_FILES },
+  test: { vitest: TEST_FILES, jest: TEST_FILES, 'go-test': { test: 'test.jsonl' }, pytest: {} },
   mutation: { stryker: { mutation: 'mutation.json' } },
-  security: { 'pnpm-audit': { security: 'security.json' } },
-  lint: { oxlint: { lint: 'lint.json' } },
+  security: { 'pnpm-audit': { security: 'security.json' }, 'trivy-config': { security: 'security.json' } },
+  lint: {
+    oxlint: { lint: 'lint.json' },
+    'golangci-lint': { lint: 'lint.json' },
+    staticcheck: { lint: 'lint.jsonl' },
+    ruff: { lint: 'lint.json' },
+    tflint: { lint: 'lint.json' },
+    shellcheck: { lint: 'lint.json' },
+  },
+  types: { mypy: { types: 'types.jsonl' }, basedpyright: { types: 'types.json' }, 'terraform-validate': { types: 'types.json' } },
   struct: { 'ast-grep': { struct: 'struct.json' } },
 };
 
+/** The adapters whose findings atis reads through checkride's own parsers, so its reading of a finding is the baseline's (D176). */
+const FINDINGS: ReadonlySet<string> = new Set(['golangci-lint', 'staticcheck', 'ruff', 'tflint', 'shellcheck', 'mypy', 'basedpyright', 'terraform-validate', 'trivy-config']);
+
+/** The kinds of file each coverage-writing adapter's report can name: istanbul's are what the TypeScript producer reads (D176). */
+const MEASURES: Readonly<Record<string, readonly string[]>> = { vitest: TYPESCRIPT_EXTENSIONS, jest: TYPESCRIPT_EXTENSIONS };
+
 /** The files `check`'s adapter writes, when atis has a parser for it. */
-function filesOf(check: SummaryCheck): Readonly<Partial<Record<Channel, string>>> | undefined {
+function filesOf(check: SummaryCheck): Files | undefined {
   return check.adapter === null ? undefined : READERS[check.slot]?.[check.adapter];
+}
+
+/** The check's name where it is not its slot's, as a clause naming who ran the adapter. */
+function ranBy(check: SummaryCheck): string {
+  return check.name === check.slot ? '' : `, which ${check.name} ran`;
 }
 
 /** Why a check's channel is muted: the adapter it ran, which atis has no parser for, and the check's name where it is not the slot's (D180, C2). */
 function unparsed(check: SummaryCheck): string {
   if (check.adapter === null) return `${check.slot}: ${check.name} ran with no adapter named`;
-  const ran = check.name === check.slot ? '' : `, which ${check.name} ran`;
-  return `${check.slot}: atis has no parser for ${check.adapter}${ran}`;
+  return `${check.slot}: atis has no parser for ${check.adapter}${ranBy(check)}`;
+}
+
+/**
+ * Why a test run's files have no coverage, or its tests no results: the
+ * adapter that ran writes none, as no pack but TypeScript's writes coverage
+ * and pytest writes no report (D176, D80, C2).
+ */
+function unwritten(check: SummaryCheck): readonly string[] {
+  const files = filesOf(check);
+  if (check.slot !== 'test' || files === undefined || check.adapter === null) return [];
+  return [
+    ...(files.coverage === undefined ? [`coverage: ${check.adapter} writes none${ranBy(check)}`] : []),
+    ...(files.test === undefined ? [`test: ${check.adapter} writes no report${ranBy(check)}, so the run counts as its verdict alone`] : []),
+  ];
+}
+
+/**
+ * One check's findings through checkride's own parsers, each path already
+ * put on the repo's root from where the check ran, and `error` where it
+ * could fail the check under the argv that ran (D176). `undefined` where the
+ * parser cannot trust the output (C2).
+ */
+function findingsOf(check: SummaryCheck, text: string, repo: string): readonly ReportedFinding[] | undefined {
+  if (check.adapter === null) return undefined;
+  const options = { slot: check.slot, root: check.cwd ?? '', repoRoot: repo, ...(check.argv === undefined ? {} : { argv: check.argv }) };
+  return parseFindings(check.adapter, text, options)
+    ?.map((finding): ReportedFinding => ({ path: finding.file, severity: finding.gates === false ? 'warning' : 'error' }))
+    .toSorted((a, b) => byPath(a.path, b.path) || byPath(a.severity, b.severity));
 }
 
 /** A path a check's tool wrote from the directory it ran in, put on the repo's root (D180). */
@@ -631,11 +694,14 @@ function gatherSecurity(all: readonly Security[]): Security {
   for (const security of all) {
     for (const [kind, count] of Object.entries(security.vulnerabilities)) vulnerabilities[kind] = (vulnerabilities[kind] ?? 0) + count;
   }
-  if (all.every((security) => security.advisories === undefined)) return { vulnerabilities };
+  const findings = all.some((security) => security.findings !== undefined)
+    ? { findings: all.flatMap((security) => security.findings ?? []).toSorted((a, b) => byPath(a.path, b.path) || byPath(a.severity, b.severity)) }
+    : {};
+  if (all.every((security) => security.advisories === undefined)) return { vulnerabilities, ...findings };
   const advisories = all
     .flatMap((security) => security.advisories ?? [])
     .toSorted((a, b) => byPath(a.module, b.module) || byPath(a.severity, b.severity));
-  return { vulnerabilities, advisories };
+  return { vulnerabilities, advisories, ...findings };
 }
 
 /** The fallow schema the first check that wrote one recorded, in pipeline order (D98). */
@@ -664,8 +730,9 @@ function readChannels(dir: string, repo: string, summary: CheckRun): Omit<Extrac
     Object.keys(READERS).map((slot) => {
       const ran = summary.checks.filter((check) => check.slot === slot && !check.skipped);
       const silent = ran.filter((check) => filesOf(check) === undefined);
-      muted.push(...silent.map(unparsed));
-      return [slot, silent.length === 0 ? ran : []] as const;
+      const read = silent.length === 0 ? ran : [];
+      muted.push(...silent.map(unparsed), ...read.flatMap(unwritten));
+      return [slot, read] as const;
     }),
   );
 
@@ -682,68 +749,102 @@ function readChannels(dir: string, repo: string, summary: CheckRun): Omit<Extrac
     return readFileSync(path, 'utf8');
   }
 
-  /** `channel` from every check that ran in `slot`, each parsed and put on the root; `undefined` unless every one yielded it (C2). */
-  function readChannel<T>(slot: string, channel: Channel, parse: (text: string, at: OnRoot | undefined) => T | undefined): readonly T[] | undefined {
-    const checks = readable.get(slot) ?? [];
+  /**
+   * `channel` from every check that ran in `slot` with an adapter that writes
+   * it, each parsed and put on the root; `undefined` unless every one of them
+   * yielded it (C2). A check whose adapter writes no such file, as go test
+   * writes no coverage, neither adds to it nor holds it back.
+   */
+  function readChannel<T>(slot: string, channel: Channel, parse: (text: string, check: SummaryCheck) => T | undefined): readonly T[] | undefined {
+    const checks = (readable.get(slot) ?? []).filter((check) => filesOf(check)?.[channel] !== undefined);
     if (checks.length === 0) return undefined;
     const values: T[] = [];
     for (const check of checks) {
       const file = filesOf(check)?.[channel];
       const text = file === undefined ? undefined : readFile(check, file);
-      const value = text === undefined ? undefined : parse(text, onRootOf(check.cwd));
+      const value = text === undefined ? undefined : parse(text, check);
       if (value === undefined) return undefined;
       values.push(value);
     }
     return values;
   }
 
-  const healthRaw = readChannel('health', 'health', (text, at) => {
+  /** The findings `check`'s adapter wrote, through checkride's parsers or, for oxlint and ast-grep, atis's own put on the root (D176). */
+  function reported(text: string, check: SummaryCheck, own: (text: string) => readonly ReportedFinding[] | undefined): readonly ReportedFinding[] | undefined {
+    if (check.adapter !== null && FINDINGS.has(check.adapter)) return findingsOf(check, text, repo);
+    const at = onRootOf(check.cwd);
+    const parsed = own(text);
+    return parsed === undefined || at === undefined ? parsed : parsed.map((finding) => ({ ...finding, path: at(finding.path) }));
+  }
+
+  const healthRaw = readChannel('health', 'health', (text, check) => {
     const parsed = parseHealth(text);
+    const at = onRootOf(check.cwd);
     return parsed === undefined || at === undefined ? parsed : { ...parsed, value: healthOnRoot(parsed.value, at) };
   });
-  const deadRaw = readChannel('dead', 'dead', (text, at) => {
+  const deadRaw = readChannel('dead', 'dead', (text, check) => {
     const parsed = parseDead(text);
+    const at = onRootOf(check.cwd);
     return parsed === undefined || at === undefined ? parsed : { ...parsed, value: deadOnRoot(parsed.value, at) };
   });
-  const dupesRaw = readChannel('dupes', 'dupes', (text, at) => {
+  const dupesRaw = readChannel('dupes', 'dupes', (text, check) => {
     const parsed = parseDupes(text);
+    const at = onRootOf(check.cwd);
     if (parsed === undefined || at === undefined) return parsed;
     return { ...parsed, value: { clone_families: parsed.value.clone_families.map((family) => rebaseFinding(family, at)) } };
   });
   // istanbul's keys and a test report's names are absolute, so making them relative to the repo puts them on its root.
+  const covered = readChannel('test', 'coverage', (text, check) => {
+    const files = parseCoverage(text, repo);
+    return files === undefined ? undefined : { files, measures: (check.adapter === null ? undefined : MEASURES[check.adapter]) ?? [] };
+  });
   const coverage = merged(
-    readChannel('test', 'coverage', (text) => parseCoverage(text, repo)),
+    covered?.map((report) => report.files),
     sortedPaths,
   );
   const test = merged(
-    readChannel('test', 'test', (text) => parseTest(text, repo)),
+    readChannel('test', 'test', (text, check) => (check.adapter === 'go-test' ? readGoTestResults(text, repo, check.cwd ?? '') : parseTest(text, repo))),
     (all) => ({ results: sortedPaths(all.map((report) => report.results)) }),
   );
   const mutation = merged(
-    readChannel('mutation', 'mutation', (text, at) => {
+    readChannel('mutation', 'mutation', (text, check) => {
       const parsed = parseMutation(text);
+      const at = onRootOf(check.cwd);
       return parsed === undefined || at === undefined ? parsed : parsed.map((file) => ({ ...file, path: at(file.path) }));
     }),
     sortedPaths,
   );
   const security = merged(
-    readChannel('security', 'security', (text, at) => {
+    readChannel('security', 'security', (text, check): Security | undefined => {
+      if (check.adapter !== null && FINDINGS.has(check.adapter)) {
+        const findings = findingsOf(check, text, repo);
+        // A config scanner counts no vulnerable packages, so it carries no counts at all (C2).
+        return findings === undefined ? undefined : { vulnerabilities: {}, findings };
+      }
       const parsed = parseSecurity(text);
+      const at = onRootOf(check.cwd);
       return parsed === undefined || at === undefined ? parsed : securityOnRoot(parsed, at);
     }),
     gatherSecurity,
   );
   const lint = merged(
-    readChannel('lint', 'lint', (text, at) => {
-      const parsed = parseLint(text);
-      return parsed === undefined || at === undefined ? parsed : { diagnostics: parsed.diagnostics.map((finding) => ({ ...finding, path: at(finding.path) })) };
+    readChannel('lint', 'lint', (text, check) => {
+      const diagnostics = reported(text, check, (raw) => parseLint(raw)?.diagnostics);
+      return diagnostics === undefined ? undefined : { diagnostics };
+    }),
+    (all) => ({ diagnostics: all.flatMap((report) => report.diagnostics).toSorted((a, b) => byPath(a.path, b.path) || byPath(a.severity, b.severity)) }),
+  );
+  const types = merged(
+    readChannel('types', 'types', (text, check) => {
+      const diagnostics = findingsOf(check, text, repo);
+      return diagnostics === undefined ? undefined : { diagnostics };
     }),
     (all) => ({ diagnostics: all.flatMap((report) => report.diagnostics).toSorted((a, b) => byPath(a.path, b.path) || byPath(a.severity, b.severity)) }),
   );
   const struct = merged(
-    readChannel('struct', 'struct', (text, at) => {
-      const parsed = parseStruct(text);
-      return parsed === undefined || at === undefined ? parsed : { matches: parsed.matches.map((finding) => ({ ...finding, path: at(finding.path) })) };
+    readChannel('struct', 'struct', (text, check) => {
+      const matches = reported(text, check, (raw) => parseStruct(raw)?.matches);
+      return matches === undefined ? undefined : { matches };
     }),
     (all) => ({ matches: all.flatMap((report) => report.matches).toSorted((a, b) => byPath(a.path, b.path) || byPath(a.severity, b.severity)) }),
   );
@@ -757,6 +858,8 @@ function readChannels(dir: string, repo: string, summary: CheckRun): Omit<Extrac
     ...(deadSchema === undefined ? {} : { dead: deadSchema }),
     ...(dupesSchema === undefined ? {} : { dupes: dupesSchema }),
   };
+  // The kinds of file the coverage speaks for, which every other kind's files are never a gap against (D176).
+  const coverage_extensions = covered === undefined ? undefined : [...new Set(covered.flatMap((report) => report.measures))].toSorted(byPath);
 
   return {
     fallow_schemas,
@@ -766,10 +869,12 @@ function readChannels(dir: string, repo: string, summary: CheckRun): Omit<Extrac
     ...(dead === undefined ? {} : { dead }),
     ...(dupes === undefined ? {} : { dupes }),
     ...(coverage === undefined ? {} : { coverage }),
+    ...(coverage_extensions === undefined ? {} : { coverage_extensions }),
     ...(mutation === undefined ? {} : { mutation }),
     ...(test === undefined ? {} : { test }),
     ...(security === undefined ? {} : { security }),
     ...(lint === undefined ? {} : { lint }),
+    ...(types === undefined ? {} : { types }),
     ...(struct === undefined ? {} : { struct }),
   };
 }

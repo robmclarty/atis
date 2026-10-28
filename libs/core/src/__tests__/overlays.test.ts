@@ -170,6 +170,13 @@ describe('coverage gaps (§8)', () => {
     ]);
   });
 
+  test('a report speaks only for the kinds of file its tool measures: a terrain file of another kind is never unmeasured against it (D176)', () => {
+    // Read as a report whose tool measures `.tsx` files alone, `d.ts` holds code it could never have named.
+    const overlays = overlaysOf({ check: ran({ coverage, coverage_extensions: ['.tsx'] }) });
+
+    expect(overlays.coverage_gaps).toEqual([{ path: 'a.ts', statements: 3, uncovered: 2 }]);
+  });
+
   test("a report that names none of the tree is muted, never read as every file unmeasured (D122)", () => {
     const overlays = overlaysOf({ check: ran({ coverage }), coverage_unnamed: true });
 

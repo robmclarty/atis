@@ -318,6 +318,19 @@ test('a changed file whose hunks meet code, and that an existing report never na
   expect(renamed.evidence.unmeasured).toEqual(['src/pm/util.ts']);
 });
 
+test('a coverage report speaks only for the kinds of file its tool measures: a changed file of another kind is never unmeasured against it (D176, D80)', () => {
+  const changed = [change('src/pm/tools.ts'), change('src/pm/util.ts')];
+
+  // istanbul's kinds include `.ts`, so the file the report omits is still a gap.
+  const istanbul = evidenceFor(CHAIN, changed, ran({ ...TOOLS_CLOSED, coverage_extensions: ['.js', '.ts'] }), ALL_CODE);
+  expect(istanbul.evidence.unmeasured).toEqual(['src/pm/util.ts']);
+
+  // Read as a report whose tool measures only `.go` files, the same omission leaves `util.ts` no gap: its kind has no coverage channel.
+  const other = evidenceFor(CHAIN, changed, ran({ ...TOOLS_CLOSED, coverage_extensions: ['.go'] }), ALL_CODE);
+  expect(other.evidence.unmeasured).toEqual([]);
+  expect(fileAt(other.files, 'src/pm/util.ts').unmeasured).toBe(false);
+});
+
 test('a file of types, a deleted file, a test and a map with no coverage channel are never unmeasured (D80)', () => {
   const report = ran(TOOLS_CLOSED);
 
@@ -584,6 +597,27 @@ test('a red slot naming a changed file is IFR, and a skipped slot is not red (D6
 
   const skipped = categoryFor(CHAIN, [change('src/pm/tools.ts')], ran(TOOLS_CLOSED, [slot('types'), slot('mutation', false, true)]));
   expect(skipped.category).toBe('VFR');
+});
+
+test("a type checker's findings place a red types slot, and a config scanner's place a red security, on the files they flag (D176, D69)", () => {
+  const types = categoryFor(
+    CHAIN,
+    [change('src/pm/tools.ts')],
+    ran({ ...TOOLS_CLOSED, types: { diagnostics: [{ path: 'src/pm/tools.ts', severity: 'error' }, { path: 'src/doctor.ts', severity: 'warning' }] } }, [slot('types', false)]),
+  );
+  expect(types.category).toBe('IFR');
+  // A warning could not fail the check, so the red names only the error's file.
+  expect(types.slots).toContainEqual({ name: 'types', ok: false, skipped: false, scope: ['src/pm/tools.ts'], change: ['src/pm/tools.ts'] });
+
+  const flagged = (path: string): CheckArtifacts =>
+    ran({ ...TOOLS_CLOSED, security: { vulnerabilities: {}, findings: [{ path, severity: 'error' }] } }, [slot('security', false)]);
+  const onChange = categoryFor(CHAIN, [change('src/pm/tools.ts')], flagged('src/pm/tools.ts'));
+  expect(onChange.category).toBe('IFR');
+  expect(onChange.slots).toContainEqual({ name: 'security', ok: false, skipped: false, scope: ['src/pm/tools.ts'], change: ['src/pm/tools.ts'] });
+  // A flagged file the change never touched is standing state.
+  const standing = categoryFor(CHAIN, [change('src/pm/tools.ts')], flagged('src/doctor.ts'));
+  expect(standing.category).toBe('VFR');
+  expect(standing.slots).toContainEqual({ name: 'security', ok: false, skipped: false, scope: ['src/doctor.ts'], change: [] });
 });
 
 test('a red slot naming only untouched files, and a global red slot, each leave an otherwise VFR change VFR (D69)', () => {

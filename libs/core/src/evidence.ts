@@ -133,16 +133,27 @@ export function severityRank(severity: string): number {
 }
 
 /**
- * `security.json`: the audit's counts, and its advisories where the report
- * names them. Without `advisories` no advisory can be tied to the change, so
- * every one is standing state (C2, D83).
+ * One finding a lint, struct, type or config tool reports, kept to the file it
+ * names and its severity: the tool's own for oxlint and ast-grep, and for a
+ * finding read through checkride's parsers, `error` where it can fail its
+ * check and `warning` where it cannot, which is all `failingPaths` asks of it
+ * (D176).
  */
-export type Security = { readonly vulnerabilities: Readonly<Record<string, number>>; readonly advisories?: readonly Advisory[] };
-
-/** One finding a lint or struct tool reports, kept to the file it names and the severity the tool gave it. */
 export type ReportedFinding = { readonly path: string; readonly severity: string };
 
-/** oxlint's `lint.json`: its diagnostics. */
+/**
+ * `security.json`: the audit's counts, and its advisories where the report
+ * names them. Without `advisories` no advisory can be tied to the change, so
+ * every one is standing state (C2, D83). A config scanner's findings, which
+ * name files rather than packages, sit beside them (trivy, D176).
+ */
+export type Security = {
+  readonly vulnerabilities: Readonly<Record<string, number>>;
+  readonly advisories?: readonly Advisory[];
+  readonly findings?: readonly ReportedFinding[];
+};
+
+/** A linter's or a type checker's findings: oxlint's `lint.json`, or what checkride's parsers read from another pack's tools (D176). */
 export type Lint = { readonly diagnostics: readonly ReportedFinding[] };
 
 /** ast-grep's `struct.json`: its matches. */
@@ -221,6 +232,14 @@ export type CheckArtifacts =
        * muted none (D180, C2).
        */
       readonly muted?: readonly string[];
+      /**
+       * The extensions of the files the coverage report can name, by the tool
+       * that wrote it; absent, it speaks for every file. A changed file of
+       * any other kind has no coverage channel, so it is never unmeasured: no
+       * checkride pack writes coverage for Go, Python, Terraform or shell
+       * (D176, D80).
+       */
+      readonly coverage_extensions?: readonly string[];
       readonly health?: Health;
       readonly dead?: Dead;
       readonly dupes?: Dupes;
@@ -229,6 +248,8 @@ export type CheckArtifacts =
       readonly test?: TestReport;
       readonly security?: Security;
       readonly lint?: Lint;
+      /** A type checker's findings, where atis reads the one that ran: mypy, basedpyright or `terraform validate` (D176). */
+      readonly types?: Lint;
       readonly struct?: Struct;
     };
 
@@ -477,6 +498,15 @@ export function trustCoverage(check: CheckArtifacts, sources: ReadonlySet<string
 }
 
 /**
+ * Whether a coverage report could name `path`: any file, unless the reader
+ * knows the kinds of file the tool that wrote it measures. A file of another
+ * kind has no coverage channel, never a gap (D176, C2).
+ */
+export function coverageSpeaksFor(extensions: readonly string[] | undefined, path: string): boolean {
+  return extensions === undefined || extensions.some((extension) => path.endsWith(extension));
+}
+
+/**
  * Whether a report that exists leaves this changed file unmeasured (D80): a
  * terrain file that still stands at head, one of whose hunks meets a
  * statement that leaves code, and that the report never names. A deleted file
@@ -489,8 +519,9 @@ function isUnmeasured(
   file: ChangedFile,
   report: ReadonlyMap<string, CoverageFile> | undefined,
   code: ReadonlyMap<string, readonly CodeSpan[]>,
+  extensions: readonly string[] | undefined,
 ): boolean {
-  if (report === undefined || report.has(file.path)) return false;
+  if (report === undefined || report.has(file.path) || !coverageSpeaksFor(extensions, file.path)) return false;
   if (file.kind === 'deleted' || file.cell === undefined) return false;
   return (code.get(file.path) ?? []).some((span) => file.hunks.some((hunk) => meets(span, hunk)));
 }
@@ -518,7 +549,7 @@ export function computeEvidence(inputs: EvidenceInputs): EvidenceResult {
       return {
         path: file.path,
         ...(coverage === undefined ? {} : { coverage: patchCoverage(file.path, changedLines, coverage) }),
-        unmeasured: isUnmeasured(file, coverageOf, inputs.code),
+        unmeasured: isUnmeasured(file, coverageOf, inputs.code, check?.coverage_extensions),
         mutants: mutation === undefined ? [] : liveMutants(file.path, changedLines, mutation),
         cells_reached: reached.get(file.path) ?? 0,
         escaped_interface: escapedInterface(file, cells, inputs.headEdges),
@@ -600,7 +631,7 @@ export type RedSplitInputs = {
   readonly stitches: readonly Stitch[];
   /** The places of the `health`, `dupes` and `dead` findings, by slot name; a slot with none here puts no file on the change. */
   readonly places: ReadonlyMap<string, readonly FindingPlace[]>;
-  /** The manifests whose added or moved packages brought an advisory: the only files a red `security` is on the change through (D83). */
+  /** The manifests whose added or moved packages brought an advisory, and the files a config scanner flagged: the only files a red `security` is on the change through (D83, D176). */
   readonly brought?: ReadonlySet<string>;
 };
 
@@ -731,7 +762,11 @@ function failingPaths(findings: readonly ReportedFinding[]): readonly string[] {
   return sortUnique((errors.length === 0 ? findings : errors).map((finding) => finding.path));
 }
 
-/** The paths a red slot's own raw output names, for the seven slots whose output is about files, `security` by the manifests its advisories start from (D27, D67, D83). */
+/**
+ * The paths a red slot's own raw output names, for the eight slots whose
+ * output is about files, `security` by the manifests its advisories start
+ * from and the files a config scanner flagged (D27, D67, D83, D176).
+ */
 function namedPaths(slot: string, check: RanCheck): readonly string[] {
   if (slot === 'test') {
     return sortUnique((check.test?.results ?? []).filter((result) => result.status === FAILED).map((result) => result.path));
@@ -744,9 +779,11 @@ function namedPaths(slot: string, check: RanCheck): readonly string[] {
   }
   if (slot === 'dupes') return sortUnique((check.dupes?.clone_families ?? []).flatMap(pathsOf));
   if (slot === 'lint') return failingPaths(check.lint?.diagnostics ?? []);
+  if (slot === 'types') return failingPaths(check.types?.diagnostics ?? []);
   if (slot === 'struct') return failingPaths(check.struct?.matches ?? []);
   if (slot === SECURITY) {
-    return sortUnique((check.security?.advisories ?? []).flatMap((advisory) => advisory.paths.map((path) => path.manifest)));
+    const manifests = (check.security?.advisories ?? []).flatMap((advisory) => advisory.paths.map((path) => path.manifest));
+    return sortUnique([...manifests, ...failingPaths(check.security?.findings ?? [])]);
   }
   return [];
 }
@@ -1246,7 +1283,11 @@ export function computeCategory(inputs: CategoryInputs): Checks {
   }
 
   const slots = scopedSlots(check);
-  const brought = new Set(broughtAdvisories(check.security, inputs.deps_added, inputs.deps_moved).map((entry) => entry.manifest));
+  // A config scanner's findings name the files they stand on, which the change puts security on when it touches one (D176).
+  const brought = new Set([
+    ...broughtAdvisories(check.security, inputs.deps_added, inputs.deps_moved).map((entry) => entry.manifest),
+    ...failingPaths(check.security?.findings ?? []),
+  ]);
   const red = splitRedSlots({ slots, changed: inputs.changed, stitches: inputs.stitches, places: findingPlaces(check, inputs.structure ?? {}), brought });
   return {
     category: categoryOf(inputs, check, red),

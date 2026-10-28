@@ -9,6 +9,7 @@ export * from './check.js';
 export * from './fallow.js';
 export * from './git.js';
 export * from './go.js';
+export * from './gotest.js';
 export * from './imports.js';
 export * from './producers.js';
 export * from './python.js';

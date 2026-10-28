@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 119 — fix(cli): read checkride's targets, each artifact by its check's adapter
+**Current step:** 85 — feat(cli): read each language's evidence as checkride writes it
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -140,7 +140,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 82. feat(cli): scan a Python project into the same scan shape
 - ☑ 83. feat(cli): scan Terraform modules into the same scan shape
 - ☑ 84. feat(cli): scan shell scripts into the same scan shape
-- ☐ 119. fix(cli): read checkride's targets, each artifact by its check's adapter
+- ☑ 119. fix(cli): read checkride's targets, each artifact by its check's adapter
 - ☐ 85. feat(cli): read each language's evidence as checkride writes it
 - ☐ 86. chore(fixtures): render one reviewed PR per new language
 - ☐ 87. docs(producers): write the contract a language producer fills
@@ -247,6 +247,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [ ] a for loop that sources every script a glob matches (for f in "$DIR"/lib/*.sh; do source "$f"; done) reaches none of them; matching the glob against the tracked scripts would give each an edge
 - [ ] an extensionless script with a shell shebang (bin/deploy, .husky/pre-commit) stays on the shore's scripts row, since a producer claims files by extension alone (D114); claiming by shebang too would bring such scripts into the terrain
 - [ ] serve a split repo's raw slot output from each target's directory: the HUD part for lint asks serve.ts for .check/lint.*, which a run split into targets writes as .check/<target>/lint.json, so it opens empty
+- [ ] read tsc's and go-build's findings through checkride's parsers, so a type error on a changed file puts a red types slot on the change; today a TypeScript or Go types red stays global, so standing, and the map names tsc and go-build as unparsed
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -3029,3 +3030,5 @@ folder, so it rides the branch into the PR.)*
   - `pnpm-workspace.yaml`: pnpm 11 refused the install until the native build was denied.
 
   Two gaps are parked: P94 (glob-sourcing loops) and P95 (extensionless shebang scripts).
+
+- 2026-10-28 — step 119 checkpointed · d15333487 — fix(cli): read checkride's targets, each artifact by its check's adapter (1 drift, 29m)

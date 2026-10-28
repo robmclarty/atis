@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -6,10 +6,13 @@ import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, expect, test } from 'vitest';
 
 import {
+  goModulePath,
+  goWorkUses,
   parseBaseline,
   parseCoverage,
   parseDead,
   parseDupes,
+  parseGoTestEvents,
   parseHealth,
   parseLint,
   parseMutation,
@@ -19,13 +22,15 @@ import {
   parseTest,
   readCheck,
   readCheckDir,
+  readGoTestResults,
   slotsOf,
 } from '../sources/index.js';
 import type { CheckInputs, SummaryCheck } from '../sources/index.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FIXTURE_REPO = join(HERE, '..', '..', 'fixtures', 'check');
-const TARGETS_FIXTURE = join(HERE, '..', '..', 'fixtures', 'check-targets');
+const TARGETS_REPO = join(HERE, '..', '..', 'fixtures', 'check-targets');
+const TARGETS_FIXTURE = join(TARGETS_REPO, 'check');
 
 function writeTree(root: string, tree: Readonly<Record<string, string>>): string {
   for (const [path, content] of Object.entries(tree)) {
@@ -515,8 +520,11 @@ test('reads the trimmed checkride fixture: mode check, the summary, and every fa
   expect(result.summary.checks_run).toBe(19);
   expect(result.summary.checks.some((slot) => slot.name === 'test' && slot.ok)).toBe(true);
   expect(result.fallow_schemas).toEqual({ health: 9, dead: 9, dupes: 9 });
-  // Every check here ran an adapter atis has a parser for, so none is muted and the reading is the one it always was (D180).
-  expect(result.muted).toBeUndefined();
+  // tsc fills types, which atis reads only from the type checkers it places, so that slot alone is muted and named (D176, D180).
+  expect(result.muted).toEqual(['types: atis has no parser for tsc']);
+  expect(result.types).toBeUndefined();
+  // vitest's coverage speaks for the files the TypeScript producer reads, and no other kind is ever a gap against it (D176).
+  expect(result.coverage_extensions).toEqual(['.cjs', '.cts', '.js', '.jsx', '.mjs', '.mts', '.ts', '.tsx']);
 });
 
 test('health.json: file_scores, findings by path with the exceeded threshold and their lines, and fan_in_p95', () => {
@@ -611,18 +619,28 @@ test("the polyglot capture reads as one summary: each target's checks of a slot 
   ]);
 });
 
-test("golangci-lint's, shellcheck's and go test's files never reach a parser written for another tool: each channel is muted, its adapter named (D180, C2)", () => {
+test("each target's findings are read by its own tool's parser and put on the repo's root: golangci-lint's on api/, shellcheck's on scripts/ (D176, D180)", () => {
   const result = expectCheck(targetsResult);
-  // Read by the slot's name alone, oxlint's parser would be handed api/lint.json; it is there, and never read.
-  expect(existsSync(join(TARGETS_FIXTURE, 'api', 'lint.json'))).toBe(true);
-  expect(result.muted).toEqual([
-    'test: atis has no parser for go-test, which api:test ran',
-    'lint: atis has no parser for golangci-lint, which api:lint ran',
-    'lint: atis has no parser for shellcheck, which scripts:lint ran',
+  expect(result.lint?.diagnostics).toEqual([
+    { path: 'api/cmd/api/remove.go', severity: 'error' },
+    { path: 'api/internal/greet/dot.go', severity: 'error' },
+    // ShellCheck's level is info, but at its default severity every comment fails the check.
+    { path: 'scripts/deploy.sh', severity: 'error' },
   ]);
-  expect(result.lint).toBeUndefined();
-  expect(result.test).toBeUndefined();
+});
+
+test("go test's failing package stands for its _test.go file, and the run says why Go's files have no coverage, and which type checkers it cannot place (D176, C2)", () => {
+  const result = expectCheck(targetsResult);
+  // cmd/api has no test files, so its skip names no file.
+  expect(result.test?.results).toEqual([{ path: 'api/internal/greet/greet_test.go', status: 'failed' }]);
   expect(result.coverage).toBeUndefined();
+  expect(result.coverage_extensions).toBeUndefined();
+  expect(result.types).toBeUndefined();
+  expect(result.muted).toEqual([
+    'coverage: go-test writes none, which api:test ran',
+    'types: atis has no parser for tsc, which web:types ran',
+    'types: atis has no parser for go-build, which api:types ran',
+  ]);
 });
 
 test("a check of the repo as a whole reads from .check/'s root, its paths already on it: ast-grep's dot import in the Go service", () => {
@@ -709,12 +727,12 @@ test("a slot one target fills with a tool atis cannot read is muted whole, and a
   writeTree(root, {
     '.check/summary.json': splitSummary([
       targetCheck('web', 'web', 'lint', 'oxlint', false),
-      targetCheck('api', 'api', 'lint', 'golangci-lint'),
+      targetCheck('api', 'api', 'lint', 'clippy'),
       targetCheck('web', 'web', 'test', 'vitest'),
       targetCheck('docs', 'docs', 'test', 'vitest'),
     ]),
     '.check/web/lint.json': OXLINT_REPORT,
-    '.check/api/lint.json': JSON.stringify({ Issues: [] }),
+    '.check/api/lint.jsonl': '{"reason":"build-finished","success":true}\n',
     '.check/web/test.json': report('web/src/a.test.ts'),
     '.check/web/coverage/coverage-final.json': JSON.stringify({ [at('web/src/a.ts')]: { statementMap: {}, s: {} } }),
     '.check/docs/test.json': report('docs/src/b.test.ts'),
@@ -722,9 +740,9 @@ test("a slot one target fills with a tool atis cannot read is muted whole, and a
   const result = expectCheck(readCheck(root));
   rmSync(root, { recursive: true, force: true });
 
-  // web's oxlint report is readable, but the red it would scope may be the Go service's, which the reader cannot place.
+  // web's oxlint report is readable, but the red it would scope may be the Rust crate's, which the reader cannot place.
   expect(result.lint).toBeUndefined();
-  expect(result.muted).toEqual(['lint: atis has no parser for golangci-lint, which api:lint ran']);
+  expect(result.muted).toEqual(['lint: atis has no parser for clippy, which api:lint ran']);
   // Both targets wrote a test report; only web wrote coverage, so docs' files would read as unmeasured gaps against it.
   expect(result.test?.results.map((entry) => entry.path)).toEqual(['docs/src/b.test.ts', 'web/src/a.test.ts']);
   expect(result.coverage).toBeUndefined();
@@ -750,4 +768,149 @@ test("a summary that never split still reads each file by its adapter: biome's l
   expect(result.dead).toBeUndefined();
   expect(result.muted).toEqual(['dead: atis has no parser for knip', 'lint: atis has no parser for biome']);
   expect(result.test?.results).toEqual([{ path: 'src/a.test.ts', status: 'passed' }]);
+});
+
+// ---------------------------------------------------------------------------
+// go test's events: a package stands for its _test.go files (D176, D30)
+// ---------------------------------------------------------------------------
+
+test("parseGoTestEvents reads each package's outcome from its own action, never a test's, from captured go test -json output", () => {
+  const red = readFileSync(join(TARGETS_FIXTURE, 'api', 'test.jsonl'), 'utf8');
+  expect(parseGoTestEvents(red)).toEqual([
+    { package: 'example.com/stack/api/cmd/api', status: 'skipped' },
+    { package: 'example.com/stack/api/internal/greet', status: 'failed' },
+  ]);
+  // A passing run, as the example's green capture prints it: the test's pass, then the package's.
+  const green = [
+    '{"Time":"2026-10-28T11:57:47.515778-07:00","Action":"run","Package":"example.com/stack/api/internal/greet","Test":"TestHello"}',
+    '{"Time":"2026-10-28T11:57:47.51581-07:00","Action":"pass","Package":"example.com/stack/api/internal/greet","Test":"TestHello","Elapsed":0}',
+    '{"Time":"2026-10-28T11:57:47.517661-07:00","Action":"pass","Package":"example.com/stack/api/internal/greet","Elapsed":1.028}',
+  ].join('\n');
+  expect(parseGoTestEvents(green)).toEqual([{ package: 'example.com/stack/api/internal/greet', status: 'passed' }]);
+  // A failing test whose package never reported names nothing, and text that holds no event is no run at all (C2).
+  expect(parseGoTestEvents('{"Action":"fail","Package":"p","Test":"TestX"}\n')).toEqual([]);
+  expect(parseGoTestEvents('ok  \texample.com/x\t0.1s\n')).toBeUndefined();
+});
+
+test("goModulePath reads a go.mod's module, quoted or not, and goWorkUses each directory a go.work uses, in either form", () => {
+  expect(goModulePath('module example.com/stack/api\n\ngo 1.24\n')).toBe('example.com/stack/api');
+  expect(goModulePath('// a comment\nmodule "example.com/quoted" // trailing\n')).toBe('example.com/quoted');
+  expect(goModulePath('go 1.24\n')).toBeUndefined();
+  expect(goWorkUses('go 1.24\n\nuse ./tools\nuse (\n\t./svc // the service\n\t"./lib"\n)\n')).toEqual(['./tools', './svc', './lib']);
+});
+
+test("readGoTestResults puts each package of a workspace in its module's directory, on every _test.go file there, and names nothing outside one", () => {
+  const root = writeTree(tempRepo('go-work'), {
+    'go/go.work': 'go 1.24\n\nuse (\n\t./svc\n\t./lib\n)\n',
+    'go/svc/go.mod': 'module example.com/svc\n',
+    'go/svc/internal/store/store_test.go': 'package store\n',
+    'go/svc/internal/store/extra_test.go': 'package store\n',
+    'go/svc/internal/store/store.go': 'package store\n',
+    'go/lib/go.mod': 'module example.com/svc/lib\n',
+    'go/lib/text_test.go': 'package lib\n',
+  });
+  const events = [
+    { Action: 'fail', Package: 'example.com/svc/internal/store' },
+    // The longer module path wins: lib is its own module, not a package of svc.
+    { Action: 'pass', Package: 'example.com/svc/lib' },
+    { Action: 'pass', Package: 'example.com/elsewhere' },
+  ]
+    .map((event) => JSON.stringify(event))
+    .join('\n');
+  const report = readGoTestResults(events, root, 'go');
+  rmSync(root, { recursive: true, force: true });
+  expect(report).toEqual({
+    results: [
+      { path: 'go/lib/text_test.go', status: 'passed' },
+      { path: 'go/svc/internal/store/extra_test.go', status: 'failed' },
+      { path: 'go/svc/internal/store/store_test.go', status: 'failed' },
+    ],
+  });
+});
+
+// ---------------------------------------------------------------------------
+// the other packs' findings, read through checkride's own parsers (D176)
+// ---------------------------------------------------------------------------
+
+/** The files `findings` name, each once, in the order they come. */
+function files(findings: readonly { readonly path: string }[] | undefined): readonly string[] {
+  return [...new Set((findings ?? []).map((finding) => finding.path))];
+}
+
+/** One of checkride's captures, its scratch repo's absolute paths moved onto `root`, where the test lays it. */
+function captured(name: string, root: string): string {
+  const text = readFileSync(join(TARGETS_REPO, 'findings', name), 'utf8');
+  return ['/private/tmp/fixture-repo', '/tmp/fixture-repo', '/private/tmp/fixture-tf', '/tmp/fixture-tf'].reduce((moved, from) => moved.replaceAll(from, root), text);
+}
+
+test("ruff and mypy, tflint, terraform validate and trivy, and staticcheck are read by checkride's parsers onto their targets: lint, types and security name the files they flag (D176)", () => {
+  const root = tempRepo('packs');
+  const target = (name: string, slot: string, adapter: string): Readonly<Record<string, unknown>> => ({ ...targetCheck(name, name, slot, adapter, false), pack: name });
+  writeTree(root, {
+    '.check/summary.json': splitSummary([
+      target('py', 'lint', 'ruff'),
+      target('py', 'types', 'mypy'),
+      target('infra', 'lint', 'tflint'),
+      target('infra', 'types', 'terraform-validate'),
+      target('infra', 'security', 'trivy-config'),
+      target('svc', 'lint', 'staticcheck'),
+    ]),
+    '.check/py/lint.json': captured('findings-ruff.json', root),
+    '.check/py/types.jsonl': captured('findings-mypy.jsonl', root),
+    '.check/infra/lint.json': captured('findings-tflint.json', root),
+    '.check/infra/types.json': captured('findings-terraform-validate.json', root),
+    '.check/infra/security.json': captured('findings-trivy-config.json', root),
+    '.check/svc/lint.jsonl': captured('findings-staticcheck.jsonl', root),
+  });
+  const result = expectCheck(readCheck(root));
+  rmSync(root, { recursive: true, force: true });
+
+  expect(result.muted).toBeUndefined();
+  expect(files(result.lint?.diagnostics)).toEqual(['infra/main.tf', 'infra/modules/bucket/main.tf', 'infra/modules/greet/main.tf', 'py/src/kit/__init__.py', 'svc/internal/store/store.go']);
+  // terraform validate's warning and mypy's note could not fail their checks, so they read as warnings beside the errors that did.
+  expect(result.types?.diagnostics).toEqual([
+    { path: 'infra/main.tf', severity: 'error' },
+    { path: 'infra/main.tf', severity: 'warning' },
+    { path: 'infra/modules/greet/main.tf', severity: 'error' },
+    { path: 'py/src/kit/__init__.py', severity: 'error' },
+    { path: 'py/src/kit/__init__.py', severity: 'error' },
+    { path: 'py/src/kit/__init__.py', severity: 'warning' },
+  ]);
+  // A config scanner names files, not packages, and counts none (C2).
+  expect(result.security?.vulnerabilities).toEqual({});
+  expect(result.security?.advisories).toBeUndefined();
+  expect(files(result.security?.findings)).toEqual(['infra/main.tf', 'infra/modules/bucket/main.tf']);
+});
+
+test('basedpyright at the root of a repo that never split reads its findings onto the paths it printed', () => {
+  const root = tempRepo('basedpyright');
+  writeTree(root, {
+    '.check/summary.json': splitSummary([{ name: 'types', adapter: 'basedpyright', pack: 'python', ok: false, exit_code: 1, duration_ms: 1, output_file: 'types.json' }]),
+    '.check/types.json': captured('findings-basedpyright.json', root),
+  });
+  const result = expectCheck(readCheck(root));
+  rmSync(root, { recursive: true, force: true });
+  expect(result.types?.diagnostics.map((finding) => finding.path)).toContain('py/src/kit/__init__.py');
+  expect(result.types?.diagnostics.some((finding) => finding.severity === 'error')).toBe(true);
+});
+
+test("a pytest run counts as its check's verdict alone beside vitest's report and coverage, which speak only for the TypeScript producer's files (D176)", () => {
+  const root = tempRepo('pytest');
+  writeTree(root, {
+    '.check/summary.json': splitSummary([targetCheck('web', 'web', 'test', 'vitest'), { ...targetCheck('py', 'py', 'test', 'pytest', false), pack: 'python' }]),
+    '.check/web/test.json': JSON.stringify({ testResults: [{ name: join(root, 'web/src/a.test.ts'), status: 'passed' }] }),
+    '.check/web/coverage/coverage-final.json': JSON.stringify({ [join(root, 'web/src/a.ts')]: { statementMap: {}, s: {} } }),
+  });
+  const result = expectCheck(readCheck(root));
+  rmSync(root, { recursive: true, force: true });
+
+  expect(result.summary.checks).toEqual([{ name: 'test', ok: false, skipped: false }]);
+  expect(result.test?.results).toEqual([{ path: 'web/src/a.test.ts', status: 'passed' }]);
+  expect(result.coverage?.map((file) => file.path)).toEqual(['web/src/a.ts']);
+  expect(result.coverage_extensions).toContain('.ts');
+  expect(result.coverage_extensions).not.toContain('.py');
+  expect(result.muted).toEqual([
+    'coverage: pytest writes none, which py:test ran',
+    'test: pytest writes no report, which py:test ran, so the run counts as its verdict alone',
+  ]);
 });
