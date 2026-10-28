@@ -618,8 +618,8 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     return undefined;
   };
   /**
-   * What an agent named over `atis mcp` (D178), held to the map the world
-   * draws: the camera flies to its stop, or the rail brings its shore
+   * What an agent named over `atis mcp` (D178), or the tour's stepper steps
+   * to (D112), held to the map the world draws: the camera flies to its stop, or the rail brings its shore
    * group's block into view, its labels are written as a notice row's hover
    * writes them until the reader takes the camera, and a notice flares at its
    * anchor, as the scheduler allows one flare in flight (C12). The canvas
@@ -633,7 +633,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     litTarget = lit.target;
     placeLabels = true;
     if (lit.flare !== undefined) scheduler.flare(lit.flare);
-    canvas.dataset['highlight'] = asked.kind === 'file' ? asked.path : `notice ${String(asked.rank)}`;
+    canvas.dataset['highlight'] = asked.kind === 'file' ? asked.path : asked.kind === 'notice' ? `notice ${String(asked.rank)}` : `stop ${asked.target}`;
   };
   // The minimap asks for a place and the camera eases there (D154); a notice's row asks for a stop and the camera flies there; the breadcrumb's buttons ask for the exploded view and the wiring; the scrubber asks for a frame.
   nav.steer({

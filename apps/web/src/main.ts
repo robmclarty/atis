@@ -5,8 +5,10 @@
  * comes through one registry (D156), which the dev panel writes and the tab's
  * session keeps. A page the CLI served listens on its socket: for the maps
  * a watch pushes, each new one handed to the world and the chrome (D106),
- * and for what an agent asks it to show over `atis mcp` (D178). A page
- * opened as a still for a comment draws no chrome (`?cinema`, D108).
+ * and for what an agent asks it to show over `atis mcp` (D178). A page the
+ * CLI served a tour beside the map reads it too, and the chrome plays it
+ * (D112). A page opened as a still for a comment draws no chrome (`?cinema`,
+ * D108).
  */
 
 import { createElement } from 'react';
@@ -17,6 +19,8 @@ import { prOf } from './diff.js';
 import { loadMap, mapUrl, servedToken } from './load.js';
 import type { MapState } from './load.js';
 import { pushedHighlight } from './highlight.js';
+import { loadTour, tourUrl } from './tour.js';
+import type { Tour } from './tour.js';
 import { createNav } from './nav.js';
 import { createRegistry, sessionStore } from './registry.js';
 import { viewOf } from './view.js';
@@ -45,11 +49,16 @@ const chrome = createRoot(chromeRoot);
 const token = servedToken(location.search);
 // The one line between the chrome and the world: the minimap reads the view from it, and moves the camera through it.
 const nav = createNav();
-const show = (state: MapState): void => chrome.render(createElement(Chrome, { state, registry, nav, dev: import.meta.env.DEV, token }));
+// The tour served beside the map, read alongside it when the URL says one is served (D112).
+let tour: Tour | undefined;
+const show = (state: MapState): void => chrome.render(createElement(Chrome, { state, registry, nav, dev: import.meta.env.DEV, token, tour }));
 
 const url = mapUrl(location.search);
 show({ status: 'loading', url });
+const touring = tourUrl(location.search);
+const toured = touring === undefined ? Promise.resolve(undefined) : loadTour(touring, (target) => fetch(target));
 const state = await loadMap(url, (target) => fetch(target));
+tour = await toured;
 show(state);
 if (state.status === 'ready') {
   await drawWorld(canvas, state.map, view, registry, nav, { token, pr: prOf(location.search) });

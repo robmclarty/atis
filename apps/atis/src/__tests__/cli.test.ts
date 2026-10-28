@@ -209,6 +209,18 @@ test('the served default exits 2 and names pnpm build when the web app was never
   });
 }, MINUTE);
 
+test('--tour plays in the served world alone, so beside --out, --svg, --png or --comment it is misuse (D183, C4)', () => {
+  for (const beside of [['--out', 'map.json'], ['--svg', 'atis.svg'], ['--png', 'atis.png']]) {
+    const result = atis(['--repo', REPO, '--base', 'HEAD~1', '--tour', 'tour.json', ...beside]);
+    expect(result.status, beside.join(' ')).toBe(2);
+    expect(result.stderr).toContain('atis: --tour plays a tour in the served world; it takes no --out, --svg or --png');
+  }
+  const comment = atis(['--repo', REPO, '--comment', '--tour', 'tour.json']);
+  expect(comment.status).toBe(2);
+  expect(comment.stderr).toContain('--comment posts a still, so drop --tour');
+  expect(atis(['--help']).stdout).toContain('--tour <file>');
+});
+
 test('--open is a no-op under a test run, and needs --svg', () => {
   const dir = temp('open');
   const out = join(dir, 'map.json');

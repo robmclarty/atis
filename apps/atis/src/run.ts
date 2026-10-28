@@ -53,7 +53,7 @@
 
 import { execFileSync, spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { existsSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { platform, tmpdir } from 'node:os';
 import { basename, join, relative, resolve } from 'node:path';
 
@@ -183,6 +183,8 @@ export type ServeRunOptions = {
   readonly watchEvery?: number | undefined;
   /** Where the watch says what it did: a line per map pushed, or kept when a rebuild failed; stderr unless a test listens. */
   readonly watchLog?: ((line: string) => void) | undefined;
+  /** `--tour <file>`: a tour `apps/tour` wrote for this map, played in the world (D112, D183). */
+  readonly tour?: string | undefined;
 };
 
 /** What the command prints and how it exits: 0 when it wrote or served a map, 2 on misuse or an unreadable repo (C4); `served` while a server runs. */
@@ -838,6 +840,30 @@ function mapOver(options: ServeRunOptions, request: BaseRequest): MapJson {
   return measure(options.repo, { base, head, cache: options.cache !== false, history: options.history }).map;
 }
 
+/** A tour as `apps/tour` writes it, read only as far as the run checks it: the base and head of the map it was written for, over stops the page reads (D183). */
+type TourSides = { readonly text: string; readonly base: string; readonly head: string };
+
+/** The tour at `path`, read loosely as the server only serves it; a file that is no tour throws, as a broken input (C4). */
+function tourAt(path: string): TourSides {
+  let text: string;
+  try {
+    text = readFileSync(path, 'utf8');
+  } catch (error) {
+    throw new Error(`--tour ${path} could not be read: ${messageOf(error)}`, { cause: error });
+  }
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    throw new Error(`--tour ${path} is not JSON`);
+  }
+  if (!isRecord(value) || typeof value['base'] !== 'string' || typeof value['head'] !== 'string' || !Array.isArray(value['stops'])) throw new Error(`--tour ${path} is no tour: it names no base, head and stops`);
+  return { text, base: value['base'], head: value['head'] };
+}
+
+/** A map's two sides as a tour names them, `main..a1b2c3d`. */
+const sidesNamed = (base: string, head: string): string => `${base}..${shortSha(head)}`;
+
 /** A map as the server holds it: its JSON text, and the slots its raw output may be served for. */
 const rebuiltOf = (map: MapJson): Rebuilt => ({ map: serialize(map), slots: map.weather.checks.slots.map((slot) => slot.name) });
 
@@ -853,6 +879,10 @@ const rebuiltOf = (map: MapJson): Rebuilt => ({ map: serialize(map), slots: map.
  * how to reach it in `.atis/serve.json`, so `atis mcp` started in the same
  * repository can point at the tab (D138); a repository that will not take
  * the file is still served, and the run says `atis mcp` will not find it.
+ * Handed `--tour`, it serves the tour beside the map for the world to play,
+ * once it holds it to the map: a tour written for another base or head exits
+ * 2 naming both, since its stops would fly to files this map may not place
+ * (D183).
  * The outcome carries the server, which the caller closes on interrupt, the
  * watch and the file with it; its exit code is 0 once serving, and 2 with no
  * built app to serve or a repository it cannot read (C4).
@@ -862,11 +892,16 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
   if (!existsSync(join(assets, 'index.html'))) return unbuilt(assets);
   try {
     const repo = resolve(options.repo);
+    // The tour is read before the scan is spent, so a broken file fails at once (C4).
+    const tour = options.tour === undefined ? undefined : tourAt(resolve(options.tour));
     const watched = options.watch === true ? watchedIn(repo) : undefined;
     const from = watched === undefined ? undefined : await signatureOf(watched);
     const asTyped = { base: options.base, head: options.head, range: options.range, wholeRepo: options.wholeRepo, cache: options.cache !== false, history: options.history };
     const measured = measure(options.repo, asTyped);
     const { map, timings } = measured;
+    if (tour !== undefined && (tour.base !== map.meta.base || tour.head !== map.meta.head)) {
+      return failed(`the tour at ${options.tour ?? ''} was written for ${sidesNamed(tour.base, tour.head)}, and this map is of ${sidesNamed(map.meta.base, map.meta.head)}; write the tour for this map, or serve the map it was written for`);
+    }
     const token = options.token ?? randomBytes(16).toString('hex');
     const started = performance.now();
     // The raw check output beside the map (D93): the run's `.check/`, for the slots the map holds alone (D134).
@@ -877,6 +912,7 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
       checks: { dir: join(options.repo, '.check'), slots: map.weather.checks.slots.map((slot) => slot.name) },
       rebase: { repo, rebuild: (request) => Promise.resolve(rebuiltOf(mapOver(options, request))) },
       watch: watched !== undefined,
+      tour: tour?.text,
     });
     timings.push({ source: 'serve', ms: Math.round(performance.now() - started) });
     const log = options.watchLog ?? ((line: string) => process.stderr.write(line));

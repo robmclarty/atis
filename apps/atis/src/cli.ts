@@ -36,6 +36,7 @@ const FLAGS = {
   png: { type: 'string' },
   open: { type: 'boolean' },
   watch: { type: 'boolean' },
+  tour: { type: 'string' },
   comment: { type: 'boolean' },
   cache: { type: 'boolean' },
   history: { type: 'string' },
@@ -65,6 +66,8 @@ type Flags = {
   readonly open?: boolean | undefined;
   /** `--watch`: rebuild the served map as the head side moves, and push it to the tab (D106). */
   readonly watch?: boolean | undefined;
+  /** `--tour <file>`: a tour `apps/tour` wrote for the map, played in the served world (D112, D183). */
+  readonly tour?: string | undefined;
   /** `--comment`: post the map to the branch's pull request through gh (D108), one of the two networked commands (C5). */
   readonly comment?: boolean | undefined;
   /** Only `--no-cache` sets it, to false: the terrain cache is on unless told otherwise (D96). */
@@ -213,13 +216,15 @@ async function mapCommand(argv: readonly string[]): Promise<Outcome> {
     return misuse('--history <n> takes a whole number of commits, at least 1');
   }
   if (flags.comment === true) {
+    if (flags.tour !== undefined) return misuse('--tour plays a tour in the served world; --comment posts a still, so drop --tour');
     const beside = [flags.out === undefined ? [] : ['--out'], flags.svg === undefined ? [] : ['--svg'], flags.png === undefined ? [] : ['--png'], flags.watch === true ? ['--watch'] : [], wholeRepo ? ['--whole-repo'] : [], typeof head === 'object' ? ['--working-tree'] : []].flat();
     if (beside.length > 0) return misuse(`--comment posts the change at a commit to its pull request and exits; drop ${beside.join(' and ')}`);
     return commentRun({ repo, base, head: typeof head === 'string' ? head : undefined, range, verbose, cache, history });
   }
   const serves = flags.out === undefined && flags.svg === undefined && flags.png === undefined;
-  if (serves) return serveRun({ repo, base, head, range, wholeRepo, assets: webDir(), open: flags.open !== false, verbose, cache, history, watch: flags.watch === true });
+  if (serves) return serveRun({ repo, base, head, range, wholeRepo, assets: webDir(), open: flags.open !== false, verbose, cache, history, watch: flags.watch === true, tour: flags.tour });
   if (flags.watch === true) return misuse('--watch keeps the served world fresh; it takes no --out, --svg or --png');
+  if (flags.tour !== undefined) return misuse('--tour plays a tour in the served world; it takes no --out, --svg or --png');
 
   if (flags.open === true && flags.svg === undefined) return misuse('--open needs --svg <file>');
   const files = { repo, base, head, range, wholeRepo, out: flags.out ?? DEFAULT_OUT, svg: flags.svg, overlay, open: flags.open === true, verbose, cache, history };

@@ -20,4 +20,5 @@ export * from './radar.js';
 export * from './rail.js';
 export * from './scrubber.js';
 export * from './status.js';
+export * from './tour.js';
 export * from './wiring.js';

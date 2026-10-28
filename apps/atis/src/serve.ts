@@ -33,7 +33,10 @@
  * the answer says how many pages it reached, so the agent hears when no tab
  * is open. A served run says where to send it in `.atis/serve.json` under
  * the repository, readable by its owner alone, since the token in it opens
- * the map (D138).
+ * the map (D138). A run handed a tour written for its map serves it beside
+ * the map at `/tour.json`, read only and to the run's token as the map is
+ * (D112, D183), and the URL it opens carries `tour`, so the page asks for
+ * one only when one is served and a run with none shows nothing new.
  * The asset directory is an argument, so a test serves a stub `index.html`
  * and no test needs a Vite build (D133).
  */
@@ -85,7 +88,7 @@ export type ServeOptions = {
   readonly assets: string;
   /** The map as its JSON text. */
   readonly map: string;
-  /** The run's token, which `/map.json`, `/check/<slot>`, `/diff/<path>`, the socket, `POST /base` and `POST /highlight` require as `?token=`. */
+  /** The run's token, which `/map.json`, `/tour.json`, `/check/<slot>`, `/diff/<path>`, the socket, `POST /base` and `POST /highlight` require as `?token=`. */
   readonly token: string;
   /** The check artifacts to serve raw at `/check/<slot>`; left out, as a fixture or a test leaves it, the path is not served. */
   readonly checks?: ServedChecks | undefined;
@@ -93,6 +96,8 @@ export type ServeOptions = {
   readonly rebase?: Rebase | undefined;
   /** Send each page the map held as its socket connects, so a map the watch rebuilt while the page loaded is never missed (D106); the socket itself is taken on every run (D178). */
   readonly watch?: boolean | undefined;
+  /** A tour written for the map, as its JSON text, served at `/tour.json` (D112, D183); left out, the path is not served and the page plays none. */
+  readonly tour?: string | undefined;
 };
 
 /** What `POST /highlight` names (D178): a file the held map places, by its path, or a notice by its rank, 1 the primary. */
@@ -105,7 +110,7 @@ export type Highlighted = { readonly pages: number };
 export type Serving = { readonly port: number; readonly token: string; readonly pid: number };
 
 export type Served = {
-  /** What to open: the page with the token in its query. */
+  /** What to open: the page with the token in its query, and `tour` when a tour is served beside the map. */
   readonly url: string;
   readonly port: number;
   /** The interface the socket is bound to: always the loopback address. */
@@ -421,7 +426,7 @@ const refuseUpgrade = (socket: Duplex, status: number): void => {
 };
 
 /** Serve the app, the map and the raw check output on loopback at a port of the system's choosing, take `POST /base` and serve the diffs when handed a way to rebuild, and take the page's socket and `POST /highlight`; resolves once it is listening. */
-export const serve = async ({ assets, map: first, token, checks: given, rebase, watch = false }: ServeOptions): Promise<Served> => {
+export const serve = async ({ assets, map: first, token, checks: given, rebase, watch = false, tour }: ServeOptions): Promise<Served> => {
   const root = resolve(assets);
   let port = 0;
   let map = first;
@@ -573,6 +578,15 @@ export const serve = async ({ assets, map: first, token, checks: given, rebase, 
       answer(request, response, 200, TYPES['.json'] ?? OCTETS, map);
       return;
     }
+    if (url.pathname === '/tour.json') {
+      if (url.searchParams.get('token') !== token) {
+        answer(request, response, 403, PLAIN, "the tour answers only to this run's token\n");
+        return;
+      }
+      if (tour === undefined) answer(request, response, 404, PLAIN, 'no tour is served\n');
+      else answer(request, response, 200, TYPES['.json'] ?? OCTETS, tour);
+      return;
+    }
     const slot = /^\/check\/([^/]+)$/.exec(url.pathname)?.[1];
     if (slot !== undefined) {
       if (url.searchParams.get('token') !== token) {
@@ -646,7 +660,7 @@ export const serve = async ({ assets, map: first, token, checks: given, rebase, 
   port = bound.port;
 
   return {
-    url: `http://${LOOPBACK}:${String(port)}/?token=${token}`,
+    url: `http://${LOOPBACK}:${String(port)}/?token=${token}${tour === undefined ? '' : '&tour'}`,
     port,
     address: bound.address,
     asked: () => switched,

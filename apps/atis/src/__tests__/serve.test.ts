@@ -552,3 +552,60 @@ test('.atis/serve.json names a run only while its process runs and the file read
     expect(servingIn(repo), text).toBeUndefined();
   }
 });
+
+/** A tour as `apps/tour` writes it, for the map of `base` and `head`. */
+const tourFor = (base: string, head: string): string => `${JSON.stringify({ base, head, stops: [{ target: 'src/square.ts', sentence: 'Start at the new square.', notice: 1 }] }, undefined, 2)}\n`;
+
+test('a tour is served beside the map at /tour.json to the run\'s token, the URL saying one is, and a run with none serves no tour (D112, D183)', async () => {
+  const tour = tourFor('main', 'a'.repeat(40));
+  const served = await serve({ assets: stubApp(), map: MAP, token: TOKEN, tour });
+  servers.push(served);
+  expect(served.url).toBe(`http://127.0.0.1:${String(served.port)}/?token=${TOKEN}&tour`);
+  const answer = await get(served.port, `/tour.json?token=${TOKEN}`);
+  expect([answer.status, answer.type, answer.body]).toEqual([200, 'application/json; charset=utf-8', tour]);
+  const refused = await Promise.all(['/tour.json', `/tour.json?token=${TOKEN.slice(1)}`].map((path) => get(served.port, path)));
+  expect(refused.map((each) => each.status)).toEqual([403, 403]);
+  expect(refused[0]?.body).toContain('token');
+  // A run handed no tour serves none, and its URL says nothing of one.
+  const bare = await start();
+  expect(bare.url).not.toContain('tour');
+  expect((await get(bare.port, `/tour.json?token=${TOKEN}`)).status).toBe(404);
+});
+
+test('a served run plays a tour written for its map, and one written for another base or head, or a file that is no tour, exits 2 naming what is wrong and serves nothing (D183, C4)', async () => {
+  const repo = twoCommits();
+  const head = git(repo, 'rev-parse', 'HEAD');
+  const dir = mkdtempSync(join(tmpdir(), 'atis-tour-'));
+  temps.push(dir);
+  const at = (name: string, text: string): string => {
+    const path = join(dir, name);
+    writeFileSync(path, text);
+    return path;
+  };
+  const tour = tourFor('v1', head);
+  const outcome = await serveRun({ repo, base: 'v1', assets: stubApp(), open: false, verbose: false, token: TOKEN, tour: at('tour.json', tour) });
+  const { served } = outcome;
+  if (served === undefined) throw new Error(outcome.stderr);
+  servers.push(served);
+  expect(outcome.stdout).toContain(`?token=${TOKEN}&tour (Ctrl-C to stop)`);
+  expect((await get(served.port, `/tour.json?token=${TOKEN}`)).body).toBe(tour);
+  await served.close();
+
+  const elsewhere = at('elsewhere.json', tourFor('main', 'b'.repeat(40)));
+  const mismatched = await serveRun({ repo, base: 'v1', assets: stubApp(), open: false, verbose: false, token: TOKEN, tour: elsewhere });
+  expect([mismatched.exitCode, mismatched.served]).toEqual([2, undefined]);
+  expect(mismatched.stderr).toBe(`atis: the tour at ${elsewhere} was written for main..bbbbbbb, and this map is of v1..${head.slice(0, 7)}; write the tour for this map, or serve the map it was written for\n`);
+  const rebased = await serveRun({ repo, base: 'v1', assets: stubApp(), open: false, verbose: false, token: TOKEN, tour: at('rebased.json', tourFor('main', head)) });
+  expect(rebased.stderr).toContain(`was written for main..${head.slice(0, 7)}, and this map is of v1..${head.slice(0, 7)}`);
+  for (const [name, text, reason] of [
+    ['broken.json', '{"base":', 'is not JSON'],
+    ['bare.json', '{"base":"v1","head":"x"}', 'is no tour: it names no base, head and stops'],
+  ] as const) {
+    const broken = await serveRun({ repo, base: 'v1', assets: stubApp(), open: false, verbose: false, token: TOKEN, tour: at(name, text) });
+    expect([broken.exitCode, broken.served]).toEqual([2, undefined]);
+    expect(broken.stderr).toBe(`atis: --tour ${join(dir, name)} ${reason}\n`);
+  }
+  const missing = await serveRun({ repo, base: 'v1', assets: stubApp(), open: false, verbose: false, token: TOKEN, tour: join(dir, 'missing.json') });
+  expect(missing.exitCode).toBe(2);
+  expect(missing.stderr).toContain(`--tour ${join(dir, 'missing.json')} could not be read`);
+}, 120_000);

@@ -90,7 +90,11 @@ names, and highlight says no tab is open.
   --watch         keep serving the world and, when HEAD, the index or
                   .check/summary.json changes, rebuild the map and push its
                   weather to the open tab over the terrain it already shows
-  --no-cache      measure afresh, neither reading nor writing the terrain kept
+  --tour <file>   play a reviewer's tour in the served world, a stepper that
+                  flies to each stop with its sentence; the tour must be one
+                  written for this map's base and head, by the workspace's
+                  opt-in \`pnpm --filter tour start <map.json>\`
+  --no-cache     measure afresh, neither reading nor writing the terrain kept
                   per base commit in .atis/terrain/ or the structure fallow
                   measured per commit in .atis/structure/
   --history <n>   read the newest <n> commits of history (default 5000)

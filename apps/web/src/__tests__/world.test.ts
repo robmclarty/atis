@@ -726,6 +726,8 @@ test('served, a pushed map on the ground drawn cross-fades its weather in withou
     await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
     await expect.poll(() => sockets.length).toBe(1);
     expect(await page.$$eval('[data-labels] [data-mark]', (elements) => elements.length)).toBe(6);
+    // Served with no tour, the page shows nothing of one (D112).
+    expect(await page.$('[data-tour]')).toBeNull();
     await page.evaluate(() => {
       document.body.dataset['before'] = 'push';
     });
@@ -763,6 +765,63 @@ test('served, a pushed map on the ground drawn cross-fades its weather in withou
     // A file flies to its stop the same way.
     sockets[1]?.send(JSON.stringify({ kind: 'highlight', file: 'apps/cli/src/doctor.ts' }));
     await page.waitForSelector('#world[data-highlight="apps/cli/src/doctor.ts"]', { timeout: 30_000 });
+    expect(complaints).toEqual([]);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+/** Answer `/tour.json` for the run's token, as the CLI does when handed `--tour` (D112, D183). */
+const serveTour = (token: string, body: string): Plugin => ({
+  name: 'atis-serve-tour',
+  configureServer(server) {
+    server.middlewares.use((request, response, next) => {
+      const url = new URL(request.url ?? '/', 'http://127.0.0.1');
+      if (url.pathname !== '/tour.json') {
+        next();
+        return;
+      }
+      response.statusCode = url.searchParams.get('token') === token ? 200 : 403;
+      response.setHeader('content-type', 'application/json');
+      response.end(response.statusCode === 200 ? body : '"refused"');
+    });
+  },
+});
+
+test('served with a tour, the stepper flies the world to each stop in order, lighting its target and writing its sentence in the chrome, with a clean console (D112, D183)', { timeout: 150_000 }, async () => {
+  // The tour `apps/tour` writes for the demo on fascicle's stub engine, its golden.
+  const tourText = readFileSync(join(WEB, '..', 'tour', 'fixtures', 'demo', 'tour.json'), 'utf8');
+  const tour = JSON.parse(tourText) as { readonly stops: readonly { readonly target: string; readonly sentence: string; readonly notice: number }[] };
+  const { server, url } = await serve(undefined, [serveTour('toured', tourText)]);
+  const browser = await launch();
+  try {
+    const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    const complaints: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error' || message.type() === 'warning') complaints.push(`${message.type()}: ${message.text()}`);
+    });
+    page.on('pageerror', (error) => complaints.push(`pageerror: ${error.message}`));
+    // A served page opens its socket, which nothing here pushes on.
+    await page.routeWebSocket(/\/socket\?token=toured$/, () => undefined);
+    await page.goto(`${url}/?backend=webgl&zoom=2&token=toured&tour`);
+    await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
+    expect(await page.textContent('[data-tour-place]')).toBe('tour · 6 stops');
+    const [first, , , , fifth] = tour.stops;
+    if (first === undefined || fifth === undefined) throw new Error("the tour's golden lost its stops");
+    // The first step flies to the first stop's target, writes its labels as an asked target's (D168), and writes the sentence beneath the strip.
+    await page.click('[data-tour-step="on"]');
+    await page.waitForSelector(`#world[data-highlight="stop ${first.target}"]`, { timeout: 30_000 });
+    await page.waitForSelector(`[data-labels] [data-target="${first.target}"]`, { state: 'attached', timeout: 30_000 });
+    expect(await page.textContent('[data-tour-sentence]')).toBe(first.sentence);
+    expect(await page.textContent('[data-tour-place]')).toBe('tour · 1 of 6');
+    // On to the fifth, another file: the world flies there, and the breadcrumb stands at it.
+    for (let step = 0; step < 4; step += 1) await page.click('[data-tour-step="on"]');
+    await page.waitForSelector(`#world[data-highlight="stop ${fifth.target}"]`, { timeout: 30_000 });
+    await page.waitForSelector('[data-crumbs="organelle"]', { timeout: 30_000 });
+    // The breadcrumb names it as the walk does, an added file marked `+`.
+    expect(await page.textContent('[data-crumbs] [data-crumb]:last-child')).toContain(fifth.target.split('/').at(-1));
+    expect(await page.textContent('[data-tour-sentence]')).toBe(fifth.sentence);
     expect(complaints).toEqual([]);
   } finally {
     await browser.close();

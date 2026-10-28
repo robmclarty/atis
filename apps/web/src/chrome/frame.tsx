@@ -4,7 +4,7 @@
  * the HUD's grade blocks over it (§7), with the legend folded into its `key` block (D87, D166), on a map of a range the
  * scrubber under them, every block drawn from the frame it stands at (D100), on a whole repo's map its overlay toggles
  * (D101), in served mode the base selector (D99, C13), and the breadcrumb
- * under it (§6), the minimap in the bottom-left corner (D154), and the right-hand column, the ranked notices over the shore rail
+ * under it (§6), in served mode with a tour beside the map its stepper under the breadcrumb (D112), the minimap in the bottom-left corner (D154), and the right-hand column, the ranked notices over the shore rail
  * (§5.4, D153); over them all, the open cell's wiring plate while it is toggled on (step 41); and, behind a switch, the dev panel (D156): off and absent by
  * default, its code fetched only when it is first opened. A development build shows a toggle for it; a published
  * build opens it only through a key combination, which the docs never name.
@@ -32,6 +32,8 @@ import { Minimap } from './minimap.js';
 import { OverlayToggles } from './overlays.js';
 import { Scrubber } from './scrubber.js';
 import { Status } from './status.js';
+import type { Tour } from '../tour.js';
+import { TourStepper } from './tour.js';
 import { WiringPlate } from './wiring.js';
 
 /** What opening the panel loads: the dev module, or whatever a test hands in. */
@@ -79,9 +81,11 @@ export type ChromeProps = {
   /** The base selector's request and the page's reload, injected so a test needs no server. */
   readonly post?: PostBase;
   readonly reload?: () => void;
+  /** The tour the CLI serves beside the map, when it serves one (D112); none, and the chrome shows nothing of a tour. */
+  readonly tour?: Tour | undefined;
 };
 
-export const Chrome = ({ state, registry, nav: given, dev, token, load = loadPanel, post, reload }: ChromeProps): ReactElement => {
+export const Chrome = ({ state, registry, nav: given, dev, token, load = loadPanel, post, reload, tour }: ChromeProps): ReactElement => {
   const [open, setOpen] = useState(false);
   const own = useMemo(() => createNav(), []);
   const nav = given ?? own;
@@ -115,6 +119,7 @@ export const Chrome = ({ state, registry, nav: given, dev, token, load = loadPan
         {ranged !== undefined && token !== undefined && <Bases map={ranged} registry={registry} token={token} {...(post === undefined ? {} : { post })} {...(reload === undefined ? {} : { reload })} />}
         <Status state={state} registry={registry} />
         {map !== undefined && <Crumbs map={map} registry={registry} nav={nav} />}
+        {ranged !== undefined && tour !== undefined && <TourStepper map={ranged} tour={tour} registry={registry} nav={nav} />}
         {open && (
           <Suspense fallback={null}>
             <Panel registry={registry} onClose={() => setOpen(false)} />
