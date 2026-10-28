@@ -1,16 +1,17 @@
 /**
- * watch: the page's side of `--watch` (D106). A page the CLI opened watching
- * carries `watch` in its query beside the run's token, and opens a socket at
- * the served `/watch` with that token (D134); every map the watch rebuilds
- * comes over it as `{ "kind": "map", "map": … }`, the server sending the one
- * it holds as the page connects, so a commit landing while the page loaded
- * is never missed. A kind the page does not know is dropped, as weft's
- * studio drops one, and so is a map that fails core's guard: the page keeps
- * the map it has (C2). A map on the same ground as the one shown, one layout
- * with the same cells and files on it, has its weather cross-faded in over
- * the terrain the world already draws (P2); one on other ground, a file
- * added or gone, is drawn afresh at the framing the reader stands at. Pure,
- * so a test reads it straight.
+ * watch: the page's socket (D106, D178). A page the CLI served carries the
+ * run's token in its query, and opens a socket at the served `/socket` with
+ * that token (D134), whether or not the run watches: the watch pushes its
+ * maps over it, and `atis mcp` its highlights (`highlight.ts`). Under
+ * `--watch` every map the watch rebuilds comes as `{ "kind": "map", "map": … }`,
+ * the server sending the one it holds as the page connects, so a commit
+ * landing while the page loaded is never missed. A kind the page does not
+ * know is dropped, as weft's studio drops one, and so is a map that fails
+ * core's guard: the page keeps the map it has (C2). A map on the same ground
+ * as the one shown, one layout with the same cells and files on it, has its
+ * weather cross-faded in over the terrain the world already draws (P2); one
+ * on other ground, a file added or gone, is drawn afresh at the framing the
+ * reader stands at. Pure, so a test reads it straight.
  */
 
 import { assertMap } from 'core';
@@ -22,11 +23,10 @@ import { servedToken } from './load.js';
 /** Where the reader stands: the camera's zoom over the fit, its tilt off overhead in degrees, and the layout point the free screen is centred on. */
 export type Framing = { readonly zoom: number; readonly tilt: number; readonly centre?: Point | undefined };
 
-/** The socket a watching page opens: the served `/watch` with the run's token; none for a page not opened watching, or one that names a map of its own. */
-export const watchUrl = (search: string, host: string): string | undefined => {
+/** The socket a served page opens: the served `/socket` with the run's token; none for a page that names a map of its own, which nobody serves who could send one (D178). */
+export const socketUrl = (search: string, host: string): string | undefined => {
   const token = servedToken(search);
-  if (token === undefined || new URLSearchParams(search).get('watch') === null) return undefined;
-  return `ws://${host}/watch?token=${encodeURIComponent(token)}`;
+  return token === undefined ? undefined : `ws://${host}/socket?token=${encodeURIComponent(token)}`;
 };
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {

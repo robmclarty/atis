@@ -35,10 +35,12 @@
  * its diff: a page with no token shows its hunk's line range alone, and one
  * served with the token shows the diff `/diff/<path>` answers, its hunk's head
  * and its head linked to the file in the editor, beside the PR the page was
- * told of (D102). Opened watching, the world takes the maps the watch pushes
- * over its socket, stood in for here by the browser's own: one on the ground
- * it draws cross-fades its weather in without the page reloading, and one on
- * other ground is drawn afresh where the reader stood (D106). As a still
+ * told of (D102). Served, the world takes the maps a watch pushes over its
+ * socket, stood in for here by the browser's own: one on the ground it draws
+ * cross-fades its weather in without the page reloading, and one on other
+ * ground is drawn afresh where the reader stood (D106); and a highlight an
+ * agent sends over `atis mcp` flies to its notice and writes its target's
+ * labels, and to a file it names the same way (D178). As a still
  * (`?cinema`), it draws no chrome and stands at the surface framed on the
  * change where the comment's flat still is framed, never the planet, opening
  * no slide (D108, D175).
@@ -619,6 +621,8 @@ test("past LOD4 the changed file's plate gives way to its diff: its hunk's line 
     expect(await page.$eval('[data-file-plate]', (plate) => plate instanceof SVGElement && (plate.style.display === 'none' || Number(plate.style.opacity) === 0))).toBe(true);
 
     // Served with the token: the diff `/diff/<path>` answers, its hunk's head and the sheet's head linked to the file in the editor.
+    // A served page opens its socket too (D178), stood in for by the browser's own, which sends nothing.
+    await page.routeWebSocket(/\/socket\?token=t0$/, () => undefined);
     await page.goto(`${url}/?token=t0&${framed}`);
     await page.waitForSelector('[data-diff-sheet] [data-diff-row="added"]', { timeout: 90_000 });
     expect(await page.$$eval('[data-diff-sheet] [data-diff-row]', (rows) => rows.map((row) => [row.getAttribute('data-diff-row'), row.getAttribute('data-line')]))).toEqual([
@@ -636,7 +640,7 @@ test("past LOD4 the changed file's plate gives way to its diff: its hunk's line 
   }
 });
 
-test('opened watching, a pushed map on the ground drawn cross-fades its weather in without a reload, and one on other ground is drawn afresh where the reader stood, with a clean console (D106)', { timeout: 120_000 }, async () => {
+test('served, a pushed map on the ground drawn cross-fades its weather in without a reload, one on other ground is drawn afresh where the reader stood, and a highlight flies to its notice and lights it, with a clean console (D106, D178)', { timeout: 150_000 }, async () => {
   const text = readFileSync(DEMO, 'utf8');
   const demo = JSON.parse(text) as { meta: { generated_at: string; head: string }; notices: unknown[]; terrain: { layout: { positions: Record<string, { x: number; y: number }> } } };
   const { server, url } = await serve(text);
@@ -650,13 +654,13 @@ test('opened watching, a pushed map on the ground drawn cross-fades its weather 
     page.on('pageerror', (error) => complaints.push(`pageerror: ${error.message}`));
     // The browser stands in for the server's socket: it hears each connection, and the test says what it pushes.
     const sockets: { send: (message: string) => void }[] = [];
-    await page.routeWebSocket(/\/watch\?token=watched$/, (socket) => {
+    await page.routeWebSocket(/\/socket\?token=watched$/, (socket) => {
       sockets.push(socket);
       // As the server does, the map held is sent as the page connects: the one the page drew, so it is dropped.
       if (sockets.length === 1) socket.send(JSON.stringify({ kind: 'map', map: demo }));
     });
 
-    await page.goto(`${url}/?backend=webgl&zoom=2&token=watched&watch=1`);
+    await page.goto(`${url}/?backend=webgl&zoom=2&token=watched`);
     await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
     await expect.poll(() => sockets.length).toBe(1);
     expect(await page.$$eval('[data-labels] [data-mark]', (elements) => elements.length)).toBe(6);
@@ -683,9 +687,20 @@ test('opened watching, a pushed map on the ground drawn cross-fades its weather 
     expect(Number(framed.get('zoom'))).toBeCloseTo(2, 3);
     expect(framed.get('tilt')).toBe('0');
     expect(framed.get('token')).toBe('watched');
-    expect(framed.get('watch')).toBe('1');
     await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
     expect(await page.evaluate(() => document.body.dataset['before'])).toBeUndefined();
+
+    // An agent names the primary over `atis mcp` (D178): the page drawn afresh listens again, flies there, and writes its target's labels, which it writes for nothing unasked (D168).
+    await expect.poll(() => sockets.length, { timeout: 30_000 }).toBe(2);
+    const [primary] = demo.notices as readonly { readonly target: string }[];
+    if (primary === undefined) throw new Error('the demo ranks no notice');
+    expect(await page.$$(`[data-labels] [data-target="${primary.target}"]`)).toHaveLength(0);
+    sockets[1]?.send(JSON.stringify({ kind: 'highlight', notice: 1 }));
+    await page.waitForSelector('#world[data-highlight="notice 1"]', { timeout: 30_000 });
+    await page.waitForSelector(`[data-labels] [data-target="${primary.target}"]`, { state: 'attached', timeout: 30_000 });
+    // A file flies to its stop the same way.
+    sockets[1]?.send(JSON.stringify({ kind: 'highlight', file: 'apps/cli/src/doctor.ts' }));
+    await page.waitForSelector('#world[data-highlight="apps/cli/src/doctor.ts"]', { timeout: 30_000 });
     expect(complaints).toEqual([]);
   } finally {
     await browser.close();

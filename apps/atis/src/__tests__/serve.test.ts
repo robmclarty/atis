@@ -1,23 +1,28 @@
-import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { request } from 'node:http';
 import type { OutgoingHttpHeaders } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { afterAll, expect, test } from 'vitest';
+import { WebSocket } from 'ws';
 
 import { DEFAULT_EDITOR, assertMap } from 'core';
 
 import { serveRun } from '../run.js';
-import { serve } from '../serve.js';
+import { dropServing, keepServing, serve, servingIn } from '../serve.js';
 import type { BaseRequest, Rebuilt, Served, ServedDiff } from '../serve.js';
 
 /**
  * The loopback server in-process over a stub app (D133): it answers the page,
  * the assets, the map, a held slot's raw output and a changed file's diff,
  * and nothing else; binds loopback alone (C13); and refuses a foreign Host
- * and a missing or wrong token (D134).
+ * and a missing or wrong token (D134). Its second write, `POST /highlight`,
+ * relays a target the held map places to each open page and refuses any
+ * other, and a served run says how to reach it in `.atis/serve.json` while it
+ * serves (D138, D178).
  */
 const TOKEN = 'a3f1c2d4e5b6a7f8091a2b3c4d5e6f70';
 const MAP = '{"meta":{"repo":"stub"}}\n';
@@ -398,3 +403,152 @@ test('a served run whose atis.config.json names an editor with a control charact
   expect(outcome.exitCode).toBe(2);
   expect(outcome.stderr).toBe("atis: atis.config.json's editor must hold no control character\n");
 }, 60_000);
+
+/** The demo map, which places files on its terrain and ranks six notices: what a highlight is held to. */
+const DEMO = readFileSync(fileURLToPath(new URL('../../../../libs/core/fixtures/demo/map.json', import.meta.url)), 'utf8');
+
+/** A `POST /highlight` as `atis mcp` sends it: JSON, from the server's own origin, unless told otherwise; an origin of `null` sends none. */
+const postHighlight = (served: Served, body: unknown, { token = TOKEN, origin = `http://127.0.0.1:${String(served.port)}` }: { readonly token?: string; readonly origin?: string | null } = {}): Promise<Answer> =>
+  get(served.port, `/highlight?token=${token}`, { 'content-type': 'application/json', ...(origin === null ? {} : { origin }) }, 'POST', typeof body === 'string' ? body : JSON.stringify(body));
+
+/** A page's socket on a served run, opened as the page opens it, and every message it hears. */
+const pageOn = async (served: Served): Promise<{ readonly heard: unknown[] }> => {
+  const heard: unknown[] = [];
+  const socket = new WebSocket(`ws://127.0.0.1:${String(served.port)}/socket?token=${TOKEN}`, { origin: `http://127.0.0.1:${String(served.port)}` });
+  socket.on('message', (data: Buffer) => heard.push(JSON.parse(data.toString('utf8'))));
+  await new Promise<void>((opened, failed) => {
+    socket.once('open', () => opened());
+    socket.once('error', failed);
+  });
+  return { heard };
+};
+
+/** The demo served with no watch, as a plain `atis` serves it (D178). */
+const demoServed = async (): Promise<Served> => {
+  const served = await serve({ assets: stubApp(), map: DEMO, token: TOKEN });
+  servers.push(served);
+  return served;
+};
+
+test('POST /highlight relays a file the held map places, or a notice it ranks, to each open page, and answers how many it reached (D178)', async () => {
+  const served = await demoServed();
+  const alone = await postHighlight(served, { notice: 1 });
+  expect(alone.status).toBe(200);
+  expect(alone.type).toBe('application/json; charset=utf-8');
+  expect(JSON.parse(alone.body)).toEqual({ pages: 0 });
+
+  const pages = [await pageOn(served), await pageOn(served)];
+  expect(JSON.parse((await postHighlight(served, { file: 'libs/core/src/pm/tools.ts' })).body)).toEqual({ pages: 2 });
+  expect(JSON.parse((await postHighlight(served, { notice: 6 })).body)).toEqual({ pages: 2 });
+  for (const { heard } of pages) {
+    await expect.poll(() => heard.length).toBe(2);
+    expect(heard).toEqual([
+      { kind: 'highlight', file: 'libs/core/src/pm/tools.ts' },
+      { kind: 'highlight', notice: 6 },
+    ]);
+  }
+});
+
+test("POST /highlight is refused without this run's token, or from any origin but the server's own (D134, D178)", async () => {
+  const served = await demoServed();
+  const { heard } = await pageOn(served);
+  const tokens = await Promise.all(['', TOKEN.slice(1), `${TOKEN}0`].map((token) => postHighlight(served, { notice: 1 }, { token })));
+  expect(tokens.map((refused) => refused.status)).toEqual([403, 403, 403]);
+  for (const refused of tokens) expect(refused.body).toContain('token');
+  const origins = [null, 'http://evil.example', `http://evil.example:${String(served.port)}`, 'http://127.0.0.1:1', 'null'];
+  const strangers = await Promise.all(origins.map((origin) => postHighlight(served, { notice: 1 }, { origin })));
+  expect(strangers.map((refused) => refused.status)).toEqual(origins.map(() => 403));
+  for (const refused of strangers) expect(refused.body).toContain('own origin');
+  // A round trip after the refusals, so a relay one of them made would have arrived.
+  await get(served.port, `/map.json?token=${TOKEN}`);
+  expect(heard).toEqual([]);
+});
+
+test('POST /highlight names only a file the held map places or a notice it ranks, held to the map held now, and refuses anything else with a 400 (D178)', async () => {
+  const served = await demoServed();
+  const { heard } = await pageOn(served);
+  const named = 'a highlight names a file by its path, or a notice by its rank from 1';
+  const bodies = [
+    [{ file: 'README.md' }, 'the map places no file README.md'],
+    [{ file: 'libs/core/src/nope.ts' }, 'the map places no file libs/core/src/nope.ts'],
+    [{ notice: 7 }, 'the map ranks 6 notices; none is 7'],
+    [{ notice: 0 }, named],
+    [{ notice: 1.5 }, named],
+    [{ notice: '1' }, named],
+    [{ file: '' }, named],
+    [{}, named],
+    [{ file: 'libs/core/src/pm/tools.ts', notice: 1 }, 'file and notice each name the target; give one of them'],
+    [{ notice: 1, base: 'v1' }, 'a highlight names a file or a notice, never base'],
+    ['{', 'the body is not JSON'],
+    ['[]', 'the body is not a JSON object'],
+    [JSON.stringify({ file: 'x'.repeat(5000) }), 'the body is too long'],
+  ] as const;
+  const refused = await Promise.all(bodies.map(([body]) => postHighlight(served, body)));
+  expect(refused.map((answer) => answer.status)).toEqual(bodies.map(() => 400));
+  expect(refused.map((answer) => answer.body)).toEqual(bodies.map(([, reason]) => `${reason}\n`));
+
+  // A map a watch pushed ranks three notices: the sixth is gone from it.
+  const demo = JSON.parse(DEMO) as { readonly notices: readonly unknown[] };
+  served.push({ map: `${JSON.stringify({ ...demo, notices: demo.notices.slice(0, 3) })}\n`, slots: [] });
+  await expect.poll(() => heard.length).toBe(1);
+  const gone = await postHighlight(served, { notice: 6 });
+  expect([gone.status, gone.body]).toEqual([400, 'the map ranks 3 notices; none is 6\n']);
+  await get(served.port, `/map.json?token=${TOKEN}`);
+  // The page heard the map pushed, and no highlight before or after it.
+  expect(heard.map((message) => (message as { readonly kind: string }).kind)).toEqual(['map']);
+});
+
+test('a served run says how to reach it in .atis/serve.json, readable by its owner alone and ignored by git, and takes it back as it closes (D138)', async () => {
+  const repo = twoCommits();
+  const outcome = await serveRun({ repo, base: 'v1', assets: stubApp(), open: false, verbose: false, token: TOKEN });
+  const { served } = outcome;
+  if (served === undefined) throw new Error(outcome.stderr);
+  servers.push(served);
+  const path = join(repo, '.atis', 'serve.json');
+  const serving = { port: served.port, token: TOKEN, pid: process.pid };
+  expect(JSON.parse(readFileSync(path, 'utf8'))).toEqual(serving);
+  expect(statSync(path).mode & 0o777).toBe(0o600);
+  expect(servingIn(repo)).toEqual(serving);
+  expect(git(repo, 'status', '--porcelain')).toBe('');
+  expect(outcome.stderr).toBe('');
+  await served.close();
+  expect(existsSync(path)).toBe(false);
+  expect(servingIn(repo)).toBeUndefined();
+}, 60_000);
+
+test('a repository that will not take .atis/serve.json is still served, and the run says atis mcp will not find the tab (D138, C4)', async () => {
+  const repo = twoCommits();
+  // A file where the directory would go, so nothing can be written under it.
+  writeFileSync(join(repo, '.atis'), 'not a directory\n');
+  const outcome = await serveRun({ repo, base: 'v1', assets: stubApp(), open: false, verbose: false, token: TOKEN, cache: false });
+  const { served } = outcome;
+  if (served === undefined) throw new Error(outcome.stderr);
+  servers.push(served);
+  expect(outcome.exitCode).toBe(0);
+  expect(outcome.stderr).toMatch(/^atis: atis mcp will not find this tab, since \.atis\/serve\.json could not be written: /);
+  expect((await get(served.port, `/map.json?token=${TOKEN}`)).status).toBe(200);
+}, 60_000);
+
+test('.atis/serve.json names a run only while its process runs and the file reads as one, and a run closing takes back only the file it wrote (D138)', () => {
+  const repo = mkdtempSync(join(tmpdir(), 'atis-serving-'));
+  temps.push(repo);
+  const path = keepServing(repo, { port: 4173, token: TOKEN, pid: process.pid });
+  expect(path).toBe(join(repo, '.atis', 'serve.json'));
+  expect(servingIn(repo)).toEqual({ port: 4173, token: TOKEN, pid: process.pid });
+  // Another run's close leaves this run's file where it is.
+  dropServing(repo, process.pid + 1);
+  expect(existsSync(path)).toBe(true);
+
+  const exited = spawnSync(process.execPath, ['-e', '']).pid;
+  keepServing(repo, { port: 4173, token: TOKEN, pid: exited });
+  expect(servingIn(repo)).toBeUndefined();
+  dropServing(repo, process.pid);
+  expect(existsSync(path)).toBe(true);
+  dropServing(repo, exited);
+  expect(existsSync(path)).toBe(false);
+
+  for (const text of ['not json', '[]', `{"port":"4173","token":"${TOKEN}","pid":${String(process.pid)}}`, `{"port":4173,"token":"","pid":${String(process.pid)}}`, '{"port":4173,"token":"t","pid":0}']) {
+    writeFileSync(path, text);
+    expect(servingIn(repo), text).toBeUndefined();
+  }
+});

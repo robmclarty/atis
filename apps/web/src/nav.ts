@@ -13,7 +13,8 @@
  * map the HUD's toggles ask for (D101), which the world cross-fades to the
  * same way, and a map a watch pushed (D106), whose weather the world
  * cross-fades in over the ground it shows, or whose new ground it names the
- * framing to draw afresh at. Neither imports the
+ * framing to draw afresh at, and a target `atis mcp` asked the tab to show,
+ * which the world flies to and lights (D178). Neither imports the
  * other: `main.ts` hands both the same line, and an ask made before the world
  * is drawn, or with no world at all, as in a DOM test, goes nowhere. Pure, so
  * a test reads it straight.
@@ -22,6 +23,7 @@
 import type { MapJson } from 'core';
 import type { Point } from 'scene';
 
+import type { Highlight } from './highlight.js';
 import type { Opened } from './opened.js';
 import type { OverlayAsk } from './overlays.js';
 import { FIELD } from './walk.js';
@@ -39,6 +41,8 @@ export type Steering = {
   readonly overlay?: (asked: OverlayAsk) => void;
   /** Take a map a watch pushed: none when its weather now shows over the ground drawn, else the framing to draw its new ground afresh at. */
   readonly swap?: (map: MapJson) => Framing | undefined;
+  /** Fly to what an agent named over `atis mcp`, and light it (D178). */
+  readonly highlight?: (highlight: Highlight) => void;
 };
 
 export type Nav = {
@@ -81,6 +85,8 @@ export type Nav = {
    * ground afresh at; none too with no world drawn.
    */
   readonly swap: (map: MapJson) => Framing | undefined;
+  /** Ask the world to fly to what an agent named over `atis mcp`, and light it (D178). */
+  readonly highlight: (highlight: Highlight) => void;
   /** The world takes the chrome's asks; the latest to steer is the one asked, until it lets go. */
   readonly steer: (steering: Steering) => () => void;
 };
@@ -149,6 +155,7 @@ export const createNav = (): Nav => {
       }
       return steering?.swap?.(map);
     },
+    highlight: (highlight) => steering?.highlight?.(highlight),
     steer: (next) => {
       steering = next;
       return () => {

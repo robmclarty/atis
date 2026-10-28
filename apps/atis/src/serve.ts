@@ -20,17 +20,26 @@
  * URL carries. The write checks the `Origin` too, since a form in another
  * tab could send one, and takes only a ref `git rev-parse --verify` resolves
  * to a commit, never one opening with `-`, which git would read as a flag.
- * Under `--watch` it takes one socket path too, `/watch`, on the same port
- * (D106): a WebSocket the page opens with the run's token, from its own
- * `Origin`, over which every map the watch rebuilds is pushed as
+ * It takes one socket path too, `/socket`, on the same port, on every run
+ * (D178): a WebSocket the page opens with the run's token, from its own
+ * `Origin`. Under `--watch` every map the watch rebuilds is pushed over it as
  * `{ "kind": "map", "map": … }`, a message kind as weft's watch sends, the
- * page reading only the kinds it knows; as weft's does, it sends the map it
- * holds as the page connects. The page sends nothing on it.
+ * page reading only the kinds it knows, and as weft's does, the server sends
+ * the map it holds as the page connects (D106). The page sends nothing on it.
+ * The second write, `POST /highlight`, is how `atis mcp` points at the map
+ * (D110): with the token and this server's own `Origin`, as the first, it
+ * names a file the held map places or a notice by its rank, anything else
+ * refused, and is relayed to each open page as `{ "kind": "highlight", … }`;
+ * the answer says how many pages it reached, so the agent hears when no tab
+ * is open. A served run says where to send it in `.atis/serve.json` under
+ * the repository, readable by its owner alone, since the token in it opens
+ * the map (D138).
  * The asset directory is an argument, so a test serves a stub `index.html`
  * and no test needs a Vite build (D133).
  */
 
 import { execFile } from 'node:child_process';
+import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
 import { STATUS_CODES, createServer } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
@@ -39,6 +48,8 @@ import { extname, join, resolve, sep } from 'node:path';
 
 import { CONFIG_FILE, DEFAULT_EDITOR, configuredEditor } from 'core';
 import { WebSocket, WebSocketServer } from 'ws';
+
+import { writeAtomic } from './cache.js';
 
 /** The run's check artifacts: where checkride wrote them, and the slots the map holds, the only ones served. */
 export type ServedChecks = {
@@ -74,15 +85,24 @@ export type ServeOptions = {
   readonly assets: string;
   /** The map as its JSON text. */
   readonly map: string;
-  /** The run's token, which `/map.json`, `/check/<slot>`, `/diff/<path>` and `POST /base` require as `?token=`. */
+  /** The run's token, which `/map.json`, `/check/<slot>`, `/diff/<path>`, the socket, `POST /base` and `POST /highlight` require as `?token=`. */
   readonly token: string;
   /** The check artifacts to serve raw at `/check/<slot>`; left out, as a fixture or a test leaves it, the path is not served. */
   readonly checks?: ServedChecks | undefined;
   /** How `POST /base` rebuilds the map, and the repository `/diff/<path>` reads; left out, neither is served. */
   readonly rebase?: Rebase | undefined;
-  /** Take the page's socket at `/watch`, and name it in the URL to open, so the watch can push each map it rebuilds (D106); left out, no socket is taken. */
+  /** Send each page the map held as its socket connects, so a map the watch rebuilt while the page loaded is never missed (D106); the socket itself is taken on every run (D178). */
   readonly watch?: boolean | undefined;
 };
+
+/** What `POST /highlight` names (D178): a file the held map places, by its path, or a notice by its rank, 1 the primary. */
+export type HighlightRequest = { readonly file: string } | { readonly notice: number };
+
+/** What `POST /highlight` answers once it relays: how many open pages it reached, none when no tab is open. */
+export type Highlighted = { readonly pages: number };
+
+/** How `atis mcp` reaches the run serving a repository's tab (D138): its port on loopback, its token, and its process. */
+export type Serving = { readonly port: number; readonly token: string; readonly pid: number };
 
 export type Served = {
   /** What to open: the page with the token in its query. */
@@ -126,10 +146,17 @@ const RAW_FILES = ['.stdout.txt', '.json'] as const;
 /** The most a `POST /base` body may hold: a ref and two words, never a file. */
 const BODY_LIMIT = 4096;
 
-/** The path the page opens its socket at, under `--watch` (D106). */
-const WATCH_PATH = '/watch';
+/** The path the page opens its socket at, on every run (D106, D178). */
+const SOCKET_PATH = '/socket';
 /** The most one message from the page may hold on the socket, which carries nothing from it. */
 const SOCKET_LIMIT = 1024;
+
+/** Where a serving run says how to reach it, under the reviewed repository (D138), beside the cache. */
+export const SERVING_FILE = join('.atis', 'serve.json');
+/** What `.atis/` holds for git: nothing, so atis never edits the repository's own ignores. */
+const IGNORE_ALL = '*\n';
+/** Read and write for the owner alone: the token in the file opens the map. */
+const OWNER_ONLY = 0o600;
 
 /** The most one file's diff may run to before git's answer is cut off as a failure. */
 const DIFF_LIMIT = 32 * 1024 * 1024;
@@ -214,6 +241,108 @@ export const parseBaseRequest = (text: string): BaseRequest | { readonly reason:
   return { ...(base === undefined ? {} : { base }), ...(last === undefined ? {} : { last }), ...(working === undefined ? {} : { working_tree: working }) };
 };
 
+/** A `POST /highlight` body as a request, or why it is not one: JSON naming a file by its path or a notice by its rank from 1, one of them and nothing else (D178). */
+export const parseHighlight = (text: string): HighlightRequest | { readonly reason: string } => {
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    return { reason: 'the body is not JSON' };
+  }
+  if (!isRecord(value)) return { reason: 'the body is not a JSON object' };
+  const others = Object.keys(value).filter((key) => key !== 'file' && key !== 'notice');
+  if (others.length > 0) return { reason: `a highlight names a file or a notice, never ${others.join(' or ')}` };
+  const { file, notice } = value;
+  if (file !== undefined && notice !== undefined) return { reason: 'file and notice each name the target; give one of them' };
+  if (typeof file === 'string' && file !== '') return { file };
+  if (typeof notice === 'number' && Number.isSafeInteger(notice) && notice >= 1) return { notice };
+  return { reason: 'a highlight names a file by its path, or a notice by its rank from 1' };
+};
+
+/** What a highlight may name in a map: the files its layout places on the terrain, and how many notices it ranks. */
+type Targets = { readonly files: ReadonlySet<string>; readonly notices: number };
+
+/** A map's targets, read loosely from its text as the sides are; a map that does not parse places nothing and ranks nothing. */
+const targetsOf = (text: string): Targets => {
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    return { files: new Set(), notices: 0 };
+  }
+  const terrain = isRecord(value) ? value['terrain'] : undefined;
+  const layout = isRecord(terrain) ? terrain['layout'] : undefined;
+  const positions = isRecord(layout) && isRecord(layout['positions']) ? layout['positions'] : {};
+  const organelles: unknown = isRecord(terrain) ? terrain['organelles'] : undefined;
+  const files = (Array.isArray(organelles) ? (organelles as readonly unknown[]) : []).flatMap((organelle) =>
+    isRecord(organelle) && typeof organelle['id'] === 'string' && Object.hasOwn(positions, organelle['id']) ? [organelle['id']] : [],
+  );
+  const notices: unknown = isRecord(value) ? value['notices'] : undefined;
+  return { files: new Set(files), notices: Array.isArray(notices) ? notices.length : 0 };
+};
+
+/** Why a map refuses a highlight's target, or none when it places the file or ranks the notice. */
+const refusalOf = (asked: HighlightRequest, held: Targets): string | undefined => {
+  if ('file' in asked) return held.files.has(asked.file) ? undefined : `the map places no file ${asked.file}`;
+  if (asked.notice <= held.notices) return undefined;
+  return held.notices === 0 ? 'the map ranks no notice' : `the map ranks ${String(held.notices)} notice${held.notices === 1 ? '' : 's'}; none is ${String(asked.notice)}`;
+};
+
+/**
+ * Say how to reach this run in `.atis/serve.json` under `repo` (D138): its
+ * port, its token and its process, written whole or not at all, readable and
+ * writable by its owner alone, with `.atis/` ignoring itself in git as the
+ * cache's does. Returns where it went; throws on a repository it cannot
+ * write to.
+ */
+export const keepServing = (repo: string, serving: Serving): string => {
+  const path = join(repo, SERVING_FILE);
+  const ignore = join(repo, '.atis', '.gitignore');
+  mkdirSync(join(repo, '.atis'), { recursive: true });
+  if (!existsSync(ignore)) writeAtomic(ignore, IGNORE_ALL);
+  const temp = `${path}.${String(serving.pid)}.tmp`;
+  rmSync(temp, { force: true });
+  writeFileSync(temp, `${JSON.stringify(serving)}\n`, { mode: OWNER_ONLY });
+  renameSync(temp, path);
+  return path;
+};
+
+/** Whether a process is running; one owned by another user is, though this one cannot signal it. */
+const isRunning = (pid: number): boolean => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return isRecord(error) && error['code'] === 'EPERM';
+  }
+};
+
+/** What `.atis/serve.json` under `repo` names, whatever its process's state; none when there is none, or it does not read as one. */
+const servingFile = (repo: string): Serving | undefined => {
+  let value: unknown;
+  try {
+    value = JSON.parse(readFileSync(join(repo, SERVING_FILE), 'utf8'));
+  } catch {
+    return undefined;
+  }
+  if (!isRecord(value)) return undefined;
+  const { port, token, pid } = value;
+  if (typeof port !== 'number' || !Number.isSafeInteger(port) || port < 1 || port > 65_535) return undefined;
+  if (typeof token !== 'string' || token === '' || typeof pid !== 'number' || !Number.isSafeInteger(pid) || pid < 1) return undefined;
+  return { port, token, pid };
+};
+
+/** The run serving `repo`'s tab, as its `.atis/serve.json` names it, while that process runs; none when no run serves it, or the one that did has died without taking the file back (D138). */
+export const servingIn = (repo: string): Serving | undefined => {
+  const serving = servingFile(repo);
+  return serving !== undefined && isRunning(serving.pid) ? serving : undefined;
+};
+
+/** Take back what `keepServing` wrote, when the file still names process `pid`; a later run serving the same repository keeps its own. */
+export const dropServing = (repo: string, pid: number): void => {
+  if (servingFile(repo)?.pid === pid) rmSync(join(repo, SERVING_FILE), { force: true });
+};
+
 /** Whether `ref` names a commit in `repo`, by `git rev-parse --verify`; a ref opening with `-` is never handed to git, which would read it as a flag. */
 const isCommit = (repo: string, ref: string): Promise<boolean> =>
   ref.startsWith('-')
@@ -291,7 +420,7 @@ const refuseUpgrade = (socket: Duplex, status: number): void => {
   socket.end(`HTTP/1.1 ${String(status)} ${STATUS_CODES[status] ?? ''}\r\nconnection: close\r\ncontent-length: 0\r\n\r\n`);
 };
 
-/** Serve the app, the map and the raw check output on loopback at a port of the system's choosing, take `POST /base` and serve the diffs when handed a way to rebuild, and take the page's socket under a watch; resolves once it is listening. */
+/** Serve the app, the map and the raw check output on loopback at a port of the system's choosing, take `POST /base` and serve the diffs when handed a way to rebuild, and take the page's socket and `POST /highlight`; resolves once it is listening. */
 export const serve = async ({ assets, map: first, token, checks: given, rebase, watch = false }: ServeOptions): Promise<Served> => {
   const root = resolve(assets);
   let port = 0;
@@ -299,8 +428,8 @@ export const serve = async ({ assets, map: first, token, checks: given, rebase, 
   let checks = given;
   // The base the page last switched to, which a watch's rebuild keeps to (D106).
   let switched: BaseRequest | undefined;
-  // The page's sockets, under a watch alone; each hears every map pushed and is heard from not at all.
-  const sockets = watch ? new WebSocketServer({ noServer: true, maxPayload: SOCKET_LIMIT }) : undefined;
+  // The page's sockets, on every run (D178); each hears every map pushed and every highlight relayed, and is heard from not at all.
+  const sockets = new WebSocketServer({ noServer: true, maxPayload: SOCKET_LIMIT });
   // The diff's repository and editor, read once, so a broken editor fails the run before it serves (C4).
   const repo = rebase === undefined ? undefined : resolve(rebase.repo);
   const editor = repo === undefined ? undefined : await editorOf(repo);
@@ -311,11 +440,25 @@ export const serve = async ({ assets, map: first, token, checks: given, rebase, 
     map = rebuilt.map;
     checks = checks === undefined ? undefined : { dir: checks.dir, slots: rebuilt.slots };
   };
-  // The held map's sides, read again only when a base replaces it.
-  let sidesRead: { readonly text: string; readonly sides: Sides | undefined } | undefined;
-  const sides = (): Sides | undefined => {
-    if (sidesRead?.text !== map) sidesRead = { text: map, sides: sidesOf(map) };
-    return sidesRead.sides;
+  /** A reading of the held map, made again only when a base or a watch replaces it. */
+  const reading = <T>(read: (text: string) => T): (() => T) => {
+    let last: { readonly text: string; readonly value: T } | undefined;
+    return () => {
+      if (last?.text !== map) last = { text: map, value: read(map) };
+      return last.value;
+    };
+  };
+  const sides = reading(sidesOf);
+  const targets = reading(targetsOf);
+  /** Send every open page a message, and say how many it reached. */
+  const relay = (message: string): number => {
+    let pages = 0;
+    for (const client of sockets.clients) {
+      if (client.readyState !== WebSocket.OPEN) continue;
+      client.send(message);
+      pages += 1;
+    }
+    return pages;
   };
 
   /** `/diff/<path>` (D102, D134): the run's token, then a path the held map changed, diffed between its sides in the repository the server reads. */
@@ -374,6 +517,35 @@ export const serve = async ({ assets, map: first, token, checks: given, rebase, 
     answer(request, response, 200, TYPES['.json'] ?? OCTETS, map);
   };
 
+  /**
+   * `POST /highlight` (D178): the run's token, an `Origin` of this server's
+   * own, and a body naming a file the held map places or a notice it ranks;
+   * then relayed to each open page, and answered with how many it reached.
+   */
+  const highlighted = async (request: IncomingMessage, response: ServerResponse, url: URL, host: string): Promise<void> => {
+    if (url.searchParams.get('token') !== token) {
+      answer(request, response, 403, PLAIN, "a highlight is taken only with this run's token\n");
+      return;
+    }
+    if (request.headers.origin !== `http://${host}`) {
+      answer(request, response, 403, PLAIN, "a highlight is taken only from this server's own origin\n");
+      return;
+    }
+    const text = await bodyOf(request);
+    const asked = text === undefined ? { reason: 'the body is too long' } : parseHighlight(text);
+    if ('reason' in asked) {
+      answer(request, response, 400, PLAIN, `${asked.reason}\n`);
+      return;
+    }
+    const refused = refusalOf(asked, targets());
+    if (refused !== undefined) {
+      answer(request, response, 400, PLAIN, `${refused}\n`);
+      return;
+    }
+    const reached: Highlighted = { pages: relay(JSON.stringify({ kind: 'highlight', ...asked })) };
+    answer(request, response, 200, TYPES['.json'] ?? OCTETS, `${JSON.stringify(reached)}\n`);
+  };
+
   const handle = async (request: IncomingMessage, response: ServerResponse): Promise<void> => {
     const host = request.headers.host;
     if (host !== `${LOOPBACK}:${String(port)}` && host !== `localhost:${String(port)}`) {
@@ -385,8 +557,12 @@ export const serve = async ({ assets, map: first, token, checks: given, rebase, 
       await rebased(request, response, url, host);
       return;
     }
+    if (request.method === 'POST' && url.pathname === '/highlight') {
+      await highlighted(request, response, url, host);
+      return;
+    }
     if (request.method !== 'GET' && request.method !== 'HEAD') {
-      answer(request, response, 405, PLAIN, 'atis serves; it takes nothing but a base\n');
+      answer(request, response, 405, PLAIN, 'atis serves; it takes nothing but a base or a highlight\n');
       return;
     }
     if (url.pathname === '/map.json') {
@@ -440,10 +616,10 @@ export const serve = async ({ assets, map: first, token, checks: given, rebase, 
     server.listen(0, LOOPBACK, () => listening());
   });
   /**
-   * The page's socket at `/watch` (D106, D134): the loopback host, the run's
-   * token and an `Origin` of this server's own, as the write asks, since a
-   * socket has no same-origin rule and any tab could open one; anything else
-   * is refused before it is upgraded.
+   * The page's socket at `/socket` (D106, D134, D178): the loopback host, the
+   * run's token and an `Origin` of this server's own, as the writes ask,
+   * since a socket has no same-origin rule and any tab could open one;
+   * anything else is refused before it is upgraded.
    */
   server.on('upgrade', (request: IncomingMessage, socket: Duplex, head: Buffer) => {
     const host = request.headers.host;
@@ -452,7 +628,7 @@ export const serve = async ({ assets, map: first, token, checks: given, rebase, 
       return;
     }
     const url = new URL(request.url ?? '/', `http://${host}`);
-    if (sockets === undefined || url.pathname !== WATCH_PATH) {
+    if (url.pathname !== SOCKET_PATH) {
       refuseUpgrade(socket, 404);
       return;
     }
@@ -462,7 +638,7 @@ export const serve = async ({ assets, map: first, token, checks: given, rebase, 
     }
     sockets.handleUpgrade(request, socket, head, (client) => {
       client.on('error', () => client.terminate());
-      client.send(pushed());
+      if (watch) client.send(pushed());
     });
   });
   const bound = server.address();
@@ -470,19 +646,18 @@ export const serve = async ({ assets, map: first, token, checks: given, rebase, 
   port = bound.port;
 
   return {
-    url: `http://${LOOPBACK}:${String(port)}/?token=${token}${watch ? '&watch=1' : ''}`,
+    url: `http://${LOOPBACK}:${String(port)}/?token=${token}`,
     port,
     address: bound.address,
     asked: () => switched,
     push: (rebuilt) => {
       hold(rebuilt);
-      const message = pushed();
-      for (const client of sockets?.clients ?? []) if (client.readyState === WebSocket.OPEN) client.send(message);
+      relay(pushed());
     },
     close: () =>
       new Promise<void>((closed, failed) => {
-        for (const client of sockets?.clients ?? []) client.terminate();
-        sockets?.close();
+        for (const client of sockets.clients) client.terminate();
+        sockets.close();
         server.closeAllConnections();
         server.close((error) => (error === undefined ? closed() : failed(error)));
       }),

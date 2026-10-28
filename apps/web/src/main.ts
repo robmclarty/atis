@@ -3,8 +3,9 @@
  * it, says where the load is in the chrome, and once the map is read and
  * trusted draws the world under it. Every token the world and the chrome read
  * comes through one registry (D156), which the dev panel writes and the tab's
- * session keeps. A page opened watching listens for the maps the watch
- * pushes, and hands each new one to the world and the chrome (D106). A page
+ * session keeps. A page the CLI served listens on its socket: for the maps
+ * a watch pushes, each new one handed to the world and the chrome (D106),
+ * and for what an agent asks it to show over `atis mcp` (D178). A page
  * opened as a still for a comment draws no chrome (`?cinema`, D108).
  */
 
@@ -15,10 +16,11 @@ import { Chrome } from './chrome/index.js';
 import { prOf } from './diff.js';
 import { loadMap, mapUrl, servedToken } from './load.js';
 import type { MapState } from './load.js';
+import { pushedHighlight } from './highlight.js';
 import { createNav } from './nav.js';
 import { createRegistry, sessionStore } from './registry.js';
 import { viewOf } from './view.js';
-import { framedUrl, pushedMap, sameBuild, watchUrl } from './watch.js';
+import { framedUrl, pushedMap, sameBuild, socketUrl } from './watch.js';
 import { drawWorld } from './world/index.js';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#world');
@@ -51,12 +53,18 @@ const state = await loadMap(url, (target) => fetch(target));
 show(state);
 if (state.status === 'ready') {
   await drawWorld(canvas, state.map, view, registry, nav, { token, pr: prOf(location.search) });
-  const socket = watchUrl(location.search, location.host);
-  // Each map the watch pushes that is not the one shown: its weather swapped in by the world, or its new ground drawn afresh where the reader stands (D106).
+  const socket = socketUrl(location.search, location.host);
+  // What an agent names, flown to and lit (D178); and each map the watch pushes that is not the one shown: its weather swapped in by the world, or its new ground drawn afresh where the reader stands (D106).
   let shown = state.map;
   if (socket !== undefined) {
     new WebSocket(socket).addEventListener('message', (event: MessageEvent<unknown>) => {
-      const next = typeof event.data === 'string' ? pushedMap(event.data) : undefined;
+      const text = typeof event.data === 'string' ? event.data : '';
+      const highlight = pushedHighlight(text);
+      if (highlight !== undefined) {
+        nav.highlight(highlight);
+        return;
+      }
+      const next = pushedMap(text);
       if (next === undefined || sameBuild(shown, next)) return;
       const framing = nav.swap(next);
       if (framing !== undefined) {

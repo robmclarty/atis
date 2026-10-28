@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { LATEST_PROTOCOL_VERSION } from '@modelcontextprotocol/sdk/types.js';
 import { assertMap } from 'core';
 import { afterAll, beforeAll, expect, test } from 'vitest';
 
@@ -21,7 +22,8 @@ import { VERSION } from '../index.js';
  * `workspace:` resolves to, and its scripts are not run, since `prepack` is
  * the whole workspace build. The tarball is then unpacked beside links to
  * the packages its manifest names and no others, so the bin runs with
- * nothing else in reach.
+ * nothing else in reach. The MCP SDK and zod are devDependencies the bundle
+ * inlines, so the manifest still names three packages alone (D179).
  */
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PACKAGE = join(HERE, '..', '..');
@@ -114,8 +116,8 @@ test('the packed manifest names no workspace package among its dependencies, and
     expect(workspace, name).not.toContain(name);
     expect(range, name).not.toMatch(/^workspace:/);
   }
-  // The scan's compiler stays a runtime dependency.
-  expect(Object.keys(packed.manifest.dependencies)).toContain('typescript');
+  // The scan's compiler stays a runtime dependency, and the MCP SDK installs nothing beside the three (D179).
+  expect(Object.keys(packed.manifest.dependencies).toSorted()).toEqual(['playwright-core', 'typescript', 'ws']);
 
   const imports = bareImports();
   expect(imports.map(packageOf)).toEqual(expect.arrayContaining(['playwright-core', 'typescript', 'ws']));
@@ -130,10 +132,12 @@ test('the tarball carries the bundled bin and library entry, the licenses of wha
   expect(stray).toEqual([]);
   expect(packed.files.filter((path) => path.includes('__tests__') || (path.endsWith('.ts') && !path.endsWith('.d.ts')))).toEqual([]);
 
-  // Core reaches d3-force and bubblesets-js, which ride inside the bundle with their licenses.
+  // Core reaches d3-force and bubblesets-js, and `atis mcp` the MCP SDK and zod, which ride inside the bundle with their licenses (D179).
   const licenses = readFileSync(join(packed.root, 'dist', 'licenses.md'), 'utf8');
   expect(licenses).toContain('## d3-force');
   expect(licenses).toContain('## bubblesets-js');
+  expect(licenses).toContain('## @modelcontextprotocol/sdk');
+  expect(licenses).toContain('## zod');
   expect(readFileSync(join(packed.root, 'dist', 'cli.js'), 'utf8')).toMatch(/^#!\/usr\/bin\/env node\n/);
 });
 
@@ -204,3 +208,46 @@ test('the unpacked bin runs with only its dependencies installed: it prints its 
     expect(await stop()).toBe(0);
   }
 }, 2 * MINUTE);
+
+/** One JSON-RPC message, as MCP's stdio transport writes them: a line each. */
+type Message = { readonly id?: number; readonly result?: unknown; readonly error?: unknown };
+
+test("the unpacked bin's atis mcp answers an agent over stdio with only its dependencies installed, and exits 0 when the agent closes it (D110, D179, C4)", async () => {
+  const bin = join(packed.root, packedPath(packed.manifest.bin['atis']));
+  const map = join(REPO, 'libs', 'core', 'fixtures', 'demo', 'map.json');
+  const child = spawn(process.execPath, [bin, 'mcp', '--repo', temp('mcp'), '--map', map], { stdio: ['pipe', 'pipe', 'pipe'] });
+  let stderr = '';
+  child.stderr.setEncoding('utf8');
+  child.stderr.on('data', (chunk: string) => (stderr += chunk));
+  const exited = new Promise<number | null>((done) => child.once('exit', (code) => done(code)));
+  const answers = new Map<number, (message: Message) => void>();
+  let pending = '';
+  child.stdout.setEncoding('utf8');
+  child.stdout.on('data', (chunk: string) => {
+    pending += chunk;
+    const lines = pending.split('\n');
+    pending = lines.pop() ?? '';
+    for (const line of lines.filter((each) => each.trim() !== '')) {
+      const message = JSON.parse(line) as Message;
+      if (message.id !== undefined) answers.get(message.id)?.(message);
+    }
+  });
+  const ask = (id: number, method: string, params: unknown): Promise<Message> =>
+    new Promise((answered) => {
+      answers.set(id, answered);
+      child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id, method, params })}\n`);
+    });
+
+  const hello = await ask(1, 'initialize', { protocolVersion: LATEST_PROTOCOL_VERSION, capabilities: {}, clientInfo: { name: 'atis-package-test', version: '0.0.0' } });
+  expect(hello.result).toMatchObject({ serverInfo: { name: 'atis', version: VERSION } });
+  child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' })}\n`);
+  const listed = (await ask(2, 'tools/list', {})).result as { readonly tools: readonly { readonly name: string }[] };
+  expect(listed.tools.map((tool) => tool.name).toSorted()).toEqual(['explain', 'highlight', 'reach']);
+  const explained = (await ask(3, 'tools/call', { name: 'explain', arguments: { notice: 1 } })).result as { readonly content: readonly { readonly text: string }[] };
+  const [primary] = assertMap(JSON.parse(readFileSync(map, 'utf8'))).notices;
+  expect(JSON.parse(explained.content[0]?.text ?? '')).toEqual({ rank: 1, ...primary, source: map });
+
+  child.stdin.end();
+  expect(await exited).toBe(0);
+  expect(stderr).toBe('');
+}, MINUTE);

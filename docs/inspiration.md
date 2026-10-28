@@ -90,7 +90,9 @@ rest are evaluated or held in reserve.
 | `react`, `react-dom` 19.3.1 | Meta and contributors | MIT | The chrome: the HUD and its parts, the breadcrumb, the notices and the shore rail, the legend inset, the minimap, the wiring plate and the dev panel, in `apps/web/src/chrome/` and `apps/web/src/dev/` |
 | `vite` 8.3.5, `@vitejs/plugin-react` 6.1.2 | Evan You and Vite contributors | MIT | Building `apps/web` into the assets the CLI serves (`apps/web/vite.config.ts`), and serving the app from source for the world's smoke test and the budget script (`apps/web/scripts/budget.ts`) |
 | `playwright-core` 1.64.1 | Microsoft | Apache-2.0 | Driving the installed Chrome headless, downloading no browser of its own (D145): the world's smoke test (D132) and `--png` (`apps/atis/src/png.ts`) |
-| `ws` 8.22.0 | Einar Otto Stangvik and contributors | MIT | The WebSocket server `--watch` pushes each rebuilt map to the tab over, on the served port (`apps/atis/src/serve.ts`, D106) |
+| `ws` 8.22.0 | Einar Otto Stangvik and contributors | MIT | The page's socket on the served port, which `--watch` pushes each rebuilt map over (D106) and `atis mcp`'s highlights ride (D178), in `apps/atis/src/serve.ts` |
+| `@modelcontextprotocol/sdk` 1.32.2 | Anthropic, PBC | MIT | `atis mcp`'s stdio server and its three tools, on its `McpServer` (`apps/atis/src/mcp.ts`, D110). A devDependency the bundle inlines, its licence with it, so the installed package carries none of the packages its HTTP transports need (D179) |
+| `zod` 4.6.7 | Colin McDonnell | MIT | The input schemas of `atis mcp`'s tools, as the MCP SDK's `McpServer` takes them, the SDK's required peer; inlined with it (D179) |
 | `deck.gl` | vis.gl / OpenJS Foundation | MIT | Evaluated, not chosen (§15) |
 
 ## 5. Fixtures (trees and reviews, no code taken)

@@ -79,7 +79,7 @@ type Listening = { readonly next: () => Promise<MapJson>; readonly socket: WebSo
 
 /** Open the page's socket on a served run, as the page opens it: the token in its query, the page's own `Origin`. */
 const listen = async (served: Served, origin = `http://127.0.0.1:${String(served.port)}`): Promise<Listening> => {
-  const socket = new WebSocket(`ws://127.0.0.1:${String(served.port)}/watch?token=${TOKEN}`, { origin });
+  const socket = new WebSocket(`ws://127.0.0.1:${String(served.port)}/socket?token=${TOKEN}`, { origin });
   const heard: MapJson[] = [];
   const waiting: ((map: MapJson) => void)[] = [];
   socket.on('message', (data: Buffer) => {
@@ -118,7 +118,7 @@ const watching = async (repo: string): Promise<{ readonly served: Served; readon
 test('under --watch, each new commit is rebuilt and pushed to the open socket, on the terrain the first map was drawn on (D106, P2)', async () => {
   const repo = twoCommits();
   const { served, lines, stdout } = await watching(repo);
-  expect(served.url).toBe(`http://127.0.0.1:${String(served.port)}/?token=${TOKEN}&watch=1`);
+  expect(served.url).toBe(`http://127.0.0.1:${String(served.port)}/?token=${TOKEN}`);
   expect(stdout).toContain(', watching (Ctrl-C to stop)');
   const { next } = await listen(served);
 
@@ -171,7 +171,7 @@ test('a watch keeps to the base the page switched to, and a rebuild that fails k
   expect(assertMap(await held.json()).meta.head).toBe(sha);
 }, MINUTE);
 
-test("the socket answers only the run's token from the page's own origin on loopback, and only on a watching server (D134)", async () => {
+test("the socket answers only the run's token from the page's own origin on loopback, on every served run, and only a watch sends the map held as a page connects (D134, D178)", async () => {
   const { served } = await watching(twoCommits());
   const port = String(served.port);
   const refused = async (path: string, headers: Readonly<Record<string, string>>): Promise<number> =>
@@ -189,25 +189,34 @@ test("the socket answers only the run's token from the page's own origin on loop
     });
   const origin = `http://127.0.0.1:${port}`;
   const answers = await Promise.all([
-    refused('/watch', { origin }),
-    refused(`/watch?token=${TOKEN}0`, { origin }),
-    refused(`/watch?token=${TOKEN}`, {}),
-    refused(`/watch?token=${TOKEN}`, { origin: 'http://evil.example' }),
-    refused(`/watch?token=${TOKEN}`, { origin, host: `evil.example:${port}` }),
-    refused(`/elsewhere?token=${TOKEN}`, { origin }),
-    refused(`/watch?token=${TOKEN}`, { origin: `http://localhost:${port}`, host: `localhost:${port}` }),
+    refused('/socket', { origin }),
+    refused(`/socket?token=${TOKEN}0`, { origin }),
+    refused(`/socket?token=${TOKEN}`, {}),
+    refused(`/socket?token=${TOKEN}`, { origin: 'http://evil.example' }),
+    refused(`/socket?token=${TOKEN}`, { origin, host: `evil.example:${port}` }),
+    refused(`/watch?token=${TOKEN}`, { origin }),
+    refused(`/socket?token=${TOKEN}`, { origin: `http://localhost:${port}`, host: `localhost:${port}` }),
   ]);
   expect(answers).toEqual([403, 403, 403, 403, 403, 404, 101]);
 
+  // A run served without a watch takes the socket too, for a highlight to ride (D178), and sends nothing as the page connects.
   const still = await serve({ assets: stubApp(), map: '{}\n', token: TOKEN });
   closers.push(still.close);
   expect(still.url).toBe(`http://127.0.0.1:${String(still.port)}/?token=${TOKEN}`);
-  const without = await new Promise<number>((settled) => {
-    const socket = new WebSocket(`ws://127.0.0.1:${String(still.port)}/watch?token=${TOKEN}`, { origin: `http://127.0.0.1:${String(still.port)}` });
-    socket.on('unexpected-response', (_request, response) => settled(response.statusCode ?? 0));
-    socket.on('open', () => settled(101));
+  const heard: string[] = [];
+  const socket = new WebSocket(`ws://127.0.0.1:${String(still.port)}/socket?token=${TOKEN}`, { origin: `http://127.0.0.1:${String(still.port)}` });
+  socket.on('message', (data: Buffer) => heard.push(data.toString('utf8')));
+  await new Promise<void>((opened, failed) => {
+    socket.once('open', () => opened());
+    socket.once('error', failed);
   });
-  expect(without).toBe(404);
+  closers.push(() => {
+    socket.terminate();
+    return Promise.resolve();
+  });
+  // A round trip on loopback, so a map sent as the page connected would have arrived.
+  await fetch(`http://127.0.0.1:${String(still.port)}/map.json?token=${TOKEN}`);
+  expect(heard).toEqual([]);
 }, MINUTE);
 
 test('the signature moves with HEAD, the index and the summary, and the watch hands on a move once it has held still (D106)', async () => {

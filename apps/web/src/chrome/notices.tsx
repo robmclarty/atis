@@ -42,6 +42,7 @@ import { useMemo } from 'react';
 import type { ReactElement } from 'react';
 import type { MapJson } from 'core';
 
+import { revealGroup } from '../highlight.js';
 import type { Nav } from '../nav.js';
 import { categoryHue, rowsOf, tallyOf } from '../notices.js';
 import { screenType } from '../screen.js';
@@ -84,7 +85,7 @@ const LIST_SHARE = '50%';
 const go = (map: MapJson, rank: number, nav: Nav | undefined): void => {
   const destination = destinationOf(map, rank);
   if (destination?.kind === 'stop') nav?.visit(destination.stop);
-  if (destination?.kind === 'group') document.querySelector(`[data-rail] [data-group="${destination.group}"]`)?.scrollIntoView({ block: 'nearest' });
+  if (destination?.kind === 'group') revealGroup(destination.group);
 };
 
 /** The ranked list for a map, read live from the registry; with the line to the world, a row's click flies there. */

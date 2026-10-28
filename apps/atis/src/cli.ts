@@ -16,6 +16,7 @@ import { OVERLAY_NAMES } from 'core';
 import type { OverlayName } from 'core';
 
 import { USAGE, VERSION } from './index.js';
+import { mcpRun } from './mcp.js';
 import { commentRun, fingerprintRun, pngRun, run, serveRun } from './run.js';
 import type { HeadAsked, Outcome, RangeAsked } from './run.js';
 import type { BaseAsked } from './sources/index.js';
@@ -249,8 +250,30 @@ function fingerprintCommand(argv: readonly string[]): Promise<Outcome> {
   return Promise.resolve(fingerprintRun({ repo: values.repo ?? process.cwd(), head: values.head, out: values.out }));
 }
 
+/** The flags `atis mcp` takes: the repository whose tab it points at, and the map to read when no run serves one (D138). */
+const MCP_FLAGS = {
+  repo: { type: 'string' },
+  map: { type: 'string' },
+  help: { type: 'boolean', short: 'h' },
+} as const;
+
+/** `atis mcp`: the tools an agent points at the map with, served over stdio until the client closes it (D110, D138). */
+function mcpCommand(argv: readonly string[]): Promise<Outcome> {
+  let values: { readonly repo?: string | undefined; readonly map?: string | undefined; readonly help?: boolean | undefined };
+  try {
+    ({ values } = parseArgs({ args: [...argv], options: MCP_FLAGS, allowPositionals: false }));
+  } catch (error) {
+    return Promise.resolve(misuse(error instanceof Error ? error.message : String(error)));
+  }
+  if (values.help === true) return Promise.resolve({ exitCode: 0, stdout: USAGE, stderr: '' });
+  return mcpRun({ repo: values.repo ?? process.cwd(), map: values.map, version: VERSION });
+}
+
 /** The verbs atis takes ahead of its flags, each a command that is not a map (D104). */
-const COMMANDS: ReadonlyMap<string, Command> = new Map([['fingerprint', fingerprintCommand]]);
+const COMMANDS: ReadonlyMap<string, Command> = new Map([
+  ['fingerprint', fingerprintCommand],
+  ['mcp', mcpCommand],
+]);
 
 /**
  * The command a leading verb names, or the map when the first word is a flag

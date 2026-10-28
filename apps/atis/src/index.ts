@@ -5,13 +5,15 @@
  * a parsed set of flags into `map.json` on disk, `pngRun`, which captures the
  * world beside it as a PNG (D105), `serveRun`, which serves the world instead
  * (D92), `serve`, the loopback server beneath both, `fingerprintRun`, which
- * writes the terrain alone for a README (D107), and `commentRun`, which posts
- * the map to the branch's pull request (D108).
+ * writes the terrain alone for a README (D107), `commentRun`, which posts
+ * the map to the branch's pull request (D108), and `mcpRun`, which serves
+ * the tools an agent points at the map with (D110).
  */
 
 import { SCHEMA_VERSION } from 'core';
 
 export * from './comment.js';
+export * from './mcp.js';
 export * from './png.js';
 export * from './run.js';
 export * from './serve.js';
@@ -26,6 +28,7 @@ export const USAGE = `${NAME} ${VERSION}: a weather map for code changes.
   atis --range <from>..<to> [options]
   atis --whole-repo [--head <ref>] [options]
   atis fingerprint --out <svg> [--repo <path>] [--head <ref>]
+  atis mcp [--repo <path>] [--map <file>]
 
 With no --out, --svg or --png, atis serves the world on 127.0.0.1 at a port of
 its own, opens it in a tab, and runs until interrupted.
@@ -34,7 +37,16 @@ atis fingerprint writes the terrain alone, no weather and no notices, as a
 480 x 300 SVG for a README: the whole repository at the head (HEAD unless
 --head names another), measured afresh, the same bytes for one commit.
 
+atis mcp serves an agent three tools over stdio (MCP): highlight flies the
+open tab to a file or a notice and lights it, reach says how the change
+reaches a file, and explain gives a notice's why, inputs and thresholds. They
+read the map the tab atis serves in the repository holds, found by its
+.atis/serve.json; with no tab open, reach and explain read the map --map
+names, and highlight says no tab is open.
+
   --repo <path>   the repository to read (default: the working directory)
+  --map <file>    for atis mcp, the map reach and explain read when no tab is
+                  open
   --base <ref>    the ref the change is measured from (default: the trunk, the
                   trunk atis.config.json names, else the first of main, master,
                   develop and trunk, each local and then on origin/)

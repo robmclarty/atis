@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 73 — docs(atis): write the user's README with the legend and the fingerprint
+**Current step:** 74 — feat(cli): serve MCP tools that point at the open map
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -126,18 +126,20 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 71. feat(cli): post the map to a pull request through gh
 - ☑ 118. feat(svg): draw the comment's image and the fingerprint as the minimap zoomed in
 - ☑ 72. build(atis): bundle the workspace into a package that installs
-- ☐ 73. docs(atis): write the user's README with the legend and the fingerprint
+- ☑ 73. docs(atis): write the user's README with the legend and the fingerprint
 - ☐ 74. feat(cli): serve MCP tools that point at the open map
 - ☐ 75. feat(core): reach exported names through the files that import them
 - ☐ 76. feat(web): light a symbol's reach where it crosses a membrane
 - ☐ 77. feat(tour): write an opt-in reviewer's tour with fascicle
 - ☐ 78. feat(web): play a tour's stops with fly-to
 - ☐ 79. refactor(cli): run every producer a repo needs and merge their scans
+- ☐ 120. feat(cli): read JavaScript as terrain through the TypeScript producer
 - ☐ 80. fix(core): sort other languages' manifests and settings onto the shore
 - ☐ 81. feat(cli): scan a Go module into the same scan shape
 - ☐ 82. feat(cli): scan a Python project into the same scan shape
 - ☐ 83. feat(cli): scan Terraform modules into the same scan shape
 - ☐ 84. feat(cli): scan shell scripts into the same scan shape
+- ☐ 119. fix(cli): read checkride's targets, each artifact by its check's adapter
 - ☐ 85. feat(cli): read each language's evidence as checkride writes it
 - ☐ 86. chore(fixtures): render one reviewed PR per new language
 - ☐ 87. docs(producers): write the contract a language producer fills
@@ -227,8 +229,9 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] step 43's 20,000-file map draws its first frame about 5 s after it arrives on both backends, 0.7 s of it the composites' tissue and grid; C14 names no first frame at that size (step 66)
 - [x] a PNG capture frames the tab's opening view, the far-zoom planet with the HUD and the notices' rail, where the numbered notice boxes are not drawn; a PR comment's image may read better framed at the surface (step 68)
 - [x] draw the comment's image and the fingerprint the way the minimap draws the field (flat skins and files, the notices' numbered boxes), as if the minimap could be zoomed in, rather than the world's lit still and the SVG's terrain (Rob at range 19's stop)
-- [ ] the web app the tarball ships under web/ inlines three, react, camera-controls and elkjs (EPL-2.0) with no license file beside it; apps/web's Vite build could set build.license as the CLI's bundle now does (step 72)
-- [ ] the packed declarations (dist/run.d.ts, comment.d.ts, cache.d.ts) import types from core, which the tarball carries only as bundled JavaScript, so a TypeScript consumer of @robmclarty/atis's library entry reads those types unresolved (step 72)
+- [x] the web app the tarball ships under web/ inlines three, react, camera-controls and elkjs (EPL-2.0) with no license file beside it; apps/web's Vite build could set build.license as the CLI's bundle now does (step 72)
+- [x] the packed declarations (dist/run.d.ts, comment.d.ts, cache.d.ts) import types from core, which the tarball carries only as bundled JavaScript, so a TypeScript consumer of @robmclarty/atis's library entry reads those types unresolved (step 72)
+- [ ] the user's README (root and apps/atis) says nothing of atis mcp: an agent's MCP config launching it in the repo, its three tools, and --map for a map with no tab open
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -348,6 +351,9 @@ Harvest results this boundary:
 - 2026-10-27, at range 19 of 33's stop: 2 parked ideas, classified.
 - **tangent**: park 78 · a PNG capture frames the tab's opening view, the far-zoom planet with the HUD and the notices' rail, where the numbered notice boxes are not drawn; a PR comment's image may read better framed at the surface (step 68) → the comment's image now takes the cinema framing (D174 (comment-image)), and whether `--png` should too can wait for the README (step 73), the next place a PNG is shown
 - **blocker**: park 79 · draw the comment's image and the fingerprint the way the minimap draws the field (flat skins and files, the notices' numbered boxes), as if the minimap could be zoomed in, rather than the world's lit still and the SVG's terrain (Rob at range 19's stop) → it amends D174 (comment-image) and D107 (fingerprint), and step 73's README shows the fingerprint, so it becomes step 118 in a bare range of its own ahead of range 20, where you judge the look at its pause
+- 2026-10-28, at range 20 of 33's stop: 2 parked ideas, classified.
+- **tangent**: park 80 · the web app the tarball ships under web/ inlines three, react, camera-controls and elkjs (EPL-2.0) with no license file beside it; apps/web's Vite build could set build.license as the CLI's bundle now does (step 72) → nothing in wave 5 depends on it, and it needs doing only before you publish by hand (D53 (pnpm-and-stub))
+- **tangent**: park 81 · the packed declarations (dist/run.d.ts, comment.d.ts, cache.d.ts) import types from core, which the tarball carries only as bundled JavaScript, so a TypeScript consumer of @robmclarty/atis's library entry reads those types unresolved (step 72) → the package is a command, and nothing imports its library entry, in the workspace or out of it
 
 ## Log
 
@@ -2543,3 +2549,71 @@ folder, so it rides the branch into the PR.)*
   For the stills to be the inset zoomed in, the inset has to draw what they draw. It still hangs its boxes on the targets, since it has no room for labels. `MINIMAP` moved into `libs/scene/src/minimap.ts` so `libs/svg` can read it, and it gained three tokens: `skin`, `file` and `fileFloor`. All three are live in the dev panel and have rows in `docs/design.md`. On retake-3 the inset is busier, a fine speckle over the body (`/tmp/atis-118/out/inset-*.png`). Setting `MINIMAP.skin` to the body's grey and raising `MINIMAP.fileFloor` gives back the old flat silhouette, live. Panel tuning reaches the stills only once the value is copied into `minimap.ts`. The two still sizes are fixed, not tokens, and `docs/design.md` says so.
 
 - 2026-10-27 — step 72 checkpointed · d77781992 — build(atis): bundle the workspace into a package that installs (1 drift, 14m)
+- 2026-10-27 — step 73 checkpointed · 0958b93de — docs(atis): write the user's README with the legend and the fingerprint (6m)
+- 2026-10-28 — range 20 of 33's stop recorded — wave 4's boundary: review the packed tarball's install and the README; then `/plumbbob:refine` sharpens wave 5, settling [Q39 (other-language-evidence)](#q39) and [Q40 (tour-provider)](#q40) and weighing JavaScript as terrain ([D126 (typescript-corpus)](#d126))
+
+  **Summary**: atis is now a package that installs, and it has a README to go with it. `pnpm pack` in `apps/atis` makes a tarball whose `dependencies` name only `playwright-core`, `typescript` and `ws`. Core, svg and scene ride inside its bundled `dist/`, and the built web app sits in `web/` beside it. I installed that tarball into an empty directory, and `atis --version`, `atis --base HEAD~1 --out map.json` and a `--png` all ran there against a clone of this repo. Both READMEs now say what atis is, how to run each mode, what every mark on the map means, and what atis never does, under its own fingerprint.
+
+  1. The bundle step strayed one line outside its seam, so the gate type-checks the new script
+  2. The web app ships in `web/` beside `dist/`, where the CLI looks for it, rather than in `dist/web/` as the done-when words it
+  3. The bundle reads the libs' sources and inlines everything the manifest does not install
+  4. The tarball installed into an empty directory and ran against a clone of this repo
+  5. The two READMEs share one user-facing body, and differ in their links and one section
+
+  **Readout**:
+
+  ```text
+  steps        2 of 2 landed
+               - 72 d777819 · 73 0958b93
+  check        green: 2 of 8 checks, 2 landings · without 6 others
+  done-when    met
+  decisions    honored:
+               - D109 (installable-package), D133 (served-assets)
+               - D20 (workspace-exports), D53 (pnpm-and-stub)
+  constraints  14 of 14 honored
+  seam         strayed: 1 path outside step 72's seam
+               → tsconfig.json
+  diff         +887 -27 across 10 files
+               - README.md +297 -10
+               - apps/atis/README.md +284 -7
+               - apps/atis/package.json +5 -2
+               - apps/atis/scripts/bundle.ts +72 -0
+               - apps/atis/scripts/tsconfig.json +13 -0
+               - apps/atis/src/__tests__/package.test.ts +206 -0
+               - apps/atis/tsconfig.json +2 -1
+               - and 3 more
+  spent        20 min · green first run at every landing · 1 drift warning
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Harvested**: 2 of 81 parked ideas open
+
+  | Park | What it is | Why it matters | Lean |
+  | --- | --- | --- | --- |
+  | P80 · Web app license notices | the web app the tarball ships under web/ inlines three, react, camera-controls and elkjs (EPL-2.0) with no license file beside it; apps/web's Vite build could set build.license as the CLI's bundle now does (step 72) | the tarball's web app inlines three, react and elkjs (EPL-2.0) with no notice; a `build.license` in `apps/web`'s Vite config fixes it | tangent: nothing in wave 5 depends on it, and it needs doing only before you publish by hand (D53 (pnpm-and-stub)) |
+  | P81 · Packed types name core | the packed declarations (dist/run.d.ts, comment.d.ts, cache.d.ts) import types from core, which the tarball carries only as bundled JavaScript, so a TypeScript consumer of @robmclarty/atis's library entry reads those types unresolved (step 72) | a TypeScript user of the library entry would see `core`'s types unresolved | tangent: the package is a command, and nothing imports its library entry, in the workspace or out of it |
+
+  **Recommendation**: Try the install yourself, read the two READMEs, confirm both parks as tangents, then run `/plumbbob:refine` for wave 5. For the install, run `pnpm -C apps/atis pack --pack-destination /tmp`. Then, in an empty directory, run `npm install /tmp/robmclarty-atis-0.0.0.tgz` and `npx atis --version`, and in any clone run `npx --prefix <that dir> atis --base HEAD~1 --out map.json`. In the refine, I would take Q39 (other-language-evidence)'s lean, evidence through checkride's `.check/` with one parser per native format, and Q40 (tour-provider)'s lean, a separate `apps/tour` on fascicle's `claude_cli`. JavaScript is the cheapest new terrain, because the TypeScript scan can read it through `allowJs`, but it widens the Frame's five languages, so that call is yours. Fix the web app's licenses (P80) before you publish.
+
+  **1.** The bundle step strayed one line outside its seam, so the gate type-checks the new script
+
+  The bundle script, `apps/atis/scripts/bundle.ts`, sat outside every tsconfig, so tsc never checked it, and the type-aware lint had no project to read it through. I gave it a `scripts/tsconfig.json`, the way `apps/web/scripts` has one, and referenced it from the root `tsconfig.json`, which the step's seam did not name. That one line is why the step's checkpoint read "a hair off". Without it the script would stay unchecked, so I would keep it.
+
+  **2.** The web app ships in `web/` beside `dist/`, where the CLI looks for it, rather than in `dist/web/` as the done-when words it
+
+  The done-when says "the built web app in `dist/web/`, where the workspace build already puts it (D133 (served-assets))". Those two halves disagree. The workspace build puts the app in `apps/atis/web/`, beside `dist/`, and the CLI reads `../web/` from `dist/cli.js`, which is the layout D133 (served-assets) names. I followed the decision and left the build and the lookup as they were. The gate test serves the packed app from that place to prove the two agree.
+
+  **3.** The bundle reads the libs' sources and inlines everything the manifest does not install
+
+  Vite (Rolldown beneath it) bundles the bin and the library entry from their sources. It resolves core, svg and scene through the `source` condition (D20 (workspace-exports)), so a pack needs neither the libs' `dist/` nor a tsc build first, and the test never races the `types` slot. Whatever the manifest's `dependencies` names stays an import, along with Node's builtins; everything else is inlined. That puts d3-force and bubblesets-js inside the bundle, with their licenses written to `dist/licenses.md`. earcut and elkjs never reach the CLI's code, so they are not in it.
+
+  `core` and `svg` moved to `devDependencies`, and tsc now writes only declarations for `apps/atis`. `pnpm build` ends with the bundle, and `prepack` runs the whole build. One habit changes: `pnpm types` alone no longer refreshes `apps/atis/dist/cli.js`, though `pnpm build` does, and your `~/.local/bin/atis` wrapper still runs whatever `pnpm build` last wrote. The gate test, `package.test.ts`, does four things. It bundles into a temp copy of the package and packs it with pnpm. It unpacks the tarball beside links to only the packages its manifest names. Then it checks the manifest, the file list and the bundle's imports, and has the unpacked bin print its version, write a map and its SVG, and serve the shipped page. Putting `core` back into `dependencies` turned two of its three tests red.
+
+  **4.** The tarball installed into an empty directory and ran against a clone of this repo
+
+  The real `pnpm pack` came to 41 files. `npm install` of it pulled four packages. In a clone, the installed `atis --base HEAD~1 --out map.json` wrote a 39-file map with 6 notices, NOINST because a clone has no `.check/`, in about 4 seconds. `--png` from the same install served its own web app and Chrome captured the world on WebGPU.
+
+  **5.** The two READMEs share one user-facing body, and differ in their links and one section
+
+  `apps/atis/README.md` is the npm page, so its links and the fingerprint image are absolute GitHub URLs; npm renders it away from the repo. The root `README.md` has the same body with relative links, plus a "Working on atis" section for the workspace. The reading is `docs/glance-test.md`'s legend made general. It covers the category, the HUD with Health Δ now live, the field, the key's fourteen marks and the few it leaves to the map, the notices, and how to move through the world. An edit to either body belongs in both.

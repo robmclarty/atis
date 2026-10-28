@@ -81,7 +81,7 @@ import { MAPS_BRANCH, commentBody, findPullRequest, imageUrl, keepImage, postCom
 import type { CommentImage } from './comment.js';
 import { capturePng, launchBrowser } from './png.js';
 import type { BrowserCandidate, Captured } from './png.js';
-import { serve } from './serve.js';
+import { SERVING_FILE, dropServing, keepServing, serve } from './serve.js';
 import type { BaseRequest, Rebuilt, Served } from './serve.js';
 import { WATCH_EVERY_MS, signatureOf, watchRepo, watchedIn } from './watch.js';
 import {
@@ -849,10 +849,13 @@ const rebuiltOf = (map: MapJson): Rebuilt => ({ map: serialize(map), slots: map.
  * mid-scan is never missed, and each time the signature moves it rebuilds
  * the map over the base the page last switched to, else as the flags asked,
  * through the terrain cache, and pushes it to the tab; a rebuild that fails
- * keeps the map the tab holds and says why (D106). The outcome carries the
- * server, which the caller closes on interrupt, the watch with it; its exit
- * code is 0 once serving, and 2 with no built app to serve or a repository
- * it cannot read (C4).
+ * keeps the map the tab holds and says why (D106). While it serves, it says
+ * how to reach it in `.atis/serve.json`, so `atis mcp` started in the same
+ * repository can point at the tab (D138); a repository that will not take
+ * the file is still served, and the run says `atis mcp` will not find it.
+ * The outcome carries the server, which the caller closes on interrupt, the
+ * watch and the file with it; its exit code is 0 once serving, and 2 with no
+ * built app to serve or a repository it cannot read (C4).
  */
 export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
   const assets = resolve(options.assets);
@@ -895,21 +898,26 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
             },
             options.watchEvery ?? WATCH_EVERY_MS,
           );
+    // Where `atis mcp`, started in this repository, finds the tab (D138); taken back as the run closes.
+    let unkept = '';
+    try {
+      keepServing(repo, { port: served.port, token, pid: process.pid });
+    } catch (error) {
+      unkept = `atis: atis mcp will not find this tab, since ${SERVING_FILE} could not be written: ${messageOf(error)}\n`;
+    }
     if (options.open) openTarget(served.url);
     return {
       exitCode: 0,
       stdout: `${summary(map)}, serving at ${served.url}${watching === undefined ? '' : ', watching'} (Ctrl-C to stop)\n`,
-      stderr: options.verbose ? report(measured) : '',
-      served:
-        watching === undefined
-          ? served
-          : {
-              ...served,
-              close: () => {
-                watching.close();
-                return served.close();
-              },
-            },
+      stderr: `${unkept}${options.verbose ? report(measured) : ''}`,
+      served: {
+        ...served,
+        close: () => {
+          watching?.close();
+          dropServing(repo, process.pid);
+          return served.close();
+        },
+      },
     };
   } catch (error) {
     return failed(error);

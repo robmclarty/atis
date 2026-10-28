@@ -38,7 +38,9 @@
  * and moves the camera where the minimap asks (D154). A notice's row, the
  * arrows, Enter and Escape fly the camera to a stop along the scheduler's
  * fly-to, and the skin swings as it lands; the stop goes back over the line
- * for the HUD's breadcrumb (step 39). From the surface on, the innermost cell
+ * for the HUD's breadcrumb (step 39). A target an agent names over
+ * `atis mcp` flies there too, and is lit: its labels written until the
+ * reader takes the camera, and a notice flared at its anchor (D178). From the surface on, the innermost cell
  * under the view's centre opens as a stained slide once its skin fills the
  * cell gate's share of the free screen, if its slide shows files (step 40,
  * D155, D165), a single-file module opening as the package it floats in
@@ -112,6 +114,8 @@ import { RAIL_WIDTH, zoomFor } from '../fit.js';
 import { askedOf, slideWords } from '../asked.js';
 import { diffLevelOf, loadDiff } from '../diff.js';
 import type { DiffAnswer, DiffLevel } from '../diff.js';
+import { litIn, revealGroup } from '../highlight.js';
+import type { Highlight } from '../highlight.js';
 import { hoverOf } from '../hover.js';
 import type { Hovered } from '../hover.js';
 import { marksOf } from '../marks.js';
@@ -288,10 +292,11 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   post.outputNode = scenePass.getTextureNode('output').add(glow);
 
   // The labels are placed again on the next frame after the view, the level of detail, a token or what they are asked for changes:
-  // the file or cell under the pointer on the field, and the target of the notice row it is over (D168).
+  // the file or cell under the pointer on the field, the target of the notice row it is over (D168), else the target an agent lit (D178).
   let placeLabels = true;
   let fieldTarget: string | undefined;
   let rowTarget: string | undefined;
+  let litTarget: string | undefined;
   const barrelOf = new Map(map.terrain.cells.map((cell) => [cell.id, cell.barrel] as const));
   let placedLod: number | undefined;
   // The free screen beside the rail, or the whole canvas in a still for a comment, which draws no chrome (D108).
@@ -542,6 +547,10 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   const byHand = (): void => {
     flight = undefined;
     handled = true;
+    // A hand on the camera puts out what an agent lit.
+    if (litTarget === undefined) return;
+    litTarget = undefined;
+    placeLabels = true;
   };
   canvas.addEventListener('pointerdown', byHand);
   canvas.addEventListener('wheel', byHand, { passive: true });
@@ -607,6 +616,24 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     relay(frameMap(next, shownFrame));
     return undefined;
   };
+  /**
+   * What an agent named over `atis mcp` (D178), held to the map the world
+   * draws: the camera flies to its stop, or the rail brings its shore
+   * group's block into view, its labels are written as a notice row's hover
+   * writes them until the reader takes the camera, and a notice flares at its
+   * anchor, as the scheduler allows one flare in flight (C12). The canvas
+   * names what was lit last.
+   */
+  const highlight = (asked: Highlight): void => {
+    const lit = litIn(source, asked);
+    if (lit === undefined) return;
+    if (lit.destination.kind === 'stop') visit(lit.destination.stop);
+    else revealGroup(lit.destination.group);
+    litTarget = lit.target;
+    placeLabels = true;
+    if (lit.flare !== undefined) scheduler.flare(lit.flare);
+    canvas.dataset['highlight'] = asked.kind === 'file' ? asked.path : `notice ${String(asked.rank)}`;
+  };
   // The minimap asks for a place and the camera eases there (D154); a notice's row asks for a stop and the camera flies there; the breadcrumb's buttons ask for the exploded view and the wiring; the scrubber asks for a frame.
   nav.steer({
     lookAt: (point) => {
@@ -624,6 +651,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     scrub,
     overlay,
     swap,
+    highlight,
   });
   // The arrows walk to a sibling, Enter descends and Escape ascends, unless the key is the focused element's own or the chrome already took it (an open legend folds away on Escape); with a cell open, Escape closes it first, x spreads or gathers its exploded view (D155), and w draws or takes away its wiring.
   globalThis.addEventListener('keydown', (event) => {
@@ -816,7 +844,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       canvas.dataset['planet'] = planetOn ? 'on' : 'off';
     }
     if (placeLabels || lod !== placedLod) {
-      for (const layer of layers()) layer.labels.place(viewportOf(camera, canvas.clientWidth), lod, slide, askedOf(fieldTarget, rowTarget));
+      for (const layer of layers()) layer.labels.place(viewportOf(camera, canvas.clientWidth), lod, slide, askedOf(fieldTarget, rowTarget ?? litTarget));
       placeLabels = false;
       placedLod = lod;
     }
