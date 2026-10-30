@@ -146,6 +146,22 @@ file there; two of them read differently on GitHub today, and their rows say how
 | **Inngest TypeScript SDK**, Inngest Inc. <https://github.com/inngest/inngest-js>, Apache-2.0 in each package's `LICENSE.md` and MIT in two examples' own, with no licence file at the root (GitHub's repository metadata reports GPL-3.0) | [#1753](https://github.com/inngest/inngest-js/pull/1753), name Sandbox snapshots, at `aff45e0` | The tree as a fixture (a merge); `jakobevangelista`'s approval as ground truth | `fixtures/corpus-11/`; copy C in [glance-test.md](./glance-test.md#round-one-second-retake-fail-2026-10-23) |
 | **VeeValidate**, Abdelrahman Awad. <https://github.com/logaretm/vee-validate>, MIT | [#4754](https://github.com/logaretm/vee-validate/pull/4754), use field-level schemas' transformed values on submit, at `61298cf` | The tree as a fixture (a hold); `logaretm`'s changes-requested review, its two inline comments and the issue comment confirming the first as ground truth | `fixtures/corpus-12/`; copy A in [glance-test.md](./glance-test.md#round-one-second-retake-fail-2026-10-23) |
 
+Once atis read other languages (D114 (producers-compose)), it read one reviewed pull request in
+each new language, from a repo whose main code is that language, to see each producer's cells
+and each checkride pack's evidence on a tree nobody in the room wrote. From each, atis took the
+same two things as the corpus, none of them code: the tree at the fixture commit, scanned into
+`map.json` and rendered as `atis.svg`, and a human reviewer's words at that commit, quoted in
+`truth.md` as the ground truth. No reader read them blind, so each fixture's README names its
+repo. Each licence is the one the tree carried at its fixture commit.
+
+| Project | Pull request and fixture commit | What was taken | Where in atis |
+| --- | --- | --- | --- |
+| **Svelte**, the Svelte contributors. <https://github.com/sveltejs/svelte>, MIT | [#16131](https://github.com/sveltejs/svelte/pull/16131), better `$inspect.trace()` output, at `b6a4afd` | The tree as a fixture (a hold); `dummdidumm`'s changes-requested review as ground truth | `fixtures/javascript-1/` |
+| **Fiber**, Fenny and contributors. <https://github.com/gofiber/fiber>, MIT | [#4079](https://github.com/gofiber/fiber/pull/4079), expand the middlewares' context helpers to read a `context.Context`, at `7ccc68c` | The tree as a fixture (a hold); `sixcolors`' changes-requested review as ground truth | `fixtures/go-1/` |
+| **OpenAI Agents SDK for Python**, OpenAI. <https://github.com/openai/openai-agents-python>, MIT | [#2224](https://github.com/openai/openai-agents-python/pull/2224), auto-compact long conversations through `responses.compact`, at `cb496bf` | The tree as a fixture (a hold); `seratch`'s changes-requested review as ground truth | `fixtures/python-1/` |
+| **Braintrust data plane for AWS**, Braintrust. <https://github.com/braintrustdata/terraform-aws-braintrust-data-plane>, Apache-2.0 (its licence file names no copyright owner) | [#405](https://github.com/braintrustdata/terraform-aws-braintrust-data-plane/pull/405), make the Loop sandbox's egress restricted-only and add an egress gateway, at `a6518ac` | The tree as a fixture (a hold); `erikdw`'s changes-requested review and two of its inline comments as ground truth | `fixtures/terraform-1/` |
+| **Bash-it**, the Bash-it contributors. <https://github.com/Bash-it/bash-it>, MIT | [#2366](https://github.com/Bash-it/bash-it/pull/2366), read the prompt's command duration from `EPOCHREALTIME` without a subshell and update the vendored bash-preexec to 0.6.0, at `9e88c2a` | The tree as a fixture (a hold); `akinomyoga`'s changes-requested review and two of its inline comments as ground truth | `fixtures/shell-1/` |
+
 ## 6. Not borrowed, on purpose
 
 - Per-person metrics from CHID (author merge rate), Git-Truck (authorship

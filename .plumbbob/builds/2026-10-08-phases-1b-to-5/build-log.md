@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 85 — feat(cli): read each language's evidence as checkride writes it
+**Current step:** 86 — chore(fixtures): render one reviewed PR per new language
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -141,7 +141,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 83. feat(cli): scan Terraform modules into the same scan shape
 - ☑ 84. feat(cli): scan shell scripts into the same scan shape
 - ☑ 119. fix(cli): read checkride's targets, each artifact by its check's adapter
-- ☐ 85. feat(cli): read each language's evidence as checkride writes it
+- ☑ 85. feat(cli): read each language's evidence as checkride writes it
 - ☐ 86. chore(fixtures): render one reviewed PR per new language
 - ☐ 87. docs(producers): write the contract a language producer fills
 
@@ -248,6 +248,12 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [ ] an extensionless script with a shell shebang (bin/deploy, .husky/pre-commit) stays on the shore's scripts row, since a producer claims files by extension alone (D114); claiming by shebang too would bring such scripts into the terrain
 - [ ] serve a split repo's raw slot output from each target's directory: the HUD part for lint asks serve.ts for .check/lint.*, which a run split into targets writes as .check/<target>/lint.json, so it opens empty
 - [ ] read tsc's and go-build's findings through checkride's parsers, so a type error on a changed file puts a red types slot on the change; today a TypeScript or Go types red stays global, so standing, and the map names tsc and go-build as unparsed
+- [ ] the shore table's rules/** and root /config/** exceptions keep only TypeScript extensions (libs/core/src/config.ts, D164), so since D184 (javascript-terrain) a JavaScript repo's rules folder lands on the shore's config group: stylelint's 160 lib/rules/**/*.mjs files draw no cell, and an eslint plugin's rules/ would do the same; widen both exceptions to .js, .jsx, .mjs and .cjs (step 86)
+- [ ] a pack with no test check (bash always, terraform without .tftest.hcl runs) leaves meta.instruments silent on why its files have no coverage or test channel: unwritten() in apps/atis/src/sources/check.ts names the reason only for a test check that ran, so fixtures/shell-1's map has no muted line though D176 (other-language-evidence) says meta.instruments says why (step 86)
+- [ ] the Terraform producer's edges carry local.*, module.*, data.* and resource names a file reads from its sibling, but its exports hold only var.* and output.*, so liveConsumers (libs/core/src/notices.ts) reads each as a removed export: all 6 notices on fixtures/terraform-1 are false deleted-export ones naming 62 names that both sides still declare (step 86)
+- [ ] a Terraform module source spelled with a trailing slash, source = "../../", draws no edge: calledDir in apps/atis/src/sources/terraform.ts normalizes it to './', checks for '.' before stripping the slash, and returns '.' where the root module is keyed '', so fixtures/terraform-1's root reads fan-in 0 and interface 0 and counts as an entry point (step 86)
+- [ ] the TypeScript producer reads a tests/ folder as source terrain: TEST_DIR in apps/atis/src/sources/imports.ts matches only __tests__/ and test/, so svelte's packages/svelte/tests/ (2,465 _config.js and sample files) founds 2,377 of fixtures/javascript-1's 2,417 cells, 2,089 of its 2,203 reach entries, a 17.7 MB map.json and a 7.5 minute run, where the Python producer already counts tests/ as tests (step 86)
+- [ ] core's deleted-export candidate (liveConsumers in libs/core/src/notices.ts) checks a base edge's names only against head exports, never that the base exported them, so a Go file's same-package reads of unexported names (App.isASCII, getAuthSchemes) and a Terraform file's local.* reads all count as deleted exports: 3 of fixtures/go-1's 6 notices are false, with the same cause as P100's 6 on terraform-1 (step 86)
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -3032,3 +3038,72 @@ folder, so it rides the branch into the PR.)*
   Two gaps are parked: P94 (glob-sourcing loops) and P95 (extensionless shebang scripts).
 
 - 2026-10-28 — step 119 checkpointed · d15333487 — fix(cli): read checkride's targets, each artifact by its check's adapter (1 drift, 29m)
+- 2026-10-28 — step 85 checkpointed · 3b2bfdc4d — feat(cli): read each language's evidence as checkride writes it (1 drift, 72m)
+
+  **Summary**: atis now reads the Go, Python, Terraform and shell packs' evidence from `.check/`. Linters' findings go through checkride's own parsers into `lint`, and trivy's go into `security`, each on the files it names. Go's test events land on each package's `_test.go` files, and pytest counts as its verdict alone. Coverage speaks only for the kinds of file its tool measures, so a Go, Python, Terraform or shell file is never a gap, and the map says why. Mapped end to end, the planted polyglot repo reads IFR, with each red on the change through the files that broke it.
+
+  1. Type checkers' findings place a red `types` slot rather than feeding `lint`
+  2. tsc and go-build are named in every TypeScript and Go map, not read
+  3. Coverage speaks only for the kinds of file its tool measures
+  4. Go's test events stand for each package's test files, and the readings are tested on captured output
+  5. Outside the seam
+
+  **Readout**:
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    bent: D176 (other-language-evidence)
+               → type checkers feed a types channel, not lint (see 1)
+  constraints  14 of 14 honored
+  seam         strayed: 3 paths outside the seam
+               - libs/core/src/__tests__/evidence.test.ts
+               - libs/core/src/__tests__/overlays.test.ts
+               - libs/core/src/overlays.ts
+  diff         +1827 -388 across 42 files
+               - apps/atis/fixtures/check-targets/README.md +35 -6
+               - apps/atis/fixtures/check-targets/api/cmd/api/main.go +12 -0
+               - apps/atis/fixtures/check-targets/api/cmd/api/remove.go +5 -0
+               - apps/atis/fixtures/check-targets/api/go.mod +3 -0
+               - apps/atis/fixtures/check-targets/api/internal/greet/dot.go +5 -0
+               - apps/atis/fixtures/check-targets/api/internal/greet/greet.go +7 -0
+               - apps/atis/fixtures/check-targets/api/internal/greet/greet_test.go +9 -0
+               - and 35 more
+  spent        72 min · 1 turn · 116s gate · green first run
+  ```
+
+  **Verdict**: ○ Out of plumb (decisions bent)
+
+  **Recommendation**: Approve the `types` channel and land step 85. Feeding the type checkers into `lint`, as D176 words it, would let a type error put a red `lint` on the change where no linter found anything. The `types` channel keeps each tool's findings on the slot that reported them, and that is the reading step 86's five maps would be rendered under.
+
+  **1.** Type checkers' findings place a red `types` slot rather than feeding `lint`
+
+  D176 says the findings of all nine tools feed `lint` and `security`. In checkride 0.19, three of them fill the `types` slot, not `lint`: mypy, basedpyright and `terraform validate`. Core places a red slot on the change through the files its own findings name, and `lint`'s findings place only `lint`. Read into `lint`, a type error on a changed file would put a red `lint` on the change even where ruff found nothing there, and the red `types` would stay global and so standing.
+
+  So core gained a `types` channel shaped like `lint`'s. A red `types` slot is now placed by its own findings, as `lint` is. Every other tool D176 names lands exactly where it says: the five linters in `lint`, trivy in `security`.
+
+  A finding read through checkride's parsers keeps its file and one severity word. It is `error` where checkride's `gates` says it could fail the check under the argv that ran, and `warning` where it could not. That is the only distinction `failingPaths` draws, so a ShellCheck `info` that fails its check at the default severity places the red.
+
+  **2.** tsc and go-build are named in every TypeScript and Go map, not read
+
+  Once `types` is a channel, step 119's rule applies to it. A check whose adapter atis has no parser for mutes its channel and is named in `meta.instruments.muted`. D176 lists no TypeScript or Go type checker, so tsc and go-build stay unread. A TypeScript or Go types red stays global, so standing, as it is today. The visible change is one line in `map.json`: `types: atis has no parser for tsc`. Nothing renders it. I parked reading both through checkride's parsers, which would put a type error on a changed file on the change. That would change TypeScript verdicts, so it is beyond this step.
+
+  **3.** Coverage speaks only for the kinds of file its tool measures
+
+  The Go, Python and shell producers fill `code` spans too, which they use to narrow interface notices. So a vitest report beside a changed Go file would have called that file unmeasured: a fake gap. The reader now records the extensions the coverage's tool measures: vitest's and jest's istanbul measure what the TypeScript producer reads. Both core's evidence and the repo map's coverage overlay leave every other kind of file out of the gap.
+
+  Each test run that writes no coverage says so, for example `coverage: go-test writes none, which api:test ran`. pytest writes no report either, so it also says its run counts as its verdict alone. In a slot whose checks write different files, a check now holds back only the channels its own adapter writes. go test therefore never hides a sibling vitest's coverage.
+
+  **4.** Go's test events stand for each package's test files, and the readings are tested on captured output
+
+  `gotest.ts` is a pure parser of `go test -json`. It reads each package's outcome from its own package-level action, never from a test's. A thin runner puts each package in its directory through `go.mod` and a workspace's `go.work`, with the longest module path winning. That package's outcome then lands on every `_test.go` file in the directory.
+
+  The polyglot fixture is now a small repo: the run's `.check/` as `check/`, the Go module it tested as `api/`, and `findings/`. `findings/` holds checkride's own captures of ruff, mypy, basedpyright, staticcheck, tflint, `tofu validate` and trivy, credited in its README. The tests lay those captures into a split `.check/`, their scratch paths moved onto the test's repo, and every finding lands on its target's root.
+
+  The package test now also finds `checkride` in `dist/licenses.md`, and still only `playwright-core`, `typescript` and `ws` in `dependencies`. I built atis and mapped the planted polyglot repo. It reads IFR: `lint` is on the change through `remove.go`, `dot.go` and `deploy.sh`, `test` through `greet_test.go`, and `struct` through `dot.go`, while `types` stays standing.
+
+  **5.** Outside the seam
+
+  - `libs/core/src/overlays.ts`, whose coverage gaps take the same extension rule.
+  - Core's evidence and overlay tests.
+  - `apps/atis/src/sources/index.ts`, exporting the Go test reader.
