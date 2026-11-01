@@ -70,7 +70,8 @@ seconds, and atis's run on it 17 seconds.
 checkride 0.19.2 and fallow 3.38.1 had been released since step 86, so per D58 commands 4, 8 and
 9 ran again on them, and the map here reads that run. Its first attempt was stopped and
 discarded: atis's first run had left its cache in `.atis/` in the worktree, and the `format`
-slot reported those four JSON files (command 8 now clears it). The run the map reads took 22
+slot reported those four JSON files (command 8 cleared it then; since step 125 atis keeps its
+cache under the clone's git directory, D190, so it no longer has to). The run the map reads took 22
 minutes 20 seconds, at a load average between 20 and 60, and atis's run on it 26 seconds. Two
 things in the map moved from the run on step 86's harness: `meta.instruments.structure` names
 fallow 3.38.1, and one mutant on `runtime.js` line 447 that survived there was killed here, so
@@ -78,6 +79,17 @@ fallow 3.38.1, and one mutant on `runtime.js` line 447 that survived there was k
 harness's: stryker is 10.1.1 in both. Every count fallow reports for the tree is the same, and
 so are its schemas, and its 2,517 entry points reach the same files. The mutation attempt was
 not run again, since neither tool takes part in it.
+
+Step 126 regenerated both on 2026-11-01, once a nested barrel under a `src/<name>/` folder
+module became a cell of its own (D187), by command 9 alone, over the `.check/` step 123's run
+wrote. Step 123's worktree still held it, and checkride 0.19.2 and fallow 3.38.1 were still the
+latest on npm, so nothing the run reads had moved (D58). Its `meta.instruments`, its evidence,
+its checks, its outside packages and its shore are the same as step 123's, byte for byte; only
+the cells moved, and what is measured by them ("What atis read" says what). atis was built from
+step 125's commit, so it kept its caches in `.git/atis/` of the clone, which both worktrees
+share, and `git status --porcelain --ignored` in the worktree read the same after the run as
+before it. The `.atis/` step 123's atis left in the worktree was neither read nor removed, so
+the run laid the base out cold, in 17 seconds.
 
 ## The toolchain
 
@@ -203,16 +215,17 @@ cp ../svelte-mutation-attempt/stryker.conf.json .
 node_modules/.bin/prettier --write stryker.conf.json
 
 # 8. The .check/ atis reads for evidence, from a clean state. Run the installed binary, never
-#    the repo's own `test` script. An earlier atis run leaves its cache in .atis/, which
-#    prettier checks as part of the tree, so it goes too.
-rm -rf .check .stryker-tmp .atis
+#    the repo's own `test` script. atis writes nothing in the worktree (D190), so an earlier
+#    atis run leaves nothing for prettier to check.
+rm -rf .check .stryker-tmp
 node_modules/.bin/checkride --all --skip security
 cp .check/summary.json /tmp/atis-languages/work/javascript-1.summary.json
 
 # 9. The map and the still render, from atis's built CLI. --repo takes the resolved path, not
 #    the /tmp symlink: on macOS /tmp is /private/tmp, and istanbul's absolute coverage keys
 #    will not relativise against the unresolved one, which silently empties patch_coverage.
-#    atis runs the worktree's own node_modules/.bin/fallow for the entry points.
+#    atis runs the worktree's own node_modules/.bin/fallow for the entry points, and keeps its
+#    caches in the clone's .git/atis/, which every worktree of the clone shares (D190).
 cd ~/Projects/atis/code/atis
 node apps/atis/dist/cli.js \
   --repo "$(cd /tmp/atis-languages/work/javascript-1/svelte && pwd -P)" \
@@ -329,13 +342,18 @@ Named per D56. 12 slots ran, of 20.
 
 ## What atis read
 
-**Cells.** 40 cells: 19 directory, 9 folder, 3 package and 9 single-file, every one of them the
+**Cells.** 50 cells: 19 directory, 19 folder, 3 package and 9 single-file, every one of them the
 source's own modules:
 
 - the 3 packages, `.`, `packages/svelte` and `playgrounds/sandbox`;
-- 9 folder cells, `packages/svelte/src/animate`, `attachments`, `compiler` (233 files),
-  `easing`, `events`, `internal` (96 files), `motion`, `server` and `transition`, each a
+- 9 folder cells at `packages/svelte/src/`, `animate`, `attachments`, `compiler` (29 files),
+  `easing`, `events`, `internal` (10 files), `motion`, `server` and `transition`, each a
   directory tree read as one cell, with the barrel the folder names;
+- 10 folder cells nested in two of them, each a directory with an `index.js` of its own and so a
+  module of its own (D187): under `internal`, `client` (74 files), `server` (9) and `flags` (3);
+  under `compiler`, `phases/1-parse` (17), `phases/2-analyze` (73), `phases/3-transform` (102),
+  `phases/3-transform/client/transform-template` (4), `phases/3-transform/css` (1),
+  `preprocess` (6) and `migrate` (1);
 - 9 single-file cells at the root of `packages/svelte/src/`: `ambient.d.ts`, `constants.js`,
   `escaping.js`, `html-tree-validation.js`, `index-client.js`, `index-server.js`, `index.d.ts`,
   `utils.js` and `version.js`;
@@ -345,6 +363,33 @@ source's own modules:
   `store/shared`, and `playgrounds/sandbox` with its `scripts/`.
 
 The 414 organelles are the repo's source: 377 JavaScript files and 37 `.d.ts` declaration files.
+
+**What moved at step 126.** Step 123's map held 40 cells, with `compiler` holding 233 files and
+`internal` 96. svelte's runtime and compiler are folder modules with modules inside them, each
+marked by its own `index.js`, and the cell rule folded every directory under a `src/<name>/`
+folder into it, barrel or not. D187 makes a directory under such a folder that holds a barrel a
+folder cell of its own, beside the folder that holds it, and leaves a directory with no barrel
+folded, so the ten nested modules above are cells now. `compiler` keeps its own eight files and
+its barrel-less `phases/`, `types/` and `utils/` (29 files), and `internal` keeps its three and
+`shared/` (10). Nothing else moved: no file's depth changed, and the other 38 cells read as they
+did, but for these:
+
+- `internal` is read by 41 files, not 36: 35 of them are files of the three runtimes it held,
+  which read its `shared/` across a membrane now, and the files that read a runtime count as
+  that runtime's readers. `compiler` is read by 118, not 3, since the phases, `preprocess` and
+  `migrate` read what it keeps, `phases/`'s own files, `utils/`, `errors.js`, `state.js` and
+  `warnings.js`, the same way. `compiler` holds 7,983 lines and 600 functions, not 32,078 and
+  1,492, and `internal` 569 and 32, not 11,474 and 779;
+- 183 of the 414 files tie to different files inside their cell, since the cells they sit in
+  are smaller;
+- the six notices are step 123's six, in the same order, each weighing a little more. All six
+  sit in `internal/client` now, and it is the interface they name: its barrel exports 180 names,
+  28 files outside it read them, not the 36 that read `internal`, and it sits in band 2, not band
+  0. Each notice's change reaches 22 cells, not 21, since `internal/server` is a cell the reach
+  crosses into; `each.js`'s reaches 21, not 20. `weather.reach` still holds 114 entries and
+  `weather.wiring` 115.
+
+`map.json` is 5.6 MB and `atis.svg` 1.1 MB, where step 123's were 5.3 MB and 1.0 MB.
 
 **What moved at step 123.** Step 86's map held 2,417 cells, and 2,377 of them were directories
 under `packages/svelte/tests/`: 2,376 suites' sample directories (`runtime-legacy` 1,194,
@@ -441,10 +486,11 @@ D184 settle for a JavaScript repo, the evidence is the ts pack's:
 
 **Notices.** Six, ranked:
 
-1. `interface-change` on `runtime.js`, primary: "the interface of `packages/svelte/src/internal`
-   changed (`set_captured_signals` removed) and 36 files read it and `svelte` publishes
-   `deep_read`, `deep_read_state`, `exclude_from_object` and 6 more". One name removed, none
-   added, none reshaped, 29 uncompared, as D184 has it for JavaScript.
+1. `interface-change` on `runtime.js`, primary: "the interface of
+   `packages/svelte/src/internal/client` changed (`set_captured_signals` removed) and 28 files
+   read it and `svelte` publishes `deep_read`, `deep_read_state`, `exclude_from_object` and 6
+   more". One name removed, none added, none reshaped, 29 uncompared, as D184 has it for
+   JavaScript.
 2. `survived-mutants` on `runtime.js`, secondary: "11 mutants survived on the changed lines",
    where step 86's read 12 (see "Generation").
 3. `threshold-breached` on `runtime.js`, secondary: "cognitive, crap, cyclomatic over threshold
@@ -458,11 +504,12 @@ They are step 86's six, each weighing less, and the third and fourth have swappe
 `each.js`'s notice secondary and the threshold breach tertiary. A notice about names weighs
 the files that read those names as well as its reach, and `each.js`'s readers fell from 35 to
 13 with the tests, so its notice fell further than the breach, which weighs its reach alone.
-The interface notices read "36 files read it", not 85.
+The interface notices read "36 files read it" at step 123, not 85, and since step 126 they name
+`internal/client`'s interface and read "28 files read it".
 
 **Verdict on the read.** The JavaScript files are the cells' organelles, their shapes read
 uncompared, and the notices weigh names added and removed, never reshaped: D184 holds. The
 evidence reads as D176 settles for the ts pack, with `lint` muted by name, not silently. The
-cells hold now too: the 40 cells are the language's modules, the test samples sit in the
-shore's `tests` group (D189), and the primary notice reaches 21 of the source's cells, not
-2,092 sample directories.
+cells hold now too: the 50 cells are the language's modules, the nested ones included (D187),
+the test samples sit in the shore's `tests` group (D189), and the primary notice reaches 22 of
+the source's cells, not 2,092 sample directories.
