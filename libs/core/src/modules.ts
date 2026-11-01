@@ -3,7 +3,8 @@
  *
  * Checkride's convention comes first, inside every package: the barrel of
  * `src/` is the package barrel, a file directly in `src/` a single-file cell,
- * and `src/<name>/` with a barrel of its own a folder cell. Every other
+ * and `src/<name>/` with a barrel of its own a folder cell, as is each
+ * directory inside it with a barrel of its own, beside it (D187). Every other
  * terrain file falls back to its own directory, whose interface is whatever is
  * imported from outside it, so nothing here depends on a barrel existing
  * (D45). Which files are terrain, which are tests, and which file is its
@@ -134,7 +135,13 @@ function barrelsOf(sorted: readonly ScannedFile[]): ReadonlyMap<string, string> 
 
 type Placement = { readonly kind: CellKind; readonly path: string; readonly barrel?: string };
 
-/** Where checkride's convention puts a file inside its package; its directory otherwise. */
+/**
+ * Where checkride's convention puts a file inside its package; its directory
+ * otherwise. Inside a `src/<name>/` folder module, a file sits in the nearest
+ * directory above it with a barrel of its own, a folder cell beside the one
+ * that holds it, as a Python subpackage's `__init__.py` makes it a module
+ * (D187); a directory with no barrel folds into that folder.
+ */
 function place(path: string, member: string | undefined, barrels: ReadonlyMap<string, string>): Placement {
   const fallback: Placement = { kind: 'directory', path: dirname(path) };
   if (member === undefined) return fallback;
@@ -147,8 +154,14 @@ function place(path: string, member: string | undefined, barrels: ReadonlyMap<st
       : { kind: 'single', path };
   }
   const folder = `${src}/${name}`;
-  const barrel = barrels.get(folder);
-  return barrel === undefined ? fallback : { kind: 'folder', path: folder, barrel };
+  if (!barrels.has(folder)) return fallback;
+  let dir = dirname(path);
+  let barrel = barrels.get(dir);
+  while (barrel === undefined && dir !== folder) {
+    dir = dirname(dir);
+    barrel = barrels.get(dir);
+  }
+  return barrel === undefined ? fallback : { kind: 'folder', path: dir, barrel };
 }
 
 type Draft = {

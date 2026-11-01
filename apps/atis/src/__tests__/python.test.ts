@@ -246,10 +246,12 @@ test.skipIf(!HAS_PYTHON)('a real run reads the tree as the captured output does,
   expect(python.edges).toEqual(capturedScan().edges);
   expect(scan.members).toEqual(capturedScan().members);
 
-  // Under src/, core's convention makes the top package one folder cell, its subpackages inside it (D45).
+  // Under src/, core's convention makes the top package one folder cell and a subpackage with its own
+  // `__init__.py` one beside it (D187), while the namespace package `plugins/` folds into the top (D45).
   const { terrain } = mapOf(scan);
   expect(terrain.cells.map((cell) => [cell.kind, cell.path])).toEqual([
     ['folder', 'src/shop'],
+    ['folder', 'src/shop/store'],
     ['package', '.'],
   ]);
   expect(terrain.groups.find((group) => group.id === 'deps')?.files).toEqual(['pyproject.toml']);

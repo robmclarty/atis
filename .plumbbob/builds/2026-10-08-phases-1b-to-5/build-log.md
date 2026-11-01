@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 123 — fix(cli): read a tests folder as tests in the TypeScript producer
+**Current step:** 124 — fix(core): give a package under src/ with its own barrel a cell of its own
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -144,7 +144,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 85. feat(cli): read each language's evidence as checkride writes it
 - ☑ 86. chore(fixtures): render one reviewed PR per new language
 - ☑ 122. fix(core): count a deleted export only where the base exported it
-- ☐ 123. fix(cli): read a tests folder as tests in the TypeScript producer
+- ☑ 123. fix(cli): read a tests folder as tests in the TypeScript producer
 - ☐ 124. fix(core): give a package under src/ with its own barrel a cell of its own
 - ☐ 87. docs(producers): write the contract a language producer fills
 
@@ -260,6 +260,9 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] chrome.test.ts's HUD-fit test (libs/svg) renders every committed fixture map and timed out at 5 s under the full suite once in step 122's check, passing alone in 1.1 s; javascript-1's 2,417-cell map is the heavy one, which step 123's regeneration shrinks (step 122)
 - [ ] seven committed outside-repo maps predate D189 (tests-folder-is-tests): corpus-2, corpus-5, corpus-10, corpus-12, retake-2, retake-3 and round-two-5 read 73 JavaScript and TypeScript files under a tests/ folder as terrain, founding 30 cells of their own (retake-2 alone 44 files in 15 cells); no golden reads them, and each would move if regenerated (step 123)
 - [ ] atis's cache turns a reviewed repo's format check red: apps/atis/src/cache.ts writes .atis/{terrain,structure,entries}/<sha>.json into the repo and hides them from git with a .atis/.gitignore of *, which prettier never reads, so checkride run after atis on svelte failed its format slot on four .atis/*.json files; javascript-1's README now clears .atis before its checkride run, and a cache under .git/ or written as prettier would write it would not trip it (step 123)
+- [ ] a Python subpackage whose __init__.py exports nothing shows an interface of 0 now that it is a cell (D187): fixtures/python-1's util (fan-in 21), extensions (7), extensions/models (2) and voice/models (2) read interface_size 0 and no exports, since a folder cell's interface is its barrel alone (D45), while its readers import the submodules directly; interface notices still find those files through interfaceFiles in libs/core/src/notices.ts, so only the membrane's names and the HUD's sizes go quiet (step 124)
+- [ ] fixtures/javascript-1 predates D187 (nested-barrel-cells): step 123 regenerated it before step 124's rule, and its compiler and internal folder cells hold 10 nested index.js barrels; a scratch run on the same worktree and .check/ reads 50 cells, not 40 (internal/client with 74 files, internal/server, internal/flags, the compiler's 1-parse, 2-analyze and 3-transform among 10 new folder cells), and every notice names packages/svelte/src/internal/client, read by 28 files, where the committed map says packages/svelte/src/internal and 36 (step 124)
+- [ ] ten committed outside maps predate D187 (nested-barrel-cells) and would move if regenerated: their folder cells hold nested index or __init__ barrels, in corpus-2 (8), corpus-3 (2), corpus-7 (20 across 6 folders), corpus-9 (1), retake-1 (26 across 4), retake-3 (2), retake-5 (3), round-two-2 (2), round-two-4 (2) and round-two-5 (4); no golden reads them (step 124)
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -3246,3 +3249,58 @@ folder, so it rides the branch into the PR.)*
   **4.** One test timed out under the full suite's load and passed on the rerun.
 
   The first check ran red on `chrome.test.ts`'s HUD-fit test, which renders every committed fixture map. It timed out at 5 s under the full suite and passes alone in 1.1 s. javascript-1's 2,417-cell map is the heavy one, and step 123's regeneration shrinks it. It is parked, and the rerun was green.
+
+- 2026-11-01 — step 123 checkpointed · 038a9f8c3 — fix(cli): read a tests folder as tests in the TypeScript producer (98m)
+
+  **Summary**: The TypeScript producer now reads a file under a `tests/` folder at any depth as a test, beside `__tests__/` and `test/`. javascript-1 is regenerated: its 40 cells are svelte's source modules, and the 2,465 files under `packages/svelte/tests/` that founded 2,377 cells now sit in the shore's tests group. No golden moved. The fixture was regenerated twice: first on step 86's pins, to isolate the rule, then on checkride 0.19.2 and fallow 3.38.1, the latest releases, which D58 asks for.
+
+  1. The fixture ran on the latest harness, not the README's pins
+  2. The mutation attempt reached its timeout under another project's load
+  3. The rule is one regex, tested from strings in a temp tree
+  4. What moved in javascript-1
+  5. Seven committed outside maps predate the rule
+
+  **Readout**:
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored:
+               - D189 (tests-folder-is-tests), D4 (tests-not-terrain)
+               - D184 (javascript-terrain), D58 (fixtures-current-toolchain)
+               - D59 (outside-fixtures), D56 (fixtures-skip-audit)
+  constraints  14 of 14 honored
+  seam         held: 3 of 3 declared, no strays
+  diff         +154574 -765496 across 6 files
+               - apps/atis/src/__tests__/javascript.test.ts +43 -0
+               - apps/atis/src/__tests__/producers.test.ts +5 -1
+               - apps/atis/src/sources/imports.ts +3 -3
+               - fixtures/javascript-1/README.md +116 -58
+               - fixtures/javascript-1/atis.svg +3596 -10163
+               - fixtures/javascript-1/map.json +150811 -755271
+  spent        98 min · 152s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Land it and go on to step 124. The gate is green twice, the fixture reads as its done-when says, and the harness upgrade moved only fallow's version and one flaky mutant.
+
+  **1.** The fixture ran on the latest harness, not the README's pins
+
+  The README's commands pinned checkride 0.19.1 and fallow 3.37.0, and checkride 0.19.2 (released 2026-10-31) and fallow 3.38.1 had come out since. D58 (fixtures-current-toolchain) asks for the latest, so after a first full regeneration on step 86's pins, commands 4, 8 and 9 ran again on the new versions. The map is the second run's. Next to the first, it moved in only two places. `meta.instruments.structure` names fallow 3.38.1, and one `runtime.js` mutant on line 447 was killed rather than surviving, so `survived-mutants` reads 11, not 12: run-to-run variance, with stryker 10.1.1 in both runs. fallow's tree counts, schemas and 2,517 entry points are unchanged. The first try on the new harness was stopped and thrown away: atis's earlier run had left its cache in `.atis/`, and prettier failed the `format` slot on it. Command 8 now clears `.atis/`, and the cause is parked as P106.
+
+  **2.** The mutation attempt reached its timeout under another project's load
+
+  Command 6, Stryker on its own, ran its initial tests in 31 seconds as at step 86 and then hit its 20-minute `timeout`. Other projects' vitest suites (plumbbob's and runciter's) were running on the machine at a load average near 25. The slot is kept, as D58 allows where the run completes: both full runs' `mutation` slots, which checkride runs to the end, finished, in 21m43s and 21m24s. The README's Generation and Skipped slots sections say so.
+
+  **3.** The rule is one regex, tested from strings in a temp tree
+
+  `TEST_DIR` in `apps/atis/src/sources/imports.ts` is now `(?:^|/)(?:__tests__|tests?)/`. The kind table in `producers.test.ts` gains `tests/e2e/run.ts` and a svelte-shaped `_config.js` as tests, and `src/tests.ts` and `src/contests/index.ts` as source. A new test in `javascript.test.ts` writes a package with a `tests/` suite, a sample `_config.js`, a helper and a `.svelte` file into a `mkdtemp` tree. It checks that they are tests, found no cell, sit in the tests group, and stay out of the reach of a change their imports touch. Three of these cases fail on the old rule. Core's goldens come from committed scans in `libs/core/fixtures/`, and no tracked tree in the repo has a `tests/` folder, so no golden can move, and none did.
+
+  **4.** What moved in javascript-1
+
+  From 2,417 cells to 40, all of them step 86's 40 source cells. 13 of them read lower where only tests had read them: `internal`'s fan-in went from 85 to 36, `index-server.js`'s from 692 to 1, and three cells moved from band 1 to band 0. Reach went from 2,203 entries to 114, and the primary notice's cells reached from 2,092 to 21. `unmeasured` is empty, since the changed `_config.js` is a test now, and two suites became stitches. Outside packages went from 30 to 22. The notices are the same six, with the threshold breach and `each.js`'s uncompared notice swapping third and fourth, because `each.js`'s readers fell from 35 to 13. atis's run went from 7m36s to 26s, and `map.json` from 17.7 MB to 5.3 MB.
+
+  **5.** Seven committed outside maps predate the rule
+
+  corpus-2, -5, -10 and -12, retake-2 and -3, and round-two-5 read 73 JavaScript and TypeScript files under a `tests/` folder as terrain, which found 30 cells. No golden reads them, and this step regenerates none of them, so they are parked as P105.

@@ -196,6 +196,109 @@ test('a folder module owns everything beneath it; a barrel-less folder falls bac
   expect(cellIn(modules, 'package:.')).toMatchObject({ organelles: ['src/index.ts'], body_loc: 222 });
 });
 
+test('inside a folder module, a directory with a barrel of its own is a folder cell beside it, and one without folds in (D187)', () => {
+  const modules = identifyModules(
+    [
+      file('src/index.ts', 4, 2),
+      file('src/pm/index.ts', 8, 4),
+      file('src/pm/tools.ts', 120, 3),
+      file('src/pm/plain/run.ts', 12, 1),
+      file('src/pm/detect/index.ts', 3, 2),
+      file('src/pm/detect/lockfile.ts', 30, 1),
+      file('src/pm/detect/deep/scan.ts', 18, 1),
+      file('src/types/slot.ts', 15, 2),
+      file('src/types/sub/index.ts', 5, 1),
+    ],
+    [edge('src/pm/tools.ts', 'src/pm/detect/index.ts'), edge('src/pm/detect/lockfile.ts', 'src/pm/detect/deep/scan.ts')],
+    [],
+  );
+
+  // `src/types/` has no barrel, so it is no folder module, and its barrelled child stays a directory as before.
+  expect(cellIds(modules)).toEqual(['directory:src/types', 'directory:src/types/sub', 'folder:src/pm', 'folder:src/pm/detect', 'package:.']);
+  expect(cellIn(modules, 'folder:src/pm')).toEqual({
+    id: 'folder:src/pm',
+    path: 'src/pm',
+    kind: 'folder',
+    parent: 'package:.',
+    barrel: 'src/pm/index.ts',
+    organelles: ['src/pm/index.ts', 'src/pm/plain/run.ts', 'src/pm/tools.ts'],
+    interface_files: ['src/pm/index.ts'],
+    interface_size: 4,
+    body_loc: 140,
+  });
+  // The barrel-less `deep/` below it folds into the nearest barrel above, not the outer folder.
+  expect(cellIn(modules, 'folder:src/pm/detect')).toEqual({
+    id: 'folder:src/pm/detect',
+    path: 'src/pm/detect',
+    kind: 'folder',
+    parent: 'package:.',
+    barrel: 'src/pm/detect/index.ts',
+    organelles: ['src/pm/detect/deep/scan.ts', 'src/pm/detect/index.ts', 'src/pm/detect/lockfile.ts'],
+    interface_files: ['src/pm/detect/index.ts'],
+    interface_size: 2,
+    body_loc: 51,
+  });
+});
+
+/** A Python file as its producer gives it: a test by its folder or name, and the barrel its package is entered through where it is an `__init__.py` (D115). */
+function python(path: string, loc = 10, exports: readonly string[] = []): ScannedFile {
+  const kind = /(?:^|\/)tests?\/|(?:^|\/)test_[^/]*\.py$/.test(path) ? 'test' : 'source';
+  return { path, loc, kind, ...(kind === 'source' && path.endsWith('/__init__.py') ? { barrel: true } : {}), exports };
+}
+
+test('a Python src layout gives each subpackage of its distribution a cell of its own, nested ones included (D115, D187)', () => {
+  const files = [
+    python('src/agents/__init__.py', 40, ['Agent', 'Runner']),
+    python('src/agents/run.py', 300, ['Runner']),
+    python('src/agents/_internal/retry.py', 20, ['retry']),
+    python('src/agents/mcp/__init__.py', 5, ['MCPServer']),
+    python('src/agents/mcp/server.py', 200, ['MCPServer']),
+    python('src/agents/voice/__init__.py', 6, ['VoicePipeline']),
+    python('src/agents/voice/pipeline.py', 120, ['VoicePipeline']),
+    python('src/agents/voice/models/__init__.py', 2, ['OpenAIVoice']),
+    python('src/agents/voice/models/openai.py', 80, ['OpenAIVoice']),
+    python('tests/test_run.py', 60),
+  ];
+  const edges = [
+    edge('src/agents/__init__.py', 'src/agents/run.py'),
+    edge('src/agents/run.py', 'src/agents/mcp/__init__.py'),
+    edge('src/agents/voice/pipeline.py', 'src/agents/voice/models/__init__.py'),
+    edge('tests/test_run.py', 'src/agents/run.py'),
+  ];
+  const modules = identifyModules(files, edges, ['.']);
+
+  expect(cellIds(modules)).toEqual(['folder:src/agents', 'folder:src/agents/mcp', 'folder:src/agents/voice', 'folder:src/agents/voice/models', 'package:.']);
+  expect(modules.cells.map((cell) => [cell.id, cell.parent, cell.barrel, cell.organelles])).toEqual([
+    ['folder:src/agents', 'package:.', 'src/agents/__init__.py', ['src/agents/__init__.py', 'src/agents/_internal/retry.py', 'src/agents/run.py']],
+    ['folder:src/agents/mcp', 'package:.', 'src/agents/mcp/__init__.py', ['src/agents/mcp/__init__.py', 'src/agents/mcp/server.py']],
+    ['folder:src/agents/voice', 'package:.', 'src/agents/voice/__init__.py', ['src/agents/voice/__init__.py', 'src/agents/voice/pipeline.py']],
+    ['folder:src/agents/voice/models', 'package:.', 'src/agents/voice/models/__init__.py', ['src/agents/voice/models/__init__.py', 'src/agents/voice/models/openai.py']],
+    ['package:.', undefined, undefined, []],
+  ]);
+  expect(modules.tests).toEqual(['tests/test_run.py']);
+
+  // The map draws them as sibling cells of the one package, each entered through its `__init__.py`.
+  const map = buildMap({
+    meta: { repo: 'fixture', base: 'main', head: 'head', merge_base: 'base', generated_at: '' },
+    base: { files, edges: edges.map((entry) => ({ ...entry, names: [] })), members: [{ name: 'agents', dir: '.', entry: ['src/agents/__init__.py'] }], entry_points: { source: 'manifests', reason: 'no local fallow' } },
+    head: { files, edges: edges.map((entry) => ({ ...entry, names: [] })), members: [{ name: 'agents', dir: '.', entry: ['src/agents/__init__.py'] }], entry_points: { source: 'manifests', reason: 'no local fallow' } },
+    diff: [{ path: 'src/agents/mcp/server.py', kind: 'modified', added: 1, deleted: 1, hunks: [{ start: 3, count: 1 }] }],
+    deps_added: [],
+    commits: [],
+    head_time: 0,
+    check: { mode: 'git-only', reason: '.check/ is absent' },
+  });
+  expect(map.terrain.cells.map((cell) => [cell.id, cell.interface_size])).toEqual([
+    ['folder:src/agents', 2],
+    ['folder:src/agents/mcp', 1],
+    ['folder:src/agents/voice', 1],
+    ['folder:src/agents/voice/models', 1],
+    ['package:.', 0],
+  ]);
+  expect(map.weather.changed).toMatchObject([{ path: 'src/agents/mcp/server.py', cell: 'folder:src/agents/mcp' }]);
+  expect(Object.keys(map.terrain.layout?.contours ?? {})).toEqual(expect.arrayContaining(['folder:src/agents/mcp', 'folder:src/agents/voice/models']));
+});
+
 test('a root config .ts beside workspace members is shore: no `directory:.` cell, no empty `package:.` (D57)', () => {
   const modules = identifyModules(
     [

@@ -52,6 +52,16 @@ checkride (0.19.1) run from outside the tree over a clean `.check/`, and atis's 
 result. The tree pins ruff, mypy and pytest in `uv.lock`, so no pins file was needed and checkride
 ran each from the uv-synced `.venv` at its locked version. Nothing in the tree was changed.
 
+Step 124 regenerated both on 2026-10-31, once core gave a package under `src/<name>/` with its
+own barrel a cell of its own (D187), by the same commands from a fresh clone, since a reboot had
+cleared `/tmp`. The shared checkride moved to 0.19.2, released that day, per D58 (command 4 now
+installs it); its changes are to its own report and `init`, and no artifact this pack writes
+moved. The run took 95,259 ms. Its `test` slot passed 1,121 tests and skipped 4 where step 86's
+passed 1,128 and skipped 3: Docker was not running, so
+`tests/extensions/memory/test_dapr_redis_integration.py` skipped its 7 tests as one module
+("Docker daemon is not available"). atis reads `test` as its verdict alone, which is the same.
+atis's run took 5 seconds. "What atis read" says what moved.
+
 ## The toolchain
 
 The tree is historical; the harness is current (D58). The repo's own tools, package manager lock
@@ -59,7 +69,7 @@ and test plugins stay as the commit had them.
 
 | tool | version | how atis knows |
 | --- | --- | --- |
-| checkride | 0.19.1 | the shared copy at `/tmp/atis-languages/harness`, run from outside the tree; the commit pins none and has no `package.json` |
+| checkride | 0.19.2 | the shared copy at `/tmp/atis-languages/harness`, run from outside the tree; the commit pins none and has no `package.json`. Step 86 ran 0.19.1 |
 | checkride summary schema | 1 | required by `readCheck` before anything under `.check/` is read |
 | node | 24.15.0 | the machine's; checkride's runtime |
 | uv | 0.11.7 | the machine's (Homebrew); CI's `astral-sh/setup-uv@v5` names no version |
@@ -96,11 +106,12 @@ export HUSKY=0 LEFTHOOK=0 SKIP_INSTALL_SIMPLE_GIT_HOOKS=1 UV_FROZEN=1
 cd /tmp/atis-languages/work/python-1/openai-agents-python
 uv sync --all-extras --all-packages --group dev --python 3.12
 
-# 4. The current harness (D58): the shared checkride 0.19.1, run from outside the tree. No
+# 4. The current harness (D58): the shared checkride 0.19.2, run from outside the tree. No
 #    package.json is added, since a root package.json would make checkride treat the repo as
 #    TypeScript, and no pins file is needed: uv.lock lists ruff, mypy and pytest. `doctor`
 #    confirms the mode ("the repo is one python project at its root") and the three tools'
 #    pin source, `uv-lock`.
+npm install --prefix /tmp/atis-languages/harness --save-exact --ignore-scripts checkride@0.19.2
 node /tmp/atis-languages/harness/node_modules/checkride/dist/cli.js doctor
 
 # 5. Harness edits: none (see the next section).
@@ -108,7 +119,8 @@ node /tmp/atis-languages/harness/node_modules/checkride/dist/cli.js doctor
 # 6. The .check/ atis reads for evidence, from a clean state. There is no `--skip security`:
 #    the python pack has no security slot, and checkride exits 2 on that token ("unknown token
 #    'security' in --skip. Valid tokens: types, format, lint, struct, test, docs, links, spell,
-#    prose, unclaimed."), so the run is `--all` alone. It took 146,272 ms.
+#    prose, unclaimed."), so the run is `--all` alone. It took 146,272 ms at step 86 and
+#    95,259 ms at step 124.
 rm -rf .check
 node /tmp/atis-languages/harness/node_modules/checkride/dist/cli.js --all
 
@@ -144,20 +156,24 @@ python pack sets itself for every spawn (`PYTHONDONTWRITEBYTECODE=1`, `PIP_NO_IN
 
 ## Skipped slots
 
-Named per D56. checkride 0.19.1 listed 9 slots for this repo: 5 ran and 4 skipped.
+Named per D56. checkride lists 9 slots for this repo, 0.19.1 at step 86 and 0.19.2 at step 124:
+5 ran and 4 skipped. The timings below are step 86's, with step 124's where they differ.
 
 - `security`: the python pack has no such slot in this mode. `--skip security` is refused with
   exit 2 (see step 6), so it was left off. Nothing was audited against today's advisories, which
   is what D56 asks for.
-- `types`: ran and passed. mypy 1.17.1 (`.venv/bin/mypy --output json .`) exited 0 in 72,235 ms,
-  so it wrote no `types.jsonl` and the summary entry's `output_file` is `null`.
+- `types`: ran and passed. mypy 1.17.1 (`.venv/bin/mypy --output json .`) exited 0 in 72,235 ms
+  (95,253 ms at step 124), so it wrote no `types.jsonl` and the summary entry's `output_file` is
+  `null`.
 - `lint`: ran and passed. ruff 0.9.2 (`ruff check --no-cache --output-format=json .`) wrote
-  `lint.json` as `[]`, in 886 ms.
+  `lint.json` as `[]`, in 886 ms (851 ms).
 - `format`: opt-in, run because `--all` includes it, and passed: `ruff format --no-cache --check .`
   reported "374 files already formatted".
 - `test`: ran and passed. `pytest -q` reported "1128 passed, 3 skipped in 141.63s" and exited 0
-  (146,255 ms in checkride's clock). pytest writes no report, so checkride's `output_file` for it
-  is `null` and only `test.stdout.txt` is kept.
+  (146,255 ms in checkride's clock). At step 124 it reported "1121 passed, 4 skipped in 56.80s"
+  (62,800 ms): with no Docker daemon running, the 7 tests of
+  `tests/extensions/memory/test_dapr_redis_integration.py` skip as one module. pytest writes no
+  report, so checkride's `output_file` for it is `null` and only `test.stdout.txt` is kept.
 - `links`: ran and **stayed red** on the tree's own docs: 10 relative markdown links do not
   resolve to a file on disk, all under `docs/`: `running_agents.md:54`, `ja/running_agents.md:58`,
   `ja/sessions.md:457`, `ko/handoffs.md:89`, `ko/running_agents.md:58`, `ko/sessions.md:458`,
@@ -177,28 +193,45 @@ Named per D56. checkride 0.19.1 listed 9 slots for this repo: 5 ran and 4 skippe
 
 ## What atis read
 
-**Cells.** 31, of three kinds. One `package`, `package:.`, the root, which owns no organelle of
-its own. One `folder`, `folder:src/agents`: barrel `src/agents/__init__.py`, 113 organelles, an
-interface of 165 names, 22,182 lines, read by 88 files. And 29 `directory` cells: `docs/scripts`
-(2 files) and 28 under `examples/` (`examples`, `examples/agent_patterns` with 11,
-`examples/basic` with 20, `examples/memory` with 8, `examples/tools` with 9, and the rest of one
-to seven files each). The cells are the language's folders and the producer reads every `.py`
-file as an organelle, 225 of them, plus three `.js` files under `examples/realtime/app/static/`
-that the TypeScript producer reads as JavaScript terrain (D184), 228 organelles in all.
+**Cells.** 43, of three kinds. One `package`, `package:.`, the root, which owns no organelle of
+its own. 13 `folder` cells, one for each package under `src/agents/`, each entered through its
+`__init__.py`: `src/agents` itself (28 organelles, an interface of 165 names, 8,325 lines, read by
+134 files and reading 19), and beside it, under the same package, `extensions` (4 files),
+`extensions/memory` (6), `extensions/models` (3), `handoffs` (2), `mcp` (3), `memory` (6),
+`models` (12), `realtime` (15), `tracing` (12), `util` (7), `voice` (11) and `voice/models` (4).
+And 29 `directory` cells: `docs/scripts` (2 files) and 28 under `examples/` (`examples`,
+`examples/agent_patterns` with 11, `examples/basic` with 20, `examples/memory` with 8,
+`examples/tools` with 9, and the rest of one to seven files each). The cells are the language's
+packages and folders, and the producer reads every `.py` file as an organelle, 225 of them, plus
+three `.js` files under `examples/realtime/app/static/` that the TypeScript producer reads as
+JavaScript terrain (D184), 228 organelles in all.
 
-**Where atis read the cells wrongly, or at least not as D115 describes them.** The 12 packages
-under `src/agents/` that have their own `__init__.py` (`extensions`, `extensions/memory`,
-`extensions/models`, `handoffs`, `mcp`, `memory`, `models`, `realtime`, `tracing`, `util`, `voice`
-and `voice/models`) are not cells. `place()` in `libs/core/src/modules.ts` treats a first-level
-folder under a package's `src/` as one cell and folds everything below it in, so all 113 files of
-`src/agents/` are the organelles of `folder:src/agents`, and `src/agents/memory/__init__.py`
-shows as `is_barrel: false` among the changed files. The PR's one new module,
-`src/agents/memory/openai_responses_compaction_session.py`, and `models/chatcmpl_converter.py`
-therefore sit in the same cell as `run.py` and `items.py`, so the weather over the change falls
-in one cell where the repo's own package structure has three (`agents`, `agents.memory` and
-`agents.models`). This is the TypeScript `src/<name>/` convention applied to a Python package. A
-flat layout, with the package folders at the root, takes `place()`'s fallback instead, a
-`directory` cell per folder. It is recorded, not fixed.
+**What moved at step 124.** Step 86's map had 31 cells: the 12 packages under `src/agents/` with
+their own `__init__.py` were not cells, since `place()` in `libs/core/src/modules.ts` read a
+first-level folder under a package's `src/` as one cell and folded everything below it in, so all
+113 files were organelles of `folder:src/agents`. Step 124 gave each directory inside a
+`src/<name>/` folder module with a barrel of its own a folder cell beside it (D187), and a
+barrel-less directory still folds into the nearest package above it. What moved:
+
+- `folder:src/agents` holds 28 files, not 113, and 8,325 lines, not 22,182. Its fan-in is 134,
+  not 88, since its subpackages' files now read it from outside, and it reads 19 files outside
+  it, not 0. It sits in band 1, not band 0. Its interface is the same 165 names.
+- The change falls in three cells, as the repo's own packages have it: `memory/__init__.py`,
+  `memory/session.py` and the new `memory/openai_responses_compaction_session.py` in
+  `folder:src/agents/memory`, `models/chatcmpl_converter.py` in `folder:src/agents/models`, and
+  the other four in `folder:src/agents`. `memory/__init__.py` reads `is_barrel: true`.
+- `weather.reach` lists the same 164 files, across 37 cells, not 26.
+- `terrain.edges_exceptional` holds three new cross-module edges, not one: the example to
+  `src/agents/__init__.py` as before, and the new compaction session module to
+  `src/agents/items.py` and to `src/agents/models/_openai_shared.py`, which now cross from one
+  cell into another.
+- Four of the new cells show an interface of 0 and no exports: `util` (read by 21 files),
+  `extensions` (7), `extensions/models` (2) and `voice/models` (2). Their `__init__.py` exports
+  nothing and their readers import the submodules directly, while a folder cell's interface is
+  its barrel (D45). Interface notices still find those submodules, since they look for files
+  imported from outside their cell; the cell's shown interface is what goes quiet.
+- The bands, every organelle's band and reachability, the wiring's 351 edges, the slots and the
+  outside packages are unchanged.
 
 **Where the tests and manifests went.** All 148 files under `tests/` are in the shore's `tests`
 group, not terrain: `tests/__init__.py`, the four `conftest.py` files, the `test_*.py` modules and
@@ -253,28 +286,47 @@ parser. The category is `MVFR` because the changed barrel `src/agents/__init__.p
 from outside its cell, by the examples (D27's escaped interface), not because of `links`: that
 slot is red on docs the change did not touch, so it is standing state (D69) and sets nothing.
 
-**Notices**, 4, in the order atis ranked them:
+**Notices**, 6, in the order atis ranked them:
 
-1. `interface-added` on `src/agents/items.py`, primary tier, weight 146.199: "the interface of
-   `src/agents` grew (`CompactionItem` added) and 88 files read it; the shape of `T`, `TResponse`,
-   `TResponseInputItem` and 2 more could not be compared".
-2. `interface-added` on `src/agents/__init__.py`, secondary, weight 55.62: five names added
+1. `interface-added` on `src/agents/memory/session.py`, primary tier, weight 255.303: "the
+   interface of `src/agents/memory` grew (`OpenAIResponsesCompactionArgs`,
+   `OpenAIResponsesCompactionAwareSession` and `is_openai_responses_compaction_aware_session`
+   added) and 8 files read it and it sits in band 4".
+2. `interface-added` on `src/agents/items.py`, secondary, weight 157.829: "the interface of
+   `src/agents` grew (`CompactionItem` added) and 134 files read it; the shape of `T`,
+   `TResponse`, `TResponseInputItem` and 2 more could not be compared".
+3. `interface-added` on `src/agents/memory/__init__.py`, secondary, weight 74.979: four names
+   added (`OpenAIResponsesCompactionArgs`, `OpenAIResponsesCompactionAwareSession`,
+   `OpenAIResponsesCompactionSession` and one more), read by 8 files, in band 4.
+4. `interface-added` on `src/agents/__init__.py`, tertiary, weight 56.091: five names added
    (`CompactionItem`, `OpenAIResponsesCompactionArgs`, `OpenAIResponsesCompactionAwareSession` and
    two more), and the shape of `__version__` could not be compared.
-3. `missing-cochange` on `src/agents/tool.py`, secondary, weight 9.592: "usually changes with
-   `src/agents/items.py` (8 commits, rate 0.5) and did not".
-4. `other-group`, tertiary, weight 2: "3 files no shore rule claims: .typed, .yml, Makefile".
+5. `interface-uncompared` on `src/agents/models/chatcmpl_converter.py`, tertiary, weight 28.28:
+   "the interface of `src/agents/models` was touched and 13 files read it; the shape of
+   `ResponseInputContentWithAudioParam` could not be compared".
+6. `interface-uncompared` on `src/agents/run.py`, tertiary, weight 26.926: "the interface of
+   `src/agents` was touched and 134 files read it; the shape of `CallModelInputFilter` and
+   `DEFAULT_AGENT_RUNNER` could not be compared".
 
-The two `interface-added` notices are the PR's real structural news, a new exported item type
-and its re-export, found through the barrel. The shapes it could not compare are module-level
-assignments (a `TypeVar`, type aliases and `__version__`), which carry no printable signature.
-`weather.reach` lists the examples that read `src/agents/__init__.py` (one hop), and
-`terrain.edges_exceptional` holds one new cross-module edge,
-`examples/memory/compaction_session_example.py` to `src/agents/__init__.py`.
+Step 86's map had four: the notices on `items.py` and `src/agents/__init__.py`, then
+`missing-cochange` on `src/agents/tool.py` (weight 9.592: "usually changes with
+`src/agents/items.py` (8 commits, rate 0.5) and did not") and `other-group` (weight 2: "3 files
+no shore rule claims: .typed, .yml, Makefile"). With the packages as cells, `agents.memory`'s
+new surface is read from outside its cell, and so are the names `models` and `run.py` keep, so
+four more interface notices outrank those two, and they fall below the six core keeps (one
+primary, two secondary, three tertiary). The ghost is still in `weather.ghosts`, and the three
+files are still in `other`.
 
-**Verdict on the reading.** The cells are the language's folders and packages, with the one
-exception above: atis folds a `src/` package's nested packages into one cell, so for this repo the
-language's modules are not cells below the top. The evidence reads as D176 settles for what it
-settles (pack tools resolved from `uv.lock`, the mypy slot ok with no artifact, pytest counted as
-its verdict alone, no coverage channel and the reason in `meta.instruments`), and nothing is muted
-that should not be. Nothing crashed, and no file landed on the shore that should be terrain.
+The interface notices are the PR's real structural news: the session protocol and wrapper in
+`agents.memory` and their re-export from its `__init__.py`, and a new exported item type in
+`agents` with its re-export from the barrel. The shapes atis could not compare are module-level
+assignments (a `TypeVar`, type aliases, `__version__` and the runner's default), which carry no
+printable signature.
+
+**Verdict on the reading.** The cells are the language's packages and folders: each of the 13
+packages under `src/agents/` is a cell (D187), and the change's weather falls in the three the PR
+touches. The evidence reads as D176 settles for what it settles (pack tools resolved from
+`uv.lock`, the mypy slot ok with no artifact, pytest counted as its verdict alone, no coverage
+channel and the reason in `meta.instruments`), and nothing is muted that should not be. Nothing
+crashed, and no file landed on the shore that should be terrain. The one gap left is the four
+packages whose `__init__.py` exports nothing, which show no interface of their own.

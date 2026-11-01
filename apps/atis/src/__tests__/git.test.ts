@@ -183,7 +183,8 @@ test('readDiff against this repo with --base HEAD~1', () => {
     expect(typeof dep.manifest).toBe('string');
     expect(typeof dep.name).toBe('string');
   }
-});
+  // The diff is this repository's own last commit, as large as a regenerated fixture makes it, so it is measured, never raced (D50).
+}, 60_000);
 
 test('readManifests reads the members of a package.json workspaces repo, with no pnpm-workspace.yaml (D64)', () => {
   const { dir, git } = tempRepo('workspaces');

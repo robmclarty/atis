@@ -9,10 +9,10 @@
 import type { FileKind, ScannedFile } from '../modules.js';
 
 const READ = /\.(?:[cm]?[jt]s|[jt]sx)$/;
-const TEST = /\.(?:test|spec)\.(?:[cm]?[jt]s|[jt]sx)$|(?:^|\/)(?:__tests__|test)\//;
+const TEST = /\.(?:test|spec)\.(?:[cm]?[jt]s|[jt]sx)$|(?:^|\/)(?:__tests__|tests?)\//;
 const BARREL = /(?:^|\/)index\.[jt]sx?$/;
 
-/** A path's kind as the TypeScript producer gives it: a test by its name or folder (D4), other TypeScript or JavaScript source, and anything else other. */
+/** A path's kind as the TypeScript producer gives it: a test by its name or folder (D4, D189), other TypeScript or JavaScript source, and anything else other. */
 function kindOf(path: string): FileKind {
   if (!READ.test(path)) return 'other';
   return TEST.test(path) ? 'test' : 'source';
