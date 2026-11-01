@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 86 — chore(fixtures): render one reviewed PR per new language
+**Current step:** 122 — fix(core): count a deleted export only where the base exported it
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -142,7 +142,10 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 84. feat(cli): scan shell scripts into the same scan shape
 - ☑ 119. fix(cli): read checkride's targets, each artifact by its check's adapter
 - ☑ 85. feat(cli): read each language's evidence as checkride writes it
-- ☐ 86. chore(fixtures): render one reviewed PR per new language
+- ☑ 86. chore(fixtures): render one reviewed PR per new language
+- ☐ 122. fix(core): count a deleted export only where the base exported it
+- ☐ 123. fix(cli): read a tests folder as tests in the TypeScript producer
+- ☐ 124. fix(core): give a package under src/ with its own barrel a cell of its own
 - ☐ 87. docs(producers): write the contract a language producer fills
 
 ## Park list
@@ -238,22 +241,23 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] two runs serving one repository overwrite each other's .atis/serve.json, and the later one's exit removes it, so atis mcp loses the tab that is still open
 - [x] the web tour test (world.test.ts, served with a tour) timed out at 30 s waiting on the breadcrumb under the full suite's load once in step 79's check, and passed alone in 5 s and on the rerun: a flake in the gate
 - [x] steps 81 to 84 each register their producer in apps/atis/src/sources/producers.ts's PRODUCERS, which their seams omit (they name sources/index.ts); step 87's contract should say where a producer is registered
-- [ ] vendored or minified JavaScript (vendor/thing/dist/thing.min.js, a public/vendor/jquery.js) is terrain since step 120, since only the build row at a member's root and the config row take JavaScript back to the shore; a bundle of thousands of lines founds a directory cell of its own
-- [ ] the config row's except list names only TypeScript (D164), so a root config/ of JavaScript code and a JavaScript eslint plugin's rules/ stay config shore while TypeScript in the same places is terrain
-- [ ] a Go module with no main package (a library) has no entry points, so every file of it sits in the deepest band, unreachable (D26); a Go library's non-internal packages may be its entry points as a TypeScript package's exports are
-- [ ] Go files go list never lists, under testdata/ or vendor/ or in no module, land in the shore's other group, loud; a testdata/ row in data and a vendor/ row would sort them by kind
-- [ ] a Python src layout folds every subpackage into its top package's folder cell, since core's src/ convention (D45) makes src/<name>/ one folder module, while a flat layout gives each package a cell of its own; D115 wants each package with an __init__.py a cell
-- [ ] hcl2-parser 1.0.3, step 83's HCL reader, has had no release since 2022-05 and has one maintainer, the staleness Rob ruled out; the maintained choice is HashiCorp's @cdktf/hcl2json (WASM, asynchronous), which the same worker bridge step 84 builds for sh-syntax could run
-- [ ] a for loop that sources every script a glob matches (for f in "$DIR"/lib/*.sh; do source "$f"; done) reaches none of them; matching the glob against the tracked scripts would give each an edge
-- [ ] an extensionless script with a shell shebang (bin/deploy, .husky/pre-commit) stays on the shore's scripts row, since a producer claims files by extension alone (D114); claiming by shebang too would bring such scripts into the terrain
-- [ ] serve a split repo's raw slot output from each target's directory: the HUD part for lint asks serve.ts for .check/lint.*, which a run split into targets writes as .check/<target>/lint.json, so it opens empty
-- [ ] read tsc's and go-build's findings through checkride's parsers, so a type error on a changed file puts a red types slot on the change; today a TypeScript or Go types red stays global, so standing, and the map names tsc and go-build as unparsed
-- [ ] the shore table's rules/** and root /config/** exceptions keep only TypeScript extensions (libs/core/src/config.ts, D164), so since D184 (javascript-terrain) a JavaScript repo's rules folder lands on the shore's config group: stylelint's 160 lib/rules/**/*.mjs files draw no cell, and an eslint plugin's rules/ would do the same; widen both exceptions to .js, .jsx, .mjs and .cjs (step 86)
-- [ ] a pack with no test check (bash always, terraform without .tftest.hcl runs) leaves meta.instruments silent on why its files have no coverage or test channel: unwritten() in apps/atis/src/sources/check.ts names the reason only for a test check that ran, so fixtures/shell-1's map has no muted line though D176 (other-language-evidence) says meta.instruments says why (step 86)
-- [ ] the Terraform producer's edges carry local.*, module.*, data.* and resource names a file reads from its sibling, but its exports hold only var.* and output.*, so liveConsumers (libs/core/src/notices.ts) reads each as a removed export: all 6 notices on fixtures/terraform-1 are false deleted-export ones naming 62 names that both sides still declare (step 86)
-- [ ] a Terraform module source spelled with a trailing slash, source = "../../", draws no edge: calledDir in apps/atis/src/sources/terraform.ts normalizes it to './', checks for '.' before stripping the slash, and returns '.' where the root module is keyed '', so fixtures/terraform-1's root reads fan-in 0 and interface 0 and counts as an entry point (step 86)
-- [ ] the TypeScript producer reads a tests/ folder as source terrain: TEST_DIR in apps/atis/src/sources/imports.ts matches only __tests__/ and test/, so svelte's packages/svelte/tests/ (2,465 _config.js and sample files) founds 2,377 of fixtures/javascript-1's 2,417 cells, 2,089 of its 2,203 reach entries, a 17.7 MB map.json and a 7.5 minute run, where the Python producer already counts tests/ as tests (step 86)
-- [ ] core's deleted-export candidate (liveConsumers in libs/core/src/notices.ts) checks a base edge's names only against head exports, never that the base exported them, so a Go file's same-package reads of unexported names (App.isASCII, getAuthSchemes) and a Terraform file's local.* reads all count as deleted exports: 3 of fixtures/go-1's 6 notices are false, with the same cause as P100's 6 on terraform-1 (step 86)
+- [x] vendored or minified JavaScript (vendor/thing/dist/thing.min.js, a public/vendor/jquery.js) is terrain since step 120, since only the build row at a member's root and the config row take JavaScript back to the shore; a bundle of thousands of lines founds a directory cell of its own
+- [x] the config row's except list names only TypeScript (D164), so a root config/ of JavaScript code and a JavaScript eslint plugin's rules/ stay config shore while TypeScript in the same places is terrain
+- [x] a Go module with no main package (a library) has no entry points, so every file of it sits in the deepest band, unreachable (D26); a Go library's non-internal packages may be its entry points as a TypeScript package's exports are
+- [x] Go files go list never lists, under testdata/ or vendor/ or in no module, land in the shore's other group, loud; a testdata/ row in data and a vendor/ row would sort them by kind
+- [x] a Python src layout folds every subpackage into its top package's folder cell, since core's src/ convention (D45) makes src/<name>/ one folder module, while a flat layout gives each package a cell of its own; D115 wants each package with an __init__.py a cell
+- [x] hcl2-parser 1.0.3, step 83's HCL reader, has had no release since 2022-05 and has one maintainer, the staleness Rob ruled out; the maintained choice is HashiCorp's @cdktf/hcl2json (WASM, asynchronous), which the same worker bridge step 84 builds for sh-syntax could run
+- [x] a for loop that sources every script a glob matches (for f in "$DIR"/lib/*.sh; do source "$f"; done) reaches none of them; matching the glob against the tracked scripts would give each an edge
+- [x] an extensionless script with a shell shebang (bin/deploy, .husky/pre-commit) stays on the shore's scripts row, since a producer claims files by extension alone (D114); claiming by shebang too would bring such scripts into the terrain
+- [x] serve a split repo's raw slot output from each target's directory: the HUD part for lint asks serve.ts for .check/lint.*, which a run split into targets writes as .check/<target>/lint.json, so it opens empty
+- [x] read tsc's and go-build's findings through checkride's parsers, so a type error on a changed file puts a red types slot on the change; today a TypeScript or Go types red stays global, so standing, and the map names tsc and go-build as unparsed
+- [x] the shore table's rules/** and root /config/** exceptions keep only TypeScript extensions (libs/core/src/config.ts, D164), so since D184 (javascript-terrain) a JavaScript repo's rules folder lands on the shore's config group: stylelint's 160 lib/rules/**/*.mjs files draw no cell, and an eslint plugin's rules/ would do the same; widen both exceptions to .js, .jsx, .mjs and .cjs (step 86)
+- [x] a pack with no test check (bash always, terraform without .tftest.hcl runs) leaves meta.instruments silent on why its files have no coverage or test channel: unwritten() in apps/atis/src/sources/check.ts names the reason only for a test check that ran, so fixtures/shell-1's map has no muted line though D176 (other-language-evidence) says meta.instruments says why (step 86)
+- [x] the Terraform producer's edges carry local.*, module.*, data.* and resource names a file reads from its sibling, but its exports hold only var.* and output.*, so liveConsumers (libs/core/src/notices.ts) reads each as a removed export: all 6 notices on fixtures/terraform-1 are false deleted-export ones naming 62 names that both sides still declare (step 86)
+- [x] a Terraform module source spelled with a trailing slash, source = "../../", draws no edge: calledDir in apps/atis/src/sources/terraform.ts normalizes it to './', checks for '.' before stripping the slash, and returns '.' where the root module is keyed '', so fixtures/terraform-1's root reads fan-in 0 and interface 0 and counts as an entry point (step 86)
+- [x] the TypeScript producer reads a tests/ folder as source terrain: TEST_DIR in apps/atis/src/sources/imports.ts matches only __tests__/ and test/, so svelte's packages/svelte/tests/ (2,465 _config.js and sample files) founds 2,377 of fixtures/javascript-1's 2,417 cells, 2,089 of its 2,203 reach entries, a 17.7 MB map.json and a 7.5 minute run, where the Python producer already counts tests/ as tests (step 86)
+- [x] core's deleted-export candidate (liveConsumers in libs/core/src/notices.ts) checks a base edge's names only against head exports, never that the base exported them, so a Go file's same-package reads of unexported names (App.isASCII, getAuthSchemes) and a Terraform file's local.* reads all count as deleted exports: 3 of fixtures/go-1's 6 notices are false, with the same cause as P100's 6 on terraform-1 (step 86)
+- [ ] chrome.test.ts's HUD-fit test (libs/svg) renders every committed fixture map and timed out at 5 s under the full suite once in step 122's check, passing alone in 1.1 s; javascript-1's 2,417-cell map is the heavy one, which step 123's regeneration shrinks (step 122)
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -384,6 +388,23 @@ Harvest results this boundary:
 - 2026-10-28, at range 23 of 33's stop: 2 parked ideas, classified.
 - **tangent**: park 86 · the web tour test (world.test.ts, served with a tour) timed out at 30 s waiting on the breadcrumb under the full suite's load once in step 79's check, and passed alone in 5 s and on the rerun: a flake in the gate → a load-sensitive timeout in a test this range never touched, green alone and on two full reruns
 - **tangent**: park 87 · steps 81 to 84 each register their producer in apps/atis/src/sources/producers.ts's PRODUCERS, which their seams omit (they name sources/index.ts); step 87's contract should say where a producer is registered → seams are orientation, so steps 81 to 84 still land; the stray just shows on each checkpoint
+- 2026-10-30, at the step 86 boundary: 16 parked ideas, classified.
+- **tangent**: park 88 · vendored or minified JavaScript (vendor/thing/dist/thing.min.js, a public/vendor/jquery.js) is terrain since step 120, since only the build row at a member's root and the config row take JavaScript back to the shore; a bundle of thousands of lines founds a directory cell of its own → no fixture carries vendored JavaScript, and the build and config rows catch its common homes
+- **tangent**: park 89 · the config row's except list names only TypeScript (D164), so a root config/ of JavaScript code and a JavaScript eslint plugin's rules/ stay config shore while TypeScript in the same places is terrain → no fixture reads a JavaScript rules or config folder, and P102's step can take it if you want
+- **tangent**: park 90 · a Go module with no main package (a library) has no entry points, so every file of it sits in the deepest band, unreachable (D26); a Go library's non-internal packages may be its entry points as a TypeScript package's exports are → which packages a Go library exposes is a design call, and go-1 shows the gap openly
+- **tangent**: park 91 · Go files go list never lists, under testdata/ or vendor/ or in no module, land in the shore's other group, loud; a testdata/ row in data and a vendor/ row would sort them by kind → the files go list skips land loud on the shore, and no map misreads code there
+- **blocker**: park 92 · a Python src layout folds every subpackage into its top package's folder cell, since core's src/ convention (D45) makes src/<name>/ one folder module, while a flat layout gives each package a cell of its own; D115 wants each package with an __init__.py a cell → python-1 folds twelve packages into one cell, so a fix step regenerates it before range 24's stop
+- **tangent**: park 93 · hcl2-parser 1.0.3, step 83's HCL reader, has had no release since 2022-05 and has one maintainer, the staleness Rob ruled out; the maintained choice is HashiCorp's @cdktf/hcl2json (WASM, asynchronous), which the same worker bridge step 84 builds for sh-syntax could run → the parser works today, and the replacement's own upkeep needs checking before a swap
+- **tangent**: park 94 · a for loop that sources every script a glob matches (for f in "$DIR"/lib/*.sh; do source "$f"; done) reaches none of them; matching the glob against the tracked scripts would give each an edge → shell-1 shows it on Bash-it's lib loader, and the map stays honest about what it reads
+- **tangent**: park 95 · an extensionless script with a shell shebang (bin/deploy, .husky/pre-commit) stays on the shore's scripts row, since a producer claims files by extension alone (D114); claiming by shebang too would bring such scripts into the terrain → claiming by shebang is a new producer rule, and shell-1 has only four such scripts
+- **tangent**: park 96 · serve a split repo's raw slot output from each target's directory: the HUD part for lint asks serve.ts for .check/lint.*, which a run split into targets writes as .check/<target>/lint.json, so it opens empty → the map reads a split repo right, and only the HUD part's raw view opens empty
+- **tangent**: park 97 · read tsc's and go-build's findings through checkride's parsers, so a type error on a changed file puts a red types slot on the change; today a TypeScript or Go types red stays global, so standing, and the map names tsc and go-build as unparsed → a types red stays standing, and the map names both checkers as unparsed
+- **tangent**: park 98 · the shore table's rules/** and root /config/** exceptions keep only TypeScript extensions (libs/core/src/config.ts, D164), so since D184 (javascript-terrain) a JavaScript repo's rules folder lands on the shore's config group: stylelint's 160 lib/rules/**/*.mjs files draw no cell, and an eslint plugin's rules/ would do the same; widen both exceptions to .js, .jsx, .mjs and .cjs (step 86) → it repeats P89, parked again at step 86
+- **tangent**: park 99 · a pack with no test check (bash always, terraform without .tftest.hcl runs) leaves meta.instruments silent on why its files have no coverage or test channel: unwritten() in apps/atis/src/sources/check.ts names the reason only for a test check that ran, so fixtures/shell-1's map has no muted line though D176 (other-language-evidence) says meta.instruments says why (step 86) → the channel is absent and never faked, so only the stated reason is missing
+- **blocker**: park 100 · the Terraform producer's edges carry local.*, module.*, data.* and resource names a file reads from its sibling, but its exports hold only var.* and output.*, so liveConsumers (libs/core/src/notices.ts) reads each as a removed export: all 6 notices on fixtures/terraform-1 are false deleted-export ones naming 62 names that both sides still declare (step 86) → P103 is its cause, so P103's fix step clears these notices and regenerates terraform-1
+- **blocker**: park 101 · a Terraform module source spelled with a trailing slash, source = "../../", draws no edge: calledDir in apps/atis/src/sources/terraform.ts normalizes it to './', checks for '.' before stripping the slash, and returns '.' where the root module is keyed '', so fixtures/terraform-1's root reads fan-in 0 and interface 0 and counts as an entry point (step 86) → terraform-1 is regenerated in P103's step, and the missing edge would ride into it
+- **blocker**: park 102 · the TypeScript producer reads a tests/ folder as source terrain: TEST_DIR in apps/atis/src/sources/imports.ts matches only __tests__/ and test/, so svelte's packages/svelte/tests/ (2,465 _config.js and sample files) founds 2,377 of fixtures/javascript-1's 2,417 cells, 2,089 of its 2,203 reach entries, a 17.7 MB map.json and a 7.5 minute run, where the Python producer already counts tests/ as tests (step 86) → javascript-1's cells are mostly test samples, so a fix step regenerates it before range 24's stop
+- **blocker**: park 103 · core's deleted-export candidate (liveConsumers in libs/core/src/notices.ts) checks a base edge's names only against head exports, never that the base exported them, so a Go file's same-package reads of unexported names (App.isASCII, getAuthSchemes) and a Terraform file's local.* reads all count as deleted exports: 3 of fixtures/go-1's 6 notices are false, with the same cause as P100's 6 on terraform-1 (step 86) → three Go and six Terraform notices are false, so a fix step regenerates both maps before range 24's stop
 
 ## Log
 
@@ -3107,3 +3128,63 @@ folder, so it rides the branch into the PR.)*
   - `libs/core/src/overlays.ts`, whose coverage gaps take the same extension rule.
   - Core's evidence and overlay tests.
   - `apps/atis/src/sources/index.ts`, exporting the Go test reader.
+- 2026-10-30 — step 86 checkpointed · 5e63185a5 — chore(fixtures): render one reviewed PR per new language (2772m)
+
+  **Summary**: All five language fixtures are rendered and cited: svelte for JavaScript, gofiber/fiber for Go, the OpenAI Agents SDK for Python, Braintrust's AWS data plane for Terraform and Bash-it for shell. Each is a hold, with the reviewer's words quoted from the GitHub record. The Go, Terraform and shell maps draw their language's modules as cells, but the JavaScript and Python maps are bent by atis gaps the fixtures exposed, and false deleted-export notices fill the Go and Terraform maps. Seven gaps are parked for the stop.
+
+  1. Two maps' cells are bent by atis gaps the fixtures exposed.
+  2. Core reads a same-module name as an export, so the Go and Terraform maps carry false notices.
+  3. The Go fixture's tests had to run from your terminal.
+  4. The shell and Terraform maps never say why their files have no coverage.
+  5. One park repeats an older one, and the runs left three things in shared caches.
+
+  **Readout**:
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    not met
+               → JS and Python cells bent by atis gaps: P102, P92
+  decisions    honored:
+               - D59 (outside-fixtures)
+               - D56 (fixtures-skip-audit)
+               - D58 (fixtures-current-toolchain)
+               - D176 (other-language-evidence)
+  constraints  14 of 14 honored
+  seam         held: 6 of 6 declared, no strays
+  diff         +1029980 -0 across 21 files
+               - docs/inspiration.md +16 -0
+               - fixtures/go-1/README.md +222 -0
+               - fixtures/go-1/atis.svg +969 -0
+               - fixtures/go-1/map.json +79282 -0
+               - fixtures/go-1/truth.md +137 -0
+               - fixtures/javascript-1/README.md +410 -0
+               - fixtures/javascript-1/atis.svg +10390 -0
+               - and 14 more
+  spent        46h 12m · 6 turns · 138s gate · green first run
+  ```
+
+  **Verdict**: ○ Out of plumb (done-when not met)
+
+  **Recommendation**: Land the step as it stands, and fold P103 (deleted exports not checked at the base), P102 (the tests folder is terrain) and P92 (src layout folds subpackages) as blockers at range 24's stop, then regenerate the three maps they bend. The fixtures did their job by exposing gaps a TypeScript corpus never could, and fixing atis is outside this step's seam, while re-picking repos to dodge the gaps would hide them.
+
+  **1.** Two maps' cells are bent by atis gaps the fixtures exposed.
+
+  The svelte map has 2,417 cells, and 2,377 of them are test-sample folders. The TypeScript producer counts only `__tests__/` and `test/` as test folders, never `tests/`, so svelte's `packages/svelte/tests/` reads as terrain: P102 (the tests folder is terrain). The map is 17.7 MB and took atis 7.5 minutes; the largest map before it was 9.1 MB. Its 40 source cells are right, and its evidence reads well: patch coverage on all four changed files, 18 surviving mutants on changed lines, and eslint named as unparsed.
+
+  The Python map folds all twelve subpackages under `src/agents/` into one folder cell, as P92 (src layout folds subpackages) predicted at step 82. None of the flat-layout Python repos checked had a qualifying hold with three or more source files. Both fixtures stay as their gaps' real cases, to regenerate once the gaps are fixed. The Go map's cells are fiber's 38 packages, the Terraform map's are 24 modules, and the shell map's are the scripts' folders.
+
+  **2.** Core reads a same-module name as an export, so the Go and Terraform maps carry false notices.
+
+  Three of the Go map's six notices and all six of the Terraform map's are deleted-export notices naming names both sides still declare. Core's candidate checks a base edge's names against the head's exports, never whether the base exported them. TypeScript's edges only ever carry exports, so it never showed. Go's edges carry a file's reads of unexported names from its own package, and Terraform's carry `local.*`, `module.*`, `data.*` and resource names, so each such read of a changed file counts as a deleted export: P103 (deleted exports not checked at the base), the cause behind P100 (Terraform false deleted exports). A Terraform module source written `../../`, with the trailing slash, also draws no edge: P101 (Terraform trailing-slash source).
+
+  **3.** The Go fixture's tests had to run from your terminal.
+
+  fiber #4079 made five middlewares write their values into each request's `context.Context`, and `sixcolors` requested changes at `7ccc68c` because every user pays that allocation for an interop path only some use. golangci-lint 2.5.0, the version fiber's CI names, needed Go 1.25.14 put on `PATH` through a symlink directory, since `mise exec` strips other mise installs and had left it on Homebrew's Go 1.26. In any process this agent session starts, a nil call in Go never becomes a panic, so five of fiber's tests spun to checkride's limit. Your run passed 37 packages in 29 seconds, and the map reads 23 passing stitches from `test.jsonl`, names go-test's missing coverage and the unparsed go-build, and has no entry points, since fiber is a library: P90 (a Go library has no entry points).
+
+  **4.** The shell and Terraform maps never say why their files have no coverage.
+
+  The Go and Python maps name it in `meta.instruments.muted`, as "coverage: go-test writes none" and "coverage: pytest writes none". The bash pack has no test check, and neither does the terraform pack here, so nothing writes that line, though D176 (other-language-evidence) says the instruments say why: P99 (silent coverage reason). Otherwise the evidence reads as D176 settles. shellcheck's 79 findings sit on 12 untouched files, so `lint` is red as standing state; tflint, ruff, mypy, golangci-lint and pytest are green. The Terraform map's `types` is red only because checkride runs `validate` without the `-no-tests` flag the repo's CI uses, and OpenTofu rejects its test files' mock syntax.
+
+  **5.** One park repeats an older one, and the runs left three things in shared caches.
+
+  P98 (JavaScript rules folder on the shore) repeats P89 (config row names only TypeScript). The Terraform agent's first `mise exec` installed pre-commit 4.7.0 into mise's shared installs, the JavaScript run installed Playwright's chromium into its shared cache, and Go 1.25.14 and golangci-lint 2.5.0 are now mise installs. checkride 0.19.1 refuses `--skip security` for a bash or python target, whose packs have no security slot, so those runs used `--all` alone and audited nothing. `docs/producers.md` for step 87 is drafted outside the repo.

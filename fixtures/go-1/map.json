@@ -1,7 +1,7 @@
 {
   "meta": {
     "schema_version": 1,
-    "generated_at": "2026-10-30T04:48:44.154Z",
+    "generated_at": "2026-11-01T04:48:16.773Z",
     "repo": "fiber",
     "base": "c64bda1856e531474fa1cd3356f04886a5dbdf39",
     "base_typed": "--base c64bda1856e531474fa1cd3356f04886a5dbdf39",
@@ -79010,7 +79010,7 @@
     "checks": {
       "category": "VFR",
       "checks_run": 5,
-      "timestamp": "2026-10-30T04:48:05.321Z",
+      "timestamp": "2026-11-01T04:46:58.621Z",
       "slots": [
         {
           "name": "dead",
@@ -79169,42 +79169,6 @@
   },
   "notices": [
     {
-      "kind": "deleted-export",
-      "target": "helpers.go",
-      "why": "`App.isASCII`, `App.isEtagStale`, `App.method`, `App.methodInt`, `App.quoteRawString`, `App.quoteString`, `acceptsLanguageOfferBasic`, `acceptsLanguageOfferExtended`, `acceptsOffer`, `acceptsOfferType`, `defaultString`, `errTestConnClosed`, `genericParseType`, `getGroupPath`, `getOffer`, `getSplicedStrList`, `getTLSConfig`, `isNoCache`, `joinHeaderValues`, `parseAddr`, `readContent`, `testConn`, `testConn.Close`, `testConn.LocalAddr`, `testConn.Read`, `testConn.RemoteAddr`, `testConn.SetDeadline`, `testConn.SetReadDeadline`, `testConn.SetWriteDeadline`, `testConn.Write`, `toBytesImmutable`, `toStringImmutable` no longer exported, and 16 files still import it",
-      "inputs": {
-        "cells_reached": 32,
-        "uncovered_fraction": 0,
-        "history_weight": 4.53,
-        "names": 32,
-        "consumers": 16,
-        "readers": 16
-      },
-      "thresholds": {
-        "severity": 8
-      },
-      "weight": 762.524,
-      "tier": "primary"
-    },
-    {
-      "kind": "deleted-export",
-      "target": "middleware/keyauth/keyauth.go",
-      "why": "`getAuthSchemes` no longer exported, and 1 file still imports it",
-      "inputs": {
-        "cells_reached": 1,
-        "uncovered_fraction": 0,
-        "history_weight": 8.274,
-        "names": 1,
-        "consumers": 1,
-        "readers": 1
-      },
-      "thresholds": {
-        "severity": 8
-      },
-      "weight": 212.69,
-      "tier": "secondary"
-    },
-    {
       "kind": "interface-added",
       "target": "helpers.go",
       "why": "the interface of `.` grew (`ValueFromContext` added) and 69 files read it",
@@ -79226,25 +79190,7 @@
         "deep_band": 4
       },
       "weight": 208.257,
-      "tier": "secondary"
-    },
-    {
-      "kind": "deleted-export",
-      "target": "middleware/session/middleware.go",
-      "why": "`Middleware.initialize`, `Middleware.saveSession`, `middlewareContextKey` no longer exported, and 2 files still import it",
-      "inputs": {
-        "cells_reached": 2,
-        "uncovered_fraction": 0,
-        "history_weight": 1.828,
-        "names": 3,
-        "consumers": 2,
-        "readers": 2
-      },
-      "thresholds": {
-        "severity": 8
-      },
-      "weight": 99.64,
-      "tier": "tertiary"
+      "tier": "primary"
     },
     {
       "kind": "missing-cochange",
@@ -79260,7 +79206,7 @@
         "cochange_support": 3
       },
       "weight": 10.046,
-      "tier": "tertiary"
+      "tier": "secondary"
     },
     {
       "kind": "missing-cochange",
@@ -79276,6 +79222,23 @@
         "cochange_support": 3
       },
       "weight": 9.472,
+      "tier": "secondary"
+    },
+    {
+      "kind": "other-group",
+      "target": "other",
+      "why": "3 files no shore rule claims: .json, .yml, Makefile",
+      "inputs": {
+        "cells_reached": 0,
+        "uncovered_fraction": 0,
+        "history_weight": 0,
+        "files": 3,
+        "kinds": 3
+      },
+      "thresholds": {
+        "severity": 2
+      },
+      "weight": 2,
       "tier": "tertiary"
     }
   ]

@@ -55,6 +55,13 @@ outside the tree, a clean `checkride --all --skip security`, then atis over the 
 is historical and the harness current (D58): checkride is the latest, and the Terraform, OpenTofu
 and tflint copies are the ones the commit's own `mise.toml` pins.
 
+Step 122 regenerated both on 2026-10-30 by the same commands, from the clone step 86 kept, with
+atis built from step 86's commit, `5e63185`, plus step 122's change. Since then core counts a name
+as a deleted export only where the base exported it from that file (D188 (deleted-export-at-base)),
+and the producer reads a module source written with a trailing slash. checkride's run matched step
+86's (the same four slots ran, `types` red on the same 45 diagnostics) in 2 seconds, and atis took
+6 seconds. What moved is under "What atis read".
+
 ## The toolchain
 
 | tool | version | how atis knows |
@@ -214,8 +221,9 @@ same run, `directory:managed-byoc` and `directory:scripts` (2 `.sh` files each).
 organelles: 152 `.tf` and 5 `.sh`, the fifth being `modules/remote-support/bastion-user-data.sh`,
 which sits inside its Terraform module's cell.
 
-The module edges are there: the root cell has a `fan_out` of 116 into the modules it calls, the
-head graph's `weather.wiring` holds 221 import edges (tests' included), and one
+The module edges are there: the root cell has a `fan_out` of 116 into the modules it calls, and
+since step 122 a `fan_in` of 2 from the one example that calls it (see "What moved at step 122").
+The head graph's `weather.wiring` holds 231 import edges (tests' included), and one
 `new-cross-module` edge is in the change (`main.tf` to
 `modules/loop-runtime-sandbox-aws-microvm/moved_state.tf`, the new file). A module's interface
 is its `var.<name>` and `output.<name>` blocks: `modules/api-ecs` has an `interface_size` of 103
@@ -245,8 +253,9 @@ Entry points. `meta.instruments` records the rule, not the list:
 ```
 
 Read by hand from the `module` blocks, the modules no `module` block calls are the four examples
-and `modules/vpc-peering-accepter` and `modules/vpc-peering-requester`; atis's reading adds the
-root (see the second misreading below). 156 of the 157 organelles are reachable; the one that is
+and `modules/vpc-peering-accepter` and `modules/vpc-peering-requester`, and since step 122 atis
+reads the same six: their 27 files sit in band 0, beside the two shell cells' scripts. 156 of the
+157 organelles are reachable; the one that is
 not is `modules/remote-support/bastion-user-data.sh`, which is mode 100644 and loaded by
 `templatefile("${path.module}/bastion-user-data.sh", …)`, a reference atis reads as no edge.
 
@@ -274,33 +283,51 @@ atis. `weather.checks` has the nine slots as atis read them:
 
 `weather.evidence` is empty: `lint` has no issues and the `types` diagnostics sit on test files.
 
-The notices atis ranked are six, all of kind `deleted-export`: `main.tf` (primary tier),
-`modules/loop-runtime-ecs/main.tf` and `examples/braintrust-data-plane/main.tf` (secondary), and
-`modules/loop-runtime-sandbox-aws-microvm/main.tf`, `examples/braintrust-data-plane-sandbox/main.tf`
-and `variables.tf` (tertiary). **All six are false**, and two producer faults show in this map:
+The notices atis ranks are six, and none is a `deleted-export`:
 
-1. The `deleted-export` notices claim 62 names are "no longer exported" (44 `local.*` and
-   `module.*` on `main.tf`, 4 resource addresses on `modules/loop-runtime-ecs/main.tf`, 1
+| tier | kind | target | why |
+| --- | --- | --- | --- |
+| primary | `red-check-slot` | `tests/loop_runtime_egress_gateway.tftest.hcl` | the `types` check is red on this changed file |
+| secondary | `red-check-slot` | `tests/loop_runtime_network.tftest.hcl` | the same |
+| secondary | `red-check-slot` | `tests/loop_sandbox_network.tftest.hcl` | the same |
+| tertiary | `missing-cochange` | `tests/loop_sandbox_egress_gateway.tftest.hcl` | usually changes with `modules/loop-runtime-sandbox-aws-microvm/main.tf` (7 commits, rate 0.538) and did not |
+| tertiary | `missing-cochange` | `loop-runtime.tf` | usually changes with `modules/loop-runtime-ecs/variables.tf` (4 commits, rate 0.571) and did not |
+| tertiary | `other-group` | `other` | 16 files no shore rule claims: .hcl, .json, .tf_example, .toml, .yaml, lock_versions |
+
+The three red rows are true to the run: `types` is red on the three test files the PR touched,
+for the OpenTofu reason under "Skipped slots", so they say more about checkride's choice of CLI
+than about the PR's source.
+
+What moved at step 122. Step 86's map ranked six `deleted-export` notices, all false, and drew the
+root as a module nobody calls. Both were atis faults, and step 122 fixed both:
+
+1. The six notices named 62 names as "no longer exported": 44 `local.*` and `module.*` on
+   `main.tf`, 4 resource addresses on `modules/loop-runtime-ecs/main.tf`, 1
    `module.braintrust-data-plane` on each of the two examples, 4 on the sandbox module's
-   `main.tf`, 8 `local.*` on `variables.tf`). The PR removed none of them: every one is declared
-   at the fixture commit and at the merge base (checked against the two trees with
-   `/tmp/atis-languages/tools/terraform-1/verify-notices.cjs`, which matches each `locals` key and
-   each `module`, `data` and `resource` header). The cause is in how the
-   names travel. The Terraform producer gives an edge the names a file reads of a sibling
-   (`local.x`, `module.x`, `data.t.n`, `type.name`), but a file's `exports` hold only `var.*` and
-   `output.*` (`apps/atis/src/sources/terraform.ts`, `terraformScan`), and `liveConsumers` in
-   `libs/core/src/notices.ts` counts every edge name that the head's `exports` lack as removed,
-   for any changed file another file in its module reads. Any PR touching a Terraform file whose
-   locals, module calls or resources a sibling reads would draw them, so the ranked notices say
-   nothing true about this PR.
+   `main.tf`, and 8 `local.*` on `variables.tf`. The PR removed none of them: every one is
+   declared at the fixture commit and at the merge base (checked against the two trees with
+   `/tmp/atis-languages/tools/terraform-1/verify-notices.cjs`). The Terraform producer gives an
+   edge the names a file reads of a sibling (`local.x`, `module.x`, `data.t.n`, `type.name`),
+   while a file's `exports` hold only `var.*` and `output.*`. `liveConsumers` in
+   `libs/core/src/notices.ts` counted every edge name the head's `exports` lacked as removed,
+   without asking whether the base had exported it. Since D188 (deleted-export-at-base) it asks,
+   so a read inside a module is never a deleted export, and all six notices are gone.
 2. The call `source = "../../"` in
-   `examples/braintrust-data-plane-external-eks-quarantine/main.tf` (line 14), the one local call
-   of the root, makes no edge. `calledDir` joins the example's directory with `../../` and gets
-   `./`, strips the slash to `.`, and looks for a module keyed `.`, while the root is keyed by
-   the empty string; `../..` without the trailing slash would have matched. So `directory:.` has
-   `fan_in` 0 and an `interface_size` of 0 though its `variables.tf` and `outputs.tf` declare 280
-   `variable` and `output` blocks, the example cell has `fan_out` 0, and the root counts as a
-   module no one calls (an entry point).
+   `examples/braintrust-data-plane-external-eks-quarantine/main.tf` (line 14), the one local
+   call of the root, made no edge. `calledDir` in `apps/atis/src/sources/terraform.ts` joined the
+   example's directory with `../../` and got `./`. It checked for `.` before stripping the slash,
+   so it returned `.`, while the root is keyed by the empty string. It now strips the slash
+   first, and the example's `main.tf` reaches all nine root files, its `outputs.tf` reaches the
+   root's `outputs.tf`, and `weather.wiring` grew from 221 edges to 231. `directory:.` went from
+   `fan_in` 0, band 0 and an `interface_size` of 0 to `fan_in` 2, band 1 and an `interface_size`
+   of 279. That is every `variable` and `output` block in the root at the merge base, where the
+   terrain is read (the PR adds the 280th). The 17 modules beneath it each went one band
+   deeper, from band 1 to band 2. The root's nine files left band 0, which now holds 27 files
+   where it held 36.
+
+With the false notices gone, the budget's six places go to the `types` red, the two ghosts and
+the `other` group, which step 86's map had crowded out. The cells, organelles, bands and reach
+are otherwise as step 86 drew them: 27 cells, 157 organelles, 7 bands and 23 reach entries.
 
 Not Terraform's own and not counted as faults: the two ghosts, `loop-runtime.tf` (deleted by the
 merge base) and `tests/loop_sandbox_egress_gateway.tftest.hcl` (added and deleted inside the PR),
@@ -311,5 +338,4 @@ validate`'s diagnostics came through checkride's parser into the `types` slot (r
 files), `lint` was read as a clean slot, the dependency delta carries the git module source and
 the provider constraints, and no coverage, test or plan is read. Not exercised: a tflint finding,
 since this tree has none, so no finding reached a terrain file. Nothing in the evidence is wrongly
-muted. What does not read as settled is the notices: all six are the `deleted-export` misreading
-above.
+muted. Since step 122 the notices read as settled too: none is a `deleted-export` misreading.

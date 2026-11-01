@@ -46,6 +46,14 @@ install ran from this session; the checkride run that wrote the `.check/` the ma
 terminal outside it, for the reason under "The commands". atis then mapped the worktree from its
 build at the step's base commit, `3b2bfdc`.
 
+Step 122 regenerated both on 2026-10-31 by the same commands, after a reboot had cleared `/tmp`:
+the clone and the shared checkride 0.19.1 were made again, commands 1 to 4 ran from this session,
+and command 5 ran from Rob's terminal again, its tests passing 37 packages in 51 seconds. atis was
+built from step 86's commit, `5e63185`, plus step 122's change: core now counts a name as a deleted
+export only where the base exported it from that file (D188 (deleted-export-at-base)). Every part
+of the map but `notices` and the check run's timestamp is as step 86 drew it. What moved is under
+"What atis read".
+
 ## The toolchain
 
 The tree is historical; the harness is current (D58). checkride runs from a shared copy outside the
@@ -200,23 +208,25 @@ stitches all five changed middleware files. There is no coverage channel and no 
 gap: the instruments say go-test writes none. go-build's `types` is unread and named. golangci-lint's
 findings would be read through checkride's parser, and there were none.
 
-**Notices.** Six, in rank order:
+**Notices.** Four, in rank order:
 
-1. `deleted-export` on `helpers.go` (primary), naming `App.isASCII`, `App.isEtagStale`,
-   `acceptsOffer` and more.
-2. `deleted-export` on `middleware/keyauth/keyauth.go` (secondary): `getAuthSchemes`.
-3. `interface-added` on `helpers.go` (secondary): `ValueFromContext` added, and 69 files read the
+1. `interface-added` on `helpers.go` (primary): `ValueFromContext` added, and 69 files read the
    root package.
-4. `deleted-export` on `middleware/session/middleware.go` (tertiary): `Middleware.initialize`,
-   `Middleware.saveSession`, `middlewareContextKey`.
-5. `missing-cochange` on `middleware/basicauth/config.go` (tertiary).
-6. `missing-cochange` on `middleware/keyauth/config.go` (tertiary).
+2. `missing-cochange` on `middleware/basicauth/config.go` (secondary).
+3. `missing-cochange` on `middleware/keyauth/config.go` (secondary).
+4. `other-group` on `other` (tertiary): 3 files no shore rule claims, `.json`, `.yml` and
+   `Makefile`.
 
-**What does not read right.** The three `deleted-export` notices are false. Every name they list is
-unexported and still declared at the fixture commit. The Go producer's edges carry the names a
-file reads from another file of its own package, unexported ones included, while its exports hold
-only exported names. Core's candidate checks a base edge's names against the head's exports
-without asking whether the base exported them, so each such read of a changed file counts as a
-deleted export. The same cause gives the Terraform fixture its six false notices; both are parked.
-The `interface-added` notice on `helpers.go` is true and is the PR's new API. The cells, the
-stitches and the muted channels read as D176 (other-language-evidence) settles.
+The `interface-added` notice is true and is the PR's new API. The cells, the stitches and the
+muted channels read as D176 (other-language-evidence) settles.
+
+**What moved at step 122.** Step 86's map ranked six notices, and three were false
+`deleted-export` notices: on `helpers.go` (`App.isASCII`, `App.isEtagStale`, `acceptsOffer` and
+more), on `middleware/keyauth/keyauth.go` (`getAuthSchemes`) and on
+`middleware/session/middleware.go` (`Middleware.initialize`, `Middleware.saveSession`,
+`middlewareContextKey`). Every name they listed is unexported and still declared at the fixture
+commit. The Go producer's edges carry the names a file reads from another file of its own package,
+unexported ones included, while its exports hold only exported names, and core's candidate
+checked a base edge's names against the head's exports without asking whether the base had
+exported them. Since D188 (deleted-export-at-base) it asks, so all three are gone, and the
+`other` group, which they had crowded out of the budget, takes the fourth place.

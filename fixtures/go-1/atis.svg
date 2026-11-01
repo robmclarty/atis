@@ -1,5 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2319 847" width="2319" height="847" font-family="ui-monospace, Menlo, Consolas, monospace">
-  <rect id="ground" x="0" y="0" width="2319" height="847" fill="#1a1f27"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2319 697" width="2319" height="697" font-family="ui-monospace, Menlo, Consolas, monospace">
+  <rect id="ground" x="0" y="0" width="2319" height="697" fill="#1a1f27"/>
   <g id="world" transform="translate(0 -166.33)">
     <rect id="field" x="0" y="202.33" width="2019" height="522.67" fill="#0a0c0f"/>
     <g id="terraces">
@@ -356,7 +356,7 @@
       </g>
       <g data-block="notices">
         <rect x="728.92" y="8" width="84.54" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="734.92" y="21.15" font-size="9" fill="#e6edf3"><tspan>Notices </tspan><tspan font-weight="bold">1·2·3</tspan></text>
+        <text x="734.92" y="21.15" font-size="9" fill="#e6edf3"><tspan>Notices </tspan><tspan font-weight="bold">1·2·1</tspan></text>
       </g>
       <g data-block="other">
         <rect x="816.46" y="8" width="51.06" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
@@ -365,97 +365,58 @@
     </g>
     <g id="rules" stroke="#2b333d" stroke-width="1">
       <line x1="0" y1="36" x2="2319" y2="36"/>
-      <line x1="2019" y1="36" x2="2019" y2="847"/>
+      <line x1="2019" y1="36" x2="2019" y2="697"/>
       <line x1="0" y1="558.67" x2="2019" y2="558.67"/>
     </g>
     <g id="leaders" stroke="#9aa5b1" stroke-width="1" stroke-dasharray="0.1 3" stroke-linecap="round" fill="none">
       <line data-notice="1" x1="2034" y1="51" x2="797.12" y2="308.61"/>
-      <line data-notice="2" x1="2034" y1="245.6" x2="1847.69" y2="152.94"/>
-      <line data-notice="3" x1="2034" y1="305" x2="810.12" y2="308.61"/>
-      <line data-notice="4" x1="2034" y1="364.4" x2="1474.75" y2="451.34"/>
-      <line data-notice="5" x1="2034" y1="434.2" x2="210.29" y2="150.32"/>
-      <line data-notice="6" x1="2034" y1="493.6" x2="1848.63" y2="370.31"/>
+      <line data-notice="2" x1="2034" y1="110.4" x2="210.29" y2="150.32"/>
+      <line data-notice="3" x1="2034" y1="169.8" x2="1848.63" y2="370.31"/>
+      <line data-notice="4" x1="2034" y1="229.2" x2="821.2" y2="579.17"/>
     </g>
     <g id="notices">
-      <g data-notice="1" data-tier="primary" data-kind="deleted-export" data-target="helpers.go">
+      <g data-notice="1" data-tier="primary" data-kind="interface-added" data-target="helpers.go">
         <g data-mark="1" data-tier="primary">
           <rect x="2029" y="46" width="10" height="10" fill="#4fd37a"/>
           <text x="2034" y="53.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#0a0c0f">1</text>
         </g>
         <text x="2044" y="54" font-size="8" font-weight="bold" fill="#e6edf3">helpers.go</text>
-        <text x="2044" y="63.4" font-size="7" font-variant="small-caps" fill="#e6edf3">deleted-export</text>
-        <text x="2044" y="73.5" font-size="8" fill="#e6edf3">`App.isASCII`, `App.isEtagStale`, `App.method`,</text>
-        <text x="2044" y="83.9" font-size="8" fill="#e6edf3">`App.methodInt`, `App.quoteRawString`,</text>
-        <text x="2044" y="94.3" font-size="8" fill="#e6edf3">`App.quoteString`, `acceptsLanguageOfferBasic`,</text>
-        <text x="2044" y="104.7" font-size="8" fill="#e6edf3">`acceptsLanguageOfferExtended`, `acceptsOffer`,</text>
-        <text x="2044" y="115.1" font-size="8" fill="#e6edf3">`acceptsOfferType`, `defaultString`,</text>
-        <text x="2044" y="125.5" font-size="8" fill="#e6edf3">`errTestConnClosed`, `genericParseType`,</text>
-        <text x="2044" y="135.9" font-size="8" fill="#e6edf3">`getGroupPath`, `getOffer`, `getSplicedStrList`,</text>
-        <text x="2044" y="146.3" font-size="8" fill="#e6edf3">`getTLSConfig`, `isNoCache`, `joinHeaderValues`,</text>
-        <text x="2044" y="156.7" font-size="8" fill="#e6edf3">`parseAddr`, `readContent`, `testConn`,</text>
-        <text x="2044" y="167.1" font-size="8" fill="#e6edf3">`testConn.Close`, `testConn.LocalAddr`,</text>
-        <text x="2044" y="177.5" font-size="8" fill="#e6edf3">`testConn.Read`, `testConn.RemoteAddr`,</text>
-        <text x="2044" y="187.9" font-size="8" fill="#e6edf3">`testConn.SetDeadline`, `testConn.SetReadDeadline`,</text>
-        <text x="2044" y="198.3" font-size="8" fill="#e6edf3">`testConn.SetWriteDeadline`, `testConn.Write`,</text>
-        <text x="2044" y="208.7" font-size="8" fill="#e6edf3">`toBytesImmutable`, `toStringImmutable` no longer</text>
-        <text x="2044" y="219.1" font-size="8" fill="#e6edf3">exported, and 16 files still import it</text>
-        <text x="2044" y="228.5" font-size="7" fill="#6b7480">severity 8</text>
+        <text x="2044" y="63.4" font-size="7" font-variant="small-caps" fill="#e6edf3">interface-added</text>
+        <text x="2044" y="73.5" font-size="8" fill="#e6edf3">the interface of `.` grew (`ValueFromContext` added)</text>
+        <text x="2044" y="83.9" font-size="8" fill="#e6edf3">and 69 files read it</text>
+        <text x="2044" y="93.3" font-size="7" fill="#6b7480">severity 3 · fan_in_high 7 · deep_band 4</text>
       </g>
-      <g data-notice="2" data-tier="secondary" data-kind="deleted-export" data-target="middleware/keyauth/keyauth.go">
+      <g data-notice="2" data-tier="secondary" data-kind="missing-cochange" data-target="middleware/basicauth/config.go">
         <g data-mark="2" data-tier="secondary">
-          <rect x="2029" y="240.6" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
-          <text x="2034" y="248.05" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">2</text>
+          <rect x="2029" y="105.4" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
+          <text x="2034" y="112.85" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">2</text>
         </g>
-        <text x="2044" y="248.6" font-size="8" font-weight="bold" fill="#e6edf3">middleware/keyauth/keyauth.go</text>
-        <text x="2044" y="258" font-size="7" font-variant="small-caps" fill="#e6edf3">deleted-export</text>
-        <text x="2044" y="268.1" font-size="8" fill="#e6edf3">`getAuthSchemes` no longer exported, and 1 file still</text>
-        <text x="2044" y="278.5" font-size="8" fill="#e6edf3">imports it</text>
-        <text x="2044" y="287.9" font-size="7" fill="#6b7480">severity 8</text>
+        <text x="2044" y="113.4" font-size="8" font-weight="bold" fill="#e6edf3">middleware/basicauth/config.go</text>
+        <text x="2044" y="122.8" font-size="7" font-variant="small-caps" fill="#e6edf3">missing-cochange</text>
+        <text x="2044" y="132.9" font-size="8" fill="#e6edf3">usually changes with `docs/middleware/basicauth.md`</text>
+        <text x="2044" y="143.3" font-size="8" fill="#e6edf3">(8 commits, rate 0.571) and did not</text>
+        <text x="2044" y="152.7" font-size="7" fill="#6b7480">severity 2 · cochange_rate 0.5 · cochange_support 3</text>
       </g>
-      <g data-notice="3" data-tier="secondary" data-kind="interface-added" data-target="helpers.go">
+      <g data-notice="3" data-tier="secondary" data-kind="missing-cochange" data-target="middleware/keyauth/config.go">
         <g data-mark="3" data-tier="secondary">
-          <rect x="2029" y="300" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
-          <text x="2034" y="307.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">3</text>
+          <rect x="2029" y="164.8" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
+          <text x="2034" y="172.25" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">3</text>
         </g>
-        <text x="2044" y="308" font-size="8" font-weight="bold" fill="#e6edf3">helpers.go</text>
-        <text x="2044" y="317.4" font-size="7" font-variant="small-caps" fill="#e6edf3">interface-added</text>
-        <text x="2044" y="327.5" font-size="8" fill="#e6edf3">the interface of `.` grew (`ValueFromContext` added)</text>
-        <text x="2044" y="337.9" font-size="8" fill="#e6edf3">and 69 files read it</text>
-        <text x="2044" y="347.3" font-size="7" fill="#6b7480">severity 3 · fan_in_high 7 · deep_band 4</text>
+        <text x="2044" y="172.8" font-size="8" font-weight="bold" fill="#e6edf3">middleware/keyauth/config.go</text>
+        <text x="2044" y="182.2" font-size="7" font-variant="small-caps" fill="#e6edf3">missing-cochange</text>
+        <text x="2044" y="192.3" font-size="8" fill="#e6edf3">usually changes with `docs/middleware/keyauth.md` (7</text>
+        <text x="2044" y="202.7" font-size="8" fill="#e6edf3">commits, rate 0.538) and did not</text>
+        <text x="2044" y="212.1" font-size="7" fill="#6b7480">severity 2 · cochange_rate 0.5 · cochange_support 3</text>
       </g>
-      <g data-notice="4" data-tier="tertiary" data-kind="deleted-export" data-target="middleware/session/middleware.go">
+      <g data-notice="4" data-tier="tertiary" data-kind="other-group" data-target="other">
         <g data-mark="4" data-tier="tertiary">
-          <rect x="2029" y="359.4" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
-          <text x="2034" y="366.85" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">4</text>
+          <rect x="2029" y="224.2" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="2034" y="231.65" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">4</text>
         </g>
-        <text x="2044" y="367.4" font-size="8" font-weight="bold" fill="#e6edf3">middleware/session/middleware.go</text>
-        <text x="2044" y="376.8" font-size="7" font-variant="small-caps" fill="#e6edf3">deleted-export</text>
-        <text x="2044" y="386.9" font-size="8" fill="#e6edf3">`Middleware.initialize`, `Middleware.saveSession`,</text>
-        <text x="2044" y="397.3" font-size="8" fill="#e6edf3">`middlewareContextKey` no longer exported, and 2</text>
-        <text x="2044" y="407.7" font-size="8" fill="#e6edf3">files still import it</text>
-        <text x="2044" y="417.1" font-size="7" fill="#6b7480">severity 8</text>
-      </g>
-      <g data-notice="5" data-tier="tertiary" data-kind="missing-cochange" data-target="middleware/basicauth/config.go">
-        <g data-mark="5" data-tier="tertiary">
-          <rect x="2029" y="429.2" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
-          <text x="2034" y="436.65" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">5</text>
-        </g>
-        <text x="2044" y="437.2" font-size="8" font-weight="bold" fill="#e6edf3">middleware/basicauth/config.go</text>
-        <text x="2044" y="446.6" font-size="7" font-variant="small-caps" fill="#e6edf3">missing-cochange</text>
-        <text x="2044" y="456.7" font-size="8" fill="#e6edf3">usually changes with `docs/middleware/basicauth.md`</text>
-        <text x="2044" y="467.1" font-size="8" fill="#e6edf3">(8 commits, rate 0.571) and did not</text>
-        <text x="2044" y="476.5" font-size="7" fill="#6b7480">severity 2 · cochange_rate 0.5 · cochange_support 3</text>
-      </g>
-      <g data-notice="6" data-tier="tertiary" data-kind="missing-cochange" data-target="middleware/keyauth/config.go">
-        <g data-mark="6" data-tier="tertiary">
-          <rect x="2029" y="488.6" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
-          <text x="2034" y="496.05" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">6</text>
-        </g>
-        <text x="2044" y="496.6" font-size="8" font-weight="bold" fill="#e6edf3">middleware/keyauth/config.go</text>
-        <text x="2044" y="506" font-size="7" font-variant="small-caps" fill="#e6edf3">missing-cochange</text>
-        <text x="2044" y="516.1" font-size="8" fill="#e6edf3">usually changes with `docs/middleware/keyauth.md` (7</text>
-        <text x="2044" y="526.5" font-size="8" fill="#e6edf3">commits, rate 0.538) and did not</text>
-        <text x="2044" y="535.9" font-size="7" fill="#6b7480">severity 2 · cochange_rate 0.5 · cochange_support 3</text>
+        <text x="2044" y="232.2" font-size="8" font-weight="bold" fill="#e6edf3">other</text>
+        <text x="2044" y="241.6" font-size="7" font-variant="small-caps" fill="#e6edf3">other-group</text>
+        <text x="2044" y="251.7" font-size="8" fill="#e6edf3">3 files no shore rule claims: .json, .yml, Makefile</text>
+        <text x="2044" y="261.1" font-size="7" fill="#6b7480">severity 2</text>
       </g>
     </g>
     <g id="shore">
@@ -714,216 +675,216 @@
         <text x="709.88" y="581.97" font-size="8" font-variant="small-caps" fill="#e6edf3">settings<tspan fill="#6b7480"> 4</tspan></text>
       </g>
       <g data-group="other" data-loud="true">
-        <rect x="770.48" y="568.67" width="44.72" height="21" fill="none" stroke="#e6edf3" stroke-width="2"/>
+        <rect x="770.48" y="568.67" width="60.72" height="21" fill="none" stroke="#e6edf3" stroke-width="2"/>
         <text x="775.48" y="581.97" font-size="8" font-variant="small-caps" fill="#e6edf3">other<tspan fill="#6b7480"> 3</tspan></text>
       </g>
     </g>
     <g id="legend">
-      <rect x="2029" y="548" width="280" height="289" fill="none" stroke="#6b7480" stroke-width="1"/>
-      <text x="2035" y="561" font-size="7" font-variant="small-caps" fill="#6b7480">legend</text>
+      <rect x="2029" y="397.67" width="280" height="289" fill="none" stroke="#6b7480" stroke-width="1"/>
+      <text x="2035" y="410.67" font-size="7" font-variant="small-caps" fill="#6b7480">legend</text>
       <g data-mark="category">
         <g data-balloon="1">
-          <circle cx="2042" cy="570" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
-          <text x="2042" y="572.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">1</text>
+          <circle cx="2042" cy="419.67" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="2042" y="422.12" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">1</text>
         </g>
         <g>
-          <rect x="2055" y="563" width="19.02" height="14" fill="#4fd37a"/>
-          <text x="2058" y="572.45" font-size="7" font-weight="bold" fill="#0a0c0f">VFR</text>
+          <rect x="2055" y="412.67" width="19.02" height="14" fill="#4fd37a"/>
+          <text x="2058" y="422.12" font-size="7" font-weight="bold" fill="#0a0c0f">VFR</text>
         </g>
         <g>
-          <rect x="2075.02" y="563" width="23.36" height="14" fill="#5b8def"/>
-          <text x="2078.02" y="572.45" font-size="7" font-weight="bold" fill="#0a0c0f">MVFR</text>
+          <rect x="2075.02" y="412.67" width="23.36" height="14" fill="#5b8def"/>
+          <text x="2078.02" y="422.12" font-size="7" font-weight="bold" fill="#0a0c0f">MVFR</text>
         </g>
         <g>
-          <rect x="2099.38" y="563" width="19.02" height="14" fill="#f0546a"/>
-          <text x="2102.38" y="572.45" font-size="7" font-weight="bold" fill="#0a0c0f">IFR</text>
+          <rect x="2099.38" y="412.67" width="19.02" height="14" fill="#f0546a"/>
+          <text x="2102.38" y="422.12" font-size="7" font-weight="bold" fill="#0a0c0f">IFR</text>
         </g>
         <g>
-          <rect x="2119.4" y="563" width="23.36" height="14" fill="#e35ce0"/>
-          <text x="2122.4" y="572.45" font-size="7" font-weight="bold" fill="#0a0c0f">LIFR</text>
+          <rect x="2119.4" y="412.67" width="23.36" height="14" fill="#e35ce0"/>
+          <text x="2122.4" y="422.12" font-size="7" font-weight="bold" fill="#0a0c0f">LIFR</text>
         </g>
-        <text x="2149.76" y="572.45" font-size="7" fill="#e6edf3">category: set by the change alone</text>
+        <text x="2149.76" y="422.12" font-size="7" fill="#e6edf3">category: set by the change alone</text>
       </g>
       <g data-mark="lit-arc">
         <g data-balloon="2">
-          <circle cx="2042" cy="588" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
-          <text x="2042" y="590.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">2</text>
+          <circle cx="2042" cy="437.67" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="2042" y="440.12" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">2</text>
         </g>
-        <circle cx="2067" cy="588" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-        <circle cx="2067" cy="588" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
-        <circle cx="2067" cy="588" r="6.25" fill="none" stroke="#e6edf3" stroke-width="2.5" pathLength="1" stroke-dasharray="0.4 1" transform="rotate(-90 2067 588)"/>
-        <text x="2085" y="590.45" font-size="7" fill="#e6edf3">lit arc: changed lines no test ran</text>
+        <circle cx="2067" cy="437.67" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="2067" cy="437.67" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
+        <circle cx="2067" cy="437.67" r="6.25" fill="none" stroke="#e6edf3" stroke-width="2.5" pathLength="1" stroke-dasharray="0.4 1" transform="rotate(-90 2067 437.67)"/>
+        <text x="2085" y="440.12" font-size="7" fill="#e6edf3">lit arc: changed lines no test ran</text>
       </g>
       <g data-mark="hairline">
         <g data-balloon="3">
-          <circle cx="2042" cy="606" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
-          <text x="2042" y="608.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">3</text>
+          <circle cx="2042" cy="455.67" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="2042" y="458.12" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">3</text>
         </g>
-        <circle cx="2067" cy="606" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-        <circle cx="2067" cy="606" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
-        <text x="2085" y="608.45" font-size="7" fill="#e6edf3">hairline: changed lines the tests ran</text>
+        <circle cx="2067" cy="455.67" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="2067" cy="455.67" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
+        <text x="2085" y="458.12" font-size="7" fill="#e6edf3">hairline: changed lines the tests ran</text>
       </g>
       <g data-mark="notch">
         <g data-balloon="4">
-          <circle cx="2042" cy="624" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
-          <text x="2042" y="626.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">4</text>
+          <circle cx="2042" cy="473.67" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="2042" y="476.12" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">4</text>
         </g>
-        <circle cx="2067" cy="624" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-        <circle cx="2067" cy="624" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
-        <path d="M2065 616.5L2067 621L2069 616.5Z" fill="#e6edf3"/>
-        <text x="2085" y="626.45" font-size="7" fill="#e6edf3">notch: a mutant no test killed</text>
+        <circle cx="2067" cy="473.67" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="2067" cy="473.67" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
+        <path d="M2065 466.17L2067 470.67L2069 466.17Z" fill="#e6edf3"/>
+        <text x="2085" y="476.12" font-size="7" fill="#e6edf3">notch: a mutant no test killed</text>
       </g>
       <g data-mark="stitches">
         <g data-balloon="5">
-          <circle cx="2042" cy="642" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
-          <text x="2042" y="644.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">5</text>
+          <circle cx="2042" cy="491.67" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="2042" y="494.12" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">5</text>
         </g>
-        <circle cx="2067" cy="642" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-        <line x1="2067.5" y1="642.87" x2="2071.5" y2="649.79" stroke="#e6edf3" stroke-width="2"/>
-        <line x1="2067" y1="643" x2="2067" y2="651" stroke="#6b7480" stroke-width="2"/>
-        <line x1="2066.5" y1="642.87" x2="2065" y2="645.46" stroke="#f0546a" stroke-width="2"/>
-        <line x1="2064" y1="647.2" x2="2062.5" y2="649.79" stroke="#f0546a" stroke-width="2"/>
-        <text x="2085" y="644.45" font-size="7" fill="#e6edf3">stitches: its tests passed, not run, failed</text>
+        <circle cx="2067" cy="491.67" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <line x1="2067.5" y1="492.54" x2="2071.5" y2="499.46" stroke="#e6edf3" stroke-width="2"/>
+        <line x1="2067" y1="492.67" x2="2067" y2="500.67" stroke="#6b7480" stroke-width="2"/>
+        <line x1="2066.5" y1="492.54" x2="2065" y2="495.13" stroke="#f0546a" stroke-width="2"/>
+        <line x1="2064" y1="496.87" x2="2062.5" y2="499.46" stroke="#f0546a" stroke-width="2"/>
+        <text x="2085" y="494.12" font-size="7" fill="#e6edf3">stitches: its tests passed, not run, failed</text>
       </g>
       <g data-mark="red-bolt">
         <g data-balloon="6">
-          <circle cx="2042" cy="660" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
-          <text x="2042" y="662.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">6</text>
+          <circle cx="2042" cy="509.67" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="2042" y="512.12" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">6</text>
         </g>
-        <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" fill="#f0546a" transform="translate(2067 660) scale(1)"/>
-        <text x="2085" y="662.45" font-size="7" fill="#e6edf3">red bolt: a failing check names a changed file</text>
+        <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" fill="#f0546a" transform="translate(2067 509.67) scale(1)"/>
+        <text x="2085" y="512.12" font-size="7" fill="#e6edf3">red bolt: a failing check names a changed file</text>
       </g>
       <g data-mark="grey-bolt">
         <g data-balloon="7">
-          <circle cx="2042" cy="678" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
-          <text x="2042" y="680.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">7</text>
+          <circle cx="2042" cy="527.67" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="2042" y="530.12" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">7</text>
         </g>
-        <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" fill="#58616b" transform="translate(2067 678) scale(0.6)"/>
-        <text x="2085" y="680.45" font-size="7" fill="#e6edf3">grey bolt: fails on files the change left alone</text>
+        <path d="M1 -6L-3 1H0L-1 6L3 -1H0Z" fill="#58616b" transform="translate(2067 527.67) scale(0.6)"/>
+        <text x="2085" y="530.12" font-size="7" fill="#e6edf3">grey bolt: fails on files the change left alone</text>
       </g>
       <g data-mark="ghost">
         <g data-balloon="8">
-          <circle cx="2042" cy="696" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
-          <text x="2042" y="698.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">8</text>
+          <circle cx="2042" cy="545.67" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="2042" y="548.12" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">8</text>
         </g>
-        <circle cx="2067" cy="696" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-        <circle cx="2067" cy="696" r="8" fill="none" stroke="#7c8590" stroke-dasharray="2 2"/>
-        <text x="2085" y="698.45" font-size="7" fill="#e6edf3">ghost: usually changes with these, and did not</text>
+        <circle cx="2067" cy="545.67" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="2067" cy="545.67" r="8" fill="none" stroke="#7c8590" stroke-dasharray="2 2"/>
+        <text x="2085" y="548.12" font-size="7" fill="#e6edf3">ghost: usually changes with these, and did not</text>
       </g>
       <g data-mark="stain">
         <g data-balloon="9">
-          <circle cx="2042" cy="714" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
-          <text x="2042" y="716.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">9</text>
+          <circle cx="2042" cy="563.67" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="2042" y="566.12" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">9</text>
         </g>
-        <circle cx="2067" cy="714" r="5" fill="#5fd8ea" stroke="#5f6873" stroke-width="1"/>
-        <text x="2085" y="716.45" font-size="7" fill="#e6edf3">cyan: a changed file; +path in a row: added</text>
+        <circle cx="2067" cy="563.67" r="5" fill="#5fd8ea" stroke="#5f6873" stroke-width="1"/>
+        <text x="2085" y="566.12" font-size="7" fill="#e6edf3">cyan: a changed file; +path in a row: added</text>
       </g>
       <g data-mark="unmeasured">
         <g data-balloon="10">
-          <circle cx="2042" cy="732" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
-          <text x="2042" y="734.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">10</text>
+          <circle cx="2042" cy="581.67" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="2042" y="584.12" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">10</text>
         </g>
-        <circle cx="2067" cy="732" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-        <circle cx="2067" cy="732" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
-        <circle cx="2067" cy="732" r="6.25" fill="none" stroke="#e6edf3" stroke-width="2.5"/>
-        <text x="2085" y="734.45" font-size="7" fill="#e6edf3">skin lit whole: no coverage report names it</text>
+        <circle cx="2067" cy="581.67" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="2067" cy="581.67" r="6.25" fill="none" stroke="#575d64" stroke-width="1"/>
+        <circle cx="2067" cy="581.67" r="6.25" fill="none" stroke="#e6edf3" stroke-width="2.5"/>
+        <text x="2085" y="584.12" font-size="7" fill="#e6edf3">skin lit whole: no coverage report names it</text>
       </g>
       <g data-mark="reach">
         <g data-balloon="11">
-          <circle cx="2042" cy="750" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
-          <text x="2042" y="752.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">11</text>
+          <circle cx="2042" cy="599.67" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="2042" y="602.12" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">11</text>
         </g>
-        <rect data-hops="0" x="2055" y="745" width="8" height="10" fill="#7d7970"/>
-        <rect data-hops="1" x="2063" y="745" width="8" height="10" fill="#555553"/>
-        <rect data-hops="2" x="2071" y="745" width="8" height="10" fill="#3e3f41"/>
-        <text x="2085" y="752.45" font-size="7" fill="#e6edf3">warm light: the reach, dimmer each module out</text>
+        <rect data-hops="0" x="2055" y="594.67" width="8" height="10" fill="#7d7970"/>
+        <rect data-hops="1" x="2063" y="594.67" width="8" height="10" fill="#555553"/>
+        <rect data-hops="2" x="2071" y="594.67" width="8" height="10" fill="#3e3f41"/>
+        <text x="2085" y="602.12" font-size="7" fill="#e6edf3">warm light: the reach, dimmer each module out</text>
       </g>
       <g data-mark="crossing">
         <g data-balloon="12">
-          <circle cx="2042" cy="768" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
-          <text x="2042" y="770.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">12</text>
+          <circle cx="2042" cy="617.67" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="2042" y="620.12" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">12</text>
         </g>
-        <circle cx="2067" cy="768" r="8" fill="#e0d3b9"/>
-        <circle cx="2067" cy="768" r="5" fill="none" stroke="#5f6873" stroke-width="1"/>
-        <text x="2085" y="770.45" font-size="7" fill="#e6edf3">lit halo: where the reach leaves a module</text>
+        <circle cx="2067" cy="617.67" r="8" fill="#e0d3b9"/>
+        <circle cx="2067" cy="617.67" r="5" fill="none" stroke="#5f6873" stroke-width="1"/>
+        <text x="2085" y="620.12" font-size="7" fill="#e6edf3">lit halo: where the reach leaves a module</text>
       </g>
       <g data-mark="hatching">
         <g data-balloon="13">
-          <circle cx="2042" cy="786" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
-          <text x="2042" y="788.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">13</text>
+          <circle cx="2042" cy="635.67" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="2042" y="638.12" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">13</text>
         </g>
-        <circle cx="2067" cy="786" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-        <line x1="2062.53" y1="786.47" x2="2067.47" y2="781.53" stroke="#a0a7af" stroke-width="1"/>
-        <line x1="2063.82" y1="789.18" x2="2070.18" y2="782.82" stroke="#a0a7af" stroke-width="1"/>
-        <line x1="2066.53" y1="790.47" x2="2071.47" y2="785.53" stroke="#a0a7af" stroke-width="1"/>
-        <text x="2085" y="788.45" font-size="7" fill="#e6edf3">hatching: how much of it was rewritten lately</text>
+        <circle cx="2067" cy="635.67" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <line x1="2062.53" y1="636.14" x2="2067.47" y2="631.2" stroke="#a0a7af" stroke-width="1"/>
+        <line x1="2063.82" y1="638.85" x2="2070.18" y2="632.49" stroke="#a0a7af" stroke-width="1"/>
+        <line x1="2066.53" y1="640.14" x2="2071.47" y2="635.2" stroke="#a0a7af" stroke-width="1"/>
+        <text x="2085" y="638.12" font-size="7" fill="#e6edf3">hatching: how much of it was rewritten lately</text>
       </g>
       <g data-mark="stipple">
         <g data-balloon="14">
-          <circle cx="2042" cy="804" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
-          <text x="2042" y="806.45" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">14</text>
+          <circle cx="2042" cy="653.67" r="7" fill="#1a1f27" stroke="#e6edf3" stroke-width="1"/>
+          <text x="2042" y="656.12" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">14</text>
         </g>
-        <circle cx="2067" cy="804" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-        <circle cx="2065" cy="802" r="0.7" fill="#a0a7af"/>
-        <circle cx="2069" cy="802" r="0.7" fill="#a0a7af"/>
-        <circle cx="2065" cy="806" r="0.7" fill="#a0a7af"/>
-        <circle cx="2069" cy="806" r="0.7" fill="#a0a7af"/>
-        <text x="2085" y="806.45" font-size="7" fill="#e6edf3">stipple: how many of its commits fixed bugs</text>
+        <circle cx="2067" cy="653.67" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+        <circle cx="2065" cy="651.67" r="0.7" fill="#a0a7af"/>
+        <circle cx="2069" cy="651.67" r="0.7" fill="#a0a7af"/>
+        <circle cx="2065" cy="655.67" r="0.7" fill="#a0a7af"/>
+        <circle cx="2069" cy="655.67" r="0.7" fill="#a0a7af"/>
+        <text x="2085" y="656.12" font-size="7" fill="#e6edf3">stipple: how many of its commits fixed bugs</text>
       </g>
       <g data-key="shapes">
         <g data-rules="0">
-          <circle cx="2044" cy="822" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2044" cy="671.67" r="5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
         </g>
         <g data-rules="1">
-          <path d="M2066.87 822L2066.85 822.64L2066.77 823.28L2066.63 823.92L2066.42 824.55L2066.11 825.16L2065.72 825.72L2065.24 826.23L2064.69 826.65L2064.06 826.97L2063.39 827.18L2062.69 827.27L2062 827.24L2061.33 827.1L2060.7 826.87L2060.11 826.56L2059.58 826.19L2059.1 825.78L2058.66 825.34L2058.26 824.87L2057.9 824.37L2057.58 823.83L2057.31 823.26L2057.1 822.64L2056.97 822L2056.93 821.33L2056.99 820.66L2057.16 819.99L2057.43 819.36L2057.81 818.78L2058.27 818.27L2058.8 817.83L2059.39 817.48L2060.02 817.21L2060.67 817.02L2061.33 816.91L2062 816.88L2062.67 816.93L2063.33 817.05L2063.96 817.26L2064.56 817.56L2065.11 817.95L2065.59 818.41L2066 818.93L2066.32 819.5L2066.57 820.11L2066.73 820.73L2066.83 821.36Z" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <path d="M2066.87 671.67L2066.85 672.31L2066.77 672.95L2066.63 673.59L2066.42 674.22L2066.11 674.83L2065.72 675.39L2065.24 675.9L2064.69 676.32L2064.06 676.64L2063.39 676.85L2062.69 676.94L2062 676.91L2061.33 676.77L2060.7 676.54L2060.11 676.23L2059.58 675.86L2059.1 675.45L2058.66 675.01L2058.26 674.54L2057.9 674.04L2057.58 673.5L2057.31 672.93L2057.1 672.31L2056.97 671.67L2056.93 671L2056.99 670.33L2057.16 669.66L2057.43 669.03L2057.81 668.45L2058.27 667.94L2058.8 667.5L2059.39 667.15L2060.02 666.88L2060.67 666.69L2061.33 666.58L2062 666.55L2062.67 666.6L2063.33 666.72L2063.96 666.93L2064.56 667.23L2065.11 667.62L2065.59 668.08L2066 668.6L2066.32 669.17L2066.57 669.78L2066.73 670.4L2066.83 671.03Z" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
         </g>
         <g data-rules="2">
-          <path d="M2085.44 822L2085.5 822.54L2085.46 823.09L2085.31 823.61L2085.05 824.09L2084.69 824.51L2084.27 824.85L2083.82 825.13L2083.36 825.36L2082.93 825.57L2082.53 825.78L2082.14 825.99L2081.74 826.2L2081.34 826.4L2080.92 826.62L2080.48 826.85L2080 827.06L2079.49 827.22L2078.94 827.3L2078.4 827.28L2077.87 827.15L2077.38 826.9L2076.95 826.57L2076.57 826.18L2076.23 825.77L2075.93 825.34L2075.66 824.9L2075.4 824.46L2075.19 823.99L2075.02 823.51L2074.87 823.02L2074.76 822.52L2074.69 822L2074.69 821.48L2074.76 820.96L2074.92 820.46L2075.17 820L2075.49 819.59L2075.87 819.24L2076.27 818.94L2076.68 818.68L2077.08 818.45L2077.48 818.22L2077.86 818.01L2078.26 817.8L2078.67 817.6L2079.08 817.39L2079.52 817.16L2080 816.96L2080.51 816.8L2081.05 816.72L2081.59 816.74L2082.12 816.88L2082.61 817.12L2083.04 817.44L2083.43 817.83L2083.76 818.24L2084.06 818.67L2084.34 819.1L2084.6 819.54L2084.81 820.01L2085 820.48L2085.17 820.97L2085.32 821.48Z" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <path d="M2085.44 671.67L2085.5 672.21L2085.46 672.76L2085.31 673.28L2085.05 673.76L2084.69 674.18L2084.27 674.52L2083.82 674.8L2083.36 675.03L2082.93 675.24L2082.53 675.45L2082.14 675.66L2081.74 675.87L2081.34 676.07L2080.92 676.29L2080.48 676.52L2080 676.73L2079.49 676.89L2078.94 676.97L2078.4 676.95L2077.87 676.82L2077.38 676.57L2076.95 676.24L2076.57 675.85L2076.23 675.44L2075.93 675.01L2075.66 674.57L2075.4 674.13L2075.19 673.66L2075.02 673.18L2074.87 672.69L2074.76 672.19L2074.69 671.67L2074.69 671.15L2074.76 670.63L2074.92 670.13L2075.17 669.67L2075.49 669.26L2075.87 668.91L2076.27 668.61L2076.68 668.35L2077.08 668.12L2077.48 667.89L2077.86 667.68L2078.26 667.47L2078.67 667.27L2079.08 667.06L2079.52 666.83L2080 666.63L2080.51 666.47L2081.05 666.39L2081.59 666.41L2082.12 666.55L2082.61 666.79L2083.04 667.11L2083.43 667.5L2083.76 667.91L2084.06 668.34L2084.34 668.77L2084.6 669.21L2084.81 669.68L2085 670.15L2085.17 670.64L2085.32 671.15Z" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
         </g>
         <g data-rules="3">
-          <path d="M2102.94 822L2102.88 822.43L2102.79 822.85L2102.69 823.26L2102.67 823.7L2102.8 824.24L2102.97 824.87L2102.91 825.44L2102.49 825.77L2101.82 825.82L2101.16 825.77L2100.66 825.79L2100.27 825.93L2099.91 826.1L2099.55 826.25L2099.18 826.39L2098.81 826.6L2098.43 826.95L2098 827.35L2097.51 827.59L2097.03 827.48L2096.63 827.11L2096.29 826.69L2095.96 826.38L2095.59 826.17L2095.22 825.98L2094.86 825.75L2094.5 825.5L2094.08 825.29L2093.51 825.14L2092.85 824.97L2092.35 824.63L2092.23 824.1L2092.46 823.49L2092.78 822.92L2092.98 822.44L2093.06 822L2093.12 821.57L2093.21 821.15L2093.31 820.74L2093.34 820.31L2093.24 819.78L2093.1 819.17L2093.17 818.62L2093.58 818.29L2094.22 818.22L2094.86 818.25L2095.35 818.21L2095.73 818.07L2096.09 817.9L2096.45 817.75L2096.82 817.6L2097.18 817.37L2097.56 816.96L2098 816.49L2098.51 816.21L2099 816.33L2099.4 816.77L2099.73 817.26L2100.05 817.61L2100.41 817.83L2100.78 818.02L2101.14 818.25L2101.5 818.5L2101.93 818.7L2102.54 818.82L2103.24 818.98L2103.77 819.31L2103.89 819.86L2103.62 820.49L2103.25 821.07L2103.02 821.56Z" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <path d="M2102.94 671.67L2102.88 672.1L2102.79 672.52L2102.69 672.93L2102.67 673.37L2102.8 673.91L2102.97 674.54L2102.91 675.11L2102.49 675.44L2101.82 675.49L2101.16 675.44L2100.66 675.46L2100.27 675.6L2099.91 675.77L2099.55 675.92L2099.18 676.06L2098.81 676.27L2098.43 676.62L2098 677.02L2097.51 677.26L2097.03 677.15L2096.63 676.78L2096.29 676.36L2095.96 676.05L2095.59 675.84L2095.22 675.65L2094.86 675.42L2094.5 675.17L2094.08 674.96L2093.51 674.81L2092.85 674.64L2092.35 674.3L2092.23 673.77L2092.46 673.16L2092.78 672.59L2092.98 672.11L2093.06 671.67L2093.12 671.24L2093.21 670.82L2093.31 670.41L2093.34 669.98L2093.24 669.45L2093.1 668.84L2093.17 668.29L2093.58 667.96L2094.22 667.89L2094.86 667.92L2095.35 667.88L2095.73 667.74L2096.09 667.57L2096.45 667.42L2096.82 667.27L2097.18 667.04L2097.56 666.63L2098 666.16L2098.51 665.88L2099 666L2099.4 666.44L2099.73 666.93L2100.05 667.28L2100.41 667.5L2100.78 667.69L2101.14 667.92L2101.5 668.17L2101.93 668.37L2102.54 668.49L2103.24 668.65L2103.77 668.98L2103.89 669.53L2103.62 670.16L2103.25 670.74L2103.02 671.23Z" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
         </g>
         <g data-rules="4">
-          <path d="M2121.1 822L2120.73 822.31L2120.67 822.61L2120.6 822.92L2120.52 823.21L2120.42 823.5L2120.33 823.8L2120.52 824.23L2121.04 824.91L2121.01 825.35L2120.19 825.21L2119.52 825.09L2119.22 825.22L2118.99 825.4L2118.75 825.58L2118.5 825.74L2118.25 825.89L2118.05 826.16L2118.08 827.02L2118.11 828.2L2117.63 828.1L2117 827.02L2116.59 826.5L2116.29 826.46L2116 826.47L2115.71 826.47L2115.41 826.45L2115.12 826.44L2114.76 826.63L2114.17 827.4L2113.54 827.93L2113.43 827.2L2113.55 826.24L2113.43 825.85L2113.19 825.67L2112.94 825.49L2112.71 825.29L2112.49 825.08L2112.24 824.88L2111.71 824.87L2110.72 825.05L2110.29 824.82L2110.89 824.12L2111.38 823.57L2111.42 823.23L2111.35 822.92L2111.3 822.62L2111.28 822.31L2111.27 822L2111.17 821.68L2110.61 821.29L2109.86 820.78L2110.13 820.43L2111.11 820.34L2111.65 820.2L2111.84 819.95L2112 819.69L2112.18 819.45L2112.37 819.21L2112.56 818.98L2112.61 818.61L2112.33 817.81L2112.24 817.1L2112.89 817.34L2113.62 817.87L2114.01 817.97L2114.29 817.87L2114.56 817.77L2114.84 817.69L2115.13 817.62L2115.41 817.51L2115.67 816.91L2116 815.65L2116.44 815.31L2116.73 816.47L2116.92 817.4L2117.17 817.63L2117.46 817.71L2117.74 817.8L2118.02 817.9L2118.3 818.02L2118.65 818.04L2119.43 817.53L2120.5 816.86L2120.67 817.33L2120.03 818.46L2119.78 819.1L2119.91 819.39L2120.08 819.64L2120.23 819.91L2120.37 820.19L2120.5 820.47L2120.9 820.69L2122.04 820.8L2122.93 821.09L2122.21 821.59Z" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <path d="M2121.1 671.67L2120.73 671.98L2120.67 672.28L2120.6 672.59L2120.52 672.88L2120.42 673.17L2120.33 673.47L2120.52 673.9L2121.04 674.58L2121.01 675.02L2120.19 674.88L2119.52 674.76L2119.22 674.89L2118.99 675.07L2118.75 675.25L2118.5 675.41L2118.25 675.56L2118.05 675.83L2118.08 676.69L2118.11 677.87L2117.63 677.77L2117 676.69L2116.59 676.17L2116.29 676.13L2116 676.14L2115.71 676.14L2115.41 676.12L2115.12 676.11L2114.76 676.3L2114.17 677.07L2113.54 677.6L2113.43 676.87L2113.55 675.91L2113.43 675.52L2113.19 675.34L2112.94 675.16L2112.71 674.96L2112.49 674.75L2112.24 674.55L2111.71 674.54L2110.72 674.72L2110.29 674.49L2110.89 673.79L2111.38 673.24L2111.42 672.9L2111.35 672.59L2111.3 672.29L2111.28 671.98L2111.27 671.67L2111.17 671.35L2110.61 670.96L2109.86 670.45L2110.13 670.1L2111.11 670.01L2111.65 669.87L2111.84 669.62L2112 669.36L2112.18 669.12L2112.37 668.88L2112.56 668.65L2112.61 668.28L2112.33 667.48L2112.24 666.77L2112.89 667.01L2113.62 667.54L2114.01 667.64L2114.29 667.54L2114.56 667.44L2114.84 667.36L2115.13 667.29L2115.41 667.18L2115.67 666.58L2116 665.32L2116.44 664.98L2116.73 666.14L2116.92 667.07L2117.17 667.3L2117.46 667.38L2117.74 667.47L2118.02 667.57L2118.3 667.69L2118.65 667.71L2119.43 667.2L2120.5 666.53L2120.67 667L2120.03 668.13L2119.78 668.77L2119.91 669.06L2120.08 669.31L2120.23 669.58L2120.37 669.86L2120.5 670.14L2120.9 670.36L2122.04 670.47L2122.93 670.76L2122.21 671.26Z" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
         </g>
         <g data-rules="5">
-          <path d="M2138.48 822L2139.05 822.25L2140.88 822.68L2139.45 822.81L2138.4 822.88L2138.31 823.08L2138.25 823.29L2138.18 823.49L2138.09 823.69L2138 823.89L2137.91 824.09L2138.53 824.72L2139.79 825.87L2138.14 825.07L2137.4 824.79L2137.24 824.94L2137.08 825.08L2136.92 825.23L2136.76 825.36L2136.58 825.48L2136.44 825.65L2136.95 826.92L2137.4 828.36L2136.1 826.44L2135.65 825.99L2135.45 826.05L2135.25 826.11L2135.04 826.17L2134.84 826.21L2134.63 826.25L2134.43 826.36L2134.28 827.75L2134 828.41L2133.77 826.6L2133.58 826.28L2133.37 826.26L2133.16 826.22L2132.95 826.18L2132.75 826.13L2132.54 826.07L2132.26 826.19L2131.21 827.91L2130.89 827.81L2131.65 825.93L2131.58 825.63L2131.4 825.51L2131.22 825.39L2131.05 825.25L2130.89 825.11L2130.73 824.96L2130.41 824.95L2129.09 825.64L2129.31 825.14L2130.13 824.32L2130.08 824.09L2129.98 823.9L2129.89 823.7L2129.8 823.5L2129.73 823.29L2129.66 823.09L2129.18 822.96L2127.35 822.99L2128.41 822.55L2129.49 822.22L2129.53 822L2129.54 821.78L2129.56 821.56L2129.59 821.35L2129.63 821.13L2129.67 820.92L2129.07 820.51L2127.5 819.68L2129.1 819.97L2129.98 820.1L2130.11 819.92L2130.22 819.74L2130.34 819.56L2130.48 819.39L2130.61 819.22L2130.73 819.04L2130.02 818.02L2128.99 816.48L2130.75 818.04L2131.41 818.5L2131.59 818.4L2131.78 818.29L2131.96 818.19L2132.16 818.1L2132.35 818.02L2132.53 817.89L2132.42 816.78L2132.47 815.9L2133.09 817.45L2133.37 817.75L2133.58 817.73L2133.79 817.71L2134 817.71L2134.21 817.71L2134.42 817.72L2134.65 817.63L2135.13 816.31L2135.49 816.06L2135.32 817.66L2135.46 817.93L2135.66 818L2135.86 818.08L2136.05 818.17L2136.24 818.26L2136.43 818.37L2136.76 818.28L2138.22 816.86L2138.26 817.3L2137.22 818.78L2137.26 819.04L2137.41 819.2L2137.55 819.37L2137.68 819.54L2137.8 819.72L2137.92 819.9L2138.42 819.91L2140.57 819.28L2139.71 819.96L2138.35 820.68L2138.33 820.92L2138.38 821.13L2138.42 821.34L2138.45 821.56L2138.46 821.78Z" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2135.47" cy="815.59" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2138.67" cy="816.54" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2140.76" cy="819.31" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2140.84" cy="822.72" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2139.78" cy="825.85" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2137.54" cy="828.48" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2134.11" cy="828.78" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2130.7" cy="828.54" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2128.85" cy="825.68" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2127.32" cy="822.92" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2127.56" cy="819.68" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2128.92" cy="816.45" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2132.33" cy="815.69" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <path d="M2138.48 671.67L2139.05 671.92L2140.88 672.35L2139.45 672.48L2138.4 672.55L2138.31 672.75L2138.25 672.96L2138.18 673.16L2138.09 673.36L2138 673.56L2137.91 673.76L2138.53 674.39L2139.79 675.54L2138.14 674.74L2137.4 674.46L2137.24 674.61L2137.08 674.75L2136.92 674.9L2136.76 675.03L2136.58 675.15L2136.44 675.32L2136.95 676.59L2137.4 678.03L2136.1 676.11L2135.65 675.66L2135.45 675.72L2135.25 675.78L2135.04 675.84L2134.84 675.88L2134.63 675.92L2134.43 676.03L2134.28 677.42L2134 678.08L2133.77 676.27L2133.58 675.95L2133.37 675.93L2133.16 675.89L2132.95 675.85L2132.75 675.8L2132.54 675.74L2132.26 675.86L2131.21 677.58L2130.89 677.48L2131.65 675.6L2131.58 675.3L2131.4 675.18L2131.22 675.06L2131.05 674.92L2130.89 674.78L2130.73 674.63L2130.41 674.62L2129.09 675.31L2129.31 674.81L2130.13 673.99L2130.08 673.76L2129.98 673.57L2129.89 673.37L2129.8 673.17L2129.73 672.96L2129.66 672.76L2129.18 672.63L2127.35 672.66L2128.41 672.22L2129.49 671.89L2129.53 671.67L2129.54 671.45L2129.56 671.23L2129.59 671.02L2129.63 670.8L2129.67 670.59L2129.07 670.18L2127.5 669.35L2129.1 669.64L2129.98 669.77L2130.11 669.59L2130.22 669.41L2130.34 669.23L2130.48 669.06L2130.61 668.89L2130.73 668.71L2130.02 667.69L2128.99 666.15L2130.75 667.71L2131.41 668.17L2131.59 668.07L2131.78 667.96L2131.96 667.86L2132.16 667.77L2132.35 667.69L2132.53 667.56L2132.42 666.45L2132.47 665.57L2133.09 667.12L2133.37 667.42L2133.58 667.4L2133.79 667.38L2134 667.38L2134.21 667.38L2134.42 667.39L2134.65 667.3L2135.13 665.98L2135.49 665.73L2135.32 667.33L2135.46 667.6L2135.66 667.67L2135.86 667.75L2136.05 667.84L2136.24 667.93L2136.43 668.04L2136.76 667.95L2138.22 666.53L2138.26 666.97L2137.22 668.45L2137.26 668.71L2137.41 668.87L2137.55 669.04L2137.68 669.21L2137.8 669.39L2137.92 669.57L2138.42 669.58L2140.57 668.95L2139.71 669.63L2138.35 670.35L2138.33 670.59L2138.38 670.8L2138.42 671.01L2138.45 671.23L2138.46 671.45Z" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2135.47" cy="665.26" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2138.67" cy="666.21" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2140.76" cy="668.98" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2140.84" cy="672.39" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2139.78" cy="675.52" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2137.54" cy="678.15" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2134.11" cy="678.45" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2130.7" cy="678.21" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2128.85" cy="675.35" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2127.32" cy="672.59" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2127.56" cy="669.35" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2128.92" cy="666.12" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2132.33" cy="665.36" r="0.5" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
         </g>
         <g data-rules="6">
-          <path d="M2156.24 822L2156.22 822.17L2156.21 822.33L2156.19 822.5L2156.16 822.66L2156.13 822.82L2156.12 822.99L2158.56 823.85L2157.32 823.73L2155.93 823.45L2155.87 823.6L2155.79 823.75L2155.72 823.89L2155.63 824.04L2155.55 824.17L2155.51 824.34L2158.27 826.56L2156.12 825.25L2155.14 824.68L2155.03 824.8L2154.91 824.91L2154.79 825.02L2154.67 825.12L2154.54 825.22L2154.47 825.4L2155.97 827.94L2154.41 825.94L2154 825.56L2153.85 825.64L2153.71 825.7L2153.56 825.76L2153.41 825.82L2153.26 825.87L2153.17 826.14L2153.81 829.55L2152.86 826.34L2152.64 826.02L2152.48 826.04L2152.32 826.06L2152.16 826.07L2152 826.07L2151.84 826.07L2151.66 826.36L2151.21 828.72L2151.34 826.18L2151.2 826.01L2151.04 825.98L2150.89 825.95L2150.73 825.9L2150.58 825.86L2150.42 825.8L2150.06 826.21L2148.93 828.02L2149.94 825.68L2149.84 825.53L2149.7 825.45L2149.56 825.36L2149.42 825.27L2149.29 825.17L2149.17 825.07L2148.49 825.51L2147.26 826.38L2148.78 824.75L2148.7 824.6L2148.6 824.47L2148.5 824.34L2148.41 824.2L2148.32 824.06L2148.24 823.92L2146.65 824.47L2145.55 824.67L2148.01 823.47L2147.98 823.31L2147.93 823.15L2147.88 822.99L2147.85 822.83L2147.82 822.66L2147.79 822.5L2145.64 822.5L2145.75 822.25L2147.76 822L2147.78 821.83L2147.79 821.67L2147.81 821.5L2147.84 821.34L2147.87 821.18L2147.89 821.01L2146.18 820.36L2147.07 820.4L2148.07 820.55L2148.13 820.4L2148.21 820.25L2148.28 820.11L2148.37 819.96L2148.45 819.83L2148.51 819.67L2146.73 818.17L2148.18 818.99L2148.86 819.32L2148.97 819.2L2149.09 819.09L2149.21 818.98L2149.33 818.88L2149.46 818.78L2149.52 818.59L2147.8 815.71L2149.55 818L2150 818.44L2150.15 818.36L2150.29 818.3L2150.44 818.24L2150.59 818.18L2150.74 818.13L2150.84 817.89L2150.28 814.83L2151.14 817.69L2151.36 817.98L2151.52 817.96L2151.68 817.94L2151.84 817.93L2152 817.93L2152.16 817.93L2152.36 817.49L2152.96 813.91L2152.67 817.74L2152.8 817.99L2152.96 818.02L2153.11 818.05L2153.27 818.1L2153.42 818.14L2153.58 818.2L2154.04 817.58L2155.6 814.93L2154.08 818.29L2154.16 818.47L2154.3 818.55L2154.44 818.64L2154.58 818.73L2154.71 818.83L2154.83 818.93L2155.55 818.45L2156.86 817.51L2155.22 819.25L2155.3 819.4L2155.4 819.53L2155.5 819.66L2155.59 819.8L2155.68 819.94L2155.76 820.08L2156.91 819.73L2157.72 819.63L2155.98 820.53L2156.02 820.69L2156.07 820.85L2156.12 821.01L2156.15 821.17L2156.18 821.34L2156.21 821.5L2158.19 821.51L2158.09 821.76Z" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2150.27" cy="814.73" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2152.95" cy="813.79" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2155.7" cy="814.6" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2157.2" cy="817.08" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2158.5" cy="819.19" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2159.73" cy="821.54" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2159.55" cy="824.25" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2158.79" cy="827.04" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2156.07" cy="828.17" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2153.82" cy="829.65" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2151.21" cy="828.82" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2148.87" cy="828.26" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2146.95" cy="826.78" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2144.41" cy="825.28" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2143.95" cy="822.48" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2145.49" cy="820.06" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2146.4" cy="817.84" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
-          <circle cx="2147.69" cy="815.46" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <path d="M2156.24 671.67L2156.22 671.84L2156.21 672L2156.19 672.17L2156.16 672.33L2156.13 672.49L2156.12 672.66L2158.56 673.52L2157.32 673.4L2155.93 673.12L2155.87 673.27L2155.79 673.42L2155.72 673.56L2155.63 673.71L2155.55 673.84L2155.51 674.01L2158.27 676.23L2156.12 674.92L2155.14 674.35L2155.03 674.47L2154.91 674.58L2154.79 674.69L2154.67 674.79L2154.54 674.89L2154.47 675.07L2155.97 677.61L2154.41 675.61L2154 675.23L2153.85 675.31L2153.71 675.37L2153.56 675.43L2153.41 675.49L2153.26 675.54L2153.17 675.81L2153.81 679.22L2152.86 676.01L2152.64 675.69L2152.48 675.71L2152.32 675.73L2152.16 675.74L2152 675.74L2151.84 675.74L2151.66 676.03L2151.21 678.39L2151.34 675.85L2151.2 675.68L2151.04 675.65L2150.89 675.62L2150.73 675.57L2150.58 675.53L2150.42 675.47L2150.06 675.88L2148.93 677.69L2149.94 675.35L2149.84 675.2L2149.7 675.12L2149.56 675.03L2149.42 674.94L2149.29 674.84L2149.17 674.74L2148.49 675.18L2147.26 676.05L2148.78 674.42L2148.7 674.27L2148.6 674.14L2148.5 674.01L2148.41 673.87L2148.32 673.73L2148.24 673.59L2146.65 674.14L2145.55 674.34L2148.01 673.14L2147.98 672.98L2147.93 672.82L2147.88 672.66L2147.85 672.5L2147.82 672.33L2147.79 672.17L2145.64 672.17L2145.75 671.92L2147.76 671.67L2147.78 671.5L2147.79 671.34L2147.81 671.17L2147.84 671.01L2147.87 670.85L2147.89 670.68L2146.18 670.03L2147.07 670.07L2148.07 670.22L2148.13 670.07L2148.21 669.92L2148.28 669.78L2148.37 669.63L2148.45 669.5L2148.51 669.34L2146.73 667.84L2148.18 668.66L2148.86 668.99L2148.97 668.87L2149.09 668.76L2149.21 668.65L2149.33 668.55L2149.46 668.45L2149.52 668.26L2147.8 665.38L2149.55 667.67L2150 668.11L2150.15 668.03L2150.29 667.97L2150.44 667.91L2150.59 667.85L2150.74 667.8L2150.84 667.56L2150.28 664.5L2151.14 667.36L2151.36 667.65L2151.52 667.63L2151.68 667.61L2151.84 667.6L2152 667.6L2152.16 667.6L2152.36 667.16L2152.96 663.58L2152.67 667.41L2152.8 667.66L2152.96 667.69L2153.11 667.72L2153.27 667.77L2153.42 667.81L2153.58 667.87L2154.04 667.25L2155.6 664.6L2154.08 667.96L2154.16 668.14L2154.3 668.22L2154.44 668.31L2154.58 668.4L2154.71 668.5L2154.83 668.6L2155.55 668.12L2156.86 667.18L2155.22 668.92L2155.3 669.07L2155.4 669.2L2155.5 669.33L2155.59 669.47L2155.68 669.61L2155.76 669.75L2156.91 669.4L2157.72 669.3L2155.98 670.2L2156.02 670.36L2156.07 670.52L2156.12 670.68L2156.15 670.84L2156.18 671.01L2156.21 671.17L2158.19 671.18L2158.09 671.43Z" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2150.27" cy="664.4" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2152.95" cy="663.46" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2155.7" cy="664.27" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2157.2" cy="666.75" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2158.5" cy="668.86" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2159.73" cy="671.21" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2159.55" cy="673.92" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2158.79" cy="676.71" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2156.07" cy="677.84" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2153.82" cy="679.32" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2151.21" cy="678.49" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2148.87" cy="677.93" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2146.95" cy="676.45" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2144.41" cy="674.95" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2143.95" cy="672.15" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2145.49" cy="669.73" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2146.4" cy="667.51" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
+          <circle cx="2147.69" cy="665.13" r="0.6" fill="#333a43" stroke="#5f6873" stroke-width="1"/>
         </g>
-        <text x="2167" y="824.45" font-size="7" fill="#e6edf3">shape: rules it breaks, 0 to 6</text>
+        <text x="2167" y="674.12" font-size="7" fill="#e6edf3">shape: rules it breaks, 0 to 6</text>
       </g>
     </g>
     <g id="marks">
@@ -933,35 +894,26 @@
           <rect x="792.12" y="303.61" width="10" height="10" fill="#4fd37a"/>
           <text x="797.12" y="311.06" font-size="7" font-weight="bold" text-anchor="middle" fill="#0a0c0f">1</text>
         </g>
-        <g data-mark="3" data-tier="secondary">
-          <rect x="805.12" y="303.61" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
-          <text x="810.12" y="311.06" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">3</text>
-        </g>
-        <text data-target="helpers.go" x="792.12" y="323.61" font-size="7" font-variant="small-caps" fill="#4fd37a">deleted-export</text>
-      </g>
-      <g data-target="middleware/keyauth/keyauth.go">
-        <circle data-target="middleware/keyauth/keyauth.go" data-tier="secondary" fill="none" stroke="#9aa5b1" stroke-width="3" cx="1829.74" cy="134.99" r="15.32"/>
-        <g data-mark="2" data-tier="secondary">
-          <rect x="1842.69" y="147.94" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
-          <text x="1847.69" y="155.39" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">2</text>
-        </g>
-      </g>
-      <g data-target="middleware/session/middleware.go">
-        <g data-mark="4" data-tier="tertiary">
-          <rect x="1469.75" y="446.34" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
-          <text x="1474.75" y="453.79" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">4</text>
-        </g>
+        <text data-target="helpers.go" x="792.12" y="323.61" font-size="7" font-variant="small-caps" fill="#4fd37a">interface-added</text>
       </g>
       <g data-target="middleware/basicauth/config.go">
-        <g data-mark="5" data-tier="tertiary">
-          <rect x="205.29" y="145.32" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
-          <text x="210.29" y="152.77" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">5</text>
+        <circle data-target="middleware/basicauth/config.go" data-tier="secondary" fill="none" stroke="#9aa5b1" stroke-width="3" cx="190.94" cy="130.97" r="17.3"/>
+        <g data-mark="2" data-tier="secondary">
+          <rect x="205.29" y="145.32" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
+          <text x="210.29" y="152.77" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">2</text>
         </g>
       </g>
       <g data-target="middleware/keyauth/config.go">
-        <g data-mark="6" data-tier="tertiary">
-          <rect x="1843.63" y="365.31" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
-          <text x="1848.63" y="372.76" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">6</text>
+        <circle data-target="middleware/keyauth/config.go" data-tier="secondary" fill="none" stroke="#9aa5b1" stroke-width="3" cx="1829.74" cy="351.42" r="16.64"/>
+        <g data-mark="3" data-tier="secondary">
+          <rect x="1843.63" y="365.31" width="10" height="10" fill="#1a1f27" stroke="#e6edf3" stroke-width="2"/>
+          <text x="1848.63" y="372.76" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">3</text>
+        </g>
+      </g>
+      <g data-target="other">
+        <g data-mark="4" data-tier="tertiary">
+          <rect x="816.2" y="574.17" width="10" height="10" fill="#1a1f27" stroke="#6b7480" stroke-width="1"/>
+          <text x="821.2" y="581.62" font-size="7" font-weight="bold" text-anchor="middle" fill="#e6edf3">4</text>
         </g>
       </g>
     </g>

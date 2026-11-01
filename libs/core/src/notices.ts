@@ -153,7 +153,7 @@ export type NoticeInputs = {
   /** The manifest delta (D47), with the ranges it moved (D83). */
   readonly deps_added: readonly DepAdded[];
   readonly deps_moved: readonly DepMoved[];
-  /** The base scan's files under head paths (D40): the names and shapes each interface file had before (D76). */
+  /** The base scan's files under head paths (D40): the names and shapes each interface file had before (D76), and so the names a change can delete (D188). */
   readonly baseFiles: readonly ScanFile[];
   /** The head scan's files: a name missing from one's `exports[]` is an export this change deleted (D39). */
   readonly headFiles: readonly ScanFile[];
@@ -995,9 +995,13 @@ type LiveConsumers = ReadonlyMap<string, ReadonlyMap<string, ReadonlySet<string>
  * deleted file is the one case that cannot be told apart, since a consumer
  * that kept a broken import and one that removed it both leave no head edge,
  * and the base importer is kept. A failing test is the test slot's to report,
- * so a test is not a consumer here (D4).
+ * so a test is not a consumer here (D4). Only a name the base exported from
+ * that file can be a deleted export: an edge may carry a name its target never
+ * exported, as a Go file's read of an unexported name in its own package or a
+ * Terraform file's `local` read, and that is a read within the module (D188).
  */
 function liveConsumers(inputs: NoticeInputs, changed: ReadonlyMap<string, ChangedFile>): LiveConsumers {
+  const baseExports = new Map(inputs.baseFiles.map((file) => [file.path, new Set(file.exports)] as const));
   const headExports = new Map(inputs.headFiles.map((file) => [file.path, new Set(file.exports)] as const));
   const tests = testsOf(inputs.headFiles);
   const headTakes = new Map<string, ReadonlySet<string>>();
@@ -1009,7 +1013,8 @@ function liveConsumers(inputs: NoticeInputs, changed: ReadonlyMap<string, Change
     if (file === undefined || file.kind === 'added' || file.cell === undefined) continue;
     if (!headExports.has(from) || tests.has(from)) continue;
     const exported = headExports.get(to);
-    const missing = names.filter((name) => name !== STAR && exported?.has(name) !== true);
+    const was = baseExports.get(to);
+    const missing = names.filter((name) => name !== STAR && was?.has(name) === true && exported?.has(name) !== true);
     const taken = headTakes.get(`${from}\n${to}`);
     // The target still stands at head, so the head edge is the truth about what this consumer takes today.
     const live = exported === undefined ? missing : missing.filter((name) => taken?.has(name) === true);

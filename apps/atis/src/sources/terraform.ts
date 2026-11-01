@@ -293,9 +293,10 @@ function referencesIn(source: string): ReadonlyMap<string, number> {
 
 /** A local module source from `dir`, as the directory it names, or nothing for one that leaves the tree. */
 function calledDir(dir: string, source: string): string | undefined {
-  const joined = posix.normalize(posix.join(dir === '' ? '.' : dir, source));
+  // `../../` normalizes to `./` with its slash kept, so the slash goes before `.` can read as the root.
+  const joined = posix.normalize(posix.join(dir === '' ? '.' : dir, source)).replace(/\/$/, '');
   if (joined === '..' || joined.startsWith('../')) return undefined;
-  return joined === '.' ? '' : joined.replace(/\/$/, '');
+  return joined === '.' ? '' : joined;
 }
 
 function dirOf(path: string): string {

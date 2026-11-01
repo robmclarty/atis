@@ -251,6 +251,7 @@ const ONE_OF_EACH: Readonly<Record<NoticeKind, Scenario>> = {
   'deleted-export': {
     changed: [change('src/pm/tools.ts')],
     names: { 'src/pm/index.ts > src/pm/tools.ts': ['resolve'] },
+    baseExports: { 'src/pm/tools.ts': ['resolve'] },
   },
   'interface-change': {
     changed: [change('src/pm/index.ts')],
@@ -915,8 +916,9 @@ test('with no red test the ranking is weight order, and a red test lifts its own
 
 test('a consumer that has already dropped the name is not a live consumer', () => {
   const takes = { 'src/pm/index.ts > src/pm/tools.ts': ['resolve'] };
-  const broken = noticesFor({ changed: [change('src/pm/tools.ts')], names: takes });
-  const mended = noticesFor({ changed: [change('src/pm/tools.ts')], baseNames: takes });
+  const exportedAtBase = { 'src/pm/tools.ts': ['resolve'] };
+  const broken = noticesFor({ changed: [change('src/pm/tools.ts')], names: takes, baseExports: exportedAtBase });
+  const mended = noticesFor({ changed: [change('src/pm/tools.ts')], baseNames: takes, baseExports: exportedAtBase });
   const exported = noticesFor({
     changed: [change('src/pm/tools.ts')],
     names: takes,
@@ -939,6 +941,7 @@ test('a deleted file keeps the consumers only the base graph can see', () => {
     deleted: ['src/pm/gone.ts'],
     baseEdges: ['src/pm/tools.ts > src/pm/gone.ts'],
     baseNames: { 'src/pm/tools.ts > src/pm/gone.ts': ['helper'] },
+    baseExports: { 'src/pm/gone.ts': ['helper'] },
   });
 
   // The file is gone from the head scan, so every name it exported is missing and its base importer is the consumer.
@@ -950,6 +953,7 @@ test('the deleted-export why pluralises its consumer count', () => {
   const one = noticesFor({
     changed: [change('src/pm/tools.ts')],
     names: { 'src/pm/index.ts > src/pm/tools.ts': ['resolve'] },
+    baseExports: { 'src/pm/tools.ts': ['resolve'] },
   });
   expect(one[0]?.kind).toBe('deleted-export');
   expect(one[0]?.why).toContain('1 file still imports it');
@@ -965,6 +969,7 @@ test('the deleted-export why pluralises its consumer count', () => {
       'src/b.ts > src/pm/gone.ts': ['helper'],
       'src/c.ts > src/pm/gone.ts': ['helper'],
     },
+    baseExports: { 'src/pm/gone.ts': ['helper'] },
   });
   expect(three[0]?.kind).toBe('deleted-export');
   expect(three[0]?.inputs['consumers']).toBe(3);
@@ -972,6 +977,31 @@ test('the deleted-export why pluralises its consumer count', () => {
   // Its readers are those live consumers, and they scale its weight (D82, D124).
   expect(three[0]?.inputs['readers']).toBe(3);
   expect(one[0]?.inputs['readers']).toBe(1);
+});
+
+test("a name the base never exported is a read within the module, never a deleted export, as a Go file's unexported reads are (D188)", () => {
+  // The Go producer's edges carry a file's reads of its package's unexported names, which no scan exports at either end.
+  const notices = noticesFor({
+    changed: [change('src/pm/tools.ts')],
+    names: { 'src/pm/index.ts > src/pm/tools.ts': ['getAuthSchemes', 'isASCII'] },
+    exports: { 'src/pm/tools.ts': ['New'] },
+  });
+  expect(notices).toEqual([]);
+});
+
+test("a Terraform file's local, module, data and resource reads draw no deleted-export, and a removed output still does (D188)", () => {
+  const reads = ['aws_s3_bucket.logs', 'data.aws_caller_identity.me', 'local.region', 'module.vpc'];
+  const terraform = {
+    changed: [change('src/pm/tools.ts')],
+    names: { 'src/pm/index.ts > src/pm/tools.ts': [...reads, 'output.bucket'] },
+    baseExports: { 'src/pm/tools.ts': ['output.bucket', 'var.region'] },
+  };
+  // Both sides still declare every name the edge carries: nothing was deleted.
+  expect(noticesFor({ ...terraform, exports: { 'src/pm/tools.ts': ['output.bucket', 'var.region'] } })).toEqual([]);
+  // The output went while its reader still takes it, so it is the one name the notice carries.
+  const removed = noticesFor({ ...terraform, exports: { 'src/pm/tools.ts': ['var.region'] } });
+  expect(rowsOf(removed)).toEqual([['deleted-export', 'src/pm/tools.ts']]);
+  expect(removed[0]?.why).toBe('`output.bucket` no longer exported, and 1 file still imports it');
 });
 
 /** Two deep barrels outside the chain, each read only from the loose files of `src/app`, so both reach the same two cells. */

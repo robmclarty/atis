@@ -210,6 +210,42 @@ test('a module no other module calls is a root module, its files the entry point
   expect(band('infra/modules/network/main.tf')).toBeGreaterThan(band('infra/live/main.tf'));
 });
 
+test('a module source written with a trailing slash, `../../`, reaches the root module it names, which is then no root module (P101)', () => {
+  const tree = {
+    'main.tf': 'variable "region" {\n  type = string\n}\n\nresource "aws_s3_bucket" "logs" {\n  bucket = var.region\n}\n',
+    'outputs.tf': 'output "bucket" {\n  value = aws_s3_bucket.logs.id\n}\n',
+    'examples/basic/main.tf': 'module "plane" {\n  source = "../../"\n  region = "us-east-1"\n}\n',
+  };
+  const { edges } = terraformScan(sources(tree));
+  expect(edges.filter((edge) => edge.from === 'examples/basic/main.tf').map((edge) => [edge.to, edge.names])).toEqual([
+    ['main.tf', ['*']],
+    ['outputs.tf', ['*']],
+  ]);
+  // The root is called, so the example is the one root module, and the root's cell has fan-in.
+  const scan = readTree(writeTree(tree)).scan;
+  expect(scan.members[0]?.entry).toEqual(['examples/basic/main.tf']);
+  expect(mapOf(scan).terrain.cells.find((cell) => cell.path === '.')?.fan_in).toBeGreaterThan(0);
+});
+
+test("a change to a file whose locals a sibling reads draws no deleted-export, since the base never exported them (D188, P100)", () => {
+  const edited = INFRA['infra/live/variables.tf']?.replace('"10.0.0.0/16"', '"10.1.0.0/16"') ?? '';
+  const base = readTree(writeTree(INFRA)).scan;
+  const head = readTree(writeTree({ ...INFRA, 'infra/live/variables.tf': edited })).scan;
+  const map = buildMap({
+    meta: { repo: 'infra', base: 'main', head: 'h'.repeat(40), merge_base: 'b'.repeat(40), generated_at: '' },
+    base,
+    head,
+    diff: [{ path: 'infra/live/variables.tf', kind: 'modified', added: 1, deleted: 1, hunks: [{ start: 3, count: 1 }] }],
+    deps_added: [],
+    commits: [],
+    head_time: 0,
+    check: { mode: 'git-only', reason: '.check/ is absent' },
+  });
+  // `main.tf` reads `local.tags` out of `variables.tf`, which exports only `var.cidr` at either end.
+  expect(head.edges.find((edge) => edge.to === 'infra/live/variables.tf')?.names).toContain('local.tags');
+  expect(map.notices.filter((notice) => notice.kind === 'deleted-export')).toEqual([]);
+});
+
 test('a file the parser cannot read keeps the blocks its walk found, their shapes uncompared (C2)', () => {
   const { files } = terraformScan([{ path: 'broken/main.tf', text: 'variable "a" {\n  type = \n}\n\noutput "b" {\n  value = 1\n}\n' }]);
   expect(files[0]).toMatchObject({ exports: ['output.b', 'var.a'], shapes: { 'output.b': null, 'var.a': null }, packages: [] });
