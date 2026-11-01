@@ -78,9 +78,9 @@ const STAR = '*';
 export const TYPESCRIPT_EXTENSIONS: readonly string[] = ['.ts', '.tsx', '.mts', '.cts', '.js', '.jsx', '.mjs', '.cjs'];
 const TYPESCRIPT = /\.(?:[cm]?ts|tsx)$/;
 const JAVASCRIPT = /\.(?:[cm]?js|jsx)$/;
-/** A test by its name, `.test.ts` or `.spec.jsx`, or by its folder, `__tests__/` or `test/` (D4). */
+/** A test by its name, `.test.ts` or `.spec.jsx`, or by its folder at any depth, `__tests__/`, `test/` or `tests/` (D4, D189). */
 const TEST_NAME = /\.(?:test|spec)\.(?:[cm]?[jt]s|[jt]sx)$/;
-const TEST_DIR = /(?:^|\/)(?:__tests__|test)\//;
+const TEST_DIR = /(?:^|\/)(?:__tests__|tests?)\//;
 /** The barrel a directory is entered through (D45): its `index.ts`, or its `index.tsx`. */
 const BARREL = /(?:^|\/)index\.tsx?$/;
 /** A JavaScript directory's barrel, the `index.js` or `index.jsx` `require('./dir')` lands on: one only where no TypeScript barrel sits beside it (D184). */
@@ -132,7 +132,7 @@ function isJavaScript(path: string): boolean {
 /**
  * What the TypeScript producer makes of a path (D114): TypeScript (`.mts`
  * and `.cts` too, D77) and JavaScript (D184) are source unless a name or a
- * folder says it is a test (D4), and any other path is none of its own. The
+ * folder says it is a test (D4, D189), and any other path is none of its own. The
  * shore's `config` and `build` rows may still take a source file, which is
  * core's to apply (D57, D84).
  */

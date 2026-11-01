@@ -13,7 +13,7 @@ repo freely. Its ground truth is in [`truth.md`](./truth.md).
 | base branch | `main` |
 | fixture commit | `b6a4afd6b2bbefd8371196601580bee68b059177` `lint`: the commit a human review was submitted against |
 | merge base | `91272d702b9cafc310a0176e1e489bb487872fd9` `feat: add source name logging to $inspect.trace (#16060)` |
-| size | 7 files, +61 −91 against the merge base: 4 JavaScript source files, 1 TypeScript declaration file, 1 test sample (a `_config.js`, which atis's producer reads as a fifth JavaScript source file; see "What atis read") and 1 changeset |
+| size | 7 files, +61 −91 against the merge base: 4 JavaScript source files, 1 TypeScript declaration file, 1 test sample (a `_config.js` under `packages/svelte/tests/`, which atis reads as a test; see "What atis read") and 1 changeset |
 
 The JavaScript source files are `packages/svelte/src/internal/client/dev/tracing.js`,
 `packages/svelte/src/internal/client/dom/blocks/each.js`,
@@ -53,8 +53,31 @@ own pnpm, lockfile and CI install steps and the current harness (checkride 0.19.
 3.37.0). Stryker's vitest runner was tried on its own first, in a second worktree, and finished
 in 18 minutes 23 seconds, inside the 20 minutes allowed, so the `mutation` slot is kept. Two
 runs were stopped and discarded before the one the map reads, each for a fault of the harness's
-(see "Harness changes in the worktree"). The run the map reads took 19 minutes 59 seconds, 19
-minutes 3 seconds of it the `mutation` slot, and atis's run on it took 7 minutes 36 seconds.
+(see "Harness changes in the worktree"). That run took 19 minutes 59 seconds, 19 minutes 3
+seconds of it the `mutation` slot, and atis's run on it took 7 minutes 36 seconds.
+
+Step 123 regenerated both on 2026-10-31, once the TypeScript producer read a `tests/` folder as
+tests (D189), by the same commands from a fresh clone, since a reboot had cleared `/tmp`. It
+ran them first on step 86's harness, checkride 0.19.1 and fallow 3.37.0, so that the map would
+show what the producer's rule moves and nothing else; "What atis read" says what that was. The
+mutation attempt (command 6) ran its initial 5,293 tests in 31 seconds and then reached its
+20-minute `timeout`: other projects' test suites were running on the machine at the same time,
+at a load average near 25. The slot is kept all the same, because the full run's `mutation`
+slot, which checkride runs to the end, finished under that same load in 21 minutes 43 seconds,
+with the same 18 survivors on the changed lines as step 86's. That run took 25 minutes 38
+seconds, and atis's run on it 17 seconds.
+
+checkride 0.19.2 and fallow 3.38.1 had been released since step 86, so per D58 commands 4, 8 and
+9 ran again on them, and the map here reads that run. Its first attempt was stopped and
+discarded: atis's first run had left its cache in `.atis/` in the worktree, and the `format`
+slot reported those four JSON files (command 8 now clears it). The run the map reads took 22
+minutes 20 seconds, at a load average between 20 and 60, and atis's run on it 26 seconds. Two
+things in the map moved from the run on step 86's harness: `meta.instruments.structure` names
+fallow 3.38.1, and one mutant on `runtime.js` line 447 that survived there was killed here, so
+17 survive on the changed lines, not 18. That mutant is a mutation run's variance, not the
+harness's: stryker is 10.1.1 in both. Every count fallow reports for the tree is the same, and
+so are its schemas, and its 2,517 entry points reach the same files. The mutation attempt was
+not run again, since neither tool takes part in it.
 
 ## The toolchain
 
@@ -65,8 +88,8 @@ the one coverage package named below.
 
 | tool | version | how atis knows |
 | --- | --- | --- |
-| checkride | 0.19.1 | installed into the worktree; the commit pinned none. Released 2026-10-28, the day of the run; pnpm 10.4.0 has no release-age gate and the repo sets none, so it installed as is and no override was needed |
-| fallow | 3.37.0 | installed into the worktree; the commit pinned none |
+| checkride | 0.19.2 | installed into the worktree; the commit pinned none. Released 2026-10-31, the day of step 123's run (step 86 ran 0.19.1, released 2026-10-28); pnpm 10.4.0 has no release-age gate and the repo sets none, so it installed as is and no override was needed |
+| fallow | 3.38.1 | installed into the worktree; the commit pinned none (step 86 ran 3.37.0) |
 | checkride summary schema | 1 | required by `readCheck` before anything under `.check/` is read |
 | node | 24.15.0 | the machine's; `engines.node` is `>=18` and CI's matrix reaches 24 |
 | pnpm | 10.4.0 | the root `packageManager` field, run by corepack, which downloads and uses it; no wrapper was needed |
@@ -80,7 +103,7 @@ the one coverage package named below.
 | `@stryker-mutator/vitest-runner` | 10.1.1 | added for the `mutation` slot, and kept; its peer range (`vitest >=2.0.0`) admits 2.1.9 |
 
 checkride records each tool's version as the check's `tool_version` in `.check/summary.json`, and
-every one above that runs a slot matches it: prettier 3.2.4, eslint 9.9.1, fallow 3.37.0, vitest
+every one above that runs a slot matches it: prettier 3.2.4, eslint 9.9.1, fallow 3.38.1, vitest
 2.1.9 and stryker 10.1.1.
 
 ## The commands
@@ -112,7 +135,7 @@ pnpm build
 # 4. The current harness (D58) at the workspace root, exact-pinned and without scripts. `-w`
 #    because the root is a workspace. The third line raises the coverage provider to the
 #    version that runs under the vitest the lockfile locks.
-pnpm add -D -w --save-exact --ignore-scripts checkride@0.19.1 fallow@3.37.0
+pnpm add -D -w --save-exact --ignore-scripts checkride@0.19.2 fallow@3.38.1
 pnpm add -D -w --save-exact --ignore-scripts @vitest/coverage-v8@2.1.9
 
 # 5. Harness edits (see the next section for why).
@@ -139,7 +162,8 @@ printf '.check\n' >> .prettierignore
 #    as the run reads it. Stryker 10.1.1 with its vitest runner, scoped to the PR's four
 #    changed JavaScript source files. It instrumented 1,476 mutants, ran its initial 5,293
 #    tests in 29 seconds and finished in 18 minutes 23 seconds, inside the 20 minutes
-#    allowed, so the slot is kept.
+#    allowed, so the slot is kept. At step 123 it reached the timeout under the machine's
+#    load (see "Generation").
 git -C /tmp/atis-languages/clones/sveltejs__svelte worktree add \
   /tmp/atis-languages/work/javascript-1/svelte-mutation-attempt \
   b6a4afd6b2bbefd8371196601580bee68b059177 --detach
@@ -179,8 +203,9 @@ cp ../svelte-mutation-attempt/stryker.conf.json .
 node_modules/.bin/prettier --write stryker.conf.json
 
 # 8. The .check/ atis reads for evidence, from a clean state. Run the installed binary, never
-#    the repo's own `test` script.
-rm -rf .check .stryker-tmp
+#    the repo's own `test` script. An earlier atis run leaves its cache in .atis/, which
+#    prettier checks as part of the tree, so it goes too.
+rm -rf .check .stryker-tmp .atis
 node_modules/.bin/checkride --all --skip security
 cp .check/summary.json /tmp/atis-languages/work/javascript-1.summary.json
 
@@ -195,7 +220,8 @@ node apps/atis/dist/cli.js \
   --out fixtures/javascript-1/map.json \
   --svg fixtures/javascript-1/atis.svg
 
-# 10. Inspect the map.
+# 10. Inspect the map. The summarizer is a scratch tool outside the repo; step 123 wrote it
+#     again after a reboot cleared /tmp.
 node /tmp/atis-languages/tools/summarize.cjs fixtures/javascript-1/map.json --cells
 
 # 11. The worktrees are not kept; the clone is.
@@ -265,12 +291,17 @@ Named per D56. 12 slots ran, of 20.
 - `mutation`: **not** skipped. Stryker 10.1.1 with its vitest runner, scoped to the PR's four
   changed JavaScript source files, instrumented 1,476 mutants (`tracing.js` 138, `each.js` 383,
   `sources.js` 179, `runtime.js` 776). The attempt on its own ran its initial test run of 5,293
-  tests in 29 seconds and finished in 18 minutes 23 seconds, scoring 83.54%. In the full run
-  the slot took 19 minutes 3 seconds and scored 80.42%: 1,141 killed, 46 timed out, 242
+  tests in 29 seconds and finished in 18 minutes 23 seconds, scoring 83.54%. In step 86's full
+  run the slot took 19 minutes 3 seconds and scored 80.42%: 1,141 killed, 46 timed out, 242
   survived, 47 with no coverage, no errors. The attempt's counts were 98 timed out and 196
   survived: mutants near the timeout moved between the two, since a timeout depends on the
-  machine's load.
-- `types`, `struct`, `docs`, `spell`, `prose`, `publint`, `attw`: checkride 0.19.1 skips these
+  machine's load. Step 123's attempt reached the 20-minute timeout under a heavier load. Its
+  full run on step 86's harness took 21 minutes 43 seconds and scored 80.35% (1,131 killed, 55
+  timed out, 243 survived, 47 with no coverage), with step 86's 18 survivors on the PR's changed
+  lines. The run the map reads, on checkride 0.19.2, took 21 minutes 24 seconds at a load
+  average between 20 and 60 and scored 84.69%: 1,120 killed, 130 timed out, 179 survived, 47
+  with no coverage, no errors, and 17 survivors on the changed lines.
+- `types`, `struct`, `docs`, `spell`, `prose`, `publint`, `attw`: checkride 0.19.2 skips these
   itself ("no tool detected for slot"); the repo has none of their detect files, and per the
   harness policy none was added. For `types`, checkride adds that four nested `tsconfig.json`
   files go unchecked (`benchmarking/tsconfig.json` and three more).
@@ -298,8 +329,8 @@ Named per D56. 12 slots ran, of 20.
 
 ## What atis read
 
-**Cells.** 2,417 cells: 2,396 directory, 9 folder, 3 package and 9 single-file. The cells that
-are the source's own modules number 40:
+**Cells.** 40 cells: 19 directory, 9 folder, 3 package and 9 single-file, every one of them the
+source's own modules:
 
 - the 3 packages, `.`, `packages/svelte` and `playgrounds/sandbox`;
 - 9 folder cells, `packages/svelte/src/animate`, `attachments`, `compiler` (233 files),
@@ -313,32 +344,49 @@ are the source's own modules number 40:
   `packages/svelte/src/action`, `legacy`, `reactivity`, `reactivity/window`, `store` and
   `store/shared`, and `playgrounds/sandbox` with its `scripts/`.
 
-The other 2,377 cells are directories under `packages/svelte/tests/`, and they are not the
-language's modules: 2,376 are the suites' sample directories (`runtime-legacy` 1,194,
-`runtime-runes` 622, `compiler-errors` 141, `css` 91, `runtime-browser` 62, `hydration` 61,
-`snapshot` 56, `server-side-rendering` 44, and ten more suites below 30), and one is
-`packages/svelte/tests` itself. **This is an atis gap, recorded and not fixed here.** The
-TypeScript producer's test rule (`TEST_DIR` in `apps/atis/src/sources/imports.ts`) is
-`/(?:^|\/)(?:__tests__|test)\//`, a folder named `__tests__` or `test`, and a test file name
-needs `.test.` or `.spec.`; svelte's folder is `tests/` and its suites are `tests/<suite>/test.ts`
-and `_config.js`, so neither matches. The result is 2,465 of the 2,879 organelles (2,301 of them
-`_config.js`, 17 `test.ts`) read as source terrain, not as tests, and only the 7 `*.test.ts`
-files beside the source reach the shore's `tests` group. The 414 organelles outside `tests/`
-are the repo's source: 377 JavaScript files and 37 `.d.ts` declaration files.
+The 414 organelles are the repo's source: 377 JavaScript files and 37 `.d.ts` declaration files.
 
-The gap shows in the weather. The `runtime.js` notice counts 2,092 cells reached, and 2,089 of
-the 2,203 entries in `weather.reach` are paths under `tests/`; the one changed test sample,
-`.../inspect-trace-reassignment/_config.js`, is listed under `weather.evidence.unmeasured` as a
-source file no coverage report names; and `weather.evidence.stitches` is empty, since none of
-the 7 files atis calls tests imports a changed file. It also costs: atis's run took 7 minutes
-36 seconds, and `map.json` is 17.7 MB and `atis.svg` 4.9 MB, where the largest map before it is
-9.1 MB (`corpus-5`). During that run git warned that "exhaustive rename detection was skipped due
-to too many files" and asked for a `diff.renameLimit` of at least 2403; the run finished and the
-map shows no sign of it.
+**What moved at step 123.** Step 86's map held 2,417 cells, and 2,377 of them were directories
+under `packages/svelte/tests/`: 2,376 suites' sample directories (`runtime-legacy` 1,194,
+`runtime-runes` 622, `compiler-errors` 141 and fifteen more suites) and `packages/svelte/tests`
+itself. The TypeScript producer's test rule took a `__tests__/` or `test/` folder and a
+`.test.` or `.spec.` name, and svelte's folder is `tests/`, its suites `tests/<suite>/test.ts`
+and `_config.js`, so 2,465 of the 2,879 organelles read as source terrain. Step 123 widened the
+rule to a `tests/` folder at any depth (D189), as the Python producer already reads one, and
+those 2,465 files are tests now. The 40 source cells are the ones step 86 listed, and 13 of
+them read differently, each where only test files had read it:
 
-**Tests and manifests on the shore.** `tests` holds 7 files, all `*.test.ts` beside the source:
-`src/internal/client/proxy.test.ts`, `src/internal/shared/clone.test.ts` and
-`src/reactivity/{date,map,set,url-search-params,url}.test.ts`. The manifests are in `deps` (6):
+- fan-in: `packages/svelte/src/internal` 36, not 85; `index-server.js` 1, not 692;
+  `index-client.js` 3, not 25; `store` 4, not 25; `compiler`
+  3, not 12; `server` 3, not 9; `legacy` 1, not 5; `reactivity` 3, `events` 2, and `motion` and
+  `packages/svelte/types` 0, each one lower;
+- interface: `legacy` 13 names, not 26; `store` 14, not 21; `reactivity` 9, not 10; and
+  `packages/svelte/types` has no `exports` list, where step 86 gave it an empty one, since no
+  source file imports it and it has no entrance file;
+- depth: `legacy`, `easing` and `index-server.js` sit in band 0, not band 1, and from band 3
+  on each band's deepest depth is one lower, the deepest 14, not 15;
+- size: the package `packages/svelte` holds 55,243 lines and 2,671 functions, not 106,164 and
+  6,404.
+
+The weather follows. The `runtime.js` notices count 21 cells reached, not 2,092, and
+`weather.reach` holds 114 entries, not 2,203, none of them under `tests/`. The one changed test
+sample, `.../inspect-trace-reassignment/_config.js`, sits in the `tests` group, so
+`weather.evidence.unmeasured` is empty, where step 86 listed the sample there as a source file
+no coverage report names. `weather.evidence.stitches` holds two, where it held none:
+`packages/svelte/tests/signals/test.ts` and `packages/svelte/tests/store/test.ts` each import
+`sources.js` and `runtime.js`, and both passed. The terrain's outside packages are 22, not 30:
+`vitest` (25 importers), `@playwright/test`, `typescript`, `esbuild`, `source-map`,
+`@jridgewell/trace-mapping`, and `assert.js` and `somewhere` (two specifiers in test files)
+were imported only from tests. atis's run took 17 seconds, `map.json` is 5.3 MB and `atis.svg`
+1.0 MB, where step 86's were 7 minutes 36 seconds, 17.7 MB and 4.9 MB. git still warns that
+"exhaustive rename detection was skipped due to too many files" and asks for a
+`diff.renameLimit` of at least 2403, since it counts the tree's files, not atis's.
+
+**Tests and manifests on the shore.** `tests` holds 2,472 files. Seven are the `*.test.ts`
+files beside the source: `src/internal/client/proxy.test.ts`, `src/internal/shared/clone.test.ts`
+and `src/reactivity/{date,map,set,url-search-params,url}.test.ts`. The other 2,465 are the
+JavaScript and TypeScript files under `packages/svelte/tests/`: 2,301 `_config.js`, 17 suites'
+`test.ts`, 11 other `.ts` files and 136 other JavaScript files. The manifests are in `deps` (6):
 `package.json`, `packages/svelte/package.json`, `packages/svelte/compiler/package.json`,
 `playgrounds/sandbox/package.json`, `pnpm-lock.yaml` and `pnpm-workspace.yaml`. `config` (14)
 holds the four JavaScript tool configs, `eslint.config.js`, `vitest.config.js`,
@@ -351,8 +399,10 @@ tsconfigs, `knip.json`, `.changeset/config.json`, `.prettierrc` and `.prettierig
 **Entry points.** `meta.instruments.entry_points` is `"fallow"`: fallow lists 2,517 entry points,
 27 from `package.json` exports and main, 14 from its scripts, 26 from vitest, one each from
 eslint, rollup and vite, and 2,447 from its playwright plugin, every one of them a file under
-`packages/svelte/tests/` (2,301 are `_config.js`). 2,836 of the 2,879 organelles are reachable
-from them and 43 are not, all of the 43 outside `tests/`.
+`packages/svelte/tests/` (2,301 are `_config.js`). 369 of the 414 organelles are reachable from
+them and 45 are not: step 86's 43, all outside `tests/`, and the two declaration files
+`src/internal/client/types.d.ts` and `src/internal/client/reactivity/types.d.ts`, which only
+test files reached.
 
 **Evidence.** `meta.instruments`, verbatim:
 
@@ -362,7 +412,7 @@ from them and 43 are not, all of the 43 outside `tests/`.
   "entry_points": "fallow",
   "fallow_schemas": { "health": 12, "dead": 10, "dupes": 10 },
   "muted": [ "lint: atis has no parser for eslint" ],
-  "structure": { "base": { "fallow": "3.37.0" }, "head": { "fallow": "3.37.0" } }
+  "structure": { "base": { "fallow": "3.38.1" }, "head": { "fallow": "3.38.1" } }
 }
 ```
 
@@ -372,9 +422,10 @@ D184 settle for a JavaScript repo, the evidence is the ts pack's:
 - `test` ran and passed; coverage is read from `.check/coverage/coverage-final.json`. Patch
   coverage names the four source files: `tracing.js` 16 of 16 changed executable lines covered,
   `sources.js` 5 of 5, `runtime.js` 15 of 15, and `each.js` 0 of 0, since the PR only deletes
-  lines there.
-- `mutation` ran and passed; 18 mutants survive on changed lines: six in `tracing.js` (lines 58
-  to 66) and twelve in `runtime.js` (lines 447 to 451 and 771 to 786). The `runtime.js` lines
+  lines there. No changed source file is unmeasured, and the two suites that import changed
+  files, `tests/signals/test.ts` and `tests/store/test.ts`, are stitches that passed.
+- `mutation` ran and passed; 17 mutants survive on changed lines: six in `tracing.js` (lines 58
+  to 66) and eleven in `runtime.js` (lines 447 to 451 and 771 to 786). The `runtime.js` lines
   771 to 786 are the `TracedAt` block of `get` that the reviewer's concern touches.
 - `lint` ran and passed but is muted: eslint is an adapter atis has no parser for, so the
   channel is named in `muted` and read as no evidence, never as clean (C2).
@@ -391,20 +442,27 @@ D184 settle for a JavaScript repo, the evidence is the ts pack's:
 **Notices.** Six, ranked:
 
 1. `interface-change` on `runtime.js`, primary: "the interface of `packages/svelte/src/internal`
-   changed (`set_captured_signals` removed) and 85 files read it and `svelte` publishes
+   changed (`set_captured_signals` removed) and 36 files read it and `svelte` publishes
    `deep_read`, `deep_read_state`, `exclude_from_object` and 6 more". One name removed, none
    added, none reshaped, 29 uncompared, as D184 has it for JavaScript.
-2. `survived-mutants` on `runtime.js`, secondary: "12 mutants survived on the changed lines".
-3. `interface-uncompared` on `each.js`, secondary: its four names' shapes "could not be
-   compared".
-4. `threshold-breached` on `runtime.js`, tertiary: "cognitive, crap, cyclomatic over threshold
+2. `survived-mutants` on `runtime.js`, secondary: "11 mutants survived on the changed lines",
+   where step 86's read 12 (see "Generation").
+3. `threshold-breached` on `runtime.js`, secondary: "cognitive, crap, cyclomatic over threshold
    in a function worse than at the base".
+4. `interface-uncompared` on `each.js`, tertiary: its four names' shapes "could not be
+   compared".
 5. `interface-uncompared` on `sources.js`, tertiary: eleven names.
 6. `interface-uncompared` on `tracing.js`, tertiary: six names.
 
+They are step 86's six, each weighing less, and the third and fourth have swapped: step 86 ranked
+`each.js`'s notice secondary and the threshold breach tertiary. A notice about names weighs
+the files that read those names as well as its reach, and `each.js`'s readers fell from 35 to
+13 with the tests, so its notice fell further than the breach, which weighs its reach alone.
+The interface notices read "36 files read it", not 85.
+
 **Verdict on the read.** The JavaScript files are the cells' organelles, their shapes read
 uncompared, and the notices weigh names added and removed, never reshaped: D184 holds. The
-evidence reads as D176 settles for the ts pack, with `lint` muted by name, not silently. What
-does not hold is the cells: the source's 40 cells are the language's modules, but 2,377 more are
-test-sample directories that atis should have read as tests (the gap above), which makes the
-map a poor picture of this PR and inflates reach to 2,092 cells.
+evidence reads as D176 settles for the ts pack, with `lint` muted by name, not silently. The
+cells hold now too: the 40 cells are the language's modules, the test samples sit in the
+shore's `tests` group (D189), and the primary notice reaches 21 of the source's cells, not
+2,092 sample directories.

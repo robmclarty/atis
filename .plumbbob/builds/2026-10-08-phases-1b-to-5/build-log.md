@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 122 — fix(core): count a deleted export only where the base exported it
+**Current step:** 123 — fix(cli): read a tests folder as tests in the TypeScript producer
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -143,7 +143,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 119. fix(cli): read checkride's targets, each artifact by its check's adapter
 - ☑ 85. feat(cli): read each language's evidence as checkride writes it
 - ☑ 86. chore(fixtures): render one reviewed PR per new language
-- ☐ 122. fix(core): count a deleted export only where the base exported it
+- ☑ 122. fix(core): count a deleted export only where the base exported it
 - ☐ 123. fix(cli): read a tests folder as tests in the TypeScript producer
 - ☐ 124. fix(core): give a package under src/ with its own barrel a cell of its own
 - ☐ 87. docs(producers): write the contract a language producer fills
@@ -257,7 +257,9 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] a Terraform module source spelled with a trailing slash, source = "../../", draws no edge: calledDir in apps/atis/src/sources/terraform.ts normalizes it to './', checks for '.' before stripping the slash, and returns '.' where the root module is keyed '', so fixtures/terraform-1's root reads fan-in 0 and interface 0 and counts as an entry point (step 86)
 - [x] the TypeScript producer reads a tests/ folder as source terrain: TEST_DIR in apps/atis/src/sources/imports.ts matches only __tests__/ and test/, so svelte's packages/svelte/tests/ (2,465 _config.js and sample files) founds 2,377 of fixtures/javascript-1's 2,417 cells, 2,089 of its 2,203 reach entries, a 17.7 MB map.json and a 7.5 minute run, where the Python producer already counts tests/ as tests (step 86)
 - [x] core's deleted-export candidate (liveConsumers in libs/core/src/notices.ts) checks a base edge's names only against head exports, never that the base exported them, so a Go file's same-package reads of unexported names (App.isASCII, getAuthSchemes) and a Terraform file's local.* reads all count as deleted exports: 3 of fixtures/go-1's 6 notices are false, with the same cause as P100's 6 on terraform-1 (step 86)
-- [ ] chrome.test.ts's HUD-fit test (libs/svg) renders every committed fixture map and timed out at 5 s under the full suite once in step 122's check, passing alone in 1.1 s; javascript-1's 2,417-cell map is the heavy one, which step 123's regeneration shrinks (step 122)
+- [x] chrome.test.ts's HUD-fit test (libs/svg) renders every committed fixture map and timed out at 5 s under the full suite once in step 122's check, passing alone in 1.1 s; javascript-1's 2,417-cell map is the heavy one, which step 123's regeneration shrinks (step 122)
+- [ ] seven committed outside-repo maps predate D189 (tests-folder-is-tests): corpus-2, corpus-5, corpus-10, corpus-12, retake-2, retake-3 and round-two-5 read 73 JavaScript and TypeScript files under a tests/ folder as terrain, founding 30 cells of their own (retake-2 alone 44 files in 15 cells); no golden reads them, and each would move if regenerated (step 123)
+- [ ] atis's cache turns a reviewed repo's format check red: apps/atis/src/cache.ts writes .atis/{terrain,structure,entries}/<sha>.json into the repo and hides them from git with a .atis/.gitignore of *, which prettier never reads, so checkride run after atis on svelte failed its format slot on four .atis/*.json files; javascript-1's README now clears .atis before its checkride run, and a cache under .git/ or written as prettier would write it would not trip it (step 123)
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -405,6 +407,8 @@ Harvest results this boundary:
 - **blocker**: park 101 · a Terraform module source spelled with a trailing slash, source = "../../", draws no edge: calledDir in apps/atis/src/sources/terraform.ts normalizes it to './', checks for '.' before stripping the slash, and returns '.' where the root module is keyed '', so fixtures/terraform-1's root reads fan-in 0 and interface 0 and counts as an entry point (step 86) → terraform-1 is regenerated in P103's step, and the missing edge would ride into it
 - **blocker**: park 102 · the TypeScript producer reads a tests/ folder as source terrain: TEST_DIR in apps/atis/src/sources/imports.ts matches only __tests__/ and test/, so svelte's packages/svelte/tests/ (2,465 _config.js and sample files) founds 2,377 of fixtures/javascript-1's 2,417 cells, 2,089 of its 2,203 reach entries, a 17.7 MB map.json and a 7.5 minute run, where the Python producer already counts tests/ as tests (step 86) → javascript-1's cells are mostly test samples, so a fix step regenerates it before range 24's stop
 - **blocker**: park 103 · core's deleted-export candidate (liveConsumers in libs/core/src/notices.ts) checks a base edge's names only against head exports, never that the base exported them, so a Go file's same-package reads of unexported names (App.isASCII, getAuthSchemes) and a Terraform file's local.* reads all count as deleted exports: 3 of fixtures/go-1's 6 notices are false, with the same cause as P100's 6 on terraform-1 (step 86) → three Go and six Terraform notices are false, so a fix step regenerates both maps before range 24's stop
+- 2026-11-01, at the step 122 boundary: 1 parked idea, classified.
+- **tangent**: park 104 · chrome.test.ts's HUD-fit test (libs/svg) renders every committed fixture map and timed out at 5 s under the full suite once in step 122's check, passing alone in 1.1 s; javascript-1's 2,417-cell map is the heavy one, which step 123's regeneration shrinks (step 122) → a load-sensitive timeout that passed alone and on the rerun, and step 123 shrinks the map behind it
 
 ## Log
 
@@ -3188,3 +3192,57 @@ folder, so it rides the branch into the PR.)*
   **5.** One park repeats an older one, and the runs left three things in shared caches.
 
   P98 (JavaScript rules folder on the shore) repeats P89 (config row names only TypeScript). The Terraform agent's first `mise exec` installed pre-commit 4.7.0 into mise's shared installs, the JavaScript run installed Playwright's chromium into its shared cache, and Go 1.25.14 and golangci-lint 2.5.0 are now mise installs. checkride 0.19.1 refuses `--skip security` for a bash or python target, whose packs have no security slot, so those runs used `--all` alone and audited nothing. `docs/producers.md` for step 87 is drafted outside the repo.
+
+- 2026-11-01 — step 122 checkpointed · 872b49155 — fix(core): count a deleted export only where the base exported it (1604m)
+
+  **Summary**: Core now counts a name as a deleted export only where the base exported it from that file, and a Terraform module written `source = "../../"` reaches the root it names. terraform-1 and go-1 are regenerated. terraform-1's six false deleted-export notices are gone, and its root module now has fan-in 2 at band 1. go-1's three false ones are gone, and the rest of its map is as step 86 drew it.
+
+  1. Core now asks the base before calling a name deleted.
+  2. terraform-1's six false notices are gone, and its root is a called module.
+  3. go-1 loses its three false notices, and nothing else moves.
+  4. One test timed out under the full suite's load and passed on the rerun.
+
+  **Readout**:
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored:
+               - D188 (deleted-export-at-base)
+               - D58 (fixtures-current-toolchain)
+               - D59 (outside-fixtures)
+  constraints  14 of 14 honored
+  seam         held: 6 of 6 declared, no strays
+  diff         +16228 -20704 across 10 files
+               - apps/atis/src/__tests__/terraform.test.ts +36 -0
+               - apps/atis/src/sources/terraform.ts +3 -2
+               - fixtures/go-1/README.md +28 -18
+               - fixtures/go-1/atis.svg +179 -227
+               - fixtures/go-1/map.json +21 -58
+               - fixtures/terraform-1/README.md +56 -30
+               - fixtures/terraform-1/atis.svg +522 -581
+               - and 3 more
+  spent        26h 44m · 3 turns · 134s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Land the step and run the rest of the range. Both fixtures now read as their PRs do, with the goldens unchanged and the gate green.
+
+  **1.** Core now asks the base before calling a name deleted.
+
+  `liveConsumers` in `libs/core/src/notices.ts` builds the base's exports beside the head's and keeps a name only when the base exported it from that file and the head no longer does. `baseFiles` is the base scan rekeyed to head paths, and a deleted file stays under its own path, so a deleted file still raises its notice. Four existing scenarios in `notices.test.ts` took names the base never exported, so each now says what the base exported. Two new tests cover a Go-shaped read of unexported names (no notice) and Terraform-shaped `local`, `module`, `data` and resource reads (no notice), and in the same test a removed `output.bucket` still raises the one notice, naming only it. The demo golden and every SVG golden are unchanged.
+
+  **2.** terraform-1's six false notices are gone, and its root is a called module.
+
+  `calledDir` in `apps/atis/src/sources/terraform.ts` now strips the trailing slash before it checks for `.`, so `../../` resolves to `''`, the key the root uses. Two new tests in `terraform.test.ts`: the root is reached and has fan-in, and a full `buildMap` over a change to a file whose locals a sibling reads draws no deleted-export (it fails on the old rule). terraform-1 was regenerated by its README's commands. Checkride matched step 86's run, and the map's six notices are now three `types` reds on the PR's test files, two ghosts and the `other` group. The root went from fan-in 0, band 0 and interface 0 to fan-in 2, band 1 and interface 279: every block at the merge base, where the terrain is read. Its modules each went one band deeper, and `weather.wiring` grew from 221 edges to 231. The README's "Generation" and "What atis read" say what moved. `truth.md` never counted the notices, so it is unchanged.
+
+  **3.** go-1 loses its three false notices, and nothing else moves.
+
+  A reboot on 2026-10-31 cleared `/tmp`, so the fiber clone, checkride 0.19.1 in `/tmp/atis-languages/harness`, and commands 1 to 4 were done again here, and you ran command 5 from your terminal. It passed 37 packages in 51 seconds. `links` was red on fiber's 38 broken doc links, as at step 86, and that red stopped the command's `&&` chain before its last `cp`, so I copied the summary by hand. The map's notices went from six to four: the three false deleted-export notices are gone, and the `other` group takes the place they held. Every other part of the map matches step 86's except the check run's timestamp: 40 cells, 96 reach entries, 137 wiring edges, 23 stitches and VFR. The README's "Generation" and "What atis read" say what moved. `truth.md` never named the notices.
+
+  The reboot also cleared step 87's draft, `/tmp/atis-languages/producers.md`, and every other clone, so step 87 is written fresh and steps 123 and 124 clone again.
+
+  **4.** One test timed out under the full suite's load and passed on the rerun.
+
+  The first check ran red on `chrome.test.ts`'s HUD-fit test, which renders every committed fixture map. It timed out at 5 s under the full suite and passes alone in 1.1 s. javascript-1's 2,417-cell map is the heavy one, and step 123's regeneration shrinks it. It is parked, and the rerun was green.

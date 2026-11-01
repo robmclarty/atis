@@ -269,3 +269,46 @@ test('TypeScript beside its JavaScript twin keeps the barrel and the import, and
     ['src/lib/index.js', 'src/run.ts'],
   ]);
 });
+
+test("a tests/ folder at any depth is tests, so its suites and samples sit in the shore's tests group and found no cell (D4, D189)", () => {
+  const scan = scanTree({
+    'package.json': `{ "name": "samples-demo", "type": "module", "exports": { ".": "./src/index.js" } }\n`,
+    'src/index.js': `export { flush } from './runtime.js';\n`,
+    'src/runtime.js': `let queued = 0;
+
+export function flush() {
+  queued = 0;
+  return queued;
+}
+`,
+    'tests/helpers.js': `export const ok = (value) => value === true;\n`,
+    'tests/runtime/test.ts': `import { flush } from '../../src/index.js';\nimport { ok } from '../helpers.js';\n\nok(flush() === 0);\n`,
+    'tests/runtime/samples/each/_config.js': `import { flush } from '../../../../src/runtime.js';\n\nexport default { test: () => flush() };\n`,
+    'tests/runtime/samples/each/main.svelte': `<p>each</p>\n`,
+  });
+  expect(scan.files.map((file) => [file.path, file.kind])).toEqual([
+    ['package.json', 'other'],
+    ['src/index.js', 'source'],
+    ['src/runtime.js', 'source'],
+    ['tests/helpers.js', 'test'],
+    ['tests/runtime/samples/each/_config.js', 'test'],
+    ['tests/runtime/samples/each/main.svelte', 'other'],
+    ['tests/runtime/test.ts', 'test'],
+  ]);
+  const { terrain, weather } = changeMap(scan, scan, 'src/runtime.js');
+  expect(terrain.cells.map((cell) => [cell.path, cell.kind])).toEqual([
+    ['.', 'package'],
+    ['src/runtime.js', 'single'],
+  ]);
+  expect(terrain.organelles.map((organelle) => organelle.path)).toEqual(['src/index.js', 'src/runtime.js']);
+  expect(terrain.groups.find((group) => group.id === 'tests')?.files).toEqual([
+    'tests/helpers.js',
+    'tests/runtime/samples/each/_config.js',
+    'tests/runtime/test.ts',
+  ]);
+  // The suite and the sample that import the change read as tests, so the reach stays on the source.
+  expect(weather.reach.map((entry) => [entry.path, entry.cell])).toEqual([
+    ['src/index.js', 'package:.'],
+    ['src/runtime.js', 'single:src/runtime.js'],
+  ]);
+});

@@ -96,6 +96,10 @@ test.each([
   ['src/view.spec.tsx', 'test'],
   ['test/e2e/run.ts', 'test'],
   ['packages/core/test/fixtures/tree.ts', 'test'],
+  ['tests/e2e/run.ts', 'test'],
+  ['packages/svelte/tests/runtime-runes/samples/each/_config.js', 'test'],
+  ['src/tests.ts', 'source'],
+  ['src/contests/index.ts', 'source'],
   ['benchmarks/handle-event/index.mts', 'source'],
   ['src/loader.cts', 'source'],
   ['src/types.d.mts', 'source'],
@@ -111,7 +115,7 @@ test.each([
   ['README.md', 'other'],
   ['data/points.json', 'other'],
   ['test/fixtures/biome.json', 'other'],
-])('the TypeScript producer reads %s as %s (D4, D77, D184)', (path, kind) => {
+])('the TypeScript producer reads %s as %s (D4, D77, D184, D189)', (path, kind) => {
   expect(typescriptKind(path)).toBe(kind);
 });
 
