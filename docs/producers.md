@@ -352,8 +352,8 @@ exactly as the baseline that keys it does (D176 (other-language-evidence)). Ever
 that ran (`format`, `links`, `build`, `pack` and the rest) is read for its pass or fail alone,
 from the summary.
 
-What a language does not give is said, never faked (C2 (never-fake)). Each gap is a line in
-`meta.instruments.muted`:
+What a language does not give is said, never faked (C2 (never-fake)). Each gap a check that ran
+leaves is a line in `meta.instruments.muted`:
 
 - No pack but TypeScript's writes coverage, so a Go, Python, Terraform or shell file has no
   coverage channel, which is never a gap in its skin: `coverage: go-test writes none`,
@@ -365,6 +365,11 @@ What a language does not give is said, never faked (C2 (never-fake)). Each gap i
   where a JavaScript repo lints with eslint, `types: atis has no parser for go-build`. tsc and
   go-build are type checkers atis does not read, so a red they report stays standing state.
 - No Terraform plan is read, since a plan needs credentials and state atis never touches.
+- A pack with no test check, bash always and Terraform with no `.tftest.hcl` tests to run,
+  writes no `muted` line at all, since each line names what a check that ran did not write, and
+  no test check ran. `fixtures/shell-1/` and `fixtures/terraform-1/` carry none, so such a map's
+  silence on coverage is the channel's absence, not a reading of it (P99 (pack without a test
+  check)).
 
 When a pack learns to write coverage, atis reads each report as it lands; that is checkride's
 work, and a line in `READERS` and `MEASURES` here.

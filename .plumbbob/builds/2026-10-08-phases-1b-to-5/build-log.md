@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 126 — chore(fixtures): regenerate javascript-1 under the nested-cell rule
+**Current step:** 127 — docs(producers): say what a map says when a pack runs no test check
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -148,7 +148,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 124. fix(core): give a package under src/ with its own barrel a cell of its own
 - ☑ 87. docs(producers): write the contract a language producer fills
 - ☑ 125. fix(cli): keep atis's files in the git directory, out of the working tree
-- ☐ 126. chore(fixtures): regenerate javascript-1 under the nested-cell rule
+- ☑ 126. chore(fixtures): regenerate javascript-1 under the nested-cell rule
 - ☐ 127. docs(producers): say what a map says when a pack runs no test check
 
 ## Park list
@@ -3489,3 +3489,4 @@ folder, so it rides the branch into the PR.)*
   atis writes its cache into the reviewed repo's `.atis/` and hides it from git with a `.gitignore` of `*`, which prettier never reads. So checkride's `format` slot, run after atis on svelte, failed on four `.atis/*.json` files. The README now clears `.atis/` before its checkride run. Any repo that formats with `prettier --check .` hits the same red the first time checkride runs after atis. That is P106.
 
 - 2026-11-01 — step 125 checkpointed · 1aed865d8 — fix(cli): keep atis's files in the git directory, out of the working tree (1 drift, 17m)
+- 2026-11-01 — step 126 checkpointed · 6956778b5 — chore(fixtures): regenerate javascript-1 under the nested-cell rule (8m)
