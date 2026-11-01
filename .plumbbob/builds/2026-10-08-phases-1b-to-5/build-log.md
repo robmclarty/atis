@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 124 — fix(core): give a package under src/ with its own barrel a cell of its own
+**Current step:** 87 — docs(producers): write the contract a language producer fills
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -145,7 +145,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 86. chore(fixtures): render one reviewed PR per new language
 - ☑ 122. fix(core): count a deleted export only where the base exported it
 - ☑ 123. fix(cli): read a tests folder as tests in the TypeScript producer
-- ☐ 124. fix(core): give a package under src/ with its own barrel a cell of its own
+- ☑ 124. fix(core): give a package under src/ with its own barrel a cell of its own
 - ☐ 87. docs(producers): write the contract a language producer fills
 
 ## Park list
@@ -3304,3 +3304,62 @@ folder, so it rides the branch into the PR.)*
   **5.** Seven committed outside maps predate the rule
 
   corpus-2, -5, -10 and -12, retake-2 and -3, and round-two-5 read 73 JavaScript and TypeScript files under a `tests/` folder as terrain, which found 30 cells. No golden reads them, and this step regenerates none of them, so they are parked as P105.
+
+- 2026-11-01 — step 124 checkpointed · cf0ba63b0 — fix(core): give a package under src/ with its own barrel a cell of its own (1 drift, 19m)
+
+  **Summary**: Inside a `src/<name>/` folder module, a directory with its own barrel is now a folder cell beside it, under the same package, and a barrel-less directory folds into the nearest barrelled one above it. python-1 is regenerated: each of the 13 packages under `src/agents/` is a cell, and the PR's change falls in three of them. No golden moved. Two test files outside the seam changed with the rule. javascript-1, regenerated in step 123 before this rule existed, is now stale against it, and is parked for the stop.
+
+  1. javascript-1 predates this rule, and the stop reviews it
+  2. Two tests outside the seam moved with the rule
+  3. The rule walks up to the nearest barrel
+  4. What moved in python-1
+  5. Four new cells show no interface of their own
+
+  **Readout**:
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored:
+               - D187 (nested-barrel-cells), D45 (nested-cells)
+               - D115 (python-producer), D58 (fixtures-current-toolchain)
+               - D59 (outside-fixtures), D50 (history-measured)
+  constraints  14 of 14 honored
+  seam         strayed: 2 paths outside the seam
+               - apps/atis/src/__tests__/git.test.ts
+               - apps/atis/src/__tests__/python.test.ts
+  diff         +12413 -17192 across 8 files
+               - apps/atis/src/__tests__/git.test.ts +2 -1
+               - apps/atis/src/__tests__/python.test.ts +3 -1
+               - fixtures/python-1/README.md +106 -54
+               - fixtures/python-1/atis.svg +771 -694
+               - fixtures/python-1/map.json +11409 -16436
+               - libs/core/src/__tests__/modules.test.ts +103 -0
+               - libs/core/src/__tests__/scanned.ts +2 -2
+               - libs/core/src/modules.ts +17 -4
+  spent        19 min · 143s gate · green first run
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Recommendation**: Land it and go on to step 87. The rule does what D187 asks and python-1 reads as its packages. The javascript-1 gap is parked, so the stop can decide whether that fixture is regenerated before the build ends.
+
+  **1.** javascript-1 predates this rule, and the stop reviews it
+
+  Step 123 regenerated javascript-1 before step 124's rule existed, and its `compiler` and `internal` folder cells hold 10 nested `index.js` barrels. A scratch run on the same worktree and `.check/`, written to `/tmp` with the fixture left alone, reads 50 cells, not 40. `internal/client` becomes its own cell with 74 files, and so do `internal/server`, `internal/flags` and the compiler's three phases. Every notice then names `packages/svelte/src/internal/client`, read by 28 files. Since `fixtures/javascript-1/` is outside this step's seam, this is parked as P108, a likely blocker for the stop. Ten other committed outside maps would move too and are parked as P109.
+
+  **2.** Two tests outside the seam moved with the rule
+
+  `apps/atis/src/__tests__/python.test.ts` read a Python `src/shop/` tree as one folder cell. `src/shop/store/` has its own `__init__.py`, so it is a cell beside it now, while the namespace package `plugins/` still folds in, and the expectation and its comment say so. `apps/atis/src/__tests__/git.test.ts`'s `readDiff against this repo with --base HEAD~1` reads this repo's own last commit, and step 123's commit (920,000 lines of a regenerated map) took it past vitest's 5-second default under the full suite, though it passes alone in 1.8 s. It now has the 60-second limit its neighbour, the log test, has, under the same D50 (history-measured) reason. The first check was red on these two, and the rerun was green.
+
+  **3.** The rule walks up to the nearest barrel
+
+  `place()` in `libs/core/src/modules.ts` still requires `src/<name>/` itself to have a barrel. From a file's directory it then walks up to the first directory with a barrel, stopping at `src/<name>/`. That directory is the file's folder cell, with the package as its parent. A barrelled directory under a barrel-less `src/<name>/` stays a directory cell, as before. Two new tests in `modules.test.ts` cover a TypeScript tree (a nested `index.ts`, a barrel-less folder at each depth, a barrel-less outer folder) and a Python `src/agents/` layout with a nested `voice/models/`. The Python test goes through `buildMap` to check the interfaces, the changed file's cell and the contours, and both tests fail on the old rule. `scanned.ts`, the test helper that restates the TypeScript producer's rule, now takes a `tests/` folder too, as step 123 made the producer do.
+
+  **4.** What moved in python-1
+
+  From 31 cells to 43. `folder:src/agents` holds 28 files, not 113. Its fan-in went from 88 to 134, since its subpackages read it from outside now, and it moved from band 0 to band 1. The change falls in `agents`, `agents.memory` and `agents.models`. Reach covers the same 164 files across 37 cells, and the exceptional edges went from one to three. The notices went from four to six. `memory/session.py`'s `interface-added` leads, and four new interface notices push the `tool.py` co-change and the `other` group below the six core keeps, though the ghost is still in `weather.ghosts`. The shared checkride moved to 0.19.2 per D58, which changes no artifact here. pytest passed 1,121 and skipped 4 where step 86 had 1,128 and 3, because Docker was not running for the 7 Dapr integration tests.
+
+  **5.** Four new cells show no interface of their own
+
+  `util` (read by 21 files), `extensions`, `extensions/models` and `voice/models` have an `__init__.py` that exports nothing, and their readers import the submodules directly. A folder cell's interface is its barrel (D45), so they show an interface of 0 and no exports. Interface notices still find those submodules, since they look for files imported from outside a cell. Parked as P107.
