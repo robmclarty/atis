@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,7 +18,8 @@ import type { Scan } from '../sources/index.js';
  * The terrain cache (D96, D137): an entry read back whole, a miss for each
  * reason an entry stops being this run's, and the command end to end on a
  * throwaway repository, where a second run reads what the first kept and
- * writes the same map.
+ * writes the same map. Every entry sits under the git directory, shared by
+ * each worktree, and a run leaves the working tree as git saw it (D190).
  */
 
 const MINUTE = 60_000;
@@ -37,6 +38,13 @@ function temp(prefix: string): string {
   return dir;
 }
 
+/** An empty repository: the cache is kept under its git directory, so it needs one. */
+function repository(prefix: string): string {
+  const repo = temp(prefix);
+  execFileSync('git', ['init', '--quiet'], { cwd: repo });
+  return repo;
+}
+
 function write(path: string, text: string): void {
   mkdirSync(dirname(path), { recursive: true });
   writeFileSync(path, text);
@@ -51,13 +59,13 @@ const TERRAIN: BaseTerrain = {
   layout: { width: 480, height: 96, shore: { y0: 0, y1: 0 }, bands: [{ index: 0, y0: 0, y1: 96 }], positions: { 'src/a.ts': { x: 60, y: 48, r: 6 } } },
 };
 
-test('a terrain kept for a commit reads back whole, under an .atis/ that ignores itself (D96)', () => {
-  const repo = temp('kept');
+test('a terrain kept for a commit reads back whole, under the git directory and never in the working tree (D96, D190)', () => {
+  const repo = repository('kept');
   const path = writeTerrain(repo, SHA, KEY, TERRAIN);
 
   expect(path).toBe(terrainPath(repo, SHA));
-  expect(path).toBe(join(repo, '.atis', 'terrain', `${SHA}.json`));
-  expect(readFileSync(join(repo, '.atis', '.gitignore'), 'utf8')).toBe('*\n');
+  expect(path).toBe(join(repo, '.git', 'atis', 'terrain', `${SHA}.json`));
+  expect(readdirSync(repo)).toEqual(['.git']);
   expect(readTerrain(repo, SHA, KEY)).toEqual({ hit: true, terrain: TERRAIN });
 
   // Another commit has no entry until a run keeps one.
@@ -65,7 +73,7 @@ test('a terrain kept for a commit reads back whole, under an .atis/ that ignores
 });
 
 test('an entry misses on a changed config, and says so', () => {
-  const repo = temp('config');
+  const repo = repository('config');
   writeTerrain(repo, SHA, KEY, TERRAIN);
 
   const moved = { ...DEFAULT_CONFIG, notices: { ...DEFAULT_CONFIG.notices, large_lines: DEFAULT_CONFIG.notices.large_lines + 1 } };
@@ -106,13 +114,13 @@ test('an entry misses on changed code: a byte, a file or the compiler, never a t
   expect(codeKey()).toMatch(/^[0-9a-f]{64}$/);
   expect(codeKey()).toBe(codeKey());
 
-  const repo = temp('code-entry');
+  const repo = repository('code-entry');
   writeTerrain(repo, SHA, KEY, TERRAIN);
   expect(readTerrain(repo, SHA, { ...KEY, code: before })).toEqual({ hit: false, reason: 'code changed' });
 });
 
 test('a corrupt entry reads as a miss, never an error', () => {
-  const repo = temp('corrupt');
+  const repo = repository('corrupt');
   const path = writeTerrain(repo, SHA, KEY, TERRAIN);
   const whole = readFileSync(path, 'utf8');
   const unreadable = { hit: false, reason: 'unreadable' };
@@ -170,13 +178,13 @@ test('a second run on the same base reads the cache, and writes the map the firs
 
   const first = run({ repo, base: 'HEAD~1', out: join(out, 'first.json'), verbose: true });
   expect(first.exitCode, first.stderr).toBe(0);
-  expect(first.stderr).toContain(`terrain cache miss (no entry), laid out cold, wrote .atis/terrain/${base}.json`);
+  expect(first.stderr).toContain(`terrain cache miss (no entry), laid out cold, wrote .git/atis/terrain/${base}.json`);
   expect(first.stderr).toMatch(/scan base\s+\d+ ms/);
   expect(existsSync(entry)).toBe(true);
 
   const second = run({ repo, base: 'HEAD~1', out: join(out, 'second.json'), verbose: true });
   expect(second.exitCode, second.stderr).toBe(0);
-  expect(second.stderr).toContain(`terrain cache hit, .atis/terrain/${base}.json`);
+  expect(second.stderr).toContain(`terrain cache hit, .git/atis/terrain/${base}.json`);
   expect(second.stderr).not.toMatch(/scan base/);
   expect(bytesBesideTheClock(join(out, 'second.json'))).toBe(bytesBesideTheClock(join(out, 'first.json')));
 
@@ -208,9 +216,64 @@ test('a second run on the same base reads the cache, and writes the map the firs
     expect(bytesBesideTheClock(join(out, `${part}.json`))).toBe(bytesBesideTheClock(join(out, 'first.json')));
   }
 
-  // The cache ignores itself: the repository's own status and ignores are untouched.
-  expect(git('status', '--porcelain')).toBe('');
+  // The cache sits in the git directory: the repository's own status, its ignored files included, and its ignores are untouched.
+  expect(git('status', '--porcelain', '--ignored')).toBe('');
   expect(existsSync(join(repo, '.gitignore'))).toBe(false);
+}, MINUTE);
+
+test('a run leaves the working tree as git saw it, ignored files included, and keeps every entry under the git directory (D190)', () => {
+  const { repo, git } = twoCommits();
+  write(join(repo, '.gitignore'), 'build/\n');
+  write(join(repo, 'build', 'out.js'), 'export {};\n');
+  write(join(repo, 'notes.txt'), 'untracked\n');
+  const before = git('status', '--porcelain', '--ignored');
+  expect(before).toBe('?? .gitignore\n?? notes.txt\n!! build/');
+
+  const result = run({ repo, base: 'HEAD~1', out: join(temp('untouched'), 'map.json'), verbose: true });
+  expect(result.exitCode, result.stderr).toBe(0);
+  expect(git('status', '--porcelain', '--ignored')).toBe(before);
+  expect(existsSync(join(repo, '.atis'))).toBe(false);
+  expect(readdirSync(join(repo, '.git', 'atis')).toSorted()).toEqual(['terrain']);
+}, MINUTE);
+
+test('every worktree of a repository shares one cache: a linked worktree reads the terrain the main one kept, and a run there leaves its tree as git saw it (D190)', () => {
+  const { repo, git } = twoCommits();
+  const base = git('rev-parse', 'HEAD~1');
+  const worktree = join(temp('worktree'), 'linked');
+  git('worktree', 'add', '--quiet', '--detach', worktree);
+  const out = temp('shared');
+
+  const main = run({ repo, base: 'HEAD~1', out: join(out, 'main.json'), verbose: true });
+  expect(main.stderr).toContain(`terrain cache miss (no entry), laid out cold, wrote .git/atis/terrain/${base}.json`);
+  // The linked worktree's entry is the main one's, named whole since it lies outside its tree.
+  expect(realpathSync(terrainPath(worktree, base))).toBe(realpathSync(terrainPath(repo, base)));
+  const linked = run({ repo: worktree, base: 'HEAD~1', out: join(out, 'linked.json'), verbose: true });
+  expect(linked.exitCode, linked.stderr).toBe(0);
+  expect(linked.stderr).toContain(`terrain cache hit, ${terrainPath(worktree, base)}`);
+  // One commit, one terrain, whichever worktree drew it; the map names the worktree it was drawn in.
+  const terrainOf = (name: string): unknown => assertMap(JSON.parse(readFileSync(join(out, name), 'utf8'))).terrain;
+  expect(terrainOf('linked.json')).toEqual(terrainOf('main.json'));
+  expect(execFileSync('git', ['status', '--porcelain', '--ignored'], { cwd: worktree, encoding: 'utf8' })).toBe('');
+}, MINUTE);
+
+test('a .atis/ an older atis left in the working tree is neither read nor removed (D190)', () => {
+  const { repo, git } = twoCommits();
+  const base = git('rev-parse', 'HEAD~1');
+  const out = temp('older');
+  const first = run({ repo, base: 'HEAD~1', out: join(out, 'first.json'), verbose: true });
+  expect(first.exitCode, first.stderr).toBe(0);
+
+  // The entry this run would hit, moved where an older atis kept it.
+  cpSync(join(repo, '.git', 'atis'), join(repo, '.atis'), { recursive: true });
+  write(join(repo, '.atis', '.gitignore'), '*\n');
+  rmSync(join(repo, '.git', 'atis'), { recursive: true });
+  const kept = readFileSync(join(repo, '.atis', 'terrain', `${base}.json`), 'utf8');
+
+  const second = run({ repo, base: 'HEAD~1', out: join(out, 'second.json'), verbose: true });
+  expect(second.exitCode, second.stderr).toBe(0);
+  expect(second.stderr).toContain(`terrain cache miss (no entry), laid out cold, wrote .git/atis/terrain/${base}.json`);
+  expect(readFileSync(join(repo, '.atis', 'terrain', `${base}.json`), 'utf8')).toBe(kept);
+  expect(readFileSync(join(repo, '.atis', '.gitignore'), 'utf8')).toBe('*\n');
 }, MINUTE);
 
 test('a change that changes nothing holds its base\'s kept layout exactly (D172)', () => {
@@ -278,7 +341,7 @@ test('a base the cache has not seen relaxes from the nearest ancestor it has, an
 }, MINUTE);
 
 test('the entry points fallow listed for a head commit read back under the key they were kept by, and a fallback is never kept (D136, D172)', () => {
-  const repo = temp('entries');
+  const repo = repository('entries');
   const key: StructureKey = { code: 'c'.repeat(64), fallow: '3.22.0' };
   const listed = { entries: [{ path: 'src/index.ts', tag: 'package.json main' }], lookup: { source: 'fallow' } } as const;
 

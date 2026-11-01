@@ -40,9 +40,9 @@ atis fingerprint writes the terrain alone, no weather and no notices, as a
 atis mcp serves an agent three tools over stdio (MCP): highlight flies the
 open tab to a file or a notice and lights it, reach says how the change
 reaches a file, and explain gives a notice's why, inputs and thresholds. They
-read the map the tab atis serves in the repository holds, found by its
-.atis/serve.json; with no tab open, reach and explain read the map --map
-names, and highlight says no tab is open.
+read the map the tab atis serves in the repository holds, found by the
+atis/serve.json its git directory keeps; with no tab open, reach and explain
+read the map --map names, and highlight says no tab is open.
 
   --repo <path>   the repository to read (default: the working directory)
   --map <file>    for atis mcp, the map reach and explain read when no tab is
@@ -95,8 +95,9 @@ names, and highlight says no tab is open.
                   written for this map's base and head, by the workspace's
                   opt-in \`pnpm --filter tour start <map.json>\`
   --no-cache     measure afresh, neither reading nor writing the terrain kept
-                  per base commit in .atis/terrain/ or the structure fallow
-                  measured per commit in .atis/structure/
+                  per base commit in atis/terrain/ or the structure fallow
+                  measured per commit in atis/structure/, under the git
+                  directory
   --history <n>   read the newest <n> commits of history (default 5000)
   --verbose       print per-source timings, and each cache's hit or miss, on
                   stderr
@@ -106,6 +107,8 @@ names, and highlight says no tab is open.
 The map is written at schema ${SCHEMA_VERSION}: terrain scanned from the merge
 base of the base and the head, weather from the head, and at most six ranked
 notices.
-The terrain is kept per merge base under .atis/, which ignores itself in git.
+The terrain is kept per merge base under atis/ in the repository's git
+directory (git rev-parse --git-common-dir), which every worktree of it shares,
+so atis writes nothing in the working tree.
 https://github.com/robmclarty/atis
 `;

@@ -13,10 +13,13 @@ Every number here was measured on 2026-10-26 on an Apple M1 Pro with 32 GB, macO
 
 ## The terrain cache
 
-A base commit's side of a run is kept in `.atis/terrain/<merge-base>.json` under the
-reviewed repository: the base tree's scan, what the scan read from each TypeScript file,
-the history window at the base, and the base terrain's own layout. `.atis/.gitignore` holds
-`*`, so the repository's own ignores are never touched. An entry is keyed beside its commit
+A base commit's side of a run is kept in `atis/terrain/<merge-base>.json` under the
+reviewed repository's git directory, `git rev-parse --git-common-dir`: the base tree's
+scan, what the scan read from each TypeScript file, the history window at the base, and
+the base terrain's own layout. Nothing is written in the working tree, so no check the
+repository runs over its own files reads an entry, and every linked worktree of the
+repository shares the one cache (D190). A `.atis/` an older atis left in the working tree
+is neither read nor removed. An entry is keyed beside its commit
 by a hash of the code that builds a terrain (the directory atis runs from and core's,
 tests and declarations left out, and the TypeScript version the scan runs on) and a hash
 of the config and the history window, so changed code, a changed config or another
@@ -43,7 +46,7 @@ A run then reads only what its change touched over the cached base:
 
 An entry is 0.5 MB on `inspector`'s 164 files and 11.5 MB on `actual`'s 4,207.
 
-Beside the terrains, `.atis/structure/<sha>.json` keeps what the reviewed repository's own
+Beside the terrains, `atis/structure/<sha>.json` keeps what the reviewed repository's own
 fallow measured of one commit: its `health`, `dupes` and `dead-code` reports, read by the
 parsers `.check/` is read by (D98). The base's is read on the runs its terrain is, and the
 head's is kept per head commit, so a second run on one change runs fallow on neither side
@@ -51,7 +54,7 @@ head's is kept per head commit, so a second run on one change runs fallow on nei
 a moved pin measures both sides again over the terrain as it was, and an entry with an
 analysis fallow could not read is never kept. On this repository, measuring a side costs
 0.9 to 1.0 s (three fallow runs on its extraction), and reading it back 1 ms.
-`.atis/entries/<sha>.json` keeps, under the same key, the entry points that fallow listed
+`atis/entries/<sha>.json` keeps, under the same key, the entry points that fallow listed
 for a head commit, so the head's scan never extracts the head for fallow on a second run
 either.
 
@@ -155,7 +158,9 @@ On `actual`, a cached run went from 95 s to 8.1 s at step 50, and to 1.8 s now.
 ## A cached run's first frame
 
 `apps/web/scripts/first-frame.ts` times it. With Chrome already running and its page open,
-it fills a repository's cache with one untimed run, then times a served run per backend
+it fills a repository's cache with one untimed run, whose map it keeps as
+`atis/first-frame.json` under the working tree's own git directory and never in the tree
+(D190), then times a served run per backend
 from the command: until it serves, until the map arrives in the page, and until the page's
 `atis:ready` mark, raised once the first complete frame is on the screen (D105). The page is
 driven to the served URL, so a platform opener's hand-off is no part of it.

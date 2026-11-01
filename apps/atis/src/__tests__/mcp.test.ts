@@ -1,5 +1,5 @@
-import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,7 +17,8 @@ import type { Served } from '../serve.js';
 /**
  * `atis mcp` (D110), driven through a client in the same process, as an
  * agent drives it over stdio: its three tools against a tab a run serves,
- * found by the repository's `.atis/serve.json` (D138), and with none, where
+ * found by the `atis/serve.json` the working tree's git directory keeps
+ * (D138, D190), and with none, where
  * `reach` and `explain` read the map `--map` names and `highlight` says no
  * tab is open. A highlight rides `POST /highlight` to each page on the
  * served socket (D178).
@@ -40,6 +41,18 @@ afterAll(async () => {
   await Promise.allSettled(closers.map((close) => close()));
   for (const dir of temps) rmSync(dir, { recursive: true, force: true });
 });
+
+/** git in `cwd`, with no author config of the machine running the test. */
+const git = (cwd: string, ...args: readonly string[]): string =>
+  execFileSync('git', ['-c', 'user.name=atis', '-c', 'user.email=atis@example.invalid', '-c', 'commit.gpgsign=false', ...args], { cwd, encoding: 'utf8' }).trim();
+
+/** A repository of one empty commit, for a run to serve a tab from. */
+const repository = (): string => {
+  const repo = temp('repo');
+  git(repo, 'init', '--quiet');
+  git(repo, 'commit', '--quiet', '--allow-empty', '-m', 'chore: begin');
+  return repo;
+};
 
 /** The demo with only its first three notices, written to a file of its own: a map unlike the one a tab serves. */
 const threeNotices = (): string => {
@@ -77,9 +90,9 @@ const stubApp = (): string => {
   return dir;
 };
 
-/** The demo served from `repo` with no watch, as a plain `atis` serves it, and the file that says how to reach it (D138). */
-const tabIn = async (repo: string): Promise<Served> => {
-  const served = await serve({ assets: stubApp(), map: DEMO_TEXT, token: TOKEN });
+/** The demo, or `map`, served from `repo` with no watch, as a plain `atis` serves it, and the file that says how to reach it (D138). */
+const tabIn = async (repo: string, map: string = DEMO_TEXT): Promise<Served> => {
+  const served = await serve({ assets: stubApp(), map, token: TOKEN });
   closers.push(served.close);
   keepServing(repo, { port: served.port, token: TOKEN, pid: process.pid });
   return served;
@@ -142,7 +155,7 @@ test('with no tab open, reach and explain read the map --map names, and highligh
 
   const lit = await call(client, 'highlight', { notice: 1 });
   expect(lit.error).toBe(true);
-  expect(lit.text).toBe(`no tab is open: no atis serves ${repo}, by its .atis/serve.json; run atis there to open one`);
+  expect(lit.text).toBe(`no tab is open: no atis serves ${repo}, by the atis/serve.json its git directory keeps; run atis there to open one`);
 });
 
 test('a file the map does not hold, a notice it does not rank, or no map to read at all is a tool error saying which', async () => {
@@ -160,8 +173,11 @@ test('a file the map does not hold, a notice it does not rank, or no map to read
 });
 
 test('with a tab served, reach and explain read the map it holds now, never --map, and highlight flies each open page to its target (D138, D178)', async () => {
-  const repo = temp('repo');
+  const repo = repository();
   const served = await tabIn(repo);
+  // The tab is found under the git directory, and nothing is written in the working tree (D190).
+  expect(existsSync(join(repo, '.git', 'atis', 'serve.json'))).toBe(true);
+  expect(git(repo, 'status', '--porcelain', '--ignored')).toBe('');
   const origin = `http://127.0.0.1:${String(served.port)}`;
   const source = `the tab atis serves at ${origin}`;
   const client = await connect(repo, threeNotices());
@@ -194,7 +210,7 @@ test('with a tab served, reach and explain read the map it holds now, never --ma
 });
 
 test('a tab whose run stopped answering, or whose process has exited, is no tab: highlight says so, and reach and explain read --map (D138)', async () => {
-  const repo = temp('repo');
+  const repo = repository();
   const served = await tabIn(repo);
   const origin = `http://127.0.0.1:${String(served.port)}`;
   const map = threeNotices();
@@ -205,6 +221,23 @@ test('a tab whose run stopped answering, or whose process has exited, is no tab:
 
   const exited = spawnSync(process.execPath, ['-e', '']).pid;
   keepServing(repo, { port: served.port, token: TOKEN, pid: exited });
-  expect((await call(client, 'highlight', { notice: 1 })).text).toBe(`no tab is open: no atis serves ${repo}, by its .atis/serve.json; run atis there to open one`);
+  expect((await call(client, 'highlight', { notice: 1 })).text).toBe(`no tab is open: no atis serves ${repo}, by the atis/serve.json its git directory keeps; run atis there to open one`);
   expect(((await call(client, 'reach', { file: 'libs/core/src/pm/index.ts' })).value as { readonly source: string }).source).toBe(map);
+});
+
+test("atis mcp started in a linked worktree finds the tab served from that worktree, and in the main one the main one's, each by its own git directory (D138, D190)", async () => {
+  const repo = repository();
+  const worktree = join(temp('worktree'), 'linked');
+  git(repo, 'worktree', 'add', '--quiet', '--detach', worktree);
+  const main = await tabIn(repo);
+  const linked = await tabIn(worktree, readFileSync(threeNotices(), 'utf8'));
+
+  const fromMain = await connect(repo);
+  const fromLinked = await connect(worktree);
+  expect(((await call(fromMain, 'explain', { notice: 6 })).value as { readonly source: string }).source).toBe(`the tab atis serves at http://127.0.0.1:${String(main.port)}`);
+  expect(await call(fromLinked, 'explain', { notice: 6 })).toEqual({ error: true, text: 'the map ranks 3 notices, 1 to 3; none is 6', value: undefined });
+  expect(((await call(fromLinked, 'explain', { notice: 3 })).value as { readonly source: string }).source).toBe(`the tab atis serves at http://127.0.0.1:${String(linked.port)}`);
+  // Neither working tree holds a file atis wrote.
+  expect(git(worktree, 'status', '--porcelain', '--ignored')).toBe('');
+  expect(git(repo, 'status', '--porcelain', '--ignored')).toBe('');
 });

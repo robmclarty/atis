@@ -137,8 +137,9 @@ has a workflow that keeps it fresh.
 ### Everything else
 
 - `--repo <path>` reads a repository other than the working directory.
-- atis keeps each base's terrain under `.atis/`, which ignores itself in git, so a second
-  run on the same base opens fast. `--no-cache` measures afresh.
+- atis keeps each base's terrain in `atis/` under the repository's git directory
+  (`git rev-parse --git-common-dir`), never in the working tree, so a second run on the
+  same base opens fast, from any worktree of the repository. `--no-cache` measures afresh.
 - `--history <n>` reads the newest `n` commits of history, 5,000 by default.
 - `--verbose` prints each source's timing, and each cache's hit or miss, on stderr.
 - `atis.config.json` at the repository's root may name the `trunk`, and an `editor` URL

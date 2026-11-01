@@ -211,5 +211,6 @@ test('with no gh, or no pull request for the branch, --comment exits 2 naming wh
   expect(nopr.exitCode).toBe(2);
   expect(nopr.stderr).toBe('atis: --comment found no pull request for this branch: no pull requests found for branch "feature"\n');
   expect(gh.state().calls.map((call) => call.slice(0, 2).join(' '))).toEqual(['--version', 'pr view']);
+  expect(existsSync(join(repo, '.git', 'atis'))).toBe(false);
   expect(existsSync(join(repo, '.atis'))).toBe(false);
 }, MINUTE);

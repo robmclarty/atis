@@ -1,9 +1,9 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { request } from 'node:http';
 import type { OutgoingHttpHeaders } from 'node:http';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterAll, expect, test } from 'vitest';
@@ -21,8 +21,8 @@ import type { BaseRequest, Rebuilt, Served, ServedDiff } from '../serve.js';
  * and nothing else; binds loopback alone (C13); and refuses a foreign Host
  * and a missing or wrong token (D134). Its second write, `POST /highlight`,
  * relays a target the held map places to each open page and refuses any
- * other, and a served run says how to reach it in `.atis/serve.json` while it
- * serves (D138, D178).
+ * other, and a served run says how to reach it in the `atis/serve.json` its
+ * working tree's git directory keeps while it serves (D138, D178, D190).
  */
 const TOKEN = 'a3f1c2d4e5b6a7f8091a2b3c4d5e6f70';
 const MAP = '{"meta":{"repo":"stub"}}\n';
@@ -498,42 +498,46 @@ test('POST /highlight names only a file the held map places or a notice it ranks
   expect(heard.map((message) => (message as { readonly kind: string }).kind)).toEqual(['map']);
 });
 
-test('a served run says how to reach it in .atis/serve.json, readable by its owner alone and ignored by git, and takes it back as it closes (D138)', async () => {
+test('a served run says how to reach it in the atis/serve.json of its git directory, readable by its owner alone and never in its working tree, and takes it back as it closes (D138, D190)', async () => {
   const repo = twoCommits();
+  const before = git(repo, 'status', '--porcelain', '--ignored');
   const outcome = await serveRun({ repo, base: 'v1', assets: stubApp(), open: false, verbose: false, token: TOKEN });
   const { served } = outcome;
   if (served === undefined) throw new Error(outcome.stderr);
   servers.push(served);
-  const path = join(repo, '.atis', 'serve.json');
+  const path = join(repo, '.git', 'atis', 'serve.json');
   const serving = { port: served.port, token: TOKEN, pid: process.pid };
   expect(JSON.parse(readFileSync(path, 'utf8'))).toEqual(serving);
   expect(statSync(path).mode & 0o777).toBe(0o600);
   expect(servingIn(repo)).toEqual(serving);
-  expect(git(repo, 'status', '--porcelain')).toBe('');
+  // Serving, with its terrain kept, leaves the working tree as git saw it, its ignored files included.
+  expect(git(repo, 'status', '--porcelain', '--ignored')).toBe(before);
+  expect(existsSync(join(repo, '.atis'))).toBe(false);
   expect(outcome.stderr).toBe('');
   await served.close();
   expect(existsSync(path)).toBe(false);
   expect(servingIn(repo)).toBeUndefined();
 }, 60_000);
 
-test('a repository that will not take .atis/serve.json is still served, and the run says atis mcp will not find the tab (D138, C4)', async () => {
+test('a repository that will not take its serve.json is still served, and the run says atis mcp will not find the tab (D138, C4)', async () => {
   const repo = twoCommits();
   // A file where the directory would go, so nothing can be written under it.
-  writeFileSync(join(repo, '.atis'), 'not a directory\n');
+  writeFileSync(join(repo, '.git', 'atis'), 'not a directory\n');
   const outcome = await serveRun({ repo, base: 'v1', assets: stubApp(), open: false, verbose: false, token: TOKEN, cache: false });
   const { served } = outcome;
   if (served === undefined) throw new Error(outcome.stderr);
   servers.push(served);
   expect(outcome.exitCode).toBe(0);
-  expect(outcome.stderr).toMatch(/^atis: atis mcp will not find this tab, since \.atis\/serve\.json could not be written: /);
+  expect(outcome.stderr).toMatch(/^atis: atis mcp will not find this tab, since its serve\.json could not be written: /);
   expect((await get(served.port, `/map.json?token=${TOKEN}`)).status).toBe(200);
 }, 60_000);
 
-test('.atis/serve.json names a run only while its process runs and the file reads as one, and a run closing takes back only the file it wrote (D138)', () => {
+test('a serve.json names a run only while its process runs and the file reads as one, and a run closing takes back only the file it wrote (D138)', () => {
   const repo = mkdtempSync(join(tmpdir(), 'atis-serving-'));
   temps.push(repo);
+  git(repo, 'init', '--quiet');
   const path = keepServing(repo, { port: 4173, token: TOKEN, pid: process.pid });
-  expect(path).toBe(join(repo, '.atis', 'serve.json'));
+  expect(path).toBe(join(repo, '.git', 'atis', 'serve.json'));
   expect(servingIn(repo)).toEqual({ port: 4173, token: TOKEN, pid: process.pid });
   // Another run's close leaves this run's file where it is.
   dropServing(repo, process.pid + 1);
@@ -551,6 +555,37 @@ test('.atis/serve.json names a run only while its process runs and the file read
     writeFileSync(path, text);
     expect(servingIn(repo), text).toBeUndefined();
   }
+
+  // A directory git finds no repository in is served by no run.
+  const bare = mkdtempSync(join(tmpdir(), 'atis-serving-none-'));
+  temps.push(bare);
+  expect(servingIn(bare)).toBeUndefined();
+});
+
+test("each working tree keeps its own serve.json in its own git directory, a linked worktree's apart from the main one's, and a .atis/serve.json an older atis left is never read (D138, D190)", () => {
+  const repo = twoCommits();
+  const worktree = join(mkdtempSync(join(tmpdir(), 'atis-serving-worktree-')), 'linked');
+  temps.push(dirname(worktree));
+  git(repo, 'worktree', 'add', '--quiet', '--detach', worktree, 'v1');
+
+  const main = keepServing(repo, { port: 4173, token: TOKEN, pid: process.pid });
+  const linked = keepServing(worktree, { port: 4174, token: TOKEN, pid: process.pid });
+  expect(main).toBe(join(repo, '.git', 'atis', 'serve.json'));
+  expect(linked).toBe(join(realpathSync(repo), '.git', 'worktrees', 'linked', 'atis', 'serve.json'));
+  expect(servingIn(repo)?.port).toBe(4173);
+  expect(servingIn(worktree)?.port).toBe(4174);
+  // The linked worktree's run closing takes back its own file alone.
+  dropServing(worktree, process.pid);
+  expect(servingIn(worktree)).toBeUndefined();
+  expect(servingIn(repo)?.port).toBe(4173);
+  dropServing(repo, process.pid);
+
+  // A run an older atis served says so in the working tree, which this one never reads, nor removes.
+  mkdirSync(join(repo, '.atis'));
+  writeFileSync(join(repo, '.atis', 'serve.json'), JSON.stringify({ port: 4175, token: TOKEN, pid: process.pid }));
+  expect(servingIn(repo)).toBeUndefined();
+  dropServing(repo, process.pid);
+  expect(existsSync(join(repo, '.atis', 'serve.json'))).toBe(true);
 });
 
 /** A tour as `apps/tour` writes it, for the map of `base` and `head`. */

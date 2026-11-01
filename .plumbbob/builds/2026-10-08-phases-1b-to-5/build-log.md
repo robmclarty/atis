@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 87 — docs(producers): write the contract a language producer fills
+**Current step:** 125 — fix(cli): keep atis's files in the git directory, out of the working tree
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -146,7 +146,10 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 122. fix(core): count a deleted export only where the base exported it
 - ☑ 123. fix(cli): read a tests folder as tests in the TypeScript producer
 - ☑ 124. fix(core): give a package under src/ with its own barrel a cell of its own
-- ☐ 87. docs(producers): write the contract a language producer fills
+- ☑ 87. docs(producers): write the contract a language producer fills
+- ☐ 125. fix(cli): keep atis's files in the git directory, out of the working tree
+- ☐ 126. chore(fixtures): regenerate javascript-1 under the nested-cell rule
+- ☐ 127. docs(producers): say what a map says when a pack runs no test check
 
 ## Park list
 
@@ -258,11 +261,12 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] the TypeScript producer reads a tests/ folder as source terrain: TEST_DIR in apps/atis/src/sources/imports.ts matches only __tests__/ and test/, so svelte's packages/svelte/tests/ (2,465 _config.js and sample files) founds 2,377 of fixtures/javascript-1's 2,417 cells, 2,089 of its 2,203 reach entries, a 17.7 MB map.json and a 7.5 minute run, where the Python producer already counts tests/ as tests (step 86)
 - [x] core's deleted-export candidate (liveConsumers in libs/core/src/notices.ts) checks a base edge's names only against head exports, never that the base exported them, so a Go file's same-package reads of unexported names (App.isASCII, getAuthSchemes) and a Terraform file's local.* reads all count as deleted exports: 3 of fixtures/go-1's 6 notices are false, with the same cause as P100's 6 on terraform-1 (step 86)
 - [x] chrome.test.ts's HUD-fit test (libs/svg) renders every committed fixture map and timed out at 5 s under the full suite once in step 122's check, passing alone in 1.1 s; javascript-1's 2,417-cell map is the heavy one, which step 123's regeneration shrinks (step 122)
-- [ ] seven committed outside-repo maps predate D189 (tests-folder-is-tests): corpus-2, corpus-5, corpus-10, corpus-12, retake-2, retake-3 and round-two-5 read 73 JavaScript and TypeScript files under a tests/ folder as terrain, founding 30 cells of their own (retake-2 alone 44 files in 15 cells); no golden reads them, and each would move if regenerated (step 123)
-- [ ] atis's cache turns a reviewed repo's format check red: apps/atis/src/cache.ts writes .atis/{terrain,structure,entries}/<sha>.json into the repo and hides them from git with a .atis/.gitignore of *, which prettier never reads, so checkride run after atis on svelte failed its format slot on four .atis/*.json files; javascript-1's README now clears .atis before its checkride run, and a cache under .git/ or written as prettier would write it would not trip it (step 123)
-- [ ] a Python subpackage whose __init__.py exports nothing shows an interface of 0 now that it is a cell (D187): fixtures/python-1's util (fan-in 21), extensions (7), extensions/models (2) and voice/models (2) read interface_size 0 and no exports, since a folder cell's interface is its barrel alone (D45), while its readers import the submodules directly; interface notices still find those files through interfaceFiles in libs/core/src/notices.ts, so only the membrane's names and the HUD's sizes go quiet (step 124)
-- [ ] fixtures/javascript-1 predates D187 (nested-barrel-cells): step 123 regenerated it before step 124's rule, and its compiler and internal folder cells hold 10 nested index.js barrels; a scratch run on the same worktree and .check/ reads 50 cells, not 40 (internal/client with 74 files, internal/server, internal/flags, the compiler's 1-parse, 2-analyze and 3-transform among 10 new folder cells), and every notice names packages/svelte/src/internal/client, read by 28 files, where the committed map says packages/svelte/src/internal and 36 (step 124)
-- [ ] ten committed outside maps predate D187 (nested-barrel-cells) and would move if regenerated: their folder cells hold nested index or __init__ barrels, in corpus-2 (8), corpus-3 (2), corpus-7 (20 across 6 folders), corpus-9 (1), retake-1 (26 across 4), retake-3 (2), retake-5 (3), round-two-2 (2), round-two-4 (2) and round-two-5 (4); no golden reads them (step 124)
+- [x] seven committed outside-repo maps predate D189 (tests-folder-is-tests): corpus-2, corpus-5, corpus-10, corpus-12, retake-2, retake-3 and round-two-5 read 73 JavaScript and TypeScript files under a tests/ folder as terrain, founding 30 cells of their own (retake-2 alone 44 files in 15 cells); no golden reads them, and each would move if regenerated (step 123)
+- [x] atis's cache turns a reviewed repo's format check red: apps/atis/src/cache.ts writes .atis/{terrain,structure,entries}/<sha>.json into the repo and hides them from git with a .atis/.gitignore of *, which prettier never reads, so checkride run after atis on svelte failed its format slot on four .atis/*.json files; javascript-1's README now clears .atis before its checkride run, and a cache under .git/ or written as prettier would write it would not trip it (step 123)
+- [x] a Python subpackage whose __init__.py exports nothing shows an interface of 0 now that it is a cell (D187): fixtures/python-1's util (fan-in 21), extensions (7), extensions/models (2) and voice/models (2) read interface_size 0 and no exports, since a folder cell's interface is its barrel alone (D45), while its readers import the submodules directly; interface notices still find those files through interfaceFiles in libs/core/src/notices.ts, so only the membrane's names and the HUD's sizes go quiet (step 124)
+- [x] fixtures/javascript-1 predates D187 (nested-barrel-cells): step 123 regenerated it before step 124's rule, and its compiler and internal folder cells hold 10 nested index.js barrels; a scratch run on the same worktree and .check/ reads 50 cells, not 40 (internal/client with 74 files, internal/server, internal/flags, the compiler's 1-parse, 2-analyze and 3-transform among 10 new folder cells), and every notice names packages/svelte/src/internal/client, read by 28 files, where the committed map says packages/svelte/src/internal and 36 (step 124)
+- [x] ten committed outside maps predate D187 (nested-barrel-cells) and would move if regenerated: their folder cells hold nested index or __init__ barrels, in corpus-2 (8), corpus-3 (2), corpus-7 (20 across 6 folders), corpus-9 (1), retake-1 (26 across 4), retake-3 (2), retake-5 (3), round-two-2 (2), round-two-4 (2) and round-two-5 (4); no golden reads them (step 124)
+- [x] docs/producers.md overstates the muted lines: its evidence section says each gap is a line in meta.instruments.muted, but a pack with no test check (bash always, terraform without .tftest.hcl runs) leaves none, as P99 (a tangent) records, so shell-1's and terraform-1's maps say nothing of their missing coverage; one sentence in the page's list makes it true (step 87)
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -412,6 +416,13 @@ Harvest results this boundary:
 - **blocker**: park 103 · core's deleted-export candidate (liveConsumers in libs/core/src/notices.ts) checks a base edge's names only against head exports, never that the base exported them, so a Go file's same-package reads of unexported names (App.isASCII, getAuthSchemes) and a Terraform file's local.* reads all count as deleted exports: 3 of fixtures/go-1's 6 notices are false, with the same cause as P100's 6 on terraform-1 (step 86) → three Go and six Terraform notices are false, so a fix step regenerates both maps before range 24's stop
 - 2026-11-01, at the step 122 boundary: 1 parked idea, classified.
 - **tangent**: park 104 · chrome.test.ts's HUD-fit test (libs/svg) renders every committed fixture map and timed out at 5 s under the full suite once in step 122's check, passing alone in 1.1 s; javascript-1's 2,417-cell map is the heavy one, which step 123's regeneration shrinks (step 122) → a load-sensitive timeout that passed alone and on the rerun, and step 123 shrinks the map behind it
+- 2026-11-01, at range 24 of 34's stop: 6 parked ideas, classified.
+- **tangent**: park 105 · seven committed outside-repo maps predate D189 (tests-folder-is-tests): corpus-2, corpus-5, corpus-10, corpus-12, retake-2, retake-3 and round-two-5 read 73 JavaScript and TypeScript files under a tests/ folder as terrain, founding 30 cells of their own (retake-2 alone 44 files in 15 cells); no golden reads them, and each would move if regenerated (step 123) → no golden reads them, and they were scored as they stand
+- **blocker**: park 106 · atis's cache turns a reviewed repo's format check red: apps/atis/src/cache.ts writes .atis/{terrain,structure,entries}/<sha>.json into the repo and hides them from git with a .atis/.gitignore of *, which prettier never reads, so checkride run after atis on svelte failed its format slot on four .atis/*.json files; javascript-1's README now clears .atis before its checkride run, and a cache under .git/ or written as prettier would write it would not trip it (step 123) → a user's own format gate goes red after one atis run, and the fix lives in atis's cache alone
+- **tangent**: park 107 · a Python subpackage whose __init__.py exports nothing shows an interface of 0 now that it is a cell (D187): fixtures/python-1's util (fan-in 21), extensions (7), extensions/models (2) and voice/models (2) read interface_size 0 and no exports, since a folder cell's interface is its barrel alone (D45), while its readers import the submodules directly; interface notices still find those files through interfaceFiles in libs/core/src/notices.ts, so only the membrane's names and the HUD's sizes go quiet (step 124) → display only, since interface notices still find the submodules readers import
+- **blocker**: park 108 · fixtures/javascript-1 predates D187 (nested-barrel-cells): step 123 regenerated it before step 124's rule, and its compiler and internal folder cells hold 10 nested index.js barrels; a scratch run on the same worktree and .check/ reads 50 cells, not 40 (internal/client with 74 files, internal/server, internal/flags, the compiler's 1-parse, 2-analyze and 3-transform among 10 new folder cells), and every notice names packages/svelte/src/internal/client, read by 28 files, where the committed map says packages/svelte/src/internal and 36 (step 124) → the JavaScript map this stop reviews predates the cell rule step 124 shipped
+- **tangent**: park 109 · ten committed outside maps predate D187 (nested-barrel-cells) and would move if regenerated: their folder cells hold nested index or __init__ barrels, in corpus-2 (8), corpus-3 (2), corpus-7 (20 across 6 folders), corpus-9 (1), retake-1 (26 across 4), retake-3 (2), retake-5 (3), round-two-2 (2), round-two-4 (2) and round-two-5 (4); no golden reads them (step 124) → no golden reads them, as with P105, for the nested-cell rule
+- **blocker**: park 110 · docs/producers.md overstates the muted lines: its evidence section says each gap is a line in meta.instruments.muted, but a pack with no test check (bash always, terraform without .tftest.hcl runs) leaves none, as P99 (a tangent) records, so shell-1's and terraform-1's maps say nothing of their missing coverage; one sentence in the page's list makes it true (step 87) → the page is the contract this range ships, and one sentence makes it true
 
 ## Log
 
@@ -3363,3 +3374,116 @@ folder, so it rides the branch into the PR.)*
   **5.** Four new cells show no interface of their own
 
   `util` (read by 21 files), `extensions`, `extensions/models` and `voice/models` have an `__init__.py` that exports nothing, and their readers import the submodules directly. A folder cell's interface is its barrel (D45), so they show an interface of 0 and no exports. Interface notices still find those submodules, since they look for files imported from outside a cell. Parked as P107.
+
+- 2026-11-01 — step 87 checkpointed · 15a790b2d — docs(producers): write the contract a language producer fills (8m)
+
+  **Summary**: `docs/producers.md` documents the `Producer` interface and what it is handed, the `Scan` a producer writes, part by part, with what core does with each part, the five producers as worked examples, and the evidence each language's checkride pack gives atis. It closes on a five-step recipe for a new language, none of which touches `libs/core/`.
+
+  1. The scan has no version field, and the page says what versions it
+  2. Every claim was read from the code, not from the decisions
+
+  **Readout**:
+
+  ```text
+  check        green: 1 of 1 checks
+  done-when    met
+  decisions    honored:
+               - D114 (producers-compose), D176 (other-language-evidence)
+               - D113 (go-producer), D115 (python-producer)
+               - D116 (terraform-producer), D117 (shell-producer)
+               - D184 (javascript-terrain)
+  constraints  14 of 14 honored
+  seam         held: 1 of 1 declared, no strays
+  diff         +388 -0 across 1 file
+               - docs/producers.md +388 -0
+  spent        8 min · 119s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Land it, then review the range at its stop. The page is the contract D114 (producers-compose) promised, and it closes the build's last step.
+
+  **1.** The scan has no version field, and the page says what versions it
+
+  The done-when calls the `Scan` "the versioned input a language producer writes". It carries no version of its own. It is a type core declares in `libs/core/src/map.ts`, so it moves with core, and the type checker holds every producer to it. The page says that, and names the two places that do carry a version: the terrain cache's key, a hash of atis's own code with core's included (D137 (cache-key)), so a changed producer misses the cache by itself, and the map's `meta.schema_version`, which is 1. It also says that a producer outside this repository would have nothing to declare against. A version field would be a change to core, and nothing in this build asks for one.
+
+  **2.** Every claim was read from the code, not from the decisions
+
+  Each producer's section comes from its module's header and from the file record it writes: what it claims, its test rule, its barrel, edges, exports and shapes, members, entry points, `code`, `functions`, `packages`, and what it needs to run. The evidence table is `READERS` in `apps/atis/src/sources/check.ts`, row for row, and the muted lines are the ones the five fixtures' `meta.instruments` actually carry. Decisions are cited by number and slug.
+
+- 2026-11-01 — range 24 of 34's stop recorded — the build's end: review one reviewed PR per new language, JavaScript among them (each map's cells are that language's modules, its evidence as [D176 (other-language-evidence)](#d176) reads it), and the producer contract; then `/plumbbob:finish`
+
+  **Summary**: Range 24 made atis read six languages. JavaScript joined the TypeScript producer, and Go, Python, Terraform and shell became producers of their own. Each language's checkride evidence is read as checkride writes it, and one reviewed outside PR per new language is rendered as a fixture. Three fixes the fixtures exposed came after: a deleted export counts only where the base exported it, a `tests/` folder is tests, and a nested barrel is a cell. `docs/producers.md` writes down the contract a producer fills. The JavaScript fixture predates the last of those fixes, and three parks lean blocker.
+
+  1. The JavaScript map predates step 124's cell rule
+  2. Each language's map draws its own modules, and reads its evidence as D176 does
+  3. The fixtures ran on the latest harness, except two from step 122
+  4. The producer contract is written, with one sentence too strong
+  5. Regenerating svelte turned up a defect in atis's cache
+
+  **Readout**:
+
+  ```text
+  steps        13 of 13 landed
+               - 120 7ef67c5 · 80 2fa9a83 · 81 a256463 · 82 607e031 · 83 6f1081f
+               - 84 4b337ff · 119 d153334 · 85 3b2bfdc · 86 5e63185 · 122 872b491
+               - 123 038a9f8 · 124 cf0ba63 · 87 15a790b
+  check        green: 1 of 1 checks, 13 landings
+  done-when    met
+  decisions    bent: D58 (fixtures-current-toolchain)
+               → go-1, terraform-1 ran 0.19.1 after 0.19.2; no artifact moved
+  constraints  14 of 14 honored
+  seam         strayed: 24 paths outside 7 steps' seams
+               - step 81: apps/atis/src/__tests__/producers.test.ts and 1 other
+               - step 82: apps/atis/src/__tests__/go.test.ts and 3 others
+               - step 83: apps/atis/src/sources/git.ts and 2 others
+               - step 84: apps/atis/scripts/bundle.ts and 4 others
+               - step 119: apps/atis/src/__tests__/cli.test.ts and 4 others
+               - step 85: libs/core/src/__tests__/evidence.test.ts and 2 others
+               - step 124: apps/atis/src/__tests__/git.test.ts and 1 other
+  diff         +1221758 -803956 across 100 files
+               - apps/atis/fixtures/check-targets/README.md +60 -6
+               - apps/atis/fixtures/check-targets/api/cmd/api/main.go +12 -0
+               - apps/atis/fixtures/check-targets/api/cmd/api/remove.go +5 -0
+               - apps/atis/fixtures/check-targets/api/go.mod +3 -0
+               - apps/atis/fixtures/check-targets/api/internal/greet/dot.go +5 -0
+               - apps/atis/fixtures/check-targets/api/internal/greet/greet.go +7 -0
+               - apps/atis/fixtures/check-targets/api/internal/greet/greet_test.go +9 -0
+               - and 93 more
+  spent        89h 2m · 1 red run · 7 drift warnings
+  ```
+
+  **Verdict**: ○ Out of plumb (decisions bent)
+
+  **Harvested**: **6** of 110 parked ideas open
+
+  | Park | What it is | Why it matters | Lean |
+  | --- | --- | --- | --- |
+  | P105 · Corpus maps predate tests rule | seven committed outside-repo maps predate D189 (tests-folder-is-tests): corpus-2, corpus-5, corpus-10, corpus-12, retake-2, retake-3 and round-two-5 read 73 JavaScript and TypeScript files under a tests/ folder as terrain, founding 30 cells of their own (retake-2 alone 44 files in 15 cells); no golden reads them, and each would move if regenerated (step 123) | a glance round reading them again would see test samples as cells | tangent: no golden reads them, and they were scored as they stand |
+  | P106 · Cache trips the repo's prettier | atis's cache turns a reviewed repo's format check red: apps/atis/src/cache.ts writes .atis/{terrain,structure,entries}/<sha>.json into the repo and hides them from git with a .atis/.gitignore of *, which prettier never reads, so checkride run after atis on svelte failed its format slot on four .atis/*.json files; javascript-1's README now clears .atis before its checkride run, and a cache under .git/ or written as prettier would write it would not trip it (step 123) | checkride's format slot fails on files atis wrote into the reviewed repo | blocker: a user's own format gate goes red after one atis run, and the fix lives in atis's cache alone |
+  | P107 · Empty init shows no interface | a Python subpackage whose __init__.py exports nothing shows an interface of 0 now that it is a cell (D187): fixtures/python-1's util (fan-in 21), extensions (7), extensions/models (2) and voice/models (2) read interface_size 0 and no exports, since a folder cell's interface is its barrel alone (D45), while its readers import the submodules directly; interface notices still find those files through interfaceFiles in libs/core/src/notices.ts, so only the membrane's names and the HUD's sizes go quiet (step 124) | four python-1 cells read interface 0 though up to 21 files read them | tangent: display only, since interface notices still find the submodules readers import |
+  | P108 · javascript-1 predates nested cells | fixtures/javascript-1 predates D187 (nested-barrel-cells): step 123 regenerated it before step 124's rule, and its compiler and internal folder cells hold 10 nested index.js barrels; a scratch run on the same worktree and .check/ reads 50 cells, not 40 (internal/client with 74 files, internal/server, internal/flags, the compiler's 1-parse, 2-analyze and 3-transform among 10 new folder cells), and every notice names packages/svelte/src/internal/client, read by 28 files, where the committed map says packages/svelte/src/internal and 36 (step 124) | its cells and every notice move once internal/client is a cell | blocker: the JavaScript map this stop reviews predates the cell rule step 124 shipped |
+  | P109 · Corpus maps predate nested cells | ten committed outside maps predate D187 (nested-barrel-cells) and would move if regenerated: their folder cells hold nested index or __init__ barrels, in corpus-2 (8), corpus-3 (2), corpus-7 (20 across 6 folders), corpus-9 (1), retake-1 (26 across 4), retake-3 (2), retake-5 (3), round-two-2 (2), round-two-4 (2) and round-two-5 (4); no golden reads them (step 124) | ten scored maps would draw more folder cells if regenerated | tangent: no golden reads them, as with P105, for the nested-cell rule |
+  | P110 · Producer page overstates muted | docs/producers.md overstates the muted lines: its evidence section says each gap is a line in meta.instruments.muted, but a pack with no test check (bash always, terraform without .tftest.hcl runs) leaves none, as P99 (a tangent) records, so shell-1's and terraform-1's maps say nothing of their missing coverage; one sentence in the page's list makes it true (step 87) | it says a missing channel always names itself, and two packs' maps do not | blocker: the page is the contract this range ships, and one sentence makes it true |
+
+  **Recommendation**: Confirm the leans, so P106, P108 and P110 become one more range of three small steps before `/plumbbob:finish`, and review the other four fixtures now. The JavaScript map is the one this stop reads for its cells and it predates step 124's rule, the producer page says one thing that is not so, and atis's cache turns a prettier repo's format check red. go-1, python-1, terraform-1 and shell-1 already draw their languages' modules and read their evidence as D176 (other-language-evidence) settles.
+
+  **1.** The JavaScript map predates step 124's cell rule
+
+  Step 123 regenerated `fixtures/javascript-1/` on the latest checkride and fallow. Its cells went from 2,417 to svelte's 40 source modules, its 2,465 test files moved to the shore, reach went from 2,203 entries to 114, and the map from 17.7 MB to 5.3 MB. Step 124 then gave a nested barrel a cell of its own, and svelte's `compiler` and `internal` hold 10 of them. A scratch run on the same worktree reads 50 cells, with `internal/client` (74 files) a cell of its own and every notice naming it, read by 28 files. The committed map still says `internal`, read by 36. The fixture is outside step 124's seam, so it is P108. It is the map this stop asks you to read for its cells.
+
+  **2.** Each language's map draws its own modules, and reads its evidence as D176 does
+
+  go-1 (fiber) draws its 39 packages as cells, and its `go test -json` events give 23 stitches. Its three false deleted-export notices went away at step 122. python-1 (openai-agents-python) draws each of the 13 packages under `src/agents/` as a cell since step 124, with pytest read as its verdict alone and no coverage channel, said in `muted`. terraform-1 draws its 26 modules as cells, with its root a called module since step 122's trailing-slash fix, and tflint and `terraform validate` as its findings. shell-1 (bash-it) draws 101 directory cells with shellcheck as its findings. javascript-1 carries the ts pack's coverage, mutants, fallow findings and stitches, with eslint muted by name. Four committed python-1 cells show an interface of 0 because their `__init__.py` exports nothing (P107).
+
+  **3.** The fixtures ran on the latest harness, except two from step 122
+
+  javascript-1 ran first on step 86's pins, to isolate the tests rule, and then on checkride 0.19.2 and fallow 3.38.1, released since. Only fallow's version stamp and one mutant moved between the two runs. python-1 ran on the shared checkride moved to 0.19.2. go-1 and terraform-1, regenerated at step 122, ran 0.19.1 a few hours after 0.19.2 shipped. 0.19.2's changes are to its own report and `init`, so no artifact atis reads differs. Other projects' test suites loaded the machine during the svelte runs, so the standalone Stryker attempt hit its 20-minute timeout. Both full runs' mutation slots finished, and the slot is kept as D58 allows.
+
+  **4.** The producer contract is written, with one sentence too strong
+
+  `docs/producers.md` covers the `Producer` interface, the `Scan` part by part with what core does with each part, the five producers as worked examples, the `READERS` table of evidence by pack, and the steps that add a language without touching `libs/core/`. The `Scan` carries no version field, and the page says what versions it instead. One claim is too strong: it says every missing channel is a `muted` line, but a pack with no test check (bash always, Terraform without `.tftest.hcl` runs) leaves none, as P99 recorded. That is P110.
+
+  **5.** Regenerating svelte turned up a defect in atis's cache
+
+  atis writes its cache into the reviewed repo's `.atis/` and hides it from git with a `.gitignore` of `*`, which prettier never reads. So checkride's `format` slot, run after atis on svelte, failed on four `.atis/*.json` files. The README now clears `.atis/` before its checkride run. Any repo that formats with `prettier --check .` hits the same red the first time checkride runs after atis. That is P106.

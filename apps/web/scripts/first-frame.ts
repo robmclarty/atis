@@ -52,9 +52,16 @@ const targets: readonly Target[] = (process.argv.length > 2 ? process.argv.slice
   return at === -1 ? { repo: resolve(given), base: 'HEAD~1' } : { repo: resolve(given.slice(0, at)), base: given.slice(at + 1) };
 });
 
+/** Where the warm run's map is kept: `atis/first-frame.json` under the target's own git directory, never its working tree (D190). */
+const recordIn = (repo: string): string => {
+  const asked = spawnSync('git', ['rev-parse', '--git-path', 'atis/first-frame.json'], { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  if (asked.status !== 0) throw new Error(`git finds no repository at ${repo}: ${asked.stderr}`);
+  return resolve(repo, asked.stdout.trim());
+};
+
 /** Fill the terrain cache for a target, untimed: the run being measured is the second one. */
 const warm = (target: Target): void => {
-  const out = join(target.repo, '.atis', 'first-frame.json');
+  const out = recordIn(target.repo);
   const done = spawnSync(process.execPath, [CLI, '--repo', target.repo, '--base', target.base, '--out', out], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   if (done.status !== 0) throw new Error(`atis would not map ${target.repo}: ${done.stderr}`);
 };

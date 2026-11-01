@@ -1,4 +1,5 @@
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -23,7 +24,8 @@ import { TOUR_SYSTEM, writeTour } from '../tour.js';
  * it called. The prompt is golden too, so what the model reads of a map, and
  * that it is the map alone, is pinned: paths, names, line numbers and the
  * notices, never a line of code. Asked again for the same base and head, it
- * takes the tour `.atis/tours/` keeps and calls nothing. The goldens are
+ * takes the tour the git directory keeps in `atis/tours/`, from any worktree
+ * of the repository, and calls nothing (D190). The goldens are
  * written back under `ATIS_UPDATE_GOLDENS=1` and read before committing.
  */
 
@@ -44,12 +46,23 @@ const STOPS = {
   ],
 };
 
+/** git in `cwd`, with no author config of the machine running the test. */
+const git = (cwd: string, ...args: readonly string[]): string =>
+  execFileSync('git', ['-c', 'user.name=atis', '-c', 'user.email=atis@example.invalid', '-c', 'commit.gpgsign=false', ...args], { cwd, encoding: 'utf8' }).trim();
+
+/** Where `repo` keeps the tour of `head`, which must be a place. */
+const keptAt = (repo: string, head: string): string => {
+  const place = cachePath(repo, head);
+  if ('unkept' in place) throw new Error(place.unkept);
+  return place.path;
+};
+
 let root: string;
 let mapPath: string;
 beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), 'tour-test-'));
-  // The map sits in a repository of its own, which keeps the tour.
-  mkdirSync(join(root, '.git'));
+  // The map sits in a repository of its own, whose git directory keeps the tour.
+  git(root, 'init', '--quiet');
   mapPath = join(root, 'map.json');
   cpSync(DEMO_MAP, mapPath);
 });
@@ -109,10 +122,12 @@ test('on the stub engine the demo map gets the tour the golden holds, written be
   expect(configs).toEqual([{ providers: { claude_cli: { auth_mode: 'oauth', default_cwd: io.scratches[0] } } }]);
   expect(io.lines[0]).toBe(`tour: asking claude_cli · sonnet for a tour of main..a1b2c3d4e5f6's 6 notices, sending the map alone, never the code or its diff`);
   expect(io.lines[1]).toBe('tour: stub · stub-model answered with 6 stops');
-  const kept = cachePath(root, DEMO.meta.head) ?? '';
+  const kept = keptAt(root, DEMO.meta.head);
+  expect(kept).toBe(join(root, '.git', 'atis', 'tours', `${DEMO.meta.head}.json`));
   expect(io.lines.slice(2)).toEqual([`tour: wrote ${join(root, 'tour.json')}`, `tour: kept it at ${kept}`]);
   expect(readFileSync(kept, 'utf8')).toBe(written);
-  expect(readFileSync(join(root, '.atis', '.gitignore'), 'utf8')).toBe('*\n');
+  // Nothing is written in the working tree but the tour asked for (D190).
+  expect(readdirSync(root).toSorted()).toEqual(['.git', 'map.json', 'tour.json']);
   // The CLI's scratch directory is cleared once the call is done.
   expect(existsSync(io.scratches[0] ?? '')).toBe(false);
 
@@ -172,7 +187,33 @@ test('a working tree names no commit, so its tour is written but never kept', as
   const io = ioOf(() => make_stub_engine([{ prefix: 'atis/tour', content: STOPS }]));
   expect(await tourCommand(['map.json'], io)).toBe(0);
   expect(io.lines.at(-1)).toBe('tour: a working tree names no commit, so the tour is not kept');
+  expect(existsSync(join(root, '.git', 'atis'))).toBe(false);
   expect(existsSync(join(root, '.atis'))).toBe(false);
+});
+
+test('a tour kept from one worktree is taken in another of the same repository, and a .atis/tours/ an older tour left is neither read nor removed (D190)', async () => {
+  git(root, 'commit', '--quiet', '--allow-empty', '-m', 'chore: begin');
+  const worktree = join(mkdtempSync(join(tmpdir(), 'tour-worktree-')), 'linked');
+  try {
+    git(root, 'worktree', 'add', '--quiet', '--detach', worktree);
+    // A tour an older atis kept in the working tree, which a run never reads.
+    mkdirSync(join(worktree, '.atis', 'tours'), { recursive: true });
+    const older = join(worktree, '.atis', 'tours', `${DEMO.meta.head}.json`);
+    writeFileSync(older, JSON.stringify({ base: 'main', head: DEMO.meta.head, stops: [] }));
+    cpSync(DEMO_MAP, join(worktree, 'map.json'));
+    const linked = { ...ioOf(() => make_stub_engine([{ prefix: 'atis/tour', content: STOPS }])), cwd: worktree };
+    expect(await tourCommand(['map.json'], linked)).toBe(0);
+    expect(linked.lines[0]).toContain('asking claude_cli');
+    expect(existsSync(older)).toBe(true);
+
+    // The main worktree takes the tour the linked one kept, since they share one git directory.
+    const main = ioOf(none);
+    expect(await tourCommand(['map.json'], main)).toBe(0);
+    expect(main.lines[0]).toBe(`tour: ${keptAt(root, DEMO.meta.head)} already keeps the tour of main..a1b2c3d4e5f6, so no model was called`);
+    expect(readFileSync(join(root, 'tour.json'), 'utf8')).toBe(readFileSync(join(worktree, 'tour.json'), 'utf8'));
+  } finally {
+    rmSync(dirname(worktree), { recursive: true, force: true });
+  }
 });
 
 test('misuse and a map it cannot read exit 2, a failed call exits 1, and --help prints the usage (C4)', async () => {
@@ -200,13 +241,22 @@ test('an API provider is called with its key from the environment, and the repos
   const configs: EngineConfig[] = [];
   const io = { ...ioOf((config) => (configs.push(config), make_stub_engine([{ prefix: 'atis/tour', content: STOPS }]))), env: { ANTHROPIC_API_KEY: 'sk-test' } };
   const elsewhere = mkdtempSync(join(tmpdir(), 'tour-repo-'));
+  const nowhere = mkdtempSync(join(tmpdir(), 'tour-none-'));
   try {
+    git(elsewhere, 'init', '--quiet');
     expect(await tourCommand(['map.json', '--provider', 'anthropic', '--repo', elsewhere, '--out', 'out/../named.json'], io)).toBe(0);
     expect(configs).toEqual([{ providers: { anthropic: { api_key: 'sk-test', transport: 'native' } } }]);
     expect(io.lines[0]).toContain('asking anthropic · claude-sonnet-5-5');
     expect(existsSync(join(root, 'named.json'))).toBe(true);
-    expect(existsSync(cachePath(elsewhere, DEMO.meta.head) ?? '')).toBe(true);
+    expect(existsSync(keptAt(elsewhere, DEMO.meta.head))).toBe(true);
+
+    // A directory git finds no repository in keeps nothing, and the command says so.
+    const unkept = ioOf(() => make_stub_engine([{ prefix: 'atis/tour', content: STOPS }]));
+    expect(await tourCommand(['map.json', '--repo', nowhere, '--out', 'unkept.json'], unkept)).toBe(0);
+    expect(unkept.lines.at(-1)).toBe(`tour: git finds no repository at ${nowhere}, so the tour is not kept`);
+    expect(readdirSync(nowhere)).toEqual([]);
   } finally {
     rmSync(elsewhere, { recursive: true, force: true });
+    rmSync(nowhere, { recursive: true, force: true });
   }
 });

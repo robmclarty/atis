@@ -1,10 +1,11 @@
 /**
  * command: `pnpm --filter tour start <map.json>` (D183), with its world
  * handed in so a test runs it whole on fascicle's stub engine. It reads the
- * map, takes a tour kept for the map's base and head if `.atis/tours/` holds
- * one, else asks the provider for one, printing the provider and the model
- * before and after the call (D182), and writes `tour.json` beside the map, or
- * where `--out` says, then keeps it by the head's sha. It exits 0 once it has
+ * map, takes a tour kept for the map's base and head if the repository's git
+ * directory holds one in `atis/tours/` (D190), else asks the provider for
+ * one, printing the provider and the model before and after the call (D182),
+ * and writes `tour.json` beside the map, or where `--out` says, then keeps it
+ * by the head's sha. It exits 0 once it has
  * written the tour, 2 on misuse or a map it cannot read (C4), and 1 when the
  * call fails.
  */
@@ -37,8 +38,9 @@ numbers, and the notices' whys and thresholds, never the code or its diff.
   --model <id>       the model to call (default: sonnet on claude_cli,
                      claude-sonnet-5-5 on anthropic; openai and openrouter
                      need one)
-  --repo <path>      the repository whose .atis/tours/ keeps the tour by its
-                     head's sha (default: the one holding the map)
+  --repo <path>      the repository whose git directory keeps the tour in
+                     atis/tours/ by its head's sha (default: the one holding
+                     the map)
   --out <file>       where to write the tour (default: tour.json beside the map)
 `;
 
@@ -142,8 +144,8 @@ export const tourCommand = async (argv: readonly string[], io: TourIo): Promise<
       if (written.called !== undefined) io.out(`tour: ${written.called.provider} · ${written.called.model} answered with ${String(written.tour.stops.length)} stops`);
       writeFileSync(outPath, tourText(written.tour));
       io.out(`tour: wrote ${outPath}`);
-      const keptAt = keepTour(repo, written.tour);
-      io.out(keptAt === undefined ? 'tour: a working tree names no commit, so the tour is not kept' : `tour: kept it at ${keptAt}`);
+      const place = keepTour(repo, written.tour);
+      io.out('unkept' in place ? `tour: ${place.unkept}, so the tour is not kept` : `tour: kept it at ${place.path}`);
       return 0;
     } catch (error) {
       io.out(`tour: the call to ${plan.call.provider} · ${plan.call.model} failed: ${error instanceof Error ? error.message : String(error)}`);

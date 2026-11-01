@@ -31,28 +31,29 @@
  * names a file the held map places or a notice by its rank, anything else
  * refused, and is relayed to each open page as `{ "kind": "highlight", … }`;
  * the answer says how many pages it reached, so the agent hears when no tab
- * is open. A served run says where to send it in `.atis/serve.json` under
- * the repository, readable by its owner alone, since the token in it opens
- * the map (D138). A run handed a tour written for its map serves it beside
- * the map at `/tour.json`, read only and to the run's token as the map is
- * (D112, D183), and the URL it opens carries `tour`, so the page asks for
- * one only when one is served and a run with none shows nothing new.
+ * is open. A served run says where to send it in `atis/serve.json` under
+ * its working tree's own git directory, readable by its owner alone, since
+ * the token in it opens the map (D138, D190). A run handed a tour written
+ * for its map serves it beside the map at `/tour.json`, read only and to the
+ * run's token as the map is (D112, D183), and the URL it opens carries
+ * `tour`, so the page asks for one only when one is served and a run with
+ * none shows nothing new.
  * The asset directory is an argument, so a test serves a stub `index.html`
  * and no test needs a Vite build (D133).
  */
 
 import { execFile } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
 import { STATUS_CODES, createServer } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Duplex } from 'node:stream';
-import { extname, join, resolve, sep } from 'node:path';
+import { dirname, extname, join, resolve, sep } from 'node:path';
 
 import { CONFIG_FILE, DEFAULT_EDITOR, configuredEditor } from 'core';
 import { WebSocket, WebSocketServer } from 'ws';
 
-import { writeAtomic } from './cache.js';
+import { worktreeDirectory } from './cache.js';
 
 /** The run's check artifacts: where checkride wrote them, and the slots the map holds, the only ones served. */
 export type ServedChecks = {
@@ -156,10 +157,8 @@ const SOCKET_PATH = '/socket';
 /** The most one message from the page may hold on the socket, which carries nothing from it. */
 const SOCKET_LIMIT = 1024;
 
-/** Where a serving run says how to reach it, under the reviewed repository (D138), beside the cache. */
-export const SERVING_FILE = join('.atis', 'serve.json');
-/** What `.atis/` holds for git: nothing, so atis never edits the repository's own ignores. */
-const IGNORE_ALL = '*\n';
+/** The file a serving run says how to reach it in (D138). */
+const SERVING_FILE = 'serve.json';
 /** Read and write for the owner alone: the token in the file opens the map. */
 const OWNER_ONLY = 0o600;
 
@@ -294,17 +293,22 @@ const refusalOf = (asked: HighlightRequest, held: Targets): string | undefined =
 };
 
 /**
- * Say how to reach this run in `.atis/serve.json` under `repo` (D138): its
- * port, its token and its process, written whole or not at all, readable and
- * writable by its owner alone, with `.atis/` ignoring itself in git as the
- * cache's does. Returns where it went; throws on a repository it cannot
- * write to.
+ * Where a run serving `repo`'s working tree says how to reach it: under that
+ * working tree's own git directory, never the tree itself, so a linked
+ * worktree's run and the main one's each keep their own (D138, D190). Throws
+ * where git finds no repository.
+ */
+export const servingPath = (repo: string): string => join(worktreeDirectory(repo), SERVING_FILE);
+
+/**
+ * Say how to reach this run in the `atis/serve.json` of `repo`'s git
+ * directory (D138, D190): its port, its token and its process, written whole
+ * or not at all, readable and writable by its owner alone. Returns where it
+ * went; throws on a repository it cannot write to.
  */
 export const keepServing = (repo: string, serving: Serving): string => {
-  const path = join(repo, SERVING_FILE);
-  const ignore = join(repo, '.atis', '.gitignore');
-  mkdirSync(join(repo, '.atis'), { recursive: true });
-  if (!existsSync(ignore)) writeAtomic(ignore, IGNORE_ALL);
+  const path = servingPath(repo);
+  mkdirSync(dirname(path), { recursive: true });
   const temp = `${path}.${String(serving.pid)}.tmp`;
   rmSync(temp, { force: true });
   writeFileSync(temp, `${JSON.stringify(serving)}\n`, { mode: OWNER_ONLY });
@@ -322,11 +326,11 @@ const isRunning = (pid: number): boolean => {
   }
 };
 
-/** What `.atis/serve.json` under `repo` names, whatever its process's state; none when there is none, or it does not read as one. */
+/** What `repo`'s `atis/serve.json` names, whatever its process's state; none when there is none, it does not read as one, or `repo` is in no repository. */
 const servingFile = (repo: string): Serving | undefined => {
   let value: unknown;
   try {
-    value = JSON.parse(readFileSync(join(repo, SERVING_FILE), 'utf8'));
+    value = JSON.parse(readFileSync(servingPath(repo), 'utf8'));
   } catch {
     return undefined;
   }
@@ -337,7 +341,7 @@ const servingFile = (repo: string): Serving | undefined => {
   return { port, token, pid };
 };
 
-/** The run serving `repo`'s tab, as its `.atis/serve.json` names it, while that process runs; none when no run serves it, or the one that did has died without taking the file back (D138). */
+/** The run serving `repo`'s tab, as its `atis/serve.json` names it, while that process runs; none when no run serves it, or the one that did has died without taking the file back (D138). */
 export const servingIn = (repo: string): Serving | undefined => {
   const serving = servingFile(repo);
   return serving !== undefined && isRunning(serving.pid) ? serving : undefined;
@@ -345,7 +349,7 @@ export const servingIn = (repo: string): Serving | undefined => {
 
 /** Take back what `keepServing` wrote, when the file still names process `pid`; a later run serving the same repository keeps its own. */
 export const dropServing = (repo: string, pid: number): void => {
-  if (servingFile(repo)?.pid === pid) rmSync(join(repo, SERVING_FILE), { force: true });
+  if (servingFile(repo)?.pid === pid) rmSync(servingPath(repo), { force: true });
 };
 
 /** Whether `ref` names a commit in `repo`, by `git rev-parse --verify`; a ref opening with `-` is never handed to git, which would read it as a flag. */

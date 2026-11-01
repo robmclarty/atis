@@ -1,22 +1,42 @@
 /**
- * cache: a written tour kept by its head's sha under the reviewed
- * repository's `.atis/tours/` (D177), so asking again for the same change
- * calls no model. A kept tour is used only when it was written for the same
+ * cache: a written tour kept by its head's sha in `atis/tours/` under the
+ * reviewed repository's git directory, `git rev-parse --git-common-dir`, as
+ * atis keeps its own cache (D177, D190), so asking again for the same change
+ * calls no model, from any worktree of it, and nothing is written in the
+ * working tree. A kept tour is used only when it was written for the same
  * base and head as the map asked about (D183); a working tree's map names no
- * commit, so it is never kept. `.atis/` ignores itself in git, as atis's own
- * cache leaves it, so the tour never edits the repository's ignores.
+ * commit, and a directory git finds no repository in has no git directory, so
+ * neither is ever kept. A `.atis/tours/` an older tour left in the working
+ * tree is neither read nor removed.
  */
 
+import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 
 import type { Tour } from './tour.js';
 
 /** What a working tree's map names as its head, which no commit is. */
 const WORKING_TREE = 'working-tree';
 
-/** Where the tour of `head` is kept in `repo`, or none for a working tree. */
-export const cachePath = (repo: string, head: string): string | undefined => (head === WORKING_TREE || !/^[0-9a-f]{7,64}$/.test(head) ? undefined : join(repo, '.atis', 'tours', `${head}.json`));
+/** Where a tour is kept, or why it is not. */
+type CachePlace = { readonly path: string } | { readonly unkept: string };
+
+/** The git directory every worktree of `repo` shares, as git names it there; none where git finds no repository. */
+const commonDirectory = (repo: string): string | undefined => {
+  try {
+    return resolve(repo, execFileSync('git', ['rev-parse', '--git-common-dir'], { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim());
+  } catch {
+    return undefined;
+  }
+};
+
+/** Where the tour of `head` is kept in `repo`, or why it is not: a working tree names no commit, and no repository has no git directory. */
+export const cachePath = (repo: string, head: string): CachePlace => {
+  if (head === WORKING_TREE || !/^[0-9a-f]{7,64}$/.test(head)) return { unkept: 'a working tree names no commit' };
+  const common = commonDirectory(repo);
+  return common === undefined ? { unkept: `git finds no repository at ${repo}` } : { path: join(common, 'atis', 'tours', `${head}.json`) };
+};
 
 const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> => typeof value === 'object' && value !== null && !Array.isArray(value);
 
@@ -40,22 +60,19 @@ export const tourText = (tour: Tour): string => `${JSON.stringify({ base: tour.b
 
 /** The tour kept for this base and head in `repo`, if one is. */
 export const keptTour = (repo: string, base: string, head: string): { readonly tour: Tour; readonly path: string } | undefined => {
-  const path = cachePath(repo, head);
-  if (path === undefined || !existsSync(path)) return undefined;
-  const tour = readTour(readFileSync(path, 'utf8'));
-  return tour?.base === base && tour.head === head ? { tour, path } : undefined;
+  const place = cachePath(repo, head);
+  if ('unkept' in place || !existsSync(place.path)) return undefined;
+  const tour = readTour(readFileSync(place.path, 'utf8'));
+  return tour?.base === base && tour.head === head ? { tour, path: place.path } : undefined;
 };
 
-/** Keep `tour` for its head in `repo`, atomically, under a `.atis/` that ignores itself. Returns where it went, or none for a working tree. */
-export const keepTour = (repo: string, tour: Tour): string | undefined => {
-  const path = cachePath(repo, tour.head);
-  if (path === undefined) return undefined;
-  const directory = join(repo, '.atis');
-  mkdirSync(join(directory, 'tours'), { recursive: true });
-  const ignore = join(directory, '.gitignore');
-  if (!existsSync(ignore)) writeFileSync(ignore, '*\n');
-  const partial = `${path}.partial`;
+/** Keep `tour` for its head in `repo`, atomically, under its git directory. Returns where it went, or why it was not kept. */
+export const keepTour = (repo: string, tour: Tour): CachePlace => {
+  const place = cachePath(repo, tour.head);
+  if ('unkept' in place) return place;
+  mkdirSync(dirname(place.path), { recursive: true });
+  const partial = `${place.path}.partial`;
   writeFileSync(partial, tourText(tour));
-  renameSync(partial, path);
-  return path;
+  renameSync(partial, place.path);
+  return place;
 };

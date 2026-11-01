@@ -163,13 +163,14 @@ test('the repo’s own fallow runs each analysis on the extraction, as checkride
 const KEY: StructureKey = { code: 'c'.repeat(64), fallow: '3.22.0' };
 const STRUCTURE = structureOf(RUNS) as MeasuredStructure;
 
-test('a structure kept for a commit reads back whole, and misses by name on other code, another fallow or a bad entry', () => {
+test('a structure kept for a commit reads back whole, under the git directory, and misses by name on other code, another fallow or a bad entry (D190)', () => {
   const repo = temp('kept');
+  execFileSync('git', ['init', '--quiet'], { cwd: repo });
   const path = writeStructure(repo, SHA, KEY, STRUCTURE);
 
   expect(path).toBe(structurePath(repo, SHA));
-  expect(path).toBe(join(repo, '.atis', 'structure', `${SHA}.json`));
-  expect(readFileSync(join(repo, '.atis', '.gitignore'), 'utf8')).toBe('*\n');
+  expect(path).toBe(join(repo, '.git', 'atis', 'structure', `${SHA}.json`));
+  expect(existsSync(join(repo, '.atis'))).toBe(false);
   expect(readStructure(repo, SHA, KEY)).toEqual({ hit: true, structure: STRUCTURE });
   expect(readStructure(repo, OTHER_SHA, KEY)).toEqual({ hit: false, reason: 'no entry' });
   expect(readStructure(repo, SHA, { ...KEY, code: 'd'.repeat(64) })).toEqual({ hit: false, reason: 'code changed' });
@@ -228,8 +229,8 @@ test('both sides are measured once, kept per commit beside the terrain, and reco
 
   const first = run({ repo, base: 'HEAD~1', out: out('first'), verbose: true });
   expect(first.exitCode, first.stderr).toBe(0);
-  expect(first.stderr).toContain(`structure base miss (no entry), measured, wrote .atis/structure/${base}.json`);
-  expect(first.stderr).toContain(`structure head miss (no entry), measured, wrote .atis/structure/${head}.json`);
+  expect(first.stderr).toContain(`structure base miss (no entry), measured, wrote .git/atis/structure/${base}.json`);
+  expect(first.stderr).toContain(`structure head miss (no entry), measured, wrote .git/atis/structure/${head}.json`);
   expect(first.stderr).toMatch(/structure head\s+\d+ ms/);
   expect(mapAt(out('first')).meta.instruments.structure).toEqual({ base: { fallow: '3.22.0' }, head: { fallow: '3.22.0' } });
   // Three analyses on each extraction, never on the working tree itself.
@@ -240,8 +241,8 @@ test('both sides are measured once, kept per commit beside the terrain, and reco
   // The second run reads both sides, the terrain too, and runs fallow on neither.
   const second = run({ repo, base: 'HEAD~1', out: out('second'), verbose: true });
   expect(second.stderr).toContain('terrain cache hit');
-  expect(second.stderr).toContain(`structure base hit, .atis/structure/${base}.json`);
-  expect(second.stderr).toContain(`structure head hit, .atis/structure/${head}.json`);
+  expect(second.stderr).toContain(`structure base hit, .git/atis/structure/${base}.json`);
+  expect(second.stderr).toContain(`structure head hit, .git/atis/structure/${head}.json`);
   expect(calls(log)).toHaveLength(6);
   expect(bytesBesideTheClock(out('second'))).toBe(bytesBesideTheClock(out('first')));
 
@@ -255,15 +256,16 @@ test('both sides are measured once, kept per commit beside the terrain, and reco
   expect(bytesBesideTheClock(out('moved'))).toBe(bytesBesideTheClock(out('first')));
 
   // --no-cache measures both sides afresh and keeps nothing.
-  rmSync(join(repo, '.atis', 'structure'), { recursive: true });
+  rmSync(join(repo, '.git', 'atis', 'structure'), { recursive: true });
   const off = run({ repo, base: 'HEAD~1', out: out('off'), verbose: true, cache: false });
   expect(off.stderr).toContain('structure base off (--no-cache)');
   expect(off.stderr).toContain('structure head off (--no-cache)');
-  expect(existsSync(join(repo, '.atis', 'structure'))).toBe(false);
+  expect(existsSync(join(repo, '.git', 'atis', 'structure'))).toBe(false);
   expect(mapAt(out('off')).meta.instruments.structure).toEqual({ base: { fallow: '3.22.0' }, head: { fallow: '3.22.0' } });
 
-  // The repository's own status is untouched: the stub stays ignored and the cache ignores itself.
+  // The repository's own status is untouched: the stub stays ignored, and the cache sits in the git directory.
   expect(git('status', '--porcelain')).toBe('');
+  expect(git('status', '--porcelain', '--ignored')).toBe('!! node_modules/');
 }, MINUTE);
 
 test('a repository with no fallow of its own says so on both sides, and a muted analysis is never kept (C2)', () => {

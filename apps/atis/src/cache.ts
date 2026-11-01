@@ -3,27 +3,32 @@
  *
  * The base side of a run depends on the base commit alone: its scan and what
  * the scan read from each file, the history window at it (D8), and its
- * terrain's own layout. Each is costly and
- * none changes while the commit does not, so a run on a base it has seen reads
- * them from `.atis/terrain/<sha>.json` under the reviewed repository instead
- * of extracting, scanning and walking the log again. Beside its commit, an
- * entry is keyed by a hash of the code that wrote it, read from atis's own
- * files at startup, and a hash of the config it was laid out under, so changed
- * code or a changed config misses by itself, whatever the version says. Every
- * entry is written atomically, and one that will not read is a miss, never an
- * error. `.atis/.gitignore` holds `*`, so atis never edits the repository's
- * own ignores. A base the cache has not seen is laid out from the nearest
- * ancestor it has, so the terrain holds still across bases (D97).
+ * terrain's own layout. Each is costly and none changes while the commit does
+ * not, so a run on a base it has seen reads them from `atis/terrain/<sha>.json`
+ * under the reviewed repository's git directory instead of extracting,
+ * scanning and walking the log again. Beside its commit, an entry is keyed by
+ * a hash of the code that wrote it, read from atis's own files at startup, and
+ * a hash of the config it was laid out under, so changed code or a changed
+ * config misses by itself, whatever the version says. Every entry is written
+ * atomically, and one that will not read is a miss, never an error. A base
+ * the cache has not seen is laid out from the nearest ancestor it has, so the
+ * terrain holds still across bases (D97).
+ *
+ * Every entry sits under `git rev-parse --git-common-dir`, never in the
+ * working tree, so no gate the repository runs over its own files reads one,
+ * and every linked worktree of the repository shares them, since each is
+ * keyed by a commit they all hold (D190). A `.atis/` an older atis left in
+ * the working tree is neither read nor removed.
  *
  * Beside each terrain sits what the reviewed repo's own fallow measured of a
- * commit, at `.atis/structure/<sha>.json`: the base's, read on the same runs
+ * commit, at `atis/structure/<sha>.json`: the base's, read on the same runs
  * the terrain is, and the head's, per head commit, so a second run on one
  * change runs fallow on neither side (D98, D136). It is keyed by the code
  * that read it and the fallow that measured it, since a repository that moves
  * its fallow pin would otherwise compare a base measured by one version with
  * a head measured by another, while its terrain stands as it was.
  *
- * Beside them, at `.atis/entries/<sha>.json`, sit the entry points that
+ * Beside them, at `atis/entries/<sha>.json`, sit the entry points that
  * fallow listed for a head commit, under the same key, so the head's scan,
  * read from git's own objects, needs no extraction of the head on a second
  * run either (D136, D172).
@@ -32,7 +37,7 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
-import { basename, dirname, join, relative, sep } from 'node:path';
+import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { Commit, Config, Layout, Structure } from 'core';
@@ -77,14 +82,14 @@ export type StructureKey = {
 /** A hit carries the structure; a miss says why. */
 export type StructureRead = { readonly hit: true; readonly structure: MeasuredStructure } | { readonly hit: false; readonly reason: string };
 
-const DIRECTORY = '.atis';
+/** The directory atis keeps its files in, under a git directory (D190). */
+const DIRECTORY = 'atis';
 const TERRAIN = 'terrain';
 const STRUCTURE = 'structure';
 const ENTRIES = 'entries';
 const ENTRY = '.json';
 /** How many commits back from a base the cache looks for an ancestor's terrain to relax from (D97). */
 const ANCESTRY = 1000;
-const IGNORE_ALL = '*\n';
 const TESTS = '__tests__';
 /** The files that are code: TypeScript sources under a test run, JavaScript once built; never a declaration or a source map. */
 const CODE = /\.(?:[cm]?js|[cm]?ts|tsx)$/;
@@ -107,25 +112,61 @@ export function writeAtomic(path: string, text: string | Uint8Array): void {
   renameSync(temp, path);
 }
 
-/** Where a base commit's terrain is kept, under the reviewed repository. */
+/** What git answers to `rev-parse` with `args` in `repo`, as a path: git gives one relative to where it was asked when it can, so it is resolved there. */
+function gitPath(repo: string, args: readonly string[]): string {
+  return resolve(repo, execFileSync('git', ['rev-parse', ...args], { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim());
+}
+
+/** Each repository's two directories, asked of git once a process, since neither moves while it runs. */
+const commonDirs = new Map<string, string>();
+const worktreeDirs = new Map<string, string>();
+
+/** The answer `ask` gives for `repo`, kept in `asked` once it has one; a failure is never kept, so a directory that later holds a repository is asked again. */
+function askedOnce(asked: Map<string, string>, repo: string, ask: (at: string) => string): string {
+  const at = resolve(repo);
+  const kept = asked.get(at);
+  if (kept !== undefined) return kept;
+  const answer = ask(at);
+  asked.set(at, answer);
+  return answer;
+}
+
+/**
+ * Where atis keeps what any worktree of `repo` may read, each file keyed by a
+ * commit: `atis/` under `git rev-parse --git-common-dir`, out of every working
+ * tree and shared by each of them (D190). Throws where git finds no repository.
+ */
+function keptDirectory(repo: string): string {
+  return askedOnce(commonDirs, repo, (at) => join(gitPath(at, ['--git-common-dir']), DIRECTORY));
+}
+
+/**
+ * Where atis keeps what speaks for `repo`'s working tree alone: `atis/` under
+ * its own `git rev-parse --git-path`, which a linked worktree holds apart from
+ * the others, and which is the shared one in the main worktree (D190). Throws
+ * where git finds no repository.
+ */
+export function worktreeDirectory(repo: string): string {
+  return askedOnce(worktreeDirs, repo, (at) => gitPath(at, ['--git-path', DIRECTORY]));
+}
+
+/** Where a base commit's terrain is kept, under the reviewed repository's git directory (D190). */
 export function terrainPath(repo: string, sha: string): string {
-  return join(repo, DIRECTORY, TERRAIN, `${sha}${ENTRY}`);
+  return join(keptDirectory(repo), TERRAIN, `${sha}${ENTRY}`);
 }
 
 /** Where a commit's structure is kept, beside the terrains (D98). */
 export function structurePath(repo: string, sha: string): string {
-  return join(repo, DIRECTORY, STRUCTURE, `${sha}${ENTRY}`);
+  return join(keptDirectory(repo), STRUCTURE, `${sha}${ENTRY}`);
 }
 
 /** Where the entry points fallow listed for a head commit are kept, beside the structures (D136). */
 export function entriesPath(repo: string, sha: string): string {
-  return join(repo, DIRECTORY, ENTRIES, `${sha}${ENTRY}`);
+  return join(keptDirectory(repo), ENTRIES, `${sha}${ENTRY}`);
 }
 
-/** Write an entry under `.atis/`, which ignores itself in git, so atis never edits the repository's own ignores. */
-function keep(repo: string, path: string, entry: unknown): string {
-  const ignore = join(repo, DIRECTORY, '.gitignore');
-  if (!existsSync(ignore)) writeAtomic(ignore, IGNORE_ALL);
+/** Write an entry, atomically; under the git directory, git never shows it, so nothing edits the repository's own ignores. */
+function keep(path: string, entry: unknown): string {
   writeAtomic(path, JSON.stringify(entry));
   return path;
 }
@@ -252,9 +293,9 @@ export function readTerrain(repo: string, sha: string, key: TerrainKey): Terrain
   return { hit: true, terrain: { scan, parsed, commits, layout } };
 }
 
-/** Keep the terrain of `sha` for the next run, atomically, with `.atis/` ignored by a `.gitignore` of its own. Returns where it went. */
+/** Keep the terrain of `sha` for the next run, atomically, under the git directory. Returns where it went. */
 export function writeTerrain(repo: string, sha: string, key: TerrainKey, terrain: BaseTerrain): string {
-  return keep(repo, terrainPath(repo, sha), { sha, key, ...terrain });
+  return keep(terrainPath(repo, sha), { sha, key, ...terrain });
 }
 
 /** Read the structure of `sha`, a hit only when the entry was written for this commit by this code, as this fallow measured it (D98). */
@@ -271,7 +312,7 @@ export function readStructure(repo: string, sha: string, key: StructureKey): Str
 
 /** Keep the structure of `sha` for the next run, atomically, beside the terrains. Returns where it went. */
 export function writeStructure(repo: string, sha: string, key: StructureKey, structure: MeasuredStructure): string {
-  return keep(repo, structurePath(repo, sha), { sha, key, structure });
+  return keep(structurePath(repo, sha), { sha, key, structure });
 }
 
 function isEntryList(value: unknown): value is EntryPoints['entries'] {
@@ -291,12 +332,12 @@ export function readEntries(repo: string, sha: string, key: StructureKey): Entry
 /** Keep the entry points fallow listed for `sha`, atomically; a lookup that fell back to the manifests is never kept, since fallow may read the next time. Returns where it went. */
 export function writeEntries(repo: string, sha: string, key: StructureKey, entryPoints: EntryPoints): string | undefined {
   if (entryPoints.lookup.source !== 'fallow') return undefined;
-  return keep(repo, entriesPath(repo, sha), { sha, key, entries: entryPoints.entries });
+  return keep(entriesPath(repo, sha), { sha, key, entries: entryPoints.entries });
 }
 
 /** The commits the cache holds an entry for, by the names of its files. */
 function keptCommits(repo: string): ReadonlySet<string> {
-  const dir = join(repo, DIRECTORY, TERRAIN);
+  const dir = join(keptDirectory(repo), TERRAIN);
   if (!existsSync(dir)) return new Set();
   return new Set(readdirSync(dir).flatMap((name) => (name.endsWith(ENTRY) && !name.startsWith('.') ? [name.slice(0, -ENTRY.length)] : [])));
 }

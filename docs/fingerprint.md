@@ -18,8 +18,8 @@ The image is always 480 by 300, the whole terrain fitted inside it and
 centred, so it never changes the space it takes on a page. It maps the whole
 repository at the head (`HEAD` unless `--head` names another commit),
 measured afresh: the fingerprint neither reads nor writes the terrain cache
-under `.atis/`, so one commit gives one layout and the same bytes wherever it
-is drawn. The terrain only changes when the structure does,
+atis keeps under the repository's git directory, so one commit gives one
+layout and the same bytes wherever it is drawn. The terrain only changes when the structure does,
 which is the point. GitHub Next's repo-visualizer found that a picture of a
 repository seen every day makes its structural change noticeable by
 familiarity: a new package, a module that grew, a cell that split.

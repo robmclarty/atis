@@ -12,10 +12,10 @@
  * crossed (D9).
  *
  * An MCP client launches its server as a child over stdio, so the server
- * learns which run serves the tab from `.atis/serve.json` under the
- * repository it is started in, read again at every call, so a tab opened
- * after the agent started is found, and one whose process died is not
- * (D138). `reach` and `explain` read only the map that run holds, fetched
+ * learns which run serves the tab from the `atis/serve.json` the git
+ * directory of the working tree it is started in keeps (D190), read again at
+ * every call, so a tab opened after the agent started is found, and one
+ * whose process died is not (D138). `reach` and `explain` read only the map that run holds, fetched
  * with its token at every call, so a base the page switched to, or a map a
  * watch pushed, is the one they answer from. With no run serving, they read
  * the map `--map` names, and `highlight` says no tab is open. Nothing here
@@ -33,12 +33,12 @@ import type { ChangedFile, MapJson, Notice, ReachEntry } from 'core';
 import { z } from 'zod';
 
 import type { Outcome } from './run.js';
-import { SERVING_FILE, servingIn } from './serve.js';
+import { servingIn } from './serve.js';
 import type { HighlightRequest, Serving } from './serve.js';
 
 /** What `atis mcp` was started with: the repository whose tab it points at, the map to read when none is served, and the version it names itself by. */
 export type McpOptions = {
-  /** Where `.atis/serve.json` is looked for: the repository a run serves its tab from. */
+  /** Whose git directory `atis/serve.json` is looked for in: the working tree a run serves its tab from. */
   readonly repo: string;
   /** The map `reach` and `explain` read when no run serves the repository (D138). */
   readonly map?: string | undefined;
@@ -134,7 +134,7 @@ const pagesOf = (text: string): number => {
 /** Send the run serving `repo`'s tab a highlight, with its token and its own `Origin` (D178), and say what came of it. */
 const highlight = async (repo: string, asked: HighlightRequest): Promise<CallToolResult> => {
   const serving = servingIn(repo);
-  if (serving === undefined) return refused(`no tab is open: no atis serves ${repo}, by its ${SERVING_FILE}; run atis there to open one`);
+  if (serving === undefined) return refused(`no tab is open: no atis serves ${repo}, by the atis/serve.json its git directory keeps; run atis there to open one`);
   const origin = originOf(serving);
   let response: Response;
   try {

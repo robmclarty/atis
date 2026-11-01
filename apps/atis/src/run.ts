@@ -55,7 +55,7 @@ import { execFileSync, spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { platform, tmpdir } from 'node:os';
-import { basename, join, relative, resolve } from 'node:path';
+import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 import { DEFAULT_CONFIG, OVERLAY_NAMES, buildMap, buildRepoMap, configuredProducersOff, layOutTerrain } from 'core';
 import type { CheckBaseline, Commit, Config, FrameInputs, Layout, MapJson, OverlayName, Structure } from 'core';
@@ -81,7 +81,7 @@ import { MAPS_BRANCH, commentBody, findPullRequest, imageUrl, keepImage, postCom
 import type { CommentImage } from './comment.js';
 import { capturePng, launchBrowser } from './png.js';
 import type { BrowserCandidate, Captured } from './png.js';
-import { SERVING_FILE, dropServing, keepServing, serve } from './serve.js';
+import { dropServing, keepServing, serve } from './serve.js';
 import type { BaseRequest, Rebuilt, Served } from './serve.js';
 import { WATCH_EVERY_MS, signatureOf, watchRepo, watchedIn } from './watch.js';
 import {
@@ -203,6 +203,12 @@ function git(repo: string, ...args: readonly string[]): string {
 
 function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === 'object' && value !== null;
+}
+
+/** Where a cache entry sits, for `--verbose` to say: from `repo` when it is under it, as the main worktree's git directory is, else whole, as a linked worktree's shared one is (D190). */
+function keptAt(repo: string, path: string): string {
+  const from = relative(repo, path);
+  return from.startsWith(`..${sep}`) || isAbsolute(from) ? path : from;
 }
 
 /** A failed command carries its diagnostics on `stderr`, not in `message`; the exit-2 line wants both. */
@@ -434,7 +440,7 @@ function groundAt(reader: Reader, sha: string, cache: boolean, side: string = 'b
   if (read?.hit === true) {
     const { terrain } = read;
     const { scan, parsed, commits, layout } = terrain;
-    return { scan, parsed, commits, layout, cache: `hit, ${relative(repo, terrainPath(repo, sha))}` };
+    return { scan, parsed, commits, layout, cache: `hit, ${keptAt(repo, terrainPath(repo, sha))}` };
   }
   const scanned = reader.scanAt(`scan ${side}`, sha);
   const commits = timed(timings, `log ${side}`, () => readLog(repo, sha, history));
@@ -444,7 +450,7 @@ function groundAt(reader: Reader, sha: string, cache: boolean, side: string = 'b
   const from = nearest === undefined ? 'laid out cold' : `relaxed from ${nearest.sha}`;
   try {
     const path = timed(timings, 'cache write', () => writeTerrain(repo, sha, key, { scan: scanned.scan, parsed: scanned.parsed, commits, layout }));
-    return { ...scanned, commits, layout, cache: `miss (${read.reason}), ${from}, wrote ${relative(repo, path)}` };
+    return { ...scanned, commits, layout, cache: `miss (${read.reason}), ${from}, wrote ${keptAt(repo, path)}` };
   } catch (error) {
     return { ...scanned, commits, layout, cache: `miss (${read.reason}), ${from}, not written: ${messageOf(error)}` };
   }
@@ -464,13 +470,13 @@ function structureAt(repo: string, sha: string, tree: () => string, fallow: Loca
   if (fallow === undefined) return { structure: { reason: NO_LOCAL_FALLOW }, cache: 'none (no local fallow)' };
   const key = cache && fallow.version !== undefined ? { code: codeKey(), fallow: fallow.version } : undefined;
   const read = key === undefined ? undefined : readStructure(repo, sha, key);
-  if (read?.hit === true) return { structure: read.structure, cache: `hit, ${relative(repo, structurePath(repo, sha))}` };
+  if (read?.hit === true) return { structure: read.structure, cache: `hit, ${keptAt(repo, structurePath(repo, sha))}` };
   const structure = measureStructure(tree(), fallow);
   if (!cache) return { structure, cache: 'off (--no-cache)' };
   if (key === undefined || read === undefined) return { structure, cache: 'measured, not kept: fallow names no version to key it by' };
   if ('reason' in structure || structure.muted.length > 0) return { structure, cache: `miss (${read.reason}), measured, not kept: fallow read only part of it` };
   try {
-    return { structure, cache: `miss (${read.reason}), measured, wrote ${relative(repo, writeStructure(repo, sha, key, structure))}` };
+    return { structure, cache: `miss (${read.reason}), measured, wrote ${keptAt(repo, writeStructure(repo, sha, key, structure))}` };
   } catch (error) {
     return { structure, cache: `miss (${read.reason}), measured, not written: ${messageOf(error)}` };
   }
@@ -496,12 +502,12 @@ function headAt(repo: string, sha: string, prior: Prior, tree: () => string, fal
   const kept: EntryPoints | undefined = key === undefined ? undefined : readEntries(repo, sha, key);
   const side = readCommit(sha, { repo, prior, entryPoints: kept, extracted: tree, off: config.producers_off });
   if (fallow === undefined) return { side, entries: 'none (no local fallow)' };
-  if (kept !== undefined) return { side, entries: `hit, ${relative(repo, entriesPath(repo, sha))}` };
+  if (kept !== undefined) return { side, entries: `hit, ${keptAt(repo, entriesPath(repo, sha))}` };
   if (!cache) return { side, entries: 'off (--no-cache)' };
   if (key === undefined) return { side, entries: 'listed, not kept: fallow names no version to key it by' };
   try {
     const path = writeEntries(repo, sha, key, side.entryPoints);
-    return { side, entries: path === undefined ? 'listed, not kept: fallow listed none' : `miss, listed, wrote ${relative(repo, path)}` };
+    return { side, entries: path === undefined ? 'listed, not kept: fallow listed none' : `miss, listed, wrote ${keptAt(repo, path)}` };
   } catch (error) {
     return { side, entries: `listed, not written: ${messageOf(error)}` };
   }
@@ -916,9 +922,10 @@ const rebuiltOf = (map: MapJson): Rebuilt => ({ map: serialize(map), slots: map.
  * the map over the base the page last switched to, else as the flags asked,
  * through the terrain cache, and pushes it to the tab; a rebuild that fails
  * keeps the map the tab holds and says why (D106). While it serves, it says
- * how to reach it in `.atis/serve.json`, so `atis mcp` started in the same
- * repository can point at the tab (D138); a repository that will not take
- * the file is still served, and the run says `atis mcp` will not find it.
+ * how to reach it in the `atis/serve.json` its working tree's git directory
+ * keeps, so `atis mcp` started in the same working tree can point at the tab
+ * (D138, D190); a repository that will not take the file is still served,
+ * and the run says `atis mcp` will not find it.
  * Handed `--tour`, it serves the tour beside the map for the world to play,
  * once it holds it to the map: a tour written for another base or head exits
  * 2 naming both, since its stops would fly to files this map may not place
@@ -979,7 +986,7 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
     try {
       keepServing(repo, { port: served.port, token, pid: process.pid });
     } catch (error) {
-      unkept = `atis: atis mcp will not find this tab, since ${SERVING_FILE} could not be written: ${messageOf(error)}\n`;
+      unkept = `atis: atis mcp will not find this tab, since its serve.json could not be written: ${messageOf(error)}\n`;
     }
     if (options.open) openTarget(served.url);
     return {
