@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: atis phases 1b to 5, in waves
 
-**Current step:** 127 — docs(producers): say what a map says when a pack runs no test check
+**Current step:** none (at the boundary)
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -149,7 +149,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 87. docs(producers): write the contract a language producer fills
 - ☑ 125. fix(cli): keep atis's files in the git directory, out of the working tree
 - ☑ 126. chore(fixtures): regenerate javascript-1 under the nested-cell rule
-- ☐ 127. docs(producers): say what a map says when a pack runs no test check
+- ☑ 127. docs(producers): say what a map says when a pack runs no test check
 
 ## Park list
 
@@ -3490,3 +3490,70 @@ folder, so it rides the branch into the PR.)*
 
 - 2026-11-01 — step 125 checkpointed · 1aed865d8 — fix(cli): keep atis's files in the git directory, out of the working tree (1 drift, 17m)
 - 2026-11-01 — step 126 checkpointed · 6956778b5 — chore(fixtures): regenerate javascript-1 under the nested-cell rule (8m)
+- 2026-11-01 — step 127 checkpointed · f99023e16 — docs(producers): say what a map says when a pack runs no test check (4m)
+- 2026-11-03 — range 34 of 34's stop recorded — the build's end: review `fixtures/javascript-1/` regenerated under the nested-cell rule (its cells svelte's modules, `internal/client` among them), atis's files kept in the git directory with the working tree untouched by a run (step 125's check), and the producer page's evidence section; then `/plumbbob:finish`
+
+  **Summary**: atis no longer writes anything in a reviewed repository's working tree. Its caches and tours sit in `atis/` under the git common directory, which every worktree of the repo shares, and `serve.json` and the first-frame record sit under each working tree's own git path. `fixtures/javascript-1/` now draws svelte's nested modules as cells of their own, 50 instead of 40, with `internal/client` among them. The producer page no longer claims that every missing channel leaves a `muted` line.
+
+  1. Step 125's commit also carries your untracked draft, `docs/world-description-spec.md`
+  2. A run, a served tab and a tour leave the working tree as git saw it
+  3. svelte's runtime and compiler now show the modules inside them
+  4. The producer page says what silence on coverage means
+
+  **Readout**:
+
+  ```text
+  steps        3 of 3 landed
+               - 125 1aed865 · 126 6956778 · 127 f99023e
+  check        green: 1 of 1 checks, 3 landings
+  done-when    met
+  decisions    honored:
+               - D190 (files-in-git-dir)
+               - D187 (nested-barrel-cells)
+               - D58 (fixtures-current-toolchain)
+  constraints  14 of 14 honored
+  seam         strayed: 1 path outside step 125's seam
+               → docs/world-description-spec.md
+  diff         +38337 -20710 across 23 files
+               - README.md +3 -2
+               - apps/atis/README.md +3 -2
+               - apps/atis/src/__tests__/cache.test.ts +77 -14
+               - apps/atis/src/__tests__/comment.test.ts +1 -0
+               - apps/atis/src/__tests__/fallow.test.ts +12 -10
+               - apps/atis/src/__tests__/mcp.test.ts +43 -10
+               - apps/atis/src/__tests__/serve.test.ts +47 -12
+               - and 16 more
+  spent        30 min · green first run at every landing · 1 drift warning
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Recommendation**: Review the svelte map and step 125's check, then run `/plumbbob:finish`. The range met its done-when on a green check. The one thing to decide is whether your draft stays in step 125's commit, and leaving it there is fine. To see the cells, serve the world with `pnpm --filter web dev` and open `?map=/@fs/<this repo>/fixtures/javascript-1/map.json`, or open the still render:
+
+  ```sh
+  open fixtures/javascript-1/atis.svg
+  ```
+
+  To see step 125's check on this repository, with the `atis` on your PATH built at step 126:
+
+  ```sh
+  git status --porcelain --ignored > /tmp/atis-status-before.txt
+  atis --base HEAD~3 --out /tmp/atis-map.json --verbose
+  git status --porcelain --ignored | diff /tmp/atis-status-before.txt - && echo unchanged
+  ```
+
+  **1.** Step 125's commit also carries your untracked draft, `docs/world-description-spec.md`
+
+  The checkpoint staged every changed path, and the draft spec, untracked since before this run began, went in with step 125's `fix(cli)` commit (`1aed865`). That is the seam row's stray, and it is the only reason step 125 reads "a hair off". Its 268 lines are committed exactly as they were on disk. Nothing has been pushed. I left the commit as it is, because rewriting it would change the SHA the build's checkpoints file records. If you want the draft out of that commit, a follow-up commit can untrack it (`git rm --cached docs/world-description-spec.md`) and leave the file on disk. Since the draft is meant to seed the next build, keeping it committed costs nothing.
+
+  **2.** A run, a served tab and a tour leave the working tree as git saw it
+
+  The terrain, structure and entry-point caches and the tours sit in `atis/` under `git rev-parse --git-common-dir`. `serve.json` and the first-frame record sit under the working tree's own `git rev-parse --git-path atis`. In the main worktree both resolve to `.git/atis/`, and a linked worktree's tab file goes in `.git/worktrees/<name>/atis/`. No `.gitignore` is written any more, and a `.atis/` an older atis left behind is neither read nor removed. Tests in temporary repositories check five things: a linked worktree hits the terrain the main one kept and takes a tour kept from it, each worktree's `atis mcp` finds its own tab, and `git status --porcelain --ignored` is unchanged after a plain run, a served run and a tour. Every golden is unchanged. Step 126 then confirmed this on a real repository: the svelte run wrote its cache to the clone's `.git/atis/`, left the worktree's ignored-inclusive status unchanged, and left step 123's old `.atis/` there unread, so the base was laid out cold.
+
+  **3.** svelte's runtime and compiler now show the modules inside them
+
+  The regeneration used command 9 alone, over step 123's `.check/`. That was possible because the worktree still held it, and checkride 0.19.2 and fallow 3.38.1 are still the latest. The instruments, evidence, checks, outside packages and shore match step 123's byte for byte. Ten directories that carry their own `index.js` are now folder cells: `internal/client` (74 files), `internal/server` and `internal/flags`, and under `compiler`, the three phases, `transform-template`, `css`, `preprocess` and `migrate`. That leaves `compiler` with 29 files and `internal` with 10. The six notices keep their order. All of them now name `internal/client`'s interface: 180 names, read by 28 files, in band 2, with each change reaching 22 cells instead of 21. The README's "What atis read" explains what moved and why.
+
+  **4.** The producer page says what silence on coverage means
+
+  The evidence section used to say every gap is a line in `meta.instruments.muted`. It now says that of each gap a check that ran leaves. A new bullet adds that a pack with no test check (bash always, and Terraform with no `.tftest.hcl` tests to run) writes no `muted` line at all, as `fixtures/shell-1/` and `fixtures/terraform-1/` show. Their maps' silence on coverage means the channel is absent, not that coverage was read. Every other claim on the page stands.
