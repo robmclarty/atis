@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import { assertMap, membraneThickness, withinContour } from 'core';
 import type { Contour, MapJson } from 'core';
-import { GLYPH_OFFSET, MEMBRANE_DENT_PULL, outlineOf, rulesOf } from 'scene';
+import { GLYPH_OFFSET, MAX_RULES, MEMBRANE_DENT_PULL, outlineOf, troubleFrom, troubleOf } from 'scene';
 import { expect, test } from 'vitest';
 
 import { renderSvg } from '../render.js';
@@ -338,32 +338,34 @@ test('a cell in a clone family carries its family glyph just past its membrane, 
   expect(glyph?.d).toBe(glyphOf(layer(round, 'organelles'), RING_FILE)?.d);
 });
 
-test('one shape per organelle, a circle sized by loc when it conforms', () => {
+test('one shape per organelle, a circle sized by loc when it has no trouble', () => {
   const map = demo();
   const organelles = layer(renderSvg(map), 'organelles');
   const shapes = [...organelles.matchAll(/<(circle|path) data-id="([^"]+)"(?! data-(?:bulb|family)=)/g)].map(([, , id]) => id);
   expect(shapes).toEqual(map.terrain.organelles.map((organelle) => organelle.id));
   const radii = new Map([...organelles.matchAll(/<circle data-id="([^"]+)" cx="[\d.]+" cy="[\d.]+" r="([\d.]+)"/g)].map(([, id, r]) => [id, Number(r)]));
   const locOf = new Map(map.terrain.organelles.map((organelle) => [organelle.id, organelle.loc]));
-  // Bigger file, bigger circle: doctor.ts (212 lines) against index.ts (24).
-  expect(radii.get('apps/cli/src/doctor.ts') ?? 0).toBeGreaterThan(radii.get('apps/cli/src/index.ts') ?? Number.POSITIVE_INFINITY);
-  expect(locOf.get('apps/cli/src/doctor.ts') ?? 0).toBeGreaterThan(locOf.get('apps/cli/src/index.ts') ?? Number.POSITIVE_INFINITY);
-  // Every conforming organelle is a circle and no dented one is.
+  // Bigger file, bigger circle: slots.ts (88 lines) against index.ts (24), two files with no trouble.
+  expect(radii.get('libs/core/src/pm/slots.ts') ?? 0).toBeGreaterThan(radii.get('apps/cli/src/index.ts') ?? Number.POSITIVE_INFINITY);
+  expect(locOf.get('libs/core/src/pm/slots.ts') ?? 0).toBeGreaterThan(locOf.get('apps/cli/src/index.ts') ?? Number.POSITIVE_INFINITY);
+  // A file with no trouble is a circle, and none with any is: a dented one, or one whose history shades it (D194).
   for (const organelle of map.terrain.organelles) {
-    expect(radii.has(organelle.id)).toBe(organelle.dents.length === 0);
+    expect(radii.has(organelle.id), organelle.id).toBe(troubleOf(organelle).score === 0);
+    if (organelle.dents.length > 0) expect(radii.has(organelle.id), organelle.id).toBe(false);
   }
+  expect(map.terrain.organelles.some((organelle) => organelle.dents.length === 0 && troubleOf(organelle).score > 0), 'the demo holds a file its history alone shapes').toBe(true);
 });
 
 /** The points of an organelle's outline path as the SVG writes it. */
 function drawnOutline(organelles: string, id: string): readonly (readonly [number, number])[] {
-  const path = new RegExp(`<path data-id="${id}" data-dents="[^"]*" d="M([^"]+)Z"`).exec(organelles);
+  const path = new RegExp(`<path data-id="${id}"(?: data-reachable="false")?(?: data-dents="[^"]*")? d="M([^"]+)Z"`).exec(organelles);
   return (path?.[1] ?? '').split('L').map((pair) => {
     const [x = Number.NaN, y = Number.NaN] = pair.split(' ').map(Number);
     return [x, y] as const;
   });
 }
 
-test("a file that breaks rules is drawn as the scene's outline at rest, morphed by how many it breaks (D146)", () => {
+test("a file that breaks rules is drawn as the scene's outline at rest, at its trouble score on the spectrum (D194)", () => {
   const map = demo();
   const id = 'libs/core/src/pm/tools.ts';
   const organelle = map.terrain.organelles.find((candidate) => candidate.id === id);
@@ -372,33 +374,53 @@ test("a file that breaks rules is drawn as the scene's outline at rest, morphed 
   if (at === undefined || organelle === undefined) throw new Error('the demo places tools.ts');
 
   const drawn = drawnOutline(layer(renderSvg(map), 'organelles'), id);
-  const outline = outlineOf(id, at, rulesOf(organelle.dents));
-  expect(outline.level).toBe(2);
+  const { score } = troubleOf(organelle);
+  const outline = outlineOf(id, at, score);
+  // Two rules put it at their floor or past it, short of a third's.
+  expect(score).toBeGreaterThanOrEqual(troubleFrom(2));
+  expect(score).toBeLessThanOrEqual(troubleFrom(3));
+  expect(outline.level).toBeCloseTo(score * MAX_RULES, 9);
   expect(drawn).toHaveLength(outline.ring.length);
   drawn.forEach(([x, y], index) => {
     const [ox = 0, oy = 0] = outline.ring[index] ?? [];
     expect(x).toBeCloseTo(ox, 2);
     expect(y).toBeCloseTo(oy, 2);
   });
-  // Two rules make lobes, not teeth: the outline swings about the radius it was given, a little either way.
+  // Its arms stand out past the radius it was given, inside the outline's extent, round a body that gave a little back.
   const distances = drawn.map(([x, y]) => Math.hypot(x - at.x, y - at.y));
   expect(Math.max(...distances)).toBeGreaterThan(at.r);
-  expect(Math.max(...distances)).toBeLessThan(at.r * 1.3);
-  expect(Math.min(...distances)).toBeGreaterThan(at.r * 0.85);
+  expect(Math.max(...distances)).toBeLessThanOrEqual(outline.extent + 0.01);
+  expect(Math.min(...distances)).toBeGreaterThan(at.r * 0.8);
 });
 
-test('a file breaking five rules or more wears a bulb at each arm, and one breaking six is drawn at the highest form', () => {
+test("a file its history alone troubles leaves the circle for a soft form, and carries no dents", () => {
+  const map = demo();
+  const calm = map.terrain.organelles.find((organelle) => organelle.dents.length === 0 && troubleOf(organelle).score > 0);
+  if (calm === undefined) throw new Error('the demo holds a file its history alone shapes');
+  const at = map.terrain.layout?.positions[calm.id];
+  if (at === undefined) throw new Error('the demo places it');
+  const organelles = layer(renderSvg(map), 'organelles');
+  const drawn = drawnOutline(organelles, calm.id);
+  const outline = outlineOf(calm.id, at, troubleOf(calm).score);
+  expect(troubleOf(calm).score).toBeLessThanOrEqual(troubleFrom(1));
+  expect(drawn).toHaveLength(outline.ring.length);
+  expect(organelles).not.toMatch(new RegExp(`data-id="${calm.id}"[^>]*data-dents`));
+  expect(outline.bulbs).toEqual([]);
+});
+
+test('a file breaking five rules or more wears a bulb at each arm, and one breaking six with a full history is drawn at the highest form', () => {
   const map = demo();
   const id = 'libs/core/src/pm/tools.ts';
   const rules = ['boundary', 'cognitive', 'crap', 'cycle', 'cyclomatic', 'unit-size', 'extra'];
   const spiked: MapJson = {
     ...map,
-    terrain: { ...map.terrain, organelles: map.terrain.organelles.map((organelle) => (organelle.id === id ? { ...organelle, dents: rules } : organelle)) },
+    terrain: { ...map.terrain, organelles: map.terrain.organelles.map((organelle) => (organelle.id === id ? { ...organelle, dents: rules, churn_ratio: 99 } : organelle)) },
   };
   const organelles = layer(renderSvg(spiked), 'organelles');
   const at = map.terrain.layout?.positions[id];
   if (at === undefined) throw new Error('the demo places tools.ts');
-  const outline = outlineOf(id, at, 6);
+  const outline = outlineOf(id, at, 1);
+  expect(outline.level).toBe(MAX_RULES);
   const bulbs = [...organelles.matchAll(new RegExp(`<circle data-id="${id}" data-bulb="true"`, 'g'))];
   expect(bulbs).toHaveLength(outline.bulbs.length);
   expect(outline.bulbs.length).toBeGreaterThan(0);

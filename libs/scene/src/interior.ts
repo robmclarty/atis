@@ -41,6 +41,7 @@ import type { Point } from './minimap.js';
 import { openRing } from './raster.js';
 import type { Ring } from './raster.js';
 import { AT_REST, draw, outlineOf, rulesOf, seedOf } from './shape.js';
+import { troubleOf } from './trouble.js';
 import type { Outline, ShapeMotion } from './shape.js';
 import { MONO_ADVANCE } from './tokens.js';
 import { weatherOf } from './weather.js';
@@ -68,11 +69,12 @@ export const INTERIOR_LAYOUT: InteriorLayout = { explodeSpread: 1.6, explodePush
 /** `improved` where the change made the file healthier, which wears the calm-positive hue in place of the change hue (D98). */
 export type Stain = { readonly kind: ChangeKind; readonly from?: string; readonly open: number; readonly improved?: true };
 
-/** A file on the slide at rest: where the layout put it, the rules it breaks, its stain, its looseness, and where the exploded view takes it. */
+/** A file on the slide at rest: where the layout put it, the rules it breaks, where its trouble puts it on the shape spectrum (D194), its stain, its looseness, and where the exploded view takes it. */
 export type SlideFile = {
   readonly id: string;
   readonly rest: Position;
   readonly rules: number;
+  readonly score: number;
   readonly dents: readonly string[];
   readonly stain?: Stain;
   readonly looseness?: number;
@@ -323,6 +325,7 @@ export function cellSlide(map: MapJson, cell: string, layout: InteriorLayout = I
       id: organelle.id,
       rest: rests[index]?.rest ?? { x: 0, y: 0, r: 0 },
       rules: rulesOf(organelle.dents),
+      score: troubleOf(organelle).score,
       dents: organelle.dents,
       ...(stain === undefined ? {} : { stain }),
       ...(looseness === undefined ? {} : { looseness }),
@@ -374,7 +377,7 @@ export function interiorOf(slide: Slide, motion: InteriorMotion = {}): readonly 
     const x = at.x + (file.exploded[0] - at.x) * spread;
     const y = at.y + (file.exploded[1] - at.y) * spread;
     const r = file.rest.r;
-    return { ...file, x, y, r, outline: outlineOf(file.id, { x, y, r }, file.rules, file.rules === 0 ? AT_REST : shape(file.rules)) };
+    return { ...file, x, y, r, outline: outlineOf(file.id, { x, y, r }, file.score, file.rules === 0 ? AT_REST : shape(file.rules)) };
   });
 }
 

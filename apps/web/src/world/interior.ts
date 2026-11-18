@@ -68,9 +68,9 @@ const FRAME_LIFT = 0.3;
 const BODY_LIFT = 0.6;
 /** How many segments a bulb's disc is drawn in. */
 const BULB_SEGMENTS = 12;
-/** The most points an outline is drawn through, and the most bulbs it carries: what one body's vertices are sized for. */
+/** The most points an outline is drawn through, and the most bulbs it carries: what one body's vertices are sized for. Between two forms an outline wears both forms' bulbs, one set fading out as the other fades in (D194). */
 const MOST_SAMPLES = Math.max(...SHAPE_LEVELS.map((form) => form.samples));
-const MOST_BULBS = Math.max(...SHAPE_LEVELS.map((form) => form.arms));
+const MOST_BULBS = Math.max(...SHAPE_LEVELS.map((form, level) => form.arms + (SHAPE_LEVELS[level + 1]?.arms ?? 0)));
 /** The vertices one body may take: a fan of triangles for its fill, two per sample for its stroke, and a fan per bulb. */
 const VERTICES_PER_BODY = MOST_SAMPLES * 9 + MOST_BULBS * BULB_SEGMENTS * 3;
 

@@ -15,7 +15,8 @@
 
 import type { Hunk, MapJson, Mutant } from 'core';
 
-import { MAX_RULES, outlineOf } from './shape.js';
+import { outlineOf } from './shape.js';
+import { troubleFrom } from './trouble.js';
 import { FILE_GRANULE_PAD, FILE_STRIP_SHARE } from './tokens.js';
 
 /** One function as a granule on the plate: what it is, how deep it nests, and where it lies, its outline dented once per rule it breaks. */
@@ -80,7 +81,7 @@ export function fileLevelOf(map: MapJson, path: string): FileLevel | undefined {
     const height = fn.line_count / lines;
     const at = { x: (depth + 0.5) * width, y: top + height / 2, r: (Math.min(width, height) / 2) * (1 - FILE_GRANULE_PAD) };
     const rules = fn.breaches ?? [];
-    return { name: fn.name, line: fn.line, line_count: fn.line_count, rules, depth, ...at, ring: outlineOf(`${path}#${fn.name}@${String(fn.line)}`, at, Math.min(rules.length, MAX_RULES)).ring };
+    return { name: fn.name, line: fn.line, line_count: fn.line_count, rules, depth, ...at, ring: outlineOf(`${path}#${fn.name}@${String(fn.line)}`, at, troubleFrom(rules.length)).ring };
   });
   const { evidence } = map.weather;
   const report = evidence.patch_coverage?.find((file) => file.path === path);

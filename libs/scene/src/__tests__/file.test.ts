@@ -8,6 +8,7 @@ import { expect, test } from 'vitest';
 
 import { fileLevelOf } from '../file.js';
 import { outlineOf } from '../shape.js';
+import { troubleFrom } from '../trouble.js';
 import { FILE_GRANULE_PAD, FILE_STRIP_SHARE } from '../tokens.js';
 
 /**
@@ -33,7 +34,7 @@ test("a file's functions are granules down the plate, each level with its own li
   expect(resolveTool?.r ?? 0).toBeGreaterThan(toolName?.r ?? 0);
   expect(toolName?.r).toBeCloseTo((10 / 96 / 2) * (1 - FILE_GRANULE_PAD));
   // Its two rules dent its outline as two would dent a file's; a function within every threshold stays round.
-  expect(resolveTool?.ring).toEqual(outlineOf(`${TOOLS}#resolveTool@41`, { x: resolveTool?.x ?? 0, y: resolveTool?.y ?? 0, r: resolveTool?.r ?? 0 }, 2).ring);
+  expect(resolveTool?.ring).toEqual(outlineOf(`${TOOLS}#resolveTool@41`, { x: resolveTool?.x ?? 0, y: resolveTool?.y ?? 0, r: resolveTool?.r ?? 0 }, troubleFrom(2)).ring);
   expect(localBin?.depth).toBe(0);
 });
 

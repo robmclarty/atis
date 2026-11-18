@@ -2115,6 +2115,924 @@
       "muted": [
         "import: atis reads no imports from .md files, so docs/design.md has no import reach"
       ]
+    },
+    "3": {
+      "schema_version": 1,
+      "kind": "atis.reach",
+      "head": "579bcc9bb08c5452351f6a527b823efba1e217e2",
+      "paths": [
+        "libs/scene/src/shape.ts",
+        "libs/scene/src/file.ts",
+        "libs/scene/src/interior.ts",
+        "libs/scene/src/__tests__/shape.test.ts",
+        "libs/svg/src/terrain.ts",
+        "libs/svg/src/legend.ts",
+        "libs/svg/src/__tests__/legend.test.ts",
+        "libs/svg/src/__tests__/render.test.ts",
+        "apps/web/src/hover.ts",
+        "apps/web/src/world/organelles.ts",
+        "apps/web/src/chrome/legend.tsx",
+        "apps/web/src/hud.ts",
+        "fixtures/",
+        "docs/design.md"
+      ],
+      "new": [],
+      "reach": [
+        {
+          "path": ".plumbbob/builds/2026-09-16-map-and-svg/build-log.md",
+          "by": "cochange",
+          "rate": 1,
+          "support": 4,
+          "with": "fixtures/checkride-pr2/truth.md"
+        },
+        {
+          "path": ".plumbbob/builds/2026-09-16-map-and-svg/checkpoints",
+          "by": "cochange",
+          "rate": 1,
+          "support": 4,
+          "with": "fixtures/checkride-pr2/truth.md"
+        },
+        {
+          "path": ".plumbbob/builds/2026-09-16-map-and-svg/intent.md",
+          "by": "cochange",
+          "rate": 1,
+          "support": 4,
+          "with": "fixtures/checkride-pr2/truth.md"
+        },
+        {
+          "path": ".plumbbob/builds/2026-09-16-map-and-svg/stats.json",
+          "by": "cochange",
+          "rate": 1,
+          "support": 4,
+          "with": "fixtures/checkride-pr2/truth.md"
+        },
+        {
+          "path": ".plumbbob/builds/2026-10-08-phases-1b-to-5/build-log.md",
+          "by": "cochange",
+          "rate": 1,
+          "support": 7,
+          "with": "libs/scene/src/interior.ts"
+        },
+        {
+          "path": ".plumbbob/builds/2026-10-08-phases-1b-to-5/checkpoints",
+          "by": "cochange",
+          "rate": 1,
+          "support": 7,
+          "with": "libs/scene/src/interior.ts"
+        },
+        {
+          "path": ".plumbbob/builds/2026-10-08-phases-1b-to-5/intent.md",
+          "by": "cochange",
+          "rate": 1,
+          "support": 7,
+          "with": "libs/scene/src/interior.ts"
+        },
+        {
+          "path": ".plumbbob/builds/2026-10-08-phases-1b-to-5/stats.json",
+          "by": "cochange",
+          "rate": 1,
+          "support": 7,
+          "with": "libs/scene/src/interior.ts"
+        },
+        {
+          "path": "apps/atis/src/cli.ts",
+          "by": "import",
+          "hops": 3,
+          "via": [
+            "libs/svg/src/legend.ts",
+            "libs/svg/src/index.ts",
+            "apps/atis/src/run.ts"
+          ]
+        },
+        {
+          "path": "apps/atis/src/comment.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/svg/src/legend.ts",
+            "libs/svg/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/atis/src/index.ts",
+          "by": "import",
+          "hops": 3,
+          "via": [
+            "libs/svg/src/legend.ts",
+            "libs/svg/src/index.ts",
+            "apps/atis/src/comment.ts"
+          ]
+        },
+        {
+          "path": "apps/atis/src/mcp.ts",
+          "by": "import",
+          "hops": 3,
+          "via": [
+            "libs/svg/src/legend.ts",
+            "libs/svg/src/index.ts",
+            "apps/atis/src/run.ts"
+          ]
+        },
+        {
+          "path": "apps/atis/src/run.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/svg/src/legend.ts",
+            "libs/svg/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/__tests__/hud.test.tsx",
+          "by": "cochange",
+          "rate": 1,
+          "support": 5,
+          "with": "apps/web/src/hud.ts"
+        },
+        {
+          "path": "apps/web/src/__tests__/world.test.ts",
+          "by": "cochange",
+          "rate": 0.86,
+          "support": 6,
+          "with": "libs/scene/src/interior.ts"
+        },
+        {
+          "path": "apps/web/src/chrome/bases.tsx",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/chrome/box.tsx",
+          "by": "import",
+          "hops": 3,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts",
+            "apps/web/src/notices.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/chrome/column.tsx",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/chrome/crumbs.tsx",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/chrome/frame.tsx",
+          "by": "cochange",
+          "rate": 0.6,
+          "support": 3,
+          "with": "apps/web/src/chrome/legend.tsx"
+        },
+        {
+          "path": "apps/web/src/chrome/frame.tsx",
+          "by": "import",
+          "hops": 0,
+          "via": []
+        },
+        {
+          "path": "apps/web/src/chrome/hud.tsx",
+          "by": "cochange",
+          "rate": 0.6,
+          "support": 3,
+          "with": "apps/web/src/chrome/legend.tsx"
+        },
+        {
+          "path": "apps/web/src/chrome/hud.tsx",
+          "by": "import",
+          "hops": 0,
+          "via": []
+        },
+        {
+          "path": "apps/web/src/chrome/index.ts",
+          "by": "import",
+          "hops": 0,
+          "via": []
+        },
+        {
+          "path": "apps/web/src/chrome/live.ts",
+          "by": "import",
+          "hops": 3,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts",
+            "apps/web/src/registry.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/chrome/minimap.tsx",
+          "by": "import",
+          "hops": 1,
+          "via": [
+            "apps/web/src/hud.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/chrome/notices.tsx",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/chrome/overlays.tsx",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/chrome/parts.tsx",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/chrome/radar.tsx",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/chrome/rail.tsx",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/chrome/scrubber.tsx",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/chrome/status.tsx",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/chrome/tour.tsx",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/chrome/wiring.tsx",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/dev/index.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/dev/panel.tsx",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/dev/patch.ts",
+          "by": "import",
+          "hops": 3,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts",
+            "apps/web/src/registry.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/highlight.ts",
+          "by": "import",
+          "hops": 3,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts",
+            "apps/web/src/walk.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/main.ts",
+          "by": "import",
+          "hops": 1,
+          "via": [
+            "apps/web/src/chrome/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/marks.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/materials.ts",
+          "by": "cochange",
+          "rate": 0.8,
+          "support": 4,
+          "with": "apps/web/src/world/organelles.ts"
+        },
+        {
+          "path": "apps/web/src/materials.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/nav.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/notices.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/opened.ts",
+          "by": "cochange",
+          "rate": 0.6,
+          "support": 3,
+          "with": "apps/web/src/world/organelles.ts"
+        },
+        {
+          "path": "apps/web/src/opened.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/overlays.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/parts.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/radar.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/registry.ts",
+          "by": "cochange",
+          "rate": 0.6,
+          "support": 3,
+          "with": "apps/web/src/world/organelles.ts"
+        },
+        {
+          "path": "apps/web/src/registry.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/space.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/tour.ts",
+          "by": "import",
+          "hops": 4,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts",
+            "apps/web/src/walk.ts",
+            "apps/web/src/highlight.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/view.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/walk.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/watch.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/world/bolts.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/world/camera.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/world/diff.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/world/draw.ts",
+          "by": "cochange",
+          "rate": 1,
+          "support": 5,
+          "with": "apps/web/src/world/organelles.ts"
+        },
+        {
+          "path": "apps/web/src/world/draw.ts",
+          "by": "import",
+          "hops": 0,
+          "via": []
+        },
+        {
+          "path": "apps/web/src/world/file.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/world/hover.ts",
+          "by": "import",
+          "hops": 1,
+          "via": [
+            "apps/web/src/hover.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/world/index.ts",
+          "by": "import",
+          "hops": 0,
+          "via": []
+        },
+        {
+          "path": "apps/web/src/world/interior.ts",
+          "by": "cochange",
+          "rate": 0.71,
+          "support": 5,
+          "with": "libs/scene/src/interior.ts"
+        },
+        {
+          "path": "apps/web/src/world/interior.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/world/labels.ts",
+          "by": "cochange",
+          "rate": 0.6,
+          "support": 3,
+          "with": "apps/web/src/chrome/legend.tsx"
+        },
+        {
+          "path": "apps/web/src/world/labels.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/world/palette.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/world/planet.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/world/ribbons.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/world/sectors.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/world/skin.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/world/sky.ts",
+          "by": "import",
+          "hops": 3,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts",
+            "apps/web/src/materials.ts"
+          ]
+        },
+        {
+          "path": "apps/web/src/world/space.ts",
+          "by": "import",
+          "hops": 3,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts",
+            "apps/web/src/materials.ts"
+          ]
+        },
+        {
+          "path": "docs/glance-practice.svg",
+          "by": "cochange",
+          "rate": 0.8,
+          "support": 4,
+          "with": "libs/svg/src/__tests__/legend.test.ts"
+        },
+        {
+          "path": "docs/glance-test.md",
+          "by": "cochange",
+          "rate": 1,
+          "support": 3,
+          "with": "fixtures/checkride-pr2/README.md"
+        },
+        {
+          "path": "libs/scene/src/__tests__/interior.test.ts",
+          "by": "cochange",
+          "rate": 1,
+          "support": 7,
+          "with": "libs/scene/src/interior.ts"
+        },
+        {
+          "path": "libs/scene/src/drift.ts",
+          "by": "import",
+          "hops": 1,
+          "via": [
+            "libs/scene/src/shape.ts"
+          ]
+        },
+        {
+          "path": "libs/scene/src/index.ts",
+          "by": "cochange",
+          "rate": 0.5,
+          "support": 3,
+          "with": "libs/svg/src/legend.ts"
+        },
+        {
+          "path": "libs/scene/src/index.ts",
+          "by": "import",
+          "hops": 1,
+          "via": [
+            "libs/scene/src/file.ts"
+          ]
+        },
+        {
+          "path": "libs/scene/src/motion.ts",
+          "by": "cochange",
+          "rate": 0.8,
+          "support": 4,
+          "with": "apps/web/src/world/organelles.ts"
+        },
+        {
+          "path": "libs/scene/src/motion.ts",
+          "by": "import",
+          "hops": 1,
+          "via": [
+            "libs/scene/src/shape.ts"
+          ]
+        },
+        {
+          "path": "libs/scene/src/planet.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/shape.ts",
+            "libs/scene/src/motion.ts"
+          ]
+        },
+        {
+          "path": "libs/scene/src/synthetic.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/shape.ts",
+            "libs/scene/src/motion.ts"
+          ]
+        },
+        {
+          "path": "libs/scene/src/trouble.ts",
+          "by": "import",
+          "hops": 1,
+          "via": [
+            "libs/scene/src/shape.ts"
+          ]
+        },
+        {
+          "path": "libs/svg/fixtures/categories/LIFR.svg",
+          "by": "cochange",
+          "rate": 0.8,
+          "support": 4,
+          "with": "libs/svg/src/__tests__/legend.test.ts"
+        },
+        {
+          "path": "libs/svg/fixtures/categories/MVFR.svg",
+          "by": "cochange",
+          "rate": 0.8,
+          "support": 4,
+          "with": "libs/svg/src/__tests__/legend.test.ts"
+        },
+        {
+          "path": "libs/svg/fixtures/categories/NOINST.svg",
+          "by": "cochange",
+          "rate": 0.8,
+          "support": 4,
+          "with": "libs/svg/src/__tests__/legend.test.ts"
+        },
+        {
+          "path": "libs/svg/fixtures/categories/VFR.svg",
+          "by": "cochange",
+          "rate": 0.8,
+          "support": 4,
+          "with": "libs/svg/src/__tests__/legend.test.ts"
+        },
+        {
+          "path": "libs/svg/fixtures/demo/atis.svg",
+          "by": "cochange",
+          "rate": 0.8,
+          "support": 8,
+          "with": "libs/svg/src/__tests__/render.test.ts"
+        },
+        {
+          "path": "libs/svg/src/__tests__/chrome.test.ts",
+          "by": "cochange",
+          "rate": 0.8,
+          "support": 4,
+          "with": "libs/svg/src/__tests__/legend.test.ts"
+        },
+        {
+          "path": "libs/svg/src/chrome.ts",
+          "by": "cochange",
+          "rate": 0.8,
+          "support": 4,
+          "with": "libs/svg/src/__tests__/legend.test.ts"
+        },
+        {
+          "path": "libs/svg/src/chrome.ts",
+          "by": "import",
+          "hops": 1,
+          "via": [
+            "libs/svg/src/legend.ts"
+          ]
+        },
+        {
+          "path": "libs/svg/src/cinema.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "libs/svg/src/fingerprint.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "libs/svg/src/index.ts",
+          "by": "cochange",
+          "rate": 0.6,
+          "support": 3,
+          "with": "libs/svg/src/__tests__/legend.test.ts"
+        },
+        {
+          "path": "libs/svg/src/index.ts",
+          "by": "import",
+          "hops": 1,
+          "via": [
+            "libs/svg/src/legend.ts"
+          ]
+        },
+        {
+          "path": "libs/svg/src/minimap.ts",
+          "by": "import",
+          "hops": 1,
+          "via": [
+            "libs/svg/src/legend.ts"
+          ]
+        },
+        {
+          "path": "libs/svg/src/overlays.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "libs/svg/src/patterns.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "libs/svg/src/practice.ts",
+          "by": "cochange",
+          "rate": 0.8,
+          "support": 4,
+          "with": "libs/svg/src/__tests__/legend.test.ts"
+        },
+        {
+          "path": "libs/svg/src/practice.ts",
+          "by": "import",
+          "hops": 1,
+          "via": [
+            "libs/svg/src/legend.ts"
+          ]
+        },
+        {
+          "path": "libs/svg/src/render.ts",
+          "by": "cochange",
+          "rate": 0.6,
+          "support": 3,
+          "with": "libs/svg/src/__tests__/legend.test.ts"
+        },
+        {
+          "path": "libs/svg/src/render.ts",
+          "by": "import",
+          "hops": 1,
+          "via": [
+            "libs/svg/src/terrain.ts"
+          ]
+        },
+        {
+          "path": "libs/svg/src/shore.ts",
+          "by": "import",
+          "hops": 2,
+          "via": [
+            "libs/scene/src/file.ts",
+            "libs/scene/src/index.ts"
+          ]
+        },
+        {
+          "path": "libs/svg/src/weather.ts",
+          "by": "import",
+          "hops": 1,
+          "via": [
+            "libs/svg/src/terrain.ts"
+          ]
+        }
+      ],
+      "muted": [
+        "import: atis reads no imports from .json files, so 32 named files have no import reach",
+        "import: atis reads no imports from .md files, so 67 named files have no import reach",
+        "import: atis reads no imports from .svg files, so 32 named files have no import reach"
+      ]
     }
   }
 }

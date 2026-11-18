@@ -247,7 +247,7 @@ test('at rest every body sits where the layout put it in its still outline; open
   const rest = interiorOf(slide);
   for (const body of rest) {
     expect([body.x, body.y, body.r]).toEqual([body.rest.x, body.rest.y, body.rest.r]);
-    expect(body.outline).toEqual(outlineOf(body.id, body.rest, body.rules));
+    expect(body.outline).toEqual(outlineOf(body.id, body.rest, body.score));
   }
   const scheduler = createScheduler({ clock: () => 9000, seed: 7, tiers: [], reduced: false });
   scheduler.load();
@@ -260,8 +260,9 @@ test('at rest every body sits where the layout put it in its still outline; open
   expect(interiorOf(slide, { drifted: floated.filter((file) => file.id !== TOOLS) }).find((body) => body.id === TOOLS)).toMatchObject({ x: bodyOf(rest, TOOLS).rest.x, y: bodyOf(rest, TOOLS).rest.y });
   // A file within every threshold keeps its still outline; one breaking rules is pulsing and turned.
   expect(bodyOf(moving, SLOTS).outline).toEqual(outlineOf(SLOTS, bodyOf(moving, SLOTS), 0));
-  expect(bodyOf(moving, TOOLS).outline).not.toEqual(outlineOf(TOOLS, bodyOf(moving, TOOLS), 2, AT_REST));
-  expect(bodyOf(moving, TOOLS).outline).toEqual(outlineOf(TOOLS, bodyOf(moving, TOOLS), 2, scheduler.shape(2)));
+  const tools = bodyOf(moving, TOOLS);
+  expect(tools.outline).not.toEqual(outlineOf(TOOLS, tools, tools.score, AT_REST));
+  expect(tools.outline).toEqual(outlineOf(TOOLS, tools, tools.score, scheduler.shape(2)));
   // Under reduced motion nothing moves, and one seed and one time give one frame (C3).
   for (const body of interiorOf(slide, { drifted: floated, reduced: true, shape: scheduler.shape })) expect(body).toEqual(bodyOf(rest, body.id));
   expect(interiorOf(slide, { drifted: floated, shape: scheduler.shape })).toEqual(moving);

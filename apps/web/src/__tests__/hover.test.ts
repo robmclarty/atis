@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import { assertMap } from 'core';
 import type { MapJson } from 'core';
-import { dentedRing, outlineOf, rulesOf } from 'scene';
+import { dentedRing, outlineOf, troubleOf } from 'scene';
 import { expect, test } from 'vitest';
 
 import { hoverOf } from '../hover.js';
@@ -27,7 +27,7 @@ const placed = (map: MapJson, path: string): { readonly kind: 'organelle'; reado
 test('a file shows its own outline, rules and all, and its path, `+` before an added one (D146, D120)', () => {
   const index = placed(DEMO, 'libs/core/src/pm/index.ts');
   const organelle = DEMO.terrain.organelles.find((each) => each.id === index.path);
-  expect(hoverOf(DEMO, index)).toEqual({ key: 'organelle:libs/core/src/pm/index.ts', target: 'libs/core/src/pm/index.ts', text: 'libs/core/src/pm/index.ts', ring: outlineOf(index.path, index, rulesOf(organelle?.dents ?? [])).ring });
+  expect(hoverOf(DEMO, index)).toEqual({ key: 'organelle:libs/core/src/pm/index.ts', target: 'libs/core/src/pm/index.ts', text: 'libs/core/src/pm/index.ts', ring: outlineOf(index.path, index, organelle === undefined ? 0 : troubleOf(organelle).score).ring });
   expect(hoverOf(DEMO, placed(DEMO, 'libs/core/src/pm/tools.ts'))?.text).toBe('+libs/core/src/pm/tools.ts');
 });
 

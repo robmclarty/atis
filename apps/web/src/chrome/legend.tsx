@@ -374,17 +374,17 @@ const Balloon = ({ number, look, scale }: { readonly number: number; readonly lo
   </span>
 );
 
-/** The key of the seven shapes (D146): one file at each rule count, 0 to 6 from the left, drawn by the scene's `outlineOf` at rest, then the words. */
+/** The key of the shape spectrum (D194): seven samples along it, the smooth end at the left and the spiky at the right, drawn by the scene's `outlineOf` at rest, then the words. */
 const ShapeKey = ({ look, scale }: { readonly look: Look; readonly scale: number }): ReactElement => {
-  const forms = useMemo(() => Array.from({ length: MAX_RULES + 1 }, (_, rules) => outlineOf(`legend-key-${String(rules)}`, { x: 0, y: 0, r: LEGEND_SAMPLE_R }, rules)), []);
+  const forms = useMemo(() => Array.from({ length: MAX_RULES + 1 }, (_, level) => outlineOf(`legend-key-${String(level)}`, { x: 0, y: 0, r: LEGEND_SAMPLE_R }, level / MAX_RULES)), []);
   const style = { fill: look.ORGANELLE_FILL, stroke: look.ORGANELLE_STROKE, strokeWidth: look.ORGANELLE_STROKE_WIDTH };
   return (
     <div data-key="shapes" style={{ display: 'flex', alignItems: 'center', gap: look.LEGEND_PAD * scale }}>
       <span style={{ display: 'inline-flex' }}>
-        {forms.map((outline, rules) => (
-          <Sample key={rules} look={look} scale={scale} width={look.LEGEND_KEY_PITCH}>
-            <g data-rules={rules}>
-              {rules === 0 ? <circle r={look.LEGEND_SAMPLE_R} {...style} /> : <path d={pathOf(outline.ring)} {...style} />}
+        {forms.map((outline, level) => (
+          <Sample key={level} look={look} scale={scale} width={look.LEGEND_KEY_PITCH}>
+            <g data-level={level}>
+              {level === 0 ? <circle r={look.LEGEND_SAMPLE_R} {...style} /> : <path d={pathOf(outline.ring)} {...style} />}
               {outline.bulbs.map((bulb) => (
                 <circle key={`${String(bulb.x)},${String(bulb.y)}`} cx={bulb.x} cy={bulb.y} r={bulb.r} {...style} />
               ))}

@@ -37,7 +37,7 @@ import {
   TERRACE_LINE_WIDTH,
   dentedRing,
   outlineOf,
-  rulesOf,
+  troubleOf,
 } from 'scene';
 
 import { el, num } from './el.js';
@@ -212,21 +212,21 @@ function drawGlyph(id: string, family: string, index: number, [x, y]: Point): Ma
 
 /**
  * One organelle: its shape, then its clone glyph when it has a family, just
- * outside its edge at its upper right. A file within every threshold is a
- * circle at the radius core gave its mass; one that breaks rules is its
- * outline morphed by how many (D146), drawn still at rest (C10) through the
- * scene's `outlineOf`, the shape the world moves, with a disc for each bulb
- * at levels 5 and 6.
+ * outside its edge at its upper right. A file with no trouble is a circle at
+ * the radius core gave its mass; any other is its outline on the shape
+ * spectrum, by its trouble score (D194), drawn still at rest (C10) through
+ * the scene's `outlineOf`, the shape the world moves, with a disc for each
+ * bulb toward the spiky end.
  */
 function drawOrganelle(organelle: Organelle, at: Position, families: ReadonlyMap<string, number>): readonly Markup[] {
   const identity = { 'data-id': organelle.id, 'data-reachable': organelle.reachable ? undefined : 'false' };
-  const rules = rulesOf(organelle.dents);
-  const outline = rules === 0 ? undefined : outlineOf(organelle.id, at, rules);
+  const { score } = troubleOf(organelle);
+  const outline = score === 0 ? undefined : outlineOf(organelle.id, at, score);
   const shape =
     outline === undefined
       ? [el('circle', { ...identity, cx: at.x, cy: at.y, r: at.r })]
       : [
-          el('path', { ...identity, 'data-dents': organelle.dents.join(' '), d: pathOf(outline.ring) }),
+          el('path', { ...identity, 'data-dents': organelle.dents.length === 0 ? undefined : organelle.dents.join(' '), d: pathOf(outline.ring) }),
           ...outline.bulbs.map((bulb) => el('circle', { 'data-id': organelle.id, 'data-bulb': 'true', cx: bulb.x, cy: bulb.y, r: bulb.r })),
         ];
   const family = organelle.clone_family;
@@ -237,8 +237,8 @@ function drawOrganelle(organelle: Organelle, at: Position, families: ReadonlyMap
 
 /**
  * One shape per organelle the layout placed: a circle at the radius core gave
- * its mass, or its outline morphed by the rules it breaks (shape is
- * conformance, §5.1, D146), with the same small glyph on every member of a clone family
+ * its mass, or its outline on the shape spectrum (shape is trouble, §5.1,
+ * D194), with the same small glyph on every member of a clone family
  * (repetition is duplication). A file the layout did not place is not on the
  * field, and draws nothing.
  */

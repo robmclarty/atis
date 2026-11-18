@@ -11,6 +11,7 @@ import {
   CROSSING_PAD,
   HATCH_WIDTH,
   LEGEND_SAMPLE_R,
+  MAX_RULES,
   ORGANELLE_FILL,
   REACH_DECAY,
   REACH_GLOW,
@@ -21,7 +22,7 @@ import {
 } from 'scene';
 import { expect, test } from 'vitest';
 
-import { LEGEND, drawLegend } from '../legend.js';
+import { LEGEND, SHAPE_KEY_WORDS, drawLegend } from '../legend.js';
 import { FINDERS, calloutsOf, renderPractice } from '../practice.js';
 import { frameOf } from '../render.js';
 
@@ -210,4 +211,25 @@ test('the inset stays flat with its new rows: no opacity, no filter, no pattern'
 test('the practice map hangs a balloon on the brightest reach, a crossing and each texture, on the demo', () => {
   const callouts = renderPractice(demo()).callouts;
   expect(callouts.filter((callout) => callout.number > 10).map((callout) => callout.mark)).toEqual(['reach', 'crossing', 'hatching', 'stipple']);
+});
+
+/** How wide an outline's path stands, from the x of each point it is drawn through. */
+function widthOf(body: string): number {
+  const xs = [...body.matchAll(/[ML]([\d.-]+) [\d.-]+/g)].map(([, x]) => Number(x));
+  return Math.max(...xs) - Math.min(...xs);
+}
+
+test('the shape key is seven samples along the spectrum, a circle at the smooth end and the bulbed form at the spiky, under its words (D194)', () => {
+  const inset = drawLegend(0, 0, 280).markup;
+  const key = inset.slice(inset.indexOf('<g data-key="shapes">'));
+  const samples = [...key.matchAll(/<g data-level="(\d)">(.*?)<\/g>/gs)].map(([, level, body]) => ({ level: Number(level), body: body ?? '' }));
+  expect(samples.map((sample) => sample.level)).toEqual(Array.from({ length: MAX_RULES + 1 }, (_, level) => level));
+  // The smooth end is the one circle with no outline path; every other sample is an outline, and the last two wear bulbs.
+  expect(samples[0]?.body).toMatch(/^\s*<circle [^>]*\/>\s*$/);
+  for (const sample of samples.slice(1)) expect(sample.body, `sample ${String(sample.level)}`).toContain('<path d="M');
+  expect(samples.map((sample) => [...sample.body.matchAll(/<circle /g)].length > 0)).toEqual([true, false, false, false, false, true, true]);
+  // The spiky end stands wider than the first form past the circle.
+  expect(widthOf(samples[MAX_RULES]?.body ?? '')).toBeGreaterThan(widthOf(samples[1]?.body ?? '') * 1.3);
+  expect(SHAPE_KEY_WORDS).toBe('shape: trouble, smooth to spiky');
+  expect(key).toContain(`>${SHAPE_KEY_WORDS}</text>`);
 });

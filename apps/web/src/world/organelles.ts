@@ -9,10 +9,10 @@
  * stroke from the shared tokens, unlit by the key light, shown from LOD1 on.
  * Each carries an emissive glow of its own that is nothing at rest and lights
  * only by state, which step 33's weather sets, and that glow is all the
- * material writes to the bloom's target (D152). A file within every threshold
- * is a disc; one that breaks rules is its morphed outline, still at rest here,
- * and at levels 5 and 6 a second, smaller instanced mesh carries the bulbs at
- * its arms' tips. Under an opened cell's slide the files of that cell give
+ * material writes to the bloom's target (D152). A file with no trouble is a
+ * disc; any other is its outline on the shape spectrum (D194), still at rest
+ * here, and toward the spiky end a second, smaller instanced mesh carries the
+ * bulbs at its arms' tips. Under an opened cell's slide the files of that cell give
  * way as the slide fades in, since the slide draws them moving (step 40), and
  * once a cell has closed its files stand where they last floated, still, until
  * the scheduler brings them home (D165). A file of a package that stands as one
@@ -24,7 +24,7 @@
 import { BufferAttribute, Color, DataTexture, DataUtils, DoubleSide, DynamicDrawUsage, HalfFloatType, InstancedBufferAttribute, InstancedBufferGeometry, Mesh, MeshBasicNodeMaterial, NearestFilter, RGBAFormat } from 'three/webgpu';
 import type { UniformNode } from 'three/webgpu';
 import { abs, attribute, float, floor, instanceIndex, mix, mrt, positionLocal, smoothstep, step, texture, uniform, varying, vec2, vec3, vec4 } from 'three/tsl';
-import { ORGANELLE_FILL, ORGANELLE_STROKE, ORGANELLE_STROKE_WIDTH, instances, outlineOf, rulesOf, slideCellOf } from 'scene';
+import { ORGANELLE_FILL, ORGANELLE_STROKE, ORGANELLE_STROKE_WIDTH, instances, outlineOf, slideCellOf, troubleOf } from 'scene';
 import type { Composite, Grid, Instance, Point } from 'scene';
 import type { MapJson } from 'core';
 
@@ -62,11 +62,10 @@ export type OrganelleLook = {
 /** The look at rest, which is the shape the registry's view takes. */
 export const ORGANELLE_LOOK: OrganelleLook = { ORGANELLE_FILL, ORGANELLE_STROKE, ORGANELLE_STROKE_WIDTH };
 
-/** A file's outline as its radius at each of `SAMPLES` angles from 0, read off the ring step 94 draws, which samples uniformly from 0. */
-const radiiOf = (file: Instance): readonly number[] => {
-  const rules = rulesOf(file.dents);
-  if (rules === 0) return Array.from({ length: SAMPLES }, () => file.r);
-  const { ring } = outlineOf(file.id, { x: file.x, y: file.y, r: file.r }, rules);
+/** A file's outline at `score` on the shape spectrum (D194), as its radius at each of `SAMPLES` angles from 0, read off the ring step 94 draws, which samples uniformly from 0. */
+const radiiOf = (file: Instance, score: number): readonly number[] => {
+  if (score === 0) return Array.from({ length: SAMPLES }, () => file.r);
+  const { ring } = outlineOf(file.id, { x: file.x, y: file.y, r: file.r }, score);
   const radii = ring.map(([x, y]) => Math.hypot(x - file.x, y - file.y));
   return Array.from({ length: SAMPLES }, (_, sample) => {
     const at = (sample / SAMPLES) * ring.length;
@@ -213,6 +212,8 @@ const instancedMesh = (placed: Placed, relief: DataTexture, grid: Grid, amp: Flo
 /** Every placed file as instances, and the bulbs of the files at levels 5 and 6 as a second set, each numbered by the cell whose slide it gives way under: its own, or the package a single-file module floats in (D167). */
 const placedOf = (map: MapJson, cellNumber: ReadonlyMap<string, number>, partOf: ReadonlyMap<string, number>): { readonly files: Placed; readonly bulbs: Placed } => {
   const files = instances(map);
+  // Each file's place on the shape spectrum, read once from the map as the still map reads it (D194).
+  const scores = new Map(map.terrain.organelles.map((organelle) => [organelle.id, troubleOf(organelle).score] as const));
   const centres = new Float32Array(files.length * 2);
   const glows = new Float32Array(files.length * 4);
   const cells = new Float32Array(files.length);
@@ -227,9 +228,9 @@ const placedOf = (map: MapJson, cellNumber: ReadonlyMap<string, number>, partOf:
     centres[index * 2 + 1] = file.y;
     const slide = cellNumber.get(slideCellOf(map, file.cell)) ?? 0;
     cells[index] = slide;
-    const rules = rulesOf(file.dents);
-    if (rules > 0) {
-      for (const bulb of outlineOf(file.id, { x: file.x, y: file.y, r: file.r }, rules).bulbs) {
+    const score = scores.get(file.id) ?? 0;
+    if (score > 0) {
+      for (const bulb of outlineOf(file.id, { x: file.x, y: file.y, r: file.r }, score).bulbs) {
         bulbCentres.push(bulb.x, bulb.y);
         bulbCells.push(slide);
         bulbParts.push(parts[index] ?? 0);
@@ -237,7 +238,7 @@ const placedOf = (map: MapJson, cellNumber: ReadonlyMap<string, number>, partOf:
         bulbRadii.push(Array.from({ length: SAMPLES }, () => bulb.r));
       }
     }
-    return radiiOf(file);
+    return radiiOf(file, score);
   });
   return {
     files: { centres, glows, radii, cells, parts, owners: Int32Array.from(files, (_, index) => index) },

@@ -695,7 +695,7 @@ test('every map carries the legend inset at the foot of the notice column, clear
 
     // Under the marks, the key of the seven shapes: one form per rule count, round first, then its words, inside the frame (D146).
     const key = legend.slice(legend.indexOf('<g data-key="shapes">'));
-    expect([...key.matchAll(/<g data-rules="(\d)">/g)].map(([, rules]) => Number(rules))).toEqual([0, 1, 2, 3, 4, 5, 6]);
+    expect([...key.matchAll(/<g data-level="(\d)">/g)].map(([, level]) => Number(level))).toEqual([0, 1, 2, 3, 4, 5, 6]);
     const keyWords = new RegExp(`<text x="([\\d.]+)" y="([\\d.]+)"[^>]*font-size="([\\d.]+)"[^>]*>${SHAPE_KEY_WORDS}</text>`).exec(key);
     expect(keyWords, 'the shape key has its words').not.toBeNull();
     const [keyLeft = 0, keyBaseline = 0, keySize = 0] = (keyWords ?? []).slice(1).map(Number);

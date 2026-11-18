@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: a world that describes itself at a glance
 
-**Current step:** 2 — feat(scene): score each file's trouble on one spectrum from the map
+**Current step:** 3 — feat(scene): draw every file's outline on a continuous spectrum
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -24,7 +24,7 @@ line above. Only ONE step is in flight; a step is done only after a checkpoint:
 check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 
 - ☑ 1. feat(core): count a cell's imports through and past its interface
-- ☐ 2. feat(scene): score each file's trouble on one spectrum from the map
+- ☑ 2. feat(scene): score each file's trouble on one spectrum from the map
 - ☐ 3. feat(scene): draw every file's outline on a continuous spectrum
 - ☐ 4. feat(scene): move the spectrum's spiky end most, and least regularly
 - ☐ 5. feat(web): cycle an opened cell's files across the spectrum on demand
@@ -47,6 +47,9 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 > Mid-step, every new problem / idea / "ooh what if" lands HERE, untouched, and you
 > go straight back to the step. Acting the instant an idea arrives is the disease.
 > Capture is one line (`/plumbbob:park` composes it). Harvest happens only at the boundary.
+
+- [ ] docs/glance-practice.svg predates the shape spectrum: it still keys 'shape: rules it breaks, 0 to 6' and draws every calm file as a circle, and it was already behind the renderer (its Size block counts 4 files where today's counts 2); pnpm practice-map re-renders it, outside step 3's seam
+- [ ] the two spikiest forms are drawn through too few points: at SHAPE_LEVELS 5 and 6 an arm is about one sample wide (160 points round 18 arms of sharp 20), so the ring catches each tip at 53 to 100 percent of its length by where the points fall, which flickers as a shape turns and makes the ring's own furthest point wander as the score climbs; step 3 holds the monotone test on the outline's analytic extent instead
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -110,3 +113,5 @@ folder, so it rides the branch into the PR.)*
   **3.** Step 3 moves every SVG golden at once
 
   The spectrum gives a form to every file with history, so each fixture SVG under `fixtures/` (34 reviewed PRs) and the demo goldens regenerate in one step, and the retake maps you know by eye change shape. C16 (goldens-named) covers it and no glance reading is in scope (§5), but the diff is the build's largest, and it lands before you have judged the spectrum in the world at range 1's stop. Cutting range 1 at `1-2` would let you judge the score's spread on a map first; the plan keeps `1-5` so the stop has the demo switch to judge with.
+
+- 2026-11-18 — step 2 checkpointed · 579bcc9bb — feat(scene): score each file's trouble on one spectrum from the map (1 red, 11m)

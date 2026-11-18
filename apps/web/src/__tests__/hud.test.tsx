@@ -207,7 +207,7 @@ test('the legend inset draws one numbered row per mark with its words, and the k
   for (const [index, mark] of LEGEND.entries()) expect(rows[index]?.textContent).toContain(mark.words);
   expect(all('[data-legend] [data-mark="category"] span span').map((block) => block.textContent)).toEqual(['VFR', 'MVFR', 'IFR', 'LIFR']);
   expect(all('[data-legend] [data-mark]:not([data-mark="category"]) svg')).toHaveLength(LEGEND.length - 1);
-  expect(all('[data-legend] [data-key="shapes"] [data-rules]').map((form) => form.getAttribute('data-rules'))).toEqual(Array.from({ length: MAX_RULES + 1 }, (_, rules) => String(rules)));
+  expect(all('[data-legend] [data-key="shapes"] [data-level]').map((form) => form.getAttribute('data-level'))).toEqual(Array.from({ length: MAX_RULES + 1 }, (_, level) => String(level)));
   expect(element('[data-legend] [data-key="shapes"]').textContent).toContain(SHAPE_KEY_WORDS);
   expect(element('[data-legend]').textContent).toContain('legend');
   expect(host.innerHTML).not.toMatch(/gradient|shadow|blur|opacity/);

@@ -69,7 +69,7 @@ D11). Nothing in this section is luminous; light is the weather's to draw.
 | `ORGANELLE_FILL` | `#333a43` | each file's body in `#organelles` |
 | `ORGANELLE_STROKE` | `#5f6873` | each organelle's outline |
 | `ORGANELLE_STROKE_WIDTH` | `1` | that outline's width |
-| `SHAPE_LEVELS` | seven forms, below | shape is conformance (§5.1, D146): a file's outline morphs by how many rules it breaks, 0 to 6, drawn by `outlineOf` in `libs/scene/src/shape.ts` for both renderers, still in the SVG |
+| `SHAPE_LEVELS` | seven forms, below | shape is trouble (§5.1, D194 (shape-spectrum)): a file's outline is a point on one continuous spectrum, by its trouble score from 0 to 1, drawn by `outlineOf` in `libs/scene/src/shape.ts` for both renderers, still in the SVG; these are the spectrum's seven samples |
 | `SHAPE_CORE_GIVE` | `0.2` | the body gives this share of an arm's reach back, so a spiked file keeps about the size its mass gave it |
 | `SHAPE_ARM_SPREAD` | `0.3` | each arm's own length varies by up to this share either way, seeded by the file's path, so no two files' spikes match |
 | `TROUBLE_RULES_FROM` | `0.4` | shape means trouble (D194 (shape-spectrum)): the score one broken rule gives a file on the spectrum with no history, from which the rules climb evenly to 1 one step past the sixth; below it history alone (the greater of churn over `CHURN_FULL_AT` and bug-fix rate over `BUGFIX_FULL_AT`) shades a file that breaks none, and above it history shades within each level, computed by `troubleOf` in `libs/scene/src/trouble.ts` |
@@ -78,18 +78,33 @@ D11). Nothing in this section is luminous; light is the weather's to draw.
 | `GLYPH_STROKE` | `#7b848f` | repetition is duplication (§5.1): the clone-family glyph beside an organelle, and the same glyph beside the membrane of a cell in that family |
 | `GLYPH_OFFSET` | `4` | how far past the organelle's edge that glyph sits, or past the outer edge of a cell's membrane at its upper right |
 
-`SHAPE_LEVELS` holds one form per rule count, at the materials spike's values,
-which Rob judged in the world (D146). A form's arms are raised cosines round
-evenly spaced spokes: `reach` is how far an arm reaches as a share of the
+`SHAPE_LEVELS` holds the spectrum's seven samples, at the materials spike's
+values, which Rob judged in the world (D146). A form's arms are raised cosines
+round evenly spaced spokes: `reach` is how far an arm reaches as a share of the
 radius, `sharp` how narrow it is (1 a smooth wave, higher a spike), `wobble` a
 low two-lobed swell that keeps the gentle forms soft rather than geared, `bulb`
 the disc at each arm's tip as a share of the radius, and `samples` the points
-the outline is drawn through. A file within every threshold is a plain circle.
-Where the arms turn to and each arm's length are seeded by the file's path
-(C3); the world moves the same outline by its rule count inside an opened cell
-(D147), and the SVG draws it at rest.
+the outline is drawn through. Where the arms turn to and each arm's length are
+seeded by the file's path (C3); the SVG draws the outline at rest, and the world
+moves it inside an opened cell (D147).
 
-| Rules | Form | `arms` | `reach` | `sharp` | `wobble` | `bulb` | `samples` |
+A file's score lands at `score × 6` among the samples (D194 (shape-spectrum)).
+A score of 0 is a plain circle, and a score on a sample is that form alone.
+Between two samples `reach`, `sharp`, `wobble`, `bulb` and `samples` run
+linearly from the lower form to the upper, and the two forms' arms cross-fade:
+the lower form's arms hold their length through the first half of the way
+while the upper form's grow in beside them, then fade out through the second
+half, and the outline is whichever of the two stands further out at each
+angle. Held that way the outline's extent, its body's swell and its longest
+arm together, never draws back as the score climbs; a plain blend would let it
+halfway, where both sets of arms are half length. The lower form's bulbs fade
+out by the fraction of the way as the upper form's fade in. The score is
+`troubleOf`'s, in `libs/scene/src/trouble.ts`: the rules a file breaks, shaded
+by its history, so a file that breaks none and has changed or been fixed often
+still leaves the circle. A function's granule on the file plate reads the same
+scale by the thresholds it breaks, with no history.
+
+| Sample | Form | `arms` | `reach` | `sharp` | `wobble` | `bulb` | `samples` |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 0 | round | 0 | 0 | 1 | 0 | 0 | 48 |
 | 1 | a soft wobble | 3 | 0.06 | 1 | 0.05 | 0 | 48 |
@@ -218,8 +233,8 @@ state's graphite, muted (D49). The HUD names the overlay drawn and counts it.
 Past LOD3's gate (§6, D102) the file nearest the view's centre opens onto a
 plate of its own over the world, centred where the file lies. Its functions
 are granules down the plate in the order of their lines, each sized by the
-lines it spans and dented once per threshold it breaks, as a file is by its
-rules (D146), in the organelles' `ORGANELLE_FILL` and `ORGANELLE_STROKE`; a
+lines it spans and shaped by the thresholds it breaks on the scale a file's
+rules are (D194 (shape-spectrum)), in the organelles' `ORGANELLE_FILL` and `ORGANELLE_STROKE`; a
 function nested in another stands in a column to its right. Beside them runs
 the strip of the file's lines on the same scale, in `TERRACE_LINE` on a
 `TERRACE_FILL` ground: the change's hunks in `CHANGE_HUE`, the changed lines
@@ -319,8 +334,9 @@ Every map carries a compact key in its chrome (D87), `#legend` at the foot of th
 notice column, below the last row and clear of the world: a hairline frame in
 `CHROME_MUTED`, a small-caps title, and one row per mark in `LEGEND`'s order
 (`libs/svg/src/legend.ts`), each a numbered balloon, a sample of the mark and a few
-words. Under them a last row keys the seven shapes (D146): one file at each rule
-count, 0 to 6 from the left, `LEGEND_KEY_PITCH` apart, then their words. It keys
+words. Under them a last row keys the shape spectrum (D194 (shape-spectrum)):
+seven samples along it, the smooth end at the left and the spiky at the right,
+`LEGEND_KEY_PITCH` apart, then their words, `shape: trouble, smooth to spiky`. It keys
 a scale, as the category row does, so it takes no number and the practice map
 hangs no balloon on it. The samples are the world's own shapes and inks drawn flat (D12): no
 opacity, no blur, no pattern. Each ink the world draws at a share is laid already

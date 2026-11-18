@@ -1,6 +1,6 @@
 /**
  * hover: what the world shows of the thing under the pointer (step 38): the
- * outline it highlights, the file's own morphed shape (D146) or the cell's
+ * outline it highlights, the file's own shape on the spectrum (D194) or the cell's
  * membrane with its teeth (D159), and the path its hover tag writes, a file's
  * as the rail writes it, `+` before an added one and the old path before a
  * renamed one (D40, D120), and a cell's folder. The world eases the outline
@@ -8,7 +8,7 @@
  * Pure: no three, no DOM, so a test reads it straight.
  */
 
-import { dentedRing, outlineOf, rulesOf } from 'scene';
+import { dentedRing, outlineOf, troubleOf } from 'scene';
 import type { Pick, Point } from 'scene';
 import type { MapJson } from 'core';
 
@@ -27,7 +27,7 @@ const wordsOf = (map: MapJson, path: string): string => {
 export const hoverOf = (map: MapJson, pick: Pick): Hovered | undefined => {
   if (pick.kind === 'organelle') {
     const organelle = map.terrain.organelles.find((each) => each.id === pick.path);
-    const { ring } = outlineOf(pick.path, pick, rulesOf(organelle?.dents ?? []));
+    const { ring } = outlineOf(pick.path, pick, organelle === undefined ? 0 : troubleOf(organelle).score);
     return { key: `organelle:${pick.path}`, target: pick.path, text: wordsOf(map, pick.path), ring };
   }
   const cell = map.terrain.cells.find((each) => each.id === pick.cell);

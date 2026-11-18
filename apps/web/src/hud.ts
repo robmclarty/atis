@@ -193,8 +193,8 @@ export const LEGEND: readonly LegendMark[] = [
   { id: 'stipple', words: 'stipple: how many of its commits fixed bugs' },
 ];
 
-/** What the key of the seven shapes says beside them (D146). */
-export const SHAPE_KEY_WORDS = 'shape: rules it breaks, 0 to 6';
+/** What the key of the seven shapes says beside them (D194). */
+export const SHAPE_KEY_WORDS = 'shape: trouble, smooth to spiky';
 
 const channel = (hex: string, at: number): number => Number.parseInt(hex.slice(at, at + 2), 16);
 

@@ -312,8 +312,8 @@ function sampleOf(id: string, x: number, y: number): Sample {
   }
 }
 
-/** What the key of the seven shapes says beside them (D146). */
-export const SHAPE_KEY_WORDS = 'shape: rules it breaks, 0 to 6';
+/** What the key of the seven shapes says beside them (D194). */
+export const SHAPE_KEY_WORDS = 'shape: trouble, smooth to spiky';
 
 /** How tall the inset is: its title, a row per mark, the shape key's row, and its padding. */
 export function legendHeight(): number {
@@ -321,19 +321,20 @@ export function legendHeight(): number {
 }
 
 /**
- * The key of the seven shapes (D146), a row of its own under the numbered
- * marks: one file at each rule count, 0 to 6 from left to right, drawn by the
- * scene's `outlineOf` at rest as every organelle is, then the words. It keys a
- * scale, as the category row does, so it takes no number and no balloon.
+ * The key of the shape spectrum (D194), a row of its own under the numbered
+ * marks: seven samples along it, the smooth end at the left and the spiky at
+ * the right, each drawn by the scene's `outlineOf` at rest as every organelle
+ * is, then the words. It keys a scale, as the category row does, so it takes
+ * no number and no balloon.
  */
 function drawShapeKey(x: number, centre: number): Markup {
   const first = x + LEGEND_PAD + LEGEND_KEY_PITCH / 2;
-  const forms = Array.from({ length: MAX_RULES + 1 }, (_, rules) => {
-    const at = { x: first + rules * LEGEND_KEY_PITCH, y: centre, r: LEGEND_SAMPLE_R };
-    const outline = outlineOf(`legend-key-${String(rules)}`, at, rules);
+  const forms = Array.from({ length: MAX_RULES + 1 }, (_, level) => {
+    const at = { x: first + level * LEGEND_KEY_PITCH, y: centre, r: LEGEND_SAMPLE_R };
+    const outline = outlineOf(`legend-key-${String(level)}`, at, level / MAX_RULES);
     const style = { fill: ORGANELLE_FILL, stroke: ORGANELLE_STROKE, 'stroke-width': ORGANELLE_STROKE_WIDTH };
-    return el('g', { 'data-rules': rules }, [
-      rules === 0 ? el('circle', { cx: at.x, cy: at.y, r: at.r, ...style }) : el('path', { d: pathOf(outline.ring), ...style }),
+    return el('g', { 'data-level': level }, [
+      level === 0 ? el('circle', { cx: at.x, cy: at.y, r: at.r, ...style }) : el('path', { d: pathOf(outline.ring), ...style }),
       ...outline.bulbs.map((bulb) => el('circle', { cx: bulb.x, cy: bulb.y, r: bulb.r, ...style })),
     ]);
   });
