@@ -75,6 +75,18 @@ export type Captured = { readonly png: Buffer; readonly backend: string | undefi
 const TWO_FRAMES = 'new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(() => done(true))))';
 
 /**
+ * The URL a capture opens, from the served one: the scheduler's clock frozen
+ * at the capture's time, and never the demo switch, since a still must show
+ * the map's own shapes (D105, D202).
+ */
+export const captureUrl = (url: string): string => {
+  const frozen = new URL(url);
+  frozen.searchParams.set('time', String(CAPTURE.time));
+  frozen.searchParams.delete('shapes');
+  return frozen.href;
+};
+
+/**
  * Open the served world at `url` in `browser` at the capture's frame and take
  * it, once its ready flag is up (D105): the tab as it opens.
  */
@@ -84,9 +96,7 @@ export const capturePng = async (browser: Browser, url: string): Promise<Capture
     const page = await context.newPage();
     const faults: string[] = [];
     page.on('pageerror', (error) => faults.push(error.message));
-    const frozen = new URL(url);
-    frozen.searchParams.set('time', String(CAPTURE.time));
-    await page.goto(frozen.href);
+    await page.goto(captureUrl(url));
     try {
       await page.waitForSelector('#world[data-ready="true"]', { state: 'attached', timeout: CAPTURE.timeout_ms });
     } catch (error) {

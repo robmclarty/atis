@@ -83,9 +83,11 @@ export type ChromeProps = {
   readonly reload?: () => void;
   /** The tour the CLI serves beside the map, when it serves one (D112); none, and the chrome shows nothing of a tour. */
   readonly tour?: Tour | undefined;
+  /** The demo switch, when the page asked for it, which the status line names (D202). */
+  readonly shapes?: 'demo' | undefined;
 };
 
-export const Chrome = ({ state, registry, nav: given, dev, token, load = loadPanel, post, reload, tour }: ChromeProps): ReactElement => {
+export const Chrome = ({ state, registry, nav: given, dev, token, load = loadPanel, post, reload, tour, shapes }: ChromeProps): ReactElement => {
   const [open, setOpen] = useState(false);
   const own = useMemo(() => createNav(), []);
   const nav = given ?? own;
@@ -117,7 +119,7 @@ export const Chrome = ({ state, registry, nav: given, dev, token, load = loadPan
         {ranged !== undefined && <Scrubber map={ranged} registry={registry} nav={nav} />}
         {map !== undefined && <OverlayToggles map={map} registry={registry} nav={nav} />}
         {ranged !== undefined && token !== undefined && <Bases map={ranged} registry={registry} token={token} {...(post === undefined ? {} : { post })} {...(reload === undefined ? {} : { reload })} />}
-        <Status state={state} registry={registry} />
+        <Status state={state} registry={registry} shapes={shapes} />
         {map !== undefined && <Crumbs map={map} registry={registry} nav={nav} />}
         {ranged !== undefined && tour !== undefined && <TourStepper map={ranged} tour={tour} registry={registry} nav={nav} />}
         {open && (

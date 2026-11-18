@@ -14,7 +14,10 @@
  * layout's middle, so a screenshot or the smoke test can frame one cell
  * (step 40). `?cinema` frames the world as a still, with no chrome, on what
  * the change is about, where the scene frames the comment's flat still
- * (`libs/scene/src/cinema.ts`, D108, D175).
+ * (`libs/scene/src/cinema.ts`, D108, D175). `?shapes=demo` cycles an opened
+ * cell's files across the whole shape spectrum by their place in path order,
+ * in place of their trouble, so every form can be previewed on any map; the
+ * surface keeps its files' own shapes, and a still never carries it (D202).
  */
 
 import type { Point } from 'scene';
@@ -36,6 +39,8 @@ export type View = {
   readonly centre?: Point;
   /** A still for a comment: no chrome, the frame on what the change is about, and no cell opening as a slide (D108). */
   readonly cinema?: true;
+  /** The demo switch: an opened cell's files take scores across the spectrum by path order, in place of their trouble (D202). */
+  readonly shapes?: 'demo';
 };
 
 /** How far the camera tips off overhead, where the materials spike's controls stopped; step 37's camera keeps the bound. */
@@ -70,5 +75,6 @@ export const viewOf = (search: string): View => {
     ...(Number.isFinite(time) && time >= 0 ? { time } : {}),
     ...(centre === undefined ? {} : { centre }),
     ...(params.get('cinema') === null ? {} : { cinema: true as const }),
+    ...(params.get('shapes') === 'demo' ? { shapes: 'demo' as const } : {}),
   };
 };

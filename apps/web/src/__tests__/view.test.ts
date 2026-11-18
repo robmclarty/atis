@@ -53,6 +53,16 @@ test('the centre is a layout point, `x,y`, else the frame opens on the layout\'s
   expect(viewOf('')).not.toHaveProperty('centre');
 });
 
+test('only ?shapes=demo turns the demo switch on; any other value is ignored (D202)', () => {
+  expect(viewOf('?shapes=demo').shapes).toBe('demo');
+  expect(viewOf('?zoom=2&shapes=demo&tilt=10')).toMatchObject({ zoom: 2, tilt: 10, shapes: 'demo' });
+  expect(viewOf('?shapes=Demo')).not.toHaveProperty('shapes');
+  expect(viewOf('?shapes=1')).not.toHaveProperty('shapes');
+  expect(viewOf('?shapes=')).not.toHaveProperty('shapes');
+  expect(viewOf('?shapes')).not.toHaveProperty('shapes');
+  expect(viewOf('')).not.toHaveProperty('shapes');
+});
+
 test('the page asks for a still with ?cinema, framed by the scene as the comment frames its own (D175)', () => {
   expect(viewOf('?cinema=1').cinema).toBe(true);
   expect(viewOf('')).not.toHaveProperty('cinema');

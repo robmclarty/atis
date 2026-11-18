@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: a world that describes itself at a glance
 
-**Current step:** 4 — feat(scene): move the spectrum's spiky end most, and least regularly
+**Current step:** 5 — feat(web): cycle an opened cell's files across the spectrum on demand
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -26,7 +26,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 1. feat(core): count a cell's imports through and past its interface
 - ☑ 2. feat(scene): score each file's trouble on one spectrum from the map
 - ☑ 3. feat(scene): draw every file's outline on a continuous spectrum
-- ☐ 4. feat(scene): move the spectrum's spiky end most, and least regularly
+- ☑ 4. feat(scene): move the spectrum's spiky end most, and least regularly
 - ☐ 5. feat(web): cycle an opened cell's files across the spectrum on demand
 - ☐ 6. feat(scene): grow the drift's contrast through a looseness curve
 - ☐ 7. feat(scene): gather an opened cell's held files toward its middle
@@ -50,6 +50,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 
 - [x] docs/glance-practice.svg predates the shape spectrum: it still keys 'shape: rules it breaks, 0 to 6' and draws every calm file as a circle, and it was already behind the renderer (its Size block counts 4 files where today's counts 2); pnpm practice-map re-renders it, outside step 3's seam
 - [x] the two spikiest forms are drawn through too few points: at SHAPE_LEVELS 5 and 6 an arm is about one sample wide (160 points round 18 arms of sharp 20), so the ring catches each tip at 53 to 100 percent of its length by where the points fall, which flickers as a shape turns and makes the ring's own furthest point wander as the score climbs; step 3 holds the monotone test on the outline's analytic extent instead
+- [ ] apps/web hud.test.tsx 'the world's blocks are the sheet's' timed out at vitest's 5 s default once under a loaded full check (6.7 s) and passed on rerun; it walks every committed fixture, so give it a longer timeout or split it
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -196,3 +197,5 @@ folder, so it rides the branch into the PR.)*
   `docs/glance-practice.svg` is in the same state: it still keys `shape: rules it breaks, 0 to 6`, and it was already behind the renderer before this step. It is outside the seam, so it is parked for `pnpm practice-map`.
 
   `TROUBLE_RULES_FROM` and `SHAPE_LEVELS` stay baked for now in the sense C15 (every-look-a-token) asks to be named: the world's surface builds its outlines once from the map, so a value the dev panel moves shows at the next build of the world, not on the next frame.
+
+- 2026-11-18 — step 4 checkpointed · ca96b0bda — feat(scene): move the spectrum's spiky end most, and least regularly (1 red, 1 drift, 11m)

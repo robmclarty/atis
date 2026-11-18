@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { build } from 'vite';
 import { afterAll, expect, test } from 'vitest';
 
-import { CAPTURE, INSTALL, capturePng, launchBrowser } from '../png.js';
+import { CAPTURE, INSTALL, capturePng, captureUrl, launchBrowser } from '../png.js';
 import { pngRun } from '../run.js';
 import { serve } from '../serve.js';
 
@@ -38,6 +38,18 @@ const temp = (prefix: string): string => {
 
 afterAll(() => {
   for (const dir of temps) rmSync(dir, { recursive: true, force: true });
+});
+
+test("the URL a capture opens freezes the clock and never carries the demo switch, whatever the served one says (D105, D202)", () => {
+  const plain = new URL(captureUrl(`http://127.0.0.1:4173/?map=/map.json&token=${TOKEN}`));
+  expect(plain.searchParams.get('time')).toBe(String(CAPTURE.time));
+  expect(plain.searchParams.has('shapes')).toBe(false);
+  expect(plain.searchParams.get('map')).toBe('/map.json');
+  expect(plain.searchParams.get('token')).toBe(TOKEN);
+  const asked = new URL(captureUrl(`http://127.0.0.1:4173/?map=/map.json&shapes=demo&token=${TOKEN}`));
+  expect(asked.searchParams.has('shapes')).toBe(false);
+  expect(asked.href).not.toContain('shapes');
+  expect(asked.searchParams.get('token')).toBe(TOKEN);
 });
 
 /** A PNG's width and height, from its header. */

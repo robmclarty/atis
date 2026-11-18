@@ -3,7 +3,8 @@
  * its load. The chrome is the brutalist material (D12): one monospace face,
  * hard edges, the chrome's own ground and ink from the shared tokens (D130),
  * read through the registry so the dev panel moves them live (D156), and
- * nothing that glows, blurs or grades.
+ * nothing that glows, blurs or grades. While the demo switch is on the line
+ * says so, since an opened cell's shapes are then no reading of the map (D202).
  */
 
 import { CHROME_GROUND, CHROME_INK, CHROME_MUTED, CHROME_PAD, FONT_FAMILY, HUD_FONT_SIZE, IFR_HUE } from 'scene';
@@ -15,6 +16,9 @@ import { useLive } from './live.js';
 
 /** The tokens the line is drawn with, at rest: the shape its live view takes. */
 const LOOK = { CHROME_GROUND, CHROME_INK, CHROME_MUTED, CHROME_PAD, FONT_FAMILY, HUD_FONT_SIZE, IFR_HUE };
+
+/** What the line adds while `?shapes=demo` is on (D202). */
+const SHAPES_DEMO_WORDS = 'shapes: demo';
 
 /** How many characters of a commit's sha the line writes. */
 const SHORT_SHA = 7;
@@ -35,13 +39,14 @@ const inkOf = (state: MapState, look: typeof LOOK): string => {
   return look.CHROME_INK;
 };
 
-export const Status = ({ state, registry }: { readonly state: MapState; readonly registry: Registry }): ReactElement => {
+export const Status = ({ state, registry, shapes }: { readonly state: MapState; readonly registry: Registry; readonly shapes?: 'demo' | undefined }): ReactElement => {
   useLive(registry);
   const look = registry.view(LOOK);
   return (
     <p
       role="status"
       data-status={state.status}
+      {...(shapes === undefined ? {} : { 'data-shapes': shapes })}
       style={{
         margin: 0,
         padding: look.CHROME_PAD,
@@ -52,7 +57,7 @@ export const Status = ({ state, registry }: { readonly state: MapState; readonly
         pointerEvents: 'auto',
       }}
     >
-      {wordsOf(state)}
+      {shapes === undefined ? wordsOf(state) : `${wordsOf(state)} · ${SHAPES_DEMO_WORDS}`}
     </p>
   );
 };

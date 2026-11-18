@@ -127,12 +127,18 @@ export type Slide = {
 /** A file on the slide this frame: where it is, in its outline as the scheduler moves it. */
 export type Body = SlideFile & { readonly x: number; readonly y: number; readonly r: number; readonly outline: Outline };
 
-/** How the slide moves this frame: where the float has the cell's files (none while it rests), reduced motion, how far the exploded view has spread, 0 to 1, and how each trouble score moves a shape. */
+/**
+ * How the slide moves this frame: where the float has the cell's files (none
+ * while it rests), reduced motion, how far the exploded view has spread, 0 to
+ * 1, how each trouble score moves a shape, and the demo switch, under which
+ * the bodies take scores across the spectrum in place of their trouble (D202).
+ */
 export type InteriorMotion = {
   readonly drifted?: readonly Drifted[];
   readonly reduced?: boolean;
   readonly explode?: number;
   readonly shape?: (score: number) => ShapeMotion;
+  readonly shapes?: 'demo';
 };
 
 /** One file's tag in a column beside the slide: its words, its rule count, which column, its box on the screen, and the dotted leader from its edge to the body's rim. */
@@ -361,23 +367,34 @@ export function cellSlide(map: MapJson, cell: string, layout: InteriorLayout = I
   };
 }
 
+/** The demo switch's scores, by path (D202): each file's index in path order over the last index, 0 for a lone file. */
+function demoScores(files: readonly SlideFile[]): ReadonlyMap<string, number> {
+  const paths = files.map((file) => file.id).toSorted();
+  const last = paths.length - 1;
+  return new Map(paths.map((path, index) => [path, last === 0 ? 0 : index / last] as const));
+}
+
 /**
  * The bodies on a slide this frame: each file where the float has it (D157,
  * D165), drawn toward its exploded spot by how far the view has spread, in
  * the outline its trouble score moves (D147, D194). At rest, and under reduced motion,
  * every body sits where the layout put it, still; so does a file the float
- * leaves out.
+ * leaves out. Under the demo switch each body's score is its place in path
+ * order across the spectrum, the first file smooth and the last spiky, so a
+ * cell of any map shows every form (D202).
  */
 export function interiorOf(slide: Slide, motion: InteriorMotion = {}): readonly Body[] {
   const drifted = new Map(motion.reduced === true ? [] : (motion.drifted ?? []).map((file) => [file.id, file] as const));
   const spread = clamp01(motion.explode ?? 0);
   const shape = motion.reduced === true ? still : (motion.shape ?? still);
+  const demo = motion.shapes === 'demo' ? demoScores(slide.files) : undefined;
   return slide.files.map((file): Body => {
     const at = drifted.get(file.id) ?? file.rest;
     const x = at.x + (file.exploded[0] - at.x) * spread;
     const y = at.y + (file.exploded[1] - at.y) * spread;
     const r = file.rest.r;
-    return { ...file, x, y, r, outline: outlineOf(file.id, { x, y, r }, file.score, shape(file.score)) };
+    const score = demo?.get(file.id) ?? file.score;
+    return { ...file, score, x, y, r, outline: outlineOf(file.id, { x, y, r }, score, shape(score)) };
   });
 }
 

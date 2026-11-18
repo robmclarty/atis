@@ -7,7 +7,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { CHROME_INK, CHROME_MUTED, IFR_HUE } from 'scene';
 import { expect, test } from 'vitest';
 
-import { Status } from '../chrome/index.js';
+import { Chrome, Status } from '../chrome/index.js';
 import { createRegistry } from '../registry.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -39,6 +39,20 @@ test('the status line reads its ink through the registry (D156)', () => {
   const registry = createRegistry();
   registry.set('CHROME_INK', '#ffffff');
   expect(markup({ status: 'ready', url: '/map.json', map: DEMO }, registry)).toContain('color:#ffffff');
+});
+
+test('the status line says shapes: demo while the demo switch is on, and nothing of it otherwise (D202)', () => {
+  const ready = { status: 'ready', url: '/map.json', map: DEMO } as const;
+  const on = renderToStaticMarkup(<Status state={ready} registry={createRegistry()} shapes="demo" />);
+  expect(on).toContain('demo against main · shapes: demo');
+  expect(on).toContain('data-shapes="demo"');
+  const off = markup(ready);
+  expect(off).not.toContain('shapes');
+  // While the map loads, and when it fails, the line still says the switch is on.
+  expect(renderToStaticMarkup(<Status state={{ status: 'loading', url: '/map.json' }} registry={createRegistry()} shapes="demo" />)).toContain('reading /map.json · shapes: demo');
+  // The chrome hands the switch it was given to its status line.
+  expect(renderToStaticMarkup(<Chrome state={ready} registry={createRegistry()} dev={false} shapes="demo" />)).toContain('shapes: demo');
+  expect(renderToStaticMarkup(<Chrome state={ready} registry={createRegistry()} dev={false} />)).not.toContain('shapes: demo');
 });
 
 test('the chrome never glows: no shadow, blur or gradient in its style', () => {

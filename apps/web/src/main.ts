@@ -51,7 +51,7 @@ const token = servedToken(location.search);
 const nav = createNav();
 // The tour served beside the map, read alongside it when the URL says one is served (D112).
 let tour: Tour | undefined;
-const show = (state: MapState): void => chrome.render(createElement(Chrome, { state, registry, nav, dev: import.meta.env.DEV, token, tour }));
+const show = (state: MapState): void => chrome.render(createElement(Chrome, { state, registry, nav, dev: import.meta.env.DEV, token, tour, shapes: view.shapes }));
 
 const url = mapUrl(location.search);
 show({ status: 'loading', url });

@@ -272,6 +272,35 @@ test('at rest every body sits where the layout put it in its still outline; open
   expect(interiorOf(slide, { drifted: floated, shape: scheduler.shape })).toEqual(moving);
 });
 
+test("under the demo switch the slide's bodies take scores by their index in path order, across the whole spectrum, in place of their trouble (D202)", () => {
+  const slide = slideOf(PM);
+  const rest = interiorOf(slide);
+  const demo = interiorOf(slide, { shapes: 'demo' });
+  const paths = slide.files.map((file) => file.id).toSorted();
+  expect(paths.length).toBeGreaterThan(1);
+  for (const body of demo) {
+    const score = paths.indexOf(body.id) / (paths.length - 1);
+    expect(body.score, body.id).toBe(score);
+    expect(body.outline, body.id).toEqual(outlineOf(body.id, body.rest, score));
+    // Only the score and the outline it draws change: the body sits where it sat, with the rules and the stain it had.
+    expect({ ...body, score: 0, outline: undefined }, body.id).toEqual({ ...bodyOf(rest, body.id), score: 0, outline: undefined });
+  }
+  expect(demo.map((body) => body.score).toSorted((a, b) => a - b)).toEqual(paths.map((_, index) => index / (paths.length - 1)));
+  expect(Math.min(...demo.map((body) => body.score))).toBe(0);
+  expect(Math.max(...demo.map((body) => body.score))).toBe(1);
+  // The scheduler moves each body by its demo score, and the slide itself keeps every file's own trouble.
+  const scheduler = createScheduler({ clock: () => 9000, seed: 7, tiers: [], reduced: false });
+  scheduler.load();
+  for (const body of interiorOf(slide, { shapes: 'demo', shape: scheduler.shape })) expect(body.outline, body.id).toEqual(outlineOf(body.id, body, body.score, scheduler.shape(body.score)));
+  expect(slide.files.map((file) => file.score)).toEqual(rest.map((body) => body.score));
+  // A lone file scores 0.
+  const [only] = slide.files;
+  if (only === undefined) throw new Error('the slide has no file');
+  expect(interiorOf({ ...slide, files: [only] }, { shapes: 'demo' }).map((body) => body.score)).toEqual([0]);
+  // One slide gives one demo (C3).
+  expect(interiorOf(slide, { shapes: 'demo' })).toEqual(demo);
+});
+
 test('the exploded view spreads every body out from the middle along its leader, clear of the others, and gathers them back by how far it has spread', () => {
   const slide = slideOf(PM);
   const out = (point: Point): number => Math.hypot(point[0] - slide.centre[0], point[1] - slide.centre[1]);
