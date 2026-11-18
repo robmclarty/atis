@@ -61,6 +61,49 @@ test('an absent churn_ratio is listed under missing and never lowers a score bug
   expect(troubleOf(file(0)).score).toBe(0);
 });
 
+test('a file with only stability.churn_ratio scores as one with that churn_ratio, and names which it read (D203)', () => {
+  for (let rules = 0; rules <= MAX_RULES; rules += 1) {
+    for (const churn of [0, CHURN_FULL_AT / 3, CHURN_FULL_AT, CHURN_FULL_AT * 4]) {
+      const settled = troubleOf({ dents: dents(rules), stability: { age_days: 40, churn_ratio: churn } });
+      const own = troubleOf(file(rules, churn));
+      expect(settled.score).toBe(own.score);
+      expect(settled.used).toEqual(['dents', 'stability.churn_ratio']);
+      expect(own.used).toEqual(['dents', 'churn_ratio']);
+      expect(settled.missing).toEqual(['bugfix_rate']);
+    }
+  }
+  expect(troubleOf({ dents: [], stability: { age_days: 40, churn_ratio: CHURN_FULL_AT / 2 } }).score).toBeCloseTo(TROUBLE_RULES_FROM / 2, 12);
+});
+
+test("a file's own churn_ratio wins over its stability's, higher or lower (D203)", () => {
+  const low = troubleOf({ ...file(1, CHURN_FULL_AT / 4, 0), stability: { age_days: 9, churn_ratio: CHURN_FULL_AT } });
+  expect(low).toEqual({ ...troubleOf(file(1, CHURN_FULL_AT / 4, 0)), used: ['dents', 'churn_ratio', 'bugfix_rate'] });
+  expect(low.used).not.toContain('stability.churn_ratio');
+  const high = troubleOf({ ...file(1, CHURN_FULL_AT, 0), stability: { age_days: 9, churn_ratio: 0 } });
+  expect(high.score).toBe(troubleOf(file(1, CHURN_FULL_AT, 0)).score);
+  // A measured 0 of its own is a reading, not an absence: it still wins.
+  expect(troubleOf({ ...file(0, 0), stability: { age_days: 9, churn_ratio: CHURN_FULL_AT } }).score).toBe(0);
+});
+
+test('churn_ratio is missing only where the file and its stability both lack it, and is never defaulted (C2)', () => {
+  // A stability with an age and no churn (a file of unknown size) is no churn reading.
+  const aged = troubleOf({ dents: dents(2), stability: { age_days: 300 } });
+  expect(aged).toEqual({ score: troubleFrom(2), used: ['dents'], missing: ['churn_ratio', 'bugfix_rate'] });
+  expect(troubleOf({ dents: dents(2), bugfix_rate: BUGFIX_FULL_AT / 2, stability: { age_days: 300 } })).toEqual(troubleOf(file(2, undefined, BUGFIX_FULL_AT / 2)));
+  for (const read of [troubleOf(file(2, 0.5)), troubleOf({ dents: dents(2), stability: { age_days: 1, churn_ratio: 0.5 } })]) expect(read.missing).not.toContain('churn_ratio');
+});
+
+test("the score is monotone in stability's churn and the same on every call (C3)", () => {
+  const grid = Array.from({ length: 11 }, (_, index) => index / 10);
+  for (let rules = 0; rules <= MAX_RULES; rules += 1) {
+    for (const churn of grid) {
+      const at = (ratio: number) => troubleOf({ dents: dents(rules), stability: { age_days: 12, churn_ratio: ratio * CHURN_FULL_AT } });
+      expect(at(churn + 0.1).score).toBeGreaterThanOrEqual(at(churn).score);
+      expect(at(churn)).toEqual(at(churn));
+    }
+  }
+});
+
 test('the score is monotone in each input', () => {
   const grid = Array.from({ length: 11 }, (_, index) => index / 10);
   for (let rules = 0; rules <= MAX_RULES; rules += 1) {

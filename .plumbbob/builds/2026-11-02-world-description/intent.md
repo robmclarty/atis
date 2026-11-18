@@ -69,6 +69,7 @@ Settled at this plan (2026-11-02):
 - <a id="d200"></a>**D200 (one-meaning-per-mover)**: [C11 (one-meaning-per-channel)](#c11) is rewritten below: shape means trouble (conformance shaded by history, one spectrum), density means a file's functions, position inside an opened cell means looseness, and motion means one thing per mover (a notice's light, a file's shape, a file's place, a membrane's line, a ribbon), *because* the spectrum, the ripple and the sway each widen a channel, and the spec asks the plan to say exactly which.
 - <a id="d201"></a>**D201 (slide-only-svg)**: the still SVG draws no opened cell (`cellSlide` and `interiorOf` are the world's alone), so the nuclei and the gathering never reach it and its legend keys no nucleus; both reach the still only if a later decision shows nuclei at the surface ([Q88 (surface-nuclei)](#q88)), *because* a legend key for a mark the sheet never draws misleads, and §4.7's "wherever it draws an opened cell" binds nothing today.
 - <a id="d202"></a>**D202 (demo-switch)**: `?shapes=demo` gives an opened cell's files scores by their index in path order across the whole spectrum, in place of their trouble, the surface unchanged; the status line says `shapes: demo` while it is on; `--png`'s capture URL and the SVG never carry it, *because* every form must be previewable on any map, as the spike's switch allowed, and a still must never carry a demo.
+- <a id="d203"></a>**D203 (history-on-every-file)**: the trouble score reads a file's churn from `stability.churn_ratio` where the organelle carries no `churn_ratio` of its own, so history shades the shape of every file the log window saw and not only the files a change touched; a file's own `churn_ratio` wins where both are set, `bugfix_rate` is read as before, and `used` and `missing` name which was read; churn then shows on relief and on shape, the second channel [C11 (one-meaning-per-channel)](#c11) allows history, *because* at range 1's stop (2026-11-18) atis's own map drew 158 of 165 files as circles on a change and all 165 on the whole repo, no file breaking a rule and the map setting the top-level fields only on changed files, which left [D194 (shape-spectrum)](#d194)'s reason unmet.
 
 ## Constraints
 
@@ -101,7 +102,7 @@ Settled at this plan (2026-11-02):
    - proof: per [D194 (shape-spectrum)](#d194) and [D200 (one-meaning-per-mover)](#d200): the scheduler's `shape(score)` interpolates `SHAPE_PULSE_HZ`, `SHAPE_PULSE` and `SHAPE_TURN` at `score × MAX_RULES` as the outline interpolates its forms, and `ShapeMotion` gains `jitter`: each arm's beat wanders by up to `SHAPE_JITTER × score` radians on a slow seeded sine, so the spiky end pulses less regularly and the smooth end not at all; `interiorOf` hands each body's trouble score to `shape`; `SHAPE_PULSE` rises by about a quarter at every level as [Q87 (exaggeration-numbers)](#q87)'s starting value, inside its bound; a score of 0 is `AT_REST`; reduced motion stills it. Tests: `motion.test.ts` holds score 0 still, the motion monotone in score at one time, jitter 0 at score 0 and inside `SHAPE_JITTER` at 1, and one `ShapeMotion` per seed and time ([C3 (deterministic)](#c3)); `tokens.test.ts` bounds `SHAPE_JITTER` (at most π) and the raised `SHAPE_PULSE`; the motion table in `docs/design.md` gains the rows
    - seam: `libs/scene/src/shape.ts`, `libs/scene/src/motion.ts`, `libs/scene/src/interior.ts`, `libs/scene/src/tokens.ts`, `libs/scene/src/__tests__/motion.test.ts`, `libs/scene/src/__tests__/tokens.test.ts`, `libs/scene/src/__tests__/interior.test.ts`, `apps/web/src/world/draw.ts`, `docs/design.md`
    - model: sonnet (interpolation and one new term, specified by the done-when)
-5. [ ] feat(web): cycle an opened cell's files across the spectrum on demand
+5. [x] feat(web): cycle an opened cell's files across the spectrum on demand
    - proof: per [D202 (demo-switch)](#d202): `viewOf` reads `?shapes=demo` into `View.shapes`, ignoring any other value; while it is on, the slide's bodies take scores by their index in path order, `index / (count − 1)` (0 for a lone file), in place of their trouble, the surface and the SVG unchanged; the status line reads `shapes: demo` while it is on; the URL `--png` builds never carries the parameter, which `png.test.ts` asserts on the URL it builds. Tests: `view.test.ts` parses the parameter; `interior.test.ts` gives the demo scores by index; a status test shows the words
    - seam: `apps/web/src/view.ts`, `apps/web/src/world/draw.ts`, `apps/web/src/chrome/status.tsx`, `libs/scene/src/interior.ts`, `apps/web/src/__tests__/view.test.ts`, `apps/web/src/__tests__/status.test.tsx`, `libs/scene/src/__tests__/interior.test.ts`, `apps/atis/src/__tests__/png.test.ts`
    - model: sonnet (a parameter threaded to one call)
@@ -157,8 +158,14 @@ Settled at this plan (2026-11-02):
     - proof: `node apps/web/scripts/budget.ts` runs on the seeded 5,000-file map on both backends with the ripple and the sway on, and the budget table in `docs/design.md` gains a dated row holding [C14 (world-budget)](#c14): 60 fps at idle, through the sweep and at the surface, and a first frame about 2 s; a reading that misses is recorded as measured and parked with the mover and the level of detail it must shed at, never passed
     - seam: `apps/web/scripts/budget.ts`, `docs/design.md`
     - model: sonnet (run the script, record the numbers)
+19. [ ] feat(scene): shade every file's shape by the churn its stability carries
+    - proof: per [D203 (history-on-every-file)](#d203): `troubleOf` takes the organelle's `stability` too and reads its churn as `churn_ratio`, else `stability.churn_ratio`; `used` names `churn_ratio` or `stability.churn_ratio`, whichever it read, and `missing` names `churn_ratio` only where both are absent; every caller that passes an organelle passes its stability. Tests in `trouble.test.ts`: an organelle with only `stability.churn_ratio` scores as one with that `churn_ratio`; a top-level `churn_ratio` wins over stability's; neither is listed under `missing`, never defaulted ([C2 (never-fake)](#c2)); the score stays monotone and seeded ([C3 (deterministic)](#c3)). On atis's own whole-repo map more than half the files score above 0, counted in the commit body. Every SVG golden that moves is named there with the why ([C16 (goldens-named)](#c16))
+    - seam: `libs/scene/src/trouble.ts`, `libs/scene/src/__tests__/trouble.test.ts`, `libs/scene/src/interior.ts`, `libs/svg/src/terrain.ts`, `apps/web/src/hover.ts`, `apps/web/src/world/organelles.ts`, `libs/svg/fixtures/`, `fixtures/`, `docs/design.md`
+    - model: sonnet (one fallback read, specified by its decision)
 
 ## Build order
+
+19, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18
 
 ## Build ranges
 
@@ -173,6 +180,8 @@ Drive the build with `/plumbbob:run`: each run lands one range and stops where R
 4. `/plumbbob:build 15-16`, **stop:** the first-time-reader test: name what the depth bands mean from their labels alone, at the surface and inside a cell, tilted and zoomed; confirm they yield to cells, notices and the HUD
    - model: opus
 5. `/plumbbob:build 17-18`, **stop:** the build's boundary: review the channel list and the balance log, the budget row, and the goldens that moved with their reasons, then `/plumbbob:finish`
+   - model: sonnet
+6. `/plumbbob:build 19`, **stop:** the judgment range 1's stop could not make: on atis's own map, whole repo and last commit, a troubled file told from a calm one at the surface by shape alone, most files off the circle and the spiky end still the rule-breakers' ([D203 (history-on-every-file)](#d203))
    - model: sonnet
 
 ## Open questions

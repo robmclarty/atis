@@ -338,15 +338,22 @@ test('a cell in a clone family carries its family glyph just past its membrane, 
   expect(glyph?.d).toBe(glyphOf(layer(round, 'organelles'), RING_FILE)?.d);
 });
 
+/** Each circle an organelles layer draws, by the file's id, with its radius. */
+const circles = (drawn: string): ReadonlyMap<string, number> =>
+  new Map([...drawn.matchAll(/<circle data-id="([^"]+)" cx="[\d.]+" cy="[\d.]+" r="([\d.]+)"/g)].map(([, id, r]) => [id ?? '', Number(r)]));
+
 test('one shape per organelle, a circle sized by loc when it has no trouble', () => {
   const map = demo();
   const organelles = layer(renderSvg(map), 'organelles');
   const shapes = [...organelles.matchAll(/<(circle|path) data-id="([^"]+)"(?! data-(?:bulb|family)=)/g)].map(([, , id]) => id);
   expect(shapes).toEqual(map.terrain.organelles.map((organelle) => organelle.id));
-  const radii = new Map([...organelles.matchAll(/<circle data-id="([^"]+)" cx="[\d.]+" cy="[\d.]+" r="([\d.]+)"/g)].map(([, id, r]) => [id, Number(r)]));
+  const radii = circles(organelles);
   const locOf = new Map(map.terrain.organelles.map((organelle) => [organelle.id, organelle.loc]));
-  // Bigger file, bigger circle: slots.ts (88 lines) against index.ts (24), two files with no trouble.
-  expect(radii.get('libs/core/src/pm/slots.ts') ?? 0).toBeGreaterThan(radii.get('apps/cli/src/index.ts') ?? Number.POSITIVE_INFINITY);
+  // Bigger file, bigger circle: slots.ts (88 lines) against index.ts (24). The log window saw both, so
+  // their churn shapes them on the demo (D203); with no history read, each is the circle its lines size.
+  const quiet = { ...map, terrain: { ...map.terrain, organelles: map.terrain.organelles.map(({ stability: _stability, ...organelle }) => organelle) } };
+  const still = circles(layer(renderSvg(quiet), 'organelles'));
+  expect(still.get('libs/core/src/pm/slots.ts') ?? 0).toBeGreaterThan(still.get('apps/cli/src/index.ts') ?? Number.POSITIVE_INFINITY);
   expect(locOf.get('libs/core/src/pm/slots.ts') ?? 0).toBeGreaterThan(locOf.get('apps/cli/src/index.ts') ?? Number.POSITIVE_INFINITY);
   // A file with no trouble is a circle, and none with any is: a dented one, or one whose history shades it (D194).
   for (const organelle of map.terrain.organelles) {

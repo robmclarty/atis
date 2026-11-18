@@ -14,6 +14,13 @@
  * Every input is on the map already, so the score is computed here rather
  * than in core (C3). A signal the map lacks is named in `missing` and reads
  * as nothing, never as a default that would lower or raise the score (C2).
+ *
+ * Churn has two homes on the map (D203): a file a change touched carries its
+ * own `churn_ratio`, and every file the log window saw carries one under
+ * `stability`. The file's own wins; stability's is read where it has none,
+ * so history shades every file with a past and not only the changed ones.
+ * `used` names the one that was read, and `churn_ratio` is `missing` only
+ * where the map carries neither.
  */
 
 import type { Organelle } from 'core';
@@ -22,7 +29,7 @@ import { MAX_RULES, rulesOf } from './shape.js';
 import { BUGFIX_FULL_AT, CHURN_FULL_AT, TROUBLE_RULES_FROM } from './tokens.js';
 
 /** A signal the score reads off an organelle. */
-export type TroubleSignal = 'dents' | 'churn_ratio' | 'bugfix_rate';
+export type TroubleSignal = 'dents' | 'churn_ratio' | 'stability.churn_ratio' | 'bugfix_rate';
 
 /** A file's place on the spectrum, 0 smooth to 1 spiky, with the signals that placed it and the ones the map did not carry. */
 export type Trouble = { readonly score: number; readonly used: readonly TroubleSignal[]; readonly missing: readonly TroubleSignal[] };
@@ -46,13 +53,18 @@ export function troubleFrom(rules: number, from: number = TROUBLE_RULES_FROM): n
   return count <= 1 ? count * floor : floor + ((count - 1) / MAX_RULES) * (1 - floor);
 }
 
+/** What the score reads off an organelle: its dents, its own history, and the stability its churn falls back to (D203). */
+type Troubled = Pick<Organelle, 'dents' | 'churn_ratio' | 'bugfix_rate' | 'stability'>;
+
 /** The trouble score of one file, from its dents and its history. */
-export function troubleOf(organelle: Pick<Organelle, 'dents' | 'churn_ratio' | 'bugfix_rate'>, tokens: TroubleTokens = AT_REST_TOKENS): Trouble {
+export function troubleOf(organelle: Troubled, tokens: TroubleTokens = AT_REST_TOKENS): Trouble {
   const rules = rulesOf(organelle.dents);
-  const { churn_ratio: churn, bugfix_rate: bugfix } = organelle;
+  const { churn_ratio: own, bugfix_rate: bugfix } = organelle;
+  const churn = own ?? organelle.stability?.churn_ratio;
   const used: TroubleSignal[] = ['dents'];
   const missing: TroubleSignal[] = [];
-  (churn === undefined ? missing : used).push('churn_ratio');
+  if (churn === undefined) missing.push('churn_ratio');
+  else used.push(own === undefined ? 'stability.churn_ratio' : 'churn_ratio');
   (bugfix === undefined ? missing : used).push('bugfix_rate');
   const history = Math.max(churn === undefined ? 0 : unit(churn / tokens.CHURN_FULL_AT), bugfix === undefined ? 0 : unit(bugfix / tokens.BUGFIX_FULL_AT));
   const floor = troubleFrom(rules, tokens.TROUBLE_RULES_FROM);

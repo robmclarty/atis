@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: a world that describes itself at a glance
 
-**Current step:** 5 — feat(web): cycle an opened cell's files across the spectrum on demand
+**Current step:** 19 — feat(scene): shade every file's shape by the churn its stability carries
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -27,7 +27,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 2. feat(scene): score each file's trouble on one spectrum from the map
 - ☑ 3. feat(scene): draw every file's outline on a continuous spectrum
 - ☑ 4. feat(scene): move the spectrum's spiky end most, and least regularly
-- ☐ 5. feat(web): cycle an opened cell's files across the spectrum on demand
+- ☑ 5. feat(web): cycle an opened cell's files across the spectrum on demand
 - ☐ 6. feat(scene): grow the drift's contrast through a looseness curve
 - ☐ 7. feat(scene): gather an opened cell's held files toward its middle
 - ☐ 8. feat(scene): lay each file's functions as a nucleus inside its body
@@ -41,6 +41,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☐ 16. feat(web): write the band labels over the field
 - ☐ 17. docs(design): rewrite the channel list and log the balance patches
 - ☐ 18. chore(web): measure the new movers against the world's budget
+- ☐ 19. feat(scene): shade every file's shape by the churn its stability carries
 
 ## Park list
 
@@ -50,7 +51,9 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 
 - [x] docs/glance-practice.svg predates the shape spectrum: it still keys 'shape: rules it breaks, 0 to 6' and draws every calm file as a circle, and it was already behind the renderer (its Size block counts 4 files where today's counts 2); pnpm practice-map re-renders it, outside step 3's seam
 - [x] the two spikiest forms are drawn through too few points: at SHAPE_LEVELS 5 and 6 an arm is about one sample wide (160 points round 18 arms of sharp 20), so the ring catches each tip at 53 to 100 percent of its length by where the points fall, which flickers as a shape turns and makes the ring's own furthest point wander as the score climbs; step 3 holds the monotone test on the outline's analytic extent instead
-- [ ] apps/web hud.test.tsx 'the world's blocks are the sheet's' timed out at vitest's 5 s default once under a loaded full check (6.7 s) and passed on rerun; it walks every committed fixture, so give it a longer timeout or split it
+- [x] apps/web hud.test.tsx 'the world's blocks are the sheet's' timed out at vitest's 5 s default once under a loaded full check (6.7 s) and passed on rerun; it walks every committed fixture, so give it a longer timeout or split it
+- [x] troubleOf reads the organelle's top-level churn_ratio and bugfix_rate, which the map sets only on files the change touched, so shape shows history for almost no file: on atis's own map 0 of 165 files leave the circle on a whole-repo map and 7 of 165 on the last commit (no file breaks a rule), where stability.churn_ratio is on all 165; javascript-1 has 128 of 414 with a form against 405 with stability's churn
+- [ ] stability.churn_ratio counts a file's own birth, so on atis's whole-repo map every one of the 165 files reads churn 0.47 or more (median 1.22) and 155 score between 0.13 and 0.27, one soft wobble for nearly all; a calm file needs a floor to subtract or a scale that starts above birth before shape alone tells it from a busy one (step 19, D203 history-on-every-file)
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -71,6 +74,9 @@ Harvest results this boundary:
 - 2026-11-18, at the step 3 boundary: 2 parked ideas, classified.
 - **tangent**: park 1 · docs/glance-practice.svg predates the shape spectrum: it still keys 'shape: rules it breaks, 0 to 6' and draws every calm file as a circle, and it was already behind the renderer (its Size block counts 4 files where today's counts 2); pnpm practice-map re-renders it, outside step 3's seam → a doc image no test compares and no step ahead reads, re-rendered by one command whenever the practice map is next used
 - **tangent**: park 2 · the two spikiest forms are drawn through too few points: at SHAPE_LEVELS 5 and 6 an arm is about one sample wide (160 points round 18 arms of sharp 20), so the ring catches each tip at 53 to 100 percent of its length by where the points fall, which flickers as a shape turns and makes the ring's own furthest point wander as the score climbs; step 3 holds the monotone test on the outline's analytic extent instead → today's forms already draw this way and nothing in steps 4 or 5 depends on it, so it waits on what range 1's stop shows of the spiky end in motion
+- 2026-11-18, at range 1 of 6's stop: 2 parked ideas, classified.
+- **tangent**: park 3 · apps/web hud.test.tsx 'the world's blocks are the sheet's' timed out at vitest's 5 s default once under a loaded full check (6.7 s) and passed on rerun; it walks every committed fixture, so give it a longer timeout or split it → a timeout on a test no step touches, cured by one argument, though it will keep costing reruns on a loaded machine
+- **blocker**: park 4 · troubleOf reads the organelle's top-level churn_ratio and bugfix_rate, which the map sets only on files the change touched, so shape shows history for almost no file: on atis's own map 0 of 165 files leave the circle on a whole-repo map and 7 of 165 on the last commit (no file breaks a rule), where stability.churn_ratio is on all 165; javascript-1 has 128 of 414 with a form against 405 with stability's churn → D194 (shape-spectrum)'s own reason, most files leaving the circle, is unmet on atis's own map until the score reads the history every file carries
 
 ## Log
 
@@ -199,3 +205,95 @@ folder, so it rides the branch into the PR.)*
   `TROUBLE_RULES_FROM` and `SHAPE_LEVELS` stay baked for now in the sense C15 (every-look-a-token) asks to be named: the world's surface builds its outlines once from the map, so a value the dev panel moves shows at the next build of the world, not on the next frame.
 
 - 2026-11-18 — step 4 checkpointed · ca96b0bda — feat(scene): move the spectrum's spiky end most, and least regularly (1 red, 1 drift, 11m)
+- 2026-11-18 — step 5 checkpointed · 601636fda — feat(web): cycle an opened cell's files across the spectrum on demand (1 red, 14m)
+- 2026-11-18 — range 1 of 6's stop recorded — judge the spectrum on atis's own map: at the surface a troubled file told from a calm one by shape alone; inside an opened cell, with `?shapes=demo` and without, the forms against `docs/img/materials-spike/a-5-shapes-demo.png` and the spiky end's pulse and jitter; settle [Q87 (exaggeration-numbers)](#q87)'s shape values (`SHAPE_PULSE`, `SHAPE_JITTER`) by eye before the slide builds on them
+
+  **Summary**: Range 1 built the spectrum end to end: each cell's imports counted through and past its interface, a trouble score per file, the outline as a continuous morph across the seven forms, the motion and jitter that grow with the score, and the `?shapes=demo` switch. Every step's proof is met and the check is green. One thing stands in the way of the stop's first judgment: on atis's own map almost every file is still a circle. No atis file breaks a rule, and the score reads history only from the fields the map sets on files a change touched, so 0 of 165 files have a form on a whole-repo map and 7 of 165 on the last commit. That is parked as P4 and I lean blocker. The forms and their motion can be judged today with the demo switch, which I confirmed in the real app on two fixtures; I looked at stills only, so the pulse and the jitter are unjudged.
+
+  1. Shape reads history only on the files a change touched, so atis's own map is nearly all circles
+  2. Step 4 landed a hair off: one test file outside its seam and reach, and steps 4 and 5 each needed a rerun
+  3. The spiky end moves most and least regularly, at starting values nobody has seen move
+  4. The demo switch works in the real app, on stills
+  5. Step 3 holds two of its proof's tests as restated, and the spikiest forms' sampling waits on this stop
+
+  **Readout**:
+
+  ```text
+  steps        5 of 5 landed
+               - 1 dbd09d8 · 2 579bcc9 · 3 d970d29 · 4 ca96b0b · 5 601636f
+  check        green: 1 of 1 checks, 5 landings
+  proof        met
+  decisions    honored:
+               - D192 (cell-integrity)
+               - D194 (shape-spectrum)
+               - D200 (one-meaning-per-mover)
+               - D202 (demo-switch)
+  constraints  10 of 10 honored
+  seam         strayed: 6 paths outside 2 steps' seams
+               - step 3: apps/web/src/__tests__/hover.test.ts and 4 others
+               - step 4: libs/scene/src/__tests__/shape.test.ts
+  diff         +1580 -512 across 57 files
+               - apps/atis/src/__tests__/png.test.ts +13 -1
+               - apps/atis/src/png.ts +13 -3
+               - apps/web/src/__tests__/hover.test.ts +2 -2
+               - apps/web/src/__tests__/hud.test.tsx +1 -1
+               - apps/web/src/__tests__/status.test.tsx +15 -1
+               - apps/web/src/__tests__/view.test.ts +10 -0
+               - apps/web/src/chrome/frame.tsx +4 -2
+               - and 50 more
+  spent        11h 12m · 6 red runs · 2 drift warnings
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Harvested**: **2** of 4 parked ideas open
+
+  | Park | Why it matters | Lean |
+  | --- | --- | --- |
+  | **P3**: [HUD test's 5 s timeout](#park-list) | it turned three full checks red this range and each rerun costs about two and a half minutes | tangent: a timeout on a test no step touches, cured by one argument, though it will keep costing reruns on a loaded machine |
+  | **P4**: [shape reads changed-file history only](#park-list) | 158 of 165 atis files are circles on a change map and all 165 on a whole-repo map, so files cannot be compared by shape | blocker: D194 (shape-spectrum)'s own reason, most files leaving the circle, is unmet on atis's own map until the score reads the history every file carries |
+
+  **Recommendation**: Settle the two shape values with the demo switch now, and take P4 as a blocker before judging the surface on atis's own map. The switch shows every form moving on any map, so `SHAPE_PULSE` and `SHAPE_JITTER` do not wait on P4, and the last two files in a demo are where P2's flicker would show. The surface on atis's own map has nothing to compare until the score reads `stability.churn_ratio`, which would be one small step ahead of range 2; `fixtures/javascript-1`, with 128 of 414 files in a form, is the surface to judge meanwhile. I wrote atis's own maps to `.playwright-mcp/range-1/atis-own.json` and `.playwright-mcp/range-1/atis-last-commit.json`. The dev build carries the tokens panel (Ctrl+Alt+Shift+T):
+
+  ```sh
+  pnpm --filter web dev
+  ```
+
+  Then open `http://localhost:5173/?map=/@fs/Users/robmclarty/Projects/atis/code/atis/.playwright-mcp/range-1/atis-last-commit.json&shapes=demo` and zoom into a cell until it opens. Tell me the values you settle on and whether P4 is a blocker; `make P4 a tangent` leaves the score as it is.
+
+  **1.** Shape reads history only on the files a change touched, so atis's own map is nearly all circles
+
+  `troubleOf` (step 2) takes history as the greater of the organelle's `churn_ratio` and `bugfix_rate`, the top-level fields. The map sets those only on the files the change touched. Every file the history window saw carries `stability.churn_ratio` as well, and the score does not read it.
+
+  Counted on maps written at the range's head (601636f) with the `atis` on the PATH:
+
+  - atis, whole repo: 165 files, 0 with a broken rule, 0 with top-level history, so 0 with a form; all 165 carry `stability.churn_ratio` above 0.
+  - atis, last commit: 165 files, 0 with a broken rule, 7 with top-level history (the files step 5 touched), so 7 with a form.
+  - `fixtures/javascript-1`: 414 files, 127 with a broken rule, 128 with a form; 405 would have one if the score read stability's churn.
+  - `fixtures/corpus-7`: 1344 files, 212 with a form. `fixtures/retake-5` (hono): 242 files, 49 with a form. Neither fixture's map carries `stability`.
+
+  D194 (shape-spectrum) gives its reason as the seven stepped forms leaving four files in five as plain circles, and Q81 (spectrum-signals)'s answer says history shades the bottom so most files leave the circle. On atis's own map that has not happened. Step 2 built what its proof says; the proof names `churn_ratio` without saying which one. Reading `stability.churn_ratio` where the top-level field is absent would give atis's files scores of about 0.18 to 0.28 (churn of 1.3 to 2.1 over `CHURN_FULL_AT` 3, under the first rule's 0.4), gentle forms between the first two samples. Whether that is the reading wanted is the call: stability already owns relief, so it would put one reading on two channels, which C11 (one-meaning-per-channel) allows only where a decision names it.
+
+  **2.** Step 4 landed a hair off: one test file outside its seam and reach, and steps 4 and 5 each needed a rerun
+
+  `ShapeMotion` gained a required `jitter`, so two literals in `libs/scene/src/__tests__/shape.test.ts` now spread `AT_REST`; that file is in neither step 4's seam nor its reach. `apps/web/src/registry.ts` lists `SHAPE_JITTER` (in the reach), since the panel's sections are the design doc's tables.
+
+  Step 4's checkpoint was refused once and step 5's check and checkpoint were red twice, each time on a timeout in a browser or DOM test the steps do not touch, with the machine's load average between 27 and 72: `hud.test.tsx`'s walk over every committed fixture passed vitest's 5 s default by 0.4 to 1.7 s three times, and `world.test.ts`'s tour test timed out once. Both pass alone (1.1 s and 4.7 s). Step 5 also had one real lint error of mine, a `toSorted()` on numbers with no compare in the new interior test, fixed before it landed. The HUD test is parked as P3.
+
+  **3.** The spiky end moves most and least regularly, at starting values nobody has seen move
+
+  The scheduler's `shape(score)` lands the score at `score × MAX_RULES` among the forms as `outlineOf` does, and `SHAPE_PULSE_HZ`, `SHAPE_PULSE` and `SHAPE_TURN` run linearly between the pair either side. `jitter` is `SHAPE_JITTER × score` radians: each arm's beat wanders by up to that either way on a slow sine whose rate and phase are the arm's own by the path's seed. A score of 0, a non-finite score and reduced motion are `AT_REST`. `interiorOf` hands each body's score to `shape`, so a file with no broken rule and some history now moves inside an opened cell.
+
+  Starting values for Q87 (exaggeration-numbers): `SHAPE_PULSE` is `0, 0.31, 0.38, 0.4, 0.44, 0.48, 0.52`, about a quarter over the spike's at every level, bound still below 1; `SHAPE_JITTER` is `1.5`, bound above 0 and at most π. Both are live in the tokens panel. Baked: the jitter's wander rate, 0.05 to 0.2 Hz (a wander of 5 to 20 s), is a constant in `libs/scene/src/shape.ts`, not a token. `docs/design.md` has the table row and a balance-log line dated 2026-11-18.
+
+  **4.** The demo switch works in the real app, on stills
+
+  `viewOf` reads `?shapes=demo`; `interiorOf` then gives each body of the opened cell a score by its index in path order, `index / (count − 1)`, and the body's outline and motion read it. The slide's own scores, the surface and the SVG are untouched. The status line appends `shapes: demo` in every load state. `--png`'s URL is built by the new `captureUrl`, which deletes any `shapes` parameter.
+
+  I ran the dev build on WebGL 2 against the demo fixture and `fixtures/retake-5`: the status line read `demo against main · shapes: demo`, and hono's opened package showed a circle, a soft lobed form, a star, and the two spikiest forms with their bulbs. The screenshots are in `.playwright-mcp/range-1/`. With `?time=` set the clock is frozen and the slide never fades in, so a demo is looked at with the clock running. I did not watch it move.
+
+  **5.** Step 3 holds two of its proof's tests as restated, and the spikiest forms' sampling waits on this stop
+
+  Approved at step 3's pause: continuity is held at a thousandth of the score (under a fiftieth of the radius) across the whole spectrum, and "a higher score never gives a smaller greatest radius" is held on the outline's analytic `extent`. The cause is P2, harvested as a tangent at step 3's boundary: forms 5 and 6 are drawn through about one point per arm, so the ring catches each tip at 53 to 100 percent of its length, which may flicker as a shape turns. That park waits on what this stop shows of the spiky end in motion, so the demo's last two files are where to look for it.
+
+  Step 1 found no cell on atis's own map with `past` above 0, so range 3's ripple is judged on `fixtures/javascript-1`, as Q94 (range-3-map) allows.

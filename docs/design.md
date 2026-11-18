@@ -72,7 +72,7 @@ D11). Nothing in this section is luminous; light is the weather's to draw.
 | `SHAPE_LEVELS` | seven forms, below | shape is trouble (§5.1, D194 (shape-spectrum)): a file's outline is a point on one continuous spectrum, by its trouble score from 0 to 1, drawn by `outlineOf` in `libs/scene/src/shape.ts` for both renderers, still in the SVG; these are the spectrum's seven samples |
 | `SHAPE_CORE_GIVE` | `0.2` | the body gives this share of an arm's reach back, so a spiked file keeps about the size its mass gave it |
 | `SHAPE_ARM_SPREAD` | `0.3` | each arm's own length varies by up to this share either way, seeded by the file's path, so no two files' spikes match |
-| `TROUBLE_RULES_FROM` | `0.4` | shape means trouble (D194 (shape-spectrum)): the score one broken rule gives a file on the spectrum with no history, from which the rules climb evenly to 1 one step past the sixth; below it history alone (the greater of churn over `CHURN_FULL_AT` and bug-fix rate over `BUGFIX_FULL_AT`) shades a file that breaks none, and above it history shades within each level, computed by `troubleOf` in `libs/scene/src/trouble.ts` |
+| `TROUBLE_RULES_FROM` | `0.4` | shape means trouble (D194 (shape-spectrum)): the score one broken rule gives a file on the spectrum with no history, from which the rules climb evenly to 1 one step past the sixth; below it history alone (the greater of churn over `CHURN_FULL_AT` and bug-fix rate over `BUGFIX_FULL_AT`) shades a file that breaks none, and above it history shades within each level, computed by `troubleOf` in `libs/scene/src/trouble.ts`; the churn is the file's own `churn_ratio`, the change's, else its `stability.churn_ratio`, the log window's, so every file the window saw is shaded and not only the changed ones (D203 (history-on-every-file)) |
 | `MEMBRANE_DENT_PULL` | `8` | a cell wears its files' breached rules on its membrane: one point per rule pulled this far out of the skin, the teeth spread evenly along the ring with its top left clear for a storm |
 | `MEMBRANE_DENT_SPAN` | `6` | how far along the skin either side of that point the cut reaches, so the point reads as a tooth (narrower when the teeth would crowd) |
 | `GLYPH_STROKE` | `#7b848f` | repetition is duplication (§5.1): the clone-family glyph beside an organelle, and the same glyph beside the membrane of a cell in that family |
@@ -101,7 +101,14 @@ halfway, where both sets of arms are half length. The lower form's bulbs fade
 out by the fraction of the way as the upper form's fade in. The score is
 `troubleOf`'s, in `libs/scene/src/trouble.ts`: the rules a file breaks, shaded
 by its history, so a file that breaks none and has changed or been fixed often
-still leaves the circle. A function's granule on the file plate reads the same
+still leaves the circle. Its churn is read from the file's own `churn_ratio`
+where the map sets one, which it does on the files a change touched, and from
+`stability.churn_ratio` otherwise, which every file the log window saw
+carries (D203 (history-on-every-file)); the file's own wins where both are
+set, and a file with neither is named as missing the signal and stays as
+round as its rules leave it (C2 (never-fake)). Churn so shows twice, on the
+relief and on the shape, the second channel history is allowed (C11
+(one-meaning-per-channel)). A function's granule on the file plate reads the same
 scale by the thresholds it breaks, with no history.
 
 | Sample | Form | `arms` | `reach` | `sharp` | `wobble` | `bulb` | `samples` |
