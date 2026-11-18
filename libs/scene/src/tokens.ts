@@ -68,6 +68,13 @@ export const SHAPE_CORE_GIVE = 0.2;
 /** Each arm's own length varies by up to this share either way, seeded by the file's path, so no two files' spikes match. */
 export const SHAPE_ARM_SPREAD = 0.3;
 /**
+ * Shape means trouble (D194, Q81): the score one broken rule gives a file on
+ * the spectrum, 0 to 1, with no history. Below it lies the stretch history
+ * alone shades for a file that breaks no rule; above it the rules climb
+ * evenly to the spiky end.
+ */
+export const TROUBLE_RULES_FROM = 0.4;
+/**
  * A cell breaks a rule when one of its files does, and its membrane wears it
  * the same way: one point per rule pulled this far out of the skin, the skin
  * cut this far along either side of it so the point reads as a tooth.

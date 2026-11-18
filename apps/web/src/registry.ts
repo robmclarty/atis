@@ -64,6 +64,7 @@ export const SECTIONS: readonly Section[] = [
       'SHAPE_LEVELS',
       'SHAPE_CORE_GIVE',
       'SHAPE_ARM_SPREAD',
+      'TROUBLE_RULES_FROM',
       'MEMBRANE_DENT_PULL',
       'MEMBRANE_DENT_SPAN',
       'GLYPH_STROKE',

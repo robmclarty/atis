@@ -25,5 +25,6 @@ export * from './shape.js';
 export * from './shore.js';
 export * from './tokens.js';
 export * from './synthetic.js';
+export * from './trouble.js';
 export * from './weather.js';
 export * from './wiring.js';

@@ -85,7 +85,7 @@ Settled at this plan (2026-11-02):
 
 ## Steps
 
-1. [ ] feat(core): count a cell's imports through and past its interface
+1. [x] feat(core): count a cell's imports through and past its interface
    - proof: per [D192 (cell-integrity)](#d192): `Cell` gains the optional `integrity: { through, past }`, `assertMap` validates it as two whole counts, and `computeIntegrity` beside `ties.ts` counts it on the head graph for every cell with a barrel, every file inside the cell's contour being inside (a nested cell's files included, as `fansOf` reads them), and no key for a directory cell, a single-file cell or a deleted cell. Tests over hand-built scans cover: a folder cell imported through its barrel from a sibling folder (`through` 1, `past` 0) and past it (`past` 1); a package whose nested folder's barrel is imported from another package (`past` 1 for the package, `through` 1 for the folder); a barrel-less directory and a single-file cell (no key); a test file importing past a barrel (nothing); the same edge twice (counted once). Any committed map golden a test compares against regenerates for the added key, named in the commit body ([C16 (goldens-named)](#c16)); no SVG golden moves; the commit body lists the cells of atis's own map whose `past` is above 0 ([Q94 (range-3-map)](#q94))
    - seam: `libs/core/src/schema.ts`, `libs/core/src/integrity.ts`, `libs/core/src/map.ts`, `libs/core/src/index.ts`, `libs/core/src/__tests__/integrity.test.ts`, `libs/core/src/__tests__/schema.test.ts`, `libs/core/src/__tests__/map.test.ts`, `libs/core/fixtures/demo/`
    - model: sonnet (a count fully specified by its decision, beside `ties.ts`)

@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: a world that describes itself at a glance
 
-**Current step:** 1 — feat(core): count a cell's imports through and past its interface
+**Current step:** 2 — feat(scene): score each file's trouble on one spectrum from the map
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -23,7 +23,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 line above. Only ONE step is in flight; a step is done only after a checkpoint:
 check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 
-- ☐ 1. feat(core): count a cell's imports through and past its interface
+- ☑ 1. feat(core): count a cell's imports through and past its interface
 - ☐ 2. feat(scene): score each file's trouble on one spectrum from the map
 - ☐ 3. feat(scene): draw every file's outline on a continuous spectrum
 - ☐ 4. feat(scene): move the spectrum's spiky end most, and least regularly
@@ -75,3 +75,38 @@ end, and an older step's detail is a scroll away. Add your own decision/event li
 you point at to say "I did that: the LLM helped, but those were my calls."
 `/plumbbob:finish` reads this for the report; `plumbbob finish` commits it with the build
 folder, so it rides the branch into the PR.)*
+
+- 2026-11-18 — step 1 checkpointed · dbd09d86b — feat(core): count a cell's imports through and past its interface (10m)
+
+  **Readout**:
+
+  ```text
+  check        green: 1 of 1 checks
+  plumb        seam 8 · reach 0 · out 0
+  diff         +281 -5 across 8 files
+               - libs/core/fixtures/demo/map.json +15 -3
+               - libs/core/src/__tests__/integrity.test.ts +129 -0
+               - libs/core/src/__tests__/map.test.ts +17 -0
+               - libs/core/src/__tests__/schema.test.ts +15 -0
+               - libs/core/src/index.ts +1 -0
+               - libs/core/src/integrity.ts +70 -0
+               - libs/core/src/map.ts +9 -2
+               - libs/core/src/schema.ts +25 -0
+  spent        10 min · 143s gate · green first run
+  ```
+
+  **Verdict**: ◐ A hair off (2 commits outside the ledger)
+
+  **Recommendation**: Approve it, answering the twelve leans in one reply. The read checked each seam against the file it names (`shape.ts`, `interior.ts`, `drift.ts`, `membranes.ts`, `labels.ts`, `marks.ts`, `skin.ts`, `ribbons.ts`, `view.ts`), found every done-when a test, a golden or the smoke test can measure, and found no range that runs through an open call once the leans are answered. The three findings above are the plan's own calls for you to glance at, not holes a builder would guess through.
+
+  **1.** §4.7's clause on the SVG binds nothing, and the plan read it for you (D201, in Decisions)
+
+  The spec says the still SVG draws the same nuclei "wherever it draws an opened cell" and keys a nucleus in its legend. `libs/svg` has no slide: `cellSlide` and `interiorOf` are called from `apps/web` alone, and the SVG's legend keys the surface's marks. The plan reads the clause as vacuous and keys the nucleus in the world's legend only (step 10), which is a call made on your behalf. A nucleus on the still needs Q88 (surface-nuclei) answered yes and a step for the SVG's organelles that the plan does not carry.
+
+  **2.** §4.5 "more weather" has no candidate the map carries undrawn (Q85 in the table)
+
+  The world already draws every standing mark the still map does: history as hatching and stipple, co-change ghosts, standing storms, clone glyphs, and cycles and boundaries as ribbons (`apps/web/src/marks.ts`). The one reading nothing draws is `reachable: false`. The lean lands no step; naming a pattern here means `/plumbbob:refine` writes its step into range 4 before any code, with a channel C11 can give it.
+
+  **3.** Step 3 moves every SVG golden at once
+
+  The spectrum gives a form to every file with history, so each fixture SVG under `fixtures/` (34 reviewed PRs) and the demo goldens regenerate in one step, and the retake maps you know by eye change shape. C16 (goldens-named) covers it and no glance reading is in scope (§5), but the diff is the build's largest, and it lands before you have judged the spectrum in the world at range 1's stop. Cutting range 1 at `1-2` would let you judge the score's spread on a map first; the plan keeps `1-5` so the stop has the demo switch to judge with.
