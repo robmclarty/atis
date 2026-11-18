@@ -287,6 +287,21 @@ test("accepts an organelle's stability, with or without its churn ratio, and rej
   expect(() => assertMap(withStability(7))).toThrow(/stability: expected an object/);
 });
 
+test("accepts a cell's integrity, two zeros included, and rejects a count that is negative, fractional or missing (D192)", () => {
+  const withIntegrity = (integrity: unknown): unknown => {
+    const map = minimalMap();
+    const [cell] = map.terrain.cells;
+    return { ...map, terrain: { ...map.terrain, cells: [{ ...cell, integrity }] } };
+  };
+  expect(() => assertMap(withIntegrity({ through: 3, past: 1 }))).not.toThrow();
+  expect(() => assertMap(withIntegrity({ through: 0, past: 0 }))).not.toThrow();
+  expect(() => assertMap(minimalMap())).not.toThrow();
+  expect(() => assertMap(withIntegrity({ through: -1, past: 0 }))).toThrow(/integrity\.through/);
+  expect(() => assertMap(withIntegrity({ through: 1, past: 0.5 }))).toThrow(/integrity\.past/);
+  expect(() => assertMap(withIntegrity({ through: 1 }))).toThrow(/integrity\.past/);
+  expect(() => assertMap(withIntegrity(2))).toThrow(/integrity: expected an object/);
+});
+
 test("accepts an organelle's ties, none included, and rejects a count that is negative, fractional or missing (D157)", () => {
   const withTies = (ties: unknown): unknown => {
     const map = minimalMap();

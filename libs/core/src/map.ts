@@ -28,6 +28,7 @@ import { compareStructure, computeCategory, computeEvidence, dentsFrom, rulesOf,
 import type { CheckArtifacts, Dupes, Health, HealthFinding, Structure } from './evidence.js';
 import { OTHER_GROUP, identifyGroups, shoreMatcher } from './groups.js';
 import { computeHistory } from './history.js';
+import { computeIntegrity } from './integrity.js';
 import type { Commit, CommitFile, FileHistory } from './history.js';
 import { computeLayout } from './layout/index.js';
 import type { Ground, Prior } from './layout/index.js';
@@ -49,6 +50,7 @@ import type {
   Frame,
   Group,
   Instruments,
+  Integrity,
   Layout,
   MapJson,
   Notice,
@@ -552,6 +554,8 @@ type Signals = {
   readonly stability: ReadonlyMap<string, Stability>;
   readonly ties: ReadonlyMap<string, Ties>;
   readonly packageTies: ReadonlyMap<string, Ties>;
+  /** Each barrelled cell's imports through and past its interface, by cell id (D192). */
+  readonly integrity: ReadonlyMap<string, Integrity>;
 };
 
 function shallowest(files: readonly string[], depth: ReadonlyMap<string, FileDepth>): number {
@@ -576,8 +580,8 @@ function exportsOf(cell: ModuleCell, exports: ReadonlyMap<string, readonly strin
  * A cell's own numbers on top of what module identification found: the terrace
  * it is entered at (the shallowest its files reach, since that is where a
  * reader arrives), the names its interface exports, how many files read it and
- * how many it reads, and the mass, rules and duplication of everything inside
- * its contour.
+ * how many it reads, the mass, rules and duplication of everything inside
+ * its contour, and how it is entered from outside where it has a barrel (D192).
  */
 function assembleCells(modules: Modules, edges: readonly ImportEdge[], signals: Signals): readonly Cell[] {
   const terrain = new Set(modules.organelles.map((organelle) => organelle.path));
@@ -597,6 +601,7 @@ function assembleCells(modules: Modules, edges: readonly ImportEdge[], signals: 
     );
     const band = shallowest(files, signals.depth);
     const exports = exportsOf(cell, signals.exports);
+    const integrity = signals.integrity.get(cell.id);
     return {
       id: cell.id,
       path: cell.path,
@@ -612,6 +617,7 @@ function assembleCells(modules: Modules, edges: readonly ImportEdge[], signals: 
       ...(fans.get(cell.id) ?? { fan_in: 0, fan_out: 0 }),
       dents: sortUnique(files.flatMap((path) => signals.dents.get(path) ?? [])),
       ...(family === undefined ? {} : { clone_family: family }),
+      ...(integrity === undefined ? {} : { integrity }),
     };
   });
 }
@@ -867,6 +873,7 @@ function assemble(inputs: BuildInputs, config: Config): Assembled {
     stability: new Map(history.stability.map(({ path, ...settled }) => [path, settled] as const)),
     ties: computeTies(modules.organelles, head.edges, deleted),
     packageTies: computePackageTies(modules.organelles, modules.cells, head.edges, deleted),
+    integrity: computeIntegrity(modules.cells, head.edges, deleted),
   };
   const cells = assembleCells(modules, edges, signals);
   const organelles = assembleOrganelles(modules, signals);

@@ -40,7 +40,23 @@ export type Cell = {
   readonly fan_out?: number;
   readonly dents: readonly string[];
   readonly clone_family?: string;
+  /**
+   * How it is entered from outside (D192); an added key (D85), set on every
+   * cell with a barrel at head, one nothing outside imports included, and
+   * absent on a directory cell, a single-file cell and a cell whose barrel
+   * the change deleted (C2).
+   */
+  readonly integrity?: Integrity;
 };
+
+/**
+ * How a cell with a barrel is entered (D192): the import edges on the head
+ * graph from terrain files outside its contour that land on its barrel,
+ * `through` its interface, and those that land on any other file inside the
+ * contour, `past` it. Tests and the shore are no terrain, so they count for
+ * neither (D4).
+ */
+export type Integrity = { readonly through: number; readonly past: number };
 
 /**
  * How settled a file is over the log window (D149): its age in days since the
@@ -632,6 +648,14 @@ function assertTies(value: unknown, path: string): void {
   }
 }
 
+/** An integrity is two counts of edges, whole and never negative. */
+function assertIntegrity(value: unknown, path: string): void {
+  const integrity = expectRecord(value, path);
+  for (const side of ['through', 'past'] as const) {
+    if (!isWholeCount(integrity[side])) fail(`${path}.${side}`, 'expected a whole count');
+  }
+}
+
 /**
  * An outside package (D170): a name read by at least one terrain file, and a
  * severity exactly where some advisory names it, so a clean audit and no
@@ -759,6 +783,7 @@ function assertShape(value: unknown): asserts value is MapJson {
     if (cell['exports'] !== undefined) {
       expectArray(cell['exports'], `terrain.cells[${String(index)}].exports`).forEach((name, at) => expectString(name, `terrain.cells[${String(index)}].exports[${String(at)}]`));
     }
+    if (cell['integrity'] !== undefined) assertIntegrity(cell['integrity'], `terrain.cells[${String(index)}].integrity`);
   });
 
   const groups = expectArray(terrain['groups'], 'terrain.groups');

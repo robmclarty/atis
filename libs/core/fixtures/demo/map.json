@@ -76,7 +76,11 @@
           "crap",
           "cyclomatic"
         ],
-        "clone_family": "family-1"
+        "clone_family": "family-1",
+        "integrity": {
+          "through": 2,
+          "past": 0
+        }
       },
       {
         "id": "package:apps/cli",
@@ -95,7 +99,11 @@
         "function_count": 21,
         "fan_in": 0,
         "fan_out": 2,
-        "dents": []
+        "dents": [],
+        "integrity": {
+          "through": 0,
+          "past": 0
+        }
       },
       {
         "id": "package:libs/core",
@@ -121,7 +129,11 @@
           "cycle",
           "cyclomatic"
         ],
-        "clone_family": "family-1"
+        "clone_family": "family-1",
+        "integrity": {
+          "through": 1,
+          "past": 1
+        }
       },
       {
         "id": "single:apps/cli/src/doctor.ts",

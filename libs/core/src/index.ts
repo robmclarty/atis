@@ -10,6 +10,7 @@ export * from './depth.js';
 export * from './evidence.js';
 export * from './groups.js';
 export * from './history.js';
+export * from './integrity.js';
 export * from './layout/index.js';
 export * from './map.js';
 export * from './modules.js';

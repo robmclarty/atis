@@ -295,6 +295,23 @@ test("the demo map ties each file to its package beside its cell, so a single-fi
   expect(legacy).not.toHaveProperty('package_ties');
 });
 
+test("the demo map counts each barrelled cell's imports through and past its interface, the test's left out and a barrel-less cell given none (D192)", () => {
+  const map = buildMap(inputsFor('demo'), DEFAULT_CONFIG);
+  const integrity = new Map(map.terrain.cells.map((cell) => [cell.id, cell.integrity]));
+  // pm's barrel is read by the CLI and by the package barrel; the test that reads past it to tools.ts counts nothing.
+  expect(integrity.get('folder:libs/core/src/pm')).toEqual({ through: 2, past: 0 });
+  // The CLI reads core's barrel, and reads pm's barrel straight past it.
+  expect(integrity.get('package:libs/core')).toEqual({ through: 1, past: 1 });
+  // Nothing outside the CLI imports it: a count of none, not an absent key.
+  expect(integrity.get('package:apps/cli')).toEqual({ through: 0, past: 0 });
+  // A directory's interface is whatever outsiders import, and a single file is its own (C2).
+  const [util, doctor] = [map.terrain.cells.find((cell) => cell.id === 'directory:libs/core/src/util'), map.terrain.cells.find((cell) => cell.id === 'single:apps/cli/src/doctor.ts')];
+  expect(util).toBeDefined();
+  expect(util).not.toHaveProperty('integrity');
+  expect(doctor).toBeDefined();
+  expect(doctor).not.toHaveProperty('integrity');
+});
+
 test('assertMap accepts package ties and refuses a count that is negative or fractional (D85)', () => {
   const map = buildMap(inputsFor('demo'), DEFAULT_CONFIG);
   const withPackageTies = (package_ties: unknown): unknown => ({
