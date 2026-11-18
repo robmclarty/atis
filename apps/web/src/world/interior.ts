@@ -14,13 +14,19 @@
  * change hue where the change stained it with the share no test ran left
  * unstained (C11), a deleted file its outline alone and a renamed one dashed
  * (D40), the bulbs at its arms' tips at levels 5 and 6, and a noticed file's
- * stain following its notice's light. Every material is double-sided, since
+ * stain following its notice's light. Inside each body its nucleus is drawn,
+ * a fan per granule in the body's ink, darker: the stain's hue so darkened
+ * where the body is stained, and left unstained where the body is, by the
+ * granule's angle from the body's middle (D197). The granules ride the body
+ * and never pulse or turn. Every material is double-sided, since
  * triangulating in layout coordinates flips the winding on the ground plane.
  *
  * The chrome over it is flat (D12): each file's tag in its column beside the
- * slide with its rule count, joined to its body by a dotted leader, and, in
- * the exploded view, a dotted leader from each body's socket, its place at
- * rest, to where it has spread. The tags and the exports are written only
+ * slide with its rule count, joined to its body by a dotted leader that runs
+ * straight out to its elbow and then to the body's rim, the columns clear of
+ * the chrome's claims on the screen, and a footer under a column that had no
+ * row for every tag (D198). No body moves for the exploded view: it spreads
+ * the tags alone. The tags and the exports are written only
  * when asked (D168): in the exploded view, as it spreads, or a tag at a time
  * while the pointer is over its body. Words the reader asked for are the last
  * thing anything covers (D185): the tags and the exports lie in a layer of
@@ -32,14 +38,14 @@
 import { BufferAttribute, BufferGeometry, Color, DoubleSide, DynamicDrawUsage, Mesh, MeshBasicNodeMaterial, Vector3 } from 'three/webgpu';
 import type { Camera, UniformNode } from 'three/webgpu';
 import { attribute, mrt, uniform, vec4 } from 'three/tsl';
-import { CHANGE_HUE, CHROME_GROUND, CHROME_INK, CHROME_MUTED, CHROME_STROKE_WIDTH, EXPORTS_GAP, FONT_FAMILY, IMPROVED_HUE, LABELING, LEADER_DASH, LEADER_INK, LEADER_WIDTH, RENAME_DASH, SHAPE_LEVELS, exportsTable, tagsOf } from 'scene';
-import type { Body, ExportsTable, Point, Slide } from 'scene';
+import { CHANGE_HUE, CHROME_GROUND, CHROME_INK, CHROME_MUTED, CHROME_STROKE_WIDTH, EXPORTS_GAP, FONT_FAMILY, IMPROVED_HUE, LABELING, LEADER_DASH, LEADER_INK, LEADER_WIDTH, RENAME_DASH, SHAPE_LEVELS, TAG_ELBOW, TAG_ROW_FLOOR, exportsTable, tagsOf } from 'scene';
+import type { Body, ExportsTable, Margins, Nucleus, NucleusGranule, Point, Slide } from 'scene';
 
 import type { SlideWords } from '../asked.js';
 import type { InteriorLook } from '../materials.js';
 
 /** The scene's tokens the slide's chrome and stains read live, at rest: the shape the registry's view takes (D156). */
-export const SLIDE_CHROME = { CHANGE_HUE, CHROME_GROUND, CHROME_INK, CHROME_MUTED, CHROME_STROKE_WIDTH, FONT_FAMILY, IMPROVED_HUE, LEADER_DASH, LEADER_INK, LEADER_WIDTH };
+export const SLIDE_CHROME = { CHANGE_HUE, CHROME_GROUND, CHROME_INK, CHROME_MUTED, CHROME_STROKE_WIDTH, FONT_FAMILY, IMPROVED_HUE, LEADER_DASH, LEADER_INK, LEADER_WIDTH, TAG_ELBOW, TAG_ROW_FLOOR };
 export type SlideChrome = typeof SLIDE_CHROME;
 
 export type Interior = {
@@ -53,8 +59,8 @@ export type Interior = {
   readonly slide: (slide: Slide | undefined) => void;
   /** Lay the bodies where the scene has them this frame, at the slide's fade, each stain lit by its notice's gain. */
   readonly show: (bodies: readonly Body[], shown: number, gainOf: (id: string) => number) => void;
-  /** Place the tags, the leaders, the exports and the exploded view's sockets on the screen for this camera, the free screen `free` wide, the words as strongly as they are asked for. */
-  readonly render: (camera: Camera, width: number, height: number, free: number, pixelsPerUnit: number, spread: number, words: SlideWords) => void;
+  /** Place the tags, the leaders and the exports on the screen for this camera, inside the margins the chrome claims, the words as strongly as they are asked for and the footers as far as the exploded view has spread. */
+  readonly render: (camera: Camera, width: number, height: number, margins: Margins, pixelsPerUnit: number, spread: number, words: SlideWords) => void;
   /** The bodies as last laid, for the pointer to pick against. */
   readonly bodies: () => readonly Body[];
 };
@@ -73,6 +79,22 @@ const MOST_SAMPLES = Math.max(...SHAPE_LEVELS.map((form) => form.samples));
 const MOST_BULBS = Math.max(...SHAPE_LEVELS.map((form, level) => form.arms + (SHAPE_LEVELS[level + 1]?.arms ?? 0)));
 /** The vertices one body may take: a fan of triangles for its fill, two per sample for its stroke, and a fan per bulb. */
 const VERTICES_PER_BODY = MOST_SAMPLES * 9 + MOST_BULBS * BULB_SEGMENTS * 3;
+/** How many segments a round granule's disc is drawn in; a dented one keeps every point of its ring, so its dents read (D102). */
+const GRANULE_SEGMENTS = 12;
+
+/** How far apart the points of a granule's ring its fan is drawn through are. */
+const strideOf = (granule: NucleusGranule): number => (granule.rules.length === 0 ? Math.max(1, Math.ceil(granule.ring.length / GRANULE_SEGMENTS)) : 1);
+
+/** The vertices each nucleus's fans take, counted once: a nucleus is laid once and rides its body (D197). */
+const NUCLEUS_VERTICES = new WeakMap<Nucleus, number>();
+const verticesOf = (nucleus: Nucleus | undefined): number => {
+  if (nucleus === undefined) return 0;
+  const counted = NUCLEUS_VERTICES.get(nucleus);
+  if (counted !== undefined) return counted;
+  const count = nucleus.granules.reduce((total, granule) => total + Math.ceil(granule.ring.length / strideOf(granule)) * 3, 0);
+  NUCLEUS_VERTICES.set(nucleus, count);
+  return count;
+};
 
 /** A dash token, `"3 2"`, as its on and off lengths. */
 const dashOf = (token: string): readonly [number, number] => {
@@ -146,8 +168,8 @@ const tagElement = (): HTMLSpanElement => {
   return tag;
 };
 
-/** One file's chrome: its tag, the leader to its body, and the exploded view's socket and leader. */
-type Tagged = { readonly tag: HTMLSpanElement; readonly leader: SVGLineElement; readonly socket: SVGCircleElement; readonly spread: SVGLineElement };
+/** One tag's chrome: the tag, and for a file's the leader to its body; a column's footer has none (D198). */
+type Tagged = { readonly tag: HTMLSpanElement; readonly leader?: SVGPolylineElement };
 
 /** The slide laid in the world: the look and the scene's tokens read live, and the skin's resting height as the caller reads it, sampled every `step` layout units. */
 export const createInterior = (heightAt: (x: number, y: number) => number, step: number, look: InteriorLook, chrome: SlideChrome): Interior => {
@@ -225,7 +247,19 @@ export const createInterior = (heightAt: (x: number, y: number) => number, step:
   let top = 0;
   let laid: readonly Body[] = [];
   let tagged = new Map<string, Tagged>();
+  // Each column's footer, which counts the tags the column had no row for.
+  const footers = new Map<'left' | 'right', Tagged>(
+    (['left', 'right'] as const).map((side) => {
+      const tag = tagElement();
+      tag.dataset['interiorFooter'] = side;
+      tag.style.display = 'none';
+      layer.append(tag);
+      return [side, { tag }] as const;
+    }),
+  );
   let sized: readonly [number, number] = [0, 0];
+  let capacity = 0;
+  const granuleColour = new Color();
   const bodyColour = new Color();
   const strokeColour = new Color();
   const stain = new Color();
@@ -243,11 +277,9 @@ export const createInterior = (heightAt: (x: number, y: number) => number, step:
   const lay = (next: Slide | undefined): void => {
     slide = next;
     laid = [];
-    for (const { tag, leader, socket, spread } of tagged.values()) {
+    for (const { tag, leader } of tagged.values()) {
       tag.remove();
-      leader.remove();
-      socket.remove();
-      spread.remove();
+      leader?.remove();
     }
     tagged = new Map();
     slideMesh.visible = next !== undefined;
@@ -261,21 +293,17 @@ export const createInterior = (heightAt: (x: number, y: number) => number, step:
     slideGeometry.setIndex(new BufferAttribute(next.triangles, 1));
     frameGeometry.setAttribute('position', new BufferAttribute(stripOf(next.ring, next.thickness, top + FRAME_LIFT), 3));
     bodies.geometry.dispose();
-    bodies = dynamicGeometry(next.files.length * VERTICES_PER_BODY);
+    capacity = next.files.length * VERTICES_PER_BODY;
+    bodies = dynamicGeometry(capacity);
     bodyMesh.geometry = bodies.geometry;
     for (const file of next.files) {
       const tag = tagElement();
       tag.dataset['interiorTag'] = file.id;
-      const leader = document.createElementNS(SVG, 'line');
+      const leader = document.createElementNS(SVG, 'polyline');
       leader.dataset['interiorLeader'] = file.id;
-      const socket = document.createElementNS(SVG, 'circle');
-      socket.dataset['interiorSocket'] = file.id;
-      socket.setAttribute('fill', 'none');
-      const spread = document.createElementNS(SVG, 'line');
-      spread.dataset['interiorExplode'] = file.id;
-      strokes.append(spread, socket, leader);
+      strokes.append(leader);
       layer.append(tag);
-      tagged.set(file.id, { tag, leader, socket, spread });
+      tagged.set(file.id, { tag, leader });
     }
   };
 
@@ -299,6 +327,15 @@ export const createInterior = (heightAt: (x: number, y: number) => number, step:
     }
     bodyColour.set(look.body);
     strokeColour.set(look.bodyStroke);
+    // The nuclei's fans ride in the bodies' own mesh, which grows to hold them the first frame they are asked for.
+    const needed = next.reduce((total, body) => total + VERTICES_PER_BODY + verticesOf(body.nucleus), 0);
+    if (needed > capacity) {
+      bodies.geometry.dispose();
+      capacity = needed;
+      bodies = dynamicGeometry(capacity);
+      bodyMesh.geometry = bodies.geometry;
+    }
+    const shade = 1 - Math.min(1, Math.max(0, look.granuleShade));
     const { positions, colours } = bodies;
     const y = top + BODY_LIFT;
     const [dashOn, dashOff] = dashOf(RENAME_DASH);
@@ -333,6 +370,19 @@ export const createInterior = (heightAt: (x: number, y: number) => number, step:
             put(bulb.x, bulb.y, colour);
             put(bulb.x + Math.cos(a) * bulb.r, bulb.y + Math.sin(a) * bulb.r, colour);
             put(bulb.x + Math.cos(b) * bulb.r, bulb.y + Math.sin(b) * bulb.r, colour);
+          }
+        }
+        // The nucleus (D197): a fan per granule over the fill, in the ink the body wears where the granule lies, darker.
+        for (const granule of body.nucleus?.granules ?? []) {
+          granuleColour.copy(fillAt(Math.atan2(granule.y, granule.x))).multiplyScalar(shade);
+          const points = granule.ring;
+          const stride = strideOf(granule);
+          for (let i = 0; i < points.length; i += stride) {
+            const [ax, az] = points[i] ?? [granule.x, granule.y];
+            const [bx, bz] = points[i + stride < points.length ? i + stride : 0] ?? [granule.x, granule.y];
+            put(body.x + granule.x, body.y + granule.y, granuleColour);
+            put(body.x + ax, body.y + az, granuleColour);
+            put(body.x + bx, body.y + bz, granuleColour);
           }
         }
       }
@@ -370,7 +420,7 @@ export const createInterior = (heightAt: (x: number, y: number) => number, step:
   };
 
   const projected = new Vector3();
-  const render = (camera: Camera, width: number, height: number, free: number, pixelsPerUnit: number, spread: number, words: SlideWords): void => {
+  const render = (camera: Camera, width: number, height: number, margins: Margins, pixelsPerUnit: number, spread: number, words: SlideWords): void => {
     const visible = slide !== undefined && shown.value > 0;
     layer.style.display = visible ? '' : 'none';
     leaders.style.display = visible ? '' : 'none';
@@ -392,54 +442,43 @@ export const createInterior = (heightAt: (x: number, y: number) => number, step:
       return [((projected.x + 1) / 2) * width, ((1 - projected.y) / 2) * height];
     };
     const font = `${String(LABELING.fontSize)}px/${String(LABELING.fontSize)}px ${chrome.FONT_FAMILY}`;
-    const tags = tagsOf(slide, laid, project, { width: free, height, pixelsPerUnit });
-    const restOf = new Map(laid.map((body) => [body.id, body] as const));
+    const screen = { width, height, pixelsPerUnit, margins };
+    const columns = tagsOf(slide, laid, project, screen, LABELING, chrome);
+    // A body the pointer is on whose column had no row for its tag is tagged by itself, level with it.
+    const named = new Set(columns.map((tag) => tag.id));
+    const alone = laid.filter((body) => !named.has(body.id) && words.tag(body.id) > spread);
+    const tags = alone.length === 0 ? columns : [...columns, ...tagsOf(slide, alone, project, screen, LABELING, chrome)];
+    const placed = new Set<Tagged>();
     for (const tag of tags) {
-      const held = tagged.get(tag.id);
-      // A column's footer has no body and no leader; it is drawn with the exploded tags (step 10).
-      if (held === undefined || tag.leader === undefined) continue;
+      const held = tag.more === undefined ? tagged.get(tag.id) : footers.get(tag.side);
+      if (held === undefined) continue;
+      placed.add(held);
       held.tag.textContent = tag.text;
-      // A tag and its leader are laid whether or not they are asked for, so they stand where they belong the moment they are.
-      const asked = words.tag(tag.id);
+      // A tag and its leader are laid whether or not they are asked for, so they stand where they belong the moment they are; a footer shows with the exploded view.
+      const asked = tag.more === undefined ? words.tag(tag.id) : spread;
       held.tag.style.display = asked > 0 ? '' : 'none';
-      held.leader.style.display = asked > 0 ? '' : 'none';
-      held.leader.style.opacity = String(asked);
       Object.assign(held.tag.style, {
         opacity: String(asked),
         transform: `translate(${String(tag.box.x)}px, ${String(tag.box.y)}px)`,
         width: `${String(tag.box.width)}px`,
         height: `${String(tag.box.height)}px`,
-        padding: `${String(LABELING.pad)}px`,
-        font,
+        // The words at the size their row leaves them, centred in it.
+        padding: `${String(Math.max(0, (tag.box.height - tag.fontSize) / 2))}px ${String(LABELING.pad)}px`,
+        font: `${String(tag.fontSize)}px/${String(tag.fontSize)}px ${chrome.FONT_FAMILY}`,
         overflow: 'hidden',
         background: chrome.CHROME_GROUND,
-        color: chrome.CHROME_INK,
+        color: tag.more === undefined ? chrome.CHROME_INK : chrome.CHROME_MUTED,
       });
-      held.leader.setAttribute('x1', String(tag.leader.from[0]));
-      held.leader.setAttribute('y1', String(tag.leader.from[1]));
-      held.leader.setAttribute('x2', String(tag.leader.to[0]));
-      held.leader.setAttribute('y2', String(tag.leader.to[1]));
-      // The exploded view: a socket at the body's place at rest, and a leader from it to the body's rim.
-      const body = restOf.get(tag.id);
-      const spreading = spread > 0 && body !== undefined;
-      held.socket.style.display = spreading ? '' : 'none';
-      held.spread.style.display = spreading ? '' : 'none';
-      if (!spreading) continue;
-      const [sx, sy] = project(body.rest.x, body.rest.y);
-      const [bx, by] = project(body.x, body.y);
-      const dx = bx - sx;
-      const dy = by - sy;
-      const distance = Math.hypot(dx, dy);
-      const rim = body.r * pixelsPerUnit;
-      held.socket.setAttribute('cx', String(sx));
-      held.socket.setAttribute('cy', String(sy));
-      held.socket.setAttribute('r', String(rim));
-      held.socket.style.opacity = String(spread);
-      held.spread.style.opacity = String(spread);
-      held.spread.setAttribute('x1', String(sx));
-      held.spread.setAttribute('y1', String(sy));
-      held.spread.setAttribute('x2', String(distance <= rim ? bx : bx - (dx / distance) * rim));
-      held.spread.setAttribute('y2', String(distance <= rim ? by : by - (dy / distance) * rim));
+      if (held.leader === undefined || tag.leader === undefined) continue;
+      held.leader.style.display = asked > 0 ? '' : 'none';
+      held.leader.style.opacity = String(asked);
+      held.leader.setAttribute('points', [tag.leader.from, tag.leader.elbow, tag.leader.to].map(([x, y]) => `${String(x)},${String(y)}`).join(' '));
+    }
+    // What no column had a row for, and no pointer asked for, is not drawn.
+    for (const held of [...tagged.values(), ...footers.values()]) {
+      if (placed.has(held)) continue;
+      held.tag.style.display = 'none';
+      if (held.leader !== undefined) held.leader.style.display = 'none';
     }
     const [ex, ey] = project(slide.exports.x, slide.exports.y);
     writeExports(exportsTable(slide.exports, look), chrome.CHROME_INK);

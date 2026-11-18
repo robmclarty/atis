@@ -311,7 +311,8 @@ export const WALK: WalkLook = { share: 0.8, fileContext: 6 };
  * the surface is dark. The slide's ground and how opaque it is; the membrane's
  * ink, drawn round the files as the frame; each body's fill and stroke, the
  * stroke this wide in layout units; how much of the change hue a stained body
- * takes; how far above the cell's highest relief the slide floats, in the
+ * takes; how much darker than its body a nucleus's granules are drawn, 0 to
+ * 1 (D197); how far above the cell's highest relief the slide floats, in the
  * heightfield's units; how the membrane writes the exports; and how far the
  * held files gather toward the slide's middle (D199). Every body is unlit and nothing here blooms.
  */
@@ -324,6 +325,7 @@ export type InteriorLook = InteriorLayout & {
   readonly strokeWidth: number;
   readonly stainShare: number;
   readonly lift: number;
+  readonly granuleShade: number;
 };
 
-export const INTERIOR: InteriorLook = { ...INTERIOR_LAYOUT, slide: '#efe6d3', slideOpacity: 0.94, frame: '#1e2733', body: '#b9a9cc', bodyStroke: '#6f5f8a', strokeWidth: 1, stainShare: 1, lift: 4 };
+export const INTERIOR: InteriorLook = { ...INTERIOR_LAYOUT, slide: '#efe6d3', slideOpacity: 0.94, frame: '#1e2733', body: '#b9a9cc', bodyStroke: '#6f5f8a', strokeWidth: 1, stainShare: 1, lift: 4, granuleShade: 0.35 };

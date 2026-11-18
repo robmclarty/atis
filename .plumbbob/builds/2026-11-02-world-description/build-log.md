@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: a world that describes itself at a glance
 
-**Current step:** 9 — feat(scene): send the tags out on leaders and leave the bodies in place
+**Current step:** 10 — feat(web): draw the nuclei and the exploded tags in the world
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -31,7 +31,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 6. feat(scene): grow the drift's contrast through a looseness curve
 - ☑ 7. feat(scene): gather an opened cell's held files toward its middle
 - ☑ 8. feat(scene): lay each file's functions as a nucleus inside its body
-- ☐ 9. feat(scene): send the tags out on leaders and leave the bodies in place
+- ☑ 9. feat(scene): send the tags out on leaders and leave the bodies in place
 - ☐ 10. feat(web): draw the nuclei and the exploded tags in the world
 - ☐ 11. feat(scene): read each membrane's wobble from its cell's integrity
 - ☐ 12. feat(web): ripple the skin's membrane line by its cell's integrity
@@ -373,3 +373,4 @@ folder, so it rides the branch into the PR.)*
 - 2026-11-18 — step 6 checkpointed · fe396985e — feat(scene): grow the drift's contrast through a looseness curve (7m)
 - 2026-11-18 — step 7 checkpointed · 4eb814b3f — feat(scene): gather an opened cell's held files toward its middle (13m)
 - 2026-11-18 — step 8 checkpointed · b806fc4b7 — feat(scene): lay each file's functions as a nucleus inside its body (10m)
+- 2026-11-18 — step 9 checkpointed · f9c3c28a5 — feat(scene): send the tags out on leaders and leave the bodies in place (7m)

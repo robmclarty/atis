@@ -106,7 +106,7 @@
 import { AgXToneMapping, AmbientLight, Color, DataUtils, DirectionalLight, RenderPipeline, Scene, Vector3, WebGPUCoordinateSystem, WebGPURenderer } from 'three/webgpu';
 import { emissive, mrt, output, pass } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
-import { CINEMA, FIELD_FILL, LOD_GATES, MOTION_TOKENS, REACH_ORIGIN_OPACITY, RELIEF, cellSlide, cellWiring, cinemaFocus, compositesOf, compositesOpen, createPicker, createScheduler, fileLevelOf, fillOf, gridFor, instances, interiorOf, planetShown, slideCellOf, surfacePoint } from 'scene';
+import { CINEMA, FIELD_FILL, LOD_GATES, MOTION_TOKENS, NUCLEUS_TOKENS, REACH_ORIGIN_OPACITY, RELIEF, cellSlide, cellWiring, cinemaFocus, compositesOf, compositesOpen, createPicker, createScheduler, fileLevelOf, fillOf, gridFor, instances, interiorOf, planetShown, slideCellOf, surfacePoint } from 'scene';
 import type { FileLevel, Lod, Pick, Point, Slide } from 'scene';
 import type { MapJson, OverlayName } from 'core';
 
@@ -182,6 +182,34 @@ type WeatherLayer = {
 };
 
 /** What the page holds beyond the map: the run's token, which a served path asks for and a fixture has none of (D134), and the PR the page was told of. */
+/** How many frames pass between two readings of the chrome's claims while a slide shows. */
+const CLAIMS_EVERY = 15;
+/** The most of the screen's height the chrome may claim at its top, and at its foot, before the slide's tags stop giving way to it. */
+const CLAIMS_MOST = 1 / 3;
+
+/** A piece of the chrome's box on the screen, where the page shows it. */
+const claimOf = (selector: string): DOMRect | undefined => {
+  const box = document.querySelector(selector)?.getBoundingClientRect();
+  return box === undefined || box.height <= 0 ? undefined : box;
+};
+
+/**
+ * What the chrome claims of the screen's top and foot, in pixels (P25): the
+ * HUD at the top left, down to its lower edge, and the legend and the minimap
+ * at the bottom left, up to the higher of their upper edges. A column of an
+ * opened cell's tags stands between the two (D198). The rail's claim on the
+ * right is the world's own to know.
+ */
+const claimsOf = (height: number): { readonly top: number; readonly bottom: number } => {
+  const hud = claimOf('[data-hud]');
+  const low = [claimOf('[data-legend]'), claimOf('[data-minimap]')].filter((box): box is DOMRect => box !== undefined && box.top > height / 2);
+  const most = height * CLAIMS_MOST;
+  return {
+    top: hud === undefined || hud.top > height / 2 ? 0 : Math.min(most, Math.max(0, hud.bottom)),
+    bottom: low.length === 0 ? 0 : Math.min(most, Math.max(0, height - Math.min(...low.map((box) => box.top)))),
+  };
+};
+
 export type PageLinks = { readonly token?: string | undefined; readonly pr?: string | undefined };
 
 /** Draw the world for a map into the canvas, keep it fitted to the window beside the rail, run its one loop, and keep the chrome's line to it (`nav.ts`). */
@@ -260,6 +288,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   const hover = createHover(heightAt, hoverLook, registry.view(TAG_LOOK));
   // The opened cell's slide (step 40): its meshes in the scene, its leaders under the labels, and its words over every other layer the world lays over the canvas (D185).
   const interiorLook = registry.view(INTERIOR, 'INTERIOR');
+  const nucleusTokens = registry.view(NUCLEUS_TOKENS);
   const interior = createInterior(heightAt, skin.resolution, interiorLook, registry.view(SLIDE_CHROME));
   scene.add(...interior.meshes);
   // The far zoom's planet (D170): over the rules, which are the flat world's, and under everything else.
@@ -302,6 +331,9 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   let placedLod: number | undefined;
   // The free screen beside the rail, or the whole canvas in a still for a comment, which draws no chrome (D108).
   const chrome = { right: view.cinema === true ? 0 : RAIL_WIDTH };
+  // What the chrome claims of the screen's top and foot, which the slide's tags keep clear of (P25), and how many frames ago it was read.
+  let claims = { top: 0, bottom: 0 };
+  let claimsAge = CLAIMS_EVERY;
   const fit = (): void => {
     const { clientWidth, clientHeight } = canvas;
     renderer.setPixelRatio(globalThis.devicePixelRatio);
@@ -777,7 +809,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     }
     organelles.move(floated.surface);
     for (const layer of layers()) layer.sectors.move(floated.surface);
-    bodies = slide === undefined || open.shown <= 0 ? [] : interiorOf(slide, { drifted: floated.open, reduced, shape: scheduler.shape, ...(view.shapes === undefined ? {} : { shapes: view.shapes }) });
+    bodies = slide === undefined || open.shown <= 0 ? [] : interiorOf(slide, { drifted: floated.open, reduced, shape: scheduler.shape, nucleus: nucleusTokens, ...(view.shapes === undefined ? {} : { shapes: view.shapes }) });
     interior.show(bodies, open.shown, (id) => {
       const light = lightOf.get(id);
       return light === undefined ? 1 : (frame.notices[light]?.gain ?? 1);
@@ -871,7 +903,12 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     filePlate.render(camera, canvas.clientWidth, canvas.clientHeight, free, focus === undefined ? undefined : new Vector3(focus.x, heightAt(focus.x, focus.y), focus.y), fileLevel, fileShown * (1 - diffShown));
     diffSheet.render(canvas.clientHeight, free, diffLevel, diffShown);
     const words = slideWords(open.exploded, fieldTarget, slide === undefined ? undefined : barrelOf.get(slide.cell));
-    interior.render(camera, canvas.clientWidth, canvas.clientHeight, canvas.clientWidth - chrome.right, pixelsPerUnit(camera, canvas.clientWidth), open.exploded, words);
+    // The chrome's claims are read again a few times a second while a slide shows: the HUD's blocks and the legend open and close under it.
+    if (slide !== undefined && (claimsAge += 1) >= CLAIMS_EVERY) {
+      claimsAge = 0;
+      claims = claimsOf(canvas.clientHeight);
+    }
+    interior.render(camera, canvas.clientWidth, canvas.clientHeight, { top: claims.top, bottom: claims.bottom, left: 0, right: chrome.right }, pixelsPerUnit(camera, canvas.clientWidth), open.exploded, words);
     // A slide's files float under a still pointer, so the hover follows them each frame while one shows.
     if (pickAgain || lod !== pickedLod || (bodies.length > 0 && !reduced)) {
       // On the planet the flat ground lies under it, so nothing there answers the pointer (D170).

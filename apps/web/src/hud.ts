@@ -174,7 +174,9 @@ export type LegendMark = { readonly id: string; readonly words: string };
  * category first, then the evidence on a changed file's skin, the storms, the
  * ghost, and the change itself; then the reach's light and its crossings, and
  * last the history's two textures (D166). A test holds the list to
- * `libs/svg`'s.
+ * `libs/svg`'s, and to the one mark the world keys past it: the nucleus,
+ * which only an opened cell draws and the still sheet never does (D197,
+ * D201), last so no number moves.
  */
 export const LEGEND: readonly LegendMark[] = [
   { id: 'category', words: 'category: set by the change alone' },
@@ -191,6 +193,7 @@ export const LEGEND: readonly LegendMark[] = [
   { id: 'crossing', words: 'lit halo: where the reach leaves a module' },
   { id: 'hatching', words: 'hatching: how much of it was rewritten lately' },
   { id: 'stipple', words: 'stipple: how many of its commits fixed bugs' },
+  { id: 'nucleus', words: 'nucleus: its functions, sized by their lines' },
 ];
 
 /** What the key of the seven shapes says beside them (D194). */

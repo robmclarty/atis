@@ -331,7 +331,8 @@ test("framed on one cell where it fills the screen, the world opens it as a slid
     const onBody = await page.$$eval('[data-interior-leader]', (lines) =>
       lines
         .map((line) => {
-          const [x1, y1, x2, y2] = ['x1', 'y1', 'x2', 'y2'].map((name) => Number(line.getAttribute(name)));
+          // A leader is a polyline of three points: the tag's edge, the elbow, and the body's rim, which its last run heads into.
+          const [, , x1, y1, x2, y2] = (line.getAttribute('points') ?? '').split(/[ ,]/).map(Number);
           const length = Math.hypot((x2 ?? 0) - (x1 ?? 0), (y2 ?? 0) - (y1 ?? 0)) || 1;
           return [(x2 ?? 0) + (((x2 ?? 0) - (x1 ?? 0)) / length) * 4, (y2 ?? 0) + (((y2 ?? 0) - (y1 ?? 0)) / length) * 4] as const;
         })
@@ -410,8 +411,17 @@ test("framed on one cell where it fills the screen, the world opens it as a slid
       }
     });
     expect(covered).toEqual([]);
-    const sockets = await page.$$eval('[data-interior-socket]', (elements) => elements.filter((element) => element instanceof SVGElement && element.style.display !== 'none').length);
-    expect(sockets).toBe(4);
+    // The exploded view spreads the tags and never a body (D198): no socket marks a place a body left, and each tag has its one leader, a polyline that runs straight out of the tag to its elbow and then to the body.
+    expect(await page.$$eval('[data-interior-socket], [data-interior-explode]', (elements) => elements.length)).toBe(0);
+    const leaders = await page.$$eval('[data-interior-leader]', (elements) => elements.filter((element) => element instanceof SVGElement && element.style.display !== 'none').map((element) => [element.tagName, (element.getAttribute('points') ?? '').split(/[ ,]/).map(Number)] as const));
+    expect(leaders).toHaveLength(4);
+    for (const [name, points] of leaders) {
+      expect(name).toBe('polyline');
+      expect(points).toHaveLength(6);
+      expect(points[3]).toBe(points[1]);
+    }
+    // A cell of four files has a row for every tag, so no footer counts any.
+    expect(await page.$$eval('[data-interior-footer]', (elements) => elements.filter((element) => element instanceof HTMLElement && element.style.display !== 'none').length)).toBe(0);
     // The wiring is laid on w, its plate drawing a box per wired file and a line per wire, and taken away on w again.
     expect(await page.textContent('[data-wire]')).toBe('wire');
     await page.keyboard.press('w');
@@ -493,7 +503,7 @@ test('framed on a package, the world opens it on its modules, tagging the file o
     expect(await page.$$eval('[data-legend]', (elements) => elements.length)).toBe(0);
     await page.click('[data-hud-key]');
     await page.waitForSelector('[data-legend]', { timeout: 30_000 });
-    expect(await page.$$eval('[data-legend] [data-mark]', (elements) => elements.length)).toBe(14);
+    expect(await page.$$eval('[data-legend] [data-mark]', (elements) => elements.length)).toBe(15);
     await page.keyboard.press('Escape');
     await page.waitForSelector('[data-legend]', { state: 'detached', timeout: 30_000 });
     expect(await page.getAttribute('#world', 'data-open')).toBe(cell);
@@ -524,6 +534,20 @@ test('under reduced motion nothing changes from frame to frame after load, in an
     await layersShown(page, false);
     const [still, later] = await twoFrames(page, 1500);
     expect(still.equals(later)).toBe(true);
+    // The exploded view moves no body (D198): spread, every leader still ends on the rim it ended on, so each body is
+    // where it was picked before the view spread; gathered again, the view is as it was.
+    await layersShown(page, true);
+    const leaderEnds = async (): Promise<readonly (readonly (string | null)[])[]> =>
+      page.$$eval('[data-interior-leader]', (elements) => elements.map((element) => [element.getAttribute('data-interior-leader'), element.getAttribute('points')]));
+    const gathered = await leaderEnds();
+    expect(gathered.length).toBeGreaterThan(0);
+    for (const [, points] of gathered) expect(points).not.toBeNull();
+    await page.keyboard.press('x');
+    await page.waitForSelector('#world[data-exploded="on"]', { timeout: 30_000 });
+    await page.waitForTimeout(150);
+    expect(await leaderEnds()).toEqual(gathered);
+    await page.keyboard.press('x');
+    await page.waitForSelector('#world[data-exploded="off"]', { timeout: 30_000 });
     // A fly-to cuts: a frame just after the notice's row is clicked is already where the view lands, and the landing
     // does not swing.
     await layersShown(page, true);

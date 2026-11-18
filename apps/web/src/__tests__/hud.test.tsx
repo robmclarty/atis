@@ -160,7 +160,8 @@ test("the world's Size counts the terrain alone, as the sheet's does, so a chang
 });
 
 test('the legend keys the same marks in the same words as the sheet, and the shape key says the same', () => {
-  expect(LEGEND).toEqual(SHEET_LEGEND);
+  // The world keys one mark the sheet does not, last: the nucleus, which only an opened cell draws (D201).
+  expect(LEGEND).toEqual([...SHEET_LEGEND, { id: 'nucleus', words: 'nucleus: its functions, sized by their lines' }]);
   expect(SHAPE_KEY_WORDS).toBe(SHEET_SHAPE_KEY_WORDS);
   expect(over('#ffffff', '#000000', 0.5)).toBe('#808080');
   expect(over('#e6edf3', '#1a1f27', 0)).toBe('#1a1f27');

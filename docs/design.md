@@ -350,7 +350,11 @@ words. Under them a last row keys the shape spectrum (D194 (shape-spectrum)):
 seven samples along it, the smooth end at the left and the spiky at the right,
 `LEGEND_KEY_PITCH` apart, then their words, `shape: trouble, smooth to spiky`. It keys
 a scale, as the category row does, so it takes no number and the practice map
-hangs no balloon on it. The samples are the world's own shapes and inks drawn flat (D12): no
+hangs no balloon on it. The world's legend keys one mark more than the sheet's,
+last so no number moves: `nucleus: its functions, sized by their lines`, a body
+with a few granules of unlike sizes inside it (D197 (nuclei)). Only an opened
+cell draws a nucleus, and the still sheet draws no opened cell, so its legend
+keys none (D201 (slide-only-svg)). The samples are the world's own shapes and inks drawn flat (D12): no
 opacity, no blur, no pattern. Each ink the world draws at a share is laid already
 flattened over what it lies on, from the tokens the mark itself is drawn with:
 
@@ -659,6 +663,7 @@ fingerprint is 480 by 300 with an 8-pixel margin (`FINGERPRINT`).
 | `INTERIOR.strokeWidth` | `1` | the stroke's width, in layout units |
 | `INTERIOR.stainShare` | `1` | how much of the change hue a stained body takes |
 | `INTERIOR.lift` | `4` | how far above the cell's highest relief the slide floats, in the heightfield's units |
+| `INTERIOR.granuleShade` | `0.35` | how much darker than its body a nucleus's granules are drawn, 0 to 1 (D197 (nuclei)): each granule takes the ink the body wears where the granule lies, the body's own or the stain's hue, less this share of its light, and is left unstained where the body is |
 | `WIRING.fontSize` | `11` | the wiring plate's type size, in pixels (step 41) |
 | `WIRING.pad` | `3` | the pad round a name in its box |
 | `WIRING.nodeGap` | `10` | the gap between two files in a column |

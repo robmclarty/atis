@@ -260,6 +260,14 @@ const Stipple = ({ look }: { readonly look: Look }): ReactElement => {
   );
 };
 
+/** The nucleus's sample (D197): a few granules of unlike sizes inside the body, each a place and a radius as shares of the sample's radius. */
+const NUCLEUS_DOTS: readonly (readonly [number, number, number])[] = [
+  [-0.05, -0.1, 0.3],
+  [0.42, 0.22, 0.2],
+  [-0.38, 0.34, 0.16],
+  [0.2, -0.48, 0.12],
+];
+
 /** Each mark's sample, drawn about the origin in the sheet's units; the category's is a scale of flat blocks instead. */
 const sampleOf = (id: string, look: Look): ReactNode => {
   switch (id) {
@@ -337,6 +345,15 @@ const sampleOf = (id: string, look: Look): ReactNode => {
         <>
           <File look={look} />
           <Stipple look={look} />
+        </>
+      );
+    case 'nucleus':
+      return (
+        <>
+          <File look={look} />
+          {NUCLEUS_DOTS.map(([dx, dy, r]) => (
+            <circle key={`${String(dx)},${String(dy)}`} data-granule cx={dx * look.LEGEND_SAMPLE_R} cy={dy * look.LEGEND_SAMPLE_R} r={r * look.LEGEND_SAMPLE_R} fill={look.ORGANELLE_STROKE} />
+          ))}
         </>
       );
     default:
