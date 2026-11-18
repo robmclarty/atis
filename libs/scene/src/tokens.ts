@@ -67,6 +67,20 @@ export const SHAPE_LEVELS: readonly {
 export const SHAPE_CORE_GIVE = 0.2;
 /** Each arm's own length varies by up to this share either way, seeded by the file's path, so no two files' spikes match. */
 export const SHAPE_ARM_SPREAD = 0.3;
+
+/**
+ * Density means a file's functions (D197): on an opened cell's slide each
+ * file's functions are granules clustered inside its body, a nucleus. The
+ * largest file on the slide fills this share of its core's area with them,
+ * and every other file its lines' share of that; the outermost granule keeps
+ * this share of the core's radius clear of the core's edge, which covers the
+ * body's wobble, so a nucleus never meets the outline however the shape
+ * moves; and a file with more functions than this draws its largest and
+ * counts the rest on its tag.
+ */
+export const NUCLEUS_FILL = 0.5;
+export const NUCLEUS_PAD = 0.1;
+export const NUCLEUS_MOST = 200;
 /**
  * Shape means trouble (D194, Q81): the score one broken rule gives a file on
  * the spectrum, 0 to 1, with no history. Below it lies the stretch history

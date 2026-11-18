@@ -17,7 +17,11 @@
  * of its changed lines no test ran left unstained from the top clockwise, as
  * the evidence ring lights its gap (D71); a file nobody measured unstained
  * whole (D80); a deleted file its outline alone, the body gone; a renamed one
- * dashed (D40). On demand the exploded view spreads the bodies out from the
+ * dashed (D40). Inside each body its functions are granules, a nucleus laid
+ * by phyllotaxis from the body's middle inside the core its arms never cross,
+ * each sized by its lines and dented by the thresholds it breaks, the densest
+ * file on the slide reading full and the rest by their lines (D197); a file
+ * the scan read no functions in has none (C2). On demand the exploded view spreads the bodies out from the
  * cell's middle along dotted leaders, in the technical drawing's manner,
  * clear of one another. The file labels are tags in two columns on screen,
  * left and right of the slide however it is framed, each with its rule count
@@ -30,7 +34,7 @@
 
 import earcut from 'earcut';
 import { membraneThickness } from 'core';
-import type { ChangeKind, MapJson, Position, ReachEntry } from 'core';
+import type { ChangeKind, FileFunction, MapJson, Position, ReachEntry } from 'core';
 
 import { GATHER, heldCellsOf, restOf, slideCellOf, slideFilesOf } from './drift.js';
 import type { Drifted } from './drift.js';
@@ -41,9 +45,9 @@ import type { Point } from './minimap.js';
 import { openRing } from './raster.js';
 import type { Ring } from './raster.js';
 import { AT_REST, draw, outlineOf, rulesOf, seedOf } from './shape.js';
-import { troubleOf } from './trouble.js';
+import { troubleFrom, troubleOf } from './trouble.js';
 import type { Outline, ShapeMotion } from './shape.js';
-import { MONO_ADVANCE } from './tokens.js';
+import { MONO_ADVANCE, NUCLEUS_FILL, NUCLEUS_MOST, NUCLEUS_PAD } from './tokens.js';
 import { weatherOf } from './weather.js';
 
 /**
@@ -72,10 +76,12 @@ export const INTERIOR_LAYOUT: InteriorLayout = { explodeSpread: 1.6, explodePush
 /** `improved` where the change made the file healthier, which wears the calm-positive hue in place of the change hue (D98). */
 export type Stain = { readonly kind: ChangeKind; readonly from?: string; readonly open: number; readonly improved?: true };
 
-/** A file on the slide at rest: where it rests, the layout's place gathered by how its cellmates hold it (D199), the rules it breaks, where its trouble puts it on the shape spectrum (D194), its stain, its looseness, and where the exploded view takes it. */
+/** A file on the slide at rest: where it rests, the layout's place gathered by how its cellmates hold it (D199), its lines and the functions the head scan read in it, where it read any (D197), the rules it breaks, where its trouble puts it on the shape spectrum (D194), its stain, its looseness, and where the exploded view takes it. */
 export type SlideFile = {
   readonly id: string;
   readonly rest: Position;
+  readonly lines: number;
+  readonly functions?: readonly FileFunction[];
   readonly rules: number;
   readonly score: number;
   readonly dents: readonly string[];
@@ -123,18 +129,48 @@ export type Slide = {
   readonly thickness: number;
   readonly centre: Point;
   readonly radius: number;
+  /** The lines of the largest file on the slide, which the nuclei fill by (D197). */
+  readonly mostLines: number;
   readonly exports: Exports;
   readonly files: readonly SlideFile[];
 };
 
-/** A file on the slide this frame: where it is, in its outline as the scheduler moves it. */
-export type Body = SlideFile & { readonly x: number; readonly y: number; readonly r: number; readonly outline: Outline };
+/**
+ * The nucleus's tokens as one object, so a registry can hand in live values
+ * (D156); `NUCLEUS_TOKENS` is where they rest, at `tokens.ts`'s values.
+ */
+export type NucleusTokens = { readonly NUCLEUS_FILL: number; readonly NUCLEUS_PAD: number; readonly NUCLEUS_MOST: number };
+export const NUCLEUS_TOKENS: NucleusTokens = { NUCLEUS_FILL, NUCLEUS_PAD, NUCLEUS_MOST };
+
+/** One function as a granule in its file's nucleus: what it is, the rules it breaks, and where it lies from the body's middle, in its outline, dented once per rule (D197, D102). */
+export type NucleusGranule = {
+  readonly name: string;
+  readonly line: number;
+  readonly line_count: number;
+  readonly rules: readonly string[];
+  readonly x: number;
+  readonly y: number;
+  readonly r: number;
+  readonly ring: readonly Point[];
+};
+
+/**
+ * A file's nucleus (D197): its granules in line order, each placed from the
+ * body's middle, so the nucleus rides the body wherever the float has it and
+ * keeps still inside it; and how many functions past the most it draws are
+ * only counted.
+ */
+export type Nucleus = { readonly granules: readonly NucleusGranule[]; readonly more: number };
+
+/** A file on the slide this frame: where it is, in its outline as the scheduler moves it, with its nucleus where the scan read its functions. */
+export type Body = SlideFile & { readonly x: number; readonly y: number; readonly r: number; readonly outline: Outline; readonly nucleus?: Nucleus };
 
 /**
  * How the slide moves this frame: where the float has the cell's files (none
  * while it rests), reduced motion, how far the exploded view has spread, 0 to
  * 1, how each trouble score moves a shape, and the demo switch, under which
- * the bodies take scores across the spectrum in place of their trouble (D202).
+ * the bodies take scores across the spectrum in place of their trouble (D202);
+ * and the nucleus's tokens, resting when left out.
  */
 export type InteriorMotion = {
   readonly drifted?: readonly Drifted[];
@@ -142,9 +178,10 @@ export type InteriorMotion = {
   readonly explode?: number;
   readonly shape?: (score: number) => ShapeMotion;
   readonly shapes?: 'demo';
+  readonly nucleus?: NucleusTokens;
 };
 
-/** One file's tag in a column beside the slide: its words, its rule count, which column, its box on the screen, and the dotted leader from its edge to the body's rim. */
+/** One file's tag in a column beside the slide: its words, its rule count, the functions its nucleus only counts, which column, its box on the screen, and the dotted leader from its edge to the body's rim. */
 export type Tag = {
   readonly id: string;
   readonly text: string;
@@ -333,6 +370,8 @@ export function cellSlide(map: MapJson, cell: string, layout: InteriorLayout = I
     return {
       id: organelle.id,
       rest: rests[index]?.rest ?? { x: 0, y: 0, r: 0 },
+      lines: organelle.loc,
+      ...(organelle.functions === undefined ? {} : { functions: organelle.functions }),
       rules: rulesOf(organelle.dents),
       score: troubleOf(organelle).score,
       dents: organelle.dents,
@@ -365,9 +404,91 @@ export function cellSlide(map: MapJson, cell: string, layout: InteriorLayout = I
     thickness: membraneThickness(found.interface_size),
     centre,
     radius,
+    mostLines: Math.max(0, ...files.map((file) => file.lines)),
     exports,
     files,
   };
+}
+
+/** The golden angle, which turns each granule of a nucleus from the last so no two spokes line up. */
+const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
+/** The draw a file's nucleus takes its first spoke from, clear of the shape's own. */
+const NUCLEUS_DRAW = 170;
+/** The densest a spiral of granules is laid, as the share of its disc they cover: past it equal neighbours on the spiral would lie over one another. */
+const NUCLEUS_PACK_MOST = 0.55;
+
+/** Each file's nucleus as last laid, so a frame that asks again for the same core and tokens gets the one laid. */
+const NUCLEI = new WeakMap<SlideFile, { readonly key: string; readonly nucleus: Nucleus }>();
+
+/**
+ * A file's nucleus inside its outline (D197): one granule per function the
+ * head scan read, in line order, on a phyllotaxis spiral from the body's
+ * middle, each turned the golden angle from the last and as far out as the
+ * area of those before it and half its own, so equal granules stand at the
+ * square root of their index and a half, and a lone one at the middle. A granule's radius goes as the square root of its lines, and
+ * the set is scaled so its summed area is `NUCLEUS_FILL` of the core's, times
+ * the file's lines over the largest file's on the slide: the densest file
+ * reads full and every other by its lines. The spiral is spaced so a full
+ * nucleus spans the core less `NUCLEUS_PAD`, or as near that as it can be
+ * laid with its granules clear of one another; one whose outermost granule
+ * would spill past the padded core is shrunk whole, places and radii alike,
+ * until it fits, so no granule meets the outline however the shape moves. Each
+ * granule's ring is the plate's outline at its breaches' score (D102). Past
+ * `NUCLEUS_MOST` functions the largest are drawn, in line order, and the rest
+ * counted. None for a file the scan read no functions in, never one made
+ * from a count alone (C2). The granules lie from the body's middle and do
+ * not pulse or turn: one file, one core and one set of tokens give one
+ * nucleus (C3).
+ */
+export function nucleusOf(file: SlideFile, outline: Outline, slide: Slide, tokens: NucleusTokens = NUCLEUS_TOKENS): Nucleus | undefined {
+  const functions = file.functions;
+  if (functions === undefined || functions.length === 0 || file.lines <= 0 || slide.mostLines <= 0 || outline.core <= 0) return undefined;
+  const key = [outline.core, slide.mostLines, tokens.NUCLEUS_FILL, tokens.NUCLEUS_PAD, tokens.NUCLEUS_MOST].join(' ');
+  const last = NUCLEI.get(file);
+  if (last?.key === key) return last.nucleus;
+
+  const most = Math.max(1, Math.floor(tokens.NUCLEUS_MOST));
+  const kept = new Set(
+    functions
+      .map((fn, index) => ({ fn, index }))
+      .toSorted((a, b) => b.fn.line_count - a.fn.line_count || a.index - b.index)
+      .slice(0, most)
+      .map((each) => each.index),
+  );
+  const drawn = functions.filter((_, index) => kept.has(index));
+  const fill = clamp01(tokens.NUCLEUS_FILL) * Math.min(1, file.lines / slide.mostLines);
+  const pad = clamp01(tokens.NUCLEUS_PAD);
+  const limit = outline.core * (1 - pad);
+  // A full nucleus spans the padded core, so the spiral is as dense as that takes, and never so dense its granules overlap.
+  const pack = Math.min(NUCLEUS_PACK_MOST, clamp01(tokens.NUCLEUS_FILL) / Math.max((1 - pad) ** 2, Number.EPSILON));
+  const lines = drawn.reduce((total, fn) => total + fn.line_count, 0);
+  if (fill <= 0 || limit <= 0 || pack <= 0 || lines <= 0) return undefined;
+  const scale = outline.core * Math.sqrt(fill / lines);
+  const turn = draw(seedOf(file.id), NUCLEUS_DRAW) * 2 * Math.PI;
+  let within = 0;
+  const laid = drawn.map((fn, index) => {
+    const r = Math.sqrt(fn.line_count) * scale;
+    // As far out as the area of those before it and half its own, which keeps the first few clear of one another; a lone granule sits at the middle.
+    const away = drawn.length === 1 ? 0 : Math.sqrt((within + (r * r) / 2) / pack);
+    within += r * r;
+    const rules = fn.breaches ?? [];
+    // The granule's outline on a unit body, which its radius then sizes: the plate's, at its breaches' score (D102, Q97).
+    const unit = outlineOf(`${file.id}#${fn.name}@${String(fn.line)}`, { x: 0, y: 0, r: 1 }, troubleFrom(rules.length));
+    return { fn, rules, r, away, theta: turn + index * GOLDEN_ANGLE, unit };
+  });
+  const furthest = Math.max(...laid.map((each) => each.away + each.r * each.unit.extent));
+  const shrink = furthest <= limit ? 1 : limit / furthest;
+  const nucleus: Nucleus = {
+    granules: laid.map(({ fn, rules, r, away, theta, unit }): NucleusGranule => {
+      const x = Math.cos(theta) * away * shrink;
+      const y = Math.sin(theta) * away * shrink;
+      const radius = r * shrink;
+      return { name: fn.name, line: fn.line, line_count: fn.line_count, rules, x, y, r: radius, ring: unit.ring.map(([ux, uy]): Point => [x + ux * radius, y + uy * radius]) };
+    }),
+    more: functions.length - drawn.length,
+  };
+  NUCLEI.set(file, { key, nucleus });
+  return nucleus;
 }
 
 /** The demo switch's scores, by path (D202): each file's index in path order over the last index, 0 for a lone file. */
@@ -397,7 +518,9 @@ export function interiorOf(slide: Slide, motion: InteriorMotion = {}): readonly 
     const y = at.y + (file.exploded[1] - at.y) * spread;
     const r = file.rest.r;
     const score = demo?.get(file.id) ?? file.score;
-    return { ...file, score, x, y, r, outline: outlineOf(file.id, { x, y, r }, score, shape(score)) };
+    const outline = outlineOf(file.id, { x, y, r }, score, shape(score));
+    const nucleus = nucleusOf(file, outline, slide, motion.nucleus);
+    return { ...file, score, x, y, r, outline, ...(nucleus === undefined ? {} : { nucleus }) };
   });
 }
 
@@ -420,8 +543,8 @@ function stackColumn(wanted: readonly { readonly y: number }[], height: number, 
 }
 
 /**
- * The tags beside a slide on the screen: each body's name and rule count in
- * the column on its side of the slide's middle, stacked down the column by
+ * The tags beside a slide on the screen: each body's name, its rule count and
+ * the functions its nucleus only counts (`+12 fn`, D197) in the column on its side of the slide's middle, stacked down the column by
  * where the body projects, the columns held against the slide's edges and
  * kept on the screen however the slide is framed (D155), each joined to its
  * body's rim by a leader from the tag's inner edge.
@@ -435,7 +558,8 @@ export function tagsOf(slide: Slide, bodies: readonly Body[], project: Projectio
   const wanted = bodies
     .map((body) => {
       const [sx, sy] = project(body.x, body.y);
-      const text = `${nameOf(body.id, body.stain?.kind === 'added')}${body.rules > 0 ? ` · ${String(body.rules)}` : ''}`;
+      const more = body.nucleus?.more ?? 0;
+      const text = `${nameOf(body.id, body.stain?.kind === 'added')}${body.rules > 0 ? ` · ${String(body.rules)}` : ''}${more > 0 ? ` · +${String(more)} fn` : ''}`;
       const width = text.length * labeling.fontSize * MONO_ADVANCE + 2 * labeling.pad;
       return { body, text, width, x: sx, y: sy, side: sx < middle ? ('left' as const) : ('right' as const) };
     })

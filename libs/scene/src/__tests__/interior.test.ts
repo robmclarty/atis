@@ -3,11 +3,11 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { assertMap, membraneThickness } from 'core';
-import type { MapJson } from 'core';
+import type { FileFunction, MapJson } from 'core';
 import { expect, test } from 'vitest';
 
 import { driftOf, restOf } from '../drift.js';
-import { INTERIOR_LAYOUT, cellSlide, crossingsOf, exportsTable, exportsWords, interiorOf, tagsOf } from '../interior.js';
+import { INTERIOR_LAYOUT, cellSlide, crossingsOf, exportsTable, exportsWords, interiorOf, nucleusOf, tagsOf } from '../interior.js';
 import type { Body, Slide } from '../interior.js';
 import { LABELING } from '../labels.js';
 import { dentedRing } from '../membranes.js';
@@ -15,7 +15,8 @@ import type { Point } from '../minimap.js';
 import { createScheduler } from '../motion.js';
 import { openRing } from '../raster.js';
 import { AT_REST, outlineOf } from '../shape.js';
-import { LOD_FADE_MS, MONO_ADVANCE } from '../tokens.js';
+import { troubleFrom } from '../trouble.js';
+import { LOD_FADE_MS, MONO_ADVANCE, NUCLEUS_FILL, NUCLEUS_MOST, NUCLEUS_PAD, SHAPE_JITTER, SHAPE_PULSE, SHAPE_PULSE_HZ, SHAPE_TURN } from '../tokens.js';
 
 /**
  * An opened cell as a stained slide (step 40): the membrane as the frame with
@@ -288,7 +289,7 @@ test("under the demo switch the slide's bodies take scores by their index in pat
     expect(body.score, body.id).toBe(score);
     expect(body.outline, body.id).toEqual(outlineOf(body.id, body.rest, score));
     // Only the score and the outline it draws change: the body sits where it sat, with the rules and the stain it had.
-    expect({ ...body, score: 0, outline: undefined }, body.id).toEqual({ ...bodyOf(rest, body.id), score: 0, outline: undefined });
+    expect({ ...body, score: 0, outline: undefined, nucleus: undefined }, body.id).toEqual({ ...bodyOf(rest, body.id), score: 0, outline: undefined, nucleus: undefined });
   }
   expect(demo.map((body) => body.score).toSorted((a, b) => a - b)).toEqual(paths.map((_, index) => index / (paths.length - 1)));
   expect(Math.min(...demo.map((body) => body.score))).toBe(0);
@@ -425,4 +426,142 @@ test("the scheduler fades a slide in over the cross-fade's time as a cell opens,
   expect(still.frame().open).toEqual({ cell: PM, shown: 1, exploded: 1 });
   still.open(undefined);
   expect(still.frame().open).toEqual({ cell: undefined, shown: 0, exploded: 0 });
+});
+
+/** The demo with one file's functions set as given, or taken away. */
+function withFunctions(id: string, functions: readonly FileFunction[] | undefined): MapJson {
+  return {
+    ...DEMO,
+    terrain: {
+      ...DEMO.terrain,
+      organelles: DEMO.terrain.organelles.map((organelle) => {
+        if (organelle.id !== id) return organelle;
+        const { functions: _functions, ...rest } = organelle;
+        return functions === undefined ? { ...rest, function_count: 12 } : { ...rest, functions };
+      }),
+    },
+  };
+}
+
+/** This many functions down a file, their lengths cycling from 1 to 23 lines, every eleventh breaking a threshold. */
+function functionsOf(count: number): readonly FileFunction[] {
+  let line = 1;
+  return Array.from({ length: count }, (_, index): FileFunction => {
+    const fn: FileFunction = { name: `fn${String(index)}`, line, line_count: 1 + ((index * 7) % 23), ...(index % 11 === 0 ? { breaches: ['complexity'] } : {}) };
+    line += fn.line_count + 1;
+    return fn;
+  });
+}
+
+function insideRing(ring: readonly (readonly [number, number])[], x: number, y: number): boolean {
+  let within = false;
+  ring.forEach(([ax, ay], index) => {
+    const [bx, by] = ring[(index + 1) % ring.length] ?? [ax, ay];
+    if (ay > y !== by > y && x < ax + ((y - ay) / (by - ay)) * (bx - ax)) within = !within;
+  });
+  return within;
+}
+
+test("a file's functions are a nucleus of granules inside its body, one each in line order, sized by their lines and dented by their breaches; a file the scan read none in has no nucleus, whatever its count (D197, C2)", () => {
+  const functions = functionsOf(9);
+  const slide = slideOf(PM, withFunctions(TOOLS, functions));
+  const tools = bodyOf(interiorOf(slide), TOOLS);
+  const nucleus = tools.nucleus;
+  if (nucleus === undefined) throw new Error('tools.ts has a nucleus');
+  expect(nucleus.more).toBe(0);
+  expect(nucleus.granules.map((granule) => [granule.name, granule.line, granule.line_count, granule.rules])).toEqual(functions.map((fn) => [fn.name, fn.line, fn.line_count, fn.breaches ?? []]));
+  // Each stands further from the body's middle than the one before it, turned the golden angle from it; a lone function sits at the middle.
+  const away = nucleus.granules.map((granule) => Math.hypot(granule.x, granule.y));
+  away.slice(1).forEach((distance, index) => expect(distance).toBeGreaterThan(away[index] ?? 0));
+  const turned = (index: number): number => Math.atan2(nucleus.granules[index]?.y ?? 0, nucleus.granules[index]?.x ?? 0);
+  expect(Math.cos(turned(1) - turned(0))).toBeCloseTo(Math.cos(Math.PI * (3 - Math.sqrt(5))), 9);
+  const lone = bodyOf(interiorOf(slideOf(PM, withFunctions(TOOLS, functionsOf(1)))), TOOLS).nucleus?.granules ?? [];
+  expect(lone.map((granule) => [granule.x, granule.y])).toEqual([[0, 0]]);
+  // More lines, a larger granule, and as many lines the same.
+  const bySize = nucleus.granules.toSorted((a, b) => a.line_count - b.line_count);
+  bySize.slice(1).forEach((granule, index) => {
+    const smaller = bySize[index];
+    if (smaller === undefined) return;
+    if (granule.line_count === smaller.line_count) expect(granule.r).toBeCloseTo(smaller.r, 12);
+    else expect(granule.r).toBeGreaterThan(smaller.r);
+  });
+  // An unbroken granule is the plate's circle about its place, and a breached one is dented, by the same outline (D102, Q97).
+  const [first, , second] = nucleus.granules;
+  if (first === undefined || second === undefined) throw new Error('nine granules');
+  expect(first.rules).toEqual(['complexity']);
+  outlineOf(`${TOOLS}#fn0@1`, { x: first.x, y: first.y, r: first.r }, troubleFrom(1)).ring.forEach(([x, y], index) => {
+    expect(first.ring[index]?.[0]).toBeCloseTo(x, 9);
+    expect(first.ring[index]?.[1]).toBeCloseTo(y, 9);
+  });
+  for (const [x, y] of second.ring) expect(Math.hypot(x - second.x, y - second.y)).toBeCloseTo(second.r, 9);
+  // The same file gives the same nucleus, on this slide and on one laid afresh (C3).
+  expect(bodyOf(interiorOf(slide), TOOLS).nucleus).toBe(nucleus);
+  expect(bodyOf(interiorOf(slideOf(PM, withFunctions(TOOLS, functionsOf(9)))), TOOLS).nucleus).toEqual(nucleus);
+  // A count alone makes no nucleus, and neither does a deleted file.
+  const counted = interiorOf(slideOf(PM, withFunctions(TOOLS, undefined)));
+  expect(bodyOf(counted, TOOLS).nucleus).toBeUndefined();
+  expect(slideOf(PM, withFunctions(TOOLS, undefined)).files.find((file) => file.id === TOOLS)?.functions).toBeUndefined();
+  expect(bodyOf(counted, LEGACY).nucleus).toBeUndefined();
+});
+
+/** The summed area of a body's granules. */
+function areaOf(body: Body): number {
+  return (body.nucleus?.granules ?? []).reduce((total, granule) => total + Math.PI * granule.r ** 2, 0);
+}
+
+test('the largest file on the slide fills its share of its core and the rest by their lines, shrinking before a nucleus spills (D197, Q92)', () => {
+  const map = withFunctions(TOOLS, functionsOf(40));
+  const slide = slideOf(PM, map);
+  const bodies = interiorOf(slide);
+  expect(slide.mostLines).toBe(Math.max(...slide.files.map((file) => file.lines)));
+  for (const body of bodies) {
+    if (body.nucleus === undefined) continue;
+    const full = NUCLEUS_FILL * (body.lines / slide.mostLines) * Math.PI * body.outline.core ** 2;
+    // Its granules' summed area is its share of the core, or less where the whole nucleus shrank to keep inside it.
+    expect(areaOf(body)).toBeLessThanOrEqual(full + 1e-9);
+    expect(areaOf(body)).toBeGreaterThan(full / 2);
+    for (const granule of body.nucleus.granules) for (const [x, y] of granule.ring) expect(Math.hypot(x, y)).toBeLessThanOrEqual(body.outline.core * (1 - NUCLEUS_PAD) + 1e-9);
+  }
+  // Equal granules keep clear of one another on the spiral.
+  const even = Array.from({ length: 60 }, (_, index): FileFunction => ({ name: `fn${String(index)}`, line: index * 6 + 1, line_count: 5 }));
+  const evenly = bodyOf(interiorOf(slideOf(PM, withFunctions(TOOLS, even))), TOOLS).nucleus?.granules ?? [];
+  expect(evenly).toHaveLength(60);
+  evenly.forEach((a, index) => {
+    for (const b of evenly.slice(index + 1)) expect(Math.hypot(b.x - a.x, b.y - a.y)).toBeGreaterThanOrEqual(a.r + b.r);
+  });
+  // The tokens are read as handed in (D156): half the fill, half the area.
+  const tools = bodyOf(bodies, TOOLS);
+  const halved = nucleusOf(tools, tools.outline, slide, { NUCLEUS_FILL: NUCLEUS_FILL / 2, NUCLEUS_PAD, NUCLEUS_MOST });
+  expect((halved?.granules ?? []).reduce((total, granule) => total + Math.PI * granule.r ** 2, 0)).toBeLessThan(areaOf(tools) * 0.75);
+});
+
+test('past the most a nucleus draws, the largest functions are drawn and the rest counted on the tag, and every granule keeps inside the core while the shape pulses, turns and jitters at the spiky end (D197)', () => {
+  const functions = functionsOf(400);
+  const slide = slideOf(PM, withFunctions(TOOLS, functions));
+  // Under the demo switch the last file in path order stands at the spiky end, where the shape moves most.
+  const at = (t: number): Body => bodyOf(interiorOf(slide, { shapes: 'demo', shape: () => ({ t, pulseHz: SHAPE_PULSE_HZ.at(-1) ?? 0, pulse: SHAPE_PULSE.at(-1) ?? 0, turn: SHAPE_TURN.at(-1) ?? 0, jitter: SHAPE_JITTER }) }), TOOLS);
+  const rest = at(0);
+  expect(rest.score).toBe(1);
+  const nucleus = rest.nucleus;
+  if (nucleus === undefined) throw new Error('tools.ts has a nucleus');
+  expect(nucleus.granules).toHaveLength(NUCLEUS_MOST);
+  expect(nucleus.more).toBe(200);
+  // The drawn are the largest, still in line order.
+  const smallestDrawn = Math.min(...nucleus.granules.map((granule) => granule.line_count));
+  const drawn = new Set(nucleus.granules.map((granule) => granule.name));
+  for (const fn of functions) if (!drawn.has(fn.name)) expect(fn.line_count).toBeLessThanOrEqual(smallestDrawn);
+  expect(nucleus.granules.map((granule) => granule.line)).toEqual(nucleus.granules.map((granule) => granule.line).toSorted((a, b) => a - b));
+  for (const t of [0, 1, 2, 7]) {
+    const body = at(t);
+    // The nucleus neither pulses nor turns: it is the one laid, riding the body.
+    expect(body.nucleus).toBe(nucleus);
+    for (const granule of nucleus.granules) {
+      for (const [x, y] of granule.ring) {
+        expect(Math.hypot(x, y)).toBeLessThanOrEqual(body.outline.core * (1 - NUCLEUS_PAD) + 1e-9);
+        expect(insideRing(body.outline.ring, body.x + x, body.y + y), `${granule.name} at ${String(t)} s`).toBe(true);
+      }
+    }
+  }
+  const tag = tagsOf(slide, [rest], project, SCREEN).find((each) => each.id === TOOLS);
+  expect(tag?.text.endsWith(' · +200 fn')).toBe(true);
 });
