@@ -152,9 +152,10 @@ export type OpenFrame = { readonly cell: string | undefined; readonly shown: num
 /**
  * What the float is measured on this frame (D165): how many layout units the
  * free screen's shorter side spans at the camera's zoom, the share of the free
- * screen a cell's skin fills, and the cell's gate, resting when left out.
+ * screen a cell's skin fills, the cell's gate, and how far the held files
+ * gather on the slide (D199), each resting when left out.
  */
-export type FloatView = { readonly screen: number; readonly fill: (cell: string) => number; readonly gate?: CellGate };
+export type FloatView = { readonly screen: number; readonly fill: (cell: string) => number; readonly gate?: CellGate; readonly gather?: number };
 
 /**
  * Where the float has the files this frame: the slide's cell's, where its
@@ -485,13 +486,13 @@ export function createScheduler({ clock, seed, tiers: loaded, reduced, tokens: T
         // A cell opened again floats on from where the surface draws its files; any other floats out from rest.
         const held = resting.get(opened);
         resting.delete(opened);
-        const float = held === undefined ? startFloat(map, opened) : homeFloat(map, held, homewardAt(view.fill(opened), gate));
+        const float = held === undefined ? startFloat(map, opened, view.gather) : homeFloat(map, held, homewardAt(view.fill(opened), gate));
         // Its clock runs from the moment the cell opened, on from where a held float's stood.
         floating = { float, from: openedAt - float.t };
       }
       if (floating !== undefined) {
         const from = Math.max(floating.from, now - floating.float.t - FLOAT_CATCH_UP_MS);
-        floating = { float: stepFloat(map, floating.float, now - from, { seed, screen: view.screen, tokens: T }), from };
+        floating = { float: stepFloat(map, floating.float, now - from, { seed, screen: view.screen, tokens: T, ...(view.gather === undefined ? {} : { gather: view.gather }) }), from };
       }
       const surface = new Map<string, Point>();
       const positions = map.terrain.layout?.positions ?? {};

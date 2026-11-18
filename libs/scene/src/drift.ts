@@ -13,8 +13,15 @@
  * and a sheet of holes. On a package's slide a file's looseness is the share
  * of its `package_ties` that leave the package.
  *
+ * A file rests where the layout put it, moved along the line to its slide's
+ * middle by how much better or worse its cellmates hold it than they hold one
+ * another (D199): the held gather into a core and the loose stand round the
+ * rim, before anything moves. The float wanders about that rest, and a closed
+ * cell's files ease home to the layout's places; the layout itself, the
+ * surface and the still map never read a rest.
+ *
  * A file alone on its slide, a deleted file, and a file the map gives no
- * ties to read stay still (C2). So does every file under reduced motion
+ * ties to read stay still, where the layout put them (C2). So does every file under reduced motion
  * (C12), and in the SVG, which never draws it.
  *
  * The float is stepped, `DRIFT_STEP_MS` at a time whatever the frame rate,
@@ -33,7 +40,7 @@
  * membrane or jumps, at any zoom.
  */
 
-import type { Cell, MapJson, Organelle } from 'core';
+import type { Cell, MapJson, Organelle, Position } from 'core';
 
 import { dentedRing } from './membranes.js';
 import { openRing } from './raster.js';
@@ -70,8 +77,11 @@ export type Drifted = { readonly id: string; readonly x: number; readonly y: num
  */
 export type Float = { readonly cell: string; readonly t: number; readonly wander: number; readonly files: readonly Drifted[] };
 
-/** What a step reads: the seed, how many layout units the free screen's shorter side spans at the camera's zoom, reduced motion, and the tokens, resting when left out. */
-export type DriftAt = { readonly seed: number; readonly screen: number; readonly reduced?: boolean; readonly tokens?: DriftTokens };
+/** How far the held gather (D199): the share of a file's distance from its slide's middle it rests nearer by, were it wholly held among cellmates wholly loose. Where `INTERIOR_LAYOUT.gather` rests. */
+export const GATHER = 0.4;
+
+/** What a step reads: the seed, how many layout units the free screen's shorter side spans at the camera's zoom, reduced motion, the tokens, and how far the held gather, each resting when left out. */
+export type DriftAt = { readonly seed: number; readonly screen: number; readonly reduced?: boolean; readonly tokens?: DriftTokens; readonly gather?: number };
 
 /** How many rounds of pushing apart and pushing off the membrane a step takes. */
 const ROUNDS = 2;
@@ -141,7 +151,7 @@ export function heldCellsOf(map: MapJson, cell: string): readonly Cell[] {
   return map.terrain.cells.filter((each) => each.parent === cell && slideCellOf(map, each.id) !== cell).toSorted(byPath);
 }
 
-/** A file as the float reads it: where it rests, how loose it is where it may move at all (0 where it may not), and how far it rests from the membrane and from each cell its cell holds. */
+/** A file as the float reads it: where it rests on the slide (D199), how loose it is where it may move at all (0 where it may not), and how far it rests from the membrane and from each cell its cell holds. */
 type Resting = {
   readonly id: string;
   readonly x: number;
@@ -230,36 +240,197 @@ function crossings(edges: Edges, list: Int32Array, x0: number, y0: number, x1: n
   return count;
 }
 
-/** Each cell's float as laid, per map, so a frame steps it without laying it again. */
-const LAID = new WeakMap<MapJson, Map<string, Laid | undefined>>();
+/** A slide's skin as the float and the rests read it: its membrane as the slide draws it and the skins of the cells it holds, as edges, and its middle and radius. */
+type Skin = { readonly ring: Edges; readonly holes: readonly Edges[]; readonly cx: number; readonly cy: number; readonly radius: number };
 
-/**
- * A cell's float laid: none for a cell with fewer than two placed files on
- * its slide or no skin, whose files all stay still. A file the layout rests
- * outside its membrane, or inside a cell its cell holds, stays still too.
- */
-function laidOf(map: MapJson, cell: string): Laid | undefined {
-  const cached = LAID.get(map) ?? new Map<string, Laid | undefined>();
-  LAID.set(map, cached);
+const SKINS = new WeakMap<MapJson, Map<string, Skin | undefined>>();
+
+/** A cell's skin, laid once per map: none for a cell the map lacks or the layout drew no skin for. */
+function skinOf(map: MapJson, cell: string): Skin | undefined {
+  const cached = SKINS.get(map) ?? new Map<string, Skin | undefined>();
+  SKINS.set(map, cached);
   if (cached.has(cell)) return cached.get(cell);
   const contours = map.terrain.layout?.contours ?? {};
   const contour = contours[cell];
   const found = map.terrain.cells.find((each) => each.id === cell);
-  const onSlide = slideFilesOf(map, cell);
-  let laid: Laid | undefined;
-  if (found !== undefined && contour !== undefined && contour.length >= 3 && onSlide.length >= 2) {
+  let skin: Skin | undefined;
+  if (found !== undefined && contour !== undefined && contour.length >= 3) {
     const outline = openRing(dentedRing(contour, found.dents.length));
-    const ring = edgesOf(outline);
     const holes = heldCellsOf(map, cell).flatMap((each) => {
       const held = contours[each.id];
       return held === undefined || held.length < 3 ? [] : [edgesOf(openRing(dentedRing(held, each.dents.length)))];
     });
     const cx = outline.reduce((total, [x]) => total + x, 0) / outline.length;
     const cy = outline.reduce((total, [, y]) => total + y, 0) / outline.length;
-    const radius = Math.max(...outline.map(([x, y]) => Math.hypot(x - cx, y - cy)));
-    const positions = map.terrain.layout?.positions ?? {};
+    skin = { ring: edgesOf(outline), holes, cx, cy, radius: Math.max(...outline.map(([x, y]) => Math.hypot(x - cx, y - cy))) };
+  }
+  cached.set(cell, skin);
+  return skin;
+}
+
+/** Every edge of a ring, by index. */
+function everyEdge(edges: Edges): Int32Array {
+  return Int32Array.from({ length: edges.length / 4 }, (_, k) => k);
+}
+
+/** The clearance a rest keeps from a ring the layout put it this far from: its radius and the gap, or less where the layout had it nearer. */
+function clearOf(rests: number, r: number): number {
+  return Math.min(rests, r + DRIFT_GAP);
+}
+
+/** How many rounds of pushing apart and holding inside the membrane a slide's rests take. */
+const REST_ROUNDS = 32;
+
+/**
+ * Each slide file's rest as gathered (D199). A file with ties the layout
+ * placed inside its membrane heads along the line to the slide's middle by
+ * `gather` times how much more it is held than its cellmates are on average,
+ * times its distance: inward where it is held more, outward where less. The
+ * rests are then pushed apart, never nearer than the layout had them or than
+ * their radii and the gap, and held inside the membrane and off the cells the
+ * cell holds, no nearer either than the layout had them. A rest that still
+ * crosses a skin on its way from the layout's place, stands nearer one than
+ * it may, or lies over another body goes back to the layout's place, and so
+ * does any that then lies over it: the layout's places are always clear.
+ */
+function gathered(map: MapJson, cell: string, gather: number): ReadonlyMap<string, Position> {
+  const positions = map.terrain.layout?.positions ?? {};
+  const onSlide = slideFilesOf(map, cell);
+  const home = onSlide.map(({ organelle }): Position => positions[organelle.id] ?? { x: 0, y: 0, r: 0 });
+  const layout = new Map(onSlide.map(({ organelle }, i) => [organelle.id, home[i] ?? { x: 0, y: 0, r: 0 }] as const));
+  const skin = skinOf(map, cell);
+  const share = Math.min(1, Math.max(0, gather));
+  if (skin === undefined || onSlide.length < 2 || share === 0) return layout;
+  const outside = (edges: Edges, x: number, y: number): boolean => !insideEdges(edges, x, y);
+  // A file gathers only where the map gives it ties and the layout rests it inside its membrane and out of the held cells (C2).
+  const held = onSlide.map(({ looseness }, i): number | undefined => {
+    const at = home[i];
+    if (looseness === undefined || at === undefined) return undefined;
+    return insideEdges(skin.ring, at.x, at.y) && skin.holes.every((hole) => outside(hole, at.x, at.y)) ? 1 - looseness : undefined;
+  });
+  const moving = held.filter((each): each is number => each !== undefined);
+  // A flat signal invents no gathering: files held alike rest where the layout put them.
+  if (moving.length < 2 || Math.max(...moving) === Math.min(...moving)) return layout;
+  const mean = moving.reduce((total, each) => total + each, 0) / moving.length;
+  const xs = home.map((at, i) => at.x + (skin.cx - at.x) * share * ((held[i] ?? mean) - mean));
+  const ys = home.map((at, i) => at.y + (skin.cy - at.y) * share * ((held[i] ?? mean) - mean));
+  const toRing = home.map((at) => nearestAmong(skin.ring, undefined, at.x, at.y)[2]);
+  const toHoles = skin.holes.map((hole) => home.map((at) => nearestAmong(hole, undefined, at.x, at.y)[2]));
+  /** How near two rests may come with the gap between them, and how near before one body lies over the other: never nearer than the layout had them. */
+  const apart = (i: number, j: number, gap: number): number => {
+    const a = home[i];
+    const b = home[j];
+    return a === undefined || b === undefined ? 0 : Math.min(a.r + b.r + gap, Math.hypot(b.x - a.x, b.y - a.y));
+  };
+  /** Bring a rest back to `least` from a ring, on the side `within` names. */
+  const hold = (edges: Edges, i: number, within: boolean, least: number): void => {
+    const x = xs[i] ?? 0;
+    const y = ys[i] ?? 0;
+    const [qx, qy, distance] = nearestAmong(edges, undefined, x, y);
+    const right = insideEdges(edges, x, y) === within;
+    if ((right && distance >= least) || distance === 0 || !Number.isFinite(distance)) return;
+    const toward = right ? 1 : -1;
+    xs[i] = qx + ((x - qx) / distance) * toward * least;
+    ys[i] = qy + ((y - qy) / distance) * toward * least;
+  };
+  for (let round = 0; round < REST_ROUNDS; round += 1) {
+    for (let i = 0; i < home.length; i += 1) {
+      for (let j = i + 1; j < home.length; j += 1) {
+        const free = (held[i] === undefined ? 0 : 1) + (held[j] === undefined ? 0 : 1);
+        const need = apart(i, j, DRIFT_GAP);
+        const dx = (xs[j] ?? 0) - (xs[i] ?? 0);
+        const dy = (ys[j] ?? 0) - (ys[i] ?? 0);
+        if (free === 0 || Math.abs(dx) >= need || Math.abs(dy) >= need) continue;
+        const distance = Math.hypot(dx, dy);
+        const overlap = need - distance;
+        if (overlap <= 0 || distance === 0) continue;
+        if (held[i] !== undefined) {
+          xs[i] = (xs[i] ?? 0) - ((dx / distance) * overlap) / free;
+          ys[i] = (ys[i] ?? 0) - ((dy / distance) * overlap) / free;
+        }
+        if (held[j] !== undefined) {
+          xs[j] = (xs[j] ?? 0) + ((dx / distance) * overlap) / free;
+          ys[j] = (ys[j] ?? 0) + ((dy / distance) * overlap) / free;
+        }
+      }
+    }
+    home.forEach((at, i) => {
+      if (held[i] === undefined) return;
+      hold(skin.ring, i, true, clearOf(toRing[i] ?? 0, at.r));
+      skin.holes.forEach((hole, h) => {
+        hold(hole, i, false, clearOf(toHoles[h]?.[i] ?? 0, at.r));
+      });
+    });
+  }
+  // What no round settled goes back to the layout's place, and whatever then lies over it follows.
+  const ringEdges = everyEdge(skin.ring);
+  const holeEdges = skin.holes.map(everyEdge);
+  const moved = new Set(home.flatMap((_, i) => (held[i] === undefined ? [] : [i])));
+  const clear = (i: number): boolean => {
+    const at = home[i];
+    const x = xs[i] ?? 0;
+    const y = ys[i] ?? 0;
+    if (at === undefined) return true;
+    if (!insideEdges(skin.ring, x, y) || crossings(skin.ring, ringEdges, at.x, at.y, x, y) > 0 || nearestAmong(skin.ring, undefined, x, y)[2] < clearOf(toRing[i] ?? 0, at.r) - EPSILON) return false;
+    const offHoles = skin.holes.every((hole, h) => outside(hole, x, y) && crossings(hole, holeEdges[h] ?? new Int32Array(), at.x, at.y, x, y) === 0 && nearestAmong(hole, undefined, x, y)[2] >= clearOf(toHoles[h]?.[i] ?? 0, at.r) - EPSILON);
+    return offHoles && home.every((_, j) => j === i || Math.hypot((xs[j] ?? 0) - x, (ys[j] ?? 0) - y) >= apart(i, j, 0) - EPSILON);
+  };
+  for (let settled = false; !settled; ) {
+    settled = true;
+    for (const i of moved) {
+      if (clear(i)) continue;
+      xs[i] = home[i]?.x ?? 0;
+      ys[i] = home[i]?.y ?? 0;
+      moved.delete(i);
+      settled = false;
+    }
+  }
+  return new Map(onSlide.map(({ organelle }, i) => [organelle.id, { x: xs[i] ?? 0, y: ys[i] ?? 0, r: home[i]?.r ?? 0 }] as const));
+}
+
+/** Each slide's rests as last gathered, per map, laid again only when the gather moves. */
+const RESTS = new WeakMap<MapJson, Map<string, { readonly gather: number; readonly rests: ReadonlyMap<string, Position> }>>();
+
+/**
+ * Where each placed file of an opened cell's slide rests, by path (D199): the
+ * layout's place moved toward the slide's middle where its cellmates hold the
+ * file more than they hold one another, and away from it where less, by
+ * `gather`, 0 leaving every file where the layout put it. A cell whose files
+ * are held alike, a file the map gives no ties, and a file whose move would
+ * cross a skin or lie over another body rest at the layout's places.
+ */
+export function restOf(map: MapJson, cell: string, gather: number = GATHER): ReadonlyMap<string, Position> {
+  const cached = RESTS.get(map) ?? new Map<string, { readonly gather: number; readonly rests: ReadonlyMap<string, Position> }>();
+  RESTS.set(map, cached);
+  const last = cached.get(cell);
+  if (last?.gather === gather) return last.rests;
+  const rests = gathered(map, cell, gather);
+  cached.set(cell, { gather, rests });
+  return rests;
+}
+
+/** Each cell's float as last laid, per map, so a frame steps it without laying it again; laid again only when the gather moves. */
+const LAID = new WeakMap<MapJson, Map<string, { readonly gather: number; readonly laid: Laid | undefined }>>();
+
+/**
+ * A cell's float laid about its files' rests (D199): none for a cell with
+ * fewer than two placed files on its slide or no skin, whose files all stay
+ * still. A file the layout rests outside its membrane, or inside a cell its
+ * cell holds, stays still too.
+ */
+function laidOf(map: MapJson, cell: string, gather: number): Laid | undefined {
+  const cached = LAID.get(map) ?? new Map<string, { readonly gather: number; readonly laid: Laid | undefined }>();
+  LAID.set(map, cached);
+  const last = cached.get(cell);
+  if (last?.gather === gather) return last.laid;
+  const skin = skinOf(map, cell);
+  const onSlide = slideFilesOf(map, cell);
+  let laid: Laid | undefined;
+  if (skin !== undefined && onSlide.length >= 2) {
+    const { ring, holes, radius } = skin;
+    const rests = restOf(map, cell, gather);
     const files = onSlide.map(({ organelle, looseness }): Resting => {
-      const at = positions[organelle.id] ?? { x: 0, y: 0, r: 0 };
+      const at = rests.get(organelle.id) ?? { x: 0, y: 0, r: 0 };
       const placed = insideEdges(ring, at.x, at.y) && holes.every((hole) => !insideEdges(hole, at.x, at.y));
       return {
         id: organelle.id,
@@ -274,7 +445,7 @@ function laidOf(map: MapJson, cell: string): Laid | undefined {
     });
     laid = { ring, holes, radius, files };
   }
-  cached.set(cell, laid);
+  cached.set(cell, { gather, laid });
   return laid;
 }
 
@@ -305,12 +476,12 @@ function nearOf(laid: Laid, reach: number): Near {
   return near;
 }
 
-/** The float of `cell` at rest as it opens: every placed file on its slide where the layout put it. */
-export function startFloat(map: MapJson, cell: string): Float {
-  const laid = laidOf(map, cell);
-  const positions = map.terrain.layout?.positions ?? {};
+/** The float of `cell` at rest as it opens: every placed file on its slide at its rest, gathered by `gather` (D199). */
+export function startFloat(map: MapJson, cell: string, gather: number = GATHER): Float {
+  const laid = laidOf(map, cell, gather);
+  const rests = restOf(map, cell, gather);
   const files = slideFilesOf(map, cell).map(({ organelle, looseness }): Drifted => {
-    const at = positions[organelle.id] ?? { x: 0, y: 0, r: 0 };
+    const at = rests.get(organelle.id) ?? { x: 0, y: 0, r: 0 };
     return { id: organelle.id, x: at.x, y: at.y, r: at.r, looseness: laid === undefined ? undefined : looseness };
   });
   return { cell, t: 0, wander: 0, files };
@@ -348,8 +519,10 @@ function smooth(value: number): number {
 /**
  * The float stepped on to `t` milliseconds since its cell opened, a whole
  * number of steps at a time, at the screen it is handed. A cell whose files
- * all stay still, and reduced motion, leave every file where the layout put
- * it. The tokens it is timed from rest at `tokens.ts`'s values when none are
+ * all stay still, and reduced motion, leave every file at its rest. A file
+ * that stays still but stands off its rest, as when its cell opens again
+ * while the surface is easing it home, heads back to its rest no faster than
+ * the speed. The tokens it is timed from rest at `tokens.ts`'s values when none are
  * handed in (D156).
  */
 export function stepFloat(map: MapJson, float: Float, t: number, at: DriftAt): Float {
@@ -358,9 +531,10 @@ export function stepFloat(map: MapJson, float: Float, t: number, at: DriftAt): F
   const done = Math.round(float.t / DRIFT_STEP_MS);
   const steps = Math.max(0, Math.floor(t / DRIFT_STEP_MS + EPSILON) - done);
   if (steps === 0) return float;
-  const laid = laidOf(map, float.cell);
+  const gather = at.gather ?? GATHER;
+  const laid = laidOf(map, float.cell, gather);
   const advanced = (done + steps) * DRIFT_STEP_MS;
-  if (laid === undefined || at.reduced === true || float.files.length !== laid.files.length) return { ...startFloat(map, float.cell), t: advanced, wander: float.wander };
+  if (laid === undefined || at.reduced === true || float.files.length !== laid.files.length) return { ...startFloat(map, float.cell, gather), t: advanced, wander: float.wander };
 
   // Each file's mobility: its looseness through the curve, read now so a moved token shows on the next frame (D193, D156).
   const files = laid.files.map((file) => ({ ...file, mobility: file.loose <= 0 ? 0 : file.loose ** tokens.DRIFT_CURVE }));
@@ -424,10 +598,17 @@ export function stepFloat(map: MapJson, float: Float, t: number, at: DriftAt): F
     const seconds = wander / 1000;
     const fromX = [...xs];
     const fromY = [...ys];
-    // Each loose file heads for its wander: two sines about its place, from its place, inside the unit disc.
+    // Each loose file heads for its wander: two sines about its place, from its place, inside the unit disc; a still one off its rest heads back to it.
     files.forEach((file, i) => {
       const own = wanders[i];
-      if (file.mobility <= 0 || own === undefined) return;
+      if (file.mobility <= 0) {
+        const homeward = Math.hypot(file.x - (xs[i] ?? file.x), file.y - (ys[i] ?? file.y));
+        if (homeward === 0) return;
+        xs[i] = homeward <= speed ? file.x : (xs[i] ?? file.x) + ((file.x - (xs[i] ?? file.x)) * speed) / homeward;
+        ys[i] = homeward <= speed ? file.y : (ys[i] ?? file.y) + ((file.y - (ys[i] ?? file.y)) * speed) / homeward;
+        return;
+      }
+      if (own === undefined) return;
       const ux = (Math.sin(2 * Math.PI * own.fx * seconds + own.px) - Math.sin(own.px)) / (2 * Math.SQRT2);
       const uy = (Math.sin(2 * Math.PI * own.fy * seconds + own.py) - Math.sin(own.py)) / (2 * Math.SQRT2);
       const away = ease * file.mobility * reach;
@@ -488,7 +669,8 @@ export function stepFloat(map: MapJson, float: Float, t: number, at: DriftAt): F
         x = x0 + ((x - x0) * speed) / moved;
         y = y0 + ((y - y0) * speed) / moved;
       }
-      const stays = file.mobility <= 0 || (moved > 0 && !fits(file, i, x0, y0, x, y));
+      // A still file on its way back to its rest keeps the line the layout's place and its rest were laid clear along.
+      const stays = file.mobility > 0 && moved > 0 && !fits(file, i, x0, y0, x, y);
       xs[i] = stays ? x0 : x;
       ys[i] = stays ? y0 : y;
     });
@@ -504,10 +686,10 @@ export function stepFloat(map: MapJson, float: Float, t: number, at: DriftAt): F
 /**
  * Where each placed file of `cell` is `t` milliseconds after the cell opened,
  * stepped from rest at one screen, by path. A closed cell (`t` undefined),
- * reduced motion, or a cell whose files all stay still leaves every file where
- * the layout put it.
+ * reduced motion, or a cell whose files all stay still leaves every file at
+ * its rest.
  */
 export function driftOf(map: MapJson, cell: string, t: number | undefined, at: DriftAt): readonly Drifted[] {
-  const start = startFloat(map, cell);
+  const start = startFloat(map, cell, at.gather);
   return t === undefined ? start.files : stepFloat(map, start, t, at).files;
 }

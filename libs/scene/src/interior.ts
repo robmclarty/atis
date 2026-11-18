@@ -32,7 +32,7 @@ import earcut from 'earcut';
 import { membraneThickness } from 'core';
 import type { ChangeKind, MapJson, Position, ReachEntry } from 'core';
 
-import { heldCellsOf, slideCellOf, slideFilesOf } from './drift.js';
+import { GATHER, heldCellsOf, restOf, slideCellOf, slideFilesOf } from './drift.js';
 import type { Drifted } from './drift.js';
 import { LABELING } from './labels.js';
 import type { LabelBox, Labeling } from './labels.js';
@@ -50,8 +50,10 @@ import { weatherOf } from './weather.js';
  * How the exploded view spreads the bodies: each moves out from the cell's
  * middle to this many times its distance from it, plus this share of the
  * cell's radius, and keeps this much clear ground off its neighbours, in
- * layout units; and how the membrane writes the exports: this many names to a
- * line, and this many before the rest are only counted. One object, handed
+ * layout units; how the membrane writes the exports: this many names to a
+ * line, and this many before the rest are only counted; and how far the held
+ * files gather toward the slide's middle and the loose toward its rim, 0 to 1
+ * (D199), 0 resting every file where the layout put it. One object, handed
  * in, so the dev panel can move it live (D156); `INTERIOR_LAYOUT` is where it
  * rests.
  */
@@ -61,15 +63,16 @@ export type InteriorLayout = {
   readonly explodeGap: number;
   readonly exportsPerLine: number;
   readonly exportsShown: number;
+  readonly gather: number;
 };
 
-export const INTERIOR_LAYOUT: InteriorLayout = { explodeSpread: 1.6, explodePush: 0.35, explodeGap: 3, exportsPerLine: 3, exportsShown: 12 };
+export const INTERIOR_LAYOUT: InteriorLayout = { explodeSpread: 1.6, explodePush: 0.35, explodeGap: 3, exportsPerLine: 3, exportsShown: 12, gather: GATHER };
 
 /** What the change did to a file, and the share of its body left unstained: its changed lines no test ran, or all of it when nobody measured (D80). */
 /** `improved` where the change made the file healthier, which wears the calm-positive hue in place of the change hue (D98). */
 export type Stain = { readonly kind: ChangeKind; readonly from?: string; readonly open: number; readonly improved?: true };
 
-/** A file on the slide at rest: where the layout put it, the rules it breaks, where its trouble puts it on the shape spectrum (D194), its stain, its looseness, and where the exploded view takes it. */
+/** A file on the slide at rest: where it rests, the layout's place gathered by how its cellmates hold it (D199), the rules it breaks, where its trouble puts it on the shape spectrum (D194), its stain, its looseness, and where the exploded view takes it. */
 export type SlideFile = {
   readonly id: string;
   readonly rest: Position;
@@ -320,10 +323,10 @@ export function cellSlide(map: MapJson, cell: string, layout: InteriorLayout = I
   }
   const { centre, radius } = extentOf(ring);
 
-  const positions = map.terrain.layout?.positions ?? {};
+  const gathered = restOf(map, cell, layout.gather);
   const stains = stainsOf(map);
   const placed = slideFilesOf(map, cell);
-  const rests = placed.map(({ organelle }) => ({ id: organelle.id, rest: positions[organelle.id] ?? { x: 0, y: 0, r: 0 } }));
+  const rests = placed.map(({ organelle }) => ({ id: organelle.id, rest: gathered.get(organelle.id) ?? { x: 0, y: 0, r: 0 } }));
   const exploded = explodedOf(rests, centre, radius, layout);
   const files = placed.map(({ organelle, looseness }, index): SlideFile => {
     const stain = stains.get(organelle.id);
@@ -378,7 +381,7 @@ function demoScores(files: readonly SlideFile[]): ReadonlyMap<string, number> {
  * The bodies on a slide this frame: each file where the float has it (D157,
  * D165), drawn toward its exploded spot by how far the view has spread, in
  * the outline its trouble score moves (D147, D194). At rest, and under reduced motion,
- * every body sits where the layout put it, still; so does a file the float
+ * every body sits at its rest (D199), still; so does a file the float
  * leaves out. Under the demo switch each body's score is its place in path
  * order across the spectrum, the first file smooth and the last spiky, so a
  * cell of any map shows every form (D202).

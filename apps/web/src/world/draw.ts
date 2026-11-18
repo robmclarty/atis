@@ -769,7 +769,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     }
     // The float (D165): measured on the free screen's shorter side, and a closed cell's files held where they floated until the view climbs on.
     const free = Math.max(1, canvas.clientWidth - chrome.right);
-    const floated = scheduler.float(map, { screen: Math.min(free, canvas.clientHeight) / pixelsPerUnit(camera, canvas.clientWidth), fill: fillOfCell, gate: { open: levels.cellOpen, close: levels.cellClose, home: levels.cellHome } });
+    const floated = scheduler.float(map, { screen: Math.min(free, canvas.clientHeight) / pixelsPerUnit(camera, canvas.clientWidth), fill: fillOfCell, gate: { open: levels.cellOpen, close: levels.cellClose, home: levels.cellHome }, gather: interiorLook.gather });
     floatedOnSurface = floated.surface;
     if (floated.surface.size !== floatedShown) {
       floatedShown = floated.surface.size;

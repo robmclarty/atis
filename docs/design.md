@@ -648,6 +648,7 @@ fingerprint is 480 by 300 with an 8-pixel margin (`FINGERPRINT`).
 | `INTERIOR.explodeGap` | `3` | and keeps this much clear ground off its neighbours, in layout units |
 | `INTERIOR.exportsPerLine` | `3` | how many export names the membrane writes to a line (D162) |
 | `INTERIOR.exportsShown` | `12` | how many it writes before the rest are only counted |
+| `INTERIOR.gather` | `0.4` | how far the held files gather on the slide (D199 (held-files-gather)), 0 to 1: a file rests nearer the slide's middle by this share of its distance from it, times how much more its cellmates hold it than they hold one another on average, and further out where they hold it less; 0 rests every file where the layout put it. A rest whose move would cross a skin or lie over another body stays at the layout's place |
 | `INTERIOR.slide` | `#efe6d3` | the slide's ground: warm and clinical where the surface is dark |
 | `INTERIOR.slideOpacity` | `0.94` | how opaque it is |
 | `INTERIOR.frame` | `#1e2733` | the membrane's ink, drawn round the files as the frame |
@@ -753,7 +754,13 @@ and reaching `DRIFT_REACH` of the cell's radius times its looseness raised to
 membrane and the cells its cell holds, never nearer them than it rests. No step
 moves a file more than `DRIFT_SPEED` of the screen a second, and a step that
 would cross the membrane, or into a held cell, leaves the file where it was, so
-no file leaves its membrane or jumps. A file alone on its slide, a deleted file
+no file leaves its membrane or jumps. The place a file wanders about is its
+rest on the slide (`restOf`, D199 (held-files-gather)): the layout's place moved
+toward the slide's middle where its cellmates hold it more than they hold one
+another, and toward the rim where less, by `INTERIOR.gather`, so an opened cell
+shows a held core and a loose rim before anything moves; a still file that
+stands off its rest, as when its cell opens again while the surface is easing
+it home, heads back to it no faster than the speed. A file alone on its slide, a deleted file
 and a file with no `ties`, or on a package's slide no `package_ties`, stay still,
 and so does every file under reduced motion. Once a cell closes, the surface draws its files where they last floated,
 still, until the cell fills less of the screen than it closes at, and eases them

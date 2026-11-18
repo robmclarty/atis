@@ -6,7 +6,7 @@ import { assertMap, membraneThickness } from 'core';
 import type { MapJson } from 'core';
 import { expect, test } from 'vitest';
 
-import { driftOf } from '../drift.js';
+import { driftOf, restOf } from '../drift.js';
 import { INTERIOR_LAYOUT, cellSlide, crossingsOf, exportsTable, exportsWords, interiorOf, tagsOf } from '../interior.js';
 import type { Body, Slide } from '../interior.js';
 import { LABELING } from '../labels.js';
@@ -95,7 +95,12 @@ test("a package's slide holds the file of each single-file cell it holds as a bo
   expect(cli.files.map((file) => file.id)).toEqual([DOCTOR, 'apps/cli/src/index.ts']);
   expect(cli.holes).toEqual([]);
   expect(cli.vertices.length).toBe(cli.ring.length * 2);
-  for (const file of cli.files) expect(file.rest).toEqual(DEMO.terrain.layout?.positions[file.id]);
+  // Each rests where its package ties gather it (D199), and where the layout put it once the gather is 0.
+  for (const file of cli.files) expect(file.rest).toEqual(restOf(DEMO, CLI).get(file.id));
+  expect(cli.files.map((file) => file.rest)).not.toEqual(cli.files.map((file) => DEMO.terrain.layout?.positions[file.id]));
+  for (const file of cellSlide(DEMO, CLI, { ...INTERIOR_LAYOUT, gather: 0 })?.files ?? []) expect(file.rest).toEqual(DEMO.terrain.layout?.positions[file.id]);
+  expect(INTERIOR_LAYOUT.gather).toBeGreaterThan(0);
+  expect(INTERIOR_LAYOUT.gather).toBeLessThanOrEqual(1);
   // doctor.ts is held once from inside apps/cli and reaches out twice; the barrel's one tie is to doctor.ts beside it.
   expect(cli.files.map((file) => [file.id, file.looseness])).toEqual([
     [DOCTOR, 2 / 3],

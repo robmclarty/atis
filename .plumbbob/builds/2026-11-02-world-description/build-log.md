@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: a world that describes itself at a glance
 
-**Current step:** 6 — feat(scene): grow the drift's contrast through a looseness curve
+**Current step:** 7 — feat(scene): gather an opened cell's held files toward its middle
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -28,7 +28,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 3. feat(scene): draw every file's outline on a continuous spectrum
 - ☑ 4. feat(scene): move the spectrum's spiky end most, and least regularly
 - ☑ 5. feat(web): cycle an opened cell's files across the spectrum on demand
-- ☐ 6. feat(scene): grow the drift's contrast through a looseness curve
+- ☑ 6. feat(scene): grow the drift's contrast through a looseness curve
 - ☐ 7. feat(scene): gather an opened cell's held files toward its middle
 - ☐ 8. feat(scene): lay each file's functions as a nucleus inside its body
 - ☐ 9. feat(scene): send the tags out on leaders and leave the bodies in place
@@ -369,3 +369,5 @@ folder, so it rides the branch into the PR.)*
   Every one moved because files the log window saw and no change touched now have a form in place of a circle (C16 (goldens-named)): under `libs/svg/fixtures/`, the demo's `atis.svg` and `renamed.svg`, the four categories (`LIFR`, `MVFR`, `NOINST`, `VFR`) and the two repo overlays (`coverage-gaps`, `trouble-spots`); under `fixtures/`, `atis.svg` in `go-1`, `javascript-1`, `python-1`, `shell-1` and `terraform-1`, the five that matched a fresh render before the step. The other fixture SVGs were already older renders no test compares and are left as they were. In the demo three undented files gained an outline and the two files in a cycle moved a little, their churn now shading them within their level.
 
   `docs/design.md` says where the churn is read from, in the `TROUBLE_RULES_FROM` row and in the spectrum's prose, and that churn shows on relief and on shape (C11 (one-meaning-per-channel)).
+
+- 2026-11-18 — step 6 checkpointed · fe396985e — feat(scene): grow the drift's contrast through a looseness curve (7m)

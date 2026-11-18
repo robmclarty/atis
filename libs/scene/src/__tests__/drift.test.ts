@@ -6,7 +6,7 @@ import { assertMap } from 'core';
 import type { MapJson, Ties } from 'core';
 import { expect, test } from 'vitest';
 
-import { DRIFT_STEP_MS, DRIFT_TOKENS, driftOf, homeFloat, loosenessOf, startFloat, stepFloat } from '../drift.js';
+import { DRIFT_STEP_MS, DRIFT_TOKENS, GATHER, driftOf, homeFloat, loosenessOf, restOf, startFloat, stepFloat } from '../drift.js';
 import type { Drifted, Float } from '../drift.js';
 import { CELL_GATE, homewardAt } from '../lod.js';
 import { dentedRing } from '../membranes.js';
@@ -81,7 +81,8 @@ function looseFloats(): readonly Float[] {
   return looseMinute;
 }
 
-function restOf(map: MapJson, id: string): { readonly x: number; readonly y: number; readonly r: number } {
+/** Where the layout put a file, which the surface and a closed cell draw it at. */
+function placeOf(map: MapJson, id: string): { readonly x: number; readonly y: number; readonly r: number } {
   const at = map.terrain.layout?.positions[id];
   if (at === undefined) throw new Error(`the map places ${id}`);
   return at;
@@ -93,9 +94,9 @@ function fileOf(files: readonly Drifted[], id: string): Drifted {
   return file;
 }
 
-/** How far a file ever got from its place over the floats. */
-function farthest(map: MapJson, floats: readonly Float[], id: string): number {
-  const rest = restOf(map, id);
+/** How far a file ever got from its rest over the floats, which open on it (D199). */
+function farthest(_map: MapJson, floats: readonly Float[], id: string): number {
+  const rest = fileOf(floats[0]?.files ?? [], id);
   return Math.max(...floats.map((float) => fileOf(float.files, id)).map((file) => Math.hypot(file.x - rest.x, file.y - rest.y)));
 }
 
@@ -175,7 +176,7 @@ function square(x0: number, y0: number, x1: number, y1: number): (readonly [numb
 
 /** The files the surface should draw off their places: each one off its place, where it is. */
 function offPlace(map: MapJson, files: readonly Drifted[]): ReadonlyMap<string, readonly [number, number]> {
-  return new Map(files.filter((file) => file.x !== restOf(map, file.id).x || file.y !== restOf(map, file.id).y).map((file) => [file.id, [file.x, file.y] as const]));
+  return new Map(files.filter((file) => file.x !== placeOf(map, file.id).x || file.y !== placeOf(map, file.id).y).map((file) => [file.id, [file.x, file.y] as const]));
 }
 
 /** Run a scheduler's float frame by frame, sixty a second, until the clock reads `until`, as the world asks for it. */
@@ -217,7 +218,7 @@ test('a file held by its cellmates stays at its place, and a loose one wanders a
   const floats = looseFloats();
   const radius = spanOf(LOOSE, PM) / 2;
   expect(farthest(LOOSE, floats, SLOTS)).toBe(0);
-  expect(farthest(LOOSE, floats, TOOLS)).toBeGreaterThan(restOf(LOOSE, TOOLS).r / 4);
+  expect(farthest(LOOSE, floats, TOOLS)).toBeGreaterThan(placeOf(LOOSE, TOOLS).r / 4);
   expect(farthest(LOOSE, floats, TOOLS)).toBeGreaterThan(farthest(LOOSE, floats, INDEX));
   // It wanders about its place, not across the cell: never past twice its reach (D165 amends D157's).
   expect(farthest(LOOSE, floats, TOOLS)).toBeLessThanOrEqual(2 * DRIFT_REACH * 2 * radius);
@@ -319,10 +320,11 @@ test('a deleted file, a file without ties, and a file alone in its cell stay sti
   expect(farthest(map, floats, TOOLS)).toBeGreaterThan(0);
   // libs/core's own index.ts is wholly loose, but the package holds no other file of its own.
   expect(DEMO.terrain.organelles.find((organelle) => organelle.id === 'libs/core/src/index.ts')?.ties).toEqual({ inside: 0, outside: 2 });
-  expect(driftOf(DEMO, 'package:libs/core', 30_000, { seed: 7, screen: 400 })).toEqual([{ id: 'libs/core/src/index.ts', ...restOf(DEMO, 'libs/core/src/index.ts'), looseness: undefined }]);
-  const rest = DEMO.terrain.organelles.filter((organelle) => organelle.cell === PM).map((organelle) => organelle.id).toSorted();
+  expect(driftOf(DEMO, 'package:libs/core', 30_000, { seed: 7, screen: 400 })).toEqual([{ id: 'libs/core/src/index.ts', ...placeOf(DEMO, 'libs/core/src/index.ts'), looseness: undefined }]);
+  // Closed, and under reduced motion, every file sits at its rest (D199), still.
+  const rests = [...restOf(LOOSE, PM)].map(([id, at]) => [id, at.x, at.y]);
   for (const files of [driftOf(LOOSE, PM, undefined, { seed: 7, screen: 400 }), driftOf(LOOSE, PM, 30_000, { seed: 7, screen: 400, reduced: true })]) {
-    expect(files.map((file) => [file.id, file.x, file.y])).toEqual(rest.map((id) => [id, restOf(LOOSE, id).x, restOf(LOOSE, id).y]));
+    expect(files.map((file) => [file.id, file.x, file.y])).toEqual(rests);
   }
 });
 
@@ -348,12 +350,12 @@ test('a float eased home moves each file that share of the way back to its place
   const half = homeFloat(LOOSE, float, 0.5);
   expect([half.t, half.wander]).toEqual([float.t, float.wander]);
   for (const file of half.files) {
-    const rest = restOf(LOOSE, file.id);
+    const rest = placeOf(LOOSE, file.id);
     const from = fileOf(float.files, file.id);
     expect(file.x).toBeCloseTo((from.x + rest.x) / 2, 9);
     expect(file.y).toBeCloseTo((from.y + rest.y) / 2, 9);
   }
-  expect(homeFloat(LOOSE, float, 1).files.map((file) => [file.x, file.y])).toEqual(float.files.map((file) => [restOf(LOOSE, file.id).x, restOf(LOOSE, file.id).y]));
+  expect(homeFloat(LOOSE, float, 1).files.map((file) => [file.x, file.y])).toEqual(float.files.map((file) => [placeOf(LOOSE, file.id).x, placeOf(LOOSE, file.id).y]));
 });
 
 test('the scheduler floats the cell it opened from the moment it opened it, and nothing under reduced motion', () => {
@@ -395,7 +397,7 @@ test('as a cell closes the surface holds its files where they last floated while
   floatUntil(clock, 20_000, ask);
   const floated = scheduler.float(LOOSE, view).open;
   expect(floated).toEqual(driftOf(LOOSE, PM, 20_000, { seed: 7, screen }));
-  expect(fileOf(floated, TOOLS)).not.toEqual({ ...fileOf(floated, TOOLS), ...restOf(LOOSE, TOOLS) });
+  expect(fileOf(floated, TOOLS)).not.toEqual({ ...fileOf(floated, TOOLS), ...placeOf(LOOSE, TOOLS) });
   // Closed where the cell still fills the screen, as on Esc: the slide fades out on its files where they floated, and the surface draws them there, still.
   scheduler.open(undefined);
   scheduler.frame();
@@ -415,7 +417,7 @@ test('as a cell closes the surface holds its files where they last floated while
   expect(homewardAt(fill)).toBeCloseTo(0.5, 9);
   const halfway = scheduler.float(LOOSE, view).surface;
   const eased = floated.map((file) => {
-    const rest = restOf(LOOSE, file.id);
+    const rest = placeOf(LOOSE, file.id);
     const at = halfway.get(file.id) ?? [rest.x, rest.y];
     expect(at[0]).toBeCloseTo((file.x + rest.x) / 2, 9);
     expect(at[1]).toBeCloseTo((file.y + rest.y) / 2, 9);
@@ -452,7 +454,7 @@ test("an opened package floats its single-file modules on its slide by their pac
   // Its own cell of one file floats nothing, and under reduced motion the package's bodies sit where the layout put them.
   expect(driftOf(DEMO, 'single:apps/cli/src/doctor.ts', 30_000, { seed: 7, screen: 400 })).toEqual([]);
   const stilled = driftOf(DEMO, CLI, 30_000, { seed: 7, screen: 400, reduced: true });
-  expect(stilled.map((file) => [file.id, file.x, file.y])).toEqual([DOCTOR, CLI_BARREL].map((id) => [id, restOf(DEMO, id).x, restOf(DEMO, id).y]));
+  expect(stilled.map((file) => [file.id, file.x, file.y])).toEqual([DOCTOR, CLI_BARREL].map((id) => [id, restOf(DEMO, CLI).get(id)?.x, restOf(DEMO, CLI).get(id)?.y]));
   // A module the map gives no package ties stays still there (C2).
   const untied: MapJson = {
     ...DEMO,
@@ -484,17 +486,132 @@ test('as a package closes the surface holds its module where it last floated, an
   const floated = scheduler.float(DEMO, view).open;
   expect(floated).toEqual(driftOf(DEMO, CLI, 20_000, { seed: 7, screen }));
   const doctor = fileOf(floated, DOCTOR);
-  expect([doctor.x, doctor.y]).not.toEqual([restOf(DEMO, DOCTOR).x, restOf(DEMO, DOCTOR).y]);
-  // Closed where the package still fills the screen: the surface draws the module where it floated, and the barrel, never away, at its place.
+  expect([doctor.x, doctor.y]).not.toEqual([placeOf(DEMO, DOCTOR).x, placeOf(DEMO, DOCTOR).y]);
+  // Closed where the package still fills the screen: the surface draws the module where it floated, and the barrel, which never floated, at the rest it gathered to (D199).
   scheduler.open(undefined);
   floatUntil(clock, clock.now + 5000, ask);
   const closed = scheduler.float(DEMO, view).surface;
-  expect(closed).toEqual(new Map([[DOCTOR, [doctor.x, doctor.y]]]));
+  const barrel = restOf(DEMO, CLI).get(CLI_BARREL);
+  expect(closed).toEqual(
+    new Map([
+      [DOCTOR, [doctor.x, doctor.y]],
+      [CLI_BARREL, [barrel?.x, barrel?.y]],
+    ]),
+  );
   // Halfway between the gate's close and its home it is halfway home, and past its home it is home.
   fill = (CELL_GATE.close + CELL_GATE.home) / 2;
   const halfway = scheduler.float(DEMO, view).surface.get(DOCTOR) ?? [0, 0];
-  expect(halfway[0]).toBeCloseTo((doctor.x + restOf(DEMO, DOCTOR).x) / 2, 9);
-  expect(halfway[1]).toBeCloseTo((doctor.y + restOf(DEMO, DOCTOR).y) / 2, 9);
+  expect(halfway[0]).toBeCloseTo((doctor.x + placeOf(DEMO, DOCTOR).x) / 2, 9);
+  expect(halfway[1]).toBeCloseTo((doctor.y + placeOf(DEMO, DOCTOR).y) / 2, 9);
   fill = CELL_GATE.home;
   expect(scheduler.float(DEMO, view).surface.size).toBe(0);
+});
+
+/** Every way a slide's rests are out of bounds: outside the membrane or nearer it than the layout had them or their radius and the gap, in or too near a cell their cell holds, or one body over another. */
+function badRests(map: MapJson, cell: string, rests: ReadonlyMap<string, { readonly x: number; readonly y: number; readonly r: number }>): readonly string[] {
+  const { membrane, held } = skinsOf(map, cell);
+  const found: string[] = [];
+  const all = [...rests];
+  all.forEach(([id, at], index) => {
+    const place = placeOf(map, id);
+    if (!inside(membrane, place.x, place.y)) return;
+    if (!inside(membrane, at.x, at.y) || toRing(membrane, at.x, at.y) < Math.min(toRing(membrane, place.x, place.y), at.r + DRIFT_GAP) - 1e-6) found.push(`${id} rests off its membrane`);
+    for (const hole of held) if (inside(hole, at.x, at.y) || toRing(hole, at.x, at.y) < Math.min(toRing(hole, place.x, place.y), at.r + DRIFT_GAP) - 1e-6) found.push(`${id} rests in a held cell`);
+    for (const [other, there] of all.slice(index + 1)) {
+      const apart = Math.min(at.r + there.r, Math.hypot(placeOf(map, other).x - place.x, placeOf(map, other).y - place.y));
+      if (Math.hypot(there.x - at.x, there.y - at.y) < apart - 1e-6) found.push(`${id} rests over ${other}`);
+    }
+  });
+  return found;
+}
+
+/** The demo's package as a square of 120 with these files on it, each at a place and with ties, pm as a square in its middle or far off, and util far off. */
+function squared(files: Readonly<Record<string, { readonly x: number; readonly y: number; readonly ties?: Ties }>>, hole: boolean): MapJson {
+  const CORE = 'package:libs/core';
+  const own = DEMO.terrain.organelles.find((organelle) => organelle.cell === CORE);
+  if (own === undefined || DEMO.terrain.layout === undefined) throw new Error('the demo package holds a file');
+  // A package's slide reads its files' package ties (D167).
+  const { ties: _ties, package_ties: _package, ...bare } = own;
+  return {
+    ...DEMO,
+    terrain: {
+      ...DEMO.terrain,
+      organelles: [...DEMO.terrain.organelles.filter((organelle) => organelle.cell !== CORE), ...Object.entries(files).map(([id, file]) => (file.ties === undefined ? { ...bare, id } : { ...bare, id, ties: file.ties, package_ties: file.ties }))],
+      layout: {
+        ...DEMO.terrain.layout,
+        positions: { ...DEMO.terrain.layout.positions, ...Object.fromEntries(Object.entries(files).map(([id, file]) => [id, { x: file.x, y: file.y, r: 6 }])) },
+        contours: { ...DEMO.terrain.layout.contours, 'package:libs/core': square(0, 0, 120, 120), [PM]: hole ? square(45, 45, 75, 75) : square(300, 300, 320, 320), 'directory:libs/core/src/util': square(400, 400, 420, 420) },
+      },
+    },
+  };
+}
+
+test('of two files as far from the middle, the one its cellmates hold more rests nearer it, the one they hold less further out, and one held as the cell is on average where the layout put it (D199)', () => {
+  const CORE = 'package:libs/core';
+  const [held, loose, middling, untied] = ['libs/core/src/a.ts', 'libs/core/src/b.ts', 'libs/core/src/c.ts', 'libs/core/src/d.ts'];
+  const map = squared({ [held]: { x: 30, y: 60, ties: { inside: 4, outside: 0 } }, [loose]: { x: 90, y: 60, ties: { inside: 0, outside: 3 } }, [middling]: { x: 60, y: 30, ties: { inside: 2, outside: 2 } }, [untied]: { x: 60, y: 95 } }, false);
+  const rests = restOf(map, CORE);
+  const away = (id: string): number => Math.hypot((rests.get(id)?.x ?? 0) - 60, (rests.get(id)?.y ?? 0) - 60);
+  // Held 1, 0 and a half about a mean of a half: the held file comes in by the gather's share of half its distance, and the loose one goes out by as much.
+  expect(away(held)).toBeCloseTo(30 - GATHER * 0.5 * 30, 0);
+  expect(away(loose)).toBeCloseTo(30 + GATHER * 0.5 * 30, 0);
+  expect(away(held)).toBeLessThan(away(loose));
+  expect(rests.get(middling)).toEqual(placeOf(map, middling));
+  // A file the map gives no ties rests where the layout put it, and counts toward no mean (C2).
+  expect(rests.get(untied)).toEqual(placeOf(map, untied));
+  expect(badRests(map, CORE, rests)).toEqual([]);
+  // The gather is the dial: none of it rests every file where the layout put it, and all of it gathers further.
+  expect([...restOf(map, CORE, 0)]).toEqual([held, loose, middling, untied].map((id) => [id, placeOf(map, id)]));
+  expect(Math.hypot((restOf(map, CORE, 1).get(held)?.x ?? 0) - 60, 0)).toBeLessThan(away(held));
+  // The float opens on the rests and wanders about them; closed and eased home, every file is back where the layout put it.
+  expect(startFloat(map, CORE).files.map((file) => [file.id, file.x, file.y])).toEqual([...rests].map(([id, at]) => [id, at.x, at.y]));
+  expect(homeFloat(map, startFloat(map, CORE), 1).files.map((file) => [file.x, file.y])).toEqual([held, loose, middling, untied].map((id) => [placeOf(map, id).x, placeOf(map, id).y]));
+});
+
+test('a cell whose files are held alike rests them where the layout put them: a flat signal invents no gathering (D199)', () => {
+  // The demo's pm folder holds three tied files, each half loose, and a deleted one.
+  expect(DEMO.terrain.organelles.filter((organelle) => organelle.cell === PM).map((organelle) => loosenessOf(organelle))).toEqual([0.5, undefined, 0.5, 0.5]);
+  expect([...restOf(DEMO, PM)]).toEqual([INDEX, 'libs/core/src/pm/legacy.ts', SLOTS, TOOLS].map((id) => [id, placeOf(DEMO, id)]));
+  // With its ties set apart the same cell gathers, and its deleted file still rests where it was.
+  const rests = restOf(LOOSE, PM);
+  expect(rests.get(SLOTS)).not.toEqual(placeOf(LOOSE, SLOTS));
+  expect(rests.get('libs/core/src/pm/legacy.ts')).toEqual(placeOf(LOOSE, 'libs/core/src/pm/legacy.ts'));
+});
+
+test('no rest lies outside its membrane, in a cell its cell holds, or over another body, on a hand-built cell at every gather and on a tight cell of an outside repo (D199)', () => {
+  const CORE = 'package:libs/core';
+  // A held file whose way in is the held cell in the middle, a loose one a body from the rim, and two neighbours that would gather onto one another.
+  const map = squared(
+    {
+      'libs/core/src/a.ts': { x: 30, y: 60, ties: { inside: 4, outside: 0 } },
+      'libs/core/src/b.ts': { x: 110, y: 60, ties: { inside: 0, outside: 3 } },
+      'libs/core/src/c.ts': { x: 60, y: 22, ties: { inside: 4, outside: 0 } },
+      'libs/core/src/d.ts': { x: 60, y: 8, ties: { inside: 5, outside: 0 } },
+      'libs/core/src/e.ts': { x: 60, y: 100, ties: { inside: 1, outside: 1 } },
+    },
+    true,
+  );
+  for (const gather of [0.2, GATHER, 0.7, 1]) {
+    const rests = restOf(map, CORE, gather);
+    expect(badRests(map, CORE, rests), `at a gather of ${String(gather)}`).toEqual([]);
+    expect([...rests].some(([id, at]) => at.x !== placeOf(map, id).x || at.y !== placeOf(map, id).y)).toBe(true);
+  }
+  // Stepped from the rests, the float keeps every body in bounds as it did from the layout's places.
+  expect(strays(map, CORE, minute(map, CORE, 120 / CELL_GATE.open).slice(0, 600))).toEqual([]);
+  const rules = restOf(ROUND_TWO, RULES);
+  expect(badRests(ROUND_TWO, RULES, rules)).toEqual([]);
+  expect([...rules].filter(([id, at]) => at.x !== placeOf(ROUND_TWO, id).x || at.y !== placeOf(ROUND_TWO, id).y).length).toBeGreaterThan(rules.size / 2);
+  // One map and one gather give one set of rests (C3).
+  expect([...restOf(structuredClone(ROUND_TWO), RULES)]).toEqual([...rules]);
+});
+
+test('a held file the surface eased home heads back to its rest as its cell opens again, no faster than the speed, and stops on it (D199, D165)', () => {
+  const screen = openingScreen(LOOSE, PM);
+  const rest = restOf(LOOSE, PM).get(SLOTS);
+  const home = homeFloat(LOOSE, startFloat(LOOSE, PM), 1);
+  expect(fileOf(home.files, SLOTS)).toMatchObject({ x: placeOf(LOOSE, SLOTS).x, y: placeOf(LOOSE, SLOTS).y });
+  const floats: Float[] = [home];
+  for (let step = 1; step <= 600; step += 1) floats.push(stepFloat(LOOSE, floats.at(-1) ?? home, step * DRIFT_STEP_MS, { seed: 7, screen }));
+  expect(fastestStep(floats)).toBeLessThanOrEqual((DRIFT_SPEED * screen * DRIFT_STEP_MS) / 1000 + 1e-9);
+  expect(fileOf(floats.at(-1)?.files ?? [], SLOTS)).toMatchObject({ x: rest?.x, y: rest?.y });
 });
