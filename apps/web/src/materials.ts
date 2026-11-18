@@ -161,7 +161,10 @@ export const BLOOM: BloomLook = { strength: 0.9, radius: 0.5, threshold: 0 };
  * and how much of that the bloom sees (a fifth, so a broad reach stays a
  * luminance and not a fog), how much brighter the reach reads over a cell's
  * body than in the crease between, how far the reach is softened in samples,
- * the share of a mark's light the bloom sees, and of a ribbon's.
+ * the share of a mark's light the bloom sees, and of a ribbon's; and how
+ * long one wave of a swaying ribbon runs along its bow, in layout units
+ * (Q84), beside how far and how fast it sways, which are the scene's
+ * (`RIBBON_SWAY`, `RIBBON_SWAY_HZ`).
  */
 export type WeatherLook = {
   readonly reachGain: number;
@@ -170,10 +173,11 @@ export type WeatherLook = {
   readonly reachSoften: number;
   readonly markBloom: number;
   readonly ribbonBloom: number;
+  readonly ribbonWave: number;
 };
 
 // The reach's gain starts under the spike's 1.05: under AgX, added to the lit albedo and bloomed, that read as a white wash where the sheet lays a warm tint, so it opens lower for the panel to tune (D156).
-export const WEATHER: WeatherLook = { reachGain: 0.7, reachBloom: 0.2, reachBodyGain: 1.1, reachSoften: 2, markBloom: 1, ribbonBloom: 0.3 };
+export const WEATHER: WeatherLook = { reachGain: 0.7, reachBloom: 0.2, reachBodyGain: 1.1, reachSoften: 2, markBloom: 1, ribbonBloom: 0.3, ribbonWave: 24 };
 
 /**
  * A notice's light on the field (§5.4, step 34): the primary's halo, a disc

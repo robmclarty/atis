@@ -571,6 +571,7 @@ moves of its own, and under reduced motion the primary's light holds (C12).
 | `WEATHER.reachSoften` | `2` | how far the reach's edge is softened, in samples of the skin's grid |
 | `WEATHER.markBloom` | `1` | the share of a mark's light the bloom sees (the stains, rings, arcs, stitches and storms) |
 | `WEATHER.ribbonBloom` | `0.3` | the share of an exceptional edge's ribbon light the bloom sees |
+| `WEATHER.ribbonWave` | `24` | how long one wave of a swaying ribbon runs along its bow, in layout units (Q84 (oscillating-links)); with `RIBBON_SWAY_HZ` it sets how fast the wave travels, 7.2 units a second at rest |
 
 ### The notices' light
 
@@ -723,6 +724,19 @@ one the map counted no integrity for, never moves, and a map where no cell
 ripples costs the skin nothing more. The time is the scheduler's (C12), so one
 time gives one frame and a capture's frozen clock gives a still one; under
 reduced motion every membrane rests where it lies.
+
+A ribbon means one more thing when it moves (Q84 (oscillating-links), Q93
+(sway-from-outside)): its import enters a module past its interface. Such a
+ribbon sways, and every other ribbon holds still. The vertex stage moves it
+across its width by `RIBBON_SWAY` on a wave that travels along its bow from
+the importer to the imported file, one wave every `WEATHER.ribbonWave` of the
+bow, at `RIBBON_SWAY_HZ`. The sway eases in over the first 12 units from the
+importer's rim and out over the last 12 before the arrowhead, half the bow
+each where it is shorter, so the line leaves its file and meets its arrowhead
+where a still one would, and the arrowhead stays on the rim. A swaying ribbon
+is laid in pieces of 2 units or less, so the wave bends it smoothly; a still
+one is laid as it always was. The time is the scheduler's (C12), a capture's
+frozen clock gives a still frame, and under reduced motion nothing sways.
 
 These tokens sit where [the materials spike](#phase-1b-the-materials-spike) left
 them. Where §5.5 gives a number, the token stands at it, as §5.5's starting
@@ -894,7 +908,15 @@ purpose, not by omission:
   one draws before it takes the clearest, in `libs/scene/src/planet.ts`), the
   light the least-imported package still casts on the rim (`RIM_FLOOR`), and the
   samples round the rim it is laid at (`RIM_SAMPLES` in
-  `apps/web/src/world/planet.ts`): placement and resolution, not a look.
+  `apps/web/src/world/planet.ts`): placement and resolution, not a look;
+- how a swaying ribbon is laid (`apps/web/src/world/ribbons.ts`): the pieces it
+  is cut into, 2 units or less (`SWAY_PIECE`), and the stretch its sway eases
+  in and out over at each end, 12 units (`SWAY_EASE`), both laid into the
+  geometry when the world is built, as a ribbon's width is;
+- the world's legend samples for its two moving marks
+  (`apps/web/src/chrome/legend.tsx`): the two swells a rippling membrane and a
+  swaying line are caught at and how far they stand off rest (`WAVE_SWELLS`,
+  `WAVE_SWING`), which pick one instant of a motion to show rather than set it.
 
 ## Phase 1b: the materials spike
 

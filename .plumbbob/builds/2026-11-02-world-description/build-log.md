@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: a world that describes itself at a glance
 
-**Current step:** 13 — feat(scene): mark the ribbons that enter a cell past its interface
+**Current step:** 14 — feat(web): oscillate the marked ribbons along their length
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -35,7 +35,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 10. feat(web): draw the nuclei and the exploded tags in the world
 - ☑ 11. feat(scene): read each membrane's wobble from its cell's integrity
 - ☑ 12. feat(web): ripple the skin's membrane line by its cell's integrity
-- ☐ 13. feat(scene): mark the ribbons that enter a cell past its interface
+- ☑ 13. feat(scene): mark the ribbons that enter a cell past its interface
 - ☐ 14. feat(web): oscillate the marked ribbons along their length
 - ☐ 15. feat(scene): place a quiet label on each depth band
 - ☐ 16. feat(web): write the band labels over the field
@@ -59,6 +59,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] Rob at range 2's stop: clicking a highlighted issue pops a map of the related cells and files up in a rectangle in the centre; he likes it but could not tell what he was looking at or how to turn it off, so it needs a title or key and a visible way to close
 - [x] Rob at range 2's stop: clicking a cell should probably bring up file details in an inspector panel; what goes in it is undecided
 - [ ] fixtures/javascript-1 and fixtures/corpus-7 map.json predate step 1's integrity field (0 cells carry it), so range 3's stop sees no ripple on javascript-1 until that map is regenerated; only libs/core/fixtures/demo has a cell with past above 0 (package:libs/core, 1 through 1 past)
+- [ ] at the surface the membrane line is faint where the reach's glow fills a cell (seen on the demo's libs/core, both backends), so a lit cell's ripple barely reads while an unlit cell's reads clearly; judge at range 3's stop whether the line needs more contrast under the reach or the ripple a second cue
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -486,3 +487,4 @@ folder, so it rides the branch into the PR.)*
 
 - 2026-11-18 — step 11 checkpointed · c7022a189 — feat(scene): read each membrane's wobble from its cell's integrity (1 drift, 15m)
 - 2026-11-18 — step 12 checkpointed · 1682c274b — feat(web): ripple the skin's membrane line by its cell's integrity (11m)
+- 2026-11-18 — step 13 checkpointed · d2219579f — feat(scene): mark the ribbons that enter a cell past its interface (12m)

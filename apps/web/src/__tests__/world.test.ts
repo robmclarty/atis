@@ -27,6 +27,9 @@
  * frames move (step 42). At the surface, with no notice to flare, the frames
  * move by a membrane imported past its barrel and by nothing else: sealed, the
  * same map holds still with motion on, and reduced motion rests it (D195).
+ * A ribbon laid past a barrel sways there, one laid onto a barrel holds
+ * still, and reduced motion stills the first; and the corpus fixture's own
+ * two swaying ribbons move its frames and rest under reduced motion (Q84).
  * And at the opening frame the world is a dark planet
  * under one star per outside package the map records, which the wheel zooms
  * through LOD1's gate to the flat world (D170). Served as a range, the demo's
@@ -61,6 +64,8 @@ import type { Browser, Page } from 'playwright-core';
 import { createServer } from 'vite';
 import type { Plugin, ViteDevServer } from 'vite';
 import { expect, test } from 'vitest';
+
+import { withinContour } from 'core';
 
 import { LEGEND } from '../hud.js';
 import { repoMap } from './repo-map.js';
@@ -568,29 +573,33 @@ test('under reduced motion nothing changes from frame to frame after load, in an
   }
 });
 
+/** An exceptional edge as the map writes it. */
+type DemoEdge = { readonly from: string; readonly to: string; readonly kind: 'cycle' | 'boundary' | 'new-cross-module' };
+
 /**
  * The demo with no notices, so nothing at the surface flares or breathes and
- * a frame that moves there moves by its membranes alone; and, `sealed`, with
- * every import that lands past a barrel counted as through it, so no
- * membrane has anything to ripple by.
+ * a frame that moves there moves by its membranes and its ribbons alone;
+ * `sealed`, with every import that lands past a barrel counted as through
+ * it, so no membrane has anything to ripple by; and with its exceptional
+ * edges replaced, when some are given.
  */
-const quietDemo = (sealed: boolean): string => {
-  const demo = JSON.parse(readFileSync(DEMO, 'utf8')) as { terrain: { cells: readonly { readonly id: string; readonly integrity?: { readonly through: number; readonly past: number } }[] } };
+const quietDemo = (sealed: boolean, edges?: readonly DemoEdge[]): string => {
+  const demo = JSON.parse(readFileSync(DEMO, 'utf8')) as { terrain: { edges_exceptional: readonly DemoEdge[]; cells: readonly { readonly id: string; readonly integrity?: { readonly through: number; readonly past: number } }[] } };
   const leaky = demo.terrain.cells.filter((cell) => (cell.integrity?.past ?? 0) > 0).map((cell) => cell.id);
   if (leaky.length === 0) throw new Error('the demo lost its cell imported past its barrel');
   const cells = demo.terrain.cells.map((cell) => (sealed && cell.integrity !== undefined ? { ...cell, integrity: { through: cell.integrity.through + cell.integrity.past, past: 0 } } : cell));
-  return JSON.stringify({ ...demo, terrain: { ...demo.terrain, cells }, notices: [] });
+  return JSON.stringify({ ...demo, terrain: { ...demo.terrain, cells, edges_exceptional: edges ?? demo.terrain.edges_exceptional }, notices: [] });
 };
 
-/** A page on the world at the surface, the whole field in view and no cell opened, with motion as asked, its console's complaints collected, and only the world's own canvas showing. */
-const surfaceOn = async (browser: Browser, url: string, reducedMotion: 'reduce' | 'no-preference'): Promise<{ readonly page: Page; readonly complaints: readonly string[] }> => {
+/** A page on the world at the surface with no cell opened, the whole field in view unless `framing` frames it elsewhere, with motion as asked, its console's complaints collected, and only the world's own canvas showing. */
+const surfaceOn = async (browser: Browser, url: string, reducedMotion: 'reduce' | 'no-preference', framing = 'zoom=2'): Promise<{ readonly page: Page; readonly complaints: readonly string[] }> => {
   const page = await browser.newPage({ viewport: { width: 960, height: 720 }, reducedMotion });
   const complaints: string[] = [];
   page.on('console', (message) => {
     if (message.type() === 'error' || message.type() === 'warning') complaints.push(`${message.type()}: ${message.text()}`);
   });
   page.on('pageerror', (error) => complaints.push(`pageerror: ${error.message}`));
-  await page.goto(`${url}/?backend=webgl&zoom=2`);
+  await page.goto(`${url}/?backend=webgl&${framing}`);
   await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
   expect(await page.getAttribute('#world', 'data-lod')).toBe('1');
   expect(await page.getAttribute('#world', 'data-open')).toBeNull();
@@ -631,6 +640,96 @@ test('at the surface a membrane imported past its barrel ripples, one entered on
     await browser.close();
     await leaky.server.close();
     await sealed.server.close();
+  }
+});
+
+/** The corpus fixture the sway is judged on (Q94), with no notices so nothing else at its surface moves, and where its two swaying ribbons lie: the middle of the ground between the four files they join. */
+const CORPUS = join(WEB, '..', '..', 'fixtures', 'corpus-7', 'map.json');
+const SWAYING: readonly (readonly [string, string])[] = [
+  ['packages/ra-core/src/controller/field/ArrayFieldBase.tsx', 'packages/ra-core/src/util/useFieldValue.ts'],
+  ['packages/ra-core/src/types.ts', 'packages/ra-core/src/auth/WithPermissions.tsx'],
+];
+/** How far apart the places tried for a view's centre stand, and how many rings of them are tried, in layout units. */
+const CENTRE_STEP = 20;
+const CENTRE_RINGS = 20;
+const quietCorpus = (): { readonly body: string; readonly centre: readonly [number, number] } => {
+  const corpus = JSON.parse(readFileSync(CORPUS, 'utf8')) as { terrain: { layout: { positions: Record<string, { readonly x: number; readonly y: number }>; contours: Record<string, readonly (readonly [number, number])[]> } } };
+  const ends = SWAYING.flat().map((path) => {
+    const at = corpus.terrain.layout.positions[path];
+    if (at === undefined) throw new Error(`corpus-7 lost ${path}`);
+    return at;
+  });
+  const middle = [ends.reduce((total, at) => total + at.x, 0) / ends.length, ends.reduce((total, at) => total + at.y, 0) / ends.length] as const;
+  // A cell under the view's centre may open and cover the ribbons, so the view centres on the open ground nearest their middle, under no skin at all.
+  const rings = Array.from({ length: CENTRE_RINGS + 1 }, (_, ring) => ring);
+  const tried = rings.flatMap((ring) =>
+    Array.from({ length: Math.max(1, ring * 8) }, (_, turn): readonly [number, number] => {
+      const angle = (2 * Math.PI * turn) / Math.max(1, ring * 8);
+      return [middle[0] + Math.cos(angle) * ring * CENTRE_STEP, middle[1] + Math.sin(angle) * ring * CENTRE_STEP];
+    }),
+  );
+  const skins = Object.values(corpus.terrain.layout.contours);
+  const centre = tried.find(([x, y]) => skins.every((skin) => !withinContour(skin, x, y)));
+  if (centre === undefined) throw new Error('corpus-7 has no open ground near its swaying ribbons');
+  return { body: JSON.stringify({ ...corpus, notices: [] }), centre };
+};
+
+test("on the corpus fixture's own swaying ribbons the frames move with motion on and hold still under reduced motion, with a clean console (Q84, Q94)", { timeout: 180_000 }, async () => {
+  const { body, centre } = quietCorpus();
+  const { server, url } = await serve(body);
+  const browser = await launch();
+  try {
+    const framing = `zoom=3&centre=${centre[0].toFixed(0)},${centre[1].toFixed(0)}`;
+    // The map carries no integrity and no notice, so its two ribbons that enter ra-core's modules past their barrels are all that moves.
+    const moving = await surfaceOn(browser, url, 'no-preference', framing);
+    const [before, after] = await twoFrames(moving.page, 1000);
+    expect(before.equals(after)).toBe(false);
+    expect(moving.complaints).toEqual([]);
+    await moving.page.close();
+
+    const { page, complaints } = await surfaceOn(browser, url, 'reduce', framing);
+    expect(await page.getAttribute('#world', 'data-motion')).toBe('reduced');
+    const [still, later] = await twoFrames(page, 1000);
+    expect(still.equals(later)).toBe(true);
+    expect(complaints).toEqual([]);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+test('at the surface a ribbon that enters a module past its interface sways, one that lands on a barrel never moves, and reduced motion stills it, with a clean console (Q84, Q93)', { timeout: 120_000 }, async () => {
+  // The demo draws no ribbon that sways, so one is laid from the cli's doctor onto a file of the pm folder that is not its barrel, past two interfaces;
+  // beside it, the same importer onto the core package's barrel, through its interface. Sealed, no membrane ripples, so a ribbon is all that could move.
+  const past = await serve(quietDemo(true, [{ from: 'apps/cli/src/doctor.ts', to: 'libs/core/src/pm/slots.ts', kind: 'boundary' }]));
+  const through = await serve(quietDemo(true, [{ from: 'apps/cli/src/doctor.ts', to: 'libs/core/src/index.ts', kind: 'boundary' }]));
+  const browser = await launch();
+  try {
+    // With motion on, the ribbon past the barrel sways along its bow, so two frames differ.
+    const moving = await surfaceOn(browser, past.url, 'no-preference');
+    expect(await moving.page.getAttribute('#world', 'data-motion')).toBe('full');
+    const [before, after] = await twoFrames(moving.page, 1000);
+    expect(before.equals(after)).toBe(false);
+    expect(moving.complaints).toEqual([]);
+    await moving.page.close();
+
+    // The ribbon onto the barrel is drawn and holds still: motion on, and not a pixel moves.
+    const held = await surfaceOn(browser, through.url, 'no-preference');
+    const [calm, calmer] = await twoFrames(held.page, 1000);
+    expect(calm.equals(calmer)).toBe(true);
+    expect(held.complaints).toEqual([]);
+    await held.page.close();
+
+    // Reduced: the ribbon past the barrel lies where a still one would, the frames the same to the pixel.
+    const { page, complaints } = await surfaceOn(browser, past.url, 'reduce');
+    expect(await page.getAttribute('#world', 'data-motion')).toBe('reduced');
+    const [still, later] = await twoFrames(page, 1000);
+    expect(still.equals(later)).toBe(true);
+    expect(complaints).toEqual([]);
+  } finally {
+    await browser.close();
+    await past.server.close();
+    await through.server.close();
   }
 });
 
