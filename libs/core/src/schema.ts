@@ -501,6 +501,41 @@ export type MapJson = {
   readonly overlays?: Overlays;
 };
 
+/** The `atis reach` answer's contract version: its own, so a consumer pins it without pinning the map. */
+export const REACH_SCHEMA_VERSION = 1;
+
+/** What an `atis reach` answer says it is. */
+export const REACH_KIND = 'atis.reach';
+
+/** A file a change would reach over the import graph: `hops` cell boundaries away, through the interfaces `via` names in order (D5, D45). */
+export type ReachByImport = { readonly path: string; readonly by: 'import'; readonly hops: number; readonly via: readonly string[] };
+
+/** A file that usually moves with a named one: in `rate` of the commits that touched `with`, `support` of them. */
+export type ReachByCochange = { readonly path: string; readonly by: 'cochange'; readonly rate: number; readonly support: number; readonly with: string };
+
+/** One file of a reach, by the evidence that put it there; a file reached both ways is listed once for each. */
+export type ReachedFile = ReachByImport | ReachByCochange;
+
+/**
+ * What `atis reach` answers: the reach a change to `paths` would have at
+ * `head`, before the change is made. It is a document of its own beside
+ * `map.json`, so it leaves the map's `schema_version` alone (D85).
+ */
+export type ReachAnswer = {
+  readonly schema_version: typeof REACH_SCHEMA_VERSION;
+  readonly kind: typeof REACH_KIND;
+  /** The commit the scan was taken at. */
+  readonly head: string;
+  /** The paths as asked, in the order asked. */
+  readonly paths: readonly string[];
+  /** The named paths that name nothing at the head yet, sorted. */
+  readonly new: readonly string[];
+  /** Sorted by `path`, then by `by` (C3). */
+  readonly reach: readonly ReachedFile[];
+  /** What a missing source would have said, in words (C2). */
+  readonly muted: readonly string[];
+};
+
 const NOTICE_BUDGET: Readonly<Record<NoticeTier, number>> = {
   primary: 1,
   secondary: 2,
@@ -1099,5 +1134,60 @@ function assertWeather(value: unknown, path: string, placed: Placed, unplaced: R
 /** Turn an unknown value into a trusted `MapJson`, or throw naming the offending path. */
 export function assertMap(value: unknown): MapJson {
   assertShape(value);
+  return value;
+}
+
+function failReach(path: string, reason: string): never {
+  throw new Error(`invalid reach answer at ${path}: ${reason}`);
+}
+
+function reachStrings(value: unknown, path: string): readonly string[] {
+  if (!Array.isArray(value)) failReach(path, 'expected an array');
+  return value.map((entry: unknown, index) => (typeof entry === 'string' ? entry : failReach(`${path}[${String(index)}]`, 'expected a string')));
+}
+
+/** One reached file: its path, and the fields its `by` carries. */
+function assertReached(value: unknown, path: string): string {
+  if (!isRecord(value)) failReach(path, 'expected an object');
+  const file = value['path'];
+  if (typeof file !== 'string' || file === '') failReach(`${path}.path`, 'expected a path');
+  if (value['by'] === 'import') {
+    const via = reachStrings(value['via'], `${path}.via`);
+    if (!isWholeCount(value['hops'])) failReach(`${path}.hops`, 'expected a whole count');
+    if (via.length !== value['hops']) failReach(`${path}.via`, 'expected one interface for each hop');
+  } else if (value['by'] === 'cochange') {
+    const rate = value['rate'];
+    if (!isCount(rate) || rate > 1) failReach(`${path}.rate`, 'expected a rate from 0 to 1');
+    if (!isWholeCount(value['support']) || value['support'] < 1) failReach(`${path}.support`, 'expected a whole count of at least 1');
+    if (typeof value['with'] !== 'string' || value['with'] === '') failReach(`${path}.with`, 'expected a path');
+  } else {
+    failReach(`${path}.by`, 'expected "import" or "cochange"');
+  }
+  return `${file}\n${value['by']}`;
+}
+
+/** A reach answer's shape, entry by entry; throws naming the offending path. */
+function assertReachShape(value: unknown): asserts value is ReachAnswer {
+  if (!isRecord(value)) failReach('$', 'expected an object');
+  if (value['schema_version'] !== REACH_SCHEMA_VERSION) failReach('$.schema_version', `expected ${String(REACH_SCHEMA_VERSION)}`);
+  if (value['kind'] !== REACH_KIND) failReach('$.kind', `expected "${REACH_KIND}"`);
+  if (typeof value['head'] !== 'string' || value['head'] === '') failReach('$.head', 'expected a commit');
+  reachStrings(value['paths'], '$.paths');
+  reachStrings(value['new'], '$.new');
+  reachStrings(value['muted'], '$.muted');
+  const reach = value['reach'];
+  if (!Array.isArray(reach)) failReach('$.reach', 'expected an array');
+  let previous: string | undefined;
+  reach.forEach((entry: unknown, index) => {
+    const at = `$.reach[${String(index)}]`;
+    const key = assertReached(entry, at);
+    if (previous !== undefined && previous >= key) failReach(at, 'expected the entries sorted by path, then by, and unique');
+    previous = key;
+  });
+}
+
+/** Turn an unknown value into a trusted `ReachAnswer`, or throw naming the offending path. */
+export function assertReachAnswer(value: unknown): ReachAnswer {
+  assertReachShape(value);
   return value;
 }

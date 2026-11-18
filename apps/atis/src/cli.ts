@@ -17,7 +17,7 @@ import type { OverlayName } from 'core';
 
 import { USAGE, VERSION } from './index.js';
 import { mcpRun } from './mcp.js';
-import { commentRun, fingerprintRun, pngRun, run, serveRun } from './run.js';
+import { commentRun, fingerprintRun, pngRun, reachRun, run, serveRun } from './run.js';
 import type { HeadAsked, Outcome, RangeAsked } from './run.js';
 import type { BaseAsked } from './sources/index.js';
 
@@ -184,6 +184,14 @@ function overlayOf(flags: Flags, wholeRepo: boolean): { readonly overlay: Overla
   return { overlay };
 }
 
+/** `--history <n>` as typed, read as a whole number of commits, at least one (D50); undefined where it was not typed. */
+function windowOf(typed: string | undefined): number | undefined | { readonly reason: string } {
+  if (typed === undefined) return undefined;
+  const history = Number(typed);
+  if (!Number.isSafeInteger(history) || history < 1 || !/^\d+$/.test(typed)) return { reason: '--history <n> takes a whole number of commits, at least 1' };
+  return history;
+}
+
 /** The map the flags ask for, written or served (D92); the command with no verb. */
 async function mapCommand(argv: readonly string[]): Promise<Outcome> {
   const parsed = parseFlags(argv);
@@ -211,10 +219,9 @@ async function mapCommand(argv: readonly string[]): Promise<Outcome> {
   const repo = flags.repo ?? process.cwd();
   const verbose = flags.verbose === true;
   const cache = flags.cache !== false;
-  const history = flags.history === undefined ? undefined : Number(flags.history);
-  if (history !== undefined && (!Number.isSafeInteger(history) || history < 1 || !/^\d+$/.test(flags.history ?? ''))) {
-    return misuse('--history <n> takes a whole number of commits, at least 1');
-  }
+  const window = windowOf(flags.history);
+  if (typeof window === 'object') return misuse(window.reason);
+  const history = window;
   if (flags.comment === true) {
     if (flags.tour !== undefined) return misuse('--tour plays a tour in the served world; --comment posts a still, so drop --tour');
     const beside = [flags.out === undefined ? [] : ['--out'], flags.svg === undefined ? [] : ['--svg'], flags.png === undefined ? [] : ['--png'], flags.watch === true ? ['--watch'] : [], wholeRepo ? ['--whole-repo'] : [], typeof head === 'object' ? ['--working-tree'] : []].flat();
@@ -274,10 +281,49 @@ function mcpCommand(argv: readonly string[]): Promise<Outcome> {
   return mcpRun({ repo: values.repo ?? process.cwd(), map: values.map, version: VERSION });
 }
 
+/** The flags `atis reach` takes beside its paths: the answer as JSON, and the co-change window a map run reads. */
+const REACH_FLAGS = {
+  repo: { type: 'string' },
+  json: { type: 'boolean' },
+  history: { type: 'string' },
+  cache: { type: 'boolean' },
+  help: { type: 'boolean', short: 'h' },
+} as const;
+
+/**
+ * `atis reach <paths...>`: what a change to the paths would reach, asked
+ * before the change is made. The one verb that takes positionals, the paths;
+ * with none it is misuse (C4). `--history <n>` names the co-change window
+ * and `--no-history` drops it, so the two together are misuse too.
+ */
+function reachCommand(argv: readonly string[]): Promise<Outcome> {
+  let values: { readonly repo?: string | undefined; readonly json?: boolean | undefined; readonly history?: string | boolean | undefined; readonly cache?: boolean | undefined; readonly help?: boolean | undefined };
+  let positionals: readonly string[];
+  try {
+    // `--no-history` is the one negation of a flag that takes a value, which `parseArgs` will not negate; it is read as a flag of its own, ahead of a `--`, past which every word is a path.
+    const end = argv.indexOf('--');
+    const typed = argv.filter((word, index) => word !== '--no-history' || (end !== -1 && index > end));
+    ({ values, positionals } = parseArgs({ args: typed, options: REACH_FLAGS, allowPositionals: true, allowNegative: true }));
+    if (typed.length !== argv.length) {
+      if (values.history !== undefined) return Promise.resolve(misuse('--history <n> names the co-change window and --no-history drops it; give one of them'));
+      values = { ...values, history: false };
+    }
+  } catch (error) {
+    return Promise.resolve(misuse(error instanceof Error ? error.message : String(error)));
+  }
+  if (values.help === true) return Promise.resolve({ exitCode: 0, stdout: USAGE, stderr: '' });
+  if (values.json === false) return Promise.resolve(misuse('reach prints a table unless --json asks for the answer as JSON; drop --no-json'));
+  const window = windowOf(typeof values.history === 'string' ? values.history : undefined);
+  if (typeof window === 'object') return Promise.resolve(misuse(window.reason));
+  if (positionals.length === 0) return Promise.resolve(misuse('reach needs the paths a change would touch'));
+  return Promise.resolve(reachRun(positionals, { repo: values.repo ?? process.cwd(), json: values.json === true, history: values.history !== false, window, cache: values.cache !== false }));
+}
+
 /** The verbs atis takes ahead of its flags, each a command that is not a map (D104). */
 const COMMANDS: ReadonlyMap<string, Command> = new Map([
   ['fingerprint', fingerprintCommand],
   ['mcp', mcpCommand],
+  ['reach', reachCommand],
 ]);
 
 /**

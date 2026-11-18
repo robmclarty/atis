@@ -250,9 +250,7 @@ function standingOf(base: Scan, head: Scan, added: ReadonlySet<string>, config: 
   const files = terrainFiles(base, head, added);
   const edges = terrainEdges(base, head, added);
   const roots = sortUnique([...base.members, ...head.members].map((member) => member.dir));
-  const isShore = shoreMatcher(config.groups, roots);
-  const modules = identifyModules(files, edges, roots, isShore);
-  const groups = shoreGroups(files, roots, config, modules.tests);
+  const { isShore, modules, groups } = cellsAndShore(files, edges, roots, config);
   const sources = new Set(files.filter((file) => file.kind === 'source').map((file) => file.path));
   const depths = computeDepth(
     edges.filter((edge) => !isShore(edge.from) && !isShore(edge.to)),
@@ -261,6 +259,28 @@ function standingOf(base: Scan, head: Scan, added: ReadonlySet<string>, config: 
     (path) => sources.has(path),
   );
   return { files, edges, roots, isShore, modules, groups, depths };
+}
+
+/** A terrain's cells and its shore: what the files and the graph between them make of the workspace's members under the shore table. */
+type CellsAndShore = Pick<Standing, 'isShore' | 'modules' | 'groups'>;
+
+function cellsAndShore(files: readonly ScannedFile[], edges: readonly ImportEdge[], roots: readonly string[], config: Config): CellsAndShore {
+  const isShore = shoreMatcher(config.groups, roots);
+  const modules = identifyModules(files, edges, roots, isShore);
+  return { isShore, modules, groups: shoreGroups(files, roots, config, modules.tests) };
+}
+
+/**
+ * The cells and the shore of one scan alone, with no change over it: what
+ * `standingOf` makes of a base no change has touched, without the terraces.
+ * `reachFrom` walks it for the reach a change would have, before there is a
+ * change to map.
+ */
+export function standingModules(scan: Scan, config: Config = DEFAULT_CONFIG): Pick<Standing, 'modules' | 'groups'> {
+  const none = new Set<string>();
+  const roots = sortUnique(scan.members.map((member) => member.dir));
+  const { modules, groups } = cellsAndShore(terrainFiles(scan, scan, none), terrainEdges(scan, scan, none), roots, config);
+  return { modules, groups };
 }
 
 /**

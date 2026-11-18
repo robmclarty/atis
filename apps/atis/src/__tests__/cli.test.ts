@@ -1,14 +1,14 @@
 import { execFileSync, spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { assertMap } from 'core';
-import type { MapJson } from 'core';
+import { assertMap, assertReachAnswer } from 'core';
+import type { MapJson, ReachAnswer } from 'core';
 import { afterAll, expect, test } from 'vitest';
 
-import { run, serveRun } from '../run.js';
+import { reachRun, run, serveRun } from '../run.js';
 
 /**
  * The command end to end, run the way a user runs it: the `bin` in a child
@@ -655,3 +655,192 @@ test('--overlay names the one overlay the still map of the whole repo draws, and
     expect(result.stderr).toContain(reason);
   }
 }, MINUTE);
+
+const LIMITER = 'src/lib/limiter.ts';
+
+/**
+ * A small package with a history to read: the limiter has an importer in its
+ * own folder and one across a module boundary, and six commits touch it, the
+ * config riding four of them, its test three and the notes two. The last
+ * commit modifies the limiter alone, so a map of it is the diff the reach
+ * verb is asked about beforehand.
+ */
+function limiterRepo(prefix: string): string {
+  const repo = join(temp(prefix), 'repo');
+  mkdirSync(repo);
+  git(repo, 'init', '--quiet', '--initial-branch=main');
+  write(repo, 'package.json', '{ "name": "demo", "private": true, "type": "module" }\n');
+  write(repo, 'src/lib/window.ts', "import { cap } from './limiter.js';\n\nexport const windowed = (): number => cap() * 60;\n");
+  write(repo, 'src/server.ts', "import { cap } from './lib/limiter.js';\n\nexport const serve = (): number => cap();\n");
+  write(repo, 'native/fast.rs', 'fn main() {}\n');
+  const touch = (round: number, paths: readonly string[]): void => {
+    for (const path of paths) {
+      if (path === LIMITER) write(repo, path, `export const cap = (): number => ${String(round)};\n`);
+      else if (path === 'src/config.ts') write(repo, path, `export const max = ${String(round)};\n`);
+      else if (path === 'docs/notes.md') write(repo, path, `# Notes\n\nRound ${String(round)}.\n`);
+      else write(repo, path, `import { expect, test } from 'vitest';\n\nimport { cap } from '../lib/limiter.js';\n\ntest('the cap', () => {\n  expect(cap()).toBe(${String(round)});\n});\n`);
+    }
+    git(repo, 'add', '.');
+    git(repo, 'commit', '--quiet', '-m', `feat: round ${String(round)}`);
+  };
+  touch(1, [LIMITER, 'src/config.ts', 'src/__tests__/limiter.test.ts', 'docs/notes.md']);
+  touch(2, [LIMITER, 'src/config.ts', 'src/__tests__/limiter.test.ts']);
+  touch(3, [LIMITER, 'src/config.ts', 'src/__tests__/limiter.test.ts', 'docs/notes.md']);
+  touch(4, [LIMITER, 'src/config.ts']);
+  touch(5, [LIMITER]);
+  touch(6, [LIMITER]);
+  return repo;
+}
+
+function reachOf(stdout: string): ReachAnswer {
+  return assertReachAnswer(JSON.parse(stdout));
+}
+
+test('atis reach --json answers what a change to a file would reach: both importers at 0 and 1 hops as a map of that change reports them, the co-change pairs over the thresholds, and the same bytes twice', () => {
+  const repo = limiterRepo('reach');
+  const first = atis(['reach', '--json', '--repo', repo, LIMITER]);
+  expect(first.status).toBe(0);
+  expect(first.stderr).toBe('');
+  const answer = reachOf(first.stdout);
+
+  expect(answer.schema_version).toBe(1);
+  expect(answer.kind).toBe('atis.reach');
+  expect(answer.head).toBe(git(repo, 'rev-parse', 'HEAD'));
+  expect(answer.paths).toEqual([LIMITER]);
+  expect(answer.new).toEqual([]);
+  expect(answer.muted).toEqual([]);
+  expect(answer.reach).toEqual([
+    // A test is never a cell (D4): reached by habit alone, three of six.
+    { path: 'src/__tests__/limiter.test.ts', by: 'cochange', rate: 0.5, support: 3, with: LIMITER },
+    // Four of six.
+    { path: 'src/config.ts', by: 'cochange', rate: 0.67, support: 4, with: LIMITER },
+    { path: 'src/lib/window.ts', by: 'import', hops: 0, via: [] },
+    { path: 'src/server.ts', by: 'import', hops: 1, via: [LIMITER] },
+  ]);
+
+  // The last commit modified the limiter alone: the map of it reaches the same files the same way.
+  const out = join(temp('reach-map'), 'map.json');
+  expect(atis(['--repo', repo, '--base', 'HEAD~1', '--out', out]).status).toBe(0);
+  const map = mapAt(out);
+  expect(map.weather.changed.map((file) => file.path)).toEqual([LIMITER]);
+  expect(map.weather.reach.filter((entry) => entry.path !== LIMITER).map(({ path, hops, via }) => ({ path, hops, via }))).toEqual(
+    answer.reach.flatMap((entry) => (entry.by === 'import' ? [{ path: entry.path, hops: entry.hops, via: entry.via }] : [])),
+  );
+
+  // The second run reads the terrain the first kept (D96), and prints the same bytes.
+  const second = atis(['reach', '--json', '--repo', repo, LIMITER]);
+  expect(second.status).toBe(0);
+  expect(second.stdout).toBe(first.stdout);
+  // And the same again measured afresh.
+  expect(atis(['reach', '--json', '--no-cache', '--repo', repo, LIMITER]).stdout).toBe(first.stdout);
+}, 2 * MINUTE);
+
+test('atis reach with no paths, an absolute path, a path that climbs out, a symlink out of the tree or a bad window is misuse; a directory that is no repository exits 2 in one line (C4)', () => {
+  const repo = limiterRepo('reach-misuse');
+  const outside = temp('reach-outside');
+  writeFileSync(join(outside, 'secret.ts'), 'export const secret = 1;\n');
+  symlinkSync(outside, join(repo, 'src', 'elsewhere'));
+
+  // What the flags alone settle, through the bin.
+  for (const args of [['reach'], ['reach', '--json'], ['reach', '--history', '0', LIMITER], ['reach', '--history', '3', '--no-history', LIMITER], ['reach', '--base', 'main', LIMITER], ['reach', '--no-json', LIMITER]]) {
+    const result = atis([...args, '--repo', repo]);
+    expect(result.status).toBe(2);
+    expect(result.stdout).toBe('');
+    expect(result.stderr.startsWith('atis: ')).toBe(true);
+    expect(result.stderr).toContain('--help');
+  }
+  expect(atis(['reach', '--repo', repo]).stderr).toContain('reach needs the paths a change would touch');
+  expect(atis(['reach', '--help']).stdout).toContain('atis reach [--json]');
+
+  // What the repository settles.
+  const refused = (path: string): string => {
+    const outcome = reachRun([LIMITER, path], { repo, json: true });
+    expect(outcome.exitCode).toBe(2);
+    expect(outcome.stdout).toBe('');
+    return outcome.stderr;
+  };
+  expect(refused(join(repo, LIMITER))).toContain('is absolute');
+  expect(refused('../elsewhere.ts')).toContain('../elsewhere.ts climbs out of it');
+  expect(refused('src/../../elsewhere.ts')).toContain('climbs out of it');
+  expect(refused('src/elsewhere/secret.ts')).toContain('src/elsewhere/secret.ts is a symlink out of it');
+  expect(refused('src/elsewhere/not-yet.ts')).toContain('is a symlink out of it');
+  expect(refused('')).toContain('one of them is empty');
+
+  const nowhere = temp('reach-bare');
+  expect(reachRun([LIMITER], { repo: nowhere, json: true })).toEqual({ exitCode: 2, stdout: '', stderr: `atis: ${nowhere} is not a git repository\n` });
+}, 2 * MINUTE);
+
+test('atis reach lists a path that names nothing yet as new, answers empty and exits 0 when every path is new, and expands a dir/', () => {
+  const repo = limiterRepo('reach-new');
+  const fresh = reachRun(['src/lib/cap.ts', 'src/queue/'], { repo, json: true });
+  expect(fresh.exitCode).toBe(0);
+  const answer = reachOf(fresh.stdout);
+  expect(answer.paths).toEqual(['src/lib/cap.ts', 'src/queue/']);
+  expect(answer.new).toEqual(['src/lib/cap.ts', 'src/queue/']);
+  expect(answer.reach).toEqual([]);
+  expect(answer.muted).toEqual([]);
+
+  // A path that is in the working tree and not yet at the head is new too: the head is what was scanned.
+  write(repo, 'src/lib/draft.ts', 'export const draft = 1;\n');
+  expect(reachOf(reachRun(['./src/lib/draft.ts'], { repo, json: true }).stdout).new).toEqual(['src/lib/draft.ts']);
+
+  const folder = reachOf(reachRun(['src/lib/'], { repo, json: true }).stdout);
+  expect(folder.paths).toEqual(['src/lib/']);
+  expect(folder.new).toEqual([]);
+  expect(folder.reach.map((entry) => `${entry.path} ${entry.by}`)).toEqual(['src/__tests__/limiter.test.ts cochange', 'src/config.ts cochange', 'src/server.ts import']);
+
+  // Past a `--` every word is a path, one spelled as a flag too: it names nothing, so it is new, and the history is still read.
+  const dashed = atis(['reach', '--json', '--repo', repo, '--', LIMITER, '--no-history']);
+  expect(dashed.status).toBe(0);
+  const literal = reachOf(dashed.stdout);
+  expect(literal.paths).toEqual([LIMITER, '--no-history']);
+  expect(literal.new).toEqual(['--no-history']);
+  expect(literal.muted).toEqual([]);
+  expect(literal.reach.some((entry) => entry.by === 'cochange')).toBe(true);
+
+  // Read from a folder of the repository, a path is that folder's; the answer names it from the root.
+  expect(reachOf(reachRun(['lib/limiter.ts'], { repo: join(repo, 'src'), json: true }).stdout).paths).toEqual([LIMITER]);
+}, 2 * MINUTE);
+
+test('atis reach mutes in words what it could not read: --no-history, a shallow clone with the commits it read, and a language no producer reads', () => {
+  const repo = limiterRepo('reach-muted');
+  const imports = [
+    { path: 'src/lib/window.ts', by: 'import', hops: 0, via: [] },
+    { path: 'src/server.ts', by: 'import', hops: 1, via: [LIMITER] },
+  ];
+
+  const unread = reachOf(reachRun([LIMITER], { repo, json: true, history: false }).stdout);
+  expect(unread.muted).toEqual(['cochange: --no-history asked for import reach only']);
+  expect(unread.reach).toEqual(imports);
+
+  // A window of two commits holds too little to clear the support threshold.
+  expect(reachOf(reachRun([LIMITER], { repo, json: true, window: 2 }).stdout).reach).toEqual(imports);
+
+  const shallow = join(temp('reach-shallow'), 'repo');
+  execFileSync('git', ['clone', '--quiet', '--depth', '2', pathToFileURL(repo).href, shallow], { stdio: 'ignore' });
+  const clipped = reachOf(reachRun([LIMITER], { repo: shallow, json: true }).stdout);
+  expect(clipped.muted).toEqual(['cochange: the clone is shallow, so history reads 2 commits']);
+  expect(clipped.reach).toEqual(imports);
+
+  const rust = reachOf(reachRun(['native/fast.rs'], { repo, json: true }).stdout);
+  expect(rust.reach).toEqual([]);
+  expect(rust.muted).toEqual(['import: atis reads no imports from .rs files, so native/fast.rs has no import reach']);
+}, 2 * MINUTE);
+
+test('atis reach without --json prints a short table for a person: a line a reached file, its bin and the file it came through, then what is new and what was muted', () => {
+  const repo = limiterRepo('reach-table');
+  const outcome = reachRun([LIMITER, 'src/lib/cap.ts', 'native/fast.rs'], { repo, json: false });
+  expect(outcome.exitCode).toBe(0);
+  expect(outcome.stdout).toBe(
+    [
+      `reach of 3 paths at ${git(repo, 'rev-parse', '--short=7', 'HEAD')}: 4 files`,
+      '  src/__tests__/limiter.test.ts  cochange 50%   with src/lib/limiter.ts',
+      '  src/config.ts                  cochange 67%   with src/lib/limiter.ts',
+      '  src/lib/window.ts              import 0 hops',
+      '  src/server.ts                  import 1 hop   via src/lib/limiter.ts',
+      'new: src/lib/cap.ts',
+      'muted: import: atis reads no imports from .rs files, so native/fast.rs has no import reach',
+      '',
+    ].join('\n'),
+  );
+}, 2 * MINUTE);

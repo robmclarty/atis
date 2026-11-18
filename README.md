@@ -134,6 +134,52 @@ weather, no notices and no text, the same bytes for one commit.
 [The fingerprint's page](./docs/fingerprint.md)
 has a workflow that keeps it fresh.
 
+### Before a change
+
+A map reads a change that already happened. `atis reach` answers the question the other
+way round: name the files you mean to change, and it says what a change there would
+reach, before you make it.
+
+```bash
+atis reach src/limiter.ts src/__tests__/limiter.test.ts
+atis reach --json src/lib/
+```
+
+It answers from the checked-out `HEAD` with two kinds of evidence. The files that import
+the ones you named are reached by `import`, priced in module hops as the map prices its
+reach, with the interfaces crossed on the way. The files that usually move with them in
+history are reached by `cochange`, with the rate and the count of shared commits, held to
+the thresholds a ghost is held to; a test rides here only, since a test is never a cell.
+A `dir/` stands for every file under it, and a path that names nothing at `HEAD` yet is
+listed as `new`, with no reach of its own.
+
+With no `--json` it prints a short table. With it, it prints one object of kind
+`atis.reach` at its own `schema_version`, sorted, the same bytes for one commit and one
+set of paths:
+
+```json
+{
+  "schema_version": 1,
+  "kind": "atis.reach",
+  "head": "9f3c2a1e…",
+  "paths": ["src/limiter.ts"],
+  "new": [],
+  "reach": [
+    { "path": "src/config.ts", "by": "cochange", "rate": 0.67, "support": 4, "with": "src/limiter.ts" },
+    { "path": "src/server.ts", "by": "import", "hops": 1, "via": ["src/limiter.ts"] }
+  ],
+  "muted": []
+}
+```
+
+`--history <n>` names the window of commits it reads, as for a map, and `--no-history`
+reads none, for the import reach alone. A source that is missing mutes its half in words,
+under `muted`: a shallow clone mutes the co-change half, and a file in a language atis
+does not read has no import reach. Paths are read from `--repo`, the working directory
+unless named, and answered from the repository's root; an absolute path, or one that
+leaves the repository, is misuse. No reach is too much: `atis reach`
+exits 0 once it has answered, and what counts as too far is yours to decide.
+
 ### Everything else
 
 - `--repo <path>` reads a repository other than the working directory.

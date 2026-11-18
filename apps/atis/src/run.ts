@@ -53,12 +53,12 @@
 
 import { execFileSync, spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync } from 'node:fs';
 import { platform, tmpdir } from 'node:os';
-import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 
-import { DEFAULT_CONFIG, OVERLAY_NAMES, buildMap, buildRepoMap, configuredProducersOff, layOutTerrain } from 'core';
-import type { CheckBaseline, Commit, Config, FrameInputs, Layout, MapJson, OverlayName, Structure } from 'core';
+import { DEFAULT_CONFIG, OVERLAY_NAMES, buildMap, buildRepoMap, configuredProducersOff, layOutTerrain, reachFrom } from 'core';
+import type { CheckBaseline, Commit, Config, FrameInputs, Layout, MapJson, OverlayName, ReachAnswer, ReachedFile, Structure } from 'core';
 import type { Browser } from 'playwright-core';
 import { renderCinema, renderFingerprint, renderSvg } from 'svg';
 
@@ -771,6 +771,127 @@ export function fingerprintRun(options: FingerprintOptions): Outcome {
     return { exitCode: 0, stdout: `terrain of ${counted(map.terrain.organelles.length, 'file')} at ${shortSha(map.meta.head)}, wrote ${options.out}\n`, stderr: '' };
   } catch (error) {
     return failed(error);
+  }
+}
+
+/** The flags `atis reach` takes beside its paths: the repository, the answer as JSON or as a table, and the co-change window. */
+export type ReachRunOptions = {
+  readonly repo: string;
+  /** Print the answer as JSON; without it, a short table for a person. */
+  readonly json: boolean;
+  /** `--no-history` sets it to false: import reach only, and `muted` says so. */
+  readonly history?: boolean | undefined;
+  /** How many commits of history to read (D50); 5,000 unless named. */
+  readonly window?: number | undefined;
+  /** Whether to read and keep the terrain cache (D96); on unless told otherwise. */
+  readonly cache?: boolean | undefined;
+};
+
+/** A named path as the scan spells one: from the repository's root, `/` between its parts, the trailing slash of a `dir/` kept. */
+type NamedPath = { readonly path: string } | { readonly reason: string };
+
+/** The nearest directory entry that exists at or above `path`, resolved through every symlink on the way. */
+function realAbove(path: string): string {
+  for (let at = path; ; at = dirname(at)) {
+    if (existsSync(at) || dirname(at) === at) return realpathSync(at);
+  }
+}
+
+const climbs = (from: string): boolean => from === '..' || from.startsWith(`..${sep}`) || isAbsolute(from);
+
+/**
+ * One path `atis reach` was handed, read from `repo` and held inside the
+ * repository at `root`: an absolute path, one that climbs out, and one a
+ * symlink carries out of the tree are each misuse (C4). A path that names
+ * nothing is no misuse; core lists it as new.
+ */
+function namedPath(repo: string, root: string, typed: string): NamedPath {
+  if (typed === '') return { reason: 'reach takes paths, and one of them is empty' };
+  if (isAbsolute(typed)) return { reason: `reach takes paths inside the repository, from its root; ${typed} is absolute` };
+  const at = resolve(repo, typed);
+  const from = relative(root, at);
+  if (climbs(from)) return { reason: `reach takes paths inside the repository; ${typed} climbs out of it` };
+  if (climbs(relative(root, realAbove(at)))) return { reason: `reach takes paths inside the repository; ${typed} is a symlink out of it` };
+  const path = from.split(sep).join('/');
+  if (path === '') return { path: '.' };
+  return { path: /[\\/]$/.test(typed) ? `${path}/` : path };
+}
+
+/** The root of the repository `repo` is in and whether its clone is shallow, as git prints the two; nothing where `repo` is in no repository. */
+function repositoryAt(repo: string): readonly string[] {
+  try {
+    return git(repo, 'rev-parse', '--show-toplevel', '--is-shallow-repository').split('\n');
+  } catch (error) {
+    if (messageOf(error).includes('not a git repository') || !existsSync(repo)) return [];
+    throw error;
+  }
+}
+
+/** One reached file as a person reads it: how it is reached, and the file it came through. */
+function reachedLine(entry: ReachedFile): readonly [string, string, string] {
+  if (entry.by === 'import') {
+    const through = entry.via.length === 0 ? '' : `via ${entry.via.join(', ')}`;
+    return [entry.path, `import ${counted(entry.hops, 'hop')}`, through];
+  }
+  return [entry.path, `cochange ${String(Math.round(entry.rate * 100))}%`, `with ${entry.with}`];
+}
+
+/** The answer as a short table for a person: one line a reached file, then the new paths and what was muted. */
+function reachTable(answer: ReachAnswer): string {
+  const rows = answer.reach.map(reachedLine);
+  const wide = (column: 0 | 1): number => Math.max(0, ...rows.map((row) => row[column].length));
+  const lines = [
+    `reach of ${counted(answer.paths.length, 'path')} at ${shortSha(answer.head)}: ${counted(answer.reach.length, 'file')}`,
+    ...rows.map(([path, bin, through]) => `  ${path.padEnd(wide(0))}  ${bin.padEnd(wide(1))}  ${through}`.trimEnd()),
+    ...answer.new.map((path) => `new: ${path}`),
+    ...answer.muted.map((reason) => `muted: ${reason}`),
+  ];
+  return `${lines.join('\n')}\n`;
+}
+
+/**
+ * Answer what a change to `paths` would reach, before it is made: the head's
+ * scan from the terrain cache when it holds that commit, else scanned and
+ * kept as any base is (D96), and the log window read back from the head,
+ * both handed to core's `reachFrom`. A shallow clone mutes the co-change
+ * half with the commits it could read, and `--no-history` mutes it by
+ * asking. Exits 0 once the answer printed and 2 on misuse or a repository
+ * it cannot read (C4); no reach is too much, so no exit code says so.
+ */
+export function reachRun(paths: readonly string[], options: ReachRunOptions): Outcome {
+  const repo = resolve(options.repo);
+  const timings: Timing[] = [];
+  const extractions: Extraction[] = [];
+  try {
+    const [top, shallow = ''] = repositoryAt(repo);
+    if (top === undefined) return { exitCode: 2, stdout: '', stderr: `atis: ${repo} is not a git repository\n` };
+    const head = commitAt(repo, HEAD);
+    // Both through their symlinks, so a path is measured from the root git names, not from how the directory was reached.
+    const root = realpathSync(top);
+    const named = paths.map((path) => namedPath(realpathSync(repo), root, path));
+    const refused = named.flatMap((path) => ('reason' in path ? [path.reason] : []))[0];
+    if (refused !== undefined) return { exitCode: 2, stdout: '', stderr: `atis: ${refused}\n` };
+
+    const config = configAt(repo, head.sha);
+    const scanAt = (source: string, sha: string): Side =>
+      timed(timings, source, () => {
+        const extraction = extract(repo, sha);
+        extractions.push(extraction);
+        return { tree: extraction.tree, ...readTree(extraction.tree, { repo, off: config.producers_off }) };
+      });
+    const ground = groundAt({ repo, timings, scanAt, history: options.window ?? HISTORY_WINDOW, config }, head.sha, options.cache !== false, 'head');
+    const muted = options.history === false ? '--no-history asked for import reach only' : shallow === 'true' ? `the clone is shallow, so history reads ${counted(ground.commits.length, 'commit')}` : undefined;
+    const answer = reachFrom(
+      named.flatMap((path) => ('path' in path ? [path.path] : [])),
+      ground.scan,
+      ground.commits,
+      { head: head.sha, config, ...(muted === undefined ? {} : { cochange_muted: muted }) },
+    );
+    return { exitCode: 0, stdout: options.json ? serialize(answer) : reachTable(answer), stderr: '' };
+  } catch (error) {
+    return failed(error);
+  } finally {
+    for (const extraction of extractions) rmSync(extraction.root, { recursive: true, force: true });
   }
 }
 

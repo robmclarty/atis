@@ -6,8 +6,9 @@
  * world beside it as a PNG (D105), `serveRun`, which serves the world instead
  * (D92), `serve`, the loopback server beneath both, `fingerprintRun`, which
  * writes the terrain alone for a README (D107), `commentRun`, which posts
- * the map to the branch's pull request (D108), and `mcpRun`, which serves
- * the tools an agent points at the map with (D110).
+ * the map to the branch's pull request (D108), `mcpRun`, which serves the
+ * tools an agent points at the map with (D110), and `reachRun`, which answers
+ * what a change to some paths would reach before it is made.
  */
 
 import { SCHEMA_VERSION } from 'core';
@@ -29,6 +30,7 @@ export const USAGE = `${NAME} ${VERSION}: a weather map for code changes.
   atis --whole-repo [--head <ref>] [options]
   atis fingerprint --out <svg> [--repo <path>] [--head <ref>]
   atis mcp [--repo <path>] [--map <file>]
+  atis reach [--json] [--history <n> | --no-history] [--repo <path>] <paths...>
 
 With no --out, --svg or --png, atis serves the world on 127.0.0.1 at a port of
 its own, opens it in a tab, and runs until interrupted.
@@ -43,6 +45,15 @@ reaches a file, and explain gives a notice's why, inputs and thresholds. They
 read the map the tab atis serves in the repository holds, found by the
 atis/serve.json its git directory keeps; with no tab open, reach and explain
 read the map --map names, and highlight says no tab is open.
+
+atis reach answers, before a change is made, what a change to the paths
+would reach: the files that import them, priced by module hop, and the files
+that usually move with them in history. The paths are read from --repo and
+answered from the repository's root; a dir/ stands for every file under it,
+and a path that names nothing at HEAD yet is listed as new. It prints a
+table, or with --json one object of kind atis.reach, the same bytes for one
+commit and one set of paths. No reach is too much: it exits 0 once it has
+answered.
 
   --repo <path>   the repository to read (default: the working directory)
   --map <file>    for atis mcp, the map reach and explain read when no tab is
@@ -99,6 +110,8 @@ read the map --map names, and highlight says no tab is open.
                   measured per commit in atis/structure/, under the git
                   directory
   --history <n>   read the newest <n> commits of history (default 5000)
+  --json          for atis reach, print the answer as JSON rather than a table
+  --no-history    for atis reach, read no history: import reach alone
   --verbose       print per-source timings, and each cache's hit or miss, on
                   stderr
   --version, -V   print the version
