@@ -470,3 +470,14 @@ export const DRIFT_EASE_MS = 600;
  */
 export const MEMBRANE_WOBBLE = 3;
 export const MEMBRANE_WOBBLE_HZ = 0.15;
+
+/**
+ * A bypass in motion, at the surface (Q84, Q93): a ribbon whose import enters
+ * a module past its interface sways, a wave travelling along its bow, this
+ * far either side of where it lies, in layout units, at this rate (Hz).
+ * Every other ribbon holds still. The sway keeps within three widths of the
+ * line, so it reads as the line moving and never as a second line, and slow
+ * enough to follow.
+ */
+export const RIBBON_SWAY = 1.5;
+export const RIBBON_SWAY_HZ = 0.3;

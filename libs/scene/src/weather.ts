@@ -10,7 +10,8 @@
  * co-change. Each cell carries the reach at its nearest hop, dimmer by a
  * fixed share per membrane crossed (D5), and the storms over it, split by
  * whether the red is the change's (D68). The exceptional edges come beside
- * them. A changed file the change made healthier carries what got better,
+ * them, each saying whether its import enters a module past its interface,
+ * which is what its ribbon sways for in the world (Q84, Q93). A changed file the change made healthier carries what got better,
  * the calm-positive state its hue wears (D98), and a renamed one the place
  * its base put it, which its leader starts from (D40, D97). Each attribute
  * has one channel of C11 and no other.
@@ -25,7 +26,7 @@
  */
 
 import { readRedSplit } from 'core';
-import type { ChangeKind, ExceptionalEdge, Improvement, MapJson, ReachEntry, Stitch, Terrain } from 'core';
+import type { Cell, ChangeKind, ExceptionalEdge, Improvement, MapJson, ReachEntry, Stitch, Terrain } from 'core';
 
 import { gridFor } from './heightfield.js';
 import type { Grid } from './heightfield.js';
@@ -118,13 +119,20 @@ export type CellWeather = {
   readonly storms: readonly Storm[];
 };
 
+/**
+ * An exceptional edge as the scene hands it on: the map's own, and whether
+ * its import enters a module past its interface (Q84, Q93), the one thing a
+ * ribbon sways for. The still map draws the edge as it always did (C10).
+ */
+export type SceneEdge = ExceptionalEdge & { readonly sway: boolean };
+
 export type SceneWeather = {
   readonly files: readonly FileWeather[];
   readonly cells: readonly CellWeather[];
   /** Every storm the map hangs, the change's first, then the standing ones, each list by slot (C3). */
   readonly storms: readonly Storm[];
   /** The exceptional edges between placed files, the only lines on the map (§5.1). */
-  readonly edges: readonly ExceptionalEdge[];
+  readonly edges: readonly SceneEdge[];
 };
 
 function byPath(a: string, b: string): number {
@@ -368,12 +376,51 @@ function cellsOf(map: MapJson, storms: readonly Storm[]): readonly CellWeather[]
   });
 }
 
-/** The exceptional edges whose two ends the layout placed, by importer, imported and kind. */
-function edgesOf(map: MapJson): readonly ExceptionalEdge[] {
+/** Every cell whose contour holds each terrain file: its own cell, and each cell that one sits in, as core's integrity reads a contour (D192). */
+function holdersOf(cells: readonly Cell[]): ReadonlyMap<string, readonly Cell[]> {
+  const byId = new Map(cells.map((cell) => [cell.id, cell] as const));
+  const holders = new Map<string, readonly Cell[]>();
+  for (const cell of cells) {
+    const chain: Cell[] = [];
+    let at: Cell | undefined = cell;
+    while (at !== undefined && !chain.includes(at)) {
+      chain.push(at);
+      at = at.parent === undefined ? undefined : byId.get(at.parent);
+    }
+    for (const path of cell.organelles) holders.set(path, chain);
+  }
+  return holders;
+}
+
+/**
+ * Whether an import enters a module past its interface (Q84, Q93): its `to`
+ * lies in the contour of a cell with a barrel, is not that barrel, and its
+ * `from` lies outside that contour. It is the import core counts as `past`
+ * for that cell (D192), so a ribbon sways exactly where it is one of the
+ * imports its target's membrane ripples by. An import between two files of
+ * one contour enters nothing, a directory or a single file has no barrel to
+ * be entered past, and neither has a cell whose barrel the change deleted
+ * (C2), so each of those holds still.
+ */
+function swayOf(map: MapJson): (edge: ExceptionalEdge) => boolean {
+  const holders = holdersOf(map.terrain.cells);
+  const deleted = new Set(map.weather.changed.filter((file) => file.kind === 'deleted').map((file) => file.path));
+  return ({ from, to }) => {
+    const outside = holders.get(from);
+    const entered = holders.get(to);
+    if (from === to || outside === undefined || entered === undefined) return false;
+    return entered.some((cell) => cell.barrel !== undefined && !deleted.has(cell.barrel) && to !== cell.barrel && !outside.includes(cell));
+  };
+}
+
+/** The exceptional edges whose two ends the layout placed, by importer, imported and kind, each with whether it sways. */
+function edgesOf(map: MapJson): readonly SceneEdge[] {
   const positions = map.terrain.layout?.positions ?? {};
+  const sways = swayOf(map);
   return map.terrain.edges_exceptional
     .filter((edge) => positions[edge.from] !== undefined && positions[edge.to] !== undefined)
-    .toSorted((a, b) => byPath(a.from, b.from) || byPath(a.to, b.to) || byPath(a.kind, b.kind));
+    .toSorted((a, b) => byPath(a.from, b.from) || byPath(a.to, b.to) || byPath(a.kind, b.kind))
+    .map((edge) => ({ ...edge, sway: sways(edge) }));
 }
 
 /** A renamed file's leader on the field: from the place its base's layout gave it to the rim of where it is. */

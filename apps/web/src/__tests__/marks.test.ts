@@ -181,7 +181,35 @@ test('an exceptional edge is a ribbon along the bow, pulled back to each file, w
     expect(Math.hypot((last?.[0] ?? 0) - (to?.x ?? 0), (last?.[1] ?? 0) - (to?.y ?? 0))).toBeCloseTo(to?.r ?? 0, 6);
     expect(ribbon.arrow).toMatchObject({ x: last?.[0], y: last?.[1], size: ARROW_SIZE });
     expect(ribbon.points.length).toBeGreaterThan(8);
+    expect(ribbon.sway).toBe(edge?.sway);
   });
+});
+
+test("a ribbon sways where its edge enters a module past its interface, and holds still on a barrel, inside one cell, and as a renamed file's leader (Q84, Q93)", () => {
+  const edges: MapJson['terrain']['edges_exceptional'] = [
+    // From another package onto a file of the pm folder that is not its barrel: past the interface.
+    { from: 'apps/cli/src/doctor.ts', to: 'libs/core/src/pm/slots.ts', kind: 'boundary' },
+    // From another package onto the core package's barrel: through it.
+    { from: 'apps/cli/src/doctor.ts', to: 'libs/core/src/index.ts', kind: 'new-cross-module' },
+    // A cycle inside the util directory, which has no barrel.
+    { from: 'libs/core/src/util/format.ts', to: 'libs/core/src/util/text.ts', kind: 'cycle' },
+  ];
+  const map: MapJson = { ...DEMO, terrain: { ...DEMO.terrain, edges_exceptional: edges } };
+  expect(marksOf(map).ribbons.map((ribbon) => [ribbon.from, ribbon.to, ribbon.sway])).toEqual([
+    ['apps/cli/src/doctor.ts', 'libs/core/src/index.ts', false],
+    ['apps/cli/src/doctor.ts', 'libs/core/src/pm/slots.ts', true],
+    ['libs/core/src/util/format.ts', 'libs/core/src/util/text.ts', false],
+  ]);
+  // The same map gives the same marks, in any order its edges and cells arrive in (C3).
+  const shuffled: MapJson = { ...map, terrain: { ...map.terrain, edges_exceptional: edges.toReversed(), cells: map.terrain.cells.toReversed() } };
+  expect(marksOf(shuffled).ribbons).toEqual(marksOf(map).ribbons);
+});
+
+test('the corpus fixture the sway is judged on carries its swaying ribbons among its still ones (Q94)', () => {
+  const map = assertMap(JSON.parse(readFileSync(join(FIXTURES, 'corpus-7', 'map.json'), 'utf8')));
+  const edges = marksOf(map).ribbons.filter((ribbon) => ribbon.kind !== 'renamed');
+  expect(edges.length).toBeGreaterThan(2);
+  expect(edges.filter((ribbon) => ribbon.sway)).toHaveLength(2);
 });
 
 test("a renamed file's leader is dashed ribbons from where its base put it to its rim, the scene's own, in its state's hue (D40, D90, D97)", () => {
@@ -204,6 +232,8 @@ test("a renamed file's leader is dashed ribbons from where its base put it to it
   // The SVG's golden draws this leader from (170, 380) to (206.66, 408.4); the world lays the same line in dashes.
   expect(leader?.from).toEqual([170, 380]);
   expect(dashes.length).toBeGreaterThan(3);
+  // A leader is no import, so it never sways.
+  expect(dashes.every((dash) => !dash.sway)).toBe(true);
   expect(dashes[0]?.points[0]).toEqual([170, 380]);
   const end = dashes.at(-1)?.points[1];
   expect(end?.[0]).toBeCloseTo(leader?.to[0] ?? 0, 6);

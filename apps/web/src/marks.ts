@@ -1,7 +1,8 @@
 /**
  * marks: the weather as the world draws it, worked out from the scene's one
  * derivation (`weatherOf`, D90) into flat records a GPU instances: a sector
- * per mark on a file, a bolt per storm, a ribbon per exceptional edge, and a
+ * per mark on a file, a bolt per storm, a ribbon per exceptional edge, marked
+ * where it sways for entering a module past its interface (Q84), and a
  * label for each old path and each change storm's slot. Every mark the still
  * SVG draws has its record here, mark for mark (D86), with the same tokens
  * for its size and the same hue by meaning (C11); the hues themselves are
@@ -112,9 +113,11 @@ export type Bolt = { readonly slot: string; readonly place: string; readonly x: 
 
 /**
  * A line as a ribbon: an exceptional edge, its points along the bow, its hue
- * by kind, and the arrowhead's tip and heading at the imported end; or one
- * dash of a renamed file's leader, from its old path to its new, `renamed`
- * by kind, its own width and no arrowhead (D40, D97).
+ * by kind, the arrowhead's tip and heading at the imported end, and whether
+ * it sways, which it does when its import enters a module past its interface
+ * (Q84, Q93); or one dash of a renamed file's leader, from its old path to
+ * its new, `renamed` by kind, its own width, no arrowhead and never swaying
+ * (D40, D97).
  */
 export type Ribbon = {
   readonly from: string;
@@ -122,6 +125,7 @@ export type Ribbon = {
   readonly kind: string;
   readonly points: readonly (readonly [number, number])[];
   readonly hue: Hue;
+  readonly sway: boolean;
   readonly arrow?: { readonly x: number; readonly y: number; readonly angle: number; readonly size: number };
   readonly width?: number;
 };
@@ -369,7 +373,7 @@ const ribbonsOf = (map: MapJson, weather: SceneWeather): readonly Ribbon[] => {
       const u = 1 - t;
       return [u * u * x1 + 2 * u * t * control.x + t * t * x2, u * u * y1 + 2 * u * t * control.y + t * t * y2];
     });
-    return [{ from: edge.from, to: edge.to, kind: edge.kind, points, hue: edge.kind === 'new-cross-module' ? 'change' : 'lifr', arrow: { x: x2, y: y2, angle: Math.atan2(y2 - control.y, x2 - control.x), size: ARROW_SIZE } }];
+    return [{ from: edge.from, to: edge.to, kind: edge.kind, points, hue: edge.kind === 'new-cross-module' ? 'change' : 'lifr', sway: edge.sway, arrow: { x: x2, y: y2, angle: Math.atan2(y2 - control.y, x2 - control.x), size: ARROW_SIZE } }];
   });
 };
 
@@ -402,7 +406,7 @@ const leadersOf = (map: MapJson, weather: SceneWeather): readonly Ribbon[] => {
     const leader = at === undefined ? undefined : renameLeaderOf(change, at);
     if (leader === undefined || change === undefined) return [];
     const hue = stateHue(change);
-    return dashesOf(leader.from, leader.to, dashOf(RENAME_DASH)).map(([a, b]) => ({ from: change.from ?? file.path, to: file.path, kind: 'renamed', points: [a, b], hue, width: RENAME_LEADER_WIDTH }));
+    return dashesOf(leader.from, leader.to, dashOf(RENAME_DASH)).map(([a, b]) => ({ from: change.from ?? file.path, to: file.path, kind: 'renamed', points: [a, b], hue, sway: false, width: RENAME_LEADER_WIDTH }));
   });
 };
 

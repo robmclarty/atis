@@ -216,6 +216,8 @@ export const SECTIONS: readonly Section[] = [
       'DRIFT_EASE_MS',
       'MEMBRANE_WOBBLE',
       'MEMBRANE_WOBBLE_HZ',
+      'RIBBON_SWAY',
+      'RIBBON_SWAY_HZ',
     ],
   },
 ];

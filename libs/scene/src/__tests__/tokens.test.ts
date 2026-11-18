@@ -103,6 +103,8 @@ const MOTION_BOUNDS: Readonly<Record<string, Bound>> = {
     why: "a rippling skin never reaches a sibling's (D171, D195): under half the layout's sibling gap, so two that ripple toward each other still keep apart, and under a tooth's pull, so a tooth stands clear of the ripple",
   },
   MEMBRANE_WOBBLE_HZ: { above: 0, atMost: 0.5, why: 'a slow ripple (D195): two seconds or longer a swell, so the teeth and the line stay readable' },
+  RIBBON_SWAY: { above: 0, atMost: 3 * tokens.EDGE_WIDTH, why: 'a ribbon sways within three of its own widths (Q84): further and it reads as a second line beside the first' },
+  RIBBON_SWAY_HZ: { above: 0, atMost: 0.5, why: 'a slow sway (Q84): two seconds or longer a swing, slow enough to follow' },
 };
 
 const VALUES: Readonly<Record<string, unknown>> = tokens;
@@ -182,7 +184,7 @@ test("the layout's sibling gap, which bounds the ripple, is the one core's layou
   expect(valueOf('MEMBRANE_WOBBLE')).toBeLessThan(valueOf('MEMBRANE_DENT_PULL'));
 });
 
-test("design.md's motion table names exactly the tokens §5.5, D147, D157, D165, D193 and D195 bound", () => {
+test("design.md's motion table names exactly the tokens §5.5, D147, D157, D165, D193, D195 and Q84 bound", () => {
   const doc = readFileSync(DESIGN, 'utf8');
   const section = doc.split(/^## /m).find((part) => part.startsWith('Motion'));
   expect(section, 'design.md has no Motion section').toBeDefined();

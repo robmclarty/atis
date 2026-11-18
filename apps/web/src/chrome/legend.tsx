@@ -14,6 +14,7 @@
  */
 
 import {
+  ARROW_SIZE,
   CALLOUT_FONT_SIZE,
   CALLOUT_R,
   CATEGORY_LETTERS,
@@ -25,6 +26,7 @@ import {
   CHROME_STROKE_WIDTH,
   CROSSING_OPACITY,
   CROSSING_PAD,
+  EDGE_WIDTH,
   EVIDENCE_LIGHT,
   FONT_FAMILY,
   GHOST_DASH,
@@ -82,6 +84,7 @@ import { useLive } from './live.js';
 
 /** The tokens the inset is drawn with, at rest: the shape its live view takes. */
 const LOOK = {
+  ARROW_SIZE,
   CALLOUT_FONT_SIZE,
   CALLOUT_R,
   CATEGORY_LETTERS,
@@ -93,6 +96,7 @@ const LOOK = {
   CHROME_STROKE_WIDTH,
   CROSSING_OPACITY,
   CROSSING_PAD,
+  EDGE_WIDTH,
   EVIDENCE_LIGHT,
   FONT_FAMILY,
   GHOST_DASH,
@@ -271,21 +275,38 @@ const NUCLEUS_DOTS: readonly (readonly [number, number, number])[] = [
   [0.2, -0.48, 0.12],
 ];
 
-/** How many swells the ripple's sample draws across its slot, and how far each stands off the line's rest as a share of the sample radius. */
-const RIPPLE_SWELLS = 2;
-const RIPPLE_SWING = 0.35;
-/** How many straight pieces draw each swell. */
-const RIPPLE_STEPS = 12;
+/** How many swells a moving line's sample draws across its slot, how far each stands off the line's rest as a share of the sample radius, and how many straight pieces draw each swell. */
+const WAVE_SWELLS = 2;
+const WAVE_SWING = 0.35;
+const WAVE_STEPS = 12;
 
-/** The ripple's sample (D195): a stretch of membrane line caught mid-ripple, a sine across the slot in the membrane's own ink, as thin as the thinnest skin, at rest on the row's middle. */
-const Ripple = ({ look }: { readonly look: Look }): ReactElement => {
-  const half = look.LEGEND_SLOT / 2 - look.LEGEND_PAD / 2;
-  const count = RIPPLE_SWELLS * RIPPLE_STEPS;
+/** A line caught mid-wave: a sine from `from` to `to` across the slot, at rest on the row's middle and back on it at each end. */
+const waveOf = (look: Look, from: number, to: number): string => {
+  const count = WAVE_SWELLS * WAVE_STEPS;
   const points = Array.from({ length: count + 1 }, (_, index) => {
     const share = index / count;
-    return `${(-half + 2 * half * share).toFixed(2)} ${(look.LEGEND_SAMPLE_R * RIPPLE_SWING * Math.sin(2 * Math.PI * RIPPLE_SWELLS * share)).toFixed(2)}`;
+    return `${(from + (to - from) * share).toFixed(2)} ${(look.LEGEND_SAMPLE_R * WAVE_SWING * Math.sin(2 * Math.PI * WAVE_SWELLS * share)).toFixed(2)}`;
   });
-  return <path data-ripple d={`M${points.join('L')}`} fill="none" stroke={look.MEMBRANE_STROKE} strokeWidth={membraneThickness(0)} strokeLinejoin="round" />;
+  return `M${points.join('L')}`;
+};
+
+/** The ripple's sample (D195): a stretch of membrane line caught mid-ripple, in the membrane's own ink, as thin as the thinnest skin. */
+const Ripple = ({ look }: { readonly look: Look }): ReactElement => {
+  const half = look.LEGEND_SLOT / 2 - look.LEGEND_PAD / 2;
+  return <path data-ripple d={waveOf(look, -half, half)} fill="none" stroke={look.MEMBRANE_STROKE} strokeWidth={membraneThickness(0)} strokeLinejoin="round" />;
+};
+
+/** The sway's sample (Q84): a ribbon caught mid-sway, as wide as an edge, ending on its arrowhead, which stays where it points; in the chrome's ink, since a ribbon keeps the hue of its kind and the sway says nothing of it. */
+const Sway = ({ look }: { readonly look: Look }): ReactElement => {
+  const half = look.LEGEND_SLOT / 2 - look.LEGEND_PAD / 2;
+  const tip = half;
+  const base = tip - look.ARROW_SIZE;
+  return (
+    <>
+      <path data-sway d={waveOf(look, -half, base)} fill="none" stroke={look.CHROME_INK} strokeWidth={look.EDGE_WIDTH} strokeLinejoin="round" />
+      <path d={`M${String(tip)} 0L${String(base)} ${String(-look.ARROW_SIZE / 2)}L${String(base)} ${String(look.ARROW_SIZE / 2)}Z`} fill={look.CHROME_INK} />
+    </>
+  );
 };
 
 /** Each mark's sample, drawn about the origin in the sheet's units; the category's is a scale of flat blocks instead. */
@@ -378,6 +399,8 @@ const sampleOf = (id: string, look: Look): ReactNode => {
       );
     case 'ripple':
       return <Ripple look={look} />;
+    case 'sway':
+      return <Sway look={look} />;
     default:
       return null;
   }

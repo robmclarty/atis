@@ -10,9 +10,11 @@ import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
 import {
   CHROME_GROUND,
+  CHROME_INK,
   CHROME_MUTED,
   CROSSING_OPACITY,
   CROSSING_PAD,
+  EDGE_WIDTH,
   HATCH_WIDTH,
   IFR_HUE,
   LEGEND_SAMPLE_R,
@@ -161,8 +163,13 @@ test("the world's Size counts the terrain alone, as the sheet's does, so a chang
 });
 
 test('the legend keys the same marks in the same words as the sheet, and the shape key says the same', () => {
-  // The world keys two marks the sheet does not, last: the nucleus, which only an opened cell draws (D201), and the membrane's ripple, which is motion and so the world's alone (D195, C10).
-  expect(LEGEND).toEqual([...SHEET_LEGEND, { id: 'nucleus', words: 'nucleus: its functions, sized by their lines' }, { id: 'ripple', words: 'membrane ripples: imported past its interface' }]);
+  // The world keys three marks the sheet does not, last: the nucleus, which only an opened cell draws (D201), and the two that are motion and so the world's alone (C10), the membrane's ripple (D195) and the swaying line (Q84).
+  expect(LEGEND).toEqual([
+    ...SHEET_LEGEND,
+    { id: 'nucleus', words: 'nucleus: its functions, sized by their lines' },
+    { id: 'ripple', words: 'membrane ripples: imported past its interface' },
+    { id: 'sway', words: 'swaying line: enters a module past its interface' },
+  ]);
   expect(SHAPE_KEY_WORDS).toBe(SHEET_SHAPE_KEY_WORDS);
   expect(over('#ffffff', '#000000', 0.5)).toBe('#808080');
   expect(over('#e6edf3', '#1a1f27', 0)).toBe('#1a1f27');
@@ -269,6 +276,21 @@ test("the ripple's row draws a membrane line caught mid-ripple, in the membrane'
   expect(Math.min(...heights)).toBeLessThan(0);
   expect(heights[0]).toBeCloseTo(0, 6);
   expect(heights.at(-1)).toBeCloseTo(0, 6);
+});
+
+test("the sway's row draws a line caught mid-sway, as wide as an edge, ending on an arrowhead that stays on the row's middle (Q84)", async () => {
+  await act(async () => root.render(<Legend registry={createRegistry()} />));
+  const line = host.querySelector('[data-legend] [data-mark="sway"] svg [data-sway]');
+  expect(line?.getAttribute('stroke')).toBe(CHROME_INK);
+  expect(line?.getAttribute('stroke-width')).toBe(String(EDGE_WIDTH));
+  const heights = [...(line?.getAttribute('d') ?? '').matchAll(/[ML](-?[\d.]+) (-?[\d.]+)/g)].map((point) => Number(point[2]));
+  expect(Math.max(...heights)).toBeGreaterThan(0);
+  expect(Math.min(...heights)).toBeLessThan(0);
+  // The wave comes back to rest where the arrowhead takes over, and the arrowhead's tip lies on the row's middle.
+  expect(heights.at(-1)).toBeCloseTo(0, 6);
+  const [, head] = [...host.querySelectorAll('[data-legend] [data-mark="sway"] svg path')];
+  expect(head?.getAttribute('fill')).toBe(CHROME_INK);
+  expect(head?.getAttribute('d')).toMatch(/^M[\d.]+ 0L/);
 });
 
 test("a new row's sample follows its token live from the registry, as every look the dev panel moves does", async () => {

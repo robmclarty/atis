@@ -176,8 +176,8 @@ export type LegendMark = { readonly id: string; readonly words: string };
  * last the history's two textures (D166). A test holds the list to
  * `libs/svg`'s, and to the marks the world keys past it, last so no number
  * moves: the nucleus, which only an opened cell draws and the still sheet
- * never does (D197, D201), and the membrane's ripple, which is motion and so
- * the world's alone (D195, C10).
+ * never does (D197, D201), and the two that are motion and so the world's
+ * alone (C10): the membrane's ripple (D195) and the swaying line (Q84).
  */
 export const LEGEND: readonly LegendMark[] = [
   { id: 'category', words: 'category: set by the change alone' },
@@ -196,6 +196,7 @@ export const LEGEND: readonly LegendMark[] = [
   { id: 'stipple', words: 'stipple: how many of its commits fixed bugs' },
   { id: 'nucleus', words: 'nucleus: its functions, sized by their lines' },
   { id: 'ripple', words: 'membrane ripples: imported past its interface' },
+  { id: 'sway', words: 'swaying line: enters a module past its interface' },
 ];
 
 /** What the key of the seven shapes says beside them (D194). */

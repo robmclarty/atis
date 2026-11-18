@@ -350,14 +350,17 @@ words. Under them a last row keys the shape spectrum (D194 (shape-spectrum)):
 seven samples along it, the smooth end at the left and the spiky at the right,
 `LEGEND_KEY_PITCH` apart, then their words, `shape: trouble, smooth to spiky`. It keys
 a scale, as the category row does, so it takes no number and the practice map
-hangs no balloon on it. The world's legend keys two marks more than the sheet's,
+hangs no balloon on it. The world's legend keys three marks more than the sheet's,
 last so no number moves. The first is `nucleus: its functions, sized by their lines`,
 a body with a few granules of unlike sizes inside it (D197 (nuclei)). Only an opened
 cell draws a nucleus, and the still sheet draws no opened cell, so its legend
 keys none (D201 (slide-only-svg)). The second is
 `membrane ripples: imported past its interface`, a stretch of membrane line caught
-mid-ripple (D195 (living-membranes)); the ripple is motion, which the still sheet
-never draws (C10), so its legend keys none there either. A cell's hover tag
+mid-ripple (D195 (living-membranes)), and the third
+`swaying line: enters a module past its interface`, a line caught mid-sway with its
+arrowhead, in the chrome's ink since a ribbon keeps the hue of its kind
+(Q84 (oscillating-links)). Both are motion, which the still sheet never draws (C10),
+so its legend keys neither. A cell's hover tag
 gives the two counts behind its ripple after its folder, `libs/core · 1 through, 1 past`,
 and its folder alone where the map counted none (Q95 (ripple-by-share)). The samples are the world's own shapes and inks drawn flat (D12): no
 opacity, no blur, no pattern. Each ink the world draws at a share is laid already
@@ -768,6 +771,8 @@ bound changes §5.5 itself, and moves the bound in the test with it.
 | `DRIFT_EASE_MS` | `600` | above 0, at most 600: a transient | how long the float takes to ease in as a cell opens |
 | `MEMBRANE_WOBBLE` | `3` | above 0, below 8: under half the layout's sibling gap (10) and under `MEMBRANE_DENT_PULL` (8), so a rippling skin never reaches a sibling's (D171) | how far a cell's membrane line ripples either side of where it rests, in layout units, when every import from outside the cell lands past its barrel (D195 (living-membranes)); a cell's is this times `past / (through + past)` from its `integrity` (`wobbleOf` in `libs/scene/src/membranes.ts`), so one entered only through its barrel holds still, and so does a cell the map gives no `integrity`: a directory, a single file, or a cell nothing outside imports |
 | `MEMBRANE_WOBBLE_HZ` | `0.15` | above 0, at most 0.5: a slow ripple, two seconds or longer a swell | how fast the ripple runs, in Hz: a swell every 6.7 s, slow enough that the teeth and the line's width stay readable |
+| `RIBBON_SWAY` | `1.5` | above 0, at most 3: three times `EDGE_WIDTH`, so it reads as the line moving and never as a second line | how far a ribbon sways either side of where it lies, in layout units, when its import enters a module past its interface (Q84 (oscillating-links), Q93 (sway-from-outside)): its `to` lies in the contour of a cell with a barrel, is not that barrel, and its `from` lies outside that contour, the import core counts as `past` for that cell (`sway` on each of `weatherOf().edges`); every other ribbon, and a renamed file's leader, holds still |
+| `RIBBON_SWAY_HZ` | `0.3` | above 0, at most 0.5: a slow sway, two seconds or longer a swing | how fast a swaying ribbon swings, in Hz: once every 3.3 s |
 
 The curves are shapes rather than tokens, and the spike drew them this way, so
 the scheduler that owns them draws what Rob judged. A flare rises over

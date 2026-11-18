@@ -176,7 +176,96 @@ test('a ghost carries the changed files it usually changes with, and the edges k
     { from: 'libs/core/src/util/format.ts', to: 'libs/core/src/util/text.ts', kind: 'cycle' as const },
     { from: 'libs/core/src/__tests__/pm.test.ts', to: 'libs/core/src/pm/index.ts', kind: 'new-cross-module' as const },
   ];
-  expect(weatherOf(withWeather({}, { edges_exceptional: edges })).edges).toEqual([edges[1], edges[0]]);
+  // Both are a cycle inside a directory, which has no barrel to be entered past, so neither sways.
+  expect(weatherOf(withWeather({}, { edges_exceptional: edges })).edges).toEqual([edges[1], edges[0]].map((edge) => ({ ...edge, sway: false })));
+});
+
+/** The demo's edges replaced, read back as `from → to` and whether each sways. */
+function swaysOf(edges: MapJson['terrain']['edges_exceptional'], map: MapJson = DEMO): readonly (readonly [string, boolean])[] {
+  return weatherOf({ ...map, terrain: { ...map.terrain, edges_exceptional: edges } }).edges.map((edge) => [`${edge.from} → ${edge.to}`, edge.sway] as const);
+}
+
+const KINDS = ['boundary', 'cycle', 'new-cross-module'] as const;
+const DOCTOR = 'apps/cli/src/doctor.ts';
+const CLI = 'apps/cli/src/index.ts';
+const CORE_BARREL = 'libs/core/src/index.ts';
+const PM_BARREL = 'libs/core/src/pm/index.ts';
+const SLOTS = 'libs/core/src/pm/slots.ts';
+const TOOLS = 'libs/core/src/pm/tools.ts';
+const FORMAT = 'libs/core/src/util/format.ts';
+const TEXT = 'libs/core/src/util/text.ts';
+
+test.each(KINDS)('a %s edge that lands on a barrel holds still, and one that lands past it from outside sways (Q84, Q93, D192)', (kind) => {
+  // Onto the core package's own barrel from another package: through its interface.
+  expect(swaysOf([{ from: DOCTOR, to: CORE_BARREL, kind }])).toEqual([[`${DOCTOR} → ${CORE_BARREL}`, false]]);
+  // Onto a file of the pm folder that is not its barrel, from another package: past the folder's interface, and the package's.
+  expect(swaysOf([{ from: DOCTOR, to: SLOTS, kind }])).toEqual([[`${DOCTOR} → ${SLOTS}`, true]]);
+  // Onto the pm folder's barrel from outside the folder but inside its package: through the folder, and it enters the package from nowhere.
+  expect(swaysOf([{ from: FORMAT, to: PM_BARREL, kind }])).toEqual([[`${FORMAT} → ${PM_BARREL}`, false]]);
+  // Past the pm folder's barrel from a sibling inside the package: the folder is entered past its interface.
+  expect(swaysOf([{ from: FORMAT, to: SLOTS, kind }])).toEqual([[`${FORMAT} → ${SLOTS}`, true]]);
+});
+
+test("an import onto a folder's barrel from another package comes through the folder and past the package it sits in, so it sways, as core counts it (D192)", () => {
+  expect(swaysOf([{ from: DOCTOR, to: PM_BARREL, kind: 'boundary' }])).toEqual([[`${DOCTOR} → ${PM_BARREL}`, true]]);
+  // With the package's barrel gone from the map, only the folder's interface is left to be entered, and it is entered through.
+  const cells = DEMO.terrain.cells.map((cell) => {
+    if (cell.id !== CORE) return cell;
+    const { barrel: _, ...rest } = cell;
+    return rest;
+  });
+  expect(swaysOf([{ from: DOCTOR, to: PM_BARREL, kind: 'boundary' }], { ...DEMO, terrain: { ...DEMO.terrain, cells } })).toEqual([[`${DOCTOR} → ${PM_BARREL}`, false]]);
+});
+
+test('a cycle inside one barrelled cell holds still, and so does one in a directory with no barrel, and an edge into either from a cell with no barrel of its own (Q93, C2)', () => {
+  // Between two files of the pm folder: nothing entered the folder, though neither end is its barrel.
+  expect(
+    swaysOf([
+      { from: SLOTS, to: TOOLS, kind: 'cycle' },
+      { from: TOOLS, to: SLOTS, kind: 'cycle' },
+    ]),
+  ).toEqual([
+    [`${SLOTS} → ${TOOLS}`, false],
+    [`${TOOLS} → ${SLOTS}`, false],
+  ]);
+  // Between two files of the util directory, which has no barrel, inside a package they both sit in.
+  expect(
+    swaysOf([
+      { from: FORMAT, to: TEXT, kind: 'cycle' },
+      { from: TEXT, to: FORMAT, kind: 'cycle' },
+    ]),
+  ).toEqual([
+    [`${FORMAT} → ${TEXT}`, false],
+    [`${TEXT} → ${FORMAT}`, false],
+  ]);
+  // Into the barrel-less directory from the folder beside it: no interface was passed, the package holding both.
+  expect(swaysOf([{ from: TOOLS, to: FORMAT, kind: 'new-cross-module' }])).toEqual([[`${TOOLS} → ${FORMAT}`, false]]);
+  // Onto a single-file cell, which is its own interface; the cli package it sits in is entered from inside.
+  expect(swaysOf([{ from: CLI, to: DOCTOR, kind: 'boundary' }])).toEqual([[`${CLI} → ${DOCTOR}`, false]]);
+});
+
+test('a cell whose barrel the change deleted has no interface to be entered past, so nothing sways into it (C2)', () => {
+  const changed = DEMO.weather.changed.map((file) => (file.path === 'libs/core/src/pm/legacy.ts' ? { ...file, path: PM_BARREL, kind: 'deleted' as const } : file)).filter((file, index, all) => all.findIndex((each) => each.path === file.path) === index || file.kind === 'deleted');
+  const gone = { ...DEMO, weather: { ...DEMO.weather, changed: changed.filter((file) => file.path !== PM_BARREL || file.kind === 'deleted') } };
+  expect(gone.weather.changed.filter((file) => file.path === PM_BARREL).map((file) => file.kind)).toEqual(['deleted']);
+  // From a sibling inside the package, past where the folder's barrel was: the folder has none at head, and the package is not entered.
+  expect(swaysOf([{ from: FORMAT, to: SLOTS, kind: 'boundary' }], gone)).toEqual([[`${FORMAT} → ${SLOTS}`, false]]);
+  // From another package it still passes the core package's barrel, which stands.
+  expect(swaysOf([{ from: DOCTOR, to: SLOTS, kind: 'boundary' }], gone)).toEqual([[`${DOCTOR} → ${SLOTS}`, true]]);
+});
+
+test('one map gives one set of sways, whatever order its cells, files and edges arrive in (C3)', () => {
+  const edges = [
+    { from: DOCTOR, to: SLOTS, kind: 'boundary' as const },
+    { from: FORMAT, to: TEXT, kind: 'cycle' as const },
+    { from: TEXT, to: FORMAT, kind: 'cycle' as const },
+    { from: DOCTOR, to: CORE_BARREL, kind: 'new-cross-module' as const },
+  ];
+  const map = { ...DEMO, terrain: { ...DEMO.terrain, edges_exceptional: edges } };
+  const shuffled = { ...map, terrain: { ...map.terrain, edges_exceptional: edges.toReversed(), cells: map.terrain.cells.toReversed(), organelles: map.terrain.organelles.toReversed() } };
+  expect(weatherOf(shuffled).edges).toEqual(weatherOf(map).edges);
+  expect(weatherOf(map).edges).toEqual(weatherOf(map).edges);
+  expect(weatherOf(map).edges.map((edge) => edge.sway)).toEqual([false, true, false, false]);
 });
 
 test('the reach field lights each reached cell at its luminance, takes the brightest where skins nest, and leaves an unreached child dark (D151)', () => {
@@ -213,7 +302,7 @@ const C11: Readonly<Record<Channel, readonly string[]>> = {
   size: ['mass'],
   repetition: ['duplication'],
   relief: ['elevation'],
-  motion: ['urgency', 'conformance', 'looseness'],
+  motion: ['urgency', 'conformance', 'looseness', 'integrity', 'bypass'],
 };
 
 type Assigned = readonly [Channel, string];
@@ -230,7 +319,13 @@ const CELL_CHANNELS = {
   storms: ['hue', 'state'],
 } as const satisfies Record<Exclude<keyof CellWeather, 'cell'>, Assigned>;
 
-const ENTITIES: Readonly<Record<string, Readonly<Record<string, Assigned>>>> = { file: FILE_CHANNELS, cell: CELL_CHANNELS };
+/** An edge's hue is its kind, the state it marks; its sway says its import enters a module past its interface, a ribbon's one motion (D200, Q84). */
+const EDGE_CHANNELS = {
+  kind: ['hue', 'state'],
+  sway: ['motion', 'bypass'],
+} as const satisfies Record<Exclude<keyof SceneWeather['edges'][number], 'from' | 'to'>, Assigned>;
+
+const ENTITIES: Readonly<Record<string, Readonly<Record<string, Assigned>>>> = { file: FILE_CHANNELS, cell: CELL_CHANNELS, edge: EDGE_CHANNELS };
 
 /** Every key the records carry, but the one naming them. */
 const carried = (records: readonly object[], identity: string): readonly string[] =>
@@ -244,6 +339,8 @@ test('every attribute the weather carries is pinned to one channel of C11', () =
   );
   expect(carried(rich.files, 'path')).toEqual(Object.keys(FILE_CHANNELS).toSorted());
   expect(carried(rich.cells, 'cell')).toEqual(Object.keys(CELL_CHANNELS).toSorted());
+  expect(rich.edges.length).toBeGreaterThan(0);
+  expect(carried(rich.edges, 'from').filter((key) => key !== 'to')).toEqual(Object.keys(EDGE_CHANNELS).toSorted());
 });
 
 test.each(Object.entries(ENTITIES))("no two of a %s's attributes share a channel's meaning, and each meaning is one C11 gives its channel", (_entity, channels) => {
