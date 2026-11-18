@@ -727,7 +727,8 @@ bound changes §5.5 itself, and moves the bound in the test with it.
 | `SHAPE_JITTER` | `1.5` | above 0, at most π: a wander of half a beat at most | how far each arm's beat wanders off the pulse at the spiky end, in radians either way (D194 (shape-spectrum)); a file's is this times its trouble score, on a slow sine of the arm's own, 5 to 20 s a wander, so the smooth end keeps time and the spiky end never settles into one rhythm |
 | `DRIFT_HZ_MIN` | `0.03` | above 0, at most 0.25, and no more than the max: a slow float | the slowest a file's wander runs inside an opened cell (D157), in Hz, at the zoom the cell opens at; each file draws its rates between the two from its path and the seed |
 | `DRIFT_HZ_MAX` | `0.08` | above 0, at most 0.25 | the fastest |
-| `DRIFT_REACH` | `0.15` | above 0, at most 0.5: about its place, never across its cell (D165) | how far a wholly loose file wanders from its place, as a share of its cell's radius; a file wanders its looseness times this, so a hub held by its cellmates stays put, and a push may carry it twice this and no further |
+| `DRIFT_REACH` | `0.3` | above 0, at most 0.5: about its place, never across its cell (D165) | how far a wholly loose file wanders from its place, as a share of its cell's radius; a file wanders its mobility times this, so a hub held by its cellmates stays put, and a push may carry it twice this and no further |
+| `DRIFT_CURVE` | `1.5` | at least 1: it quiets the held, never the loose | the power a file's looseness is raised to for its mobility (D193 (looseness-curve)): at 1 a file wanders its looseness's share of the reach; above 1 a mostly held file wanders less than its share and a wholly loose one still the whole reach, so a file a fifth loose moves 0.09 of the reach where its share would be 0.2 |
 | `DRIFT_SPEED` | `0.02` | above 0, at most 0.05: a slow float, twenty seconds or more to cross the screen (D165) | the most the float moves a file in a second, as a share of the free screen's shorter side, at every zoom: zoomed in, the wander's clock slows to keep to it |
 | `DRIFT_GAP` | `1` | at least 0 | how far a floating file keeps off its neighbours and the membrane, in layout units, or as far as it rests if that is nearer |
 | `DRIFT_EASE_MS` | `600` | above 0, at most 600: a transient | how long the float takes to ease in as a cell opens |
@@ -746,8 +747,9 @@ and hold every one of these rules. The float (`stepFloat` in
 `libs/scene/src/drift.ts`) is stepped sixty times a second whatever the frame
 rate, from rest or from wherever the surface last drew the cell's files, so one
 seed, one start and one run of zooms give one frame. Each step every loose file
-heads for its wander, two slow sines about its place eased in as the cell opens,
-then is pushed off its neighbours, the looser giving way more, and off the
+heads for its wander, two slow sines about its place eased in as the cell opens
+and reaching `DRIFT_REACH` of the cell's radius times its looseness raised to
+`DRIFT_CURVE`, then is pushed off its neighbours, the looser giving way more, and off the
 membrane and the cells its cell holds, never nearer them than it rests. No step
 moves a file more than `DRIFT_SPEED` of the screen a second, and a step that
 would cross the membrane, or into a held cell, leaves the file where it was, so
@@ -798,6 +800,16 @@ its old and new value, and what was seen that called for it.
   Rob to tune by eye at the stop of the range that built the spectrum. The three
   shape lists now read at a trouble score between two forms as the blend of the
   pair.
+- **2026-11-18, D193 (looseness-curve).** `DRIFT_REACH` from `0.15` to `0.3`, and
+  `DRIFT_CURVE` joins at `1.5`: the starting values of Q98 (curve-quiets-middle),
+  set before anything was seen, for Rob to tune by eye at the stop of the range
+  that built the slide. At range 24's boundary a held file and a loose one barely
+  differed inside an opened cell; a file now wanders its looseness raised to the
+  curve, so one a fifth loose moves 0.027 of its cell's radius where it moved
+  0.03, every file over a quarter loose moves further than it did, and a wholly
+  loose one twice as far. `DRIFT_SPEED` stays at `0.02`, so at the zoom a cell
+  opens at the wander's clock now runs at about four fifths of the wall's to keep
+  to it: the float reaches further, never faster.
 
 ## Fixed geometry that carries no token
 

@@ -22,7 +22,9 @@
  * seed, one start and one run of screens give one frame (D94, C3). Each step
  * every loose file heads for its wander: two slow sines about its place,
  * eased in as the cell opens, reaching `DRIFT_REACH` of the cell's radius
- * times its looseness. It is then pushed off its neighbours, the looser giving
+ * times its mobility, its looseness raised to `DRIFT_CURVE` (D193): a mostly
+ * held file barely moves and a wholly loose one moves the whole reach, so the
+ * two tell apart. It is then pushed off its neighbours, the looser giving
  * way more, and off the membrane and the cells its cell holds, never nearer
  * them than it rests. No step moves a file more than `DRIFT_SPEED` of the
  * screen a second, and the wander's clock slows as the view zooms in so that
@@ -37,7 +39,7 @@ import { dentedRing } from './membranes.js';
 import { openRing } from './raster.js';
 import type { Ring } from './raster.js';
 import { draw, seedOf } from './shape.js';
-import { DRIFT_EASE_MS, DRIFT_GAP, DRIFT_HZ_MAX, DRIFT_HZ_MIN, DRIFT_REACH, DRIFT_SPEED } from './tokens.js';
+import { DRIFT_CURVE, DRIFT_EASE_MS, DRIFT_GAP, DRIFT_HZ_MAX, DRIFT_HZ_MIN, DRIFT_REACH, DRIFT_SPEED } from './tokens.js';
 
 /**
  * The drift's tokens as one object, so a registry can hand in live values and
@@ -48,11 +50,12 @@ export type DriftTokens = {
   readonly DRIFT_HZ_MIN: number;
   readonly DRIFT_HZ_MAX: number;
   readonly DRIFT_REACH: number;
+  readonly DRIFT_CURVE: number;
   readonly DRIFT_SPEED: number;
   readonly DRIFT_GAP: number;
   readonly DRIFT_EASE_MS: number;
 };
-export const DRIFT_TOKENS: DriftTokens = { DRIFT_HZ_MIN, DRIFT_HZ_MAX, DRIFT_REACH, DRIFT_SPEED, DRIFT_GAP, DRIFT_EASE_MS };
+export const DRIFT_TOKENS: DriftTokens = { DRIFT_HZ_MIN, DRIFT_HZ_MAX, DRIFT_REACH, DRIFT_CURVE, DRIFT_SPEED, DRIFT_GAP, DRIFT_EASE_MS };
 
 /** How long one step of the float is: sixty a second, whatever the frame rate. */
 export const DRIFT_STEP_MS = 1000 / 60;
@@ -138,14 +141,14 @@ export function heldCellsOf(map: MapJson, cell: string): readonly Cell[] {
   return map.terrain.cells.filter((each) => each.parent === cell && slideCellOf(map, each.id) !== cell).toSorted(byPath);
 }
 
-/** A file as the float reads it: where it rests, how freely it moves, and how far it rests from the membrane and from each cell its cell holds. */
+/** A file as the float reads it: where it rests, how loose it is where it may move at all (0 where it may not), and how far it rests from the membrane and from each cell its cell holds. */
 type Resting = {
   readonly id: string;
   readonly x: number;
   readonly y: number;
   readonly r: number;
   readonly looseness: number | undefined;
-  readonly mobility: number;
+  readonly loose: number;
   readonly toRing: number;
   readonly toHoles: readonly number[];
 };
@@ -264,7 +267,7 @@ function laidOf(map: MapJson, cell: string): Laid | undefined {
         y: at.y,
         r: at.r,
         looseness,
-        mobility: placed ? (looseness ?? 0) : 0,
+        loose: placed ? (looseness ?? 0) : 0,
         toRing: nearestAmong(ring, undefined, at.x, at.y)[2],
         toHoles: holes.map((hole) => nearestAmong(hole, undefined, at.x, at.y)[2]),
       };
@@ -359,7 +362,8 @@ export function stepFloat(map: MapJson, float: Float, t: number, at: DriftAt): F
   const advanced = (done + steps) * DRIFT_STEP_MS;
   if (laid === undefined || at.reduced === true || float.files.length !== laid.files.length) return { ...startFloat(map, float.cell), t: advanced, wander: float.wander };
 
-  const files = laid.files;
+  // Each file's mobility: its looseness through the curve, read now so a moved token shows on the next frame (D193, D156).
+  const files = laid.files.map((file) => ({ ...file, mobility: file.loose <= 0 ? 0 : file.loose ** tokens.DRIFT_CURVE }));
   const xs = float.files.map((file) => file.x);
   const ys = float.files.map((file) => file.y);
   const gap = tokens.DRIFT_GAP;

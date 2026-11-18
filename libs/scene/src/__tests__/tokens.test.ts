@@ -81,6 +81,7 @@ const MOTION_BOUNDS: Readonly<Record<string, Bound>> = {
   DRIFT_HZ_MIN: { above: 0, atMost: 0.25, why: 'a slow float (D157): a wander of four seconds or longer' },
   DRIFT_HZ_MAX: { above: 0, atMost: 0.25, why: 'a slow float (D157): a wander of four seconds or longer' },
   DRIFT_REACH: { above: 0, atMost: 0.5, why: 'a loose file wanders about its place, never across its cell (D165)' },
+  DRIFT_CURVE: { atLeast: 1, why: 'the curve quiets the held and never the loose (D193): under 1 it would move a mostly held file more than its share of the reach' },
   DRIFT_SPEED: { above: 0, atMost: 0.05, why: 'a slow float on the screen (D165): a small share of it a second, twenty seconds or more to cross it' },
   DRIFT_GAP: { atLeast: 0, why: 'a file keeps off its neighbours and the membrane, never into them' },
   DRIFT_EASE_MS: { above: 0, atMost: TRANSIENT_MS, why: 'the drift eases in as the cell opens, a transient' },
@@ -157,7 +158,7 @@ test('SHAPE_JITTER wanders an arm off its beat by half a beat at most', () => {
   expect(value, SHAPE_JITTER_BOUND.why).toBeLessThanOrEqual(SHAPE_JITTER_BOUND.atMost ?? Number.NaN);
 });
 
-test("design.md's motion table names exactly the tokens §5.5, D147, D157 and D165 bound", () => {
+test("design.md's motion table names exactly the tokens §5.5, D147, D157, D165 and D193 bound", () => {
   const doc = readFileSync(DESIGN, 'utf8');
   const section = doc.split(/^## /m).find((part) => part.startsWith('Motion'));
   expect(section, 'design.md has no Motion section').toBeDefined();

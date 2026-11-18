@@ -6,7 +6,7 @@ import { assertMap } from 'core';
 import type { MapJson, Ties } from 'core';
 import { expect, test } from 'vitest';
 
-import { DRIFT_STEP_MS, driftOf, homeFloat, loosenessOf, startFloat, stepFloat } from '../drift.js';
+import { DRIFT_STEP_MS, DRIFT_TOKENS, driftOf, homeFloat, loosenessOf, startFloat, stepFloat } from '../drift.js';
 import type { Drifted, Float } from '../drift.js';
 import { CELL_GATE, homewardAt } from '../lod.js';
 import { dentedRing } from '../membranes.js';
@@ -14,7 +14,7 @@ import { createScheduler } from '../motion.js';
 import type { FloatView } from '../motion.js';
 import { openRing } from '../raster.js';
 import type { Ring } from '../raster.js';
-import { DRIFT_GAP, DRIFT_HZ_MAX, DRIFT_REACH, DRIFT_SPEED } from '../tokens.js';
+import { DRIFT_CURVE, DRIFT_GAP, DRIFT_REACH, DRIFT_SPEED } from '../tokens.js';
 
 /**
  * The float inside an opened cell (D157, D165): each file wanders about its
@@ -238,8 +238,44 @@ test('no step moves a file more than its share of the screen a second, at the zo
   const moved = (step: number): number => Math.hypot(tools(step).x - tools(step - 1).x, tools(step).y - tools(step - 1).y);
   expect(moved(1)).toBeLessThan((DRIFT_SPEED * opening * DRIFT_STEP_MS) / 1000 / 100);
   expect(moved(1)).toBeLessThan(moved(30));
-  // At its rates the wander keeps under the bound by itself at the zoom the cell opens at, so nothing caps it there.
-  expect(DRIFT_REACH * (spanOf(LOOSE, PM) / 2) * Math.PI * DRIFT_HZ_MAX).toBeLessThan(DRIFT_SPEED * opening);
+  // At the raised reach the wander would outrun the speed at the zoom the cell opens at, so its clock runs a little slow there to keep to it, and never stops (D193 leaves DRIFT_SPEED where D165 put it).
+  const last = floats.at(-1);
+  expect((last?.wander ?? 0) / (last?.t ?? 1)).toBeLessThan(1);
+  expect((last?.wander ?? 0) / (last?.t ?? 1)).toBeGreaterThan(0.75);
+});
+
+/** A cell's radius as the drift reads it: the furthest its drawn membrane gets from its own middle. */
+function radiusOf(map: MapJson, cell: string): number {
+  const { membrane } = skinsOf(map, cell);
+  const cx = membrane.reduce((total, [x]) => total + x, 0) / membrane.length;
+  const cy = membrane.reduce((total, [, y]) => total + y, 0) / membrane.length;
+  return Math.max(...membrane.map(([x, y]) => Math.hypot(x - cx, y - cy)));
+}
+
+test('a file moves by its looseness through the curve: one a fifth loose barely moves, a wholly loose one comes within a tenth of the full reach, and none outruns the speed (D193)', () => {
+  // The pm cell with `slots.ts` wholly loose, `tools.ts` a fifth loose, and its barrel held.
+  const map = tied({ [SLOTS]: { inside: 0, outside: 3 }, [TOOLS]: { inside: 4, outside: 1 }, [INDEX]: { inside: 4, outside: 0 } });
+  const screen = openingScreen(map, PM);
+  const floats = minute(map, PM, screen);
+  const full = DRIFT_REACH * radiusOf(map, PM);
+  expect(floats[0]?.files.map((file) => [file.id, file.looseness])).toContainEqual([TOOLS, 0.2]);
+  // Ten seconds in, and through the whole minute, the fifth-loose file is inside its curved share of the reach, and the gap a neighbour's push may carry it.
+  const held = 0.2 ** DRIFT_CURVE * full + DRIFT_GAP;
+  const tenSeconds = floats.slice(0, Math.round(10_000 / DRIFT_STEP_MS) + 1);
+  expect(farthest(map, tenSeconds, TOOLS)).toBeGreaterThan(0);
+  expect(farthest(map, tenSeconds, TOOLS)).toBeLessThanOrEqual(held);
+  expect(farthest(map, floats, TOOLS)).toBeLessThanOrEqual(held);
+  // The wholly loose one uses the reach: the curve leaves 1 at 1.
+  expect(farthest(map, floats, SLOTS)).toBeGreaterThanOrEqual(0.9 * full);
+  expect(farthest(map, floats, SLOTS)).toBeLessThanOrEqual(2 * full);
+  // The contrast the curve is for: the loose file wanders more than ten times as far as the fifth-loose one, where a straight share would give five.
+  expect(farthest(map, floats, SLOTS) / farthest(map, floats, TOOLS)).toBeGreaterThan(10);
+  expect(fastestStep(floats)).toBeLessThanOrEqual((DRIFT_SPEED * screen) / 60 + 1e-9);
+  // The curve is read live (D156): at 1 the fifth-loose file wanders its straight share, further than through the curve.
+  const straight: Float[] = [startFloat(map, PM)];
+  for (let step = 1; step <= Math.round(MINUTE_MS / DRIFT_STEP_MS); step += 1) straight.push(stepFloat(map, straight.at(-1) ?? startFloat(map, PM), step * DRIFT_STEP_MS, { seed: 7, screen, tokens: { ...DRIFT_TOKENS, DRIFT_CURVE: 1 } }));
+  expect(farthest(map, straight, TOOLS)).toBeGreaterThan(farthest(map, floats, TOOLS));
+  expect(farthest(map, straight, TOOLS)).toBeLessThanOrEqual(0.2 * full + DRIFT_GAP);
 });
 
 test('every body keeps inside its membrane through a minute of seeded time, on the demo and on a tight cell of an outside repo', { timeout: 60_000 }, () => {

@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: a world that describes itself at a glance
 
-**Current step:** 19 — feat(scene): shade every file's shape by the churn its stability carries
+**Current step:** 6 — feat(scene): grow the drift's contrast through a looseness curve
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -41,7 +41,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☐ 16. feat(web): write the band labels over the field
 - ☐ 17. docs(design): rewrite the channel list and log the balance patches
 - ☐ 18. chore(web): measure the new movers against the world's budget
-- ☐ 19. feat(scene): shade every file's shape by the churn its stability carries
+- ☑ 19. feat(scene): shade every file's shape by the churn its stability carries
 
 ## Park list
 
@@ -53,7 +53,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] the two spikiest forms are drawn through too few points: at SHAPE_LEVELS 5 and 6 an arm is about one sample wide (160 points round 18 arms of sharp 20), so the ring catches each tip at 53 to 100 percent of its length by where the points fall, which flickers as a shape turns and makes the ring's own furthest point wander as the score climbs; step 3 holds the monotone test on the outline's analytic extent instead
 - [x] apps/web hud.test.tsx 'the world's blocks are the sheet's' timed out at vitest's 5 s default once under a loaded full check (6.7 s) and passed on rerun; it walks every committed fixture, so give it a longer timeout or split it
 - [x] troubleOf reads the organelle's top-level churn_ratio and bugfix_rate, which the map sets only on files the change touched, so shape shows history for almost no file: on atis's own map 0 of 165 files leave the circle on a whole-repo map and 7 of 165 on the last commit (no file breaks a rule), where stability.churn_ratio is on all 165; javascript-1 has 128 of 414 with a form against 405 with stability's churn
-- [ ] stability.churn_ratio counts a file's own birth, so on atis's whole-repo map every one of the 165 files reads churn 0.47 or more (median 1.22) and 155 score between 0.13 and 0.27, one soft wobble for nearly all; a calm file needs a floor to subtract or a scale that starts above birth before shape alone tells it from a busy one (step 19, D203 history-on-every-file)
+- [x] stability.churn_ratio counts a file's own birth, so on atis's whole-repo map every one of the 165 files reads churn 0.47 or more (median 1.22) and 155 score between 0.13 and 0.27, one soft wobble for nearly all; a calm file needs a floor to subtract or a scale that starts above birth before shape alone tells it from a busy one (step 19, D203 history-on-every-file)
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -77,6 +77,8 @@ Harvest results this boundary:
 - 2026-11-18, at range 1 of 6's stop: 2 parked ideas, classified.
 - **tangent**: park 3 · apps/web hud.test.tsx 'the world's blocks are the sheet's' timed out at vitest's 5 s default once under a loaded full check (6.7 s) and passed on rerun; it walks every committed fixture, so give it a longer timeout or split it → a timeout on a test no step touches, cured by one argument, though it will keep costing reruns on a loaded machine
 - **blocker**: park 4 · troubleOf reads the organelle's top-level churn_ratio and bugfix_rate, which the map sets only on files the change touched, so shape shows history for almost no file: on atis's own map 0 of 165 files leave the circle on a whole-repo map and 7 of 165 on the last commit (no file breaks a rule), where stability.churn_ratio is on all 165; javascript-1 has 128 of 414 with a form against 405 with stability's churn → D194 (shape-spectrum)'s own reason, most files leaving the circle, is unmet on atis's own map until the score reads the history every file carries
+- 2026-11-18, at the step 19 boundary: 1 parked idea, classified.
+- **tangent**: park 5 · stability.churn_ratio counts a file's own birth, so on atis's whole-repo map every one of the 165 files reads churn 0.47 or more (median 1.22) and 155 score between 0.13 and 0.27, one soft wobble for nearly all; a calm file needs a floor to subtract or a scale that starts above birth before shape alone tells it from a busy one (step 19, D203 history-on-every-file) → real, but ranges 2 to 5 do not build on the score's spread and the fix leaves a choice open (subtract a file's birth, or start the scale above it), which is a `/plumbbob:refine` call rather than a fold made here
 
 ## Log
 
@@ -297,3 +299,73 @@ folder, so it rides the branch into the PR.)*
   Approved at step 3's pause: continuity is held at a thousandth of the score (under a fiftieth of the radius) across the whole spectrum, and "a higher score never gives a smaller greatest radius" is held on the outline's analytic `extent`. The cause is P2, harvested as a tangent at step 3's boundary: forms 5 and 6 are drawn through about one point per arm, so the ring catches each tip at 53 to 100 percent of its length, which may flicker as a shape turns. That park waits on what this stop shows of the spiky end in motion, so the demo's last two files are where to look for it.
 
   Step 1 found no cell on atis's own map with `past` above 0, so range 3's ripple is judged on `fixtures/javascript-1`, as Q94 (range-3-map) allows.
+
+- 2026-11-18 — step 19 checkpointed · db8e6f3b6 — feat(scene): shade every file's shape by the churn its stability carries (24m)
+
+  **Summary**: `troubleOf` now reads a file's churn from `stability.churn_ratio` where it has no `churn_ratio` of its own, so on atis's own whole-repo map all 165 files score above 0 (none did before) and no file is drawn as a circle; on the last commit it is 165 of 165, up from 7. The caveat for the call this pause holds: the spread is narrow. 155 of the 165 files score between 0.13 and 0.27, one soft wobble for nearly all of them, because the churn the log window measures counts each file's own birth, so no file reads calm. Three files with no broken rule reach 0.40, the score one broken rule gives, and atis breaks no rule, so the spiky end is empty.
+
+  1. The scorer falls back to stability's churn and says which it read
+  2. On atis's own map every file leaves the circle, and nearly all by the same amount
+  3. One test outside the seam followed the change
+  4. Thirteen SVG goldens moved, all for one reason
+
+  **Readout**:
+
+  ```text
+  check        green: 1 of 1 checks
+  proof        met
+  decisions    2 of 2 honored
+  constraints  10 of 10 honored
+  plumb        seam 16 · reach 1 · out 0
+  diff         +1763 -1330 across 17 files
+               - docs/design.md +9 -2
+               - fixtures/go-1/atis.svg +139 -139
+               - fixtures/javascript-1/atis.svg +816 -452
+               - fixtures/python-1/atis.svg +203 -203
+               - fixtures/shell-1/atis.svg +337 -337
+               - fixtures/terraform-1/atis.svg +144 -144
+               - libs/scene/src/__tests__/trouble.test.ts +43 -0
+               - and 10 more
+  spent        24 min · 1 turn · 149s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Look at atis's own whole-repo map before approving, and expect the shape test to fail as it stands. The step does what D203 (history-on-every-file) decided and its proof holds, so it is sound to land, but with every file at one soft wobble the surface does not yet tell a troubled file from a calm one; the parked line about churn counting a file's birth is the fix to plan, and a `/plumbbob:refine` that gives it a step is the move I would take after `looks good`. To see it live:
+
+  ```sh
+  atis --whole-repo
+  atis --last-commit
+  ```
+
+  **1.** The scorer falls back to stability's churn and says which it read
+
+  `troubleOf` in `libs/scene/src/trouble.ts` takes `stability` alongside `dents`, `churn_ratio` and `bugfix_rate`. The churn it scores is the file's own `churn_ratio`, else `stability.churn_ratio`. `used` names `churn_ratio` or `stability.churn_ratio`, whichever was read, and `missing` names `churn_ratio` only where the map carries neither, which includes a stability that has an age and no churn. A file's own 0 is a reading and wins over a higher stability churn. Nothing is defaulted (C2 (never-fake)), and the score is the same function of the same inputs as before (C3 (deterministic)). `bugfix_rate` is read as it was.
+
+  The four callers named in the seam (`interior.ts`, the SVG's `terrain.ts`, `hover.ts`, the world's `organelles.ts`) already hand `troubleOf` the whole organelle, so each passes its stability with no edit; the widened parameter type is what makes that hold.
+
+  Four tests joined `trouble.test.ts`: stability-only churn scores as the same top-level churn at every rule count and names `stability.churn_ratio`; a top-level churn wins, higher or lower, a measured 0 included; `churn_ratio` is missing only where both are absent; the score is monotone in stability's churn and the same on every call.
+
+  **2.** On atis's own map every file leaves the circle, and nearly all by the same amount
+
+  Measured on fresh maps of this repository at 601636f, whole repo and last commit, 165 files each:
+
+  - above 0: 165 of 165 whole repo (0 before the step), 165 of 165 last commit (7 before)
+  - read through stability: 165 whole repo, 158 last commit; `churn_ratio` missing on none
+  - scores: one file under 0.07, 128 between 0.13 and 0.20, 27 between 0.20 and 0.27, 6 between 0.27 and 0.33, 3 at 0.40
+  - churn ratios: least 0.47, median 1.22, 90th percentile 1.79, greatest 3.52, against `CHURN_FULL_AT` at 3
+  - broken rules: none on any file
+
+  The three at 0.40 are `libs/svg/src/fingerprint.ts`, `libs/svg/src/terrain.ts` and `libs/svg/src/weather.ts`, their churn past 3 and clamped. The proof's count (more than half above 0) is met with room. The judgment the stop asks for is a different question, and the numbers lean against it: a file the window saw being written has churned at least its own size, so the least-changed file on the map still sits near 0.06 and the typical one at 0.16. Shape now says "has a history" for every file rather than telling a troubled one from a calm one. This is parked, with the two ways out it suggests: subtract the birth before scaling, or start the scale above it. `CHURN_FULL_AT` is a live token, but moving it shifts every file together and cannot open the spread on its own.
+
+  The still SVG of the whole repo is at `/tmp/atis-step19/whole.svg`, and the rebuilt `atis` on the PATH serves the world with this step in it.
+
+  **3.** One test outside the seam followed the change
+
+  `libs/svg/src/__tests__/render.test.ts` held "bigger file, bigger circle" on two demo files, `slots.ts` and `apps/cli/src/index.ts`, that were circles only because the scorer ignored their stability. Both now have a form, so the test makes the size comparison on the demo with stability dropped, where each is the circle its lines size, and still holds on the real demo that a file is a circle exactly when its score is 0. Only `legacy.ts`, which the log window never saw, stays round there.
+
+  **4.** Thirteen SVG goldens moved, all for one reason
+
+  Every one moved because files the log window saw and no change touched now have a form in place of a circle (C16 (goldens-named)): under `libs/svg/fixtures/`, the demo's `atis.svg` and `renamed.svg`, the four categories (`LIFR`, `MVFR`, `NOINST`, `VFR`) and the two repo overlays (`coverage-gaps`, `trouble-spots`); under `fixtures/`, `atis.svg` in `go-1`, `javascript-1`, `python-1`, `shell-1` and `terraform-1`, the five that matched a fresh render before the step. The other fixture SVGs were already older renders no test compares and are left as they were. In the demo three undented files gained an outline and the two files in a cycle moved a little, their churn now shading them within their level.
+
+  `docs/design.md` says where the churn is read from, in the `TROUBLE_RULES_FROM` row and in the spectrum's prose, and that churn shows on relief and on shape (C11 (one-meaning-per-channel)).

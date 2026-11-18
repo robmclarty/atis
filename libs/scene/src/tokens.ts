@@ -421,11 +421,15 @@ export const SHAPE_JITTER = 1.5;
  * the membrane, and eases in over this long when the cell opens. Nothing in
  * the float moves a file more than this share of the screen's shorter side a
  * second: zoomed in, the wander's clock slows until it keeps to that, so the
- * float reads as slow at every zoom.
+ * float reads as slow at every zoom. A file moves by its looseness raised to
+ * the curve (D193): at 1 the wander is its looseness's share of the reach, and
+ * above 1 a mostly held file moves less than its share while a wholly loose
+ * one still moves the whole reach, so the two tell apart.
  */
 export const DRIFT_HZ_MIN = 0.03;
 export const DRIFT_HZ_MAX = 0.08;
-export const DRIFT_REACH = 0.15;
+export const DRIFT_REACH = 0.3;
+export const DRIFT_CURVE = 1.5;
 export const DRIFT_SPEED = 0.02;
 export const DRIFT_GAP = 1;
 export const DRIFT_EASE_MS = 600;

@@ -205,6 +205,7 @@ export const SECTIONS: readonly Section[] = [
       'DRIFT_HZ_MIN',
       'DRIFT_HZ_MAX',
       'DRIFT_REACH',
+      'DRIFT_CURVE',
       'DRIFT_SPEED',
       'DRIFT_GAP',
       'DRIFT_EASE_MS',
