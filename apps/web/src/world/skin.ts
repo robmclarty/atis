@@ -41,15 +41,28 @@
  * composite costs the fragment stage alone. A map of fewer files has no
  * composites, and its skin is shaded exactly as before.
  *
+ * A membrane ripples by its cell's integrity (D195): the share of the
+ * imports from outside that land past its barrel. The line is laid once, so
+ * nothing re-lays it to move it; the fragment stage reads it a little to one
+ * side instead, by the amplitude step 11's grid carries there, at a point
+ * that circles its place once each period of `MEMBRANE_WOBBLE_HZ`. The
+ * circle's phase runs with the sample's own place across the field, so the
+ * line swells along its length whichever way it runs, by the whole amplitude
+ * and no more, and keeps its teeth and its width. A sample no rippling line
+ * stands near carries no amplitude and reads the line where it lies, so a
+ * still membrane never moves, and a map where no cell ripples samples nothing
+ * more than before. The time is the scheduler's, one uniform (C12), and
+ * under reduced motion the amplitude is none.
+ *
  * The look, the weather's look and the relief come through the registry
  * (D156): the albedos, the sheen and the lights are uniforms the loop re-reads
  * each frame, and the relief is laid again when one of its tokens moves.
  */
 
-import { BufferAttribute, BufferGeometry, Color, DataTexture, DataUtils, HalfFloatType, LinearFilter, Mesh, MeshPhysicalNodeMaterial, NearestFilter, RGBAFormat } from 'three/webgpu';
+import { BufferAttribute, BufferGeometry, Color, DataTexture, DataUtils, HalfFloatType, LinearFilter, Mesh, MeshPhysicalNodeMaterial, NearestFilter, RGBAFormat, Vector2 } from 'three/webgpu';
 import type { Node, UniformNode } from 'three/webgpu';
-import { clamp, float, mix, mrt, normalize, positionLocal, pow, texture, transformNormalToView, uniform, uv, vec2, vec3, vec4 } from 'three/tsl';
-import { compositeGrid, compositeTissue, heightfield, reachField, skinResolution, tissue } from 'scene';
+import { clamp, cos, float, mix, mrt, normalize, positionLocal, pow, sin, texture, transformNormalToView, uniform, uv, vec2, vec3, vec4 } from 'three/tsl';
+import { MEMBRANE_WOBBLE, compositeGrid, compositeTissue, heightfield, reachField, skinResolution, tissue } from 'scene';
 import type { Composite, Grid, Heightfield, Relief, Tissue } from 'scene';
 import type { MapJson } from 'core';
 
@@ -75,6 +88,8 @@ export type Skin = {
   readonly reach: (map: MapJson) => void;
   /** How far the skin has faded from the reach it showed to the one it took last, 0 to 1. */
   readonly reachMix: UniformNode<'float', number>;
+  /** Run the membranes' ripple to the scheduler's time, in milliseconds since load (D195); `still` under reduced motion, where every membrane rests where it lies. */
+  readonly ripple: (t: number, still: boolean) => void;
   /** How open each composite stands, a texel each by its number from 1, the first texel always open: the organelles read it too. */
   readonly composites: DataTexture;
   /** Take how open each composite stands this frame, in composite order. */
@@ -152,6 +167,17 @@ const tissueTexture = (layers: Tissue, reach: Grid): DataTexture => {
   return softTexture(new DataTexture(data, columns, rows, RGBAFormat, HalfFloatType));
 };
 
+/** How far each membrane line ripples, in layout units, in the red channel (D195); none where the map has no cell imported past its barrel, so the skin samples nothing for it. */
+const wobbleTexture = (grid: Grid): DataTexture | undefined => {
+  if (!grid.values.some((value) => value > 0)) return undefined;
+  const data = new Uint16Array(grid.columns * grid.rows * 4);
+  for (let i = 0; i < grid.columns * grid.rows; i += 1) {
+    data[i * 4] = DataUtils.toHalfFloat(grid.values[i] ?? 0);
+    data[i * 4 + 3] = DataUtils.toHalfFloat(1);
+  }
+  return softTexture(new DataTexture(data, grid.columns, grid.rows, RGBAFormat, HalfFloatType));
+};
+
 /**
  * Lay another frame's reach in the alpha channel to fade to, and what the
  * skin shows at this moment of the fade in the blue channel to fade from, so
@@ -218,8 +244,11 @@ const gridGeometry = (grid: Grid, width: number, height: number): BufferGeometry
   return geometry;
 };
 
-/** The skin for a map over a look, the weather's look and a relief, all read live: its mesh, and the uniforms the render loop moves each frame. */
-export const createSkin = (map: MapJson, look: SkinLook, weather: WeatherLook, reachGlow: { readonly REACH_GLOW: string; readonly REACH_ORIGIN_OPACITY: number }, relief: Relief, composites: readonly Composite[] = []): Skin => {
+/** The scene's tokens the skin reads live: the reach's glow, and how far and how fast a membrane ripples (D195). */
+export type SkinTokens = { readonly REACH_GLOW: string; readonly REACH_ORIGIN_OPACITY: number; readonly MEMBRANE_WOBBLE: number; readonly MEMBRANE_WOBBLE_HZ: number };
+
+/** The skin for a map over a look, the weather's look, the scene's tokens and a relief, all read live: its mesh, and the uniforms the render loop moves each frame. */
+export const createSkin = (map: MapJson, look: SkinLook, weather: WeatherLook, tokens: SkinTokens, relief: Relief, composites: readonly Composite[] = []): Skin => {
   const field = heightfield(map, skinResolution(map), { ...relief });
   const { columns, rows, resolution } = field.height;
   // The tissue a composite wears, laid into the relief beside it (step 66).
@@ -227,7 +256,9 @@ export const createSkin = (map: MapJson, look: SkinLook, weather: WeatherLook, r
   const data = new Uint16Array(columns * rows * 4);
   fillRelief(data, field, worn);
   const reliefMap = softTexture(new DataTexture(data, columns, rows, RGBAFormat, HalfFloatType));
-  const tissueMap = tissueTexture(tissue(map, resolution), soften(reachField(map, resolution), Math.round(weather.reachSoften)));
+  const layers = tissue(map, resolution);
+  const tissueMap = tissueTexture(layers, soften(reachField(map, resolution), Math.round(weather.reachSoften)));
+  const wobbleMap = wobbleTexture(layers.wobble);
 
   const amp = uniform(1);
   const lift = uniform(0);
@@ -242,12 +273,16 @@ export const createSkin = (map: MapJson, look: SkinLook, weather: WeatherLook, r
   const cellLight = uniform(look.cellLight);
   const sheen = uniform(look.clearcoat);
   const fieldSheen = uniform(look.fieldSheen);
-  const reachColour = uniform(new Color(reachGlow.REACH_GLOW));
+  const reachColour = uniform(new Color(tokens.REACH_GLOW));
   const reachGain = uniform(weather.reachGain);
-  const reachOrigin = uniform(reachGlow.REACH_ORIGIN_OPACITY);
+  const reachOrigin = uniform(tokens.REACH_ORIGIN_OPACITY);
   const reachBloom = uniform(weather.reachBloom);
   const reachBodyGain = uniform(weather.reachBodyGain);
   const reachMix = uniform(1);
+  // The ripple (D195): where the scheduler's clock stands in its period, as an angle; the amplitude as a share of the one the grid was laid at, none until the loop says the membranes move; and the swells' length and heading across the field.
+  const rippleTurn = uniform(0);
+  const rippleGain = uniform(0);
+  const rippleWave = uniform(new Vector2());
 
   // The composites' side (step 66): which one each sample lies under, and how open each stands.
   const shares = compositeShares(composites.length);
@@ -285,11 +320,21 @@ export const createSkin = (map: MapJson, look: SkinLook, weather: WeatherLook, r
   // A closed composite wears its own tissue in place of its cells'.
   const base = texture(tissueMap, uv());
   const wearing = worn === undefined || open === undefined ? undefined : texture(reliefMap, uv());
+  // Where the membrane line is read (D195): this fragment's own place, or beside it by the amplitude laid there, at a point that circles the place once a period, its phase running with the place across the field.
+  const lineAt = ((): Node | undefined => {
+    if (wobbleMap === undefined) return undefined;
+    const x = uv().x.mul(columns).sub(0.5).mul(resolution);
+    const z = uv().y.mul(rows).sub(0.5).mul(resolution);
+    const turn = rippleTurn.add(x.mul(rippleWave.x)).add(z.mul(rippleWave.y));
+    const reach = texture(wobbleMap, uv()).r.mul(rippleGain);
+    return uv().add(vec2(cos(turn).mul(reach).div(columns * resolution), sin(turn).mul(reach).div(rows * resolution)));
+  })();
   // The worn tissue rides the relief's blue and alpha.
   const wornBody = wearing?.b;
-  const wornLine = wearing?.a;
+  const wornLine = wearing === undefined || lineAt === undefined ? wearing?.a : texture(reliefMap, lineAt).a;
+  const ownLine = lineAt === undefined ? base.g : texture(tissueMap, lineAt).g;
   const body = clamp(wornBody === undefined || open === undefined ? base.r : mix(wornBody, base.r, open), 0, 1);
-  const line = wornLine === undefined || open === undefined ? base.g : mix(wornLine, base.g, open);
+  const line = wornLine === undefined || open === undefined ? ownLine : mix(wornLine, ownLine, open);
   const albedo = mix(fieldAlbedo, tissueAlbedo, body).add(membraneLine.mul(line));
   material.colorNode = albedo.mul(mix(farAlbedo, float(1), surface));
   // The shine, the key light's highlight and the wet sheen, lies on the cells' bodies; the open field keeps only its share, so the field reads as the space it is (D169).
@@ -315,8 +360,8 @@ export const createSkin = (map: MapJson, look: SkinLook, weather: WeatherLook, r
     rimGain.value = look.rimGain;
     rimPower.value = look.rimPower;
     cellLight.value = look.cellLight;
-    reachColour.value.set(reachGlow.REACH_GLOW);
-    reachOrigin.value = reachGlow.REACH_ORIGIN_OPACITY;
+    reachColour.value.set(tokens.REACH_GLOW);
+    reachOrigin.value = tokens.REACH_ORIGIN_OPACITY;
     reachGain.value = weather.reachGain;
     reachBloom.value = weather.reachBloom;
     reachBodyGain.value = weather.reachBodyGain;
@@ -325,8 +370,17 @@ export const createSkin = (map: MapJson, look: SkinLook, weather: WeatherLook, r
     sheen.value = look.clearcoat;
     fieldSheen.value = look.fieldSheen;
     material.clearcoatRoughness = look.clearcoatRoughness;
+    // A swell's length as the phase a layout unit turns through, along the heading; a length of none is no ripple's, so it turns through none.
+    const perUnit = look.rippleLength > 0 ? (2 * Math.PI) / look.rippleLength : 0;
+    rippleWave.value.set(Math.cos(look.rippleHeading) * perUnit, Math.sin(look.rippleHeading) * perUnit);
   };
   restyle();
+
+  const ripple = (t: number, still: boolean): void => {
+    // The clock's place in the period is worked out here, where the time keeps its precision however long the page has stood open.
+    rippleTurn.value = 2 * Math.PI * (((tokens.MEMBRANE_WOBBLE_HZ * t) / 1000) % 1);
+    rippleGain.value = still ? 0 : tokens.MEMBRANE_WOBBLE / MEMBRANE_WOBBLE;
+  };
 
   const relayer = (): void => {
     fillRelief(data, heightfield(map, resolution, { ...relief }), worn);
@@ -357,5 +411,5 @@ export const createSkin = (map: MapJson, look: SkinLook, weather: WeatherLook, r
     });
     if (moved) shares.needsUpdate = true;
   };
-  return { mesh, resolution, relief: reliefMap, amp, lift, surface, restyle, relayer, reach, reachMix, composites: shares, openComposites };
+  return { mesh, resolution, relief: reliefMap, amp, lift, surface, restyle, relayer, reach, reachMix, ripple, composites: shares, openComposites };
 };

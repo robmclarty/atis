@@ -24,7 +24,10 @@
  * Esc while the cell stays open (D166). A fourth
  * emulates `prefers-reduced-motion` and holds the frames still after load, in
  * an opened cell and across a fly-to, beside a page with motion on whose
- * frames move (step 42). And at the opening frame the world is a dark planet
+ * frames move (step 42). At the surface, with no notice to flare, the frames
+ * move by a membrane imported past its barrel and by nothing else: sealed, the
+ * same map holds still with motion on, and reduced motion rests it (D195).
+ * And at the opening frame the world is a dark planet
  * under one star per outside package the map records, which the wheel zooms
  * through LOD1's gate to the flat world (D170). Served as a range, the demo's
  * scrubber steps its frames by key: the canvas names the frame it shows, the
@@ -562,6 +565,72 @@ test('under reduced motion nothing changes from frame to frame after load, in an
   } finally {
     await browser.close();
     await server.close();
+  }
+});
+
+/**
+ * The demo with no notices, so nothing at the surface flares or breathes and
+ * a frame that moves there moves by its membranes alone; and, `sealed`, with
+ * every import that lands past a barrel counted as through it, so no
+ * membrane has anything to ripple by.
+ */
+const quietDemo = (sealed: boolean): string => {
+  const demo = JSON.parse(readFileSync(DEMO, 'utf8')) as { terrain: { cells: readonly { readonly id: string; readonly integrity?: { readonly through: number; readonly past: number } }[] } };
+  const leaky = demo.terrain.cells.filter((cell) => (cell.integrity?.past ?? 0) > 0).map((cell) => cell.id);
+  if (leaky.length === 0) throw new Error('the demo lost its cell imported past its barrel');
+  const cells = demo.terrain.cells.map((cell) => (sealed && cell.integrity !== undefined ? { ...cell, integrity: { through: cell.integrity.through + cell.integrity.past, past: 0 } } : cell));
+  return JSON.stringify({ ...demo, terrain: { ...demo.terrain, cells }, notices: [] });
+};
+
+/** A page on the world at the surface, the whole field in view and no cell opened, with motion as asked, its console's complaints collected, and only the world's own canvas showing. */
+const surfaceOn = async (browser: Browser, url: string, reducedMotion: 'reduce' | 'no-preference'): Promise<{ readonly page: Page; readonly complaints: readonly string[] }> => {
+  const page = await browser.newPage({ viewport: { width: 960, height: 720 }, reducedMotion });
+  const complaints: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error' || message.type() === 'warning') complaints.push(`${message.type()}: ${message.text()}`);
+  });
+  page.on('pageerror', (error) => complaints.push(`pageerror: ${error.message}`));
+  await page.goto(`${url}/?backend=webgl&zoom=2`);
+  await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
+  expect(await page.getAttribute('#world', 'data-lod')).toBe('1');
+  expect(await page.getAttribute('#world', 'data-open')).toBeNull();
+  await layersShown(page, false);
+  // The level's cross-fade has run out before a frame is judged.
+  await page.waitForTimeout(600);
+  return { page, complaints };
+};
+
+test('at the surface a membrane imported past its barrel ripples, one entered only through its barrel never moves, and reduced motion rests them all, with a clean console (D195)', { timeout: 120_000 }, async () => {
+  const leaky = await serve(quietDemo(false));
+  const sealed = await serve(quietDemo(true));
+  const browser = await launch();
+  try {
+    // With motion on, the core package's skin ripples by its one import past its barrel, so two frames differ.
+    const moving = await surfaceOn(browser, leaky.url, 'no-preference');
+    expect(await moving.page.getAttribute('#world', 'data-motion')).toBe('full');
+    const [before, after] = await twoFrames(moving.page, 1500);
+    expect(before.equals(after)).toBe(false);
+    expect(moving.complaints).toEqual([]);
+    await moving.page.close();
+
+    // The same map with that import counted through the barrel: motion on, and not a pixel moves, so the ripple above was the membrane's alone.
+    const held = await surfaceOn(browser, sealed.url, 'no-preference');
+    expect(await held.page.getAttribute('#world', 'data-motion')).toBe('full');
+    const [calm, calmer] = await twoFrames(held.page, 1500);
+    expect(calm.equals(calmer)).toBe(true);
+    expect(held.complaints).toEqual([]);
+    await held.page.close();
+
+    // Reduced: the leaky membrane rests where it lies, the frames the same to the pixel.
+    const { page, complaints } = await surfaceOn(browser, leaky.url, 'reduce');
+    expect(await page.getAttribute('#world', 'data-motion')).toBe('reduced');
+    const [still, later] = await twoFrames(page, 1500);
+    expect(still.equals(later)).toBe(true);
+    expect(complaints).toEqual([]);
+  } finally {
+    await browser.close();
+    await leaky.server.close();
+    await sealed.server.close();
   }
 });
 

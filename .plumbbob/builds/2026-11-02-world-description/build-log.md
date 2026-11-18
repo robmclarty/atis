@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: a world that describes itself at a glance
 
-**Current step:** 11 — feat(scene): read each membrane's wobble from its cell's integrity
+**Current step:** 12 — feat(web): ripple the skin's membrane line by its cell's integrity
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -33,7 +33,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 8. feat(scene): lay each file's functions as a nucleus inside its body
 - ☑ 9. feat(scene): send the tags out on leaders and leave the bodies in place
 - ☑ 10. feat(web): draw the nuclei and the exploded tags in the world
-- ☐ 11. feat(scene): read each membrane's wobble from its cell's integrity
+- ☑ 11. feat(scene): read each membrane's wobble from its cell's integrity
 - ☐ 12. feat(web): ripple the skin's membrane line by its cell's integrity
 - ☐ 13. feat(scene): mark the ribbons that enter a cell past its interface
 - ☐ 14. feat(web): oscillate the marked ribbons along their length
@@ -483,3 +483,5 @@ folder, so it rides the branch into the PR.)*
   **6.** Rob judged the stop on 2026-11-18 and kept the drift's starting values
 
   He likes the cell and file shapes, the animation and the movement as built. Q87 (exaggeration-numbers)'s drift values stand where step 6 set them: `DRIFT_REACH` 0.3 and `DRIFT_CURVE` 1.5. What he would change is wider than this build, and is parked as P6 to P9.
+
+- 2026-11-18 — step 11 checkpointed · c7022a189 — feat(scene): read each membrane's wobble from its cell's integrity (1 drift, 15m)

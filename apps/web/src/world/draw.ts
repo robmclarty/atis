@@ -67,7 +67,8 @@
  * `prefers-reduced-motion` the
  * scheduler stills the world (§5.5, C12): the primary keeps a static halo for
  * its load flare, nothing settles, breathes, flares or jiggles, the shapes and
- * the drift hold still, and a fly-to, a slide and the exploded view cut; the
+ * the drift hold still, no membrane ripples (D195), and a fly-to, a slide and
+ * the exploded view cut; the
  * camera's controls smooth nothing either, and the canvas says the motion is
  * reduced (step 42). It is read once, as the world is drawn. Once the first
  * complete frame, every layer drawn once, is on the screen, the canvas raises
@@ -106,7 +107,7 @@
 import { AgXToneMapping, AmbientLight, Color, DataUtils, DirectionalLight, RenderPipeline, Scene, Vector3, WebGPUCoordinateSystem, WebGPURenderer } from 'three/webgpu';
 import { emissive, mrt, output, pass } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
-import { CINEMA, FIELD_FILL, LOD_GATES, MOTION_TOKENS, NUCLEUS_TOKENS, REACH_ORIGIN_OPACITY, RELIEF, cellSlide, cellWiring, cinemaFocus, compositesOf, compositesOpen, createPicker, createScheduler, fileLevelOf, fillOf, gridFor, instances, interiorOf, planetShown, slideCellOf, surfacePoint } from 'scene';
+import { CINEMA, FIELD_FILL, LOD_GATES, MEMBRANE_WOBBLE, MEMBRANE_WOBBLE_HZ, MOTION_TOKENS, NUCLEUS_TOKENS, REACH_ORIGIN_OPACITY, RELIEF, cellSlide, cellWiring, cinemaFocus, compositesOf, compositesOpen, createPicker, createScheduler, fileLevelOf, fillOf, gridFor, instances, interiorOf, planetShown, slideCellOf, surfacePoint } from 'scene';
 import type { FileLevel, Lod, Pick, Point, Slide } from 'scene';
 import type { MapJson, OverlayName } from 'core';
 
@@ -222,7 +223,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   const noticeLook = registry.view(NOTICE, 'NOTICE');
   const labelLook = registry.view(LABEL_LOOK);
   const relief = registry.view(RELIEF, 'RELIEF');
-  const tokens = registry.view({ ...MOTION_TOKENS, FIELD_FILL, REACH_ORIGIN_OPACITY, ...ORGANELLE_LOOK, ...PALETTE_LOOK });
+  const tokens = registry.view({ ...MOTION_TOKENS, MEMBRANE_WOBBLE, MEMBRANE_WOBBLE_HZ, FIELD_FILL, REACH_ORIGIN_OPACITY, ...ORGANELLE_LOOK, ...PALETTE_LOOK });
 
   const renderer = new WebGPURenderer({ canvas, antialias: true, forceWebGL: view.backend === 'webgl' });
   await renderer.init();
@@ -833,6 +834,8 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     skin.amp.value = frame.amp;
     skin.lift.value = frame.lift;
     skin.surface.value = surface;
+    // The membranes ripple on the scheduler's clock (D195, C12), and rest under reduced motion.
+    skin.ripple(frame.t, reduced);
     skin.restyle();
     space.restyle();
     organelles.surface.value = surface;

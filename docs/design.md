@@ -451,6 +451,8 @@ the planet stands over it all (D170).
 | `SKIN.rimGain` | `0.05` | how strong the rim is; it never blooms |
 | `SKIN.rimPower` | `3` | how sharply the rim falls off with the skin's facing |
 | `SKIN.cellLight` | `0.035` | each cell's own faint light over its body; it never blooms |
+| `SKIN.rippleLength` | `72` | the membranes' ripple (D195 (living-membranes)): how long one swell runs across the field, in layout units; a line that runs along the swells' heading swells this often, and one that runs across it less often, down to a line that sways as one |
+| `SKIN.rippleHeading` | `0.6` | the heading the swells lie across, in radians from the map's x toward its y; off both axes and the diagonal, so few stretches of any skin run square to it |
 
 ### The space ground
 
@@ -699,6 +701,25 @@ and on the screen's scale: no file leaves its membrane or jumps, and none moves
 more than a small share of the screen a second at any zoom (D165). That lifted
 §5.5's one continuous mover; the primary's breathing is no longer the only thing
 that moves.
+
+At the surface a membrane's line means its cell's integrity (D195
+(living-membranes)): it ripples by the share of the imports from outside the
+cell that land past its barrel, `MEMBRANE_WOBBLE` at the whole share and still
+at none, once every period of `MEMBRANE_WOBBLE_HZ`. The line is laid into the
+tissue once, so nothing lays it again to move it. The scene lays a third grid
+beside the tissue's two, each cell's amplitude under its line and as far either
+side as the ripple reaches (`tissue().wobble`), and the skin's fragment stage
+reads the line that far to one side of each fragment, at a point that circles
+the fragment's place once a period. The circle's phase runs with the place
+across the field, `SKIN.rippleLength` to a swell along `SKIN.rippleHeading`,
+so a line swells along its length whichever way it runs, by the amplitude and
+no more, and keeps its teeth and its width. Where two skins run close each
+sample takes the amplitude of the line it stands nearest, so a still skin
+beside a rippling one holds still. A cell entered only through its barrel, and
+one the map counted no integrity for, never moves, and a map where no cell
+ripples costs the skin nothing more. The time is the scheduler's (C12), so one
+time gives one frame and a capture's frozen clock gives a still one; under
+reduced motion every membrane rests where it lies.
 
 These tokens sit where [the materials spike](#phase-1b-the-materials-spike) left
 them. Where §5.5 gives a number, the token stands at it, as §5.5's starting

@@ -15,7 +15,7 @@
 import { CELL_GATE, COMPOSITE_GATE, INTERIOR_LAYOUT, LOD_GATES, PLANET_LAYOUT } from 'scene';
 import type { InteriorLayout, LodGate, PlanetLayout } from 'scene';
 
-/** The skin's material: the albedos, the membrane line, how rough and how wet it is, the share of its albedo kept at the far field, and the tissue's own faint light. */
+/** The skin's material: the albedos, the membrane line, how rough and how wet it is, the share of its albedo kept at the far field, the tissue's own faint light, and the shape of the ripple a membrane imported past its barrel runs with (D195). */
 export type SkinLook = {
   /** The skin where it lies on the open field: near-black, the ground space is (D169). */
   readonly fieldAlbedo: string;
@@ -36,6 +36,9 @@ export type SkinLook = {
   readonly rimGain: number;
   readonly rimPower: number;
   readonly cellLight: number;
+  /** The ripple's shape (D195): how long one swell runs across the field, in layout units, and the heading its swells lie across, in radians from the map's x toward its y. How far a line ripples and how fast are the scene's (`MEMBRANE_WOBBLE`, `MEMBRANE_WOBBLE_HZ`). */
+  readonly rippleLength: number;
+  readonly rippleHeading: number;
 };
 
 export const SKIN: SkinLook = {
@@ -51,6 +54,8 @@ export const SKIN: SkinLook = {
   rimGain: 0.05,
   rimPower: 3,
   cellLight: 0.035,
+  rippleLength: 72,
+  rippleHeading: 0.6,
 };
 
 /**
