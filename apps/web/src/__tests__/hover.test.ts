@@ -39,10 +39,23 @@ test('a renamed file shows where it came from (D40)', () => {
   expect(hoverOf(renamed, placed(renamed, 'libs/core/src/pm/index.ts'))?.text).toBe('libs/core/src/pm/main.ts → libs/core/src/pm/index.ts');
 });
 
-test('a cell shows its membrane with its teeth and its folder, and one the layout drew no skin for shows nothing', () => {
+test('a cell shows its membrane with its teeth, its folder and how it is entered, and one the layout drew no skin for shows nothing', () => {
   const cell = DEMO.terrain.cells.find((each) => each.id === 'folder:libs/core/src/pm');
   const contour = DEMO.terrain.layout?.contours?.['folder:libs/core/src/pm'];
   if (cell === undefined || contour === undefined) throw new Error('the demo lost its pm folder');
-  expect(hoverOf(DEMO, { kind: 'membrane', cell: cell.id })).toEqual({ key: 'membrane:folder:libs/core/src/pm', target: 'folder:libs/core/src/pm', text: 'libs/core/src/pm', ring: dentedRing(contour, cell.dents.length) });
+  expect(cell.integrity).toEqual({ through: 2, past: 0 });
+  expect(hoverOf(DEMO, { kind: 'membrane', cell: cell.id })).toEqual({ key: 'membrane:folder:libs/core/src/pm', target: 'folder:libs/core/src/pm', text: 'libs/core/src/pm · 2 through, 0 past', ring: dentedRing(contour, cell.dents.length) });
   expect(hoverOf(DEMO, { kind: 'membrane', cell: 'folder:nowhere' })).toBeUndefined();
+});
+
+test("a cell's hover line reads its two counts where the map counted them, and its folder alone where the cell has no barrel (D195, Q95, C2)", () => {
+  // The demo's core package is entered once through its barrel and once past it.
+  expect(hoverOf(DEMO, { kind: 'membrane', cell: 'package:libs/core' })?.text).toBe('libs/core · 1 through, 1 past');
+  // A directory has no barrel, so the map counts nothing there and the line says nothing of it.
+  const directory = DEMO.terrain.cells.find((each) => each.id === 'directory:libs/core/src/util');
+  expect(directory?.integrity).toBeUndefined();
+  expect(hoverOf(DEMO, { kind: 'membrane', cell: 'directory:libs/core/src/util' })?.text).toBe('libs/core/src/util');
+  // A barrelled cell nothing outside imports carries two zeros, a count of none, and says so.
+  const quiet: MapJson = { ...DEMO, terrain: { ...DEMO.terrain, cells: DEMO.terrain.cells.map((each) => (each.id === 'package:libs/core' ? { ...each, integrity: { through: 0, past: 0 } } : each)) } };
+  expect(hoverOf(quiet, { kind: 'membrane', cell: 'package:libs/core' })?.text).toBe('libs/core · 0 through, 0 past');
 });

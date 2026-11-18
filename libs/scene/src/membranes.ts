@@ -11,17 +11,22 @@
  * and softened there, so the world never paints a large canvas to get them.
  * The lines are laid from the dented ring, so the world's membranes wear the
  * same teeth the SVG draws, which reads the ring from here (D86, D159).
+ *
+ * A third grid lies beside those two (D195): how far each cell's membrane
+ * line ripples, by the share of its outside imports that land past its
+ * barrel. The line is laid once and never again, so the world moves it by
+ * sampling it a little to one side, and this grid says how far.
  */
 
 import earcut from 'earcut';
 import { membraneThickness } from 'core';
-import type { MapJson } from 'core';
+import type { Cell, MapJson } from 'core';
 
 import { gridFor } from './heightfield.js';
 import type { Grid } from './heightfield.js';
 import { openRing, scanRing } from './raster.js';
 import type { Ring } from './raster.js';
-import { MEMBRANE_DENT_PULL, MEMBRANE_DENT_SPAN } from './tokens.js';
+import { MEMBRANE_DENT_PULL, MEMBRANE_DENT_SPAN, MEMBRANE_WOBBLE } from './tokens.js';
 
 /** A cell's skin cut into triangles: its ring's points as `x, y` pairs in layout units, and three indices per triangle. */
 export type Membrane = {
@@ -30,10 +35,11 @@ export type Membrane = {
   readonly triangles: Uint32Array;
 };
 
-/** The base tissue the skin samples: how much body lies under each point, and how much membrane line. */
+/** The base tissue the skin samples: how much body lies under each point, how much membrane line, and how far that line ripples there, in layout units (D195). */
 export type Tissue = {
   readonly body: Grid;
   readonly membrane: Grid;
+  readonly wobble: Grid;
 };
 
 /** How the tissue is laid: each skin a point lies inside adds this much body, up to 1, and the body is softened over this many samples. */
@@ -133,14 +139,32 @@ export function dentedRing(contour: Ring, dents: number): Ring {
   return [...kept, ...pulled].toSorted((a, b) => a.key - b.key).map(({ point }) => point);
 }
 
+/**
+ * How far a cell's membrane line ripples either side of where it rests, in
+ * layout units (D195): `MEMBRANE_WOBBLE` by the share of its outside imports
+ * that land past its barrel. A cell entered only through its barrel holds
+ * still, and so does one the map gives no `integrity` (a directory, a single
+ * file) or nothing outside imports: no share was measured there, so none is
+ * drawn (C2).
+ */
+export function wobbleOf(cell: Pick<Cell, 'integrity'>): number {
+  const { through, past } = cell.integrity ?? { through: 0, past: 0 };
+  const entered = through + past;
+  return entered === 0 ? 0 : (MEMBRANE_WOBBLE * past) / entered;
+}
+
+/** A cell's skin as the tissue lays it: its dented ring, opened, how wide its line is drawn and how far it ripples. */
+type Skin = { readonly cell: string; readonly thickness: number; readonly wobble: number; readonly ring: Ring };
+
 /** Every cell that has a contour, in cell order, with its skin dented by its rules and opened. */
-function skinsOf(map: MapJson): readonly { readonly cell: string; readonly interfaceSize: number; readonly ring: Ring }[] {
+function skinsOf(map: MapJson): readonly Skin[] {
   const contours = map.terrain.layout?.contours ?? {};
   return map.terrain.cells
     .toSorted((a, b) => byPath(a.id, b.id))
     .flatMap((cell) => {
       const contour = contours[cell.id];
-      return contour === undefined || contour.length < 3 ? [] : [{ cell: cell.id, interfaceSize: cell.interface_size, ring: openRing(dentedRing(contour, cell.dents.length)) }];
+      if (contour === undefined || contour.length < 3) return [];
+      return [{ cell: cell.id, thickness: membraneThickness(cell.interface_size), wobble: wobbleOf(cell), ring: openRing(dentedRing(contour, cell.dents.length)) }];
     });
 }
 
@@ -186,6 +210,79 @@ function strokeRing(grid: Grid, ring: Ring, thickness: number): void {
   });
 }
 
+/**
+ * How far past its line's edge a skin's ripple is laid. The skin samples its
+ * line up to the amplitude to one side, so a sample that far off the line
+ * must carry the amplitude too, or the line would only thin where it stands
+ * and never move. `MEMBRANE_WOBBLE` keeps under `MEMBRANE_DENT_PULL`
+ * (`tokens.test.ts`), so laying to the pull holds whatever the token is moved
+ * to inside its bound; a sample more covers the skin reading between samples.
+ */
+const wobbleReach = (resolution: number): number => MEMBRANE_DENT_PULL + resolution;
+
+/**
+ * Visit every sample within `reach` of a ring's line that `wanted` passes:
+ * its index, and how far it stands off the line's edge, below zero under the
+ * line itself. A sample near two of the ring's segments is visited once for
+ * each. `wanted` is asked before the distance is measured, so a caller that
+ * wants few samples pays for few.
+ */
+function nearRing(grid: Grid, { ring, thickness }: Skin, reach: number, wanted: (index: number) => boolean, visit: (index: number, off: number) => void): void {
+  const half = thickness / 2;
+  const span = half + reach;
+  ring.forEach(([ax, ay], at) => {
+    const [bx, by] = ring[(at + 1) % ring.length] ?? [ax, ay];
+    const c0 = Math.max(0, Math.ceil((Math.min(ax, bx) - span) / grid.resolution));
+    const c1 = Math.min(grid.columns - 1, Math.floor((Math.max(ax, bx) + span) / grid.resolution));
+    const r0 = Math.max(0, Math.ceil((Math.min(ay, by) - span) / grid.resolution));
+    const r1 = Math.min(grid.rows - 1, Math.floor((Math.max(ay, by) + span) / grid.resolution));
+    for (let row = r0; row <= r1; row += 1) {
+      for (let column = c0; column <= c1; column += 1) {
+        const index = row * grid.columns + column;
+        if (!wanted(index)) continue;
+        const off = toSegment(column * grid.resolution, row * grid.resolution, ax, ay, bx, by) - half;
+        if (off <= reach) visit(index, off);
+      }
+    }
+  });
+}
+
+/**
+ * Lay each skin's ripple into the grid (D195): its amplitude under its line
+ * and as far either side as the ripple may carry it, and 0 everywhere else.
+ * Where two skins run close, each sample takes the amplitude of the line it
+ * stands nearest, so a still skin beside a rippling one holds still up to
+ * the middle of the ground between them. The rippling skins lay their
+ * amplitudes first, the nearer line holding a sample two of them reach; then
+ * each still skin takes back the samples it stands nearer, the only samples
+ * a still skin is measured at, so a map where few cells ripple costs little
+ * and one where none does costs nothing. At an equal distance a rippling
+ * skin keeps the sample, and of two the first in cell order (C3).
+ */
+function layWobble(grid: Grid, skins: readonly Skin[]): void {
+  const rippling = skins.filter((skin) => skin.wobble > 0);
+  if (rippling.length === 0) return;
+  const reach = wobbleReach(grid.resolution);
+  const nearest = new Float32Array(grid.values.length).fill(Number.POSITIVE_INFINITY);
+  const nearer = (index: number, off: number): boolean => off < (nearest[index] ?? Number.NEGATIVE_INFINITY);
+  for (const skin of rippling) {
+    nearRing(grid, skin, reach, () => true, (index, off) => {
+      if (!nearer(index, off)) return;
+      nearest[index] = off;
+      grid.values[index] = skin.wobble;
+    });
+  }
+  const laid = (index: number): boolean => (grid.values[index] ?? 0) > 0;
+  for (const skin of skins) {
+    if (skin.wobble > 0) continue;
+    nearRing(grid, skin, reach, laid, (index, off) => {
+      if (!nearer(index, off)) return;
+      nearest[index] = off;
+      grid.values[index] = 0;
+    });
+  }
+}
+
 /** Average each sample with its `radius` neighbours along one axis, held at the edges. */
 function boxPass(grid: Grid, radius: number, across: boolean): void {
   const source = Float32Array.from(grid.values);
@@ -211,15 +308,18 @@ function soften(grid: Grid, radius: number): Grid {
   return grid;
 }
 
-/** The base tissue at the heightfield's `resolution`: the cells' bodies, softened, and their membrane lines, teeth and all. */
+/** The base tissue at the heightfield's `resolution`: the cells' bodies, softened, their membrane lines, teeth and all, and how far each line ripples (D195). */
 export function tissue(map: MapJson, resolution: number, look: TissueLook = TISSUE): Tissue {
   const body = gridFor(map, resolution);
   const membrane = gridFor(map, resolution);
-  for (const { ring, interfaceSize } of skinsOf(map)) {
+  const wobble = gridFor(map, resolution);
+  const skins = skinsOf(map);
+  for (const { ring, thickness } of skins) {
     scanRing(body, ring, (index) => {
       body.values[index] = Math.min(1, (body.values[index] ?? 0) + look.bodyShare);
     });
-    strokeRing(membrane, ring, membraneThickness(interfaceSize));
+    strokeRing(membrane, ring, thickness);
   }
-  return { body: soften(body, look.bodySoften), membrane };
+  layWobble(wobble, skins);
+  return { body: soften(body, look.bodySoften), membrane, wobble };
 }

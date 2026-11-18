@@ -457,3 +457,16 @@ export const DRIFT_CURVE = 1.5;
 export const DRIFT_SPEED = 0.02;
 export const DRIFT_GAP = 1;
 export const DRIFT_EASE_MS = 600;
+
+/**
+ * Integrity in motion, at the surface (D195): a cell's membrane line ripples
+ * by the share of its outside imports that land past its barrel. A cell
+ * entered wholly past its interface ripples this far either side of where
+ * its skin rests, in layout units, and one entered only through it not at
+ * all; the ripple runs at this rate (Hz), slow enough that the teeth and
+ * the line's width stay readable. The amplitude keeps under half the
+ * layout's sibling gap and under a tooth's pull, so a rippling skin never
+ * reaches a sibling's (D171) and a tooth still stands clear of the ripple.
+ */
+export const MEMBRANE_WOBBLE = 3;
+export const MEMBRANE_WOBBLE_HZ = 0.15;

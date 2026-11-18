@@ -59,6 +59,7 @@ import { createServer } from 'vite';
 import type { Plugin, ViteDevServer } from 'vite';
 import { expect, test } from 'vitest';
 
+import { LEGEND } from '../hud.js';
 import { repoMap } from './repo-map.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -503,7 +504,7 @@ test('framed on a package, the world opens it on its modules, tagging the file o
     expect(await page.$$eval('[data-legend]', (elements) => elements.length)).toBe(0);
     await page.click('[data-hud-key]');
     await page.waitForSelector('[data-legend]', { timeout: 30_000 });
-    expect(await page.$$eval('[data-legend] [data-mark]', (elements) => elements.length)).toBe(15);
+    expect(await page.$$eval('[data-legend] [data-mark]', (elements) => elements.length)).toBe(LEGEND.length);
     await page.keyboard.press('Escape');
     await page.waitForSelector('[data-legend]', { state: 'detached', timeout: 30_000 });
     expect(await page.getAttribute('#world', 'data-open')).toBe(cell);

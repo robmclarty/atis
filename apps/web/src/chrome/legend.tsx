@@ -45,6 +45,7 @@ import {
   LEGEND_SLOT,
   LIFR_HUE,
   MAX_RULES,
+  MEMBRANE_STROKE,
   MUTANT_NOTCH_DEPTH,
   MUTANT_NOTCH_WIDTH,
   MVFR_HUE,
@@ -69,6 +70,7 @@ import {
   VFR_HUE,
   outlineOf,
 } from 'scene';
+import { membraneThickness } from 'core';
 import { useMemo } from 'react';
 import type { ReactElement, ReactNode } from 'react';
 
@@ -110,6 +112,7 @@ const LOOK = {
   LEGEND_SAMPLE_R,
   LEGEND_SLOT,
   LIFR_HUE,
+  MEMBRANE_STROKE,
   MUTANT_NOTCH_DEPTH,
   MUTANT_NOTCH_WIDTH,
   MVFR_HUE,
@@ -268,6 +271,23 @@ const NUCLEUS_DOTS: readonly (readonly [number, number, number])[] = [
   [0.2, -0.48, 0.12],
 ];
 
+/** How many swells the ripple's sample draws across its slot, and how far each stands off the line's rest as a share of the sample radius. */
+const RIPPLE_SWELLS = 2;
+const RIPPLE_SWING = 0.35;
+/** How many straight pieces draw each swell. */
+const RIPPLE_STEPS = 12;
+
+/** The ripple's sample (D195): a stretch of membrane line caught mid-ripple, a sine across the slot in the membrane's own ink, as thin as the thinnest skin, at rest on the row's middle. */
+const Ripple = ({ look }: { readonly look: Look }): ReactElement => {
+  const half = look.LEGEND_SLOT / 2 - look.LEGEND_PAD / 2;
+  const count = RIPPLE_SWELLS * RIPPLE_STEPS;
+  const points = Array.from({ length: count + 1 }, (_, index) => {
+    const share = index / count;
+    return `${(-half + 2 * half * share).toFixed(2)} ${(look.LEGEND_SAMPLE_R * RIPPLE_SWING * Math.sin(2 * Math.PI * RIPPLE_SWELLS * share)).toFixed(2)}`;
+  });
+  return <path data-ripple d={`M${points.join('L')}`} fill="none" stroke={look.MEMBRANE_STROKE} strokeWidth={membraneThickness(0)} strokeLinejoin="round" />;
+};
+
 /** Each mark's sample, drawn about the origin in the sheet's units; the category's is a scale of flat blocks instead. */
 const sampleOf = (id: string, look: Look): ReactNode => {
   switch (id) {
@@ -356,6 +376,8 @@ const sampleOf = (id: string, look: Look): ReactNode => {
           ))}
         </>
       );
+    case 'ripple':
+      return <Ripple look={look} />;
     default:
       return null;
   }

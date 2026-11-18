@@ -214,6 +214,8 @@ export const SECTIONS: readonly Section[] = [
       'DRIFT_SPEED',
       'DRIFT_GAP',
       'DRIFT_EASE_MS',
+      'MEMBRANE_WOBBLE',
+      'MEMBRANE_WOBBLE_HZ',
     ],
   },
 ];

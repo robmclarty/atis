@@ -57,6 +57,18 @@ const TRANSIENT_MS = 600;
 
 const about = (value: number, why: string): Bound => ({ atLeast: value * 0.75, atMost: value * 1.25, why });
 
+/**
+ * The clear ground the layout keeps between two sibling cells (D171), read
+ * from where core's layout sets it: it is the layout's own number and no
+ * token, and a bound that leans on it must move when it does.
+ */
+const SIBLINGS = join(HERE, '..', '..', '..', 'core', 'src', 'layout', 'siblings.ts');
+const SIBLING_GAP = ((): number => {
+  const found = /^const SIBLING_GAP = (\d+(?:\.\d+)?);$/m.exec(readFileSync(SIBLINGS, 'utf8'));
+  if (found === null) throw new Error('libs/core/src/layout/siblings.ts no longer sets SIBLING_GAP as a number');
+  return Number(found[1]);
+})();
+
 const MOTION_BOUNDS: Readonly<Record<string, Bound>> = {
   SETTLE_MS: { above: 0, atMost: TRANSIENT_MS, why: 'a damped drop, and a transient' },
   SETTLE_LIFT: { above: 0, why: 'a drop starts above where it lands' },
@@ -85,6 +97,12 @@ const MOTION_BOUNDS: Readonly<Record<string, Bound>> = {
   DRIFT_SPEED: { above: 0, atMost: 0.05, why: 'a slow float on the screen (D165): a small share of it a second, twenty seconds or more to cross it' },
   DRIFT_GAP: { atLeast: 0, why: 'a file keeps off its neighbours and the membrane, never into them' },
   DRIFT_EASE_MS: { above: 0, atMost: TRANSIENT_MS, why: 'the drift eases in as the cell opens, a transient' },
+  MEMBRANE_WOBBLE: {
+    above: 0,
+    below: Math.min(SIBLING_GAP / 2, tokens.MEMBRANE_DENT_PULL),
+    why: "a rippling skin never reaches a sibling's (D171, D195): under half the layout's sibling gap, so two that ripple toward each other still keep apart, and under a tooth's pull, so a tooth stands clear of the ripple",
+  },
+  MEMBRANE_WOBBLE_HZ: { above: 0, atMost: 0.5, why: 'a slow ripple (D195): two seconds or longer a swell, so the teeth and the line stay readable' },
 };
 
 const VALUES: Readonly<Record<string, unknown>> = tokens;
@@ -158,7 +176,13 @@ test('SHAPE_JITTER wanders an arm off its beat by half a beat at most', () => {
   expect(value, SHAPE_JITTER_BOUND.why).toBeLessThanOrEqual(SHAPE_JITTER_BOUND.atMost ?? Number.NaN);
 });
 
-test("design.md's motion table names exactly the tokens §5.5, D147, D157, D165 and D193 bound", () => {
+test("the layout's sibling gap, which bounds the ripple, is the one core's layout keeps", () => {
+  expect(SIBLING_GAP).toBeGreaterThan(0);
+  expect(valueOf('MEMBRANE_WOBBLE')).toBeLessThan(SIBLING_GAP / 2);
+  expect(valueOf('MEMBRANE_WOBBLE')).toBeLessThan(valueOf('MEMBRANE_DENT_PULL'));
+});
+
+test("design.md's motion table names exactly the tokens §5.5, D147, D157, D165, D193 and D195 bound", () => {
   const doc = readFileSync(DESIGN, 'utf8');
   const section = doc.split(/^## /m).find((part) => part.startsWith('Motion'));
   expect(section, 'design.md has no Motion section').toBeDefined();

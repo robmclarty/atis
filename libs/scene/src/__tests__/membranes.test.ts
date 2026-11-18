@@ -8,9 +8,9 @@ import { expect, test } from 'vitest';
 
 import { sampleGrid } from '../heightfield.js';
 import type { Grid } from '../heightfield.js';
-import { TISSUE, dentedRing, membranes, tissue } from '../membranes.js';
+import { TISSUE, dentedRing, membranes, tissue, wobbleOf } from '../membranes.js';
 import type { Membrane } from '../membranes.js';
-import { MEMBRANE_DENT_PULL } from '../tokens.js';
+import { MEMBRANE_DENT_PULL, MEMBRANE_WOBBLE } from '../tokens.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DEMO = assertMap(JSON.parse(readFileSync(join(HERE, '..', '..', '..', 'core', 'fixtures', 'demo', 'map.json'), 'utf8')));
@@ -195,5 +195,117 @@ test('one map lays one tissue and one set of triangles, byte for byte, in any ce
   const b = tissue(reversed, 4);
   expect(b.body.values).toEqual(a.body.values);
   expect(b.membrane.values).toEqual(a.membrane.values);
+  expect(b.wobble.values).toEqual(a.wobble.values);
+  expect(a.wobble.values.some((value) => value > 0), 'the demo has a cell imported past its barrel').toBe(true);
+  expect(tissue(DEMO, 4).wobble.values).toEqual(a.wobble.values);
   expect(membranes(reversed)).toEqual(membranes(DEMO));
+});
+
+const CORE = 'package:libs/core';
+
+/** The demo with the named cells' integrity replaced, or taken away where none is given. */
+function withIntegrity(integrity: Readonly<Record<string, { readonly through: number; readonly past: number } | undefined>>, map: MapJson = DEMO): MapJson {
+  const cells = map.terrain.cells.map((cell) => {
+    if (!(cell.id in integrity)) return cell;
+    const { integrity: _, ...rest } = cell;
+    const next = integrity[cell.id];
+    return next === undefined ? rest : { ...rest, integrity: next };
+  });
+  return { ...map, terrain: { ...map.terrain, cells } };
+}
+
+test("a membrane ripples by the share of its cell's outside imports that land past its barrel, and holds still where none was measured (D195, C2)", () => {
+  expect(wobbleOf({ integrity: { through: 0, past: 4 } })).toBe(MEMBRANE_WOBBLE);
+  expect(wobbleOf({ integrity: { through: 3, past: 3 } })).toBe(MEMBRANE_WOBBLE / 2);
+  expect(wobbleOf({ integrity: { through: 100, past: 100 } })).toBe(MEMBRANE_WOBBLE / 2);
+  expect(wobbleOf({ integrity: { through: 3, past: 1 } })).toBe(MEMBRANE_WOBBLE / 4);
+  // Entered only through its barrel, entered by nothing, and a cell with no barrel to be entered past.
+  expect(wobbleOf({ integrity: { through: 7, past: 0 } })).toBe(0);
+  expect(wobbleOf({ integrity: { through: 0, past: 0 } })).toBe(0);
+  expect(wobbleOf({})).toBe(0);
+  // The demo's own cells: its core package is entered once each way, its pm folder through its barrel alone, and its util directory has no barrel.
+  const cell = (id: string): MapJson['terrain']['cells'][number] => {
+    const found = DEMO.terrain.cells.find((each) => each.id === id);
+    if (found === undefined) throw new Error(`the demo lost ${id}`);
+    return found;
+  };
+  expect(cell(CORE).integrity).toEqual({ through: 1, past: 1 });
+  expect(wobbleOf(cell(CORE))).toBe(MEMBRANE_WOBBLE / 2);
+  expect(cell(PM).integrity?.past).toBe(0);
+  expect(wobbleOf(cell(PM))).toBe(0);
+  expect(cell(UTIL).integrity).toBeUndefined();
+  expect(wobbleOf(cell(UTIL))).toBe(0);
+});
+
+test("the tissue lays each cell's amplitude under its skin's line and as far either side as the ripple reaches, and 0 off every membrane", () => {
+  const resolution = 1;
+  const half = withIntegrity({ [PM]: { through: 2, past: 2 } }, withDents({ [PM]: [] }, withContours({ [PM]: ELL })));
+  const { wobble, membrane } = tissue(half, resolution);
+  // On every edge of the L, on the line and the ripple's reach to either side of it, the grid carries the cell's amplitude.
+  ELL.slice(0, -1).forEach(([ax, ay], index) => {
+    const [bx, by] = ELL[index + 1] ?? [ax, ay];
+    const [mx, my] = [(ax + bx) / 2, (ay + by) / 2];
+    const [nx, ny] = ax === bx ? [1, 0] : [0, 1];
+    for (const off of [-MEMBRANE_WOBBLE, 0, MEMBRANE_WOBBLE]) {
+      expect(sampleGrid(wobble, mx + nx * off, my + ny * off), `edge ${String(index)} at ${String(off)}`).toBe(MEMBRANE_WOBBLE / 2);
+    }
+  });
+  // Wherever the line is laid the ripple is too, so no stretch of a rippling line is left standing.
+  membrane.values.forEach((line, index) => {
+    if (line > 0) expect(wobble.values[index]).toBe(MEMBRANE_WOBBLE / 2);
+  });
+  // Well inside the body, out in the cut-away corner and out on the open field, nothing ripples.
+  expect(sampleGrid(wobble, 120, 150)).toBe(0);
+  expect(sampleGrid(wobble, 180, 180)).toBe(0);
+  expect(sampleGrid(wobble, 50, 50)).toBe(0);
+  // Every sample that carries an amplitude lies within the ripple's reach of the ring.
+  const pm = DEMO.terrain.cells.find((cell) => cell.id === PM);
+  const reach = membraneThickness(pm?.interface_size ?? 0) / 2 + MEMBRANE_DENT_PULL + resolution;
+  wobble.values.forEach((value, index) => {
+    if (value === 0) return;
+    const at: Ring[number] = [(index % wobble.columns) * resolution, Math.floor(index / wobble.columns) * resolution];
+    expect(offRing(at, ELL)).toBeLessThanOrEqual(reach + 1e-6);
+  });
+});
+
+test('a map where no cell is imported past its barrel lays no ripple at all', () => {
+  const still = withIntegrity({ [CORE]: { through: 2, past: 0 }, [PM]: { through: 2, past: 0 } });
+  expect(tissue(still, 2).wobble.values.every((value) => value === 0)).toBe(true);
+  const none = withIntegrity({ [CORE]: undefined, [PM]: undefined, 'package:apps/cli': undefined });
+  expect(none.terrain.cells.every((cell) => cell.integrity === undefined)).toBe(true);
+  expect(tissue(none, 2).wobble.values.every((value) => value === 0)).toBe(true);
+});
+
+test('a still skin beside a rippling one holds still: each sample takes the amplitude of the line it stands nearest', () => {
+  // Two squares 4 apart, less than the ripple's reach: the left one imported past its barrel, the right one a directory.
+  const left: Ring = [
+    [100, 100],
+    [160, 100],
+    [160, 160],
+    [100, 160],
+  ];
+  const right: Ring = [
+    [164, 100],
+    [224, 100],
+    [224, 160],
+    [164, 160],
+  ];
+  const cells = DEMO.terrain.cells.map((cell) => (cell.id === PM || cell.id === UTIL ? { ...cell, interface_size: 0, dents: [] } : cell));
+  const map = withIntegrity({ [PM]: { through: 0, past: 3 } }, withContours({ [PM]: left, [UTIL]: right }, cells));
+  const { wobble } = tissue(map, 1);
+  // Down the facing sides, away from the corners: the rippling line and its side of the gap ripple, the still line and its side do not.
+  for (let y = 115; y <= 145; y += 5) {
+    expect(sampleGrid(wobble, 160, y), `the rippling line at ${String(y)}`).toBe(MEMBRANE_WOBBLE);
+    expect(sampleGrid(wobble, 161, y)).toBe(MEMBRANE_WOBBLE);
+    expect(sampleGrid(wobble, 163, y)).toBe(0);
+    expect(sampleGrid(wobble, 164, y), `the still line at ${String(y)}`).toBe(0);
+    expect(sampleGrid(wobble, 166, y)).toBe(0);
+  }
+  // The rippling skin's far side, which no still line stands near, ripples to its whole reach.
+  expect(sampleGrid(wobble, 100 - MEMBRANE_DENT_PULL, 130)).toBe(MEMBRANE_WOBBLE);
+  // Swapped, so the still cell comes first in cell order, the same line ripples and the same line holds.
+  const swapped = withIntegrity({ [UTIL]: { through: 0, past: 3 } }, withContours({ [PM]: right, [UTIL]: left }, cells));
+  const other = tissue(swapped, 1).wobble;
+  expect(sampleGrid(other, 160, 130)).toBe(MEMBRANE_WOBBLE);
+  expect(sampleGrid(other, 164, 130)).toBe(0);
 });

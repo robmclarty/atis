@@ -17,6 +17,7 @@ import {
   IFR_HUE,
   LEGEND_SAMPLE_R,
   MAX_RULES,
+  MEMBRANE_STROKE,
   MUTED_DASH,
   ORGANELLE_FILL,
   REACH_DECAY,
@@ -160,8 +161,8 @@ test("the world's Size counts the terrain alone, as the sheet's does, so a chang
 });
 
 test('the legend keys the same marks in the same words as the sheet, and the shape key says the same', () => {
-  // The world keys one mark the sheet does not, last: the nucleus, which only an opened cell draws (D201).
-  expect(LEGEND).toEqual([...SHEET_LEGEND, { id: 'nucleus', words: 'nucleus: its functions, sized by their lines' }]);
+  // The world keys two marks the sheet does not, last: the nucleus, which only an opened cell draws (D201), and the membrane's ripple, which is motion and so the world's alone (D195, C10).
+  expect(LEGEND).toEqual([...SHEET_LEGEND, { id: 'nucleus', words: 'nucleus: its functions, sized by their lines' }, { id: 'ripple', words: 'membrane ripples: imported past its interface' }]);
   expect(SHAPE_KEY_WORDS).toBe(SHEET_SHAPE_KEY_WORDS);
   expect(over('#ffffff', '#000000', 0.5)).toBe('#808080');
   expect(over('#e6edf3', '#1a1f27', 0)).toBe('#1a1f27');
@@ -255,6 +256,19 @@ test("the reach, its crossings and the history's two textures each draw their sa
   expect(dots).toHaveLength([...sheetRow('stipple').matchAll(new RegExp(`r="${String(STIPPLE_DOT)}"`, 'g'))].length);
   expect(dots.length).toBeGreaterThan(1);
   for (const dot of dots) expect(dot.getAttribute('fill')).toBe(ink);
+});
+
+test("the ripple's row draws a membrane line caught mid-ripple, in the membrane's own ink (D195)", async () => {
+  await act(async () => root.render(<Legend registry={createRegistry()} />));
+  const line = host.querySelector('[data-legend] [data-mark="ripple"] svg [data-ripple]');
+  expect(line?.getAttribute('stroke')).toBe(MEMBRANE_STROKE);
+  expect(line?.getAttribute('fill')).toBe('none');
+  // It leaves its rest both ways and comes back to it at each end.
+  const heights = [...(line?.getAttribute('d') ?? '').matchAll(/[ML](-?[\d.]+) (-?[\d.]+)/g)].map((point) => Number(point[2]));
+  expect(Math.max(...heights)).toBeGreaterThan(0);
+  expect(Math.min(...heights)).toBeLessThan(0);
+  expect(heights[0]).toBeCloseTo(0, 6);
+  expect(heights.at(-1)).toBeCloseTo(0, 6);
 });
 
 test("a new row's sample follows its token live from the registry, as every look the dev panel moves does", async () => {

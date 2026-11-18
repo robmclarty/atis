@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: a world that describes itself at a glance
 
-**Current step:** 10 — feat(web): draw the nuclei and the exploded tags in the world
+**Current step:** 11 — feat(scene): read each membrane's wobble from its cell's integrity
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -32,7 +32,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 7. feat(scene): gather an opened cell's held files toward its middle
 - ☑ 8. feat(scene): lay each file's functions as a nucleus inside its body
 - ☑ 9. feat(scene): send the tags out on leaders and leave the bodies in place
-- ☐ 10. feat(web): draw the nuclei and the exploded tags in the world
+- ☑ 10. feat(web): draw the nuclei and the exploded tags in the world
 - ☐ 11. feat(scene): read each membrane's wobble from its cell's integrity
 - ☐ 12. feat(web): ripple the skin's membrane line by its cell's integrity
 - ☐ 13. feat(scene): mark the ribbons that enter a cell past its interface
@@ -54,6 +54,11 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] apps/web hud.test.tsx 'the world's blocks are the sheet's' timed out at vitest's 5 s default once under a loaded full check (6.7 s) and passed on rerun; it walks every committed fixture, so give it a longer timeout or split it
 - [x] troubleOf reads the organelle's top-level churn_ratio and bugfix_rate, which the map sets only on files the change touched, so shape shows history for almost no file: on atis's own map 0 of 165 files leave the circle on a whole-repo map and 7 of 165 on the last commit (no file breaks a rule), where stability.churn_ratio is on all 165; javascript-1 has 128 of 414 with a form against 405 with stability's churn
 - [x] stability.churn_ratio counts a file's own birth, so on atis's whole-repo map every one of the 165 files reads churn 0.47 or more (median 1.22) and 155 score between 0.13 and 0.27, one soft wobble for nearly all; a calm file needs a floor to subtract or a scale that starts above birth before shape alone tells it from a busy one (step 19, D203 history-on-every-file)
+- [x] Rob at range 2's stop: the transition from the overworld to the map of cells is not helping; the overworld is less useful than expected and makes it harder to get into the cells and browse them, so consider keeping the one map view and leaning on the weather-pattern analogy
+- [x] Rob at range 2's stop: selections are glitchy when clicking different things: a click does not always do what is expected, fills are not good, and 3D elements are not always rendered properly; unknown whether any of it is new since range 2
+- [x] Rob at range 2's stop: clicking a highlighted issue pops a map of the related cells and files up in a rectangle in the centre; he likes it but could not tell what he was looking at or how to turn it off, so it needs a title or key and a visible way to close
+- [x] Rob at range 2's stop: clicking a cell should probably bring up file details in an inspector panel; what goes in it is undecided
+- [ ] fixtures/javascript-1 and fixtures/corpus-7 map.json predate step 1's integrity field (0 cells carry it), so range 3's stop sees no ripple on javascript-1 until that map is regenerated; only libs/core/fixtures/demo has a cell with past above 0 (package:libs/core, 1 through 1 past)
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -79,6 +84,11 @@ Harvest results this boundary:
 - **blocker**: park 4 · troubleOf reads the organelle's top-level churn_ratio and bugfix_rate, which the map sets only on files the change touched, so shape shows history for almost no file: on atis's own map 0 of 165 files leave the circle on a whole-repo map and 7 of 165 on the last commit (no file breaks a rule), where stability.churn_ratio is on all 165; javascript-1 has 128 of 414 with a form against 405 with stability's churn → D194 (shape-spectrum)'s own reason, most files leaving the circle, is unmet on atis's own map until the score reads the history every file carries
 - 2026-11-18, at the step 19 boundary: 1 parked idea, classified.
 - **tangent**: park 5 · stability.churn_ratio counts a file's own birth, so on atis's whole-repo map every one of the 165 files reads churn 0.47 or more (median 1.22) and 155 score between 0.13 and 0.27, one soft wobble for nearly all; a calm file needs a floor to subtract or a scale that starts above birth before shape alone tells it from a busy one (step 19, D203 history-on-every-file) → real, but ranges 2 to 5 do not build on the score's spread and the fix leaves a choice open (subtract a file's birth, or start the scale above it), which is a `/plumbbob:refine` call rather than a fold made here
+- 2026-11-18, at range 2 of 6's stop: 4 parked ideas, classified.
+- **tangent**: park 6 · Rob at range 2's stop: the transition from the overworld to the map of cells is not helping; the overworld is less useful than expected and makes it harder to get into the cells and browse them, so consider keeping the one map view and leaning on the weather-pattern analogy → a change to the world's levels, wider than this build's nine changes
+- **tangent**: park 7 · Rob at range 2's stop: selections are glitchy when clicking different things: a click does not always do what is expected, fills are not good, and 3D elements are not always rendered properly; unknown whether any of it is new since range 2 → Rob confirmed it predates this build, and no step ahead builds on selection
+- **tangent**: park 8 · Rob at range 2's stop: clicking a highlighted issue pops a map of the related cells and files up in a rectangle in the centre; he likes it but could not tell what he was looking at or how to turn it off, so it needs a title or key and a visible way to close → the plate works and is liked; it lacks a name and a way out
+- **tangent**: park 9 · Rob at range 2's stop: clicking a cell should probably bring up file details in an inspector panel; what goes in it is undecided → a new surface whose contents are undecided
 
 ## Log
 
@@ -374,3 +384,102 @@ folder, so it rides the branch into the PR.)*
 - 2026-11-18 — step 7 checkpointed · 4eb814b3f — feat(scene): gather an opened cell's held files toward its middle (13m)
 - 2026-11-18 — step 8 checkpointed · b806fc4b7 — feat(scene): lay each file's functions as a nucleus inside its body (10m)
 - 2026-11-18 — step 9 checkpointed · f9c3c28a5 — feat(scene): send the tags out on leaders and leave the bodies in place (7m)
+- 2026-11-18 — step 10 checkpointed · f2969dee4 — feat(web): draw the nuclei and the exploded tags in the world (2 red, 39m)
+- 2026-11-18 — range 2 of 6's stop recorded — judge the opened cell beside `a-5-shapes-demo.png` (P37): a held file told from a loose one by its motion, the held core and the loose rim before any motion, the nuclei's density and the stains on their granules, and the exploded tags on a 16:9 screen with every name readable and no body moved; settle [Q87 (exaggeration-numbers)](#q87)'s drift values (`DRIFT_REACH`, `DRIFT_CURVE`)
+
+  **Summary**: Steps 6 to 10 landed, each on a green `pnpm check --strict`, and the opened cell is now built the way the stop asks to judge it: a file drifts by its looseness raised to `DRIFT_CURVE` (1.5) over a reach of 0.3; held files rest toward the slide's middle and loose ones toward its rim (`INTERIOR.gather` 0.4); each file's functions are a nucleus of granules inside its body; and the exploded view sends the tags out on elbowed leaders, inside the chrome's margins, and moves no body. Every number is a starting value nobody has judged by eye: I saw one headless frame of the demo, enough to know the granules draw and the leaders elbow, and no more. Three things bear on your judging. The raised reach already meets the speed cap at the zoom a cell opens at, so the float reaches further but its clock runs about a fifth slower. Most committed fixtures carry no ties and no functions, so the drift, the gathering and the nuclei show only on a freshly scanned map such as atis's own. And each step touched a file or two outside its seam, all named in its commit body. Step 10's checkpoint went red twice on timeouts while another project's run held this machine's load near 180, and green on the third run with nothing changed.
+
+  1. The raised reach meets the speed cap, so the float goes further and no faster
+  2. The gathering needed three things the proof did not name
+  3. A full nucleus draws about a tenth under `NUCLEUS_FILL`
+  4. The tags take the chrome's claims as whole-screen margins, and a few things went with the spread
+  5. Where to look, and which tokens move what
+  6. Rob judged the stop on 2026-11-18 and kept the drift's starting values
+
+  **Readout**:
+
+  ```text
+  steps        5 of 5 landed
+               - 6 fe39698 · 7 4eb814b · 8 b806fc4 · 9 f9c3c28 · 10 f2969de
+  check        green: 1 of 1 checks, 5 landings
+  proof        met
+  decisions    honored:
+               - D193 (looseness-curve)
+               - D199 (held-files-gather)
+               - D197 (nuclei)
+               - D198 (labels-explode)
+               - D201 (slide-only-svg)
+               - D165 (cell-float)
+               - D156 (dev-panel)
+  constraints  10 of 10 honored
+  seam         held: 5 of 5 steps, no strays
+  diff         +1222 -319 across 16 files
+               - apps/web/src/__tests__/hud.test.tsx +2 -1
+               - apps/web/src/__tests__/world.test.ts +28 -4
+               - apps/web/src/chrome/legend.tsx +17 -0
+               - apps/web/src/hud.ts +4 -1
+               - apps/web/src/materials.ts +9 -7
+               - apps/web/src/registry.ts +6 -0
+               - apps/web/src/world/draw.ts +42 -5
+               - and 9 more
+  spent        77 min · 2 red runs
+  ```
+
+  **Verdict**: ◐ A hair off (2 red runs before green)
+
+  **Harvested**: **4** of 9 parked ideas open
+
+  | Park | Why it matters | Lean |
+  | --- | --- | --- |
+  | **P6**: [drop the overworld view](#park-list) | the far view slows getting into the cells, which is where the reading happens | tangent: a change to the world's levels, wider than this build's nine changes |
+  | **P7**: [glitchy selection and rendering](#park-list) | clicks, fills and 3D elements misbehave across the world, before and after this range | tangent: Rob confirmed it predates this build, and no step ahead builds on selection |
+  | **P8**: [unexplained issue map](#park-list) | a reader cannot tell what the rectangle is or how to close it | tangent: the plate works and is liked; it lacks a name and a way out |
+  | **P9**: [cell inspector panel](#park-list) | a click on a cell has nowhere to show the file's details | tangent: a new surface whose contents are undecided |
+
+  **Recommendation**: Judge it on a fresh map of atis before replying, then settle the two drift values in the dev panel and tell me what they came to. Leave `DRIFT_REACH` at 0.3 and tune `DRIFT_CURVE` first: the reach already meets the speed cap, so more of it slows the float rather than livening it, while the curve alone sets how still a held file sits beside a loose one. If a loose file still reads sluggish, the lever is `DRIFT_SPEED`, which D165 (cell-float) bounds at 0.05, and that is a call for you and not a patch I would make unasked. The world's dev server, to open with `?map=/@fs/` and the absolute path of the map:
+
+  ```sh
+  pnpm --filter web dev
+  ```
+
+  **1.** The raised reach meets the speed cap, so the float goes further and no faster
+
+  At `DRIFT_REACH` 0.3 the wander's fastest point would outrun `DRIFT_SPEED` (0.02 of the screen a second) at the zoom a cell opens at, so the float's own clock now runs at about 0.81 of the wall's there, as D165 (cell-float) has it do when zoomed in. The old test held that nothing capped the wander at that zoom; it now holds that the clock slows and never stops. Raising the reach further buys distance and costs pace: at 0.5 the clock would run near half speed.
+
+  A second fact for the tuning: a wholly loose file wanders on two seeded sines, and how far that carries it depends on their phases. Over a minute at twelve seeds a wholly loose file got between 0.45 and 1.0 of the full reach from its rest, most often about 0.6. The proof's test (within a tenth of the full reach) holds for `slots.ts` at the tests' seed, which is one of the far ones. So the reach is a ceiling, and a typical loose file moves about two thirds of it.
+
+  The curve itself does what Q98 (curve-quiets-middle) said: a file a fifth loose moves 0.09 of the reach where its straight share was 0.2, and the test holds the loose file to more than ten times the fifth-loose one's wander.
+
+  **2.** The gathering needed three things the proof did not name
+
+  `restOf` moves each file along the line to the slide's middle by `gather × (held − mean held) × distance`, pushes the rests apart, holds them inside the membrane and off the held cells, and sends back to the layout's place any rest that still crosses a skin, stands too near one, or lies over another body. On the outside repo's fixture it moves all 64 tied files of `src/rules`.
+
+  Beyond the proof: the float has to gather by the same token the slide does, so `FloatView` in `libs/scene/src/motion.ts` gained an optional `gather` and `apps/web/src/world/draw.ts` hands it `INTERIOR.gather`, both outside step 7's seam. A still file that stands off its rest now heads back to it at the speed cap; without that, a held file the surface had eased home stayed wherever its cell opened on it again, since only loose files moved. And the rests keep `DRIFT_GAP` between bodies, the float's own gap, where the spec's section 4.9 names the exploded view's clear ground, which step 9 retired.
+
+  One thing to look for: a cell opens with its files already at their rests, so the slide fades in over the surface's layout places with the held files standing nearer the middle than the surface drew them. The proof asks for exactly that (`startFloat` reads the rest), and it is the "before any motion" reading the stop names.
+
+  **3.** A full nucleus draws about a tenth under `NUCLEUS_FILL`
+
+  A nucleus is laid once per file and rides its body: the granules lie from the body's middle, so a frame costs nothing for them and they cannot pulse or turn. Each stands as far out as the area before it and half its own, turned the golden angle from the last, and a lone function sits at the middle.
+
+  Equal granules on such a spiral lie clear of one another only up to about 0.55 of its disc. `NUCLEUS_FILL` 0.5 inside a core padded by `NUCLEUS_PAD` 0.1 asks for 0.62, so a full nucleus is shrunk whole by about a tenth of its area to stay inside the padded core. That limit is baked as `NUCLEUS_PACK_MOST`, since it is geometry and not a look. If the densest file should read fuller, lower `NUCLEUS_PAD` toward 0.07, the body's deepest wobble, before raising the fill.
+
+  In the world a round granule is a 12-segment fan and a dented one keeps every point of its ring. The fans are laid again each frame with the bodies, so a cell of many large files adds per-frame vertex work that step 18's budget row should measure.
+
+  **4.** The tags take the chrome's claims as whole-screen margins, and a few things went with the spread
+
+  `tagsOf` lays each leader as from, elbow, to, shrinks a crowded column's rows and words to `TAG_ROW_FLOOR`, then keeps the tags nearest the view's middle above a footer, `and 23 more`. The 80-file test holds it level, tilted to 35 degrees and zoomed past a 1440 by 900 screen.
+
+  The scene's margins are top, bottom, left and right for the whole screen, as the proof words them. So the HUD's height comes off the top of both columns and the legend's or the minimap's off the foot of both, though each sits on the left alone. The world reads those boxes from the page every 15 frames while a slide shows and caps each claim at a third of the height, so an open legend cannot squeeze the columns to nothing. If the right column looks short on a wide screen, per-column margins are the fix, and that is a change to step 9's `Screen`.
+
+  Gone or added beyond the proof: `explodeGap` went with `explodeSpread` and `explodePush`, since nothing else read it; a `Tag` carries the size its words are set at; a body under the pointer whose column had no row for its tag is tagged by itself, so a hover never comes up empty in a crowded cell; and the world's legend keys the nucleus as a fifteenth mark while the sheet keeps fourteen, which moved one assertion in `apps/web/src/__tests__/hud.test.tsx`, outside step 10's seam.
+
+  **5.** Where to look, and which tokens move what
+
+  The dev panel moves all of it live. Under Motion: `DRIFT_REACH`, `DRIFT_CURVE`, `DRIFT_SPEED`. Under the base tissue: `NUCLEUS_FILL`, `NUCLEUS_PAD`, `NUCLEUS_MOST`. Under the chrome: `TAG_ELBOW`, `TAG_ROW_FLOOR`. Under the opened cell: `INTERIOR.gather`, `INTERIOR.granuleShade`.
+
+  Of the committed fixtures only `fixtures/round-two-3` carries ties, and few carry functions, so the float, the gathering and the nuclei need a map scanned by the current build. `?shapes=demo` still spreads an opened cell's files across the spectrum, and under it each nucleus is laid for the demo score's core.
+
+  **6.** Rob judged the stop on 2026-11-18 and kept the drift's starting values
+
+  He likes the cell and file shapes, the animation and the movement as built. Q87 (exaggeration-numbers)'s drift values stand where step 6 set them: `DRIFT_REACH` 0.3 and `DRIFT_CURVE` 1.5. What he would change is wider than this build, and is parked as P6 to P9.
