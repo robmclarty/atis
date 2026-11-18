@@ -16,8 +16,8 @@
  * fly-to eases the camera across; the levels of detail cross-fade as the zoom
  * crosses their gates. An opened cell's slide fades in and out at the same
  * rate, and its exploded view spreads and gathers at it too (step 40). Inside
- * an opened cell each file's shape pulses and turns by the rules it breaks
- * (D147), and each file floats by how loosely its cellmates hold it (D157),
+ * an opened cell each file's shape pulses and turns by its trouble score,
+ * the spiky end most and least regularly (D147, D194), and each file floats by how loosely its cellmates hold it (D157),
  * or on a package's slide its package (D167), slowly and on the screen's
  * scale; once the cell closes, the surface draws its files where they last
  * floated, and they ease home only as the view climbs on toward the field
@@ -67,6 +67,7 @@ import {
   SETTLE_DAMPING,
   SETTLE_LIFT,
   SETTLE_MS,
+  SHAPE_JITTER,
   SHAPE_PULSE,
   SHAPE_PULSE_HZ,
   SHAPE_TURN,
@@ -97,6 +98,7 @@ export type MotionTokens = DriftTokens & {
   readonly SHAPE_PULSE_HZ: readonly number[];
   readonly SHAPE_PULSE: readonly number[];
   readonly SHAPE_TURN: readonly number[];
+  readonly SHAPE_JITTER: number;
 };
 
 /** The motion tokens at rest: `tokens.ts`'s values, which the design doc's motion table logs (Q3). */
@@ -125,6 +127,7 @@ export const MOTION_TOKENS: MotionTokens = {
   SHAPE_PULSE_HZ,
   SHAPE_PULSE,
   SHAPE_TURN,
+  SHAPE_JITTER,
 };
 
 /** What the scheduler is told: the clock it reads, the seed its chance is drawn from, each notice's tier in rank order, whether motion is reduced, and the tokens it is timed from, resting when left out. */
@@ -207,8 +210,13 @@ export type Scheduler = {
    * standing where it is told.
    */
   readonly frame: (zoom?: number, gates?: readonly LodGate[], composites?: readonly boolean[]) => MotionFrame;
-  /** How a shape breaking `rules` rules moves at the clock's time, inside an opened cell (D147). */
-  readonly shape: (rules: number) => ShapeMotion;
+  /**
+   * How a shape at `score` on the spectrum, 0 smooth to 1 spiky, moves at the
+   * clock's time inside an opened cell (D147, D194): its pulse and its turn
+   * the blend of the two forms the score lands between, and its jitter the
+   * score's share of `SHAPE_JITTER`. Still at 0, and under reduced motion.
+   */
+  readonly shape: (score: number) => ShapeMotion;
   /** Open a cell now, or close the open one with `undefined`; its slide fades in or out from here, and its exploded view gathers. */
   readonly open: (cell: string | undefined) => void;
   /** Spread the opened cell's exploded view, or gather it; nothing while no cell is open. */
@@ -415,11 +423,19 @@ export function createScheduler({ clock, seed, tiers: loaded, reduced, tokens: T
     return { ...shared, amp: settled + swing, lift: (1 - settled) * T.SETTLE_LIFT, notices, flaring, halo: false };
   };
 
-  const shape = (rules: number): ShapeMotion => {
-    const level = Math.max(0, Math.min(MAX_RULES, Math.round(rules)));
-    if (reduced || level === 0) return AT_REST;
+  const shape = (score: number): ShapeMotion => {
+    const share = Number.isFinite(score) ? Math.max(0, Math.min(1, score)) : 0;
+    if (reduced || share === 0) return AT_REST;
+    // The score lands among the forms where the outline's does, and each value runs linearly between the pair either side.
+    const level = share * MAX_RULES;
+    const low = Math.min(MAX_RULES, Math.floor(level));
+    const fraction = level - low;
+    const mix = (values: readonly number[]): number => {
+      const lower = values[low] ?? 0;
+      return lower + ((values[low + 1] ?? lower) - lower) * fraction;
+    };
     const t = (clock() - (loadAt ?? clock())) / 1000;
-    return { t, pulseHz: T.SHAPE_PULSE_HZ[level] ?? 0, pulse: T.SHAPE_PULSE[level] ?? 0, turn: T.SHAPE_TURN[level] ?? 0 };
+    return { t, pulseHz: mix(T.SHAPE_PULSE_HZ), pulse: mix(T.SHAPE_PULSE), turn: mix(T.SHAPE_TURN), jitter: T.SHAPE_JITTER * share };
   };
 
   return {

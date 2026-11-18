@@ -13,11 +13,15 @@ import type { Position } from 'core';
 
 import { SHAPE_ARM_SPREAD, SHAPE_CORE_GIVE, SHAPE_LEVELS } from './tokens.js';
 
-/** How the shape moves: the time in seconds, how fast and how far its arms pulse, and how fast it turns. Still unless the scheduler says otherwise. */
-export type ShapeMotion = { readonly t: number; readonly pulseHz: number; readonly pulse: number; readonly turn: number };
+/**
+ * How the shape moves: the time in seconds, how fast and how far its arms
+ * pulse, how fast it turns, and how far each arm's beat wanders off the
+ * pulse, in radians (`jitter`). Still unless the scheduler says otherwise.
+ */
+export type ShapeMotion = { readonly t: number; readonly pulseHz: number; readonly pulse: number; readonly turn: number; readonly jitter: number };
 
 /** No motion: the outline the SVG draws, and the world's under reduced motion. */
-export const AT_REST: ShapeMotion = { t: 0, pulseHz: 0, pulse: 0, turn: 0 };
+export const AT_REST: ShapeMotion = { t: 0, pulseHz: 0, pulse: 0, turn: 0, jitter: 0 };
 
 /** A bulb at an arm's tip. */
 export type Bulb = { readonly x: number; readonly y: number; readonly r: number };
@@ -64,6 +68,12 @@ export function draw(seed: number, i: number): number {
 const TURN_DRAW = 99;
 const WOBBLE_DRAW = 98;
 const BEAT_DRAW = 50;
+const JITTER_RATE_DRAW = 110;
+const JITTER_PHASE_DRAW = 130;
+
+/** How fast an arm's beat wanders, in Hz: each arm draws its own rate between the two, a wander of 5 to 20 s, far slower than any pulse. */
+const JITTER_HZ_MIN = 0.05;
+const JITTER_HZ_MAX = 0.2;
 
 /** How near a whole level a score must land to be drawn as that form alone. */
 const FORM_SNAP = 1e-9;
@@ -93,8 +103,11 @@ type Faded = { readonly form: Form; readonly weight: number; readonly strength: 
  *
  * Arms reach out from a core a little smaller than the radius, each a raised
  * cosine round its spoke, longer or shorter by its seed and pulsing with its
- * own beat; the body turns as a whole. At a whole level the outline is that
- * form alone.
+ * own beat; the body turns as a whole. Each arm's beat wanders by up to the
+ * motion's `jitter` either way, on a slow sine whose rate and phase are the
+ * arm's own by its seed, so a jittered shape's arms drift in and out of step
+ * and its pulse never settles into one rhythm (D194). At a whole level the
+ * outline is that form alone.
  */
 export function outlineOf(id: string, at: Position, score: number, motion: ShapeMotion = AT_REST): Outline {
   const landed = (Number.isFinite(score) ? Math.max(0, Math.min(1, score)) : 0) * MAX_RULES;
@@ -119,7 +132,9 @@ export function outlineOf(id: string, at: Position, score: number, motion: Shape
   const arms = Array.from({ length: Math.max(lower.arms, upper.arms) }, (_, arm) => {
     const size = 1 + SHAPE_ARM_SPREAD * (2 * draw(seed, arm) - 1);
     const beat = draw(seed, BEAT_DRAW + arm) * 2 * Math.PI;
-    return size * (1 + motion.pulse * Math.sin(2 * Math.PI * motion.pulseHz * motion.t + beat));
+    const wanderHz = JITTER_HZ_MIN + (JITTER_HZ_MAX - JITTER_HZ_MIN) * draw(seed, JITTER_RATE_DRAW + arm);
+    const wander = motion.jitter * Math.sin(2 * Math.PI * wanderHz * motion.t + draw(seed, JITTER_PHASE_DRAW + arm) * 2 * Math.PI);
+    return size * (1 + motion.pulse * Math.sin(2 * Math.PI * motion.pulseHz * motion.t + beat + wander));
   });
   const faded: readonly Faded[] = [
     { form: lower, weight: Math.min(1, 2 * (1 - fraction)), strength: 1 - fraction },

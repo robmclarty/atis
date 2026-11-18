@@ -664,9 +664,10 @@ animates outside the one scheduler that owns them all (C12), `createScheduler`
 in `libs/scene/src/motion.ts`, on an injected clock and a seeded source of chance
 (D94). A flare is the loud channel, spent once on load and then at random, so a
 reviewer who looked away is pulled back without the map ever twinkling. Inside an
-opened cell motion also means conformance: each file's shape pulses and turns by
-the rules it breaks, faster and further as the level climbs, and a file within
-every threshold stays still (D147). And it means looseness: each file floats
+opened cell motion also means trouble: each file's shape pulses and turns by its
+trouble score, faster and further as the score climbs, the spiky end's arms
+wandering off the beat so it pulses least regularly, and a file at a score of 0
+stays still (D147 (alive-motion), D194 (shape-spectrum)). And it means looseness: each file floats
 about its place by the share of its import ties that leave the cell, a hub held
 by its cellmates sitting still and a file tied to none of them wandering
 furthest, pushed off the membrane and its neighbours (D157). An opened package
@@ -713,9 +714,10 @@ bound changes §5.5 itself, and moves the bound in the test with it.
 | `HOVER_MS` | `100` | above 0, at most 600: a transient (§5.5 starts it at 100) | the ease to a hover's highlight; nothing on the hovered thing moves |
 | `FLY_TO_MS` | `400` | above 0, at most 400 | the ease of a fly-to from a notice |
 | `LOD_FADE_MS` | `300` | above 0, at most 300: a cross-fade, never a blink | the cross-fade between levels of detail at a zoom threshold |
-| `SHAPE_PULSE_HZ` | `0, 0.25, 0.4, 0.6, 0.85, 1.15, 1.5` | 0 at 0 rules, climbing, at most 2: a pulse, never a flicker | how fast a shape's arms pulse inside an opened cell, by rule count (D147) |
-| `SHAPE_PULSE` | `0, 0.25, 0.3, 0.32, 0.35, 0.38, 0.42` | 0 at 0 rules, climbing, below 1: an arm never turns inside out | how far they pulse, as a share of their reach |
-| `SHAPE_TURN` | `0, 0.03, 0.05, 0.08, 0.11, 0.15, 0.2` | 0 at 0 rules, climbing, at most 0.5 rad/s | how fast the shape's body turns, in radians a second; its wobble drifts three times as fast |
+| `SHAPE_PULSE_HZ` | `0, 0.25, 0.4, 0.6, 0.85, 1.15, 1.5` | 0 at the smooth end, climbing, at most 2: a pulse, never a flicker | how fast a shape's arms pulse inside an opened cell, at each of the spectrum's seven forms (D147 (alive-motion), D194 (shape-spectrum)); a trouble score between two forms moves at the blend of the pair, as its outline does |
+| `SHAPE_PULSE` | `0, 0.31, 0.38, 0.4, 0.44, 0.48, 0.52` | 0 at the smooth end, climbing, below 1: an arm never turns inside out | how far they pulse, as a share of their reach |
+| `SHAPE_TURN` | `0, 0.03, 0.05, 0.08, 0.11, 0.15, 0.2` | 0 at the smooth end, climbing, at most 0.5 rad/s | how fast the shape's body turns, in radians a second; its wobble drifts three times as fast |
+| `SHAPE_JITTER` | `1.5` | above 0, at most π: a wander of half a beat at most | how far each arm's beat wanders off the pulse at the spiky end, in radians either way (D194 (shape-spectrum)); a file's is this times its trouble score, on a slow sine of the arm's own, 5 to 20 s a wander, so the smooth end keeps time and the spiky end never settles into one rhythm |
 | `DRIFT_HZ_MIN` | `0.03` | above 0, at most 0.25, and no more than the max: a slow float | the slowest a file's wander runs inside an opened cell (D157), in Hz, at the zoom the cell opens at; each file draws its rates between the two from its path and the seed |
 | `DRIFT_HZ_MAX` | `0.08` | above 0, at most 0.25 | the fastest |
 | `DRIFT_REACH` | `0.15` | above 0, at most 0.5: about its place, never across its cell (D165) | how far a wholly loose file wanders from its place, as a share of its cell's radius; a file wanders its looseness times this, so a hub held by its cellmates stays put, and a push may carry it twice this and no further |
@@ -782,6 +784,13 @@ its old and new value, and what was seen that called for it.
   and a body left its membrane at the bottom and came back at the top. A loose
   file now wanders a seventh of its cell's radius about its place, and nothing in
   the float moves it more than a fiftieth of the screen a second at any zoom.
+- **2026-11-18, D194 (shape-spectrum).** `SHAPE_PULSE` from
+  `0, 0.25, 0.3, 0.32, 0.35, 0.38, 0.42` to `0, 0.31, 0.38, 0.4, 0.44, 0.48, 0.52`,
+  about a quarter further at every level, and `SHAPE_JITTER` joins at `1.5`: the
+  starting values of Q87 (exaggeration-numbers), set before anything was seen, for
+  Rob to tune by eye at the stop of the range that built the spectrum. The three
+  shape lists now read at a trouble score between two forms as the blend of the
+  pair.
 
 ## Fixed geometry that carries no token
 

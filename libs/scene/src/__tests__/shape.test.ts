@@ -111,10 +111,10 @@ test('a path seeds its shape: one path and score is one outline every time, and 
 test('at rest, the outline is the same at any time; turning and pulsing move it, and only within its form', () => {
   const still = formOf('a.ts', 5);
   expect(formOf('a.ts', 5, { ...AT_REST, t: 7.5 })).toEqual(still);
-  const turned = formOf('a.ts', 5, { t: 1, pulseHz: 0, pulse: 0, turn: 0.4 });
+  const turned = formOf('a.ts', 5, { ...AT_REST, t: 1, turn: 0.4 });
   expect(turned.ring).not.toEqual(still.ring);
   expect(crests(turned, 5)).toBe(SHAPE_LEVELS[5]?.arms);
-  const pulsing = formOf('a.ts', 5, { t: 0.3, pulseHz: 1.15, pulse: 0.38, turn: 0 });
+  const pulsing = formOf('a.ts', 5, { ...AT_REST, t: 0.3, pulseHz: 1.15, pulse: 0.38 });
   expect(pulsing.ring).not.toEqual(still.ring);
   expect(pulsing.bulbs.map((bulb) => bulb.r)).toEqual(still.bulbs.map((bulb) => bulb.r));
 });

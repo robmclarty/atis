@@ -398,14 +398,18 @@ export const FLY_TO_MS = 400;
 export const LOD_FADE_MS = 300;
 
 /**
- * Conformance in motion, inside an opened cell (D147): by rule count, 0 to 6,
- * how fast a file's arms pulse (Hz), how far (a share of their reach), and how
- * fast its body turns (radians a second). Still at 0, faster and further as
- * the level climbs; reduced motion stills them all.
+ * Trouble in motion, inside an opened cell (D147, D194): at each of the
+ * spectrum's seven forms, 0 to 6, how fast a file's arms pulse (Hz), how far
+ * (a share of their reach), and how fast its body turns (radians a second). A
+ * score lands between two forms and moves at the blend of the pair, as its
+ * outline does. Still at 0, faster and further as the score climbs; reduced
+ * motion stills them all.
  */
 export const SHAPE_PULSE_HZ: readonly number[] = [0, 0.25, 0.4, 0.6, 0.85, 1.15, 1.5];
-export const SHAPE_PULSE: readonly number[] = [0, 0.25, 0.3, 0.32, 0.35, 0.38, 0.42];
+export const SHAPE_PULSE: readonly number[] = [0, 0.31, 0.38, 0.4, 0.44, 0.48, 0.52];
 export const SHAPE_TURN: readonly number[] = [0, 0.03, 0.05, 0.08, 0.11, 0.15, 0.2];
+/** How far each arm's beat wanders off the pulse at the spiky end, in radians either way; a file's is this times its score, so the smooth end keeps time and the spiky end never does (D194). */
+export const SHAPE_JITTER = 1.5;
 
 /**
  * Looseness in motion, inside an opened cell (D157), slow and on the screen's

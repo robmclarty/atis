@@ -201,6 +201,7 @@ export const SECTIONS: readonly Section[] = [
       'SHAPE_PULSE_HZ',
       'SHAPE_PULSE',
       'SHAPE_TURN',
+      'SHAPE_JITTER',
       'DRIFT_HZ_MIN',
       'DRIFT_HZ_MAX',
       'DRIFT_REACH',

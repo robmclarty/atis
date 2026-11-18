@@ -110,9 +110,9 @@ test('each random flare, and the drift, is drawn from a window that opens before
 });
 
 /**
- * The shapes' motion inside an opened cell (D147), one value per rule count,
- * 0 to 6: still at 0, and faster and further as the level climbs, each within
- * the bound its rule serves.
+ * The shapes' motion inside an opened cell (D147, D194), one value per form
+ * of the spectrum, 0 to 6: still at 0, and faster and further as the level
+ * climbs, each within the bound its rule serves.
  */
 const SHAPE_MOTION_BOUNDS: Readonly<Record<string, Bound>> = {
   SHAPE_PULSE_HZ: { atLeast: 0, atMost: 2, why: 'a pulse, never a flicker: two beats a second at most' },
@@ -134,10 +134,33 @@ test.each(Object.entries(SHAPE_MOTION_BOUNDS))('%s is still at 0 rules, climbs w
   });
 });
 
+/** `SHAPE_PULSE` before Q87 (exaggeration-numbers) raised it, the values the materials spike ran at. */
+const SPIKE_PULSE: readonly number[] = [0, 0.25, 0.3, 0.32, 0.35, 0.38, 0.42];
+
+test('SHAPE_PULSE stands about a quarter over the spike at every level, still below 1 (Q87)', () => {
+  const values = VALUES['SHAPE_PULSE'];
+  if (!Array.isArray(values)) throw new Error('SHAPE_PULSE is not an exported list');
+  SPIKE_PULSE.slice(1).forEach((was, index) => {
+    const now = Number(values[index + 1]);
+    expect(now / was, `level ${String(index + 1)}`).toBeGreaterThanOrEqual(1.2);
+    expect(now / was, `level ${String(index + 1)}`).toBeLessThanOrEqual(1.3);
+    expect(now).toBeLessThan(1);
+  });
+});
+
+/** The jitter (D194): how far an arm's beat wanders at the spiky end, in radians either way. Half a beat is the most a wander can mean; past it an arm only laps itself. */
+const SHAPE_JITTER_BOUND: Bound = { above: 0, atMost: Math.PI, why: 'a wander of half a beat at most: past it an arm only laps itself' };
+
+test('SHAPE_JITTER wanders an arm off its beat by half a beat at most', () => {
+  const value = valueOf('SHAPE_JITTER');
+  expect(value, SHAPE_JITTER_BOUND.why).toBeGreaterThan(SHAPE_JITTER_BOUND.above ?? Number.NaN);
+  expect(value, SHAPE_JITTER_BOUND.why).toBeLessThanOrEqual(SHAPE_JITTER_BOUND.atMost ?? Number.NaN);
+});
+
 test("design.md's motion table names exactly the tokens §5.5, D147, D157 and D165 bound", () => {
   const doc = readFileSync(DESIGN, 'utf8');
   const section = doc.split(/^## /m).find((part) => part.startsWith('Motion'));
   expect(section, 'design.md has no Motion section').toBeDefined();
   const rows = [...(section ?? '').matchAll(/^\| `([A-Z][A-Z0-9_]*)` \|/gm)].map((match) => match[1] ?? '');
-  expect(rows.toSorted()).toEqual([...Object.keys(MOTION_BOUNDS), ...Object.keys(SHAPE_MOTION_BOUNDS)].toSorted());
+  expect(rows.toSorted()).toEqual([...Object.keys(MOTION_BOUNDS), ...Object.keys(SHAPE_MOTION_BOUNDS), 'SHAPE_JITTER'].toSorted());
 });

@@ -4,7 +4,7 @@ import { expect, test } from 'vitest';
 import { LOD_GATES } from '../lod.js';
 import { createScheduler, flareAt, jiggleAt, seeded, settleAt } from '../motion.js';
 import type { MotionFrame, Scheduler } from '../motion.js';
-import { AT_REST } from '../shape.js';
+import { AT_REST, MAX_RULES, outlineOf } from '../shape.js';
 import {
   BREATHE_AMPLITUDE,
   BREATHE_PERIOD_MS,
@@ -21,6 +21,7 @@ import {
   SECONDARY_FLARE_MIN_MS,
   SETTLE_LIFT,
   SETTLE_MS,
+  SHAPE_JITTER,
   SHAPE_PULSE,
   SHAPE_PULSE_HZ,
   SHAPE_TURN,
@@ -199,7 +200,7 @@ test('under reduced motion only a static halo stands for the load flare: no sett
   expect(frame.fly).toBe(1);
   expect(frame.amp).toBe(1);
   expect(scheduler.log()).toEqual([]);
-  expect(scheduler.shape(6)).toEqual(AT_REST);
+  expect(scheduler.shape(1)).toEqual(AT_REST);
 });
 
 test('with motion on, the halo never shows, and a map with no primary breathes nothing', () => {
@@ -209,20 +210,70 @@ test('with motion on, the halo never shows, and a map with no primary breathes n
   expect(scheduler.frame().notices[0]?.scale).toBe(1);
 });
 
-test('inside an opened cell a shape is still at 0 rules, and moves faster and further as the level climbs (D147)', () => {
+test('inside an opened cell a shape is still at a score of 0, and moves faster, further and less regularly as the score climbs (D147, D194)', () => {
   const { scheduler, at } = rig();
   at(3000);
   expect(scheduler.shape(0)).toEqual(AT_REST);
-  const levels = [1, 2, 3, 4, 5, 6].map((rules) => scheduler.shape(rules));
-  for (const motion of levels) expect(motion.t).toBeCloseTo(3, 9);
-  levels.slice(1).forEach((motion, index) => {
-    const before = levels[index];
+  expect(scheduler.shape(-1)).toEqual(AT_REST);
+  expect(scheduler.shape(Number.NaN)).toEqual(AT_REST);
+  // Up the spectrum in hundredths at one time: every part of the motion climbs with the score, and none ever falls.
+  const scores = Array.from({ length: 100 }, (_, index) => (index + 1) / 100);
+  const motions = scores.map((score) => scheduler.shape(score));
+  for (const motion of motions) expect(motion.t).toBeCloseTo(3, 9);
+  motions.slice(1).forEach((motion, index) => {
+    const before = motions[index];
     expect(motion.pulseHz).toBeGreaterThan(before?.pulseHz ?? Number.POSITIVE_INFINITY);
     expect(motion.pulse).toBeGreaterThan(before?.pulse ?? Number.POSITIVE_INFINITY);
     expect(motion.turn).toBeGreaterThan(before?.turn ?? Number.POSITIVE_INFINITY);
+    expect(motion.jitter).toBeGreaterThan(before?.jitter ?? Number.POSITIVE_INFINITY);
   });
-  expect(levels.at(-1)).toEqual({ t: 3, pulseHz: SHAPE_PULSE_HZ[6], pulse: SHAPE_PULSE[6], turn: SHAPE_TURN[6] });
-  expect(scheduler.shape(9)).toEqual(scheduler.shape(6));
+  // At a form's own score the motion is that form's; between two it is their blend, as the outline's forms are.
+  for (let level = 1; level <= MAX_RULES; level += 1) {
+    const motion = scheduler.shape(level / MAX_RULES);
+    expect(motion.pulseHz).toBeCloseTo(SHAPE_PULSE_HZ[level] ?? -1, 9);
+    expect(motion.pulse).toBeCloseTo(SHAPE_PULSE[level] ?? -1, 9);
+    expect(motion.turn).toBeCloseTo(SHAPE_TURN[level] ?? -1, 9);
+  }
+  const between = scheduler.shape(4.5 / MAX_RULES);
+  expect(between.pulseHz).toBeCloseTo(((SHAPE_PULSE_HZ[4] ?? 0) + (SHAPE_PULSE_HZ[5] ?? 0)) / 2, 9);
+  expect(between.pulse).toBeCloseTo(((SHAPE_PULSE[4] ?? 0) + (SHAPE_PULSE[5] ?? 0)) / 2, 9);
+  expect(between.turn).toBeCloseTo(((SHAPE_TURN[4] ?? 0) + (SHAPE_TURN[5] ?? 0)) / 2, 9);
+  expect(scheduler.shape(1)).toEqual({ t: 3, pulseHz: SHAPE_PULSE_HZ[6], pulse: SHAPE_PULSE[6], turn: SHAPE_TURN[6], jitter: SHAPE_JITTER });
+  expect(scheduler.shape(9)).toEqual(scheduler.shape(1));
+});
+
+test("the jitter is nothing at a score of 0, the score's share of SHAPE_JITTER above it, and never past SHAPE_JITTER (D194)", () => {
+  const { scheduler, at } = rig();
+  for (const ms of [0, 1000, 7300, 60_000]) {
+    at(ms);
+    expect(scheduler.shape(0).jitter).toBe(0);
+    expect(scheduler.shape(1).jitter).toBe(SHAPE_JITTER);
+    for (let score = 0; score <= 1; score += 0.05) {
+      const { jitter } = scheduler.shape(score);
+      expect(jitter).toBeCloseTo(SHAPE_JITTER * score, 12);
+      expect(jitter).toBeGreaterThanOrEqual(0);
+      expect(jitter).toBeLessThanOrEqual(SHAPE_JITTER);
+    }
+  }
+  // The jitter is what unsettles the pulse: with it the arms leave the beat they keep without it, and without it nothing wanders.
+  at(7300);
+  const spiky = scheduler.shape(1);
+  const place = { x: 0, y: 0, r: 10 };
+  expect(outlineOf('a.ts', place, 1, spiky)).not.toEqual(outlineOf('a.ts', place, 1, { ...spiky, jitter: 0 }));
+  expect(outlineOf('a.ts', place, 1, { ...AT_REST, t: 7.3, jitter: SHAPE_JITTER })).toEqual(outlineOf('a.ts', place, 1));
+});
+
+test('one seed and one time give one shape motion, and one outline from it (C3)', () => {
+  const [one, other] = [rig(11), rig(11)];
+  for (const ms of [500, 3000, 41_250]) {
+    one.at(ms);
+    other.at(ms);
+    for (const score of [0, 0.2, 0.55, 1]) {
+      expect(one.scheduler.shape(score)).toEqual(other.scheduler.shape(score));
+      expect(one.scheduler.shape(score)).toEqual(one.scheduler.shape(score));
+      expect(outlineOf('a.ts', { x: 0, y: 0, r: 10 }, score, one.scheduler.shape(score))).toEqual(outlineOf('a.ts', { x: 0, y: 0, r: 10 }, score, other.scheduler.shape(score)));
+    }
+  }
 });
 
 test('one seed and one time give one frame, and another seed flares at other times (D94, C3)', () => {

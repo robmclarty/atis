@@ -242,7 +242,7 @@ test('each file is stained by what the change did to it, with the share of its c
   ]);
 });
 
-test('at rest every body sits where the layout put it in its still outline; opened, it floats where the scheduler floats it and moves by its rules (D147, D157)', () => {
+test('at rest every body sits where the layout put it in its still outline; opened, it floats where the scheduler floats it and moves by its trouble score (D147, D157, D194)', () => {
   const slide = slideOf(PM);
   const rest = interiorOf(slide);
   for (const body of rest) {
@@ -258,11 +258,15 @@ test('at rest every body sits where the layout put it in its still outline; open
   expect(moving.some((body) => body.x !== body.rest.x || body.y !== body.rest.y)).toBe(true);
   // A file the float leaves out sits where the layout put it.
   expect(interiorOf(slide, { drifted: floated.filter((file) => file.id !== TOOLS) }).find((body) => body.id === TOOLS)).toMatchObject({ x: bodyOf(rest, TOOLS).rest.x, y: bodyOf(rest, TOOLS).rest.y });
-  // A file within every threshold keeps its still outline; one breaking rules is pulsing and turned.
-  expect(bodyOf(moving, SLOTS).outline).toEqual(outlineOf(SLOTS, bodyOf(moving, SLOTS), 0));
+  // Every body moves as the scheduler moves its own score: one at 0 keeps its still outline, one in trouble is pulsing and turned.
+  for (const body of moving) expect(body.outline, body.id).toEqual(outlineOf(body.id, body, body.score, scheduler.shape(body.score)));
+  for (const body of moving.filter((each) => each.score === 0)) expect(body.outline, body.id).toEqual(outlineOf(body.id, body, 0));
   const tools = bodyOf(moving, TOOLS);
+  expect(tools.score).toBeGreaterThan(0);
   expect(tools.outline).not.toEqual(outlineOf(TOOLS, tools, tools.score, AT_REST));
-  expect(tools.outline).toEqual(outlineOf(TOOLS, tools, tools.score, scheduler.shape(2)));
+  // A file with no broken rule and some history moves too, where its rule count alone held it still.
+  const shaded = moving.filter((body) => body.rules === 0 && body.score > 0);
+  for (const body of shaded) expect(body.outline, body.id).not.toEqual(outlineOf(body.id, body, body.score, AT_REST));
   // Under reduced motion nothing moves, and one seed and one time give one frame (C3).
   for (const body of interiorOf(slide, { drifted: floated, reduced: true, shape: scheduler.shape })) expect(body).toEqual(bodyOf(rest, body.id));
   expect(interiorOf(slide, { drifted: floated, shape: scheduler.shape })).toEqual(moving);
