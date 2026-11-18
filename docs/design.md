@@ -296,6 +296,8 @@ emphasis rings.
 | `LEADER_INK` | `#9aa5b1` | `#leaders`, the dotted lines from a notice row to its mark, and the secondary ring round its target, so no mark on the map shares the evidence light's colour (D72) |
 | `LEADER_WIDTH` | `1` | a leader's width |
 | `LEADER_DASH` | `0.1 3` | a leader's round-dotted dash |
+| `TAG_ELBOW` | `32` | an opened cell's tags go out on leaders and its bodies stay in place (D198 (labels-explode)): each leader leaves its tag's inner edge straight toward the slide for this many pixels, or as far as the body leaves room for, and then turns for the body's rim; the two columns stand this far off the slide's edges, pulled onto the screen only when the slide runs off it and then clear of the chrome's claims |
+| `TAG_ROW_FLOOR` | `9` | a column with more tags than rows shrinks its rows, and the words with them, no smaller than this many pixels; where they still do not fit it shows the tags of the bodies nearest the view's middle and ends on a footer counting the rest, `and 23 more` |
 | `SCREEN_TYPE_UP` | `3` | how much larger, in CSS pixels, the world's chrome sets the sheet's type sizes: the notice text at the world labels' size, and the HUD, the rail and the legend in step; the still sheet never reads it |
 
 ## The shore's band
@@ -646,9 +648,6 @@ fingerprint is 480 by 300 with an 8-pixel margin (`FINGERPRINT`).
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `INTERIOR.explodeSpread` | `1.6` | the exploded view moves each body out from the cell's middle to this many times its distance from it |
-| `INTERIOR.explodePush` | `0.35` | plus this share of the cell's radius |
-| `INTERIOR.explodeGap` | `3` | and keeps this much clear ground off its neighbours, in layout units |
 | `INTERIOR.exportsPerLine` | `3` | how many export names the membrane writes to a line (D162) |
 | `INTERIOR.exportsShown` | `12` | how many it writes before the rest are only counted |
 | `INTERIOR.gather` | `0.4` | how far the held files gather on the slide (D199 (held-files-gather)), 0 to 1: a file rests nearer the slide's middle by this share of its distance from it, times how much more its cellmates hold it than they hold one another on average, and further out where they hold it less; 0 rests every file where the layout put it. A rest whose move would cross a skin or lie over another body stays at the layout's place |

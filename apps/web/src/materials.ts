@@ -312,9 +312,8 @@ export const WALK: WalkLook = { share: 0.8, fileContext: 6 };
  * ink, drawn round the files as the frame; each body's fill and stroke, the
  * stroke this wide in layout units; how much of the change hue a stained body
  * takes; how far above the cell's highest relief the slide floats, in the
- * heightfield's units; the exploded view's spread, push and gap, which
- * the scene lays the view by; and how far the held files gather toward the
- * slide's middle (D199). Every body is unlit and nothing here blooms.
+ * heightfield's units; how the membrane writes the exports; and how far the
+ * held files gather toward the slide's middle (D199). Every body is unlit and nothing here blooms.
  */
 export type InteriorLook = InteriorLayout & {
   readonly slide: string;

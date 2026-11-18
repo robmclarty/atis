@@ -319,6 +319,16 @@ export const SECONDARY_BOX_WIDTH = 2;
 export const LEADER_INK = '#9aa5b1';
 export const LEADER_WIDTH = 1;
 export const LEADER_DASH = '0.1 3';
+/**
+ * An opened cell's tags, out on leaders (D198): each leader leaves its tag's
+ * inner edge straight toward the slide for this many pixels before it turns
+ * for the body's rim, in the technical drawing's manner; and a column with
+ * more tags than rows shrinks its rows no smaller than this many pixels, past
+ * which it shows the tags of the bodies nearest the view's middle and counts
+ * the rest.
+ */
+export const TAG_ELBOW = 32;
+export const TAG_ROW_FLOOR = 9;
 /** How much larger the sheet's type sizes read in the world's chrome, in CSS pixels: the notice text lands at the size the world's labels are set at, and the HUD, the rail and the legend keep step (`apps/web/src/screen.ts`). The still sheet never reads it. */
 export const SCREEN_TYPE_UP = 3;
 

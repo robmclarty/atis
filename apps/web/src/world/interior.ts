@@ -396,7 +396,8 @@ export const createInterior = (heightAt: (x: number, y: number) => number, step:
     const restOf = new Map(laid.map((body) => [body.id, body] as const));
     for (const tag of tags) {
       const held = tagged.get(tag.id);
-      if (held === undefined) continue;
+      // A column's footer has no body and no leader; it is drawn with the exploded tags (step 10).
+      if (held === undefined || tag.leader === undefined) continue;
       held.tag.textContent = tag.text;
       // A tag and its leader are laid whether or not they are asked for, so they stand where they belong the moment they are.
       const asked = words.tag(tag.id);

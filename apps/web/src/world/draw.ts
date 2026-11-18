@@ -777,7 +777,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     }
     organelles.move(floated.surface);
     for (const layer of layers()) layer.sectors.move(floated.surface);
-    bodies = slide === undefined || open.shown <= 0 ? [] : interiorOf(slide, { drifted: floated.open, reduced, explode: open.exploded, shape: scheduler.shape, ...(view.shapes === undefined ? {} : { shapes: view.shapes }) });
+    bodies = slide === undefined || open.shown <= 0 ? [] : interiorOf(slide, { drifted: floated.open, reduced, shape: scheduler.shape, ...(view.shapes === undefined ? {} : { shapes: view.shapes }) });
     interior.show(bodies, open.shown, (id) => {
       const light = lightOf.get(id);
       return light === undefined ? 1 : (frame.notices[light]?.gain ?? 1);

@@ -16,7 +16,7 @@ import { createScheduler } from '../motion.js';
 import { openRing } from '../raster.js';
 import { AT_REST, outlineOf } from '../shape.js';
 import { troubleFrom } from '../trouble.js';
-import { LOD_FADE_MS, MONO_ADVANCE, NUCLEUS_FILL, NUCLEUS_MOST, NUCLEUS_PAD, SHAPE_JITTER, SHAPE_PULSE, SHAPE_PULSE_HZ, SHAPE_TURN } from '../tokens.js';
+import { LOD_FADE_MS, MONO_ADVANCE, TAG_ELBOW, TAG_ROW_FLOOR, NUCLEUS_FILL, NUCLEUS_MOST, NUCLEUS_PAD, SHAPE_JITTER, SHAPE_PULSE, SHAPE_PULSE_HZ, SHAPE_TURN } from '../tokens.js';
 
 /**
  * An opened cell as a stained slide (step 40): the membrane as the frame with
@@ -307,31 +307,18 @@ test("under the demo switch the slide's bodies take scores by their index in pat
   expect(interiorOf(slide, { shapes: 'demo' })).toEqual(demo);
 });
 
-test('the exploded view spreads every body out from the middle along its leader, clear of the others, and gathers them back by how far it has spread', () => {
+test('no body moves for the exploded view: each stays where the float has it, and the slide carries no exploded places (D198)', () => {
   const slide = slideOf(PM);
-  const out = (point: Point): number => Math.hypot(point[0] - slide.centre[0], point[1] - slide.centre[1]);
-  for (const file of slide.files) expect(out(file.exploded)).toBeGreaterThan(out([file.rest.x, file.rest.y]));
-  slide.files.forEach((a, index) => {
-    for (const b of slide.files.slice(index + 1)) {
-      expect(Math.hypot(a.exploded[0] - b.exploded[0], a.exploded[1] - b.exploded[1]), `${a.id} and ${b.id}`).toBeGreaterThanOrEqual(a.rest.r + b.rest.r + INTERIOR_LAYOUT.explodeGap - 1e-6);
-    }
-  });
   const drifted = driftOf(DEMO, PM, 9000, { seed: 7, screen: 400 });
-  const spread = interiorOf(slide, { drifted, explode: 1 });
-  for (const body of spread) expect([body.x, body.y]).toEqual(body.exploded);
-  const half = interiorOf(slide, { drifted, explode: 0.5 });
-  const moving = interiorOf(slide, { drifted });
-  for (const body of half) {
-    const from = bodyOf(moving, body.id);
-    expect(body.x).toBeCloseTo((from.x + body.exploded[0]) / 2, 9);
-    expect(body.y).toBeCloseTo((from.y + body.exploded[1]) / 2, 9);
+  for (const body of interiorOf(slide, { drifted })) {
+    const at = drifted.find((file) => file.id === body.id);
+    expect([body.x, body.y]).toEqual([at?.x, at?.y]);
   }
-  // The layout's tokens move the spread live (D156).
-  const wider = cellSlide(DEMO, PM, { ...INTERIOR_LAYOUT, explodeSpread: 3 });
-  for (const file of wider?.files ?? []) expect(out(file.exploded)).toBeGreaterThan(out(bodyOf(spread, file.id).exploded));
+  expect(slide.files.some((file) => 'exploded' in file)).toBe(false);
+  expect(Object.keys(INTERIOR_LAYOUT).toSorted()).toEqual(['exportsPerLine', 'exportsShown', 'gather']);
 });
 
-test('the tags stand in two columns beside the slide, each on its body\'s side, stacked down the column clear of one another, with a leader to the body\'s rim', () => {
+test('the tags stand in two columns just outside the slide, each on its body\'s side, stacked down the column clear of one another, on a leader that runs straight out to its elbow and then to the body\'s rim (D198)', () => {
   const slide = slideOf(PM);
   const bodies = interiorOf(slide);
   const tags = tagsOf(slide, bodies, project, SCREEN);
@@ -344,15 +331,22 @@ test('the tags stand in two columns beside the slide, each on its body\'s side, 
   for (const tag of tags) {
     const body = bodyOf(bodies, tag.id);
     const [sx, sy] = project(body.x, body.y);
+    const leader = tag.leader;
+    if (leader === undefined) throw new Error(`${tag.id} has a leader`);
     expect(tag.side).toBe(sx < middle ? 'left' : 'right');
+    expect(tag.more).toBeUndefined();
     expect(tag.box.height).toBe(height);
+    expect(tag.fontSize).toBe(LABELING.fontSize);
     expect(tag.box.width).toBeCloseTo(tag.text.length * LABELING.fontSize * MONO_ADVANCE + 2 * LABELING.pad, 9);
-    // Against the slide's edge, and the leader from the tag's inner edge to the body's rim.
-    if (tag.side === 'left') expect(tag.box.x + tag.box.width).toBeCloseTo(x0 - LABELING.gap, 9);
-    else expect(tag.box.x).toBeCloseTo(x1 + LABELING.gap, 9);
-    expect(tag.leader.from[0]).toBeCloseTo(tag.side === 'left' ? tag.box.x + tag.box.width : tag.box.x, 9);
-    expect(tag.leader.from[1]).toBeCloseTo(tag.box.y + height / 2, 9);
-    expect(Math.hypot(tag.leader.to[0] - sx, tag.leader.to[1] - sy)).toBeCloseTo(body.r * SCREEN.pixelsPerUnit, 6);
+    // An elbow's length off the slide's edge, where the screen has the room.
+    if (tag.side === 'left') expect(tag.box.x + tag.box.width).toBeCloseTo(x0 - LABELING.gap - TAG_ELBOW, 9);
+    else expect(tag.box.x).toBeCloseTo(x1 + LABELING.gap + TAG_ELBOW, 9);
+    // The leader leaves the tag's inner edge straight toward the slide for the elbow's length, then turns for the body's rim.
+    expect(leader.from[0]).toBeCloseTo(tag.side === 'left' ? tag.box.x + tag.box.width : tag.box.x, 9);
+    expect(leader.from[1]).toBeCloseTo(tag.box.y + height / 2, 9);
+    expect(leader.elbow[1]).toBe(leader.from[1]);
+    expect((leader.elbow[0] - leader.from[0]) * (tag.side === 'left' ? 1 : -1)).toBeCloseTo(TAG_ELBOW, 9);
+    expect(Math.hypot(leader.to[0] - sx, leader.to[1] - sy)).toBeCloseTo(body.r * SCREEN.pixelsPerUnit, 6);
   }
   for (const side of ['left', 'right'] as const) {
     const column = tags.filter((tag) => tag.side === side);
@@ -362,15 +356,121 @@ test('the tags stand in two columns beside the slide, each on its body\'s side, 
       expect(project(bodyOf(bodies, tag.id).x, bodyOf(bodies, tag.id).y)[1]).toBeGreaterThanOrEqual(project(bodyOf(bodies, above?.id ?? '').x, bodyOf(bodies, above?.id ?? '').y)[1]);
     });
   }
-  // However the slide is framed, the columns stay on the screen: a slide wider than the screen pulls them in from its edges.
+  // However the slide is framed, the columns stay on the screen: a slide wider than the screen pulls them in from its edges, and a leader never runs past its body.
   const [cx, cy] = [(Math.min(...slide.ring.map(([x]) => x)) + Math.max(...slide.ring.map(([x]) => x))) / 2, (Math.min(...slide.ring.map(([, y]) => y)) + Math.max(...slide.ring.map(([, y]) => y))) / 2];
   const close = tagsOf(slide, bodies, (x, y) => [(x - cx) * 20 + 400, (y - cy) * 20 + 300], { width: 800, height: 600, pixelsPerUnit: 20 });
   for (const tag of close) {
     expect(tag.box.x).toBeGreaterThanOrEqual(0);
     expect(tag.box.x + tag.box.width).toBeLessThanOrEqual(800);
     expect(tag.box.y + tag.box.height).toBeLessThanOrEqual(600);
+    expect(tag.leader?.elbow[1]).toBe(tag.leader?.from[1]);
+    expect(Math.abs((tag.leader?.elbow[0] ?? 0) - (tag.leader?.from[0] ?? 0))).toBeLessThanOrEqual(TAG_ELBOW);
   }
+  // The elbow is a token, read as handed in (D156).
+  const short = tagsOf(slide, bodies, project, SCREEN, LABELING, { TAG_ELBOW: 10, TAG_ROW_FLOOR });
+  for (const tag of short) expect(Math.abs((tag.leader?.elbow[0] ?? 0) - (tag.leader?.from[0] ?? 0))).toBeCloseTo(10, 9);
   expect(tagsOf(slide, bodies, project, SCREEN)).toEqual(tags);
+});
+
+/** The demo with its pm folder as a square of 400 holding 80 files: seven columns of eight on its left and three on its right. */
+function crowded(): MapJson {
+  const own = DEMO.terrain.organelles.find((organelle) => organelle.id === SLOTS);
+  if (own === undefined || DEMO.terrain.layout === undefined) throw new Error('the demo lost slots.ts');
+  const { ties: _ties, package_ties: _package, functions: _functions, ...bare } = own;
+  const columns = [20, 46, 72, 98, 124, 150, 176, 260, 310, 360];
+  const files = columns.flatMap((x, column) => Array.from({ length: 8 }, (_, row) => ({ id: `libs/core/src/pm/f${String(column)}${String(row)}.ts`, x, y: 30 + row * 48 })));
+  return {
+    ...DEMO,
+    terrain: {
+      ...DEMO.terrain,
+      organelles: [...DEMO.terrain.organelles.filter((organelle) => organelle.cell !== PM), ...files.map(({ id }) => ({ ...bare, id, path: id }))],
+      layout: {
+        ...DEMO.terrain.layout,
+        positions: { ...DEMO.terrain.layout.positions, ...Object.fromEntries(files.map(({ id, x, y }) => [id, { x, y, r: 6 }])) },
+        contours: {
+          ...DEMO.terrain.layout.contours,
+          [PM]: [
+            [0, 0],
+            [400, 0],
+            [400, 400],
+            [0, 400],
+            [0, 0],
+          ],
+        },
+      },
+    },
+  };
+}
+
+test('on a 16:9 screen a crowded cell\'s tags keep off one another, on the screen and inside the chrome\'s margins, in their bodies\' order, a full column ending on a footer that counts the rest, level, tilted and zoomed past the screen, and no body moves (D198, Q89, P25)', () => {
+  const slide = slideOf(PM, crowded());
+  const bodies = interiorOf(slide);
+  expect(bodies).toHaveLength(80);
+  // Every body is where the layout rests it, inside its membrane.
+  for (const body of bodies) {
+    expect([body.x, body.y]).toEqual([body.rest.x, body.rest.y]);
+    expect(insideRing(slide.ring, body.x, body.y)).toBe(true);
+  }
+  // The chrome's claims: the HUD at the top, the legend and the minimap at the foot, the rail on the right.
+  const margins = { top: 96, bottom: 220, left: 0, right: 320 };
+  const tilt = Math.cos((35 * Math.PI) / 180);
+  const views: readonly { readonly name: string; readonly project: (x: number, y: number) => Point; readonly pixelsPerUnit: number }[] = [
+    { name: 'level', project: (x, y) => [x * 2 + 320, y * 2 + 50], pixelsPerUnit: 2 },
+    { name: 'tilted to 35 degrees', project: (x, y) => [x * 2 + 320, y * 2 * tilt + 120], pixelsPerUnit: 2 },
+    { name: 'zoomed past the screen', project: (x, y) => [(x - 200) * 6 + 560, (y - 200) * 6 + 400], pixelsPerUnit: 6 },
+  ];
+  for (const view of views) {
+    const screen = { width: 1440, height: 900, pixelsPerUnit: view.pixelsPerUnit, margins };
+    const tags = tagsOf(slide, bodies, view.project, screen);
+    tags.forEach((a, index) => {
+      // On the screen, inside the margins, at a row no smaller than the floor.
+      expect(a.box.x, view.name).toBeGreaterThanOrEqual(margins.left);
+      expect(a.box.x + a.box.width, view.name).toBeLessThanOrEqual(screen.width - margins.right);
+      expect(a.box.y, view.name).toBeGreaterThanOrEqual(margins.top);
+      expect(a.box.y + a.box.height, view.name).toBeLessThanOrEqual(screen.height - margins.bottom);
+      expect(a.box.height).toBeGreaterThanOrEqual(TAG_ROW_FLOOR);
+      expect(a.fontSize).toBeLessThanOrEqual(LABELING.fontSize);
+      for (const b of tags.slice(index + 1)) {
+        const apart = a.box.x + a.box.width <= b.box.x || b.box.x + b.box.width <= a.box.x || a.box.y + a.box.height <= b.box.y || b.box.y + b.box.height <= a.box.y;
+        expect(apart, `${a.id} and ${b.id}, ${view.name}`).toBe(true);
+      }
+      // Every leader's first segment is horizontal.
+      if (a.leader !== undefined) expect(a.leader.elbow[1]).toBe(a.leader.from[1]);
+    });
+    const middle = (Math.min(...slide.ring.map(([x, y]) => view.project(x, y)[0])) + Math.max(...slide.ring.map(([x, y]) => view.project(x, y)[0]))) / 2;
+    const centre: Point = [(margins.left + screen.width - margins.right) / 2, (margins.top + screen.height - margins.bottom) / 2];
+    for (const side of ['left', 'right'] as const) {
+      const column = tags.filter((tag) => tag.side === side);
+      const named = column.filter((tag) => tag.more === undefined);
+      const footer = column.find((tag) => tag.more !== undefined);
+      const onSide = bodies.filter((body) => (view.project(body.x, body.y)[0] < middle ? 'left' : 'right') === side);
+      // The column's order is its bodies' order down the screen, the footer last.
+      const ys = named.map((tag) => view.project(bodyOf(bodies, tag.id).x, bodyOf(bodies, tag.id).y)[1]);
+      expect(ys, view.name).toEqual(ys.toSorted((a, b) => a - b));
+      expect(named.map((tag) => tag.box.y)).toEqual(named.map((tag) => tag.box.y).toSorted((a, b) => a - b));
+      if (footer !== undefined) expect(column.at(-1)).toBe(footer);
+      // Every body on the side is named or counted.
+      expect(named.length + (footer?.more ?? 0), `${side}, ${view.name}`).toBe(onSide.length);
+      if (footer === undefined) continue;
+      expect(footer.text).toBe(`and ${String(footer.more)} more`);
+      expect(footer.leader).toBeUndefined();
+      expect(footer.box.height).toBe(TAG_ROW_FLOOR);
+      // The named are the bodies nearest the view's middle: none it dropped stands nearer than one it kept.
+      const away = (id: string): number => Math.hypot(view.project(bodyOf(bodies, id).x, bodyOf(bodies, id).y)[0] - centre[0], view.project(bodyOf(bodies, id).x, bodyOf(bodies, id).y)[1] - centre[1]);
+      const kept = new Set(named.map((tag) => tag.id));
+      const dropped = onSide.filter((body) => !kept.has(body.id));
+      expect(Math.max(...named.map((tag) => away(tag.id)))).toBeLessThanOrEqual(Math.min(...dropped.map((body) => away(body.id))));
+    }
+    // The left column holds 56 bodies, more than it has rows for; the right holds 24, at rows it need not shrink far.
+    expect(tags.find((tag) => tag.side === 'left' && tag.more !== undefined)?.more, view.name).toBeGreaterThan(0);
+    expect(tags.some((tag) => tag.side === 'right' && tag.more !== undefined)).toBe(false);
+    expect(tagsOf(slide, bodies, view.project, screen)).toEqual(tags);
+  }
+  // With no margins claimed the same column has the rows for more of its tags.
+  const [level] = views;
+  if (level === undefined) throw new Error('a level view');
+  const claimed = tagsOf(slide, bodies, level.project, { width: 1440, height: 900, pixelsPerUnit: 2, margins }).filter((tag) => tag.more === undefined).length;
+  expect(tagsOf(slide, bodies, level.project, { width: 1440, height: 900, pixelsPerUnit: 2 }).filter((tag) => tag.more === undefined).length).toBeGreaterThan(claimed);
 });
 
 test("the scheduler fades a slide in over the cross-fade's time as a cell opens, holds it open, fades it out as it closes, and spreads the exploded view the same way", () => {

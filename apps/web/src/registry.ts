@@ -166,6 +166,8 @@ export const SECTIONS: readonly Section[] = [
       'LEADER_INK',
       'LEADER_WIDTH',
       'LEADER_DASH',
+      'TAG_ELBOW',
+      'TAG_ROW_FLOOR',
       'SCREEN_TYPE_UP',
     ],
   },

@@ -21,14 +21,15 @@
  * by phyllotaxis from the body's middle inside the core its arms never cross,
  * each sized by its lines and dented by the thresholds it breaks, the densest
  * file on the slide reading full and the rest by their lines (D197); a file
- * the scan read no functions in has none (C2). On demand the exploded view spreads the bodies out from the
- * cell's middle along dotted leaders, in the technical drawing's manner,
- * clear of one another. The file labels are tags in two columns on screen,
- * left and right of the slide however it is framed, each with its rule count
- * (D155), joined to their bodies by dotted leaders.
+ * the scan read no functions in has none (C2). On demand the exploded view
+ * spreads the tags, not the bodies (D198): every body stays where the float
+ * has it, and the file labels are tags in two columns on screen, just outside
+ * the slide, left and right of it however it is framed and clear of the
+ * chrome, each with its rule count (D155), joined to their bodies by long
+ * elbowed leaders in the technical drawing's manner.
  *
  * Pure (C1): no three and no DOM. The world hands in where the scheduler's
- * float has the files, how far the exploded view has spread, and a projection
+ * float has the files and a projection
  * to the screen, and one input gives one layout (C3).
  */
 
@@ -47,14 +48,11 @@ import type { Ring } from './raster.js';
 import { AT_REST, draw, outlineOf, rulesOf, seedOf } from './shape.js';
 import { troubleFrom, troubleOf } from './trouble.js';
 import type { Outline, ShapeMotion } from './shape.js';
-import { MONO_ADVANCE, NUCLEUS_FILL, NUCLEUS_MOST, NUCLEUS_PAD } from './tokens.js';
+import { MONO_ADVANCE, NUCLEUS_FILL, NUCLEUS_MOST, NUCLEUS_PAD, TAG_ELBOW, TAG_ROW_FLOOR } from './tokens.js';
 import { weatherOf } from './weather.js';
 
 /**
- * How the exploded view spreads the bodies: each moves out from the cell's
- * middle to this many times its distance from it, plus this share of the
- * cell's radius, and keeps this much clear ground off its neighbours, in
- * layout units; how the membrane writes the exports: this many names to a
+ * How the slide is laid: how the membrane writes the exports, this many names to a
  * line, and this many before the rest are only counted; and how far the held
  * files gather toward the slide's middle and the loose toward its rim, 0 to 1
  * (D199), 0 resting every file where the layout put it. One object, handed
@@ -62,21 +60,18 @@ import { weatherOf } from './weather.js';
  * rests.
  */
 export type InteriorLayout = {
-  readonly explodeSpread: number;
-  readonly explodePush: number;
-  readonly explodeGap: number;
   readonly exportsPerLine: number;
   readonly exportsShown: number;
   readonly gather: number;
 };
 
-export const INTERIOR_LAYOUT: InteriorLayout = { explodeSpread: 1.6, explodePush: 0.35, explodeGap: 3, exportsPerLine: 3, exportsShown: 12, gather: GATHER };
+export const INTERIOR_LAYOUT: InteriorLayout = { exportsPerLine: 3, exportsShown: 12, gather: GATHER };
 
 /** What the change did to a file, and the share of its body left unstained: its changed lines no test ran, or all of it when nobody measured (D80). */
 /** `improved` where the change made the file healthier, which wears the calm-positive hue in place of the change hue (D98). */
 export type Stain = { readonly kind: ChangeKind; readonly from?: string; readonly open: number; readonly improved?: true };
 
-/** A file on the slide at rest: where it rests, the layout's place gathered by how its cellmates hold it (D199), its lines and the functions the head scan read in it, where it read any (D197), the rules it breaks, where its trouble puts it on the shape spectrum (D194), its stain, its looseness, and where the exploded view takes it. */
+/** A file on the slide at rest: where it rests, the layout's place gathered by how its cellmates hold it (D199), its lines and the functions the head scan read in it, where it read any (D197), the rules it breaks, where its trouble puts it on the shape spectrum (D194), its stain, and its looseness. */
 export type SlideFile = {
   readonly id: string;
   readonly rest: Position;
@@ -87,7 +82,6 @@ export type SlideFile = {
   readonly dents: readonly string[];
   readonly stain?: Stain;
   readonly looseness?: number;
-  readonly exploded: Point;
 };
 
 /**
@@ -167,38 +161,56 @@ export type Body = SlideFile & { readonly x: number; readonly y: number; readonl
 
 /**
  * How the slide moves this frame: where the float has the cell's files (none
- * while it rests), reduced motion, how far the exploded view has spread, 0 to
- * 1, how each trouble score moves a shape, and the demo switch, under which
+ * while it rests), reduced motion, how each trouble score moves a shape, and the demo switch, under which
  * the bodies take scores across the spectrum in place of their trouble (D202);
  * and the nucleus's tokens, resting when left out.
  */
 export type InteriorMotion = {
   readonly drifted?: readonly Drifted[];
   readonly reduced?: boolean;
-  readonly explode?: number;
   readonly shape?: (score: number) => ShapeMotion;
   readonly shapes?: 'demo';
   readonly nucleus?: NucleusTokens;
 };
 
-/** One file's tag in a column beside the slide: its words, its rule count, the functions its nucleus only counts, which column, its box on the screen, and the dotted leader from its edge to the body's rim. */
+/** A tag's leader on the screen (D198): from the tag's inner edge straight toward the slide to its elbow, then to the body's rim. */
+export type Leader = { readonly from: Point; readonly elbow: Point; readonly to: Point };
+
+/**
+ * One tag in a column beside the slide: a file's, with its words, its rule
+ * count, the functions its nucleus only counts, and the leader to its body;
+ * or a column's footer, which counts the tags the column had no row for
+ * (`more`) and has no leader. Each says which column it stands in, its box
+ * on the screen, and the size its words are set at, smaller where the
+ * column's rows shrank to fit.
+ */
 export type Tag = {
   readonly id: string;
   readonly text: string;
   readonly rules: number;
   readonly side: 'left' | 'right';
   readonly box: LabelBox;
-  readonly leader: { readonly from: Point; readonly to: Point };
+  readonly fontSize: number;
+  readonly leader?: Leader;
+  readonly more?: number;
 };
 
-/** The screen the tags are kept on: its size in pixels, and how many pixels one layout unit takes. */
-export type Screen = { readonly width: number; readonly height: number; readonly pixelsPerUnit: number };
+/** The screen's edges the chrome claims, in pixels: the tags keep inside what is left (P25). */
+export type Margins = { readonly top: number; readonly bottom: number; readonly left: number; readonly right: number };
+
+/** The screen the tags are kept on: its size in pixels, how many pixels one layout unit takes, and the margins the chrome claims, none when left out. */
+export type Screen = { readonly width: number; readonly height: number; readonly pixelsPerUnit: number; readonly margins?: Margins };
+
+/**
+ * The tags' tokens as one object, so a registry can hand in live values
+ * (D156); `TAG_TOKENS` is where they rest, at `tokens.ts`'s values.
+ */
+export type TagTokens = { readonly TAG_ELBOW: number; readonly TAG_ROW_FLOOR: number };
+export const TAG_TOKENS: TagTokens = { TAG_ELBOW, TAG_ROW_FLOOR };
 
 /** A layout point's place on the screen, in pixels. */
 export type Projection = (x: number, y: number) => Point;
 
-/** How many rounds of pushing exploded bodies apart a layout takes. */
-const ROUNDS = 12;
 /** The pixels between two tags in a column, and between a column and the screen's edge. */
 const TAG_ROW_GAP = 2;
 const TAG_MARGIN = 8;
@@ -272,44 +284,6 @@ function stainsOf(map: MapJson): ReadonlyMap<string, Stain> {
   return stains;
 }
 
-type Spread = { x: number; y: number; readonly r: number };
-
-/** Push two overlapping bodies apart along the line between them, each by half. */
-function apart(a: Spread, b: Spread, gap: number): void {
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  const distance = Math.hypot(dx, dy);
-  const overlap = a.r + b.r + gap - distance;
-  if (overlap <= 0) return;
-  const [ux, uy] = distance === 0 ? [1, 0] : [dx / distance, dy / distance];
-  a.x -= (ux * overlap) / 2;
-  a.y -= (uy * overlap) / 2;
-  b.x += (ux * overlap) / 2;
-  b.y += (uy * overlap) / 2;
-}
-
-/**
- * Where the exploded view takes each file: out from the cell's middle along
- * its own bearing, a file at the middle along one its path draws, then a few
- * rounds pushing bodies apart so none overlaps another, in path order (C3).
- */
-function explodedOf(files: readonly { readonly id: string; readonly rest: Position }[], centre: Point, radius: number, layout: InteriorLayout): readonly Point[] {
-  const bodies = files.map(({ id, rest }): Spread => {
-    const dx = rest.x - centre[0];
-    const dy = rest.y - centre[1];
-    const distance = Math.hypot(dx, dy);
-    const angle = distance === 0 ? draw(seedOf(id), 0) * 2 * Math.PI : Math.atan2(dy, dx);
-    const reach = distance * layout.explodeSpread + radius * layout.explodePush;
-    return { x: centre[0] + Math.cos(angle) * reach, y: centre[1] + Math.sin(angle) * reach, r: rest.r };
-  });
-  for (let round = 0; round < ROUNDS; round += 1) {
-    bodies.forEach((body, index) => {
-      for (const other of bodies.slice(index + 1)) apart(body, other, layout.explodeGap);
-    });
-  }
-  return bodies.map((body): Point => [body.x, body.y]);
-}
-
 /** A name the reach crossed a cell's membrane by, and the reach entries outside the cell that it carried, in the map's order (D181). */
 export type Crossing = { readonly name: string; readonly entries: readonly ReachEntry[] };
 
@@ -364,7 +338,6 @@ export function cellSlide(map: MapJson, cell: string, layout: InteriorLayout = I
   const stains = stainsOf(map);
   const placed = slideFilesOf(map, cell);
   const rests = placed.map(({ organelle }) => ({ id: organelle.id, rest: gathered.get(organelle.id) ?? { x: 0, y: 0, r: 0 } }));
-  const exploded = explodedOf(rests, centre, radius, layout);
   const files = placed.map(({ organelle, looseness }, index): SlideFile => {
     const stain = stains.get(organelle.id);
     return {
@@ -377,7 +350,6 @@ export function cellSlide(map: MapJson, cell: string, layout: InteriorLayout = I
       dents: organelle.dents,
       ...(stain === undefined ? {} : { stain }),
       ...(looseness === undefined ? {} : { looseness }),
-      exploded: exploded[index] ?? [0, 0],
     };
   });
 
@@ -500,8 +472,8 @@ function demoScores(files: readonly SlideFile[]): ReadonlyMap<string, number> {
 
 /**
  * The bodies on a slide this frame: each file where the float has it (D157,
- * D165), drawn toward its exploded spot by how far the view has spread, in
- * the outline its trouble score moves (D147, D194). At rest, and under reduced motion,
+ * D165), whether or not the exploded view is spread, which moves the tags
+ * and never a body (D198), in the outline its trouble score moves (D147, D194). At rest, and under reduced motion,
  * every body sits at its rest (D199), still; so does a file the float
  * leaves out. Under the demo switch each body's score is its place in path
  * order across the spectrum, the first file smooth and the last spiky, so a
@@ -509,13 +481,10 @@ function demoScores(files: readonly SlideFile[]): ReadonlyMap<string, number> {
  */
 export function interiorOf(slide: Slide, motion: InteriorMotion = {}): readonly Body[] {
   const drifted = new Map(motion.reduced === true ? [] : (motion.drifted ?? []).map((file) => [file.id, file] as const));
-  const spread = clamp01(motion.explode ?? 0);
   const shape = motion.reduced === true ? still : (motion.shape ?? still);
   const demo = motion.shapes === 'demo' ? demoScores(slide.files) : undefined;
   return slide.files.map((file): Body => {
-    const at = drifted.get(file.id) ?? file.rest;
-    const x = at.x + (file.exploded[0] - at.x) * spread;
-    const y = at.y + (file.exploded[1] - at.y) * spread;
+    const { x, y } = drifted.get(file.id) ?? file.rest;
     const r = file.rest.r;
     const score = demo?.get(file.id) ?? file.score;
     const outline = outlineOf(file.id, { x, y, r }, score, shape(score));
@@ -526,12 +495,12 @@ export function interiorOf(slide: Slide, motion: InteriorMotion = {}): readonly 
 
 /**
  * A column's tags stacked top-down from where each body projects, each at
- * least a row below the one above, then held on the screen: each is pulled up
- * from the foot leaving room for those below it, and down from the head
- * leaving room for those above, so the column keeps its order and its spacing
- * and fits the screen whenever it can.
+ * least a row below the one above, then held between the column's head and
+ * foot: each is pulled up from the foot leaving room for those below it, and
+ * down from the head leaving room for those above, so the column keeps its
+ * order and its spacing and fits whenever it can.
  */
-function stackColumn(wanted: readonly { readonly y: number }[], height: number, screenHeight: number): readonly number[] {
+function stackColumn(wanted: readonly { readonly y: number }[], height: number, head: number, foot: number): readonly number[] {
   const row = height + TAG_ROW_GAP;
   const tops: number[] = [];
   for (const { y } of wanted) {
@@ -539,18 +508,36 @@ function stackColumn(wanted: readonly { readonly y: number }[], height: number, 
     tops.push(previous === undefined ? y - height / 2 : Math.max(y - height / 2, previous + row));
   }
   const count = tops.length;
-  return tops.map((top, index) => Math.max(TAG_MARGIN + index * row, Math.min(top, screenHeight - TAG_MARGIN - height - (count - 1 - index) * row)));
+  return tops.map((top, index) => Math.max(head + index * row, Math.min(top, foot - height - (count - 1 - index) * row)));
 }
 
+const NO_MARGINS: Margins = { top: 0, bottom: 0, left: 0, right: 0 };
+
 /**
- * The tags beside a slide on the screen: each body's name, its rule count and
- * the functions its nucleus only counts (`+12 fn`, D197) in the column on its side of the slide's middle, stacked down the column by
- * where the body projects, the columns held against the slide's edges and
- * kept on the screen however the slide is framed (D155), each joined to its
- * body's rim by a leader from the tag's inner edge.
+ * The tags beside a slide on the screen (D198): each body's name, its rule
+ * count and the functions its nucleus only counts (`+12 fn`, D197) in the
+ * column on its side of the slide's middle, stacked down the column by where
+ * the body projects. The columns stand just outside the slide, an elbow's
+ * length off its edges, and are pulled onto the screen only when the slide
+ * runs off it, then clear of the margins the chrome claims (D155, P25). Each
+ * tag is joined to its body by a leader that leaves the tag's inner edge
+ * straight toward the slide for `TAG_ELBOW` pixels, or as far as the body
+ * leaves room for, and then turns for the body's rim.
+ *
+ * A column with more tags than rows shrinks its rows, and the words with
+ * them, no smaller than `TAG_ROW_FLOOR`. Where they still do not fit it
+ * keeps the tags of the bodies nearest the view's middle, as many as fit
+ * above a footer, in the bodies' order down the screen, and the footer
+ * counts the rest: `and 23 more` (Q89).
  */
-export function tagsOf(slide: Slide, bodies: readonly Body[], project: Projection, screen: Screen, labeling: Labeling = LABELING): readonly Tag[] {
-  const height = labeling.fontSize + 2 * labeling.pad;
+export function tagsOf(slide: Slide, bodies: readonly Body[], project: Projection, screen: Screen, labeling: Labeling = LABELING, tokens: TagTokens = TAG_TOKENS): readonly Tag[] {
+  const margins = screen.margins ?? NO_MARGINS;
+  const full = labeling.fontSize + 2 * labeling.pad;
+  const floor = Math.min(full, Math.max(1, tokens.TAG_ROW_FLOOR));
+  const head = margins.top + TAG_MARGIN;
+  const foot = screen.height - margins.bottom - TAG_MARGIN;
+  const room = Math.max(0, foot - head);
+  const centre: Point = [(margins.left + screen.width - margins.right) / 2, (margins.top + screen.height - margins.bottom) / 2];
   const ringOnScreen = slide.ring.map(([x, y]) => project(x, y));
   const x0 = Math.min(...ringOnScreen.map(([x]) => x));
   const x1 = Math.max(...ringOnScreen.map(([x]) => x));
@@ -560,28 +547,48 @@ export function tagsOf(slide: Slide, bodies: readonly Body[], project: Projectio
       const [sx, sy] = project(body.x, body.y);
       const more = body.nucleus?.more ?? 0;
       const text = `${nameOf(body.id, body.stain?.kind === 'added')}${body.rules > 0 ? ` · ${String(body.rules)}` : ''}${more > 0 ? ` · +${String(more)} fn` : ''}`;
-      const width = text.length * labeling.fontSize * MONO_ADVANCE + 2 * labeling.pad;
-      return { body, text, width, x: sx, y: sy, side: sx < middle ? ('left' as const) : ('right' as const) };
+      return { body, text, x: sx, y: sy, side: sx < middle ? ('left' as const) : ('right' as const) };
     })
     .toSorted((a, b) => a.y - b.y || byPath(a.body.id, b.body.id));
   return (['left', 'right'] as const).flatMap((side): Tag[] => {
-    const column = wanted.filter((each) => each.side === side);
-    if (column.length === 0) return [];
-    const widest = Math.max(...column.map((each) => each.width));
-    // The column's inner edge: against the slide, pulled onto the screen when the slide runs off it.
-    const edge = side === 'left' ? Math.max(x0 - labeling.gap, TAG_MARGIN + widest) : Math.min(x1 + labeling.gap, screen.width - TAG_MARGIN - widest);
-    const tops = stackColumn(column, height, screen.height);
-    return column.map((each, index): Tag => {
+    const every = wanted.filter((each) => each.side === side);
+    if (every.length === 0) return [];
+    // The rows: full where the column fits, shrunk toward the floor where it does not, and at the floor only as many tags as fit above a footer.
+    const fits = (count: number, height: number): boolean => count * height + (count - 1) * TAG_ROW_GAP <= room;
+    const height = fits(every.length, full) ? full : Math.min(full, Math.max(floor, Math.floor((room - (every.length - 1) * TAG_ROW_GAP) / every.length)));
+    const rows = fits(every.length, height) ? every.length : Math.max(1, Math.floor((room + TAG_ROW_GAP) / (height + TAG_ROW_GAP)));
+    const kept = new Set(
+      rows >= every.length
+        ? every
+        : every
+            .toSorted((a, b) => Math.hypot(a.x - centre[0], a.y - centre[1]) - Math.hypot(b.x - centre[0], b.y - centre[1]) || byPath(a.body.id, b.body.id))
+            .slice(0, rows - 1),
+    );
+    const column = every.filter((each) => kept.has(each));
+    const rest = every.length - column.length;
+    // The words shrink with their row, a pixel clear of it above and below.
+    const fontSize = Math.min(labeling.fontSize, Math.max(1, height - 2));
+    const widthOf = (text: string): number => text.length * fontSize * MONO_ADVANCE + 2 * labeling.pad;
+    const footer = rest > 0 ? `and ${String(rest)} more` : undefined;
+    const widest = Math.max(...column.map((each) => widthOf(each.text)), footer === undefined ? 0 : widthOf(footer));
+    // The column's inner edge: an elbow's length off the slide, pulled onto the screen and clear of the chrome's claims when the slide runs off it.
+    const edge = side === 'left' ? Math.max(x0 - labeling.gap - tokens.TAG_ELBOW, margins.left + TAG_MARGIN + widest) : Math.min(x1 + labeling.gap + tokens.TAG_ELBOW, screen.width - margins.right - TAG_MARGIN - widest);
+    const inward = side === 'left' ? 1 : -1;
+    const tops = stackColumn(footer === undefined ? column : [...column, { y: Number.NEGATIVE_INFINITY }], height, head, foot);
+    const boxAt = (top: number, width: number): LabelBox => ({ x: side === 'left' ? edge - width : edge, y: top, width, height });
+    const tags = column.map((each, index): Tag => {
       const top = tops[index] ?? 0;
-      const box: LabelBox = { x: side === 'left' ? edge - each.width : edge, y: top, width: each.width, height };
       const from: Point = [edge, top + height / 2];
-      const dx = each.x - from[0];
-      const dy = each.y - from[1];
-      const distance = Math.hypot(dx, dy);
       const rim = each.body.r * screen.pixelsPerUnit;
+      // Straight toward the slide, never past the body's near rim, then on to the rim.
+      const elbow: Point = [edge + inward * Math.max(0, Math.min(tokens.TAG_ELBOW, (each.x - edge) * inward - rim)), from[1]];
+      const dx = each.x - elbow[0];
+      const dy = each.y - elbow[1];
+      const distance = Math.hypot(dx, dy);
       const to: Point = distance <= rim ? [each.x, each.y] : [each.x - (dx / distance) * rim, each.y - (dy / distance) * rim];
-      return { id: each.body.id, text: each.text, rules: each.body.rules, side, box, leader: { from, to } };
+      return { id: each.body.id, text: each.text, rules: each.body.rules, side, box: boxAt(top, widthOf(each.text)), fontSize, leader: { from, elbow, to } };
     });
+    return footer === undefined ? tags : [...tags, { id: `${side}: more`, text: footer, rules: 0, side, box: boxAt(tops.at(-1) ?? head, widthOf(footer)), fontSize, more: rest }];
   });
 }
 
