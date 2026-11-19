@@ -23,13 +23,22 @@
  * The world writes no word over the field unasked (D168), so a caller may
  * name the targets it is asked about, the file or cell under the pointer and
  * the target of the notice row it is over, and only their labels are placed.
+ *
+ * The one standing text D168 allows (D196) is each depth band's: a quiet
+ * caption from LOD1, `entry` or `n deep` (Q86), the inset in from where the
+ * band's line enters the screen and just under it, worked through the
+ * camera's projection so it stays on its rule tilted and turned. It yields:
+ * where it would fall on a placed label, a notice mark, the HUD or a cell's
+ * skin it is dropped, never moved, so it never covers what it describes.
  * One input gives one placement (C3).
  */
 
-import type { MapJson, Notice, NoticeTier } from 'core';
+import { membraneThickness } from 'core';
+import type { Band, Layout, LayoutBand, MapJson, Notice, NoticeTier } from 'core';
 
+import { dentedRing, wobbleOf } from './membranes.js';
 import type { Ring } from './raster.js';
-import { MONO_ADVANCE } from './tokens.js';
+import { BAND_LABEL_GAP, BAND_LABEL_INSET, BAND_LABEL_SIZE, MONO_ADVANCE } from './tokens.js';
 import { weatherOf } from './weather.js';
 
 /** §6's levels: field, surface, cell, organelle, diff. */
@@ -188,11 +197,22 @@ export function onRing(box: LabelBox, ring: Ring): boolean {
   });
 }
 
+/** A point on the screen, in pixels from its top-left. */
+type ScreenPoint = readonly [number, number];
+
+/** A layout point's place on the screen, in the viewport's pixels: how the camera shows the level ground. */
+type Projection = (x: number, y: number) => ScreenPoint;
+
+/** The viewport seen from overhead: each layout unit `pixelsPerUnit` pixels across, from its top-left. */
+function overheadOf(viewport: Viewport): Projection {
+  return (x, y) => [(x - viewport.x) * viewport.pixelsPerUnit, (y - viewport.y) * viewport.pixelsPerUnit];
+}
+
 /** A ring on the screen, in the viewport's pixels, with the box that bounds it, so a label far off it is cleared without walking its edges. */
 type Keep = { readonly ring: Ring; readonly bounds: LabelBox };
 
-function keepOf(ring: Ring, viewport: Viewport): Keep {
-  const screen: Ring = ring.map(([x, y]) => [(x - viewport.x) * viewport.pixelsPerUnit, (y - viewport.y) * viewport.pixelsPerUnit]);
+function keepOf(ring: Ring, project: Projection): Keep {
+  const screen: Ring = ring.map(([x, y]) => project(x, y));
   const xs = screen.map(([x]) => x);
   const ys = screen.map(([, y]) => y);
   const [x, y] = [Math.min(...xs), Math.min(...ys)];
@@ -257,7 +277,7 @@ export function labelsFor(map: MapJson, lod: Lod, viewport: Viewport, labeling: 
     .map(({ file }) => file);
 
   const height = labeling.fontSize + 2 * labeling.pad;
-  const kept = off.filter((ring) => ring.length >= 3).map((ring) => keepOf(ring, viewport));
+  const kept = off.filter((ring) => ring.length >= 3).map((ring) => keepOf(ring, overheadOf(viewport)));
   const clear = (box: LabelBox): boolean => kept.every((keep) => !overlaps(keep.bounds, box) || !onRing(box, keep.ring));
   const placed: Label[] = [];
   const place = (wanted: Wanted, rings: number): boolean => {
@@ -283,4 +303,173 @@ export function labelsFor(map: MapJson, lod: Lod, viewport: Viewport, labeling: 
     if (place(file, 1)) budget -= 1;
   }
   return placed;
+}
+
+/**
+ * The stretch of the line through two points, from `low` to `high` of the way
+ * from the first to the second, that lies on the screen: its two ends there,
+ * or none when it misses the screen or the points are one. Liang and
+ * Barsky's clip: each pair of edges narrows the stretch inside the screen.
+ */
+function clip(from: ScreenPoint, to: ScreenPoint, width: number, height: number, [start, end]: readonly [number, number]): readonly [ScreenPoint, ScreenPoint] | undefined {
+  const [dx, dy] = [to[0] - from[0], to[1] - from[1]];
+  if (dx === 0 && dy === 0) return undefined;
+  let [low, high] = [start, end];
+  for (const [step, at, size] of [
+    [dx, from[0], width],
+    [dy, from[1], height],
+  ] as const) {
+    if (step === 0) {
+      if (at < 0 || at > size) return undefined;
+      continue;
+    }
+    const [a, b] = [(0 - at) / step, (size - at) / step];
+    [low, high] = [Math.max(low, Math.min(a, b)), Math.min(high, Math.max(a, b))];
+  }
+  if (low > high) return undefined;
+  return [
+    [from[0] + dx * low, from[1] + dy * low],
+    [from[0] + dx * high, from[1] + dy * high],
+  ];
+}
+
+/**
+ * The line through two points on the screen, run out to the screen's edges:
+ * its two ends there, or none when the line misses the screen or the points
+ * are one. A band's rule drawn so crosses the whole screen, wherever the
+ * camera has turned the ground, and its label hangs from where it enters.
+ */
+export function across(from: ScreenPoint, to: ScreenPoint, width: number, height: number): readonly [ScreenPoint, ScreenPoint] | undefined {
+  return clip(from, to, width, height, [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY]);
+}
+
+/** The part of the segment between two points on the screen that lies on it, or none when none of it does: a row's rule, which runs across its row alone (Q73). */
+export function between(from: ScreenPoint, to: ScreenPoint, width: number, height: number): readonly [ScreenPoint, ScreenPoint] | undefined {
+  return clip(from, to, width, height, [0, 1]);
+}
+
+/**
+ * The band labels' tokens as one object, so a registry can hand in live
+ * values (D156); `BAND_LABEL_TOKENS` is where they rest, at `tokens.ts`'s values.
+ */
+export type BandLabelTokens = { readonly BAND_LABEL_SIZE: number; readonly BAND_LABEL_INSET: number; readonly BAND_LABEL_GAP: number };
+export const BAND_LABEL_TOKENS: BandLabelTokens = { BAND_LABEL_SIZE, BAND_LABEL_INSET, BAND_LABEL_GAP };
+
+/** One depth band's label: the band it names, the row of lanes it stands in where the lanes wrap (Q73), its words, and its box on the screen. */
+export type BandLabel = { readonly band: number; readonly row?: number; readonly text: string; readonly box: LabelBox };
+
+/** What a band's label says, from its depths (Q86): `entry` for the band that starts at depth 0, else `n deep`, or `n–m deep` for a band that spans depths. */
+function bandWords(band: Band): string {
+  const [low, high] = [String(band.depth_min), String(band.depth_max)];
+  if (band.depth_min === 0) return 'entry';
+  return band.depth_min === band.depth_max ? `${low} deep` : `${low}–${high} deep`;
+}
+
+/** A ladder of terraces and the stretch of the layout it stands across: the field's one ladder, or a row's where the lanes wrap (Q73). */
+type Ladder = { readonly row?: number; readonly x0: number; readonly x1: number; readonly bands: readonly LayoutBand[] };
+
+function laddersOf(layout: Layout): readonly Ladder[] {
+  if (layout.rows === undefined) return [{ x0: 0, x1: layout.width, bands: layout.bands }];
+  return layout.rows.map((row, index) => ({ row: index, x0: row.x0, x1: row.x1, bands: row.bands }));
+}
+
+/** A line's height on the screen where it crosses `x`, through its two projected points; the caller has made sure it does not stand upright. */
+function heightOn([a, b]: readonly [ScreenPoint, ScreenPoint], x: number): number {
+  return a[1] + ((b[1] - a[1]) * (x - a[0])) / (b[0] - a[0]);
+}
+
+/**
+ * Where a band's label stands on the screen: the inset in from the left end
+ * of the stretch of its line the screen shows, and just inside the band from
+ * it, below the line unless the view is turned past a quarter. Band 0's line
+ * is its top, under the shore; every other band's is the rule the world draws
+ * where it begins. None where the line misses the screen or stands upright on
+ * it, or where the label would run past the line's end or out of its band.
+ */
+function boxFor(ladder: Ladder, band: LayoutBand, text: string, project: Projection, screen: { readonly width: number; readonly height: number }, tokens: BandLabelTokens): LabelBox | undefined {
+  const top = [project(ladder.x0, band.y0), project(ladder.x1, band.y0)] as const;
+  const foot = [project(ladder.x0, band.y1), project(ladder.x1, band.y1)] as const;
+  if (Math.abs(top[1][0] - top[0][0]) < 1e-9) return undefined;
+  const run = (ladder.row === undefined ? across : between)(top[0], top[1], screen.width, screen.height);
+  if (run === undefined) return undefined;
+  const [left, right] = [Math.min(run[0][0], run[1][0]), Math.max(run[0][0], run[1][0])];
+  const [width, height] = [text.length * tokens.BAND_LABEL_SIZE * MONO_ADVANCE, tokens.BAND_LABEL_SIZE];
+  const x = left + tokens.BAND_LABEL_INSET;
+  if (x + width > right) return undefined;
+  const line = [heightOn(top, x), heightOn(top, x + width)];
+  const end = [heightOn(foot, x), heightOn(foot, x + width)];
+  const below = heightOn(foot, x) > heightOn(top, x);
+  const y = below ? Math.max(...line) + tokens.BAND_LABEL_GAP : Math.min(...line) - tokens.BAND_LABEL_GAP - height;
+  const inBand = below ? y + height <= Math.min(...end) : y >= Math.max(...end);
+  return inBand ? { x, y, width, height } : undefined;
+}
+
+/** A cell's skin on the screen, and how far past its ring the drawn line reaches there, in pixels: half the line's width and its ripple (D195). */
+type Skin = Keep & { readonly reach: number };
+
+/** Every cell's skin as the world draws it, dented by the rules its files break (D159), on the screen. */
+function skinsOf(map: MapJson, project: Projection, pixelsPerUnit: number): readonly Skin[] {
+  const contours = map.terrain.layout?.contours ?? {};
+  return map.terrain.cells.flatMap((cell) => {
+    const contour = contours[cell.id];
+    if (contour === undefined || contour.length < 3) return [];
+    const reach = (membraneThickness(cell.interface_size) / 2 + wobbleOf(cell)) * pixelsPerUnit;
+    return [{ ...keepOf(dentedRing(contour, cell.dents.length), project), reach }];
+  });
+}
+
+/** Whether a box keeps off a skin's drawn line and the ground inside it. */
+function offSkin(box: LabelBox, skin: Skin): boolean {
+  const grown = { x: box.x - skin.reach, y: box.y - skin.reach, width: box.width + 2 * skin.reach, height: box.height + 2 * skin.reach };
+  return !overlaps(skin.bounds, grown) || !onRing(grown, skin.ring);
+}
+
+/** A placed label's box where the world draws it: hung from its anchor's projection by the offset it was placed with overhead. */
+function shownAt(label: Label, overhead: Projection, project: Projection): LabelBox {
+  const [ox, oy] = overhead(label.anchor.x, label.anchor.y);
+  const [px, py] = project(label.anchor.x, label.anchor.y);
+  return { ...label.box, x: label.box.x + px - ox, y: label.box.y + py - oy };
+}
+
+/**
+ * Each depth band's quiet label over one viewport (D196, Q86): none at LOD0;
+ * from LOD1 one for each band whose line the screen shows, a row's band in
+ * each row where the lanes wrap, saying `entry` or `n deep` from
+ * `terrain.bands`, the inset in from where its line enters the screen and
+ * just under it. A label is dropped, never moved, where it would fall off
+ * the screen or on a placed label (`placed`, as `labelsFor` gave them), a box
+ * the caller claims (`off`, in the viewport's pixels: the notice marks, the
+ * HUD), or a cell's skin, so it never covers what it describes. `project` is
+ * the camera's view of the level ground, overhead unless it is tilted or
+ * turned; a placed label is hung from its anchor's projection, as the world
+ * draws it. One input gives one set of labels (C3).
+ */
+export function bandLabelsFor(
+  map: MapJson,
+  lod: Lod,
+  viewport: Viewport,
+  placed: readonly Label[] = [],
+  off: readonly LabelBox[] = [],
+  project: Projection = overheadOf(viewport),
+  tokens: BandLabelTokens = BAND_LABEL_TOKENS,
+): readonly BandLabel[] {
+  const layout = map.terrain.layout;
+  if (lod === 0 || layout === undefined) return [];
+  const screen = { width: viewport.width * viewport.pixelsPerUnit, height: viewport.height * viewport.pixelsPerUnit };
+  const overhead = overheadOf(viewport);
+  const taken = [...off, ...placed.map((label) => shownAt(label, overhead, project))];
+  const skins = skinsOf(map, project, viewport.pixelsPerUnit);
+  const clear = (box: LabelBox): boolean => inside(box, viewport) && taken.every((other) => !overlaps(other, box)) && skins.every((skin) => offSkin(box, skin));
+  const depths = new Map(map.terrain.bands.map((band) => [band.index, band] as const));
+  return laddersOf(layout).flatMap((ladder) =>
+    ladder.bands
+      .toSorted((a, b) => a.index - b.index)
+      .flatMap((band): BandLabel[] => {
+        const depth = depths.get(band.index);
+        const text = depth === undefined ? undefined : bandWords(depth);
+        const box = text === undefined ? undefined : boxFor(ladder, band, text, project, screen, tokens);
+        if (text === undefined || box === undefined || !clear(box)) return [];
+        return [{ band: band.index, ...(ladder.row === undefined ? {} : { row: ladder.row }), text, box }];
+      }),
+  );
 }

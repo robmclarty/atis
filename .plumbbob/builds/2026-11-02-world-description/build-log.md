@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: a world that describes itself at a glance
 
-**Current step:** 14 — feat(web): oscillate the marked ribbons along their length
+**Current step:** 15 — feat(scene): place a quiet label on each depth band
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -36,7 +36,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 11. feat(scene): read each membrane's wobble from its cell's integrity
 - ☑ 12. feat(web): ripple the skin's membrane line by its cell's integrity
 - ☑ 13. feat(scene): mark the ribbons that enter a cell past its interface
-- ☐ 14. feat(web): oscillate the marked ribbons along their length
+- ☑ 14. feat(web): oscillate the marked ribbons along their length
 - ☐ 15. feat(scene): place a quiet label on each depth band
 - ☐ 16. feat(web): write the band labels over the field
 - ☐ 17. docs(design): rewrite the channel list and log the balance patches
@@ -58,8 +58,8 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] Rob at range 2's stop: selections are glitchy when clicking different things: a click does not always do what is expected, fills are not good, and 3D elements are not always rendered properly; unknown whether any of it is new since range 2
 - [x] Rob at range 2's stop: clicking a highlighted issue pops a map of the related cells and files up in a rectangle in the centre; he likes it but could not tell what he was looking at or how to turn it off, so it needs a title or key and a visible way to close
 - [x] Rob at range 2's stop: clicking a cell should probably bring up file details in an inspector panel; what goes in it is undecided
-- [ ] fixtures/javascript-1 and fixtures/corpus-7 map.json predate step 1's integrity field (0 cells carry it), so range 3's stop sees no ripple on javascript-1 until that map is regenerated; only libs/core/fixtures/demo has a cell with past above 0 (package:libs/core, 1 through 1 past)
-- [ ] at the surface the membrane line is faint where the reach's glow fills a cell (seen on the demo's libs/core, both backends), so a lit cell's ripple barely reads while an unlit cell's reads clearly; judge at range 3's stop whether the line needs more contrast under the reach or the ripple a second cue
+- [x] fixtures/javascript-1 and fixtures/corpus-7 map.json predate step 1's integrity field (0 cells carry it), so range 3's stop sees no ripple on javascript-1 until that map is regenerated; only libs/core/fixtures/demo has a cell with past above 0 (package:libs/core, 1 through 1 past)
+- [x] at the surface the membrane line is faint where the reach's glow fills a cell (seen on the demo's libs/core, both backends), so a lit cell's ripple barely reads while an unlit cell's reads clearly; judge at range 3's stop whether the line needs more contrast under the reach or the ripple a second cue
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -90,6 +90,9 @@ Harvest results this boundary:
 - **tangent**: park 7 · Rob at range 2's stop: selections are glitchy when clicking different things: a click does not always do what is expected, fills are not good, and 3D elements are not always rendered properly; unknown whether any of it is new since range 2 → Rob confirmed it predates this build, and no step ahead builds on selection
 - **tangent**: park 8 · Rob at range 2's stop: clicking a highlighted issue pops a map of the related cells and files up in a rectangle in the centre; he likes it but could not tell what he was looking at or how to turn it off, so it needs a title or key and a visible way to close → the plate works and is liked; it lacks a name and a way out
 - **tangent**: park 9 · Rob at range 2's stop: clicking a cell should probably bring up file details in an inspector panel; what goes in it is undecided → a new surface whose contents are undecided
+- 2026-11-18, at range 3 of 6's stop: 2 parked ideas, classified.
+- **tangent**: park 10 · fixtures/javascript-1 and fixtures/corpus-7 map.json predate step 1's integrity field (0 cells carry it), so range 3's stop sees no ripple on javascript-1 until that map is regenerated; only libs/core/fixtures/demo has a cell with past above 0 (package:libs/core, 1 through 1 past) → the stop reads on fascicle's own map, so rebuilding the fixtures' maps can wait for its own step
+- **tangent**: park 11 · at the surface the membrane line is faint where the reach's glow fills a cell (seen on the demo's libs/core, both backends), so a lit cell's ripple barely reads while an unlit cell's reads clearly; judge at range 3's stop whether the line needs more contrast under the reach or the ripple a second cue → a look to judge at this stop, and the dev panel moves the line's ink and the amplitude live
 
 ## Log
 
@@ -488,3 +491,98 @@ folder, so it rides the branch into the PR.)*
 - 2026-11-18 — step 11 checkpointed · c7022a189 — feat(scene): read each membrane's wobble from its cell's integrity (1 drift, 15m)
 - 2026-11-18 — step 12 checkpointed · 1682c274b — feat(web): ripple the skin's membrane line by its cell's integrity (11m)
 - 2026-11-18 — step 13 checkpointed · d2219579f — feat(scene): mark the ribbons that enter a cell past its interface (12m)
+- 2026-11-18 — step 14 checkpointed · 3c819a7ad — feat(web): oscillate the marked ribbons along their length (13m)
+- 2026-11-18 — range 3 of 6's stop recorded — judge the surface: a module entered through its interface told from one imported past it by its membrane, and a swaying ribbon against a still one, the ripple on atis's own map where step 1 found a cell with `past` above 0, else `fixtures/javascript-1`, and the sway on `fixtures/corpus-7` ([Q94 (range-3-map)](#q94)); confirm [Q84 (oscillating-links)](#q84)'s reading or redirect it before the labels land
+
+  **Summary**: Steps 11 to 14 landed, each on a green `pnpm check --strict`. A cell's membrane line now ripples by the share of its outside imports that land past its barrel, and a ribbon whose import enters a module past its interface sways along its bow. Everything else holds still, and reduced motion stills both. Two things to know before you judge. First, neither map the stop names shows a ripple: atis's own map has 12 barrelled cells and none is imported past its barrel, and the map in `fixtures/javascript-1` predates the integrity field. Fascicle's own map does ripple, at three strengths: `src/engine` is entered 14 times and all 14 go past its barrel, `src/engine/providers/claude_cli` 3 times in 4, and the root package 9 times in 51. Second, the ripple is small on a real repo. It is 3 layout units, which on fascicle is a pixel or two at the zooms before a cell opens, and it is faint where the reach's glow fills a cell. The sway reads at a glance.
+
+  1. Step 11 changed one test outside its seam and its computed reach
+  2. No map the stop names ripples, and fascicle's own map does
+  3. The ripple circles its place, and its grid is laid wider than the line
+  4. A ribbon onto a folder's barrel from another package sways
+  5. Where to look, and which tokens move what
+
+  **Readout**:
+
+  ```text
+  steps        4 of 4 landed
+               - 11 c7022a1 · 12 1682c27 · 13 d221957 · 14 3c819a7
+  check        green: 1 of 1 checks, 4 landings
+  proof        met
+  decisions    honored:
+               - D195 (living-membranes)
+               - D192 (cell-integrity)
+               - D171 (sibling-cells-apart)
+               - D200 (one-meaning-per-mover)
+               - D156 (dev-panel)
+               - D94 (seeded-motion)
+  constraints  10 of 10 honored
+  seam         strayed: 1 path outside step 11's seam
+               → apps/web/src/__tests__/world.test.ts
+  diff         +1051 -114 across 20 files
+               - apps/web/src/__tests__/hover.test.ts +15 -2
+               - apps/web/src/__tests__/hud.test.tsx +40 -4
+               - apps/web/src/__tests__/marks.test.ts +30 -0
+               - apps/web/src/__tests__/world.test.ts +180 -11
+               - apps/web/src/chrome/legend.tsx +56 -11
+               - apps/web/src/hover.ts +13 -3
+               - apps/web/src/hud.ts +8 -5
+               - and 13 more
+  spent        52 min · green first run at every landing · 1 drift warning
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Harvested**: **2** of 11 parked ideas open
+
+  | Park | Why it matters | Lean |
+  | --- | --- | --- |
+  | **P10**: [Fixture maps lack integrity](#park-list) | no committed fixture shows a ripple until its map is rebuilt | tangent: the stop reads on fascicle's own map, so rebuilding the fixtures' maps can wait for its own step |
+  | **P11**: [Faint line under reach](#park-list) | a lit cell's ripple barely reads beside an unlit cell's | tangent: a look to judge at this stop, and the dev panel moves the line's ink and the amplitude live |
+
+  **Recommendation**: Judge the ripple on fascicle's own map and the sway on `fixtures/corpus-7`, then keep Q84 (oscillating-links)'s reading. The sway reads at a glance against a still ribbon and agrees with the membranes import for import. The ripple is the one to watch: if it is too quiet, raise `MEMBRANE_WOBBLE` in the dev panel before deciding it needs a second cue. I would leave both parks as tangents. Build first, since the world `atis` serves was built before this range:
+
+  ```sh
+  pnpm build
+  atis --whole-repo --repo ~/Projects/fascicle/code/fascicle
+  ```
+
+  For the sway, serve the app from its sources and open `?map=/@fs/Users/robmclarty/Projects/atis/code/atis/fixtures/corpus-7/map.json&zoom=3&centre=896,4210` on the port it prints:
+
+  ```sh
+  pnpm --filter web dev
+  ```
+
+  **1.** Step 11 changed one test outside its seam and its computed reach
+
+  The world's smoke test in `apps/web/src/__tests__/world.test.ts` counted the legend's rows as a literal, 15. Step 11 added a row, so the count had to move, and the file was in neither the step's seam nor its reach. It now reads `LEGEND.length`, so the row step 13 added needed no second change. That is the range's one stray, and the checkpoint flagged it.
+
+  Three more files outside step 11's seam were in its reach: `apps/web/src/registry.ts`, whose test holds its Motion section to the design doc's table; `apps/web/src/chrome/legend.tsx`, for the new row's sample; and `apps/web/src/__tests__/hud.test.tsx`, which holds the legend's list. Step 13 touched the same three for the swaying line's row, and step 14 touched `apps/web/src/materials.ts` for the wave's length, all in reach.
+
+  **2.** No map the stop names ripples, and fascicle's own map does
+
+  The stop asks for the ripple on atis's own map, else on `fixtures/javascript-1`. I mapped atis at the range's head: 112 cells, 12 with a barrel, and every one is entered through its barrel alone, so every membrane holds still. That is the right reading of this repo, and it leaves nothing to judge. The map in `fixtures/javascript-1` was written before step 1 added the integrity field, as was every other committed fixture's, so none of them ripples either. Only the demo map under `libs/core/fixtures/demo` does, on its core package, entered once each way.
+
+  I then mapped the two other repos you know, reading them only. Checkride has 13 barrelled cells and none is imported past its barrel. Fascicle has 21, and three are: `src/engine` at 0 through and 14 past, which is the full ripple; `src/engine/providers/claude_cli` at 1 through and 3 past; and the root package at 42 through and 9 past, which is under a fifth of it. So fascicle's map shows a hard ripple, a middling one and a slight one beside 18 still skins, which is the comparison the stop asks for.
+
+  The sway is as the plan counted it: `fixtures/corpus-7` carries two swaying ribbons among its 104 still ones, both cycles in ra-core, and a test holds the count. Neither atis, checkride nor fascicle draws a ribbon that sways.
+
+  **3.** The ripple circles its place, and its grid is laid wider than the line
+
+  Step 12's proof gives the displacement as one sine. One sine along an axis leaves a line that runs along that axis still, and a sine on each axis in step ripples a diagonal 1.4 times too far. So the skin reads the line at a point that circles each fragment's place: the proof's sine on both axes, a quarter turn apart. A line then ripples by the amplitude and no more, whichever way it runs. The circle's phase runs with the place across the field, 72 units to a swell along a fixed heading, so a line swells along its length.
+
+  A line moved by sampling can only move where the samples beside it carry the amplitude too. So step 11's grid carries each cell's amplitude under its line and out to 8 units either side, the bound the token keeps under, plus a sample. Where two skins run close, each sample takes the amplitude of the line it stands nearest, so a still skin beside a rippling one holds still. A test holds that with two squares 4 units apart.
+
+  The cost: a map where no cell ripples lays no texture and samples nothing more than before. A map with one adds a texture the size of the tissue's and two reads to each fragment of the skin. Step 18's budget row measures it.
+
+  **4.** A ribbon onto a folder's barrel from another package sways
+
+  Step 13 marks a ribbon wherever core would count its import as `past` for some cell, so a ribbon and a membrane agree import for import. One case follows that may surprise. An import from another package onto a folder's barrel comes through the folder and past the package the folder sits in, when that package has a barrel of its own. Core counts it past the package, so the ribbon sways though it lands on a barrel. A test names the case, and the same import holds still once the package's barrel is taken away. If you would rather a ribbon that lands on any barrel hold still, that is a change to Q84 (oscillating-links)'s reading and to how D192 (cell-integrity) counts the package, and now is the time to say so.
+
+  **5.** Where to look, and which tokens move what
+
+  Hover a cell for the two counts behind its ripple: `src/engine · 0 through, 14 past`. A cell with no barrel says its folder alone. The legend's last two rows key the ripple and the swaying line.
+
+  The dev panel moves all of it live. Under Motion: `MEMBRANE_WOBBLE` (3, and it may go to just under 8), `MEMBRANE_WOBBLE_HZ` (0.15), `RIBBON_SWAY` (1.5, at most 3) and `RIBBON_SWAY_HZ` (0.3). Under the skin: `SKIN.rippleLength` (72), `SKIN.rippleHeading` (0.6) and `SKIN.membraneLine`, the line's own ink. Under the weather: `WEATHER.ribbonWave` (24), one wave's length along the bow.
+
+  The ripple's size is the thing to judge. It is in layout units and bounded under half the layout's sibling gap, so that a rippling skin never reaches a sibling's. On fascicle, 3,922 units wide, a cell opens before the view comes near enough for 3 units to be more than about two pixels. On a change's map the reach's warm glow also washes the line out over the cells it lights, where a whole repo's map has no reach and the line reads plainly.

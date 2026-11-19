@@ -298,6 +298,9 @@ emphasis rings.
 | `LEADER_DASH` | `0.1 3` | a leader's round-dotted dash |
 | `TAG_ELBOW` | `32` | an opened cell's tags go out on leaders and its bodies stay in place (D198 (labels-explode)): each leader leaves its tag's inner edge straight toward the slide for this many pixels, or as far as the body leaves room for, and then turns for the body's rim; the two columns stand this far off the slide's edges, pulled onto the screen only when the slide runs off it and then clear of the chrome's claims |
 | `TAG_ROW_FLOOR` | `9` | a column with more tags than rows shrinks its rows, and the words with them, no smaller than this many pixels; where they still do not fit it shows the tags of the bodies nearest the view's middle and ends on a footer counting the rest, `and 23 more` |
+| `BAND_LABEL_SIZE` | `9` | each depth band's quiet label (D196 (band-labels)), the one standing text the world writes unasked, from LOD1: `entry` for the band at depth 0 and `n deep` or `n–m deep` for the rest, from the band's depths (Q86 (band-label-words)), set this many pixels high |
+| `BAND_LABEL_INSET` | `8` | how far in from where its band's line enters the screen the label starts: the viewport's left edge, or where a row's rule begins where the lanes wrap (Q73); `libs/scene` works it through the camera's projection, so the label stays on its rule tilted and turned |
+| `BAND_LABEL_GAP` | `2` | how far inside its band from the line the label hangs, band 0's under its top and every other's under the rule where it begins; a label that would fall on a placed label, a notice mark, the HUD or a cell's skin, the skin's line width and ripple included, is dropped, never moved |
 | `SCREEN_TYPE_UP` | `3` | how much larger, in CSS pixels, the world's chrome sets the sheet's type sizes: the notice text at the world labels' size, and the HUD, the rail and the legend in step; the still sheet never reads it |
 
 ## The shore's band

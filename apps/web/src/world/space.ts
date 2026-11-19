@@ -17,10 +17,11 @@
 import { AdditiveBlending, Color, DataTexture, FloatType, Mesh, MeshBasicNodeMaterial, NearestFilter, PlaneGeometry, RGBAFormat, RepeatWrapping, Vector3 } from 'three/webgpu';
 import type { Camera } from 'three/webgpu';
 import { float, floor, fwidth, length, max, mrt, positionWorld, smoothstep, texture, uniform, vec4 } from 'three/tsl';
+import { across, between } from 'scene';
 import type { MapJson } from 'core';
 
 import type { SpaceLook } from '../materials.js';
-import { STAR_GRID, across, bandRules, between, starField } from '../space.js';
+import { STAR_GRID, bandRules, starField } from '../space.js';
 
 export type Space = {
   /** The stars' plane, in the scene. */

@@ -7,7 +7,7 @@ import type { LayoutBand } from 'core';
 import { expect, test } from 'vitest';
 
 import { SPACE } from '../materials.js';
-import { STAR_GRID, across, bandRules, between, starField } from '../space.js';
+import { STAR_GRID, bandRules, starField } from '../space.js';
 
 /**
  * The world's ground as space (D169): a faint star field one seed draws the
@@ -50,37 +50,11 @@ test("a field whose lanes wrap into rows rules each row's boundaries across that
   expect(bandRules(DEMO).every((rule) => rule.row === undefined)).toBe(true);
 });
 
-test("a row's rule is the stretch of its row that lies on the screen, and none when its row is off it", () => {
-  expect(between([100, 300], [500, 300], 800, 600)).toEqual([
-    [100, 300],
-    [500, 300],
-  ]);
-  expect(between([-100, 300], [500, 300], 800, 600)).toEqual([
-    [0, 300],
-    [500, 300],
-  ]);
-  expect(between([-400, 300], [-100, 300], 800, 600)).toBeUndefined();
-  expect(between([100, 700], [500, 700], 800, 600)).toBeUndefined();
-  expect(between([100, 100], [100, 100], 800, 600)).toBeUndefined();
-});
-
 test("the rule's ink is translucent and a pixel wide, so it is just visible and sits back from every mark", () => {
   expect(SPACE.ruleOpacity).toBeGreaterThan(0);
   expect(SPACE.ruleOpacity).toBeLessThan(0.5);
   expect(SPACE.ruleWidth).toBe(1);
   expect(SPACE.ruleInk).toMatch(/^#[0-9a-f]{6}$/u);
-});
-
-test("a rule runs across the whole screen, whichever way the camera has turned the ground, and one that misses the screen is not drawn", () => {
-  expect(across([100, 300], [500, 300], 800, 600)).toEqual([
-    [0, 300],
-    [800, 300],
-  ]);
-  const slanted = across([100, 100], [200, 150], 800, 600);
-  expect(slanted?.[0]).toEqual([0, 50]);
-  expect(slanted?.[1]).toEqual([800, 450]);
-  expect(across([100, 700], [500, 700], 800, 600)).toBeUndefined();
-  expect(across([100, 100], [100, 100], 800, 600)).toBeUndefined();
 });
 
 test('one seed draws one star field, another seed another, each star faint at most and whole within its cell (C3)', () => {

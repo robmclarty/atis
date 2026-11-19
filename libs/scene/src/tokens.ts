@@ -329,6 +329,15 @@ export const LEADER_DASH = '0.1 3';
  */
 export const TAG_ELBOW = 32;
 export const TAG_ROW_FLOOR = 9;
+/**
+ * Each depth band's quiet label (D196): its words set this many pixels high,
+ * this many pixels in from where its rule meets the screen's left edge, and
+ * this many pixels inside the band from the rule, so it reads as the rule's
+ * own caption and never as a mark.
+ */
+export const BAND_LABEL_SIZE = 9;
+export const BAND_LABEL_INSET = 8;
+export const BAND_LABEL_GAP = 2;
 /** How much larger the sheet's type sizes read in the world's chrome, in CSS pixels: the notice text lands at the size the world's labels are set at, and the HUD, the rail and the legend keep step (`apps/web/src/screen.ts`). The still sheet never reads it. */
 export const SCREEN_TYPE_UP = 3;
 

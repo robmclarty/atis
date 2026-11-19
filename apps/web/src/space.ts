@@ -12,7 +12,6 @@
  */
 
 import { seeded } from 'scene';
-import type { Point } from 'scene';
 import type { LayoutBand, MapJson } from 'core';
 
 /** How many cells the star grid holds each way before the ground repeats it. */
@@ -69,43 +68,3 @@ export const bandRules = (map: MapJson): readonly BandRule[] => {
   if (layout?.rows === undefined) return boundaries(layout?.bands ?? []);
   return layout.rows.flatMap((row) => boundaries(row.bands).map((rule) => ({ ...rule, row: [row.x0, row.x1] as const })));
 };
-
-/**
- * The stretch of the line through two points, from `low` to `high` of the way
- * from the first to the second, that lies on the screen: its two ends there,
- * or none when it misses the screen or the points are one. Liang and
- * Barsky's clip: each pair of edges narrows the stretch inside the screen.
- */
-const clip = (from: Point, to: Point, width: number, height: number, [start, end]: readonly [number, number]): readonly [Point, Point] | undefined => {
-  const [dx, dy] = [to[0] - from[0], to[1] - from[1]];
-  if (dx === 0 && dy === 0) return undefined;
-  let [low, high] = [start, end];
-  for (const [step, at, size] of [
-    [dx, from[0], width],
-    [dy, from[1], height],
-  ] as const) {
-    if (step === 0) {
-      if (at < 0 || at > size) return undefined;
-      continue;
-    }
-    const [a, b] = [(0 - at) / step, (size - at) / step];
-    [low, high] = [Math.max(low, Math.min(a, b)), Math.min(high, Math.max(a, b))];
-  }
-  if (low > high) return undefined;
-  return [
-    [from[0] + dx * low, from[1] + dy * low],
-    [from[0] + dx * high, from[1] + dy * high],
-  ];
-};
-
-/**
- * The line through two points on the screen, run out to the screen's edges:
- * its two ends there, or none when the line misses the screen or the points
- * are one. A rule drawn so crosses the whole screen, wherever the camera has
- * turned the ground.
- */
-export const across = (from: Point, to: Point, width: number, height: number): readonly [Point, Point] | undefined =>
-  clip(from, to, width, height, [Number.NEGATIVE_INFINITY, Number.POSITIVE_INFINITY]);
-
-/** The part of the segment between two points on the screen that lies on it, or none when none of it does: a row's rule, which runs across its row alone (Q73). */
-export const between = (from: Point, to: Point, width: number, height: number): readonly [Point, Point] | undefined => clip(from, to, width, height, [0, 1]);
