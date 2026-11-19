@@ -154,7 +154,7 @@ Settled at this plan (2026-11-02):
     - proof: the channel list in `docs/design.md` reads as [C11 (one-meaning-per-channel)](#c11) does here, its Motion section names each new mover with its tokens, the balance log carries a dated entry for each value [Q87 (exaggeration-numbers)](#q87) settled at the stops, the table test in `tokens.test.ts` names the new motion tokens, and `docs/world-description-spec.md` §9 gains one line per question naming the decision that answered it; `pnpm check --strict` is green with the `docs`, `links` and `spell` slots
     - seam: `docs/design.md`, `docs/world-description-spec.md`, `libs/scene/src/__tests__/tokens.test.ts`
     - model: sonnet (writing from the decisions)
-18. [ ] chore(web): measure the new movers against the world's budget
+18. [x] chore(web): measure the new movers against the world's budget
     - proof: `node apps/web/scripts/budget.ts` runs on the seeded 5,000-file map on both backends with the ripple and the sway on, and the budget table in `docs/design.md` gains a dated row holding [C14 (world-budget)](#c14): 60 fps at idle, through the sweep and at the surface, and a first frame about 2 s; a reading that misses is recorded as measured and parked with the mover and the level of detail it must shed at, never passed
     - seam: `apps/web/scripts/budget.ts`, `docs/design.md`
     - model: sonnet (run the script, record the numbers)

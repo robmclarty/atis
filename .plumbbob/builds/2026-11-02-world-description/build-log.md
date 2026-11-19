@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: a world that describes itself at a glance
 
-**Current step:** 18 — chore(web): measure the new movers against the world's budget
+**Current step:** none (at the boundary)
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -40,7 +40,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 15. feat(scene): place a quiet label on each depth band
 - ☑ 16. feat(web): write the band labels over the field
 - ☑ 17. docs(design): rewrite the channel list and log the balance patches
-- ☐ 18. chore(web): measure the new movers against the world's budget
+- ☑ 18. chore(web): measure the new movers against the world's budget
 - ☑ 19. feat(scene): shade every file's shape by the churn its stability carries
 
 ## Park list
@@ -61,9 +61,9 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] fixtures/javascript-1 and fixtures/corpus-7 map.json predate step 1's integrity field (0 cells carry it), so range 3's stop sees no ripple on javascript-1 until that map is regenerated; only libs/core/fixtures/demo has a cell with past above 0 (package:libs/core, 1 through 1 past)
 - [x] at the surface the membrane line is faint where the reach's glow fills a cell (seen on the demo's libs/core, both backends), so a lit cell's ripple barely reads while an unlit cell's reads clearly; judge at range 3's stop whether the line needs more contrast under the reach or the ripple a second cue
 - [x] The still SVG keeps its terraces unworded: D86 (svg-stays-the-fixture) would set each band's entry or n deep at the terrace's left edge too, and no step of this build does
-- [ ] budget.ts on 2026-11-18 read under 60 fps at idle on both backends and at the surface on WebGL 2, alike on the movers' map, the still map and the world before this build (989dee5), on a machine in use with two other browsers drawing on the GPU; rerun it on a quiet machine before C14's 60 fps is claimed with the ripple and the sway on, and if the pre-build world still misses there, look for a regression older than this build
-- [ ] the seeded synthetic map carries no functions, so the budget never draws a nucleus, and its sweep holds an opened cell for half a second: the slide's per-frame work (the nuclei's fans laid again each frame, the shapes' motion, the float) has no budget reading; it needs functions in syntheticMap and a held reading inside an opened cell in budget.ts
-- [ ] one budget run on 2026-11-18, taken as the machine quietened, read first frames of 5.05 s (WebGPU) and 3.40 s (WebGL 2) with the ripple and the sway on against 1.87 and 1.97 s without, and two frames of 117 and 158 ms at LOD1 in its WebGPU sweep; sixteen loads and a full run straight after read 1.60 to 1.66 s and no long frame, so it is unexplained, not held: if it shows again, give budget.ts a way to move the ripple and the sway apart before either is shed at LOD1
+- [x] budget.ts on 2026-11-18 read under 60 fps at idle on both backends and at the surface on WebGL 2, alike on the movers' map, the still map and the world before this build (989dee5), on a machine in use with two other browsers drawing on the GPU; rerun it on a quiet machine before C14's 60 fps is claimed with the ripple and the sway on, and if the pre-build world still misses there, look for a regression older than this build
+- [x] the seeded synthetic map carries no functions, so the budget never draws a nucleus, and its sweep holds an opened cell for half a second: the slide's per-frame work (the nuclei's fans laid again each frame, the shapes' motion, the float) has no budget reading; it needs functions in syntheticMap and a held reading inside an opened cell in budget.ts
+- [x] one budget run on 2026-11-18, taken as the machine quietened, read first frames of 5.05 s (WebGPU) and 3.40 s (WebGL 2) with the ripple and the sway on against 1.87 and 1.97 s without, and two frames of 117 and 158 ms at LOD1 in its WebGPU sweep; sixteen loads and a full run straight after read 1.60 to 1.66 s and no long frame, so it is unexplained, not held: if it shows again, give budget.ts a way to move the ripple and the sway apart before either is shed at LOD1
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -99,6 +99,10 @@ Harvest results this boundary:
 - **tangent**: park 11 · at the surface the membrane line is faint where the reach's glow fills a cell (seen on the demo's libs/core, both backends), so a lit cell's ripple barely reads while an unlit cell's reads clearly; judge at range 3's stop whether the line needs more contrast under the reach or the ripple a second cue → a look to judge at this stop, and the dev panel moves the line's ink and the amplitude live
 - 2026-11-19, at range 4 of 6's stop: 1 parked idea, classified.
 - **tangent**: park 12 · The still SVG keeps its terraces unworded: D86 (svg-stays-the-fixture) would set each band's entry or n deep at the terrace's left edge too, and no step of this build does → the still sheet has no viewport to set a caption against, so wording its terraces is a call of its own for a later build
+- 2026-11-19, at range 5 of 6's stop: 3 parked ideas, classified.
+- **tangent**: park 13 · budget.ts on 2026-11-18 read under 60 fps at idle on both backends and at the surface on WebGL 2, alike on the movers' map, the still map and the world before this build (989dee5), on a machine in use with two other browsers drawing on the GPU; rerun it on a quiet machine before C14's 60 fps is claimed with the ripple and the sway on, and if the pre-build world still misses there, look for a regression older than this build → answered at step 18's pause, where the quiet rerun held 60 fps and showed no slowdown older than this build
+- **tangent**: park 14 · the seeded synthetic map carries no functions, so the budget never draws a nucleus, and its sweep holds an opened cell for half a second: the slide's per-frame work (the nuclei's fans laid again each frame, the shapes' motion, the float) has no budget reading; it needs functions in syntheticMap and a held reading inside an opened cell in budget.ts → it needs `synthetic.ts` to carry functions and a new held reading inside an opened cell, a step of its own after this build
+- **tangent**: park 15 · one budget run on 2026-11-18, taken as the machine quietened, read first frames of 5.05 s (WebGPU) and 3.40 s (WebGL 2) with the ripple and the sway on against 1.87 and 1.97 s without, and two frames of 117 and 158 ms at LOD1 in its WebGPU sweep; sixteen loads and a full run straight after read 1.60 to 1.66 s and no long frame, so it is unexplained, not held: if it shows again, give budget.ts a way to move the ripple and the sway apart before either is shed at LOD1 → seen on one run in the day's five and on none of sixteen loads, so there is nothing to fix until it shows again
 
 ## Log
 
@@ -668,3 +672,164 @@ folder, so it rides the branch into the PR.)*
   `across` and `between` moved from `apps/web/src/space.ts` into `libs/scene/src/labels.ts`, so a caption is placed on the very line the world draws its rule along. Their two tests moved with them, and that one-line change to `space.test.ts` is step 15's stray.
 
 - 2026-11-19 — step 17 checkpointed · b296088a2 — docs(design): rewrite the channel list and log the balance patches (14m)
+- 2026-11-19 — step 18 checkpointed · b10d1b39d — chore(web): measure the new movers against the world's budget (143m)
+
+  **Summary**: On the quieter laptop the world holds C14 (world-budget) with the membranes rippling and the ribbons swaying, and the dated row in `docs/design.md` now says so. WebGPU reads 111 fps at idle, 95 through the sweep and 120 at the surface; WebGL 2 reads 74, 95 and 115; the first frame comes at 1.63 and 1.66 s. Read beside the same map with nothing for the two movers to move, they cost WebGPU 8 frames a second at idle, 2 or 3 elsewhere, and a quarter of a second on the first frame. One thing is recorded and not passed: the run just before the tabled one, taken while the machine was still settling, read first frames of 5.05 and 3.40 s with the movers on and two frames over 100 ms in its WebGPU sweep. Sixteen loads and the tabled run straight after did not repeat it, so it is in the doc as unexplained and parked. As before, the script goes beyond "run it": the seeded map draws no ribbon, so the script adds 24 stray imports to switch the sway on, and it reads each backend twice. The check is green.
+
+  1. The tabled run holds 60 fps and a first frame under two seconds, movers on
+  2. One run read a 5 s first frame with the movers on, and it did not repeat
+  3. The busy runs showed what a shared GPU costs the reading
+  4. The script adds 24 stray imports and reads each backend twice
+  5. What the row does not read
+
+  **Readout**:
+
+  ```text
+  check        green: 1 of 1 checks
+  proof        met: `node apps/web/scripts/budget.ts` · exit 0 · 125.3s
+  decisions    none exercised
+  constraints  10 of 10 honored
+  plumb        seam 2 · reach 0 · out 0
+  diff         +220 -29 across 2 files
+               - apps/web/scripts/budget.ts +146 -29
+               - docs/design.md +74 -0
+  spent        2h 23m · 2 turns · 140s gate · green first run
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Recommendation**: Approve it. The row now holds C14 on both backends with the movers on, the check is green, and the one reading that missed is written down and parked instead of passed. The slow run in section 2 is the only reason to hold: if a 5 s first frame that showed once in eighteen loads worries you, say so and I will keep the step open and chase it; otherwise it rides as a park to the stop card, where the build's boundary review comes next.
+
+  **1.** The tabled run holds 60 fps and a first frame under two seconds, movers on
+
+  The run was made at 21:36 with the other agent session's browser closed, load average 6 to 7, on the seeded 5,000-file map at 1,440 by 900, Chrome 157, motion on, 14 of 17 packages closed at the surface's zoom:
+
+  - WebGPU, movers on: first frame 1.63 s, idle 110.8 fps, sweep 95.3, surface 120.0, pointer crossing 119.6
+  - WebGPU, movers off: 1.39 s, 118.8, 95.6, 121.8, 122.3
+  - WebGL 2, movers on: 1.66 s, 74.1, 95.0, 115.4, 115.2
+  - WebGL 2, movers off: 1.41 s, 76.0, 96.9, 118.2, 117.8
+
+  Every reading the proof names holds: 60 fps at idle, through the sweep and at the surface, and a first frame about 2 s. The one frame of 30 to 40 ms in each sweep falls at LOD1 on both maps alike, so it is not the movers'.
+
+  What the movers cost: 8 frames a second at idle on WebGPU (4 on the quiet run before), 2 on WebGL 2, 2 or 3 at the surface on each, nothing through the sweep, and 0.24 to 0.25 s on the first frame. I loaded the world sixteen more times, eight a backend with the order alternating, to pin the first frame down: 1.60 to 1.64 s with the movers and 1.37 to 1.41 s without, the main thread busy for nearly all of it. Timed alone in Node, laying the ripple's grid adds about 0.15 s to the scene's tissue.
+
+  WebGL 2's idle reads 74 to 76 fps where the 2026-10-26 table reads 81, with the movers off as well as on. Firefox's GPU process was still drawing at about a quarter of a core, so I have not laid that on the build.
+
+  **2.** One run read a 5 s first frame with the movers on, and it did not repeat
+
+  The first run after you said it was quieter started at 21:32, with system daemons still at 30 to 55% of a core. Its frame rates match the tabled run. But its first frames with the movers on were 5.05 s on WebGPU and 3.40 s on WebGL 2, against 1.87 and 1.97 s without, and its WebGPU sweep met two frames of 117 and 158 ms at LOD1, which pulled that sweep to 75 fps.
+
+  Both pages with the movers were slow and neither page without, which is why I did not wave it off as noise. Then sixteen loads and a full run, all inside the next six minutes, read 1.60 to 1.66 s and no frame over 40 ms. I cannot explain the slow run. It is written beneath the table as measured and unexplained, and parked with what would settle it: the script moves the ripple and the sway together, so it needs a way to move them apart before anyone decides which to shed at LOD1.
+
+  The proof's rule is that a reading that misses is recorded and parked, never passed. I have read the tabled run as the row and this one as the miss on record. If you would rather the step not land until the slow run is explained, that is the call to make here.
+
+  **3.** The busy runs showed what a shared GPU costs the reading
+
+  The two runs before your reply read 47 fps at idle on WebGPU, 33 on WebGL 2, and 45 at WebGL 2's surface, on the movers' map, the still map and the world before this build (989dee5) alike. With the other browser closed the same script reads more than twice that. So the shortfall was the machine, and there is no slowdown older than this build to look for. The doc keeps those runs as three lines about measuring, including the first one's zoomed-in page.
+
+  The park I wrote for the rerun is answered by this reply's run. It stays in the list, since parks are settled at the stop, and I would close it there.
+
+  **4.** The script adds 24 stray imports and reads each backend twice
+
+  Unchanged since the first card. `syntheticMap` wires every import across packages onto a barrel, so its map draws no ribbon and nothing swayed, while 324 of its 618 cells already ripple. `libs/scene/src/synthetic.ts` is outside the seam, so `budget.ts` takes `syntheticInputs`, adds `STRAYS` (24) imports from one package past the barrels of a package before it, drawn from the seed, and builds the map with core's own `buildMap`. That gives 24 ribbons, all swaying, and 340 rippling cells. The script serves a second copy with no `integrity` and no ribbon at `/still.json` and reads each backend on both, about four minutes of headed Chrome in all.
+
+  It also remakes a kept map that ripples or sways nothing, opens its pages with motion on whatever the machine's setting, and prints each page's own word for its motion. The measured map carries 24 more imports than the one the 2026-10-26 table read.
+
+  **5.** What the row does not read
+
+  The seeded map carries no `functions`, so an opened cell on it draws no nucleus, and the sweep holds its opened cell for half a second. The slide's per-frame work, the nuclei's fans, the shapes' motion and the float, has no reading here. Parked; it needs `synthetic.ts` and a held reading inside an opened cell.
+
+- 2026-11-19 — range 5 of 6's stop recorded — the build's boundary: review the channel list and the balance log, the budget row, and the goldens that moved with their reasons, then `/plumbbob:finish`
+
+  **Summary**: Range 5 closed the build's record, and both steps landed on a green `pnpm check --strict`. In `docs/design.md` the channel list now reads as C11 (one-meaning-per-channel) does, the Motion section opens on a table of the five movers with their tokens, and the balance log dates every value Q87 (exaggeration-numbers) left to your eye: the spectrum's stop named none, and the slide's stop kept all four with no patch. The budget row holds C14 (world-budget) with the membranes rippling and the ribbons swaying: WebGPU 111 fps at idle, 95 through the sweep and 120 at the surface; WebGL 2 74, 95 and 115; first frames at 1.63 and 1.66 s. The run the checkpoint made agreed with it. Step 18 halted once, on a busy laptop that read under half those rates on every world, and landed after you quieted it. One slow run stands unexplained and is parked, not passed. Across the whole build three steps moved goldens, each for one named reason, and this range moved none.
+
+  1. Step 18 halted on a busy laptop and landed on the quiet rerun
+  2. The budget script now switches the sway on and reads a still copy beside it
+  3. The channel list names one pair that C11's own words leave out
+  4. The balance log says which values you judged and which you never saw move
+  5. Three steps of the build moved goldens, each for one reason
+
+  **Readout**:
+
+  ```text
+  steps        2 of 2 landed
+               - 17 b296088 · 18 b10d1b3
+  check        green: 1 of 1 checks, 2 landings
+  proof        met
+  decisions    honored:
+               - D200 (one-meaning-per-mover)
+               - D51 (motion-tokens-shared)
+               - D203 (history-on-every-file)
+  constraints  10 of 10 honored
+  seam         held: 2 of 2 steps, no strays
+  diff         +424 -62 across 4 files
+               - apps/web/scripts/budget.ts +146 -29
+               - docs/design.md +197 -26
+               - docs/world-description-spec.md +35 -1
+               - libs/scene/src/__tests__/tokens.test.ts +46 -6
+  spent        2h 37m · green first run at every landing
+  ```
+
+  **Verdict**: ● Plumb
+
+  **Harvested**: **3** of 15 parked ideas open
+
+  | Park | Why it matters | Lean |
+  | --- | --- | --- |
+  | **P13**: [Quiet-machine budget rerun](#park-list) | the busy runs read under 60 fps, which would have left C14 (world-budget) unconfirmed | tangent: answered at step 18's pause, where the quiet rerun held 60 fps and showed no slowdown older than this build |
+  | **P14**: [Slide's work unmeasured](#park-list) | the nuclei's fans, the shapes' motion and the float have no budget reading | tangent: it needs `synthetic.ts` to carry functions and a new held reading inside an opened cell, a step of its own after this build |
+  | **P15**: [Unexplained slow first frame](#park-list) | a 5 s first frame with the movers on would break C14 (world-budget) if it recurred | tangent: seen on one run in the day's five and on none of sixteen loads, so there is nothing to fix until it shows again |
+
+  **Recommendation**: Read the three places the stop names in `docs/design.md`, then `/plumbbob:finish`, taking all three parks as tangents. The channel list is at the top of the file, the balance log is "Balance patches (Q3)" under Motion, and the budget rows are "The ripple and the sway" under "The world's budget". The one line I would look at twice is the channel list's third pair, churn on relief and shape, which is D203 (history-on-every-file)'s and not in C11 (one-meaning-per-channel)'s own words. Nothing in the three parks blocks the finish: the rerun is done, and the other two are measurements a later build can add.
+
+  **1.** Step 18 halted on a busy laptop and landed on the quiet rerun
+
+  The first two budget runs read 47 fps at idle on WebGPU, 33 on WebGL 2, and 45 at WebGL 2's surface. They read the same with the movers on or off, and the same on the world before this build (989dee5), so no mover was to blame and the proof could not be met as written. I halted at the pause. With the other agent session's browser closed, the same script read more than twice those rates, and the row in `docs/design.md` under "The ripple and the sway" is that run:
+
+  - WebGPU, movers on: first frame 1.63 s, idle 111 fps, sweep 95, surface 120, pointer crossing 120
+  - WebGPU, movers off: 1.39 s, 119, 96, 122, 122
+  - WebGL 2, movers on: 1.66 s, 74, 95, 115, 115
+  - WebGL 2, movers off: 1.41 s, 76, 97, 118, 118
+
+  Beside the still map the movers cost 8 fps at idle on WebGPU, 2 on WebGL 2, 2 or 3 at the surface, nothing through the sweep, and a quarter of a second on the first frame. The checkpoint ran the script once more as the step's proof: 1.63 and 1.65 s, 107 and 73 fps at idle, 100 through both sweeps, 120 and 116 at the surface.
+
+  One run is on record as a miss. Taken as the machine quietened, it read first frames of 5.05 s on WebGPU and 3.40 s on WebGL 2 with the movers on, against 1.87 and 1.97 s without, and two frames of 117 and 158 ms at LOD1 in its WebGPU sweep. Sixteen loads and two full runs since have not repeated it. It is written beneath the table as unexplained and parked as P15.
+
+  **2.** The budget script now switches the sway on and reads a still copy beside it
+
+  The plan sized step 18 as "run the script, record the numbers". The seeded 5,000-file map draws no ribbon, since every import across its packages lands on a barrel, so nothing on it could sway. `budget.ts` now adds 24 stray imports to the change, each from one package past the barrels of a package before it, and builds the map with core's own `buildMap`: 24 ribbons, all swaying, and 340 rippling cells of 618. It serves a second copy with no `integrity` and no ribbon and reads each backend on both, which is what lets a cost be laid on the movers. The run is about four minutes of headed Chrome, twice what it was.
+
+  The measured map therefore carries 24 more imports than the one the 2026-10-26 table read. The script also remakes a kept map that ripples or sways nothing, and opens its pages with motion on whatever the machine's own setting.
+
+  Not read by it: the seeded map carries no `functions`, so no nucleus is drawn, and the sweep holds an opened cell for half a second. That is P14.
+
+  **3.** The channel list names one pair that C11's own words leave out
+
+  The list at the top of `docs/design.md` follows C11 (one-meaning-per-channel) channel for channel: hue, luminance, texture, size, repetition, relief, shape as trouble, density as a file's functions, position inside an opened cell as looseness, and motion as one thing per mover. Two lines go a clause past C11's wording, and both are worth your eye.
+
+  C11 allows one reading on two channels only where a decision names it, and lists looseness on drift and rest, and history on texture and shape. D203 (history-on-every-file) also names churn on relief and shape, so the list adds that third pair and cites D203. Without it the list would contradict the doc's own paragraph on the spectrum, which step 19 wrote.
+
+  The relief line says "the three elevation scales, depth, stability and mass", as C11 does, and adds that the world's skin rises by stability and mass and reads depth from the space ground's rules, which is D169 (space-ground) as the doc's relief section already has it.
+
+  The Motion section's table gives each mover its meaning, where it moves and its tokens, and marks the new ones: `SHAPE_JITTER`, `DRIFT_CURVE`, `MEMBRANE_WOBBLE` and `MEMBRANE_WOBBLE_HZ`, `RIBBON_SWAY` and `RIBBON_SWAY_HZ`. Every other motion token is named as a transient's. `tokens.test.ts` holds the table to that: each row is one mover's or a transient's, none is claimed twice, and each mover's row in the doc names its tokens. `docs/world-description-spec.md` section 9 has one line under each of its eleven questions naming the decision that answered it.
+
+  **4.** The balance log says which values you judged and which you never saw move
+
+  Under "Balance patches (Q3)" there are five new dated entries, written from the build log and your replies at the stops:
+
+  - At the spectrum's stop no value was named for `SHAPE_PULSE` or `SHAPE_JITTER`. The forms had been seen as stills, and atis's own map was nearly all circles then.
+  - At the slide's stop you kept all four of Q87 (exaggeration-numbers)'s values with no patch: `SHAPE_PULSE` at `0, 0.31, 0.38, 0.4, 0.44, 0.48, 0.52`, `SHAPE_JITTER` at `1.5`, `DRIFT_REACH` at `0.3` and `DRIFT_CURVE` at `1.5`.
+  - `MEMBRANE_WOBBLE` and `MEMBRANE_WOBBLE_HZ` joined at `3` and `0.15`, and `RIBBON_SWAY` and `RIBBON_SWAY_HZ` at `1.5` and `0.3`, as starting values.
+  - The stop for the ripple and the sway made no patch to those four.
+
+  The log's opening now says a value judged and kept is logged too, so a starting value nobody has looked at reads differently from one you chose. The ripple's size is the one I would call unjudged: atis's own map ripples no membrane, and the entry says so.
+
+  **5.** Three steps of the build moved goldens, each for one reason
+
+  Checked against each commit's files, since the stop asks for them:
+
+  - Step 1 (dbd09d8) moved `libs/core/fixtures/demo/map.json`, for the added `integrity` key on its cells.
+  - Step 3 (d970d29) moved thirteen SVGs, because every file with history now has a form on the spectrum: the eight under `libs/svg/fixtures/` (the demo and its renamed variant, the four categories, the two repo overlays) and `atis.svg` in `fixtures/go-1`, `javascript-1`, `python-1`, `shell-1` and `terraform-1`.
+  - Step 19 (db8e6f3) moved the same thirteen, because files the log window saw and no change touched now read their churn from `stability` and leave the circle.
+
+  No other step moved one, and range 5 moved none. The other 27 SVGs under `fixtures/` were already older renders that no test compares, and were left as they were at step 3.
