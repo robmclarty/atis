@@ -12523,6 +12523,49 @@
         "import: atis reads no imports from .md files, so 2 named files have no import reach"
       ]
     },
+    "18": {
+      "schema_version": 1,
+      "kind": "atis.reach",
+      "head": "b296088a235dae17893a3a7b20081a8d39ea41d0",
+      "paths": [
+        "apps/web/scripts/budget.ts",
+        "docs/design.md"
+      ],
+      "new": [],
+      "reach": [
+        {
+          "path": ".plumbbob/builds/2026-10-08-phases-1b-to-5/build-log.md",
+          "by": "cochange",
+          "rate": 0.57,
+          "support": 26,
+          "with": "docs/design.md"
+        },
+        {
+          "path": ".plumbbob/builds/2026-10-08-phases-1b-to-5/checkpoints",
+          "by": "cochange",
+          "rate": 0.57,
+          "support": 26,
+          "with": "docs/design.md"
+        },
+        {
+          "path": ".plumbbob/builds/2026-10-08-phases-1b-to-5/intent.md",
+          "by": "cochange",
+          "rate": 0.57,
+          "support": 26,
+          "with": "docs/design.md"
+        },
+        {
+          "path": ".plumbbob/builds/2026-10-08-phases-1b-to-5/stats.json",
+          "by": "cochange",
+          "rate": 0.57,
+          "support": 26,
+          "with": "docs/design.md"
+        }
+      ],
+      "muted": [
+        "import: atis reads no imports from .md files, so docs/design.md has no import reach"
+      ]
+    },
     "19": {
       "schema_version": 1,
       "kind": "atis.reach",

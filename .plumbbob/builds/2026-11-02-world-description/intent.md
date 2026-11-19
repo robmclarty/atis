@@ -150,7 +150,7 @@ Settled at this plan (2026-11-02):
     - proof: the rules layer writes each band label as DOM text in `SPACE.ruleInk` at `SPACE.labelOpacity` (new, 0.5) beside its rule, placed by the scene whenever the view, the level or the placed labels change, fading with the surface layer, under the slide's words ([D185 (asked-words-on-top)](#d185)); the file's header notes [D168 (labels-on-demand)](#d168)'s amendment; the world's smoke test at `?zoom=4` finds the labels with their words and at `?zoom=1` finds none
     - seam: `apps/web/src/world/space.ts`, `apps/web/src/world/draw.ts`, `apps/web/src/materials.ts`, `apps/web/src/registry.ts`, `apps/web/src/__tests__/world.test.ts`, `docs/design.md`
     - model: sonnet (DOM text placed by the scene)
-17. [ ] docs(design): rewrite the channel list and log the balance patches
+17. [x] docs(design): rewrite the channel list and log the balance patches
     - proof: the channel list in `docs/design.md` reads as [C11 (one-meaning-per-channel)](#c11) does here, its Motion section names each new mover with its tokens, the balance log carries a dated entry for each value [Q87 (exaggeration-numbers)](#q87) settled at the stops, the table test in `tokens.test.ts` names the new motion tokens, and `docs/world-description-spec.md` §9 gains one line per question naming the decision that answered it; `pnpm check --strict` is green with the `docs`, `links` and `spell` slots
     - seam: `docs/design.md`, `docs/world-description-spec.md`, `libs/scene/src/__tests__/tokens.test.ts`
     - model: sonnet (writing from the decisions)

@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: a world that describes itself at a glance
 
-**Current step:** 17 — docs(design): rewrite the channel list and log the balance patches
+**Current step:** 18 — chore(web): measure the new movers against the world's budget
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -39,7 +39,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 14. feat(web): oscillate the marked ribbons along their length
 - ☑ 15. feat(scene): place a quiet label on each depth band
 - ☑ 16. feat(web): write the band labels over the field
-- ☐ 17. docs(design): rewrite the channel list and log the balance patches
+- ☑ 17. docs(design): rewrite the channel list and log the balance patches
 - ☐ 18. chore(web): measure the new movers against the world's budget
 - ☑ 19. feat(scene): shade every file's shape by the churn its stability carries
 
@@ -61,6 +61,9 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] fixtures/javascript-1 and fixtures/corpus-7 map.json predate step 1's integrity field (0 cells carry it), so range 3's stop sees no ripple on javascript-1 until that map is regenerated; only libs/core/fixtures/demo has a cell with past above 0 (package:libs/core, 1 through 1 past)
 - [x] at the surface the membrane line is faint where the reach's glow fills a cell (seen on the demo's libs/core, both backends), so a lit cell's ripple barely reads while an unlit cell's reads clearly; judge at range 3's stop whether the line needs more contrast under the reach or the ripple a second cue
 - [x] The still SVG keeps its terraces unworded: D86 (svg-stays-the-fixture) would set each band's entry or n deep at the terrace's left edge too, and no step of this build does
+- [ ] budget.ts on 2026-11-18 read under 60 fps at idle on both backends and at the surface on WebGL 2, alike on the movers' map, the still map and the world before this build (989dee5), on a machine in use with two other browsers drawing on the GPU; rerun it on a quiet machine before C14's 60 fps is claimed with the ripple and the sway on, and if the pre-build world still misses there, look for a regression older than this build
+- [ ] the seeded synthetic map carries no functions, so the budget never draws a nucleus, and its sweep holds an opened cell for half a second: the slide's per-frame work (the nuclei's fans laid again each frame, the shapes' motion, the float) has no budget reading; it needs functions in syntheticMap and a held reading inside an opened cell in budget.ts
+- [ ] one budget run on 2026-11-18, taken as the machine quietened, read first frames of 5.05 s (WebGPU) and 3.40 s (WebGL 2) with the ripple and the sway on against 1.87 and 1.97 s without, and two frames of 117 and 158 ms at LOD1 in its WebGPU sweep; sixteen loads and a full run straight after read 1.60 to 1.66 s and no long frame, so it is unexplained, not held: if it shows again, give budget.ts a way to move the ripple and the sway apart before either is shed at LOD1
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -663,3 +666,5 @@ folder, so it rides the branch into the PR.)*
   **5.** The rule clip moved into the scene, so the rules and their captions read one line
 
   `across` and `between` moved from `apps/web/src/space.ts` into `libs/scene/src/labels.ts`, so a caption is placed on the very line the world draws its rule along. Their two tests moved with them, and that one-line change to `space.test.ts` is step 15's stray.
+
+- 2026-11-19 — step 17 checkpointed · b296088a2 — docs(design): rewrite the channel list and log the balance patches (14m)

@@ -1197,6 +1197,9 @@ the centre opens. The surface is read on a page of its own opened at
 still, then five with the pointer crossing it. Each rate is read from the
 page's own animation frames. Any other window drawing on the GPU, such as a
 second tab with a world open, costs every reading a third or more of its rate.
+Since 2026-11-18 the script also gives the change 24 stray imports and reads
+each backend twice, with the surface's two movers moving and without
+([the ripple and the sway](#the-ripple-and-the-sway)).
 
 Measured on 2026-10-26 on an Apple M1 Pro with 32 GB, macOS (Darwin 25.6.0),
 Chrome 156 at 1,440 by 900 on the laptop's 120 Hz display. This map's 5,006
@@ -1231,6 +1234,77 @@ opened cell's skin is softer than a small repo's.
 
 WebGL 2's idle alternates 8.3 and 16.7 ms frames: its skin of two million
 vertices costs it about one 120 Hz refresh in three, which still holds 60 fps.
+
+### The ripple and the sway
+
+The surface gained two movers, the membranes' ripple (D195
+(living-membranes)) and the ribbons' sway (Q84 (oscillating-links)), and both
+are work on every frame, which C14 has measured rather than assumed. The
+seeded map gives the ripple plenty to move and the sway nothing. Its repo
+imports past its folders' barrels freely, so 324 of its 618 cells ripple; but
+every import across its packages lands on a barrel, so it draws no ribbon at
+all. The script therefore gives the change 24 stray imports, each from a file
+of one package past the barrels of a package before it (`STRAYS` in
+`budget.ts`). Core reads each as it reads any import a change introduces, so
+the map draws 24 ribbons, every one swaying, and ripples 340 cells, the 16
+more being packages and folders the strays enter. The script then reads each
+backend twice: on that map, and on the same map with nothing for the two to
+move, no cell carrying `integrity` and no ribbon drawn, so the movers' cost is
+read beside what it is measured against.
+
+Measured on 2026-11-18 on the same laptop, Chrome 157 at 1,440 by 900, with
+motion on, 14 of the 17 packages closed at the surface's zoom:
+
+| date | movers | backend | first frame | idle, ten seconds | zoom sweep, LOD0 to LOD2 | surface, ten seconds | surface, pointer crossing |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 2026-11-18 | on | WebGPU | 1.63 s | 111 fps; p95 frame 16.7 ms, worst 17.6 ms | 95 fps; p95 frame 16.7 ms, worst 39.7 ms | 120 fps; p95 frame 9.2 ms, worst 9.4 ms | 120 fps; worst 16.8 ms |
+| 2026-11-18 | off | WebGPU | 1.39 s | 119 fps; p95 frame 9.2 ms, worst 17.6 ms | 96 fps; p95 frame 17.0 ms, worst 32.6 ms | 122 fps; p95 frame 9.2 ms, worst 11.1 ms | 122 fps; worst 17.2 ms |
+| 2026-11-18 | on | WebGL 2 | 1.66 s | 74 fps; p95 frame 19.4 ms; 68 of 741 frames over 17.7 ms, the worst 32.6 ms | 95 fps; p95 frame 16.9 ms, worst 34.1 ms | 115 fps; p95 frame 9.3 ms, worst 16.9 ms | 115 fps; worst 17.6 ms |
+| 2026-11-18 | off | WebGL 2 | 1.41 s | 76 fps; p95 frame 18.7 ms; 55 of 760 frames over 17.7 ms, the worst 25.1 ms | 97 fps; p95 frame 16.7 ms, worst 33.1 ms | 118 fps; p95 frame 9.1 ms, worst 17.5 ms | 118 fps; worst 25.3 ms |
+
+With the membranes rippling and the ribbons swaying the world holds C14: 60
+fps at idle, through the sweep and at the surface on both backends, and a
+first frame inside two seconds. What the two movers cost shows beside the
+rows without them. At idle WebGPU gives up 8 frames a second, more of its
+frames taking two refreshes, and WebGL 2 gives up 2; at the surface each
+gives up 2 or 3; the sweep reads the same either way, its one frame of 30 to
+40 ms at LOD1 falling on both maps alike. The first frame comes a quarter of
+a second later, 0.24 and 0.25 s here, and sixteen loads the same hour, eight
+a backend in alternating order, put it at 0.23 s: 1.60 to 1.64 s with the
+movers and 1.37 to 1.41 s without, the main thread busy for nearly all of it.
+About 0.15 s of that is the scene laying the ripple's grid beside the
+tissue's two, timed alone in Node. WebGL 2's idle reads 74 to 76 fps where
+2026-10-26 read 81, on the still map as on the moving one, so that is not the
+movers'; another browser was still drawing beside it.
+
+Three earlier runs the same day are not tabled, and each says something
+about measuring more than about the world:
+
+- Two were taken with the machine in use, its load average between 7 and 15
+  and two other browsers drawing on the GPU. Idle read 47 fps on WebGPU and
+  33 on WebGL 2, and WebGL 2's surface 45, under C14's 60. They read the same
+  within three frames a second with the movers on or off, and within five on
+  the world as it stood before the build that added the movers (989dee5),
+  read by its own script minutes later. An empty page held 120 fps the same
+  hour. Other windows drawing on the GPU can cost more than the third the
+  note above allows: these read less than half the rates in the table.
+- One of those two had its WebGPU page zoomed in past the levels the sweep
+  and the surface read, further than the script's own wheel steps take it,
+  as real input on the window would. The script cannot tell, so the window
+  wants leaving alone while it runs.
+- The third was taken as the machine quietened, system daemons still at 30 to
+  55% of a core. Its frame rates agree with the rows above but for one sweep:
+  with the movers on its first frames read 5.05 s on WebGPU and 3.40 s on
+  WebGL 2, against 1.87 and 1.97 s without, and its WebGPU sweep met two
+  frames of 117 and 158 ms at LOD1, which held it to 75 fps. Neither showed
+  again in the sixteen loads or the tabled run, both straight after it. It
+  is recorded as measured and unexplained, not passed, and the script moves
+  both movers at once, so it cannot say which of them to look at.
+
+Two things stand outside these rows. The seeded map carries no `functions`,
+so an opened cell on it draws no nucleus; and the sweep holds its opened cell
+for half a second, so the slide's own movers, a file's shape and its float,
+are read for that long and no longer.
 
 ### Twenty thousand files, as composites
 
