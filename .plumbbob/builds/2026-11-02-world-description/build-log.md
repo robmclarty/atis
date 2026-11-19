@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: a world that describes itself at a glance
 
-**Current step:** 16 — feat(web): write the band labels over the field
+**Current step:** 17 — docs(design): rewrite the channel list and log the balance patches
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -38,7 +38,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 13. feat(scene): mark the ribbons that enter a cell past its interface
 - ☑ 14. feat(web): oscillate the marked ribbons along their length
 - ☑ 15. feat(scene): place a quiet label on each depth band
-- ☐ 16. feat(web): write the band labels over the field
+- ☑ 16. feat(web): write the band labels over the field
 - ☐ 17. docs(design): rewrite the channel list and log the balance patches
 - ☐ 18. chore(web): measure the new movers against the world's budget
 - ☑ 19. feat(scene): shade every file's shape by the churn its stability carries
@@ -60,7 +60,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] Rob at range 2's stop: clicking a cell should probably bring up file details in an inspector panel; what goes in it is undecided
 - [x] fixtures/javascript-1 and fixtures/corpus-7 map.json predate step 1's integrity field (0 cells carry it), so range 3's stop sees no ripple on javascript-1 until that map is regenerated; only libs/core/fixtures/demo has a cell with past above 0 (package:libs/core, 1 through 1 past)
 - [x] at the surface the membrane line is faint where the reach's glow fills a cell (seen on the demo's libs/core, both backends), so a lit cell's ripple barely reads while an unlit cell's reads clearly; judge at range 3's stop whether the line needs more contrast under the reach or the ripple a second cue
-- [ ] The still SVG keeps its terraces unworded: D86 (svg-stays-the-fixture) would set each band's entry or n deep at the terrace's left edge too, and no step of this build does
+- [x] The still SVG keeps its terraces unworded: D86 (svg-stays-the-fixture) would set each band's entry or n deep at the terrace's left edge too, and no step of this build does
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -94,6 +94,8 @@ Harvest results this boundary:
 - 2026-11-18, at range 3 of 6's stop: 2 parked ideas, classified.
 - **tangent**: park 10 · fixtures/javascript-1 and fixtures/corpus-7 map.json predate step 1's integrity field (0 cells carry it), so range 3's stop sees no ripple on javascript-1 until that map is regenerated; only libs/core/fixtures/demo has a cell with past above 0 (package:libs/core, 1 through 1 past) → the stop reads on fascicle's own map, so rebuilding the fixtures' maps can wait for its own step
 - **tangent**: park 11 · at the surface the membrane line is faint where the reach's glow fills a cell (seen on the demo's libs/core, both backends), so a lit cell's ripple barely reads while an unlit cell's reads clearly; judge at range 3's stop whether the line needs more contrast under the reach or the ripple a second cue → a look to judge at this stop, and the dev panel moves the line's ink and the amplitude live
+- 2026-11-19, at range 4 of 6's stop: 1 parked idea, classified.
+- **tangent**: park 12 · The still SVG keeps its terraces unworded: D86 (svg-stays-the-fixture) would set each band's entry or n deep at the terrace's left edge too, and no step of this build does → the still sheet has no viewport to set a caption against, so wording its terraces is a call of its own for a later build
 
 ## Log
 
@@ -589,3 +591,75 @@ folder, so it rides the branch into the PR.)*
   The ripple's size is the thing to judge. It is in layout units and bounded under half the layout's sibling gap, so that a rippling skin never reaches a sibling's. On fascicle, 3,922 units wide, a cell opens before the view comes near enough for 3 units to be more than about two pixels. On a change's map the reach's warm glow also washes the line out over the cells it lights, where a whole repo's map has no reach and the line reads plainly.
 
 - 2026-11-19 — step 15 checkpointed · 828574f67 — feat(scene): place a quiet label on each depth band (1 drift, 21m)
+- 2026-11-19 — step 16 checkpointed · ff8c1e1d3 — feat(web): write the band labels over the field (1 drift, 21m)
+- 2026-11-19 — range 4 of 6's stop recorded — the first-time-reader test: name what the depth bands mean from their labels alone, at the surface and inside a cell, tilted and zoomed; confirm they yield to cells, notices and the HUD
+
+  **Summary**: From LOD1 each depth band now carries one quiet caption in the rule's own ink, just under where its line enters the screen: `entry` for the band at depth 0, and `n deep` or `n–m deep` for the rest. The scene places the captions through the camera's projection, so they ride their rules through a pan, a tilt and a turn. A caption that would fall on a placed label, a notice's numbered boxes, the HUD, the legend, the minimap or a cell's skin is dropped, never moved. Both steps landed a hair off. Step 15 moved two clip tests out of `space.test.ts`. Step 16 touched two files outside its seam: the labels layer now reports the boxes it drew, and the scene's placer was sped up from 45 ms to at most 1.7 ms a call on the 5,000-file map, so it can run on every frame the view moves.
+
+  1. Step 16 reached two files its seam did not name, one for the boxes to yield to and one for speed
+  2. Band 0's caption hangs under its top, where no rule is drawn
+  3. A caption stays inside its band and on its rule, tilted and turned
+  4. It yields to a skin's drawn line as well as its ground
+  5. The rule clip moved into the scene, so the rules and their captions read one line
+
+  **Readout**:
+
+  ```text
+  steps        2 of 2 landed
+               - 15 828574f · 16 ff8c1e1
+  check        green: 1 of 1 checks, 2 landings
+  proof        met
+  decisions    honored:
+               - D196 (band-labels)
+               - D168 (labels-on-demand)
+               - D185 (asked-words-on-top)
+  constraints  10 of 10 honored
+  seam         strayed: 3 paths outside 2 steps' seams
+               - step 15: apps/web/src/__tests__/space.test.ts
+               - step 16: apps/web/src/world/labels.ts, libs/scene/src/labels.ts
+  diff         +787 -128 across 12 files
+               - apps/web/src/__tests__/space.test.ts +1 -27
+               - apps/web/src/__tests__/world.test.ts +42 -2
+               - apps/web/src/materials.ts +5 -1
+               - apps/web/src/registry.ts +3 -0
+               - apps/web/src/space.ts +0 -41
+               - apps/web/src/world/draw.ts +46 -5
+               - apps/web/src/world/labels.ts +30 -10
+               - and 5 more
+  spent        42 min · green first run at every landing · 2 drift warnings
+  ```
+
+  **Verdict**: ◐ A hair off (seam strayed)
+
+  **Harvested**: **1** of 12 parked ideas open
+
+  | Park | Why it matters | Lean |
+  | --- | --- | --- |
+  | **P12**: [Still SVG's unworded terraces](#park-list) | D86 (svg-stays-the-fixture) asks for every encoding in both renderers, and the glance test reads the still | tangent: the still sheet has no viewport to set a caption against, so wording its terraces is a call of its own for a later build |
+
+  **Recommendation**: Run the first-time-reader test on atis's own map: read the bands from their captions at `?zoom=4`, at `?zoom=4&tilt=35`, and at `?zoom=8` on an opened cell, then pan under the HUD, the legend and a noticed file to see them yield. Take P12 as a tangent. Whether `n deep` alone tells a new reader that depth counts import hops from an entry point is the real question at this stop. If it doesn't, the words are a one-line change in `bandWords`, and the tokens are live in the dev panel. `atis` serves whatever `pnpm build` last wrote, and the bundle on disk at the card predated steps 6 to 16; it was rebuilt from range 4's code after the card. Rebuild and serve the whole repository with:
+
+  ```sh
+  pnpm build
+  atis --whole-repo
+  ```
+
+  **1.** Step 16 reached two files its seam did not name, one for the boxes to yield to and one for speed
+
+  The captions must keep off what the world has drawn, and only `apps/web/src/world/labels.ts` knows where its placed labels and notice runs land on the screen. It now hands those boxes out as `claims()`, read at its last render, and `draw.ts` adds the HUD's, the legend's and the minimap's boxes. A first cut of the placer took 45 ms a call on the seeded 5,000-file map (618 cells, package rings of up to 9,000 points), far over a frame. In `libs/scene/src/labels.ts` the fix caches each contour's bounds and dented ring, clears a skin by its projected bounds before walking it, keeps only the edges that reach the captions' column, and reorders `onRing` so an edge whose bounds miss the box costs a few comparisons. The worst view tried now costs 1.7 ms, with the same captions as before at every zoom. Step 18 measures it against C14 (world-budget).
+
+  **2.** Band 0's caption hangs under its top, where no rule is drawn
+
+  The rules mark the boundaries between bands, so no rule sits above band 0, and `entry` would never show if captions hung only under rules. Band 0's caption hangs just under the line where it begins, under the shore. On a zoomed view the HUD often claims that top strip, so `entry` reads mostly from LOD1's far end, which is where a first-time reader starts.
+
+  **3.** A caption stays inside its band and on its rule, tilted and turned
+
+  Each caption is worked out on the screen through the camera's view of the level ground. It hangs the inset in from where its rule's visible stretch begins, which is the screen's left edge for a full-width rule and the row's start where the lanes wrap. It sits on the band's side of the rule even when the view is turned more than a quarter turn. It is dropped where it would run past its rule's end, or out of a band thinner on the screen than the caption itself. A third token, `BAND_LABEL_GAP` (2 px), sets how far under the rule it hangs, so that gap is not baked in (C15 (every-look-a-token)).
+
+  **4.** It yields to a skin's drawn line as well as its ground
+
+  A cell's membrane line is drawn half its width outside the contour and ripples by up to `MEMBRANE_WOBBLE` there. So a caption keeps that whole reach off each skin, the teeth included. On the demo at the deepest zoom, a caption 2.4 layout units off `libs/core`'s contour is dropped, because that cell is half entered past its barrel and its rippling line reaches 2.7 units. In the browser on the demo, captions read "2 deep" and "3 deep" at zoom 4, "1 deep" and "2 deep" tilted 35° and turned, and "3 deep" inside a cell at LOD2. During a drag they followed their rules frame by frame, dropped under the HUD, and stayed off the minimap.
+
+  **5.** The rule clip moved into the scene, so the rules and their captions read one line
+
+  `across` and `between` moved from `apps/web/src/space.ts` into `libs/scene/src/labels.ts`, so a caption is placed on the very line the world draws its rule along. Their two tests moved with them, and that one-line change to `space.test.ts` is step 15's stray.

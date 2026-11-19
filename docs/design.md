@@ -14,16 +14,43 @@ and the one blur live only under `#world`. The **chrome** is brutalist: flat
 blocks, hard edges, high contrast, one monospace face, and nothing that glows,
 blurs or grades.
 
-Every channel carries one meaning and no other (P3, C11):
+Every channel carries one meaning (P3, C11 (one-meaning-per-channel), as D200
+(one-meaning-per-mover) rewrote it):
 
 - **hue** means state (change kind, flight category);
-- **luminance** means reach and evidence;
+- **luminance** means evidence and reach;
 - **texture** means history;
-- **shape** means conformance;
-- **size** means mass.
+- **size** means mass;
+- **repetition** means duplication;
+- **relief** means the three elevation scales, depth, stability and mass
+  (§5.1); the world's skin rises by stability and mass, and reads depth from
+  the space ground's rules (D169);
+- **shape** means trouble: conformance shaded by history, on one spectrum
+  (D194 (shape-spectrum));
+- **density** means a file's functions: the granules of its nucleus (D197
+  (nuclei));
+- **position** inside an opened cell means looseness (D199
+  (held-files-gather));
+- **motion** means one thing per mover:
+  - a notice's light moves by its urgency;
+  - a file's shape by its trouble;
+  - a file's place by its looseness (D157 (organelle-drift));
+  - a membrane's line by its cell's integrity (D195 (living-membranes));
+  - a ribbon when its link enters a module past its interface (Q84
+    (oscillating-links)).
 
-The sections below are those channels, plus the base tissue the weather is drawn
-over and the chrome that frames it. Each mark lands in a named group under the
+No channel carries two meanings in one view. One reading shows on two channels
+only where a decision names it: looseness on a file's drift and on its rest
+(D199 (held-files-gather)), and history on texture and on shape (D194
+(shape-spectrum)), the log window's churn on the relief as well (D203
+(history-on-every-file)). The category letters always accompany the category
+hue.
+
+The sections below take the channels in turn: shape, size, density and
+repetition with the base tissue they are drawn in; hue, luminance and texture
+each under its own heading; relief with the world's materials; and position
+and motion under [Motion](#motion). The chrome that frames the world sits
+between. Each mark lands in a named group under the
 root `<svg>`: `#world` holds `#field`, `#terraces`, `#membranes`,
 `#organelles` and `#weather` (itself `#standing-storms`, `#reach`, `#changed`,
 `#history`, `#evidence`, `#edges`, `#ghosts`, `#storms`, bottom up); `#chrome`
@@ -692,20 +719,45 @@ fingerprint is 480 by 300 with an 8-pixel margin (`FINGERPRINT`).
 
 ## Motion
 
-Motion is the world's alone: the still SVG draws none of it (C10). At the
-surface it means urgency (C11), and §5.5 budgets it: at most one flare in flight,
-transients of 600 ms or less and cross-fades of 300 ms or less, and nothing
-animates outside the one scheduler that owns them all (C12), `createScheduler`
-in `libs/scene/src/motion.ts`, on an injected clock and a seeded source of chance
-(D94). A flare is the loud channel, spent once on load and then at random, so a
-reviewer who looked away is pulled back without the map ever twinkling. Inside an
-opened cell motion also means trouble: each file's shape pulses and turns by its
-trouble score, faster and further as the score climbs, the spiky end's arms
-wandering off the beat so it pulses least regularly, and a file at a score of 0
-stays still (D147 (alive-motion), D194 (shape-spectrum)). And it means looseness: each file floats
-about its place by the share of its import ties that leave the cell, a hub held
-by its cellmates sitting still and a file tied to none of them wandering
-furthest, pushed off the membrane and its neighbours (D157). An opened package
+Motion is the world's alone: the still SVG draws none of it (C10). It means one
+thing per mover (C11 (one-meaning-per-channel), D200 (one-meaning-per-mover)),
+and §5.5 budgets it: at most one flare in flight, transients of 600 ms or less
+and cross-fades of 300 ms or less, and nothing animates outside the one
+scheduler that owns them all (C12), `createScheduler` in
+`libs/scene/src/motion.ts`, on an injected clock and a seeded source of chance
+(D94). Five things move of their own accord, each by one reading, and each is
+timed by its own tokens in the table below:
+
+| Mover | Its motion means | Where it moves | Its tokens |
+| --- | --- | --- | --- |
+| a notice's light | its urgency | the far field and the surface | the flares' and the breathing's: `FLARE_MS`, `FLARE_GAIN`, `FLARE_GROW`, `BREATHE_PERIOD_MS`, `BREATHE_AMPLITUDE`, `PRIMARY_FLARE_MIN_MS`, `PRIMARY_FLARE_MAX_MS`, `SECONDARY_FLARE_MIN_MS`, `SECONDARY_FLARE_MAX_MS`, `SECONDARY_FLARE_GAIN` |
+| a file's shape | its trouble (D147 (alive-motion), D194 (shape-spectrum)) | inside an opened cell | `SHAPE_PULSE_HZ`, `SHAPE_PULSE`, `SHAPE_TURN` and, new with the spectrum, `SHAPE_JITTER` |
+| a file's place | its looseness (D157 (organelle-drift), D193 (looseness-curve)) | inside an opened cell | `DRIFT_HZ_MIN`, `DRIFT_HZ_MAX`, `DRIFT_REACH`, `DRIFT_SPEED`, `DRIFT_GAP`, `DRIFT_EASE_MS` and, new with the curve, `DRIFT_CURVE`; the rest it wanders about is laid by `INTERIOR.gather` (D199 (held-files-gather)) |
+| a membrane's line | its cell's integrity (D195 (living-membranes)) | the surface | new: `MEMBRANE_WOBBLE` and `MEMBRANE_WOBBLE_HZ`, the swell laid out by `SKIN.rippleLength` and `SKIN.rippleHeading` |
+| a ribbon | that its link enters a module past its interface (Q84 (oscillating-links)) | wherever the world draws the ribbon | new: `RIBBON_SWAY` and `RIBBON_SWAY_HZ`, the wave's length set by `WEATHER.ribbonWave` |
+
+Every other token in the table times a transient, which answers the load or the
+reviewer's own move and never runs of its own accord: the load's settle
+(`SETTLE_MS`, `SETTLE_LIFT`, `SETTLE_DAMPING`), the jiggle as the camera lands on
+a cell or a cell opens (`JIGGLE_MS`, `JIGGLE_AMPLITUDE`, `JIGGLE_HZ`,
+`JIGGLE_DECAY`), the ease to a hover's highlight (`HOVER_MS`), a fly-to
+(`FLY_TO_MS`) and the cross-fade between levels of detail (`LOD_FADE_MS`).
+`tokens.test.ts` holds the table to that: every row is one mover's or a
+transient's, and none is two movers'. Reduced motion stills all five movers
+(C12): no notice gains light, and each shape, file, membrane and ribbon rests.
+
+A notice's light is the loud channel: a flare, spent once on load and then at
+random, so a reviewer who looked away is pulled back without the map ever
+twinkling, and between flares the primary's breathing. Inside an opened cell a
+file's shape moves by its trouble: it pulses and turns by its trouble score,
+faster and further as the score climbs, the spiky end's arms wandering off the
+beat so it pulses least regularly, and a file at a score of 0 stays still (D147
+(alive-motion), D194 (shape-spectrum)). And a file's place moves by its
+looseness: each file floats about its place by the share of its import ties
+that leave the cell, a hub held by its cellmates sitting still and a file tied
+to none of them wandering furthest, pushed off the membrane and its neighbours
+(D157 (organelle-drift)), the held far stiller than their share since the
+looseness is curved (D193 (looseness-curve)). An opened package
 floats the file of each single-file cell it holds beside its own, by the share of
 its `package_ties` that leave the package, and cuts holes only for its folders and
 directories, so a package of modules opens on them rather than on a sheet of
@@ -747,10 +799,14 @@ is laid in pieces of 2 units or less, so the wave bends it smoothly; a still
 one is laid as it always was. The time is the scheduler's (C12), a capture's
 frozen clock gives a still frame, and under reduced motion nothing sways.
 
-These tokens sit where [the materials spike](#phase-1b-the-materials-spike) left
-them. Where §5.5 gives a number, the token stands at it, as §5.5's starting
-value. Where §5.5 names a motion but not its size, the spike chose the value. Rob
-judged the motion on `retake-3` and made no patch.
+§5.5's own tokens, the notices' light and the transients, sit where
+[the materials spike](#phase-1b-the-materials-spike) left them. Where §5.5 gives
+a number, the token stands at it, as §5.5's starting value. Where §5.5 names a
+motion but not its size, the spike chose the value. Rob judged that motion on
+`retake-3` and made no patch. The tokens later decisions added, the shapes',
+the drift's, the ripple's and the sway's, joined at starting values, and
+[the log below](#balance-patches-q3) dates each stop they were put before Rob
+at and what he kept.
 
 Each bound is §5.5's, read three ways. Where it states a ceiling or a range, the
 bound is that. Where it says "about", the bound is a quarter either way. Where it
@@ -848,7 +904,9 @@ Measured from the spike's own scheduler on `retake-3`:
 §5.5's numbers were starting values, to be tuned by eye in the spike and then
 frozen here. Q3 stays open on purpose as the log of Rob's balance patches. Each
 patch edits its row in the table above and adds a line here: the date, the token,
-its old and new value, and what was seen that called for it.
+its old and new value, and what was seen that called for it. A value judged at
+a stop and kept is logged too, with what was seen, so a starting value nobody
+has looked at is told from one Rob chose to keep.
 
 - **2026-10-24, the materials spike.** Every token set at the value in the table.
   No patch: the motion held at §5.5's starting numbers.
@@ -880,6 +938,45 @@ its old and new value, and what was seen that called for it.
   loose one twice as far. `DRIFT_SPEED` stays at `0.02`, so at the zoom a cell
   opens at the wander's clock now runs at about four fifths of the wall's to keep
   to it: the float reaches further, never faster.
+- **2026-11-18, Q87 (exaggeration-numbers), at the stop of the range that built
+  the spectrum.** No patch, and no reading either: the stop was approved with
+  no value named for `SHAPE_PULSE` or `SHAPE_JITTER`. The forms had been looked
+  at as stills under `?shapes=demo`, and on atis's own map nearly every file was
+  still a circle, the score then reading history only on the files a change
+  touched (mended by D203 (history-on-every-file) before the slide was built).
+  The two values stood as starting values, unjudged in motion.
+- **2026-11-18, Q87 (exaggeration-numbers), at the stop of the range that built
+  the slide.** Rob judged the opened cell in the world and kept all four values
+  Q87 left to the eye, each where its entry above set it. No patch:
+
+  - `SHAPE_PULSE` stays at `0, 0.31, 0.38, 0.4, 0.44, 0.48, 0.52`;
+  - `SHAPE_JITTER` stays at `1.5`;
+  - `DRIFT_REACH` stays at `0.3`;
+  - `DRIFT_CURVE` stays at `1.5`.
+
+  He liked the files' shapes, their animation and their movement as built, and
+  answered that the drift's values were good. Two things were known at that
+  stop and left as they are. The reach already meets `DRIFT_SPEED` at the zoom
+  a cell opens at, so raising it further buys distance and costs pace, and
+  `DRIFT_CURVE` is the lever for how still a held file sits beside a loose
+  one. And the reach is a ceiling: over a minute a wholly loose file gets
+  between 0.45 and 1 of it from its rest by its seed, most often about 0.6.
+- **2026-11-18, D195 (living-membranes).** `MEMBRANE_WOBBLE` and
+  `MEMBRANE_WOBBLE_HZ` join the table at `3` and `0.15`: a line ripples 3 layout
+  units either side of its rest when every outside import lands past its cell's
+  barrel, a swell every 6.7 s. Starting values, set before anything was seen.
+- **2026-11-18, Q84 (oscillating-links).** `RIBBON_SWAY` and `RIBBON_SWAY_HZ`
+  join at `1.5` and `0.3`: a ribbon whose import enters a module past its
+  interface sways one and a half of its widths either side, once every 3.3 s.
+  Starting values, set before anything was seen.
+- **2026-11-18, at the stop of the range that built the ripple and the sway.**
+  No patch to the four: Rob approved the stop with the values as they joined.
+  What the build had measured before it: the sway reads at a glance against a
+  still ribbon on `fixtures/corpus-7`; the ripple is small on a real repo, a
+  pixel or two at the zooms before a cell opens, and faint where the reach's
+  glow fills a cell; and atis's own map shows neither, every one of its
+  barrelled cells being entered through its barrel alone. `MEMBRANE_WOBBLE` is
+  the lever if the ripple reads too quiet, and may go to just under 8.
 
 ## Fixed geometry that carries no token
 

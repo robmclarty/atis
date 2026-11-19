@@ -360,40 +360,74 @@ docs/design.md                 the token tables and the motion log
 
 ## 9. Open questions
 
-Each is a call for `/plumbbob:plan`, with what is known so far.
+Each is a call for `/plumbbob:plan`, with what is known so far. The plan made every call on
+2026-11-17, in [its intent](../.plumbbob/builds/2026-11-02-world-description/intent.md), and the
+line under each question names the decision that answered it.
 
 1. **What drives the shape spectrum?** Today it is `dents` alone: fallow's four thresholds, a
    boundary violation and a cycle. Candidates already in the map: churn, bugfix rate, age,
    stability, looseness, size, function count, clone family. One composite score, or a primary
    signal with the others shading it? Looseness already drives the drift, so using it for shape
    too would spend two channels on one reading.
+   *Answered by D194 (shape-spectrum), on Q81 (spectrum-signals) and Q96 (spectrum-top):* shape
+   means trouble, scored in `libs/scene`: the rules a file breaks carry the top of the spectrum,
+   history (the greater of churn and bug-fix rate) shades the bottom and within each level, and
+   looseness, size, age and clone family stay out; D203 (history-on-every-file) later read the
+   churn from every file the log window saw.
 2. **Does the shape animate at the surface?** The first spike animated shapes at the surface; the
    built world animates them only in an opened cell (D147 (alive-motion)). At the surface it costs
    frame budget at 5,000 files and competes with the surface's urgency motion (flares).
+   *Answered by D194 (shape-spectrum), on Q82 (surface-shape-motion):* not in this build; the
+   surface draws every form at rest, and the motion stays inside an opened cell.
 3. **What is integrity for a cell with no barrel?** Its interface is whatever outsiders import,
    so nothing lands past it. Options: not applicable and still; or a different reading, such as
    how many of its files outsiders reach.
+   *Answered by D192 (cell-integrity), on Q83 (barrel-less-integrity):* not applicable; a
+   directory cell and a single-file cell carry no `integrity`, and their membranes hold still.
 4. **What does an oscillating link mean, and which links?** The world draws exceptional edges,
    reach crossings and, in an opened cell, the wiring overlay. Candidates: a link that runs
    against the depth order, a deep import past an interface, an edge the change added, a cycle.
+   *Answered by D200 (one-meaning-per-mover), on Q84 (oscillating-links) and Q93
+   (sway-from-outside):* a ribbon sways when its import enters a barrelled cell from outside,
+   past the barrel, the import D192 (cell-integrity) counts as `past`; every other ribbon and
+   the wiring overlay hold still.
 5. **Which new weather patterns?** None is chosen yet. Each needs one meaning and data the map
    carries.
+   *Answered by D191 (nine-changes), on Q85 (new-weather):* none in this build beyond the two
+   standing readings it adds, the membrane's integrity and the swaying link.
 6. **What do the band labels say, and where do they sit?** The band's depth range, a word for
    what lives there (entry, surface, core, deep), or both; pinned to the field's left edge or
    following the camera; shown at every level of detail or only at the surface.
+   *Answered by D196 (band-labels), on Q86 (band-label-words):* `entry` for the band at depth 0
+   and `n deep` or `n–m deep` for the rest, just under each rule at the viewport's left edge,
+   from LOD1, dropped wherever it would cover a label, a notice mark, the HUD or a cell's skin.
 7. **How much is "slightly more exaggerated"?** The tokens' new defaults are set by eye in the
    world; the spec fixes only the direction and the readability cap.
+   *Answered by D193 (looseness-curve) and D194 (shape-spectrum), on Q87 (exaggeration-numbers)
+   and Q98 (curve-quiets-middle):* `DRIFT_REACH` 0.3 through `DRIFT_CURVE` 1.5, `SHAPE_PULSE`
+   about a quarter higher at every level and `SHAPE_JITTER` 1.5, each kept by eye on 2026-11-18
+   and logged in `docs/design.md`'s balance patches.
 8. **Does a nucleus show at the surface?** The spike's second variant glowed every unchanged
    file's nucleus through its body. At the surface the bodies are small and there are 5,000 of
    them under C14, so it may cost a draw call per file or need the granules baked into the
    organelles' instances.
+   *Answered by D201 (slide-only-svg), on Q88 (surface-nuclei):* not in this build; nuclei show
+   on the slide alone, so the still SVG draws none and keys none.
 9. **What does a column do past its rows?** A cell of 80 files has more tags than a 900-pixel
    column holds at a readable row. Options: shrink the row to a floor and then page the column by
    the pointer's height; group the tags by folder with a count; show only the tags of the bodies
    nearest the view's centre and the rest on hover.
+   *Answered by D198 (labels-explode), on Q89 (column-overflow):* the rows shrink to
+   `TAG_ROW_FLOOR`, then the column keeps the tags of the bodies nearest the view's centre and
+   ends on a footer counting the rest; hover still names any body.
 10. **Should the terrain's layout gather too?** §4.9 gathers only on the slide. Gathering the
     terrain's layout would give position one meaning at every level, but moves every golden and
     the still map, and changes the surface Rob has judged.
+    *Answered by D199 (held-files-gather), on Q90 (terrain-gather):* not in this build; the
+    slide alone gathers, and the terrain's layout, the surface and the still SVG are unchanged.
 11. **Do granules show their dents at the slide's scale?** On the file plate a granule is dented
     by the thresholds its function breaks. Inside a body a granule may be a few pixels across, so
     the dent may be invisible or may need a mark of its own.
+    *Answered by D197 (nuclei), on Q91 (granule-dents) and Q97 (granule-scale):* yes, by the
+    `outlineOf` the plate uses, a granule scoring its breaches as a file scores its rules with
+    no history, and no other mark.

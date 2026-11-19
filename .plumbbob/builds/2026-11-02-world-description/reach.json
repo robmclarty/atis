@@ -12423,6 +12423,106 @@
         "import: atis reads no imports from .md files, so docs/design.md has no import reach"
       ]
     },
+    "17": {
+      "schema_version": 1,
+      "kind": "atis.reach",
+      "head": "ff8c1e1d32248dc661cf91f45f9e0af34f165289",
+      "paths": [
+        "docs/design.md",
+        "docs/world-description-spec.md",
+        "libs/scene/src/__tests__/tokens.test.ts"
+      ],
+      "new": [],
+      "reach": [
+        {
+          "path": ".plumbbob/builds/2026-10-08-phases-1b-to-5/build-log.md",
+          "by": "cochange",
+          "rate": 0.58,
+          "support": 26,
+          "with": "docs/design.md"
+        },
+        {
+          "path": ".plumbbob/builds/2026-10-08-phases-1b-to-5/checkpoints",
+          "by": "cochange",
+          "rate": 0.58,
+          "support": 26,
+          "with": "docs/design.md"
+        },
+        {
+          "path": ".plumbbob/builds/2026-10-08-phases-1b-to-5/intent.md",
+          "by": "cochange",
+          "rate": 0.58,
+          "support": 26,
+          "with": "docs/design.md"
+        },
+        {
+          "path": ".plumbbob/builds/2026-10-08-phases-1b-to-5/stats.json",
+          "by": "cochange",
+          "rate": 0.58,
+          "support": 26,
+          "with": "docs/design.md"
+        },
+        {
+          "path": ".plumbbob/builds/2026-11-02-world-description/build-log.md",
+          "by": "cochange",
+          "rate": 0.57,
+          "support": 4,
+          "with": "libs/scene/src/__tests__/tokens.test.ts"
+        },
+        {
+          "path": ".plumbbob/builds/2026-11-02-world-description/checkpoints",
+          "by": "cochange",
+          "rate": 0.57,
+          "support": 4,
+          "with": "libs/scene/src/__tests__/tokens.test.ts"
+        },
+        {
+          "path": ".plumbbob/builds/2026-11-02-world-description/intent.md",
+          "by": "cochange",
+          "rate": 0.57,
+          "support": 4,
+          "with": "libs/scene/src/__tests__/tokens.test.ts"
+        },
+        {
+          "path": ".plumbbob/builds/2026-11-02-world-description/reach.json",
+          "by": "cochange",
+          "rate": 0.57,
+          "support": 4,
+          "with": "libs/scene/src/__tests__/tokens.test.ts"
+        },
+        {
+          "path": ".plumbbob/builds/2026-11-02-world-description/stats.json",
+          "by": "cochange",
+          "rate": 0.57,
+          "support": 4,
+          "with": "libs/scene/src/__tests__/tokens.test.ts"
+        },
+        {
+          "path": "apps/web/src/registry.ts",
+          "by": "cochange",
+          "rate": 0.71,
+          "support": 5,
+          "with": "libs/scene/src/__tests__/tokens.test.ts"
+        },
+        {
+          "path": "libs/scene/src/motion.ts",
+          "by": "cochange",
+          "rate": 0.57,
+          "support": 4,
+          "with": "libs/scene/src/__tests__/tokens.test.ts"
+        },
+        {
+          "path": "libs/scene/src/tokens.ts",
+          "by": "cochange",
+          "rate": 1,
+          "support": 7,
+          "with": "libs/scene/src/__tests__/tokens.test.ts"
+        }
+      ],
+      "muted": [
+        "import: atis reads no imports from .md files, so 2 named files have no import reach"
+      ]
+    },
     "19": {
       "schema_version": 1,
       "kind": "atis.reach",

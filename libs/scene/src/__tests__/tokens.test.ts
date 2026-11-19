@@ -184,10 +184,50 @@ test("the layout's sibling gap, which bounds the ripple, is the one core's layou
   expect(valueOf('MEMBRANE_WOBBLE')).toBeLessThan(valueOf('MEMBRANE_DENT_PULL'));
 });
 
-test("design.md's motion table names exactly the tokens §5.5, D147, D157, D165, D193, D195 and Q84 bound", () => {
-  const doc = readFileSync(DESIGN, 'utf8');
-  const section = doc.split(/^## /m).find((part) => part.startsWith('Motion'));
-  expect(section, 'design.md has no Motion section').toBeDefined();
-  const rows = [...(section ?? '').matchAll(/^\| `([A-Z][A-Z0-9_]*)` \|/gm)].map((match) => match[1] ?? '');
-  expect(rows.toSorted()).toEqual([...Object.keys(MOTION_BOUNDS), ...Object.keys(SHAPE_MOTION_BOUNDS), 'SHAPE_JITTER'].toSorted());
+/**
+ * Motion means one thing per mover (C11 (one-meaning-per-channel), as D200
+ * (one-meaning-per-mover) rewrote it): the five things that move of their own
+ * accord, each with the motion tokens that time it. The shape's jitter (D194),
+ * the drift's curve (D193), the membrane's ripple (D195) and the ribbon's sway
+ * (Q84) are the tokens the world-description build added.
+ */
+const MOVERS: Readonly<Record<string, readonly string[]>> = {
+  "a notice's light": ['FLARE_MS', 'FLARE_GAIN', 'FLARE_GROW', 'BREATHE_PERIOD_MS', 'BREATHE_AMPLITUDE', 'PRIMARY_FLARE_MIN_MS', 'PRIMARY_FLARE_MAX_MS', 'SECONDARY_FLARE_MIN_MS', 'SECONDARY_FLARE_MAX_MS', 'SECONDARY_FLARE_GAIN'],
+  "a file's shape": ['SHAPE_PULSE_HZ', 'SHAPE_PULSE', 'SHAPE_TURN', 'SHAPE_JITTER'],
+  "a file's place": ['DRIFT_HZ_MIN', 'DRIFT_HZ_MAX', 'DRIFT_REACH', 'DRIFT_CURVE', 'DRIFT_SPEED', 'DRIFT_GAP', 'DRIFT_EASE_MS'],
+  "a membrane's line": ['MEMBRANE_WOBBLE', 'MEMBRANE_WOBBLE_HZ'],
+  'a ribbon': ['RIBBON_SWAY', 'RIBBON_SWAY_HZ'],
+};
+
+/** The motion tokens that time a transient: an answer to the load or to the reviewer's own move, never a mover's reading. */
+const TRANSIENTS: readonly string[] = ['SETTLE_MS', 'SETTLE_LIFT', 'SETTLE_DAMPING', 'JIGGLE_MS', 'JIGGLE_AMPLITUDE', 'JIGGLE_HZ', 'JIGGLE_DECAY', 'HOVER_MS', 'FLY_TO_MS', 'LOD_FADE_MS'];
+
+/** design.md's Motion section, from its heading to the next of its level. */
+const motionSection = (): string => {
+  const section = readFileSync(DESIGN, 'utf8')
+    .split(/^## /m)
+    .find((part) => part.startsWith('Motion'));
+  if (section === undefined) throw new Error('design.md has no Motion section');
+  return section;
+};
+
+/** The tokens the Motion section's table of values gives a row, in its order. */
+const motionRows = (): string[] => [...motionSection().matchAll(/^\| `([A-Z][A-Z0-9_]*)` \|/gm)].map((match) => match[1] ?? '');
+
+test("design.md's motion table names exactly the tokens §5.5, D147, D157, D165, D193, D194, D195 and Q84 bound", () => {
+  expect(motionRows().toSorted()).toEqual([...Object.keys(MOTION_BOUNDS), ...Object.keys(SHAPE_MOTION_BOUNDS), 'SHAPE_JITTER'].toSorted());
+});
+
+test("every row of the motion table is one mover's or a transient's, and none is two movers' (C11, D200)", () => {
+  const claimed = [...Object.values(MOVERS).flat(), ...TRANSIENTS];
+  expect(new Set(claimed).size, 'a motion token is claimed twice').toBe(claimed.length);
+  expect(claimed.toSorted()).toEqual(motionRows().toSorted());
+});
+
+test.each(Object.entries(MOVERS))("design.md's Motion section names %s as a mover, beside each of its tokens", (mover, names) => {
+  const row = motionSection()
+    .split('\n')
+    .find((line) => line.startsWith(`| ${mover} |`));
+  expect(row, `the Motion section's table of movers has no row for ${mover}`).toBeDefined();
+  for (const name of names) expect(row, `${mover}'s row does not name ${name}`).toContain(`\`${name}\``);
 });
