@@ -38,7 +38,7 @@ import type { Band, Layout, LayoutBand, MapJson, Notice, NoticeTier } from 'core
 
 import { dentedRing, wobbleOf } from './membranes.js';
 import type { Ring } from './raster.js';
-import { BAND_LABEL_GAP, BAND_LABEL_INSET, BAND_LABEL_SIZE, MONO_ADVANCE } from './tokens.js';
+import { BAND_LABEL_GAP, BAND_LABEL_INSET, BAND_LABEL_SIZE, MEMBRANE_DENT_PULL, MONO_ADVANCE } from './tokens.js';
 import { weatherOf } from './weather.js';
 
 /** §6's levels: field, surface, cell, organelle, diff. */
@@ -181,20 +181,29 @@ function crosses(a: readonly [number, number], b: readonly [number, number], c: 
   return sideOf(a, b, c) !== sideOf(a, b, d) && sideOf(c, d, a) !== sideOf(c, d, b);
 }
 
-/** Whether a box falls on the ground a ring bounds: a corner of the box inside it, a point of it inside the box, or an edge of each crossing. */
+/**
+ * Whether a box falls on the ground a ring bounds: a point of the ring inside
+ * the box, an edge of each crossing, or the box inside the ring. Where no
+ * edge crosses and no point lies inside, the box's corners are all inside
+ * the ring or all out, so one corner speaks for them; and an edge whose own
+ * bounds miss the box is passed without the crossing test, so a long ring
+ * near a label costs a few comparisons an edge.
+ */
 export function onRing(box: LabelBox, ring: Ring): boolean {
+  const [x0, y0, x1, y1] = [box.x, box.y, box.x + box.width, box.y + box.height];
   const corners: readonly (readonly [number, number])[] = [
-    [box.x, box.y],
-    [box.x + box.width, box.y],
-    [box.x + box.width, box.y + box.height],
-    [box.x, box.y + box.height],
+    [x0, y0],
+    [x1, y0],
+    [x1, y1],
+    [x0, y1],
   ];
-  if (corners.some(([x, y]) => within(x, y, ring))) return true;
-  if (ring.some(([x, y]) => x > box.x && x < box.x + box.width && y > box.y && y < box.y + box.height)) return true;
-  return ring.some((a, index) => {
+  if (ring.some(([x, y]) => x > x0 && x < x1 && y > y0 && y < y1)) return true;
+  const crossed = ring.some((a, index) => {
     const b = ring[(index + 1) % ring.length] ?? a;
+    if (Math.max(a[0], b[0]) < x0 || Math.min(a[0], b[0]) > x1 || Math.max(a[1], b[1]) < y0 || Math.min(a[1], b[1]) > y1) return false;
     return corners.some((c, side) => crosses(a, b, c, corners[(side + 1) % corners.length] ?? c));
   });
+  return crossed || within(x0, y0, ring);
 }
 
 /** A point on the screen, in pixels from its top-left. */
@@ -404,24 +413,103 @@ function boxFor(ladder: Ladder, band: LayoutBand, text: string, project: Project
   return inBand ? { x, y, width, height } : undefined;
 }
 
-/** A cell's skin on the screen, and how far past its ring the drawn line reaches there, in pixels: half the line's width and its ripple (D195). */
-type Skin = Keep & { readonly reach: number };
+/** A box grown by `by` pixels on every side. */
+function grow(box: LabelBox, by: number): LabelBox {
+  return { x: box.x - by, y: box.y - by, width: box.width + 2 * by, height: box.height + 2 * by };
+}
 
-/** Every cell's skin as the world draws it, dented by the rules its files break (D159), on the screen. */
-function skinsOf(map: MapJson, project: Projection, pixelsPerUnit: number): readonly Skin[] {
+/** Each contour's bounds on the layout, kept with the contour, so the labels placed again on every frame the view moves walk no ring twice (C14); the same contour gives the same bounds (C3). */
+const BOUNDS = new WeakMap<Ring, readonly [number, number, number, number]>();
+
+function layoutBoundsOf(ring: Ring): readonly [number, number, number, number] {
+  const known = BOUNDS.get(ring);
+  if (known !== undefined) return known;
+  let [x0, y0, x1, y1] = [Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY];
+  for (const [x, y] of ring) [x0, y0, x1, y1] = [Math.min(x0, x), Math.min(y0, y), Math.max(x1, x), Math.max(y1, y)];
+  const bounds = [x0, y0, x1, y1] as const;
+  BOUNDS.set(ring, bounds);
+  return bounds;
+}
+
+/** Each contour dented by its cell's rules as the world draws it (D159), kept with the contour as its bounds are. */
+const DENTED = new WeakMap<Ring, { readonly dents: number; readonly ring: Ring }>();
+
+function dentedOf(contour: Ring, dents: number): Ring {
+  const known = DENTED.get(contour);
+  if (known?.dents === dents) return known.ring;
+  const ring = dentedRing(contour, dents);
+  DENTED.set(contour, { dents, ring });
+  return ring;
+}
+
+/** A ring's bounds on the layout, through its corners onto the screen: the box its picture lies in, since the camera's view of the level ground is affine. */
+function boundsOn(ring: Ring, project: Projection): LabelBox {
+  const [x0, y0, x1, y1] = layoutBoundsOf(ring);
+  const corners = [project(x0, y0), project(x1, y0), project(x1, y1), project(x0, y1)];
+  const [xs, ys] = [corners.map(([px]) => px), corners.map(([, py]) => py)];
+  const [left, top] = [Math.min(...xs), Math.min(...ys)];
+  return { x: left, y: top, width: Math.max(...xs) - left, height: Math.max(...ys) - top };
+}
+
+/** An edge of a ring on the screen, from one point to the next. */
+type Edge = readonly [ScreenPoint, ScreenPoint];
+
+/**
+ * A cell's skin on the screen as the world draws it: the box its contour's
+ * bounds land in, grown by how far a tooth stands out; how far past its ring
+ * its line reaches, half its width and its ripple (D195), in pixels; and the
+ * edges of its ring, dented by the rules its files break (D159), that reach
+ * left of `reachX`, projected only once a label comes near the skin. The band
+ * labels stand near the screen's left edge, so a long skin keeps a handful of
+ * its edges, and placing the labels again each frame the view moves stays
+ * cheap at thousands of files (C14).
+ */
+type Skin = { readonly near: LabelBox; readonly reach: number; readonly edges: () => readonly Edge[] };
+
+function skinsOf(map: MapJson, project: Projection, pixelsPerUnit: number, reachX: number): readonly Skin[] {
   const contours = map.terrain.layout?.contours ?? {};
-  return map.terrain.cells.flatMap((cell) => {
+  return map.terrain.cells.flatMap((cell): Skin[] => {
     const contour = contours[cell.id];
     if (contour === undefined || contour.length < 3) return [];
     const reach = (membraneThickness(cell.interface_size) / 2 + wobbleOf(cell)) * pixelsPerUnit;
-    return [{ ...keepOf(dentedRing(contour, cell.dents.length), project), reach }];
+    let kept: readonly Edge[] | undefined;
+    const edges = (): readonly Edge[] => {
+      if (kept !== undefined) return kept;
+      const ring = dentedOf(contour, cell.dents.length).map(([x, y]) => project(x, y));
+      kept = ring.flatMap((a, index): Edge[] => {
+        const b = ring[(index + 1) % ring.length] ?? a;
+        return Math.min(a[0], b[0]) <= reachX + reach ? [[a, b]] : [];
+      });
+      return kept;
+    };
+    return [{ near: grow(boundsOn(contour, project), MEMBRANE_DENT_PULL * pixelsPerUnit), reach, edges }];
   });
 }
 
-/** Whether a box keeps off a skin's drawn line and the ground inside it. */
-function offSkin(box: LabelBox, skin: Skin): boolean {
-  const grown = { x: box.x - skin.reach, y: box.y - skin.reach, width: box.width + 2 * skin.reach, height: box.height + 2 * skin.reach };
-  return !overlaps(skin.bounds, grown) || !onRing(grown, skin.ring);
+/**
+ * Whether a box falls on a skin's ground or its drawn line, from the edges
+ * it kept: a point of the ring inside the box grown by the line's reach, an
+ * edge crossing it, or the box inside the ring, by the even-odd count along
+ * a ray leftward from a corner, which no edge it left out can cross.
+ */
+function onSkin(box: LabelBox, skin: Skin): boolean {
+  const grown = grow(box, skin.reach);
+  if (!overlaps(skin.near, grown)) return false;
+  const [x0, y0, x1, y1] = [grown.x, grown.y, grown.x + grown.width, grown.y + grown.height];
+  const corners: readonly ScreenPoint[] = [
+    [x0, y0],
+    [x1, y0],
+    [x1, y1],
+    [x0, y1],
+  ];
+  let odd = false;
+  for (const [a, b] of skin.edges()) {
+    if (a[0] > x0 && a[0] < x1 && a[1] > y0 && a[1] < y1) return true;
+    const touches = Math.max(a[0], b[0]) >= x0 && Math.min(a[0], b[0]) <= x1 && Math.max(a[1], b[1]) >= y0 && Math.min(a[1], b[1]) <= y1;
+    if (touches && corners.some((c, side) => crosses(a, b, c, corners[(side + 1) % corners.length] ?? c))) return true;
+    if (a[1] > y0 !== b[1] > y0 && x0 > ((b[0] - a[0]) * (y0 - a[1])) / (b[1] - a[1]) + a[0]) odd = !odd;
+  }
+  return odd;
 }
 
 /** A placed label's box where the world draws it: hung from its anchor's projection by the offset it was placed with overhead. */
@@ -458,18 +546,18 @@ export function bandLabelsFor(
   const screen = { width: viewport.width * viewport.pixelsPerUnit, height: viewport.height * viewport.pixelsPerUnit };
   const overhead = overheadOf(viewport);
   const taken = [...off, ...placed.map((label) => shownAt(label, overhead, project))];
-  const skins = skinsOf(map, project, viewport.pixelsPerUnit);
-  const clear = (box: LabelBox): boolean => inside(box, viewport) && taken.every((other) => !overlaps(other, box)) && skins.every((skin) => offSkin(box, skin));
   const depths = new Map(map.terrain.bands.map((band) => [band.index, band] as const));
-  return laddersOf(layout).flatMap((ladder) =>
+  const wanted = laddersOf(layout).flatMap((ladder) =>
     ladder.bands
       .toSorted((a, b) => a.index - b.index)
       .flatMap((band): BandLabel[] => {
         const depth = depths.get(band.index);
         const text = depth === undefined ? undefined : bandWords(depth);
         const box = text === undefined ? undefined : boxFor(ladder, band, text, project, screen, tokens);
-        if (text === undefined || box === undefined || !clear(box)) return [];
+        if (text === undefined || box === undefined || !inside(box, viewport) || taken.some((other) => overlaps(other, box))) return [];
         return [{ band: band.index, ...(ladder.row === undefined ? {} : { row: ladder.row }), text, box }];
       }),
   );
+  const skins = skinsOf(map, project, viewport.pixelsPerUnit, Math.max(...wanted.map((label) => label.box.x + label.box.width)));
+  return wanted.filter((label) => !skins.some((skin) => onSkin(label.box, skin)));
 }

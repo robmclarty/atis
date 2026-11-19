@@ -468,7 +468,12 @@ little above the level field, so the stars show on the open ground and past the
 layout's edge and hide wherever a cell's body or a swell rises through them. A
 star stays its size on the screen at every zoom and never blooms. No depth band
 is drawn as a stripe or a terrace step: each band's boundary is a rule drawn
-over the canvas, beneath every other layer, across the whole screen. The still
+over the canvas, beneath every other layer, across the whole screen. From LOD1
+each band carries a quiet label in the rule's ink, `entry` or `n deep`, just
+under where its line enters the screen (D196 (band-labels)): the one text the
+world writes unasked, placed by the scene again whenever the view, the level
+or the labels over the field change, and dropped, never moved, wherever it
+would fall on a label, a notice mark, the chrome or a cell's skin. The still
 SVG keeps its bands (the terraces above).
 
 | Token | Value | Use |
@@ -482,6 +487,7 @@ SVG keeps its bands (the terraces above).
 | `SPACE.ruleInk` | `#8796a8` | the ink of the rule at each band's boundary |
 | `SPACE.ruleOpacity` | `0.16` | how much of the rule shows: just enough to register, so it sits back from every mark |
 | `SPACE.ruleWidth` | `1` | the rule's width in screen pixels |
+| `SPACE.labelOpacity` | `0.5` | how much of each band's label shows, written in `SPACE.ruleInk` just under its rule (D196 (band-labels)): more than the rule, so its few words read, and faded with the surface's layer |
 
 ### The planet at the far zoom
 

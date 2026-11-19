@@ -9,15 +9,23 @@
  * never blooms. The rules are an SVG over the canvas, beneath every other
  * layer: one line a band boundary, through where the boundary meets the
  * level ground, run out to the screen's edges, or in a field whose lanes
- * wrap into rows across its row alone (Q73), in a translucent ink. The
- * look comes through the registry (D156), and the field is drawn again from
- * a new seed or density on the frame after one moves.
+ * wrap into rows across its row alone (Q73), in a translucent ink. Under
+ * each rule, from LOD1, the band it opens carries a quiet label in the same
+ * ink, `entry` or `n deep` (D196, Q86): the one standing text D168
+ * (labels-on-demand) is amended to allow, since the world writes no other
+ * word over the field unasked. The scene places each label (`bandLabelsFor`)
+ * and drops it wherever it would cover a label, a notice mark, the chrome or
+ * a cell's skin; this layer writes what it placed, faded with the surface and
+ * under the slide's words (D185). The look comes through the registry
+ * (D156), and the field is drawn again from a new seed or density on the
+ * frame after one moves.
  */
 
 import { AdditiveBlending, Color, DataTexture, FloatType, Mesh, MeshBasicNodeMaterial, NearestFilter, PlaneGeometry, RGBAFormat, RepeatWrapping, Vector3 } from 'three/webgpu';
 import type { Camera } from 'three/webgpu';
 import { float, floor, fwidth, length, max, mrt, positionWorld, smoothstep, texture, uniform, vec4 } from 'three/tsl';
-import { across, between } from 'scene';
+import { BAND_LABEL_TOKENS, FONT_FAMILY, LABEL_BASELINE, across, between } from 'scene';
+import type { BandLabel } from 'scene';
 import type { MapJson } from 'core';
 
 import type { SpaceLook } from '../materials.js';
@@ -30,9 +38,15 @@ export type Space = {
   readonly rules: SVGSVGElement;
   /** Re-read the look, each frame, and draw the field again when its seed or density moved. */
   readonly restyle: () => void;
-  /** Lay each rule across the screen for this camera and canvas. */
-  readonly render: (camera: Camera, width: number, height: number) => void;
+  /** Write each band's label as the scene placed it (D196), in place of the last it wrote. */
+  readonly label: (labels: readonly BandLabel[]) => void;
+  /** Lay each rule across the screen for this camera and canvas, and fade the bands' labels with the surface's layer. */
+  readonly render: (camera: Camera, width: number, height: number, surface: number) => void;
 };
+
+/** The scene's tokens the bands' labels are set with, at rest: the shape their live view takes (D156). */
+export const BAND_LABEL_LOOK = { ...BAND_LABEL_TOKENS, FONT_FAMILY, LABEL_BASELINE };
+export type BandLabelLook = typeof BAND_LABEL_LOOK;
 
 const SVG = 'http://www.w3.org/2000/svg';
 
@@ -42,7 +56,7 @@ const STAR_LIFT = 0.3;
 /** How many times the layout's longer side the plane reaches each way, so the stars run on past every frame the camera allows. */
 const STAR_REACH = 8;
 
-export const createSpace = (map: MapJson, look: SpaceLook): Space => {
+export const createSpace = (map: MapJson, look: SpaceLook, type: BandLabelLook): Space => {
   const layout = map.terrain.layout ?? { width: 1, height: 1 };
   const field = new DataTexture(starField(look.starSeed, look.starDensity), STAR_GRID, STAR_GRID, RGBAFormat, FloatType);
   field.minFilter = NearestFilter;
@@ -93,6 +107,25 @@ export const createSpace = (map: MapJson, look: SpaceLook): Space => {
     rules.append(line);
     return { rule, line };
   });
+  // The bands' labels, over the rules they caption.
+  const captions = document.createElementNS(SVG, 'g');
+  captions.dataset['bandLabels'] = '';
+  rules.append(captions);
+
+  const label = (labels: readonly BandLabel[]): void => {
+    captions.replaceChildren(
+      ...labels.map((each) => {
+        const text = document.createElementNS(SVG, 'text');
+        text.dataset['bandLabel'] = String(each.band);
+        if (each.row !== undefined) text.dataset['row'] = String(each.row);
+        text.textContent = each.text;
+        text.setAttribute('x', String(each.box.x));
+        // The scene's box is as tall as the words; their baseline drops from its middle, as every label's does.
+        text.setAttribute('y', String(each.box.y + each.box.height * (0.5 + type.LABEL_BASELINE)));
+        return text;
+      }),
+    );
+  };
 
   const restyle = (): void => {
     ink.value.set(look.starInk);
@@ -109,12 +142,16 @@ export const createSpace = (map: MapJson, look: SpaceLook): Space => {
 
   let sized: readonly [number, number] = [0, 0];
   const ends = [new Vector3(), new Vector3()] as const;
-  const render = (camera: Camera, width: number, height: number): void => {
+  const render = (camera: Camera, width: number, height: number, surface: number): void => {
     if (sized[0] !== width || sized[1] !== height) {
       rules.setAttribute('width', String(width));
       rules.setAttribute('height', String(height));
       sized = [width, height];
     }
+    captions.setAttribute('fill', look.ruleInk);
+    captions.setAttribute('opacity', String(look.labelOpacity * surface));
+    captions.setAttribute('font-family', type.FONT_FAMILY);
+    captions.setAttribute('font-size', String(type.BAND_LABEL_SIZE));
     for (const { rule, line } of lines) {
       const [x0, x1] = rule.row ?? [0, layout.width];
       const [left, right] = ends.map((end, side) => {
@@ -139,5 +176,5 @@ export const createSpace = (map: MapJson, look: SpaceLook): Space => {
     }
   };
 
-  return { mesh, rules, restyle, render };
+  return { mesh, rules, restyle, label, render };
 };

@@ -39,6 +39,7 @@ import {
   LEADER_INK,
   LEADER_WIDTH,
   LIFR_HUE,
+  MONO_ADVANCE,
   MVFR_HUE,
   NOTICE_BOX,
   NOTICE_BOX_GAP,
@@ -54,7 +55,7 @@ import {
   labelsFor,
   tagsOf,
 } from 'scene';
-import type { Lod, Point, Slide, Viewport } from 'scene';
+import type { LabelBox, Lod, Point, Slide, Viewport } from 'scene';
 import type { MapJson } from 'core';
 
 import { asksFor } from '../asked.js';
@@ -100,6 +101,8 @@ export type Labels = {
   readonly place: (viewport: Viewport, lod: Lod, slide: Slide | undefined, asked: ReadonlySet<string>) => void;
   /** Keep every label over its point for this camera and canvas, and draw the leaders, with the surface's layer as the layers' opacity. */
   readonly render: (camera: Camera, width: number, height: number, surface: number) => void;
+  /** The screen's boxes the layer drew on at its last render, in pixels: each placed label's and each target's run of numbered boxes with the kind under it, which a band's label keeps off (D196). */
+  readonly claims: () => readonly LabelBox[];
   /** Take the layers off the page, once a range's frame they belong to has faded out (D100). */
   readonly dispose: () => void;
 };
@@ -112,8 +115,8 @@ type Height = (x: number, y: number) => number;
 /** A box's place in pixels relative to the projection of the point it hangs from, and its size. */
 type Offset = { readonly x: number; readonly y: number; readonly width: number; readonly height: number };
 
-/** A target's run of boxes as laid: the run, its point on the skin, the element the offset moves, and the offset from the point's projection. */
-type Marks = { readonly run: Run; readonly inner: HTMLElement; offset: Offset };
+/** A target's run of boxes as laid: the run, its point on the skin, the element the offset moves, the offset from the point's projection, and the extent of the run with the kind under it. */
+type Marks = { readonly run: Run; readonly point: Vector3; readonly inner: HTMLElement; offset: Offset; extent: Offset };
 
 /** A placed label: its object at its anchor, its box's offset, and, for a notice's, the leader to its box in the target's run. */
 type Pinned = {
@@ -225,8 +228,9 @@ export const createLabels = (map: MapJson, tags: readonly Label[], heightAt: Hei
     outer.dataset['run'] = run.target;
     // The boxes sit over any label that lands under them.
     outer.style.zIndex = '1';
-    pin(scene, outer, new Vector3(run.spot.x, heightAt(run.spot.x, run.spot.y), run.spot.y), [0, 0]);
-    return { run, inner, offset: { x: 0, y: 0, width: 0, height: 0 } };
+    const point = new Vector3(run.spot.x, heightAt(run.spot.x, run.spot.y), run.spot.y);
+    pin(scene, outer, point, [0, 0]);
+    return { run, point, inner, offset: { x: 0, y: 0, width: 0, height: 0 }, extent: { x: 0, y: 0, width: 0, height: 0 } };
   });
 
   let placed: Pinned[] = [];
@@ -239,6 +243,10 @@ export const createLabels = (map: MapJson, tags: readonly Label[], heightAt: Hei
       const { run } = marks;
       const reach = (run.spot.r + look.EMPHASIS_PAD + look.NOTICE_BOX_GAP) * Math.SQRT1_2 * ppu;
       marks.offset = { x: reach, y: reach, width: run.marked.length * type.box + (run.marked.length - 1) * look.NOTICE_BOX_GAP, height: type.box };
+      marks.extent =
+        run.primaryKind === undefined
+          ? marks.offset
+          : { ...marks.offset, width: Math.max(marks.offset.width, run.primaryKind.length * type.small * MONO_ADVANCE), height: marks.offset.height + look.NOTICE_BOX_GAP + type.small };
       Object.assign(marks.inner.style, { left: `${String(reach)}px`, top: `${String(reach)}px` });
       const boxes = document.createElement('div');
       Object.assign(boxes.style, { display: 'flex', gap: `${String(look.NOTICE_BOX_GAP)}px` });
@@ -322,6 +330,12 @@ export const createLabels = (map: MapJson, tags: readonly Label[], heightAt: Hei
   };
 
   const projected = new Vector3();
+  let claimed: readonly LabelBox[] = [];
+  /** Where a point on the skin lands on the screen for this camera and canvas, or none behind it. */
+  const screenOf = (point: Vector3, camera: Camera, width: number, height: number): readonly [number, number] | undefined => {
+    projected.copy(point).project(camera);
+    return projected.z < -1 || projected.z > 1 ? undefined : [((projected.x + 1) / 2) * width, ((1 - projected.y) / 2) * height];
+  };
   const render = (camera: Camera, width: number, height: number, surface: number): void => {
     if (sized[0] !== width || sized[1] !== height) {
       css.setSize(width, height);
@@ -333,12 +347,17 @@ export const createLabels = (map: MapJson, tags: readonly Label[], heightAt: Hei
     leaders.style.opacity = String(surface);
     css.render(scene, camera);
     for (const { tag, label } of tagged) tag.style.color = `#${palette.colour(label.hue).getHexString()}`;
+    const boxes: LabelBox[] = [];
+    for (const { point, extent } of runs) {
+      const at = screenOf(point, camera, width, height);
+      if (at !== undefined) boxes.push({ x: at[0] + extent.x, y: at[1] + extent.y, width: extent.width, height: extent.height });
+    }
     for (const { point, offset, leader } of placed) {
+      const at = screenOf(point, camera, width, height);
+      const onScreen = at !== undefined;
+      const [ax, ay] = at ?? [0, 0];
+      if (onScreen) boxes.push({ x: ax + offset.x, y: ay + offset.y, width: offset.width, height: offset.height });
       if (leader === undefined) continue;
-      projected.copy(point).project(camera);
-      const onScreen = projected.z >= -1 && projected.z <= 1;
-      const ax = ((projected.x + 1) / 2) * width;
-      const ay = ((1 - projected.y) / 2) * height;
       const { marks, index, line } = leader;
       // The leader runs from the label's edge to the centre of its box, which is drawn over it.
       const tx = ax + marks.offset.x + index * (marks.offset.height + look.NOTICE_BOX_GAP) + marks.offset.height / 2;
@@ -351,6 +370,7 @@ export const createLabels = (map: MapJson, tags: readonly Label[], heightAt: Hei
       line.setAttribute('x2', String(tx));
       line.setAttribute('y2', String(ty));
     }
+    claimed = boxes;
   };
 
   const dispose = (): void => {
@@ -358,5 +378,5 @@ export const createLabels = (map: MapJson, tags: readonly Label[], heightAt: Hei
     text.remove();
   };
 
-  return { elements: [leaders, text], place, render, dispose };
+  return { elements: [leaders, text], place, render, claims: () => claimed, dispose };
 };

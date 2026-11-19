@@ -62,7 +62,8 @@ export const SKIN: SkinLook = {
  * The space the field is (D169): its faint stars, which stay a size on the
  * screen however near the camera comes and never bloom, and the rule at each
  * band's boundary that depth reads from, drawn over the 3D in an ink just
- * visible enough to register, so it sits back from every mark.
+ * visible enough to register, so it sits back from every mark, with each
+ * band's quiet label written in the same ink (D196).
  */
 export type SpaceLook = {
   /** The stars' ink, how bright the brightest is drawn, and a star's radius in screen pixels. */
@@ -77,6 +78,8 @@ export type SpaceLook = {
   readonly ruleInk: string;
   readonly ruleOpacity: number;
   readonly ruleWidth: number;
+  /** How much of a band's label shows, in the rule's ink: more than the rule, so its few words read, and still quiet beside every mark. */
+  readonly labelOpacity: number;
 };
 
 export const SPACE: SpaceLook = {
@@ -89,6 +92,7 @@ export const SPACE: SpaceLook = {
   ruleInk: '#8796a8',
   ruleOpacity: 0.16,
   ruleWidth: 1,
+  labelOpacity: 0.5,
 };
 
 /**

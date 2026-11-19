@@ -5,8 +5,9 @@
  * path in the installed Chrome, else a Chromium on the PATH (D145), and fails
  * on a console error or a blank frame. It looks at the lit surface, past
  * LOD1's gate, since the far field is dark by design until the weather lights
- * it (D151); its field is space ruled at each band's boundary (D169), and
- * there it writes no label at load, and the pointer over a file
+ * it (D151); its field is space ruled at each band's boundary (D169), each
+ * band captioned with its depth past LOD1's gate and bare at the far zoom
+ * (D196), and there it writes no other label at load, and the pointer over a file
  * writes that file's and takes it away on leaving (D168). A second frame
  * opens on one cell where it fills the screen, and
  * the cell opens as a stained slide (step 40, D165): the canvas names the
@@ -1041,6 +1042,45 @@ test("as a still for a pull request's comment, the world draws no chrome and sta
     expect(await page.getAttribute('#world', 'data-open')).toBeNull();
     // The notices' numbered boxes are the world's, not the chrome's, so the comment's list still points into the still.
     expect(await page.$$eval('[data-labels] [data-mark]', (elements) => elements.length)).toBe(6);
+    expect(complaints).toEqual([]);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+test("each depth band is captioned with its depth under its rule at the surface, in the rule's ink, and none at the far zoom (D196, Q86)", { timeout: 120_000 }, async () => {
+  const { server, url } = await serve();
+  const browser = await launch();
+  try {
+    const page = await browser.newPage({ viewport: { width: 960, height: 720 } });
+    const complaints: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error' || message.type() === 'warning') complaints.push(`${message.type()}: ${message.text()}`);
+    });
+    page.on('pageerror', (error) => complaints.push(`pageerror: ${error.message}`));
+    const depths = (JSON.parse(readFileSync(DEMO, 'utf8')) as { terrain: { bands: readonly { depth_min: number; depth_max: number }[] } }).terrain.bands;
+    const words = new Set(depths.map((band) => (band.depth_min === 0 ? 'entry' : band.depth_min === band.depth_max ? `${String(band.depth_min)} deep` : `${String(band.depth_min)}–${String(band.depth_max)} deep`)));
+
+    await page.goto(`${url}/?backend=webgl&zoom=4`);
+    await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
+    expect(await page.getAttribute('#world', 'data-lod')).toBe('1');
+    await page.waitForFunction(() => document.querySelectorAll('[data-rules] [data-band-label]').length > 0, undefined, { timeout: 30_000 });
+    const captions = await page.$$eval('[data-rules] [data-band-label]', (labels) =>
+      labels.map((label) => ({ text: label.textContent, left: label.getBoundingClientRect().left, ink: label.parentElement?.getAttribute('fill') })),
+    );
+    expect(captions.length).toBeGreaterThan(0);
+    for (const caption of captions) {
+      expect(words.has(caption.text ?? ''), `${caption.text ?? 'no words'} is a band's depth`).toBe(true);
+      // Set in from the screen's left edge, where the rules enter it.
+      expect(caption.left).toBeLessThan(200);
+      expect(caption.ink).toBe('#8796a8');
+    }
+
+    await page.goto(`${url}/?backend=webgl&zoom=1`);
+    await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
+    expect(await page.getAttribute('#world', 'data-lod')).toBe('0');
+    expect(await page.$$eval('[data-rules] [data-band-label]', (labels) => labels.length)).toBe(0);
     expect(complaints).toEqual([]);
   } finally {
     await browser.close();

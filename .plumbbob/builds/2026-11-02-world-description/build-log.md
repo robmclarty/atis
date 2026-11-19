@@ -13,7 +13,7 @@ step boundaries. The antidote to "my plan got lost in the noise."
 
 # Build log: a world that describes itself at a glance
 
-**Current step:** 15 — feat(scene): place a quiet label on each depth band
+**Current step:** 16 — feat(web): write the band labels over the field
 **Heavy check:** checkride (set a "check" key in .plumbbob/settings.json to override)
 
 ## Steps
@@ -37,7 +37,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - ☑ 12. feat(web): ripple the skin's membrane line by its cell's integrity
 - ☑ 13. feat(scene): mark the ribbons that enter a cell past its interface
 - ☑ 14. feat(web): oscillate the marked ribbons along their length
-- ☐ 15. feat(scene): place a quiet label on each depth band
+- ☑ 15. feat(scene): place a quiet label on each depth band
 - ☐ 16. feat(web): write the band labels over the field
 - ☐ 17. docs(design): rewrite the channel list and log the balance patches
 - ☐ 18. chore(web): measure the new movers against the world's budget
@@ -60,6 +60,7 @@ check green + checkpoint taken, via `/plumbbob:verify` or `/plumbbob:build`.)*
 - [x] Rob at range 2's stop: clicking a cell should probably bring up file details in an inspector panel; what goes in it is undecided
 - [x] fixtures/javascript-1 and fixtures/corpus-7 map.json predate step 1's integrity field (0 cells carry it), so range 3's stop sees no ripple on javascript-1 until that map is regenerated; only libs/core/fixtures/demo has a cell with past above 0 (package:libs/core, 1 through 1 past)
 - [x] at the surface the membrane line is faint where the reach's glow fills a cell (seen on the demo's libs/core, both backends), so a lit cell's ripple barely reads while an unlit cell's reads clearly; judge at range 3's stop whether the line needs more contrast under the reach or the ripple a second cue
+- [ ] The still SVG keeps its terraces unworded: D86 (svg-stays-the-fixture) would set each band's entry or n deep at the terrace's left edge too, and no step of this build does
 
 ## Harvest  *(run `/plumbbob:harvest` at each step boundary, after green)*
 
@@ -586,3 +587,5 @@ folder, so it rides the branch into the PR.)*
   The dev panel moves all of it live. Under Motion: `MEMBRANE_WOBBLE` (3, and it may go to just under 8), `MEMBRANE_WOBBLE_HZ` (0.15), `RIBBON_SWAY` (1.5, at most 3) and `RIBBON_SWAY_HZ` (0.3). Under the skin: `SKIN.rippleLength` (72), `SKIN.rippleHeading` (0.6) and `SKIN.membraneLine`, the line's own ink. Under the weather: `WEATHER.ribbonWave` (24), one wave's length along the bow.
 
   The ripple's size is the thing to judge. It is in layout units and bounded under half the layout's sibling gap, so that a rippling skin never reaches a sibling's. On fascicle, 3,922 units wide, a cell opens before the view comes near enough for 3 units to be more than about two pixels. On a change's map the reach's warm glow also washes the line out over the cells it lights, where a whole repo's map has no reach and the line reads plainly.
+
+- 2026-11-19 — step 15 checkpointed · 828574f67 — feat(scene): place a quiet label on each depth band (1 drift, 21m)

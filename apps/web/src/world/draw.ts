@@ -107,8 +107,8 @@
 import { AgXToneMapping, AmbientLight, Color, DataUtils, DirectionalLight, RenderPipeline, Scene, Vector3, WebGPUCoordinateSystem, WebGPURenderer } from 'three/webgpu';
 import { emissive, mrt, output, pass } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
-import { CINEMA, FIELD_FILL, LOD_GATES, MEMBRANE_WOBBLE, MEMBRANE_WOBBLE_HZ, MOTION_TOKENS, NUCLEUS_TOKENS, RIBBON_SWAY, RIBBON_SWAY_HZ, REACH_ORIGIN_OPACITY, RELIEF, cellSlide, cellWiring, cinemaFocus, compositesOf, compositesOpen, createPicker, createScheduler, fileLevelOf, fillOf, gridFor, instances, interiorOf, planetShown, slideCellOf, surfacePoint } from 'scene';
-import type { FileLevel, Lod, Pick, Point, Slide } from 'scene';
+import { CINEMA, FIELD_FILL, LOD_GATES, MEMBRANE_WOBBLE, MEMBRANE_WOBBLE_HZ, MOTION_TOKENS, NUCLEUS_TOKENS, RIBBON_SWAY, RIBBON_SWAY_HZ, REACH_ORIGIN_OPACITY, RELIEF, bandLabelsFor, cellSlide, cellWiring, cinemaFocus, compositesOf, compositesOpen, createPicker, createScheduler, fileLevelOf, fillOf, gridFor, instances, interiorOf, planetShown, slideCellOf, surfacePoint } from 'scene';
+import type { FileLevel, LabelBox, Lod, Pick, Point, Slide } from 'scene';
 import type { MapJson, OverlayName } from 'core';
 
 import { RAIL_WIDTH, zoomFor } from '../fit.js';
@@ -154,7 +154,7 @@ import { createSectors } from './sectors.js';
 import type { Sectors } from './sectors.js';
 import { createSkin } from './skin.js';
 import { createSky } from './sky.js';
-import { createSpace } from './space.js';
+import { BAND_LABEL_LOOK, createSpace } from './space.js';
 
 /** How far off the key light stands: far enough that its direction is one across the layout. */
 const CAMERA_REACH = 1000;
@@ -211,6 +211,13 @@ const claimsOf = (height: number): { readonly top: number; readonly bottom: numb
   };
 };
 
+/** The chrome's boxes over the field's left side, in pixels, which a band's label keeps off (D196): the HUD at the top left, and the legend and the minimap at the bottom left. */
+const chromeBoxes = (): readonly LabelBox[] =>
+  ['[data-hud]', '[data-legend]', '[data-minimap]'].flatMap((selector) => {
+    const box = claimOf(selector);
+    return box === undefined ? [] : [{ x: box.left, y: box.top, width: box.width, height: box.height }];
+  });
+
 export type PageLinks = { readonly token?: string | undefined; readonly pr?: string | undefined };
 
 /** Draw the world for a map into the canvas, keep it fitted to the window beside the rail, run its one loop, and keep the chrome's line to it (`nav.ts`). */
@@ -249,7 +256,8 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   const skin = createSkin(map, skinLook, weatherLook, tokens, relief, composites);
   scene.add(skin.mesh);
   // The field is space (D169): faint stars on the open ground and past it, and a rule at each band's boundary over the canvas.
-  const space = createSpace(map, registry.view(SPACE, 'SPACE'));
+  const bandLook = registry.view(BAND_LABEL_LOOK);
+  const space = createSpace(map, registry.view(SPACE, 'SPACE'), bandLook);
   scene.add(space.mesh);
   const grid = gridFor(map, skin.resolution);
   const organelles = createOrganelles(map, skin.relief, grid, skin.amp, skin.lift, tokens, composites, skin.composites);
@@ -335,6 +343,12 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   // What the chrome claims of the screen's top and foot, which the slide's tags keep clear of (P25), and how many frames ago it was read.
   let claims = { top: 0, bottom: 0 };
   let claimsAge = CLAIMS_EVERY;
+  // The chrome's boxes the bands' labels keep off, read as often, how many times the field's labels have been laid out, and what the bands' labels were last placed for.
+  let chromeClaims: readonly LabelBox[] = [];
+  let chromeAge = CLAIMS_EVERY;
+  let placings = 0;
+  let bandsPlacedFor = '';
+  const levelPoint = new Vector3();
   const fit = (): void => {
     const { clientWidth, clientHeight } = canvas;
     renderer.setPixelRatio(globalThis.devicePixelRatio);
@@ -868,7 +882,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     glow.radius.value = bloomLook.radius;
     glow.threshold.value = bloomLook.threshold;
     post.render();
-    space.render(camera, canvas.clientWidth, canvas.clientHeight);
+    space.render(camera, canvas.clientWidth, canvas.clientHeight, surface);
     // The planet is LOD0's layer: whole at the far zoom, and faded out as the surface fades in past LOD1's gate.
     const planetLayer = frame.lod === undefined ? 1 : planetShown(frame.lod);
     planet.render(
@@ -885,8 +899,35 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       for (const layer of layers()) layer.labels.place(viewportOf(camera, canvas.clientWidth), lod, slide, askedOf(fieldTarget, rowTarget ?? litTarget));
       placeLabels = false;
       placedLod = lod;
+      placings += 1;
     }
     for (const layer of layers()) layer.labels.render(camera, canvas.clientWidth, canvas.clientHeight, surface * (layer === current ? mixed : 1 - mixed));
+    // Each band's quiet label (D196): placed again on a frame the view, the level, the field's labels, the chrome or their tokens moved, along its rule on the level ground and clear of the labels and marks just drawn and of the chrome.
+    if ((chromeAge += 1) >= CLAIMS_EVERY) {
+      chromeAge = 0;
+      chromeClaims = chromeBoxes();
+    }
+    const bandsFor = [
+      lod,
+      placings,
+      canvas.clientWidth,
+      canvas.clientHeight,
+      bandLook.BAND_LABEL_SIZE,
+      bandLook.BAND_LABEL_INSET,
+      bandLook.BAND_LABEL_GAP,
+      ...camera.matrixWorld.elements,
+      ...camera.projectionMatrix.elements,
+      ...chromeClaims.flatMap((box) => [box.x, box.y, box.width, box.height]),
+    ].join();
+    if (bandsFor !== bandsPlacedFor) {
+      bandsPlacedFor = bandsFor;
+      const [across, down] = [canvas.clientWidth, canvas.clientHeight];
+      const project = (x: number, y: number): Point => {
+        levelPoint.set(x, 0, y).project(camera);
+        return [((levelPoint.x + 1) / 2) * across, ((1 - levelPoint.y) / 2) * down];
+      };
+      space.label(bandLabelsFor(current.map, lod, viewportOf(camera, across), [], [...current.labels.claims(), ...chromeClaims], project, bandLook));
+    }
     // The file level (D102): past LOD3's gate the file nearest the view's centre, a floating body of the opened cell first, opens onto its plate.
     const fileShown = frame.lod?.opacity[3] ?? 0;
     const focus = fileShown <= 0 || middle === undefined ? undefined : nearestFile(middle);
