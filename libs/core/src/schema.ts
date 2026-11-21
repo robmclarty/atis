@@ -507,6 +507,43 @@ export const OVERLAY_NAMES = ['trouble_spots', 'ugly_spots', 'coverage_gaps', 'd
 
 export type OverlayName = (typeof OVERLAY_NAMES)[number];
 
+/** Every way a map departs from the shape its owner approved (D210 (approved-block)), in the order they are told. */
+export const DEPARTURE_KINDS = ['module-added', 'module-removed', 'files-grown', 'lines-grown', 'interface-widened', 'past-interface-up', 'fan-out-up', 'dependency-added'] as const;
+
+export type DepartureKind = (typeof DEPARTURE_KINDS)[number];
+
+/**
+ * One departure from the approved shape (D210 (approved-block)): what
+ * happened, to which module, and why it is told, in words. `target` is the
+ * module's path, a cell's `path` and not its id, since an id carries the
+ * cell's kind and a module that gains an interface is still the same module;
+ * for `dependency-added` it is the outside package's name. Every kind but
+ * `module-removed` and `dependency-added` names a module the terrain holds,
+ * and `module-removed` names one it does not. `was` and `now` are the count
+ * the kind is about, as approved and as the map has it, each set only where
+ * it was measured on that side and never a zero standing for a missing one
+ * (C2). `names` are what the kind is about by name, an interface's new
+ * exports for one, sorted.
+ */
+export type Departure = {
+  readonly kind: DepartureKind;
+  readonly target: string;
+  readonly why: string;
+  readonly was?: number;
+  readonly now?: number;
+  readonly names?: readonly string[];
+};
+
+/**
+ * The map against the shape its owner approved (D210 (approved-block)): `at`
+ * is the head that shape was approved at, as that map's `meta.head` wrote
+ * it, a commit's sha or `working-tree`, and `departures` is every way this
+ * map differs from it, none when it keeps the shape, sorted by target and
+ * then by kind, each as `<` orders two strings, one of a kind for a target
+ * (C3).
+ */
+export type ApprovedBlock = { readonly at: string; readonly departures: readonly Departure[] };
+
 export type MapJson = {
   readonly meta: Meta;
   readonly terrain: Terrain;
@@ -515,6 +552,12 @@ export type MapJson = {
   readonly sequence?: Sequence;
   /** Set exactly on a `repo` map (D101). */
   readonly overlays?: Overlays;
+  /**
+   * Set only where a shape was approved (D210 (approved-block)); an added key
+   * (D85). Absent, no shape was approved, which is not the same as a map that
+   * keeps its shape: that one carries the block with no departures.
+   */
+  readonly approved?: ApprovedBlock;
 };
 
 /** The `atis reach` answer's contract version: its own, so a consumer pins it without pinning the map. */
@@ -777,9 +820,11 @@ function assertShape(value: unknown): asserts value is MapJson {
 
   const cells = expectArray(terrain['cells'], 'terrain.cells');
   const cellIds = new Set<string>();
+  const cellPaths = new Set<string>();
   cells.forEach((raw, index) => {
     const cell = expectRecord(raw, `terrain.cells[${String(index)}]`);
     cellIds.add(expectString(cell['id'], `terrain.cells[${String(index)}].id`));
+    if (typeof cell['path'] === 'string') cellPaths.add(cell['path']);
     if (cell['exports'] !== undefined) {
       expectArray(cell['exports'], `terrain.cells[${String(index)}].exports`).forEach((name, at) => expectString(name, `terrain.cells[${String(index)}].exports[${String(at)}]`));
     }
@@ -847,6 +892,9 @@ function assertShape(value: unknown): asserts value is MapJson {
     if (sequence !== undefined) fail('sequence', 'a repo map has no range to frame');
     assertOverlays(root['overlays'], placed);
   }
+
+  // The approved block stands only where a shape was approved; a map with none says nothing of one (D210 (approved-block)).
+  if (root['approved'] !== undefined) assertApprovedBlock(root['approved'], 'approved', cellPaths);
 }
 
 const OVERLAY_KEYS: ReadonlySet<string> = new Set([...OVERLAY_NAMES, 'muted']);
@@ -1154,6 +1202,42 @@ function assertWeather(value: unknown, path: string, placed: Placed, unplaced: R
     });
   });
   return changedPaths;
+}
+
+function isDepartureKind(value: unknown): value is DepartureKind {
+  return DEPARTURE_KINDS.some((kind) => kind === value);
+}
+
+/** One departure: its kind, a target the terrain holds or, for a module removed, does not, its words, and the counts and names it carries; returns the key the list is sorted by. */
+function assertDeparture(value: unknown, path: string, modules: ReadonlySet<string>): string {
+  const departure = expectRecord(value, path);
+  const kind = departure['kind'];
+  if (!isDepartureKind(kind)) fail(`${path}.kind`, `expected one of ${DEPARTURE_KINDS.join(', ')}`);
+  const target = expectString(departure['target'], `${path}.target`);
+  if (target === '') fail(`${path}.target`, 'expected a module path or a package name');
+  if (kind === 'module-removed' && modules.has(target)) fail(`${path}.target`, `the terrain still holds the module "${target}"`);
+  if (kind !== 'module-removed' && kind !== 'dependency-added' && !modules.has(target)) fail(`${path}.target`, `unknown module "${target}"`);
+  if (expectString(departure['why'], `${path}.why`) === '') fail(`${path}.why`, 'expected the reason in words');
+  for (const side of ['was', 'now']) {
+    if (departure[side] !== undefined && !isCount(departure[side])) fail(`${path}.${side}`, 'expected a non-negative number');
+  }
+  if (departure['names'] !== undefined) {
+    expectArray(departure['names'], `${path}.names`).forEach((name, index) => expectString(name, `${path}.names[${String(index)}]`));
+  }
+  return `${target}\n${kind}`;
+}
+
+/** The approved block (D210 (approved-block)): the head the shape was approved at, and the departures from it, sorted and one of a kind for a target. */
+function assertApprovedBlock(value: unknown, path: string, modules: ReadonlySet<string>): void {
+  const approved = expectRecord(value, path);
+  if (expectString(approved['at'], `${path}.at`) === '') fail(`${path}.at`, 'expected the head the shape was approved at');
+  let previous: string | undefined;
+  expectArray(approved['departures'], `${path}.departures`).forEach((raw, index) => {
+    const at = `${path}.departures[${String(index)}]`;
+    const key = assertDeparture(raw, at, modules);
+    if (previous !== undefined && previous >= key) fail(at, 'expected the departures sorted by target, then kind, and one of a kind for a target');
+    previous = key;
+  });
 }
 
 /** Turn an unknown value into a trusted `MapJson`, or throw naming the offending path. */

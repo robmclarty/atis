@@ -408,3 +408,64 @@ test('checks every frame as it checks the weather and the notices, over the one 
   expect(() => assertMap(withFrames(frame({ weather: two, unplaced: ['b.md', 'a.md'] })))).toThrow(/unplaced\[1\]: expected the paths sorted/);
   expect(() => assertMap({ ...minimalMap(), sequence: {} })).toThrow(/sequence\.frames/);
 });
+
+/** The minimal map with an approved block beside it (D210 (approved-block)); its one module's path is `src/foo/index.ts`. */
+function withApproved(approved: unknown): unknown {
+  return { ...minimalMap(), approved };
+}
+
+const MODULE = 'src/foo/index.ts';
+
+test('accepts a map with no approved block, one that keeps its shape, and one with every kind of departure (D210 (approved-block))', () => {
+  expect(assertMap(minimalMap())).not.toHaveProperty('approved');
+  const kept = withApproved({ at: 'a'.repeat(40), departures: [] });
+  expect(assertMap(kept)).toEqual(kept);
+  const departed = withApproved({
+    at: 'working-tree',
+    departures: [
+      { kind: 'dependency-added', target: 'kleur', why: 'a package the approved shape did not import' },
+      { kind: 'fan-out-up', target: MODULE, why: 'it reaches more modules than approved', was: 2, now: 5 },
+      { kind: 'files-grown', target: MODULE, why: 'it holds more files than approved', was: 3, now: 9 },
+      { kind: 'interface-widened', target: MODULE, why: 'its interface exports more than approved', was: 1, now: 3, names: ['listSlots', 'resolveSlot'] },
+      { kind: 'lines-grown', target: MODULE, why: 'it holds more lines than approved', was: 120, now: 480 },
+      { kind: 'module-added', target: MODULE, why: 'a module the approved shape did not hold', now: 3 },
+      { kind: 'past-interface-up', target: MODULE, why: 'more imports enter past its interface than approved', was: 0, now: 2 },
+      { kind: 'module-removed', target: 'src/gone', why: 'a module the approved shape held', was: 4 },
+    ],
+  });
+  expect(assertMap(departed)).toEqual(departed);
+});
+
+test('rejects an approved block that is not one, a departure of no known kind, one naming a module the terrain does not hold or a removed one it does, and a list out of order (D210 (approved-block))', () => {
+  const one = (departure: Record<string, unknown>): unknown => withApproved({ at: 'a'.repeat(40), departures: [{ kind: 'files-grown', target: MODULE, why: 'it grew', ...departure }] });
+  const cases: readonly [unknown, RegExp][] = [
+    [withApproved('yes'), /approved: expected an object/],
+    [withApproved({ departures: [] }), /approved\.at: expected a string/],
+    [withApproved({ at: '', departures: [] }), /approved\.at: expected the head/],
+    [withApproved({ at: 'a'.repeat(40) }), /approved\.departures: expected an array/],
+    [withApproved({ at: 'a'.repeat(40), departures: ['files-grown'] }), /approved\.departures\[0\]: expected an object/],
+    [one({ kind: 'cycle-added' }), /approved\.departures\[0\]\.kind: expected one of module-added, module-removed/],
+    [one({ kind: undefined }), /approved\.departures\[0\]\.kind/],
+    [one({ target: 7 }), /approved\.departures\[0\]\.target: expected a string/],
+    [one({ target: '' }), /approved\.departures\[0\]\.target: expected a module path or a package name/],
+    [one({ kind: 'dependency-added', target: '' }), /approved\.departures\[0\]\.target: expected a module path or a package name/],
+    [one({ target: 'src/gone' }), /approved\.departures\[0\]\.target: unknown module "src\/gone"/],
+    [one({ kind: 'module-added', target: 'src/foo' }), /approved\.departures\[0\]\.target: unknown module "src\/foo"/],
+    [one({ kind: 'module-removed' }), /approved\.departures\[0\]\.target: the terrain still holds the module/],
+    [one({ why: undefined }), /approved\.departures\[0\]\.why: expected a string/],
+    [one({ why: '' }), /approved\.departures\[0\]\.why: expected the reason in words/],
+    [one({ was: -1 }), /approved\.departures\[0\]\.was: expected a non-negative number/],
+    [one({ now: '9' }), /approved\.departures\[0\]\.now: expected a non-negative number/],
+    [one({ names: 'listSlots' }), /approved\.departures\[0\]\.names: expected an array/],
+    [one({ names: ['listSlots', 7] }), /approved\.departures\[0\]\.names\[1\]: expected a string/],
+  ];
+  for (const [map, error] of cases) expect(() => assertMap(map)).toThrow(error);
+
+  const grown = { kind: 'files-grown', target: MODULE, why: 'it grew' };
+  const reaching = { kind: 'fan-out-up', target: MODULE, why: 'it reaches further' };
+  const sorted = (...departures: readonly unknown[]): unknown => withApproved({ at: 'a'.repeat(40), departures });
+  expect(() => assertMap(sorted(reaching, grown))).not.toThrow();
+  expect(() => assertMap(sorted(grown, reaching))).toThrow(/approved\.departures\[1\]: expected the departures sorted by target, then kind/);
+  expect(() => assertMap(sorted(grown, grown))).toThrow(/approved\.departures\[1\]: expected the departures sorted/);
+  expect(() => assertMap(sorted({ kind: 'module-removed', target: 'src/gone', why: 'gone' }, { kind: 'dependency-added', target: 'kleur', why: 'new' }))).toThrow(/approved\.departures\[1\]: expected the departures sorted/);
+});
