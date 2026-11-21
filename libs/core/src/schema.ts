@@ -517,17 +517,22 @@ export type DepartureKind = (typeof DEPARTURE_KINDS)[number];
  * happened, to which module, and why it is told, in words. `target` is the
  * module's path, a cell's `path` and not its id, since an id carries the
  * cell's kind and a module that gains an interface is still the same module;
- * for `dependency-added` it is the outside package's name. Every kind but
- * `module-removed` and `dependency-added` names a module the terrain holds,
- * and `module-removed` names one it does not. `was` and `now` are the count
- * the kind is about, as approved and as the map has it, each set only where
- * it was measured on that side and never a zero standing for a missing one
- * (C2). `names` are what the kind is about by name, an interface's new
- * exports for one, sorted.
+ * for `dependency-added` it is the outside package's name. A path does not
+ * name one module, though: a workspace member is a `package` cell, and the
+ * loose files at its root a `directory` cell with the same path. So `cell`
+ * says which one is meant (D218 (departure-cell)): the id of the cell of this
+ * map the departure is about, whose path is `target`, or for `module-removed`
+ * the id the module had in the approved shape, its kind and `target` joined by
+ * a colon, which no cell of this map has. `dependency-added` is about no
+ * module and carries none. `was` and `now` are the count the kind is about,
+ * as approved and as the map has it, each set only where it was measured on
+ * that side and never a zero standing for a missing one (C2). `names` are
+ * what the kind is about by name, an interface's new exports for one, sorted.
  */
 export type Departure = {
   readonly kind: DepartureKind;
   readonly target: string;
+  readonly cell?: string;
   readonly why: string;
   readonly was?: number;
   readonly now?: number;
@@ -538,9 +543,9 @@ export type Departure = {
  * The map against the shape its owner approved (D210 (approved-block)): `at`
  * is the head that shape was approved at, as that map's `meta.head` wrote
  * it, a commit's sha or `working-tree`, and `departures` is every way this
- * map differs from it, none when it keeps the shape, sorted by target and
- * then by kind, each as `<` orders two strings, one of a kind for a target
- * (C3).
+ * map differs from it, none when it keeps the shape, sorted by target, then
+ * by kind, then by cell, each as `<` orders two strings, one of a kind for a
+ * cell (C3).
  */
 export type ApprovedBlock = { readonly at: string; readonly departures: readonly Departure[] };
 
@@ -820,11 +825,12 @@ function assertShape(value: unknown): asserts value is MapJson {
 
   const cells = expectArray(terrain['cells'], 'terrain.cells');
   const cellIds = new Set<string>();
-  const cellPaths = new Set<string>();
+  const cellPaths = new Map<string, unknown>();
   cells.forEach((raw, index) => {
     const cell = expectRecord(raw, `terrain.cells[${String(index)}]`);
-    cellIds.add(expectString(cell['id'], `terrain.cells[${String(index)}].id`));
-    if (typeof cell['path'] === 'string') cellPaths.add(cell['path']);
+    const id = expectString(cell['id'], `terrain.cells[${String(index)}].id`);
+    cellIds.add(id);
+    cellPaths.set(id, cell['path']);
     if (cell['exports'] !== undefined) {
       expectArray(cell['exports'], `terrain.cells[${String(index)}].exports`).forEach((name, at) => expectString(name, `terrain.cells[${String(index)}].exports[${String(at)}]`));
     }
@@ -1208,15 +1214,34 @@ function isDepartureKind(value: unknown): value is DepartureKind {
   return DEPARTURE_KINDS.some((kind) => kind === value);
 }
 
-/** One departure: its kind, a target the terrain holds or, for a module removed, does not, its words, and the counts and names it carries; returns the key the list is sorted by. */
-function assertDeparture(value: unknown, path: string, modules: ReadonlySet<string>): string {
+const CELL_KINDS: readonly CellKind[] = ['package', 'folder', 'single', 'directory'];
+
+/**
+ * One departure: its kind, its target, the cell it is about, its words, and
+ * the counts and names it carries; returns the key the list is sorted by. The
+ * cell is one the terrain holds at the target's path, or for a module removed
+ * an id of that path the terrain does not hold, and a new dependency names
+ * none (D218 (departure-cell)).
+ */
+function assertDeparture(value: unknown, path: string, cellPaths: ReadonlyMap<string, unknown>): string {
   const departure = expectRecord(value, path);
   const kind = departure['kind'];
   if (!isDepartureKind(kind)) fail(`${path}.kind`, `expected one of ${DEPARTURE_KINDS.join(', ')}`);
   const target = expectString(departure['target'], `${path}.target`);
   if (target === '') fail(`${path}.target`, 'expected a module path or a package name');
-  if (kind === 'module-removed' && modules.has(target)) fail(`${path}.target`, `the terrain still holds the module "${target}"`);
-  if (kind !== 'module-removed' && kind !== 'dependency-added' && !modules.has(target)) fail(`${path}.target`, `unknown module "${target}"`);
+  let cell = '';
+  if (kind === 'dependency-added') {
+    if (departure['cell'] !== undefined) fail(`${path}.cell`, 'a new dependency is about no module');
+  } else {
+    cell = expectString(departure['cell'], `${path}.cell`);
+    if (kind === 'module-removed') {
+      if (cellPaths.has(cell)) fail(`${path}.cell`, `the terrain still holds the cell "${cell}"`);
+      if (!CELL_KINDS.some((each) => cell === `${each}:${target}`)) fail(`${path}.cell`, `expected the id the module at "${target}" had, its kind and its path`);
+    } else {
+      if (!cellPaths.has(cell)) fail(`${path}.cell`, `unknown cell "${cell}"`);
+      if (cellPaths.get(cell) !== target) fail(`${path}.target`, `the cell "${cell}" is not at "${target}"`);
+    }
+  }
   if (expectString(departure['why'], `${path}.why`) === '') fail(`${path}.why`, 'expected the reason in words');
   for (const side of ['was', 'now']) {
     if (departure[side] !== undefined && !isCount(departure[side])) fail(`${path}.${side}`, 'expected a non-negative number');
@@ -1224,18 +1249,18 @@ function assertDeparture(value: unknown, path: string, modules: ReadonlySet<stri
   if (departure['names'] !== undefined) {
     expectArray(departure['names'], `${path}.names`).forEach((name, index) => expectString(name, `${path}.names[${String(index)}]`));
   }
-  return `${target}\n${kind}`;
+  return `${target}\n${kind}\n${cell}`;
 }
 
-/** The approved block (D210 (approved-block)): the head the shape was approved at, and the departures from it, sorted and one of a kind for a target. */
-function assertApprovedBlock(value: unknown, path: string, modules: ReadonlySet<string>): void {
+/** The approved block (D210 (approved-block)): the head the shape was approved at, and the departures from it, sorted and one of a kind for a cell. */
+function assertApprovedBlock(value: unknown, path: string, cellPaths: ReadonlyMap<string, unknown>): void {
   const approved = expectRecord(value, path);
   if (expectString(approved['at'], `${path}.at`) === '') fail(`${path}.at`, 'expected the head the shape was approved at');
   let previous: string | undefined;
   expectArray(approved['departures'], `${path}.departures`).forEach((raw, index) => {
     const at = `${path}.departures[${String(index)}]`;
-    const key = assertDeparture(raw, at, modules);
-    if (previous !== undefined && previous >= key) fail(at, 'expected the departures sorted by target, then kind, and one of a kind for a target');
+    const key = assertDeparture(raw, at, cellPaths);
+    if (previous !== undefined && previous >= key) fail(at, 'expected the departures sorted by target, then kind, then cell, and one of a kind for a cell');
     previous = key;
   });
 }
