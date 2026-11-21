@@ -1,6 +1,6 @@
 /**
  * serve: the world on loopback (D92, C13). One `node:http` server bound to
- * `127.0.0.1` at a port the system picks, answering five things to read and
+ * `127.0.0.1` at a port the system picks, answering six things to read and
  * one to write, and nothing else (D93): the built app's `index.html` at `/`,
  * its assets by path under the directory it is handed, the map at
  * `/map.json`, held in memory, and, when it is handed the run's `.check/`, a
@@ -12,20 +12,39 @@
  * base is resolved in, between the two sides of the map it holds, for the
  * paths that map changed and no other (D102, D134), with the repository's
  * path and the editor template its `atis.config.json` names, so the page can
- * open the file at a line. It answers only a `Host` of `127.0.0.1:<port>` or
- * `localhost:<port>`, and the map, the raw output, the diff and the write
- * only to the run's token: a page in another tab can
- * reach a loopback port, and through DNS rebinding read what it answers, so
- * the server trusts neither the port nor the origin but the token the opened
- * URL carries. The write checks the `Origin` too, since a form in another
- * tab could send one, and takes only a ref `git rev-parse --verify` resolves
- * to a commit, never one opening with `-`, which git would read as a flag.
+ * open the file at a line. The sixth is a file's text at `/file/<path>`
+ * (D211 (file-text)), in the same repository, for a path the held map names
+ * on its terrain or its shore and no other. It is read from git's objects
+ * alone, never from the disk: from the head commit by its full sha, or, for
+ * a head that is the working tree, from the tree that head was written as,
+ * handed in beside the map (D312 (tree-beside-map)), so the text is the
+ * bytes the map was measured from and no path a request names is ever joined
+ * onto a directory. `git cat-file` does the reading, since it takes a path
+ * as that path whatever it spells, where `git show` reads two dots in a
+ * file's name as a range of commits (D311 (file-blob)). It answers JSON
+ * with the diff's root and editor, never a type the file's name suggests,
+ * with `nosniff`; a file past the size cap is a 413 (D310 (file-cap)), one
+ * holding a NUL byte a 415, and anything that is no file in that object a
+ * 404 (D311 (file-blob)). It answers only a
+ * `Host` of `127.0.0.1:<port>` or `localhost:<port>`, and the map, the raw
+ * output, the diff, the file's text and the write only to the run's token: a
+ * page in another tab can reach a loopback port, and through DNS rebinding
+ * read what it answers, so the server trusts neither the port nor the origin
+ * but the token the opened URL carries. The write checks the `Origin` too,
+ * since a form in another tab could send one, and takes only a ref
+ * `git rev-parse --verify` resolves to a commit, never one opening with `-`,
+ * which git would read as a flag.
  * It takes one socket path too, `/socket`, on the same port, on every run
  * (D178): a WebSocket the page opens with the run's token, from its own
  * `Origin`. Under `--watch` every map the watch rebuilds is pushed over it as
  * `{ "kind": "map", "map": … }`, a message kind as weft's watch sends, the
  * page reading only the kinds it knows, and as weft's does, the server sends
- * the map it holds as the page connects (D106). The page sends nothing on it.
+ * the map it holds as the page connects (D106). A watching run also says
+ * what the watch is doing, `{ "kind": "watch", "state": … }`, to each page
+ * as it connects and whenever it moves: `following`, or `rebuilding` while a
+ * map is measured, so the page says `live` only where something follows the
+ * repository and says when a map is on its way (D336 (watch-says)). A run
+ * with no watch says neither. The page sends nothing on it.
  * The second write, `POST /highlight`, is how `atis mcp` points at the map
  * (D110): with the token and this server's own `Origin`, as the first, it
  * names a file the held map places or a notice by its rank, anything else
@@ -68,8 +87,13 @@ export type ServedChecks = {
  */
 export type BaseRequest = { readonly base?: string; readonly last?: 'commit' | 'tag'; readonly working_tree?: boolean };
 
-/** A map rebuilt over another base: its JSON text, and the slots its raw output may now be served for. */
-export type Rebuilt = { readonly map: string; readonly slots: readonly string[] };
+/**
+ * A map rebuilt over another base: its JSON text, the slots its raw output
+ * may now be served for, and, when its head is the working tree, the tree
+ * that head was written as, which `/file/<path>` reads in place of a commit
+ * (D312 (tree-beside-map)).
+ */
+export type Rebuilt = { readonly map: string; readonly slots: readonly string[]; readonly tree?: string | undefined };
 
 /**
  * What `/diff/<path>` answers (D102): the file's diff between the map's two
@@ -77,6 +101,14 @@ export type Rebuilt = { readonly map: string; readonly slots: readonly string[] 
  * template the page fills to open the file at a line.
  */
 export type ServedDiff = { readonly path: string; readonly diff: string; readonly root: string; readonly editor: string };
+
+/**
+ * What `/file/<path>` answers (D211 (file-text)): the path asked for, as the
+ * map writes it; the file's text; the git object it was read from, the
+ * head's full sha or the working tree's tree sha; and the repository's
+ * absolute path and the editor template, as a diff's answer carries them.
+ */
+export type ServedFile = { readonly path: string; readonly text: string; readonly at: string; readonly root: string; readonly editor: string };
 
 /** How the server rebuilds the map over another base: the repository a ref is resolved in, and the rebuild itself, which throws on a base it cannot measure from. */
 export type Rebase = {
@@ -89,13 +121,15 @@ export type ServeOptions = {
   readonly assets: string;
   /** The map as its JSON text. */
   readonly map: string;
-  /** The run's token, which `/map.json`, `/tour.json`, `/check/<slot>`, `/diff/<path>`, the socket, `POST /base` and `POST /highlight` require as `?token=`. */
+  /** The run's token, which `/map.json`, `/tour.json`, `/check/<slot>`, `/diff/<path>`, `/file/<path>`, the socket, `POST /base` and `POST /highlight` require as `?token=`. */
   readonly token: string;
   /** The check artifacts to serve raw at `/check/<slot>`; left out, as a fixture or a test leaves it, the path is not served. */
   readonly checks?: ServedChecks | undefined;
-  /** How `POST /base` rebuilds the map, and the repository `/diff/<path>` reads; left out, neither is served. */
+  /** How `POST /base` rebuilds the map, and the repository `/diff/<path>` and `/file/<path>` read; left out, none of the three is served. */
   readonly rebase?: Rebase | undefined;
-  /** Send each page the map held as its socket connects, so a map the watch rebuilt while the page loaded is never missed (D106); the socket itself is taken on every run (D178). */
+  /** The tree the map's head was written as, when that head is the working tree: what `/file/<path>` reads, since no commit holds it (D312 (tree-beside-map)); left out, a working tree's map serves no file's text. */
+  readonly tree?: string | undefined;
+  /** Send each page what the watch is doing and the map held as its socket connects, so a map the watch rebuilt while the page loaded is never missed (D106, D336 (watch-says)); the socket itself is taken on every run (D178). */
   readonly watch?: boolean | undefined;
   /** A tour written for the map, as its JSON text, served at `/tour.json` (D112, D183); left out, the path is not served and the page plays none. */
   readonly tour?: string | undefined;
@@ -106,6 +140,9 @@ export type HighlightRequest = { readonly file: string } | { readonly notice: nu
 
 /** What `POST /highlight` answers once it relays: how many open pages it reached, none when no tab is open. */
 export type Highlighted = { readonly pages: number };
+
+/** What a watching run says of its watch on the socket (D336 (watch-says)): it follows the repository, or it is measuring the map the repository moved to. */
+export type WatchState = 'following' | 'rebuilding';
 
 /** How `atis mcp` reaches the run serving a repository's tab (D138): its port on loopback, its token, and its process. */
 export type Serving = { readonly port: number; readonly token: string; readonly pid: number };
@@ -120,6 +157,8 @@ export type Served = {
   readonly asked: () => BaseRequest | undefined;
   /** Hold a rebuilt map in place of the one held, and push it to every open socket (D106). */
   readonly push: (rebuilt: Rebuilt) => void;
+  /** Say what the watch is doing to every open socket, and to each page that connects from here on (D336 (watch-says)). */
+  readonly say: (state: WatchState) => void;
   /** Stop answering and drop every connection. */
   readonly close: () => Promise<void>;
 };
@@ -169,9 +208,21 @@ const SHA = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/;
 /** The head a map reads from the working tree names in place of a commit (D99). */
 const WORKING_TREE = 'working-tree';
 
-/** One answer: the status, the type, and the body, left off a HEAD. */
-const answer = (request: IncomingMessage, response: ServerResponse, status: number, type: string, body: string | Buffer): void => {
-  response.writeHead(status, { 'content-type': type, 'content-length': Buffer.byteLength(body), 'cache-control': 'no-store' });
+/**
+ * The most a file's text may run to, in bytes as git stores it, before
+ * `/file/<path>` answers 413 in its place (D310 (file-cap)): a megabyte,
+ * which no file a person reads in a panel is past, and which keeps a
+ * lockfile or a bundle from being escaped into one JSON string.
+ */
+const FILE_LIMIT = 1024 * 1024;
+/** The most git's answer to a blob's type or its size may hold: a word or a number, never a file. */
+const FACT_LIMIT = 256;
+/** What `/file/<path>` sends beside every answer: the type it names is the type, whatever the bytes look like. */
+const NOSNIFF = { 'x-content-type-options': 'nosniff' } as const;
+
+/** One answer: the status, the type, and the body, left off a HEAD, with any headers a path adds. */
+const answer = (request: IncomingMessage, response: ServerResponse, status: number, type: string, body: string | Buffer, headers: Readonly<Record<string, string>> = {}): void => {
+  response.writeHead(status, { 'content-type': type, 'content-length': Buffer.byteLength(body), 'cache-control': 'no-store', ...headers });
   response.end(request.method === 'HEAD' ? undefined : body);
 };
 
@@ -185,7 +236,7 @@ const fileFor = (root: string, pathname: string): string | undefined => {
   }
 };
 
-/** A path segment decoded, or left as it came when it does not decode, which no slot or changed path is named like. */
+/** A path segment decoded, or left as it came when it does not decode, which no slot, changed path or file is named like. */
 const decodedOr = (segment: string): string => {
   try {
     return decodeURIComponent(segment);
@@ -413,6 +464,91 @@ const diffOf = async (repo: string, sides: Sides, path: string, file: Diffable):
   return gitText(repo, ['diff', '--no-color', '--no-ext-diff', '--no-index', '--', '/dev/null', path]);
 };
 
+/** What a file's text may be read for, from the map the server holds: the head it is read at, and every path that map names. */
+type Listed = { readonly head: string; readonly files: ReadonlySet<string> };
+
+/**
+ * The files a map names, read loosely from its text as its sides are: every
+ * file on its terrain and every file of a shore group, with the head they
+ * are read at. A map whose head is neither a commit's sha nor the working
+ * tree names none.
+ */
+const listedOf = (text: string): Listed | undefined => {
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+  if (!isRecord(value) || !isRecord(value['meta']) || !isRecord(value['terrain'])) return undefined;
+  const { head } = value['meta'];
+  if (typeof head !== 'string' || !(SHA.test(head) || head === WORKING_TREE)) return undefined;
+  const { organelles, groups } = value['terrain'];
+  const files = new Set<string>();
+  for (const organelle of Array.isArray(organelles) ? (organelles as readonly unknown[]) : []) {
+    if (isRecord(organelle) && typeof organelle['path'] === 'string') files.add(organelle['path']);
+  }
+  for (const group of Array.isArray(groups) ? (groups as readonly unknown[]) : []) {
+    const held: unknown = isRecord(group) ? group['files'] : undefined;
+    for (const file of Array.isArray(held) ? (held as readonly unknown[]) : []) {
+      if (typeof file === 'string') files.add(file);
+    }
+  }
+  return { head, files };
+};
+
+/**
+ * Whether a path is one a tree holds a file at, from its root: parts joined
+ * by `/`, none of them empty, `.` or `..`, and no NUL anywhere. An absolute
+ * path, one that climbs, and one git would read from the directory it runs
+ * in rather than from the tree's root are each refused by it, whatever the
+ * map names (D311 (file-blob)).
+ */
+const isTreePath = (path: string): boolean => !path.includes('\0') && path.split('/').every((part) => part !== '' && part !== '.' && part !== '..');
+
+/** git's answer to `args` in `repo` as bytes, at most `limit` of them; none when git refuses, as it does a path an object does not hold, or says more than that. */
+const gitBytes = (repo: string, args: readonly string[], limit: number): Promise<Buffer | undefined> =>
+  new Promise((done) => {
+    execFile('git', args, { cwd: repo, encoding: 'buffer', maxBuffer: limit }, (error, stdout) => done(error === null ? stdout : undefined));
+  });
+
+/** Why `/file/<path>` answers no text, by the status it answers in its place; each is plain words that name no path. */
+const UNREAD = {
+  404: 'no text for that path\n',
+  413: `that file is past ${String(FILE_LIMIT)} bytes\n`,
+  415: 'that file holds a NUL byte, so it is not text\n',
+} as const;
+
+/**
+ * The file at `path` in the commit or the tree `at`, as git stores it, or
+ * the status that stands in its place (D311 (file-blob)). Git is asked what
+ * stands there before it is read. Only a blob is a file: a directory, a
+ * submodule, and a path the object does not hold, as a file the change
+ * deleted, are each a 404, and a symlink is the link's own few bytes, never
+ * the file it points at. The size is read before the bytes, so a file past
+ * the cap is never read (D310 (file-cap)), and a NUL byte makes it no text.
+ * `at` is a full sha, so what git is handed can never be a flag, and `path`
+ * follows its colon, where git reads it from the tree's root.
+ *
+ * All three readings are `git cat-file`, which takes `<sha>:<path>` as one
+ * object's name and nothing else (D311 (file-blob)). `git show` reads the
+ * same words as a range of commits first: a file named `src/a..private`
+ * answered the log of a branch called `private`, with its authors and its
+ * patches, in place of its own text, and a repository under review names its
+ * files as it likes. `cat-file blob` also refuses what is no blob, so the
+ * bytes can only be those of the file asked about.
+ */
+const storedAt = async (repo: string, at: string, path: string): Promise<Buffer | keyof typeof UNREAD> => {
+  const object = `${at}:${path}`;
+  const [type, size] = await Promise.all([gitBytes(repo, ['cat-file', '-t', object], FACT_LIMIT), gitBytes(repo, ['cat-file', '-s', object], FACT_LIMIT)]);
+  const bytes = size === undefined ? Number.NaN : Number(size.toString('utf8').trim());
+  if (type?.toString('utf8').trim() !== 'blob' || !Number.isSafeInteger(bytes)) return 404;
+  if (bytes > FILE_LIMIT) return 413;
+  const stored = await gitBytes(repo, ['cat-file', 'blob', object], FILE_LIMIT);
+  if (stored === undefined) return 404;
+  return stored.includes(0) ? 415 : stored;
+};
+
 /** The editor template the repository's `atis.config.json` names, else VS Code's (D102); a config that names a broken one throws, as misuse (C4). */
 const editorOf = async (repo: string): Promise<string> => {
   let text: string | undefined;
@@ -429,12 +565,14 @@ const refuseUpgrade = (socket: Duplex, status: number): void => {
   socket.end(`HTTP/1.1 ${String(status)} ${STATUS_CODES[status] ?? ''}\r\nconnection: close\r\ncontent-length: 0\r\n\r\n`);
 };
 
-/** Serve the app, the map and the raw check output on loopback at a port of the system's choosing, take `POST /base` and serve the diffs when handed a way to rebuild, and take the page's socket and `POST /highlight`; resolves once it is listening. */
-export const serve = async ({ assets, map: first, token, checks: given, rebase, watch = false, tour }: ServeOptions): Promise<Served> => {
+/** Serve the app, the map and the raw check output on loopback at a port of the system's choosing, take `POST /base` and serve the diffs and the files' text when handed a way to rebuild, and take the page's socket and `POST /highlight`; resolves once it is listening. */
+export const serve = async ({ assets, map: first, token, checks: given, rebase, tree: written, watch = false, tour }: ServeOptions): Promise<Served> => {
   const root = resolve(assets);
   let port = 0;
   let map = first;
   let checks = given;
+  // The tree a working tree's head was written as, held with the map it was measured for and replaced with it (D312 (tree-beside-map)).
+  let tree = written;
   // The base the page last switched to, which a watch's rebuild keeps to (D106).
   let switched: BaseRequest | undefined;
   // The page's sockets, on every run (D178); each hears every map pushed and every highlight relayed, and is heard from not at all.
@@ -444,10 +582,14 @@ export const serve = async ({ assets, map: first, token, checks: given, rebase, 
   const editor = repo === undefined ? undefined : await editorOf(repo);
   /** The held map as the socket carries it, a kind and the map, without parsing the map the server only serves. */
   const pushed = (): string => `{"kind":"map","map":${map.trimEnd()}}`;
-  /** Hold a rebuilt map in place of the one held, its raw output served for the slots it holds. */
+  // What the watch is doing, as the socket carries it (D336 (watch-says)).
+  let watching: WatchState = 'following';
+  const said = (): string => JSON.stringify({ kind: 'watch', state: watching });
+  /** Hold a rebuilt map in place of the one held, its raw output served for the slots it holds and its files' text read from the tree it came with, or from its commit when it came with none. */
   const hold = (rebuilt: Rebuilt): void => {
     map = rebuilt.map;
     checks = checks === undefined ? undefined : { dir: checks.dir, slots: rebuilt.slots };
+    tree = rebuilt.tree;
   };
   /** A reading of the held map, made again only when a base or a watch replaces it. */
   const reading = <T>(read: (text: string) => T): (() => T) => {
@@ -459,6 +601,7 @@ export const serve = async ({ assets, map: first, token, checks: given, rebase, 
   };
   const sides = reading(sidesOf);
   const targets = reading(targetsOf);
+  const listed = reading(listedOf);
   /** Send every open page a message, and say how many it reached. */
   const relay = (message: string): number => {
     let pages = 0;
@@ -484,6 +627,35 @@ export const serve = async ({ assets, map: first, token, checks: given, rebase, 
     }
     const served: ServedDiff = { path, diff: await diffOf(repo, held, path, file), root: repo, editor };
     answer(request, response, 200, TYPES['.json'] ?? OCTETS, `${JSON.stringify(served)}\n`);
+  };
+
+  /**
+   * `/file/<path>` (D211 (file-text)): the run's token, then a path the held
+   * map names, read from the object that map's head is, its commit or the
+   * tree handed in beside a working tree's map, in the repository the server
+   * reads. The request's path is looked up in the map and handed to git
+   * after a sha and a colon; it is never joined onto a directory, and the
+   * answer's type is JSON whatever the file is called.
+   */
+  const filed = async (request: IncomingMessage, response: ServerResponse, url: URL, path: string): Promise<void> => {
+    const say = (status: number, type: string, body: string): void => answer(request, response, status, type, body, NOSNIFF);
+    if (url.searchParams.get('token') !== token) {
+      say(403, PLAIN, "a file's text answers only to this run's token\n");
+      return;
+    }
+    const held = listed();
+    const at = held?.head === WORKING_TREE ? tree : held?.head;
+    if (repo === undefined || editor === undefined || held === undefined || at === undefined || !SHA.test(at) || !isTreePath(path) || !held.files.has(path)) {
+      say(404, PLAIN, UNREAD[404]);
+      return;
+    }
+    const stored = await storedAt(repo, at, path);
+    if (typeof stored === 'number') {
+      say(stored, PLAIN, UNREAD[stored]);
+      return;
+    }
+    const served: ServedFile = { path, text: stored.toString('utf8'), at, root: repo, editor };
+    say(200, TYPES['.json'] ?? OCTETS, `${JSON.stringify(served)}\n`);
   };
 
   /**
@@ -610,6 +782,11 @@ export const serve = async ({ assets, map: first, token, checks: given, rebase, 
       await diffed(request, response, url, decodedOr(changed));
       return;
     }
+    const named = /^\/file\/(.+)$/.exec(url.pathname)?.[1];
+    if (named !== undefined) {
+      await filed(request, response, url, decodedOr(named));
+      return;
+    }
     const file = fileFor(root, url.pathname);
     if (file === undefined) {
       answer(request, response, 404, PLAIN, 'not served\n');
@@ -656,7 +833,9 @@ export const serve = async ({ assets, map: first, token, checks: given, rebase, 
     }
     sockets.handleUpgrade(request, socket, head, (client) => {
       client.on('error', () => client.terminate());
-      if (watch) client.send(pushed());
+      if (!watch) return;
+      client.send(said());
+      client.send(pushed());
     });
   });
   const bound = server.address();
@@ -671,6 +850,10 @@ export const serve = async ({ assets, map: first, token, checks: given, rebase, 
     push: (rebuilt) => {
       hold(rebuilt);
       relay(pushed());
+    },
+    say: (state) => {
+      watching = state;
+      relay(said());
     },
     close: () =>
       new Promise<void>((closed, failed) => {

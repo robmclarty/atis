@@ -31,13 +31,18 @@ const instrumentsOf = (map: MapJson, frame: Frame): Instruments => {
  * The map as the frame at `index` shows it: the one terrain under that
  * commit's weather and notices, its head that commit. The map itself for a
  * map of one change, an index it does not hold, or its last frame, which is
- * its own weather.
+ * its own weather. An older frame carries no approved block (D333
+ * (departures-of-head)): the run holds the range's head alone against the
+ * approved shape, so the departures are the last frame's, and a panel
+ * standing at an older commit lists none of another commit's: it reads as a
+ * map no shape was held against does.
  */
 export const frameMap = (map: MapJson, index: number | undefined): MapJson => {
   const frames = framesOf(map);
   const frame = index === undefined ? undefined : frames[index];
   if (frame === undefined || index === frames.length - 1) return map;
-  return { ...map, meta: { ...map.meta, head: frame.commit, instruments: instrumentsOf(map, frame) }, weather: frame.weather, notices: frame.notices };
+  const { approved: _approved, ...ground } = map;
+  return { ...ground, meta: { ...map.meta, head: frame.commit, instruments: instrumentsOf(map, frame) }, weather: frame.weather, notices: frame.notices };
 };
 
 /** The keys that step the scrubber: `,` back a commit and `.` on one, the frame-step keys of a video player. */

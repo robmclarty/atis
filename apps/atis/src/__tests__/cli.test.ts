@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { assertMap, assertReachAnswer } from 'core';
+import { assertApproved, assertMap, assertReachAnswer } from 'core';
 import type { MapJson, ReachAnswer } from 'core';
 import { afterAll, expect, test } from 'vitest';
 
@@ -843,4 +843,90 @@ test('atis reach without --json prints a short table for a person: a line a reac
       '',
     ].join('\n'),
   );
+}, 2 * MINUTE);
+
+test('atis approve keeps the shape of the map its flags draw under the git directory; a map built after carries no departure, and then one for the module a new file founds (D212 (approved-private))', () => {
+  const { repo, sha } = featureClone('approve');
+  const dir = temp('approve-maps');
+  const mapOf = (name: string, ...args: readonly string[]): { readonly map: MapJson; readonly stderr: string } => {
+    const out = join(dir, `${name}.json`);
+    const result = atis(['--repo', repo, '--out', out, ...args]);
+    expect(result.status, result.stderr).toBe(0);
+    return { map: mapAt(out), stderr: result.stderr };
+  };
+
+  // Nothing approved yet: a map says nothing of a shape, and there is none to show.
+  expect('approved' in mapOf('before').map).toBe(false);
+  const none = atis(['approve', '--show', '--repo', repo]);
+  expect([none.status, none.stdout, none.stderr]).toEqual([0, '', 'atis: no approved shape yet: run atis approve\n']);
+
+  // With no flag it approves the map a bare run draws: the head's change over the trunk.
+  const approved = atis(['approve', '--repo', repo]);
+  expect(approved.status, approved.stderr).toBe(0);
+  expect(approved.stdout).toMatch(new RegExp(`^approved the shape at ${sha('HEAD').slice(0, 7)} over ${sha('origin/main').slice(0, 7)}: \\d+ modules?, 0 outside packages, wrote \\.git/atis/approved\\.json\\n$`));
+  expect(approved.stderr).toBe('');
+  // Nothing landed in the working tree.
+  expect(git(repo, 'status', '--porcelain', '--untracked-files=all')).toBe('');
+
+  // --show prints the document as it is kept, with the moment the command stamped on it.
+  const shown = atis(['approve', '--show', '--repo', repo]);
+  expect(shown.status).toBe(0);
+  expect(shown.stdout).toBe(readFileSync(join(repo, '.git', 'atis', 'approved.json'), 'utf8'));
+  const kept = JSON.parse(shown.stdout) as { readonly approved_on: string };
+  expect(kept.approved_on).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+  const doc = assertApproved(kept);
+  expect([doc.approved_at, doc.over]).toEqual([sha('HEAD'), sha('origin/main')]);
+
+  // Approve, then no departures: the block is there and empty, and nothing is said beside the map.
+  const held = mapOf('held');
+  expect(held.map.approved).toEqual({ at: sha('HEAD'), departures: [] });
+  expect(held.stderr).toBe('');
+
+  // Add a file, then a departure for its module: first in the working tree, then committed.
+  write(repo, 'src/solids/prism.ts', "import { area } from '../shapes.js';\n\nexport const prism = (width: number, height: number, depth: number): number => area(width, height) * depth;\n");
+  const founded = [{ kind: 'module-added', target: 'src/solids', cell: 'directory:src/solids', why: 'a module the approved shape did not hold', now: 1 }];
+  const was = sha('HEAD');
+  const working = mapOf('working', '--working-tree');
+  expect(working.map.meta.head).toBe('working-tree');
+  expect(working.map.approved).toEqual({ at: was, departures: founded });
+  expect(working.stderr).toBe('');
+  git(repo, 'add', '.');
+  git(repo, 'commit', '--quiet', '-m', 'feat: measure a prism');
+  expect(mapOf('committed').map.approved).toEqual({ at: was, departures: founded });
+
+  // A map over another base still carries the block, and says which readings it left out.
+  const other = mapOf('other', '--last-commit');
+  expect(other.map.approved).toEqual({ at: was, departures: founded });
+  expect(other.stderr).toBe(`atis: the approved shape was cut over ${sha('origin/main').slice(0, 7)} and this map over ${was.slice(0, 7)}, so lines, fan out and interfaces with no barrel were not compared; run atis approve with this map's flags to compare them\n`);
+}, 2 * MINUTE);
+
+test('atis approve takes the flags a map is named by and is misuse in the same pairs; --show measures no map, so a flag that names one is misuse beside it (C4)', () => {
+  const { repo } = featureClone('approve-misuse');
+  for (const [args, reason] of [
+    [['--show', '--base', 'v1'], '--show prints the shape already approved and measures no map; drop --base'],
+    [['--show', '--working-tree', '--whole-repo'], 'drop --working-tree and --whole-repo'],
+    [['--base', 'v1', '--last-commit'], '--base, --last-commit and --last-tag each name the base'],
+    [['--whole-repo', '--working-tree'], '--whole-repo maps one commit with no change; drop --working-tree'],
+    // A shape is approved at one head, and kept in one place: a range and an --out are no flags of it.
+    [['--range', 'v1..HEAD'], "Unknown option '--range'"],
+    [['--out', 'shape.json'], "Unknown option '--out'"],
+    [['extra'], "Unexpected argument 'extra'"],
+  ] as const) {
+    const result = atis(['approve', '--repo', repo, ...args]);
+    expect(result.status, args.join(' ')).toBe(2);
+    expect(result.stdout).toBe('');
+    expect(result.stderr).toContain(reason);
+    expect(result.stderr).toContain('--help');
+  }
+  // A ref that names no commit is no misuse of the flags, and exits 2 in one line.
+  const nowhere = atis(['approve', '--repo', repo, '--base', 'nowhere']);
+  expect([nowhere.status, nowhere.stdout]).toEqual([2, '']);
+  expect(nowhere.stderr).toContain('--base nowhere names no commit');
+  // None of them approved anything.
+  expect(existsSync(join(repo, '.git', 'atis', 'approved.json'))).toBe(false);
+
+  const help = atis(['approve', '--help']);
+  expect(help.status).toBe(0);
+  expect(help.stdout).toContain('atis approve --show [--repo <path>]');
+  expect(help.stdout).toContain('--show          for atis approve');
 }, 2 * MINUTE);

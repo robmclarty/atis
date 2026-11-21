@@ -14,7 +14,7 @@
 
 import * as scene from 'scene';
 
-import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, NOTICE, PLANET, SKIN, SKY, SPACE, WALK, WEATHER } from './materials.js';
+import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, NOTICE, PANEL, SKIN, SKY, SPACE, WALK, WEATHER } from './materials.js';
 
 /** One section of the panel: the design doc's heading and the tokens its table names, in the table's order. */
 export type Section = { readonly title: string; readonly names: readonly string[] };
@@ -23,7 +23,6 @@ export type Section = { readonly title: string; readonly names: readonly string[
 const MATERIALS: Readonly<Record<string, Readonly<Record<string, unknown>>>> = {
   SKIN,
   SPACE,
-  PLANET,
   LIGHTING,
   SKY,
   BLOOM,
@@ -38,6 +37,7 @@ const MATERIALS: Readonly<Record<string, Readonly<Record<string, unknown>>>> = {
   MINIMAP: scene.MINIMAP,
   INTERIOR,
   WIRING: scene.WIRING_SPACING,
+  PANEL,
 };
 
 const fieldsOf = (object: string): readonly string[] => Object.keys(MATERIALS[object] ?? {}).map((field) => `${object}.${field}`);
@@ -182,7 +182,7 @@ export const SECTIONS: readonly Section[] = [
     title: "The legend inset and the practice map's balloons",
     names: ['LEGEND_ROW', 'LEGEND_SAMPLE_R', 'LEGEND_SLOT', 'LEGEND_FONT_SIZE', 'LEGEND_PAD', 'LEGEND_KEY_PITCH', 'CALLOUT_R', 'CALLOUT_REACH', 'CALLOUT_FONT_SIZE', 'CALLOUT_CLEARANCE'],
   },
-  { title: MATERIALS_TITLE, names: [...fieldsOf('SKIN'), ...fieldsOf('SPACE'), ...fieldsOf('PLANET'), ...fieldsOf('LIGHTING'), ...fieldsOf('SKY'), ...fieldsOf('BLOOM'), ...fieldsOf('WEATHER'), ...fieldsOf('NOTICE'), ...fieldsOf('RELIEF'), ...fieldsOf('LEVELS'), ...fieldsOf('CAMERA'), ...fieldsOf('CINEMA'), ...fieldsOf('HOVER'), ...fieldsOf('WALK'), ...fieldsOf('MINIMAP'), ...fieldsOf('INTERIOR'), ...fieldsOf('WIRING')] },
+  { title: MATERIALS_TITLE, names: [...fieldsOf('SKIN'), ...fieldsOf('SPACE'), ...fieldsOf('LIGHTING'), ...fieldsOf('SKY'), ...fieldsOf('BLOOM'), ...fieldsOf('WEATHER'), ...fieldsOf('NOTICE'), ...fieldsOf('RELIEF'), ...fieldsOf('LEVELS'), ...fieldsOf('CAMERA'), ...fieldsOf('CINEMA'), ...fieldsOf('HOVER'), ...fieldsOf('WALK'), ...fieldsOf('MINIMAP'), ...fieldsOf('INTERIOR'), ...fieldsOf('WIRING'), ...fieldsOf('PANEL')] },
   {
     title: 'Motion',
     names: [
@@ -362,12 +362,12 @@ export const createRegistry = (store?: Store): Registry => {
   };
 };
 
-/** Where the overrides live in the tab. */
-const KEY = 'atis.tokens';
+/** Where the overrides live in the tab: the key a test writes a tab's overrides under before the page loads. */
+export const STORE_KEY = 'atis.tokens';
 
 /** The tab's `sessionStorage` as a store, or none where the page has no storage. */
 export const sessionStore = (): Store | undefined => {
   if (!('sessionStorage' in globalThis)) return undefined;
   const storage = globalThis.sessionStorage;
-  return { read: () => storage.getItem(KEY), write: (text) => storage.setItem(KEY, text) };
+  return { read: () => storage.getItem(STORE_KEY), write: (text) => storage.setItem(STORE_KEY, text) };
 };

@@ -408,3 +408,125 @@ test('checks every frame as it checks the weather and the notices, over the one 
   expect(() => assertMap(withFrames(frame({ weather: two, unplaced: ['b.md', 'a.md'] })))).toThrow(/unplaced\[1\]: expected the paths sorted/);
   expect(() => assertMap({ ...minimalMap(), sequence: {} })).toThrow(/sequence\.frames/);
 });
+
+/** The minimal map with an approved block beside it (D210 (approved-block)); its one module's path is `src/foo/index.ts` and its cell's id `src/foo`. */
+function withApproved(approved: unknown): unknown {
+  return { ...minimalMap(), approved };
+}
+
+const MODULE = 'src/foo/index.ts';
+const CELL = 'src/foo';
+
+test('accepts a map with no approved block, one that keeps its shape, and one with every kind of departure (D210 (approved-block))', () => {
+  expect(assertMap(minimalMap())).not.toHaveProperty('approved');
+  const kept = withApproved({ at: 'a'.repeat(40), departures: [] });
+  expect(assertMap(kept)).toEqual(kept);
+  const departed = withApproved({
+    at: 'working-tree',
+    departures: [
+      { kind: 'dependency-added', target: 'kleur', why: 'a package the approved shape did not import' },
+      { kind: 'fan-out-up', target: MODULE, cell: CELL, why: 'it reaches more modules than approved', was: 2, now: 5 },
+      { kind: 'files-grown', target: MODULE, cell: CELL, why: 'it holds more files than approved', was: 3, now: 9 },
+      { kind: 'interface-widened', target: MODULE, cell: CELL, why: 'its interface exports more than approved', was: 1, now: 3, names: ['listSlots', 'resolveSlot'] },
+      { kind: 'lines-grown', target: MODULE, cell: CELL, why: 'it holds more lines than approved', was: 120, now: 480 },
+      { kind: 'module-added', target: MODULE, cell: CELL, why: 'a module the approved shape did not hold', now: 3 },
+      { kind: 'past-interface-up', target: MODULE, cell: CELL, why: 'more imports enter past its interface than approved', was: 0, now: 2 },
+      { kind: 'module-removed', target: 'src/gone', cell: 'directory:src/gone', why: 'a module the approved shape held', was: 4 },
+    ],
+  });
+  expect(assertMap(departed)).toEqual(departed);
+});
+
+/** A map of one workspace member at the repo's root, as the terrain lays it: a `package` cell and, for the loose files at its root, a `directory` cell with the same path. */
+function pairedMap(approved: unknown): unknown {
+  const map = minimalMap();
+  const [cell] = map.terrain.cells;
+  const [file] = map.terrain.organelles;
+  if (cell === undefined || file === undefined) throw new Error('the minimal map lost its module');
+  const loose = { ...file, id: 'build.ts', path: 'build.ts', cell: 'directory:.' };
+  const cells = [
+    { ...cell, id: 'directory:.', path: '.', kind: 'directory', organelles: ['build.ts'], parent: 'package:.' },
+    { ...cell, id: 'package:.', path: '.', kind: 'package' },
+  ];
+  return { ...map, terrain: { ...map.terrain, cells, organelles: [{ ...file, cell: 'package:.' }, loose] }, weather: { ...map.weather, reach: [{ path: MODULE, cell: 'package:.', hops: 0, via: [] }] }, approved };
+}
+
+/** The module at the repo's root grown in lines, as one of the two cells at that path tells it. */
+const grownAt = (cell: string): unknown => ({ kind: 'lines-grown', target: '.', cell, why: 'it holds more lines than approved', was: 10, now: 40 });
+
+test('accepts a departure of one kind for each of a package and the directory of loose files at its path, told apart by the cell, and one half of the pair removed while the other stays (D218 (departure-cell))', () => {
+  const both = pairedMap({ at: 'a'.repeat(40), departures: [grownAt('directory:.'), grownAt('package:.')] });
+  expect(assertMap(both)).toEqual(both);
+  // The directory's loose files moved away and the package kept the path: the removed half is named by the id it had.
+  const halved = minimalMap();
+  const [cell] = halved.terrain.cells;
+  const alone = { ...halved, terrain: { ...halved.terrain, cells: [{ ...cell, path: '.', kind: 'package' }] }, approved: { at: 'a'.repeat(40), departures: [{ kind: 'module-removed', target: '.', cell: 'directory:.', why: 'a module the approved shape held', was: 2 }] } };
+  expect(assertMap(alone)).toEqual(alone);
+
+  expect(() => assertMap(pairedMap({ at: 'a'.repeat(40), departures: [grownAt('package:.'), grownAt('directory:.')] }))).toThrow(/approved\.departures\[1\]: expected the departures sorted by target, then kind, then cell/);
+  expect(() => assertMap(pairedMap({ at: 'a'.repeat(40), departures: [grownAt('package:.'), grownAt('package:.')] }))).toThrow(/approved\.departures\[1\]: expected the departures sorted/);
+  expect(() => assertMap(pairedMap({ at: 'a'.repeat(40), departures: [{ kind: 'module-removed', target: '.', cell: 'directory:.', why: 'gone' }] }))).toThrow(/approved\.departures\[0\]\.cell: the head still holds a file of the cell "directory:\."/);
+});
+
+test("accepts a module told removed whose cell the terrain still holds once the map's change deleted its every file, and refuses it while the head holds one, its own or a held cell's (D334 (removed-off-head))", () => {
+  const removed = { at: 'a'.repeat(40), departures: [{ kind: 'module-removed', target: '.', cell: 'directory:.', why: 'a module the approved shape held', was: 1 }] };
+  const paired = pairedMap(removed) as MapJson;
+  // The change deleted the directory's one loose file: its cell keeps its place on the change's terrain (D32), and the head holds nothing of it.
+  const gone = { ...paired, weather: { ...paired.weather, changed: [changedEntry({ path: 'build.ts', kind: 'deleted', cell: 'directory:.', is_barrel: false })] } };
+  expect(assertMap(gone)).toEqual(gone);
+  // A change that only edited the file left it at the head, so the module is not gone.
+  const edited = { ...paired, weather: { ...paired.weather, changed: [changedEntry({ path: 'build.ts', kind: 'modified', cell: 'directory:.', is_barrel: false })] } };
+  expect(() => assertMap(edited)).toThrow(/approved\.departures\[0\]\.cell: the head still holds a file of the cell "directory:\."/);
+  // A package is held by a file of a cell it holds, though the change deleted its own: the package is no module removed.
+  const [inner] = paired.terrain.organelles;
+  if (inner === undefined) throw new Error('the paired map lost its file');
+  const hollow = {
+    ...paired,
+    weather: { ...paired.weather, changed: [changedEntry({ path: inner.path, kind: 'deleted', cell: 'package:.' })] },
+    approved: { at: 'a'.repeat(40), departures: [{ kind: 'module-removed', target: '.', cell: 'package:.', why: 'a module the approved shape held', was: 2 }] },
+  };
+  expect(() => assertMap(hollow)).toThrow(/approved\.departures\[0\]\.cell: the head still holds a file of the cell "package:\."/);
+  // And with the loose file deleted too, the head holds nothing of either.
+  const empty = { ...hollow, weather: { ...hollow.weather, changed: [changedEntry({ path: 'build.ts', kind: 'deleted', cell: 'directory:.', is_barrel: false }), changedEntry({ path: inner.path, kind: 'deleted', cell: 'package:.' })] } };
+  expect(assertMap(empty)).toEqual(empty);
+});
+
+test('rejects an approved block that is not one, a departure of no known kind, one naming a cell the terrain does not hold, one not at its target or a removed one the head still holds a file of, and a list out of order (D210 (approved-block))', () => {
+  const one = (departure: Record<string, unknown>): unknown => withApproved({ at: 'a'.repeat(40), departures: [{ kind: 'files-grown', target: MODULE, cell: CELL, why: 'it grew', ...departure }] });
+  const cases: readonly [unknown, RegExp][] = [
+    [withApproved('yes'), /approved: expected an object/],
+    [withApproved({ departures: [] }), /approved\.at: expected a string/],
+    [withApproved({ at: '', departures: [] }), /approved\.at: expected the head/],
+    [withApproved({ at: 'a'.repeat(40) }), /approved\.departures: expected an array/],
+    [withApproved({ at: 'a'.repeat(40), departures: ['files-grown'] }), /approved\.departures\[0\]: expected an object/],
+    [one({ kind: 'cycle-added' }), /approved\.departures\[0\]\.kind: expected one of module-added, module-removed/],
+    [one({ kind: undefined }), /approved\.departures\[0\]\.kind/],
+    [one({ target: 7 }), /approved\.departures\[0\]\.target: expected a string/],
+    [one({ target: '' }), /approved\.departures\[0\]\.target: expected a module path or a package name/],
+    [one({ kind: 'dependency-added', target: '', cell: undefined }), /approved\.departures\[0\]\.target: expected a module path or a package name/],
+    [one({ kind: 'dependency-added', target: 'kleur' }), /approved\.departures\[0\]\.cell: a new dependency is about no module/],
+    [one({ cell: undefined }), /approved\.departures\[0\]\.cell: expected a string/],
+    [one({ cell: 'src/gone' }), /approved\.departures\[0\]\.cell: unknown cell "src\/gone"/],
+    [one({ kind: 'module-added', cell: MODULE }), /approved\.departures\[0\]\.cell: unknown cell "src\/foo\/index\.ts"/],
+    [one({ target: 'src/foo' }), /approved\.departures\[0\]\.target: the cell "src\/foo" is not at "src\/foo"/],
+    [one({ kind: 'module-removed' }), /approved\.departures\[0\]\.cell: the head still holds a file of the cell "src\/foo"/],
+    [one({ kind: 'module-removed', target: 'src/gone', cell: undefined }), /approved\.departures\[0\]\.cell: expected a string/],
+    [one({ kind: 'module-removed', target: 'src/gone', cell: 'src/gone' }), /approved\.departures\[0\]\.cell: expected the id the module at "src\/gone" had/],
+    [one({ kind: 'module-removed', target: 'src/gone', cell: 'directory:src/other' }), /approved\.departures\[0\]\.cell: expected the id the module at "src\/gone" had/],
+    [one({ why: undefined }), /approved\.departures\[0\]\.why: expected a string/],
+    [one({ why: '' }), /approved\.departures\[0\]\.why: expected the reason in words/],
+    [one({ was: -1 }), /approved\.departures\[0\]\.was: expected a non-negative number/],
+    [one({ now: '9' }), /approved\.departures\[0\]\.now: expected a non-negative number/],
+    [one({ names: 'listSlots' }), /approved\.departures\[0\]\.names: expected an array/],
+    [one({ names: ['listSlots', 7] }), /approved\.departures\[0\]\.names\[1\]: expected a string/],
+  ];
+  for (const [map, error] of cases) expect(() => assertMap(map)).toThrow(error);
+
+  const grown = { kind: 'files-grown', target: MODULE, cell: CELL, why: 'it grew' };
+  const reaching = { kind: 'fan-out-up', target: MODULE, cell: CELL, why: 'it reaches further' };
+  const sorted = (...departures: readonly unknown[]): unknown => withApproved({ at: 'a'.repeat(40), departures });
+  expect(() => assertMap(sorted(reaching, grown))).not.toThrow();
+  expect(() => assertMap(sorted(grown, reaching))).toThrow(/approved\.departures\[1\]: expected the departures sorted by target, then kind/);
+  expect(() => assertMap(sorted(grown, grown))).toThrow(/approved\.departures\[1\]: expected the departures sorted/);
+  expect(() => assertMap(sorted({ kind: 'module-removed', target: 'src/gone', cell: 'folder:src/gone', why: 'gone' }, { kind: 'dependency-added', target: 'kleur', why: 'new' }))).toThrow(/approved\.departures\[1\]: expected the departures sorted/);
+});

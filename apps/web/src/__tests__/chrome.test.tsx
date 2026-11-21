@@ -106,6 +106,8 @@ test('a development build shows a toggle, and the panel and its code arrive only
   const toggle = find('[data-dev-toggle]');
   expect(host.querySelector('[data-dev-panel]')).toBeNull();
   expect(load).not.toHaveBeenCalled();
+  // The chrome's root passes the pointer through to the camera, so the button says it takes it: a mouse reaches it in a browser, where this DOM would let a click through either way.
+  expect(element('[data-dev-toggle]').style.pointerEvents).toBe('auto');
   await click(toggle);
   expect(load).toHaveBeenCalledTimes(1);
   expect(host.querySelector('[data-dev-panel]')).not.toBeNull();

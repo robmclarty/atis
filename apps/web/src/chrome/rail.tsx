@@ -14,9 +14,11 @@
  * notice on a shore file, or on a group, wears its numbered box at the end
  * of its group's header, in rank order (step 34, D148), since the shore is
  * chrome and the box is where the notice's leader would land. The rail
- * stands beneath the ranked list in the chrome's column. Its blocks take the
- * pointer themselves, never the world's picker (step 38): a file under it is
- * outlined in the ink at once, and its path is its title.
+ * stands last in the chrome's column, beneath the ranked list and the folder
+ * tree, under a header that folds it away (D278 (column-folds)), and scrolls
+ * with the column. Its blocks take the pointer themselves, never the world's
+ * picker (step 38): a file under it is outlined in the ink at once, and its
+ * path is its title.
  */
 
 import {
@@ -57,11 +59,13 @@ import type { CSSProperties, ReactElement } from 'react';
 import type { MapJson } from 'core';
 
 import { RAIL_WIDTH } from '../fit.js';
+import { revealGroup } from '../highlight.js';
 import { categoryHue, marksOnShore } from '../notices.js';
 import { screenType } from '../screen.js';
 import type { Marked } from '../notices.js';
 import type { Registry } from '../registry.js';
 import { NoticeBox } from './box.js';
+import { Fold, unfold, useFold } from './fold.js';
 import { BOLT } from './glyphs.js';
 import { useLive } from './live.js';
 
@@ -99,6 +103,15 @@ const LOOK = {
 };
 type Look = typeof LOOK;
 
+/** The fold the shore stands under, by name, and the name its header is written with. */
+const SHORE = 'shore';
+
+/** Bring a shore group's block into view, as a notice row on the shore does (D153), opening the shore first where it is folded away (D278 (column-folds)). */
+export const revealShore = (group: string): void => {
+  unfold(SHORE);
+  revealGroup(group);
+};
+
 /** The words a named file is written with: `+` before an added path, the old path before a renamed one (D40, D120). */
 const wordsOf = (file: ShoreFile): string => {
   if (file.change?.kind === 'added') return `+${file.path}`;
@@ -112,15 +125,17 @@ const fitted = (words: string, budget: number): string => (words.length <= budge
 /** What kind of mark a file wears. */
 const kindOf = (file: ShoreFile): string => file.change?.kind ?? (file.ghost === true ? 'ghost' : 'file');
 
-/** A mark's paint, as the world stains it: filled for an edit, an outline for a deletion, dashed for a rename, a dashed grey ring for a ghost, the base tissue's grey for any other file. */
-const paintOf = (file: ShoreFile, look: Look): CSSProperties => {
+/** A mark's paint by its kind, as the world stains it: filled for an edit, an outline for a deletion, dashed for a rename, a dashed grey ring for a ghost, the base tissue's grey for any other file. The folder tree paints its rows' marks with it, so one file wears one mark in both. */
+export const markPaint = (kind: string, look: Pick<Look, 'CHANGE_HUE' | 'CHROME_STROKE_WIDTH' | 'GHOST_STROKE' | 'ORGANELLE_FILL'>): CSSProperties => {
   const hairline = `${String(look.CHROME_STROKE_WIDTH)}px`;
-  if (file.ghost === true) return { border: `${hairline} dashed ${look.GHOST_STROKE}` };
-  if (file.change === undefined) return { background: look.ORGANELLE_FILL };
-  if (file.change.kind === 'deleted') return { border: `${hairline} solid ${look.CHANGE_HUE}` };
-  if (file.change.kind === 'renamed') return { border: `${hairline} dashed ${look.CHANGE_HUE}` };
+  if (kind === 'ghost') return { border: `${hairline} dashed ${look.GHOST_STROKE}` };
+  if (kind === 'file') return { background: look.ORGANELLE_FILL };
+  if (kind === 'deleted') return { border: `${hairline} solid ${look.CHANGE_HUE}` };
+  if (kind === 'renamed') return { border: `${hairline} dashed ${look.CHANGE_HUE}` };
   return { background: look.CHANGE_HUE };
 };
+
+const paintOf = (file: ShoreFile, look: Look): CSSProperties => markPaint(kindOf(file), look);
 
 const Storm = ({ storm, look }: { readonly storm: ShoreStorm; readonly look: Look }): ReactElement => (
   <span data-slot={storm.slot} data-change={storm.change ? 'true' : 'false'} style={{ display: 'inline-flex', alignItems: 'center', gap: 2, marginLeft: look.SHORE_BLOCK_GAP }}>
@@ -164,7 +179,13 @@ const Block = ({ block, look, marked, hue }: { readonly block: ShoreBlock; reado
       data-touched={block.touched || undefined}
       data-loud={block.loud || undefined}
       data-open={(opens && open) || undefined}
-      style={{ borderBottom: `${String(look.CHROME_STROKE_WIDTH)}px solid ${look.CHROME_RULE}`, outline: block.loud ? `${String(look.SECONDARY_BOX_WIDTH)}px solid ${look.CHROME_INK}` : undefined, outlineOffset: -look.SECONDARY_BOX_WIDTH }}
+      style={{
+        borderBottom: `${String(look.CHROME_STROKE_WIDTH)}px solid ${look.CHROME_RULE}`,
+        outline: block.loud ? `${String(look.SECONDARY_BOX_WIDTH)}px solid ${look.CHROME_INK}` : undefined,
+        outlineOffset: -look.SECONDARY_BOX_WIDTH,
+        // A block brought into view stops under the shore's header, which stays at the column's top, not behind it.
+        scrollMarginTop: look.SHORE_FONT_SIZE + 2 + 2 * look.SHORE_BLOCK_PAD + look.SHORE_LINE,
+      }}
     >
       <button
         type="button"
@@ -213,41 +234,23 @@ const Block = ({ block, look, marked, hue }: { readonly block: ShoreBlock; reado
   );
 };
 
-/** The shore rail for a map, read live from the registry; it fills what the column leaves it. */
+/** The shore rail for a map, read live from the registry: the last part of the column, as long as its blocks, under the header that folds it away. */
 export const Rail = ({ map, registry }: { readonly map: MapJson; readonly registry: Registry }): ReactElement => {
   useLive(registry);
   const look = registry.view(LOOK);
   const blocks = useMemo(() => shoreRail(map), [map]);
   const marks = useMemo(() => marksOnShore(map), [map]);
+  const [open, toggle] = useFold(SHORE);
   const hue = categoryHue(map.weather.checks.category, look);
   const files = blocks.reduce((total, block) => total + block.count, 0);
   return (
-    <section
-      data-rail
-      aria-label="shore"
-      style={{
-        flex: 1,
-        minHeight: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        background: look.CHROME_GROUND,
-        color: look.CHROME_INK,
-        fontFamily: look.FONT_FAMILY,
-        fontSize: look.SHORE_FONT_SIZE + 2,
-        pointerEvents: 'auto',
-      }}
-    >
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: `${String(look.SHORE_BLOCK_PAD)}px`, borderBottom: `${String(look.CHROME_STROKE_WIDTH)}px solid ${look.CHROME_RULE}` }}>
-        <span style={{ fontVariant: 'small-caps' }}>shore</span>
+    <section data-rail aria-label="shore" style={{ background: look.CHROME_GROUND, color: look.CHROME_INK, fontFamily: look.FONT_FAMILY, fontSize: look.SHORE_FONT_SIZE + 2, pointerEvents: 'auto' }}>
+      <Fold name={SHORE} open={open} onToggle={toggle} look={look}>
         <span style={{ color: look.CHROME_MUTED }}>
           {files} files · {blocks.length} groups
         </span>
-      </header>
-      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
-        {blocks.map((block) => (
-          <Block key={block.group} block={block} look={look} marked={marks.get(block.group) ?? []} hue={hue} />
-        ))}
-      </div>
+      </Fold>
+      {open && blocks.map((block) => <Block key={block.group} block={block} look={look} marked={marks.get(block.group) ?? []} hue={hue} />)}
     </section>
   );
 };

@@ -335,7 +335,9 @@ emphasis rings.
 The shore, every tracked file that is not terrain (D48), is chrome rather than
 land (D153). The still sheet draws it as `#shore`, a band of flat blocks under
 the world at its full width, wrapping in rows (D158); the world draws the same
-blocks in a scrolled rail at the tab's right edge. `shoreRail` in
+blocks in a rail at the foot of the tab's right-hand column, which scrolls as
+one with the notices and the folder tree above it, each under a header that
+folds it (D278 (column-folds)). `shoreRail` in
 `libs/scene/src/shore.ts` orders them for both: the groups the change touched
 first, then the rest, each by name and `other` last. A touched block opens on
 a grid of every file in its group (D160): one small flat square per file,
@@ -439,16 +441,17 @@ leader's dots.
 ## World materials
 
 The world's own look, beside the sheet's tokens above: the skin, the space
-ground it lies on, the planet the far zoom draws and its lights, the sky its sheen mirrors, the bloom, the weather's and the notices' light in
+ground it lies on, its lights, the sky its sheen mirrors, the bloom, the
+weather's and the notices' light in
 the world, the relief, the levels of detail and the camera, and the chrome the
-world alone draws (the hover, the walk's framing, the minimap, an opened cell's
-slide and its wiring plate). Each is a field of one object, defined once: the
-skin, the space ground, the planet, lights, sky, bloom, weather, notices, levels, camera,
-hover, walk and slide in `apps/web/src/materials.ts`, the relief in
+world alone draws (the hover and the selection, the walk's framing, the minimap,
+an opened cell's slide and its wiring plate, and the side panels). Each is a
+field of one object, defined once: the
+skin, the space ground, lights, sky, bloom, weather, notices, levels, camera,
+hover, walk, slide and side panels in `apps/web/src/materials.ts`, the relief in
 `libs/scene/src/heightfield.ts` (`RELIEF`), a still's framing in
 `libs/scene/src/cinema.ts` (`CINEMA`), the minimap's look in
-`libs/scene/src/minimap.ts` (`MINIMAP`), the planet's shape in
-`libs/scene/src/planet.ts` (`PLANET_LAYOUT`), the slide's layout in
+`libs/scene/src/minimap.ts` (`MINIMAP`), the slide's layout in
 `libs/scene/src/interior.ts` (`INTERIOR_LAYOUT`) and the wiring plate's spacing
 in `libs/scene/src/wiring.ts` (`WIRING_SPACING`). The world reads every one
 through the registry, `OBJECT.field` by name, so the dev panel moves it on the
@@ -465,8 +468,84 @@ threshold at 0, since only the emissive target blooms at all (D152). Nothing in
 the base tissue blooms. Its faint rim and each cell's own light are emissive
 only in the colour pass. The skin's light is graded by the levels of detail: at
 the far field the key light, the sky and most of the ambient are off, so only
-the change's stains and the notices light the dark (§5.6), and at the far zoom
-the planet stands over it all (D170).
+the change's stains and the notices light the dark (§5.6). No zoom reaches the
+far field while the levels rest parked, so the skin is lit at every one
+(D204 (parked-levels), D240 (far-zoom-lit)), and the far field's tokens below
+move nothing at rest. The planet that stood over the far zoom is deleted from
+the world with its tokens (D213 (planet-goes)); the scene keeps its pure
+model, `libs/scene/src/planet.ts`, for the rule that gives an outside package
+its hue in the inspector.
+
+### The one surface
+
+The world is one lit surface, read by clicking and not by zooming. This is
+the short of it, for reading the tables below; the whole record, with the
+contracts and every decision, is [one-surface.md](one-surface.md).
+
+**One level.** The tab opens on the lit map, framed on the ground the world
+draws at `WALK.share` of the free screen (D222 (terrain-frame)). The wheel
+only magnifies: nothing opens, cross-fades or changes mode by the zoom. The
+stars, the bands, every module's body and membrane, the reach, every file
+with all its weather, the bolts, the lines and the notices' boxes are drawn
+from the farthest zoom to the nearest.
+
+**Detail by size.** What the levels showed resolves by its size on the
+screen, each by a pixel threshold that is a live token, and each fading in
+(D206 (detail-by-size)). A file's functions are round granules inside it on
+the map, from `LEVELS.granuleFrom` to `LEVELS.granuleFull`. A file's name is
+written from `LEVELS.fileNameFrom`, under `LEVELS.fileNameBudget`, after every
+label that was asked for and clear of the chrome's blocks.
+
+**Selection.** A click selects a file, a module or nothing, and the camera
+stays where it is (D207 (click-selects)). The selection wears a steady ring
+in `HOVER.selectInk` at `HOVER.selectWidth`, the hover's own ink a pixel
+heavier, so it claims no state's hue (C11 (one-meaning-per-channel)). What a
+row of the chrome points at wears the hover's outline, steady and with no
+tag. Selecting a module opens it in place as the living slide while
+`LEVELS.openOnSelect` is above `0` (D205 (open-on-select)): the slide's
+tokens below and the motion's shape and float tokens move a selected module
+and nothing else.
+
+**The inspector.** A panel of the chrome at the right, laid over the map and
+claiming none of the free screen (D215 (inspector-overlay)),
+`PANEL.inspectorWidth` wide, from the foot of the HUD's grade row down. It
+says in words what the selection is, a module's facts, files, exports and
+wiring or a file's facts, diff, code and functions, and with nothing selected
+a reading of the map's structure. It is the brutalist material: one monospace
+face, hard edges, nothing that glows. A fact that was not measured is the
+dash and its reason in `CHROME_MUTED`, never a number.
+
+**The tree.** The right-hand column is one scroll of three parts, the
+notices, the folder tree and the shore rail, each under a header that stays
+at the top and folds its part (D278 (column-folds)). A tree row is
+`PANEL.treeRow` high and set in by `PANEL.treeIndent` a depth. The selected
+row is filled in `HOVER.selectInk` and the pointed row outlined in
+`HOVER.ink`, the inks the map rings the same thing in.
+
+**The granules.** One instanced mesh of round discs, sized by the nucleus's
+tokens as a slide's granules are (`NUCLEUS_FILL`, `NUCLEUS_PAD`,
+`NUCLEUS_MOST`) and inked in the file's fill darkened by
+`INTERIOR.granuleShade`, so moving any of the four moves the map's granules
+and a slide's together. A granule adds no light, and blots the bloom under
+its disc from the moment it has any size (D298 (granules-blot-bloom)). At
+rest its contrast on an unstained file is low, about 1.19 to 1. A map that
+read no functions draws none. One past 5,000 placed files, or with more
+functions than `LEVELS.granuleMost`, lays only those of the files in view
+that are drawn large enough to show one, once the view rests (D343
+(granules-in-view)).
+
+**What is parked.** The slide a cell opened as by the share of the screen it
+filled, the file's plate and the diff's sheet are still built and are reached
+by nothing at rest (D204 (parked-levels)). `LEVELS.autoOpen` set to `1`
+brings all three back as they were, with the far zoom still lit;
+`LEVELS.openOnSelect` set to `0` leaves a click that only rings and names.
+The slide's, the plate's and the sheet's tokens are still listed in the dev
+panel, and those a selected module's slide does not read move nothing until
+the switch is on.
+
+**What was measured before.** [The world's budget](#the-worlds-budget) was
+measured with the old levels and with the planet as the opening frame. Its
+tables are kept as measured and have not been taken again.
 
 ### The skin
 
@@ -511,59 +590,11 @@ SVG keeps its bands (the terraces above).
 | `SPACE.starSpacing` | `22` | layout units between the star grid's cells, each holding one star at most |
 | `SPACE.starDensity` | `0.3` | the share of the grid's cells that hold a star |
 | `SPACE.starSeed` | `1` | the seed the star field is drawn from: one seed, one sky (C3) |
+| `SPACE.starGap` | `20` | the least gap on the screen between two cells of the star grid, in pixels: where the view climbs until they would stand nearer, the grid is read coarser, a doubling at a time and cross-faded between, so on a wide field seen whole the stars thin and never pack into dust; at `0` the grid is read as laid at every zoom (D340 (stars-thin-far)) |
 | `SPACE.ruleInk` | `#8796a8` | the ink of the rule at each band's boundary |
 | `SPACE.ruleOpacity` | `0.16` | how much of the rule shows: just enough to register, so it sits back from every mark |
 | `SPACE.ruleWidth` | `1` | the rule's width in screen pixels |
 | `SPACE.labelOpacity` | `0.5` | how much of each band's label shows, written in `SPACE.ruleInk` just under its rule (D196 (band-labels)): more than the rule, so its few words read, and faded with the surface's layer |
-
-### The planet at the far zoom
-
-At the far zoom the world draws the repository as a dark planet (D170), on a
-canvas of its own over the world's, under the labels and above the rules: the
-field's space, then one star per outside package the terrain imports, then the
-sphere, its pole touching the ground where the view faces, so a tilt or a turn
-tips it as it tips the ground. Each file the far field lights is a light where
-it sits on the sphere, in the change hue or, for the primary's file, the
-category hue, breathing with its notice; the rest of the sphere is dark. A
-star is sized by how many terrain files import its package and lit by its
-health: `IFR_HUE` for an advisory at high or critical, `PLANET.amber` for a
-lower one, `CHANGE_HUE` where the change added or moved it, `PLANET.clean` with
-no finding, and `PLANET.unread` where no audit was read (C2). Each star's light
-catches the rim facing it. The planet is a share of the free screen's
-half-diagonal, `PLANET.farFill` at the opening frame, growing as a power of the
-zoom to `PLANET.handFill` where LOD1 is left (`LEVELS.gates`), so it covers the
-frame on both sides of LOD1's gate and the level's cross-fade hands it to the
-flat world with no blink. The stars hang in the screen's plane in planet radii
-and grow apart with it, so coming in they leave the frame. While the planet
-shows, the pointer hovers nothing on the ground beneath it. Nothing on it
-moves of its own, and under reduced motion the primary's light holds (C12).
-
-| Token | Value | Use |
-| --- | --- | --- |
-| `PLANET.farFill` | `0.3` | the planet's radius at the opening frame, as a share of the free screen's half-diagonal |
-| `PLANET.handFill` | `2.5` | its radius where LOD1 is left, past 1 so it reaches beyond the frame's corners, and the layout keeps its arc length round it there |
-| `PLANET.cap` | `1.2` | the widest angle, in radians, the layout wraps to from the pole while the planet is small: the rest of the sphere stays dark |
-| `PLANET.starNear` | `1.45` | the nearest a star hangs to the planet's centre at the opening frame, in planet radii |
-| `PLANET.starGap` | `0.3` | the least room between two stars, in planet radii |
-| `PLANET.starSeed` | `1` | the seed each star draws its place from beside its package's name, so a package keeps its place from map to map (C3) |
-| `PLANET.rimSpread` | `6` | how narrowly a star's light falls on the rim: a power over the cosine of the angle off it |
-| `PLANET.body` | `#05070a` | the planet's body at its limb: near-black |
-| `PLANET.bodyCore` | `#0e131a` | its body at its middle, a hair lighter, so the disc reads as a sphere |
-| `PLANET.lightMin` | `1.4` | the least radius of a light on the planet, in pixels; else the file's own disc on the sphere |
-| `PLANET.lightGlow` | `3.5` | a light's glow, as a multiple of its radius |
-| `PLANET.lightGain` | `0.9` | how bright a light is |
-| `PLANET.limbFade` | `0.2` | how much a light must face the camera to shine whole: past the limb it dims to nothing, so a light rounds the sphere rather than sitting on its edge |
-| `PLANET.glowShare` | `0.28` | the share of a light's or a star's brightness its glow starts at, past the edge of its crisp core |
-| `PLANET.starMin` | `1.2` | a star's radius in pixels for the package the fewest files import |
-| `PLANET.starMax` | `4.5` | a star's radius for the package the most files import, under a square root between |
-| `PLANET.starGlow` | `4` | a star's glow, as a multiple of its radius |
-| `PLANET.starGain` | `0.9` | how bright a star is |
-| `PLANET.amber` | `#e9a93c` | a star whose package an advisory names below high |
-| `PLANET.clean` | `#c6d0dc` | a star whose package the audit read and named in no advisory: a dim white |
-| `PLANET.unread` | `#58616c` | a star with no audit read: muted grey, no evidence rather than a clean one (C2) |
-| `PLANET.rimDepth` | `0.12` | how far in from the limb the stars' light reaches, as a share of the planet's radius |
-| `PLANET.rimHaze` | `0.02` | how far past the limb it hazes, as a share of the radius |
-| `PLANET.rimGain` | `0.7` | how bright the rim's light is |
 
 ### The lights
 
@@ -608,6 +639,8 @@ moves of its own, and under reduced motion the primary's light holds (C12).
 | `WEATHER.markBloom` | `1` | the share of a mark's light the bloom sees (the stains, rings, arcs, stitches and storms) |
 | `WEATHER.ribbonBloom` | `0.3` | the share of an exceptional edge's ribbon light the bloom sees |
 | `WEATHER.ribbonWave` | `24` | how long one wave of a swaying ribbon runs along its bow, in layout units (Q84 (oscillating-links)); with `RIBBON_SWAY_HZ` it sets how fast the wave travels, 7.2 units a second at rest |
+| `WEATHER.ribbonLeast` | `1.5` | the narrowest a ribbon is drawn on the screen, in pixels, so a line across a wide field still reads from far off (D341 (ribbon-width-on-screen)) |
+| `WEATHER.ribbonMost` | `4` | the widest it is drawn, in pixels, so a line seen close is a line and never a band; between the two a ribbon keeps its width on the ground, and its arrowhead is held to the same bounds |
 
 ### The notices' light
 
@@ -633,21 +666,41 @@ from the space ground's rules (D169, amending D151's terraces).
 
 ### The levels of detail and the camera
 
+The levels rest parked (D204 (parked-levels)): the world is one lit surface at
+every zoom, and nothing opens, cross-fades or changes mode as the wheel turns.
+The slide a cell opened as by the share of the screen it filled, the file's
+plate and the diff's sheet are all still built, and none is reached at these
+values. The planet is not among them: it is deleted (D213 (planet-goes)).
+One token brings the three back, for the old levels to be
+judged beside the one surface: `LEVELS.autoOpen` set to `1`, which reads the
+scene's own gates in place of `LEVELS.gates`. An override lasts for the tab's
+session, so reset the tokens, or open a fresh tab, before judging the one
+surface again. At rest a
+slide opens one way, by `LEVELS.openOnSelect`, and what the levels showed
+resolves by its size on the screen (D206 (detail-by-size)).
+
 | Token | Value | Use |
 | --- | --- | --- |
-| `LEVELS.gates` | `[{ enter: 1.7, exit: 1.45 }, { enter: 6, exit: 5 }, { enter: 24, exit: 20 }, { enter: 80, exit: 66 }]` | the zoom over the fit at which each of LOD1 to LOD4 is entered and left (§6); LOD1's where the spike left it, the deeper ones an order of magnitude apart, each left at about five sixths of where it is entered |
-| `LEVELS.cellOpen` | `0.6` | the share of the free screen, in whichever of its width and height it fills first, at which the cell under the view's centre opens as a slide, from the surface on, so the whole cell is seen as it opens (D165) |
-| `LEVELS.cellClose` | `0.45` | the share it holds open at while the view stays on it, and closes under as the view zooms out |
+| `LEVELS.gates` | `[{ enter: 0, exit: 0 }, { enter: 6, exit: 5 }, { enter: 1000000, exit: 1000000 }, { enter: 1000000, exit: 1000000 }]` | parked (D204 (parked-levels)): the zoom over the fit at which each of LOD1 to LOD4 is entered and left (§6). The first rests at 0 and 0, so no zoom the camera reaches reads the far field, which is the map unlit, and it is read with `LEVELS.autoOpen` on as with it off (D240 (far-zoom-lit)); the second draws nothing of its own, and past it the label budget is larger and every composite stands open; the last two rest past the camera's nearest zoom, 200, so the file's plate and the diff's sheet never open. Past the first, read only while `LEVELS.autoOpen` is `0`: above it the scene's own `LOD_GATES` are read in the other three's place, `[{"enter":6,"exit":5},{"enter":24,"exit":20},{"enter":80,"exit":66}]` |
+| `LEVELS.cellOpen` | `0.6` | parked with `LEVELS.autoOpen`, and read only while that is above `0`: the share of the free screen, in whichever of its width and height it fills first, at which the cell under the view's centre opens as a slide, from the surface on, so the whole cell is seen as it opens (D165) |
+| `LEVELS.cellClose` | `0.45` | the share a cell opened by zoom holds open at while the view stays on it, and closes under as the view zooms out |
 | `LEVELS.cellHome` | `0.15` | the share at which a closed cell's files are home: the surface draws them where they last floated down to `LEVELS.cellClose`, and eases them home between the two |
-| `LEVELS.compositeOpen` | `0.35` | past 5,000 files, the share of the free screen at which a package on the screen opens from one composite into its cells and files at the surface (step 66); below `LEVELS.cellOpen`, so a package is open before any cell in it can open as a slide |
+| `LEVELS.compositeOpen` | `0.35` | past 5,000 files, the share of the free screen at which a package on the screen opens from one composite into its cells and files at the surface (step 66); below `LEVELS.cellOpen`, so a package is open before any cell in it can open as a slide. Not parked: a rule for very large repos, which stays |
 | `LEVELS.compositeClose` | `0.25` | the share a package holds open at, and closes back into one composite under as the view zooms out; every package is open from LOD2 on |
+| `LEVELS.autoOpen` | `0` | the one switch for the old levels (D204 (parked-levels)): at `0` `LEVELS.gates` is read, no cell opens as a slide by the share of the screen it fills, and a click opens none; above `0` the scene's own `LOD_GATES` are read in place of `LEVELS.gates` past its first gate, so the file's plate and the diff's sheet come back at their zooms and the far zoom stays the lit surface (D240 (far-zoom-lit)), a cell opens at `LEVELS.cellOpen` as it did, a click opens one that would hold, and no slide opens by a selection |
+| `LEVELS.openOnSelect` | `1` | above `0`, selecting a module opens it as the living slide in place, at any zoom, and clearing the selection closes it (D205 (open-on-select)); at `0`, and while `LEVELS.autoOpen` is above `0`, a selection is only ringed and named. Zoom alone opens and closes nothing either way |
+| `LEVELS.fileNameFrom` | `18` | the radius on the screen, in pixels, from which a file's name is written unasked, where it clears every label asked for, under the labels' collision rule and one budget at every zoom, `LEVELS.fileNameBudget` (D206 (detail-by-size), D233 (asked-before-sized), D235 (names-one-budget)), and clear of the chrome's blocks (D246 (names-off-chrome)); set very high, a name is written only when asked for, and at `0` every file is named at every zoom. A view moved by hand stands at the file under its centre, and the breadcrumb names it, from the same radius (D230 (file-stop-by-size)) |
+| `LEVELS.fileNameBudget` | `80` | the most names written unasked at once, at any zoom, a noticed file's among them (D245 (name-budget-token)). It rests at the scene's label budget for its deepest level, where the collision rule is what caps the names, not the count (D235 (names-one-budget)); lower, the files that matter most keep theirs, a noticed one first, then a changed one, then by reach and by nearness to the view's centre; at `0` no name is written unasked, and a view moved by hand still stands at a file from `LEVELS.fileNameFrom`, which setting that one very high would stop |
+| `LEVELS.granuleFrom` | `1.5` | the radius on the screen, in pixels, at which a function's granule starts to show inside its file on the map (D206 (detail-by-size)); below it the granule is not drawn |
+| `LEVELS.granuleFull` | `4` | the radius at which it shows whole, faded in between the two |
+| `LEVELS.granuleMost` | `12000` | the most granules laid at once. A map with no more functions than this, none of whose packages stands as one body, lays them all as it opens; any other lays only those of the files in view that are drawn large enough to show one, once the view rests, whole files in path order up to this many, and the canvas counts the files left (D343 (granules-in-view)). Read when the map is laid |
 | `CAMERA.smooth` | `0.1` | how long, in seconds, the camera settles on an input: a wheel's steps read as one continuous zoom, and nothing coasts once the pointer stops; reduced motion settles at once |
 | `CAMERA.dragSmooth` | `0.05` | the shorter settle a drag takes |
 | `CINEMA.share` | `0.7` | in a still for a pull request's comment, the minimap's flat still the comment posts (D174, D175) and the world's `?cinema` page alike, the share of the picture the box round the change's notices and changed files on the terrain fills, in whichever of its width and height it fills first; no chrome stands beside it |
-| `CINEMA.farthest` | `2` | the farthest zoom over the fit the still stands at, just past the surface's gate, so a change spread over the whole field is never drawn as the far zoom's planet; a box too wide for it is centred and cropped |
+| `CINEMA.farthest` | `2` | the farthest zoom over the fit the still stands at, just past the scene's own gate for the surface, so a change spread over the whole field is never drawn as the far field; a box too wide for it is centred and cropped |
 | `CINEMA.nearest` | `3` | the nearest it stands at, well short of the cells' level, so a change of one small file is framed with its cell and its neighbours round it rather than as a file's plate |
 
-### The hover and the walk
+### The hover, the selection and the walk
 
 | Token | Value | Use |
 | --- | --- | --- |
@@ -655,8 +708,13 @@ from the space ground's rules (D169, amending D151's terraces).
 | `HOVER.width` | `1.5` | the outline's width, in pixels |
 | `HOVER.slop` | `4` | how far past its edge, in pixels, a file answers the pointer |
 | `HOVER.tagGap` | `14` | how far right of and below the pointer the hover's tag stands, in pixels |
-| `WALK.share` | `0.8` | the share of the free screen a stop the camera flies to fills, in whichever of its width and height it fills first |
+| `HOVER.selectInk` | `#e6edf3` | the ink of the steady ring round what a click selected, a file or a module (D207 (click-selects)): the hover's own ink, so it claims no state's hue; flat and never blooming |
+| `HOVER.selectWidth` | `2.5` | the ring's width, in pixels: a pixel heavier than the hover's outline, so the selection reads under a hover and apart from one |
+| `HOVER.clickSlop` | `4` | how far, in pixels, a press may move and still be a click, not a drag |
+| `HOVER.clickMs` | `400` | how long, in milliseconds, a press may last and still be a click |
+| `WALK.share` | `0.8` | the share of the free screen a stop the camera flies to fills, in whichever of its width and height it fills first; the tab opens with the ground the world draws filling the same share, where the walk flies for the field (D222 (terrain-frame)) |
 | `WALK.fileContext` | `6` | how many of a file's radii of ground a file stop is framed with |
+| `WALK.fieldZoom` | `1.7` | how many times the zoom the field is framed at a view that came to rest may stand and still be at the field, whatever lies under its centre, so the breadcrumb reads `field` and Enter walks in to a module (D219 (field-by-zoom)). The field is framed on the ground at `WALK.share`, and at the fit while `LEVELS.autoOpen` is above `0` (D223 (field-over-frame)); it rests at the zoom the far field's level gave way at before it was parked |
 
 ### The minimap
 
@@ -716,6 +774,31 @@ fingerprint is 480 by 300 with an 8-pixel margin (`FINGERPRINT`).
 | `WIRING.nodeGap` | `10` | the gap between two files in a column |
 | `WIRING.layerGap` | `36` | the gap between two columns, importers left of importees |
 | `WIRING.framePad` | `8` | the pad inside a home's frame and round the plate |
+
+### The side panels: the inspector and the tree
+
+The chrome's two panels beside the map (D208 (side-panels)): the inspector,
+laid over the map beside the notice column, and the folder tree in that column.
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `PANEL.inspectorWidth` | `420` | the inspector's width, in pixels |
+| `PANEL.codeSize` | `11` | the type size its code and its diff are set at, in pixels |
+| `PANEL.codeLeading` | `1.45` | the leading of a line of its code and its diff, a share of `PANEL.codeSize` |
+| `PANEL.readingRows` | `5` | the most rows each ranked list of its map view shows; the outside packages are listed whole (D252 (packages-whole)) |
+| `PANEL.functionsShare` | `40%` | the most of the panel's height a file's functions take beneath its tab before they scroll, as CSS writes a length (D264 (functions-beneath)) |
+| `PANEL.amber` | `#e9a93c` | the mark of an outside package a lesser advisory names, the amber its star wore on the planet (D170) |
+| `PANEL.treeRow` | `16` | the height of one row of the folder tree, in pixels |
+| `PANEL.treeIndent` | `10` | how far each depth of the tree is set in from the one above, in pixels |
+
+Four looks of the panels are still baked, each a constant where it is drawn
+and not yet a token: the step a focused sheet of code scrolls by on an arrow
+key, 40 pixels (`SCROLL_STEP` in `apps/web/src/chrome/inspector.tsx`); the
+width of the edge that marks a changed line, 2 pixels (`EDGE` in
+`apps/web/src/chrome/code.tsx`); the thin `map` tab's place, half way down
+the column's edge, with its padding; and the flat buttons' padding. The
+tree's scroll margin of two rows and its header's stacking order are
+placement, not looks.
 
 ## Motion
 
@@ -1009,12 +1092,12 @@ purpose, not by omission:
   stars' plane, 0.3 above the level field and eight times the layout's longer
   side across (`STAR_LIFT`, `STAR_REACH` in `apps/web/src/world/space.ts`):
   geometry the seed and the tokens above draw on, not a look;
-- the planet's placing of its stars (`STAR_MARGIN`, the share of the free
-  screen a star may reach so its glow stays on it, and `STAR_TRIES`, the places
-  one draws before it takes the clearest, in `libs/scene/src/planet.ts`), the
-  light the least-imported package still casts on the rim (`RIM_FLOOR`), and the
-  samples round the rim it is laid at (`RIM_SAMPLES` in
-  `apps/web/src/world/planet.ts`): placement and resolution, not a look;
+- how a granule is drawn on the map (`apps/web/src/world/nuclei.ts`): the 12
+  segments of its disc (`SEGMENTS`), its lift above the skin (`LIFT`, 0.95,
+  which only keeps it clear of the one mesh that writes depth) and its place
+  in the draw order, after the files and the marks and before the bolts
+  (`RENDER_ORDER`, 2.5; D295 (granules-over-marks)): resolution and order,
+  not a look;
 - how a swaying ribbon is laid (`apps/web/src/world/ribbons.ts`): the pieces it
   is cut into, 2 units or less (`SWAY_PIECE`), and the stretch its sway eases
   in and out over at each end, 12 units (`SWAY_EASE`), both laid into the
@@ -1171,6 +1254,18 @@ The verdict leaves five rulings for the refine before wave 2:
   placed, so the one notice that breathes has no light, in the world or the SVG.
 
 ## The world's budget
+
+Every table in this section was measured before the world became one surface,
+with the planet as the opening frame and the old levels live. `idle` is ten
+seconds of the planet over an unlit far field, and the sweep runs from that
+far field through the surface until a cell opens by its share of the screen.
+The tab does none of that now ([the one surface](#the-one-surface)): it opens
+on the lit map, a sweep opens nothing, and a frame at rest also lays names by
+size, granules where a map carries functions, those in view alone past 5,000 files,
+and two panels of chrome. None of it has been measured, and the script was
+not run in the session that built it. The tables are kept as they were
+measured: they hold for the world as it was on their dates, and are the
+nearest reading there is for the world as it is.
 
 C14 holds the world to 60 fps at 5,000 files and to a first frame about 2 s after
 the map arrives, and to 30 fps at 20,000 files with composites; the frame rates

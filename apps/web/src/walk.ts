@@ -10,7 +10,15 @@
  * group's block in the rail when the shore holds it (D153). When the reviewer
  * moves the camera by hand, the stop is read back off the view: the field
  * from the far field, and from the surface on, the cell under the view's
- * centre, or the file there at the file's level.
+ * centre, or the file there. Under the old levels a file is the stop from the
+ * file's level on. The one surface never reaches that level, so there the
+ * caller says how large a file must be drawn to be stood at, and a file under
+ * the centre is the stop once it is that large (D230 (file-stop-by-size)).
+ * The walk also says where
+ * the ground the world draws lies on the layout, the box round every cell's
+ * skin and every placed file: the layout holds the shore's strip above its
+ * first band too, which the world never draws, so the tab opens framed on
+ * the ground and not on the layout (D222 (terrain-frame)).
  *
  * Pure but for `ownsKey`, which reads the focused element, so a test walks a
  * fixture's own cells.
@@ -39,12 +47,19 @@ export type Walk = {
   readonly crumbs: (stop: Stop) => readonly string[];
   /** What a stop frames: the layout for the field, a cell's skin, and a file with `context` times its radius round it. */
   readonly box: (stop: Stop, context: number) => Box | undefined;
+  /** The ground the world draws: the box round every cell's skin and every placed file, the shore's strip left out; none on a map that lays nothing out (D222 (terrain-frame)). */
+  readonly ground: () => Box | undefined;
   readonly ascend: (stop: Stop) => Stop | undefined;
   /** Into the child of a stop under a layout point, else the child nearest it. */
   readonly descend: (stop: Stop, toward: Point) => Stop | undefined;
   readonly sibling: (stop: Stop, direction: Direction) => Stop | undefined;
-  /** The stop a view shows: what lies under its centre at its level of detail. */
-  readonly stopAt: (centre: Point, lod: Lod) => Stop;
+  /**
+   * The stop a view shows: what lies under its centre at its level of detail.
+   * A file there is the stop from the file's level on, or, given `least`, the
+   * least radius in layout units a file is stood at, once the file is that
+   * large, whatever the level (D230 (file-stop-by-size)); under it, its cell.
+   */
+  readonly stopAt: (centre: Point, lod: Lod, least?: number) => Stop;
   /** Where a key takes the walk from a stop, the view centred on `centre`; none for a key the walk does not take or a way that leads nowhere. */
   readonly key: (stop: Stop, key: string, centre: Point) => Stop | undefined;
 };
@@ -54,6 +69,9 @@ const STEPS: Readonly<Record<string, Direction>> = { ArrowLeft: 'left', ArrowRig
 /** Each direction on the layout, y down as the screen's is when the view looks north. */
 const HEADINGS: Readonly<Record<Direction, Point>> = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] };
 
+/** The level of detail a file is stood at from, under the old levels (§6). */
+const FILE_LOD = 3;
+
 /** How much a sibling off the arrow's line counts against it beside how far along the line it lies. */
 const OFF_LINE = 2;
 
@@ -62,6 +80,10 @@ function byPath(a: string, b: string): number {
 }
 
 const centreOf = (box: Box): Point => [(box.x0 + box.x1) / 2, (box.y0 + box.y1) / 2];
+
+/** The box round some boxes; none round none. */
+const round = (boxes: readonly Box[]): Box | undefined =>
+  boxes.length === 0 ? undefined : { x0: Math.min(...boxes.map((each) => each.x0)), y0: Math.min(...boxes.map((each) => each.y0)), x1: Math.max(...boxes.map((each) => each.x1)), y1: Math.max(...boxes.map((each) => each.y1)) };
 
 const same = (a: Stop, b: Stop): boolean => (a.kind === 'field' ? b.kind === 'field' : a.kind === 'cell' ? b.kind === 'cell' && b.cell === a.cell : b.kind === 'organelle' && b.path === a.path);
 
@@ -109,6 +131,15 @@ export const createWalk = (map: MapJson): Walk => {
     if (file === undefined) return undefined;
     const reach = file.r * context;
     return { x0: file.x - reach, y0: file.y - reach, x1: file.x + reach, y1: file.y + reach };
+  };
+
+  // The ground is one for the map, so it is measured once, the first time it is asked for.
+  let drawn: { readonly box: Box | undefined } | undefined;
+  const ground = (): Box | undefined => {
+    drawn ??= {
+      box: round([...[...cells.keys()].flatMap((cell) => cellBox(cell) ?? []), ...[...files.values()].map((file) => ({ x0: file.x - file.r, y0: file.y - file.r, x1: file.x + file.r, y1: file.y + file.r }))]),
+    };
+    return drawn.box;
   };
 
   /** Where a stop stands on the layout, for the arrows' bearings. */
@@ -187,12 +218,13 @@ export const createWalk = (map: MapJson): Walk => {
       .toSorted((a, b) => a.score - b.score || byPath(idOf(a.stop), idOf(b.stop)))[0]?.stop;
   };
 
-  const stopAt = (point: Point, lod: Lod): Stop => {
+  const stopAt = (point: Point, lod: Lod, least?: number): Stop => {
     if (lod === 0) return FIELD;
     const pick = picker.pick(point, lod, 0);
     if (pick === undefined) return FIELD;
     if (pick.kind === 'membrane') return cellStop(pick.cell);
-    return lod >= 3 ? (fileStop(pick.path) ?? cellStop(pick.cell)) : cellStop(pick.cell);
+    const stood = least === undefined ? lod >= FILE_LOD : pick.r >= least;
+    return stood ? (fileStop(pick.path) ?? cellStop(pick.cell)) : cellStop(pick.cell);
   };
 
   /** A cell's name in the breadcrumb: its path below the cell that holds it, or its whole path at the top. */
@@ -223,7 +255,7 @@ export const createWalk = (map: MapJson): Walk => {
     return undefined;
   };
 
-  return { crumbs, box, ascend, descend, sibling, stopAt, key };
+  return { crumbs, box, ground, ascend, descend, sibling, stopAt, key };
 };
 
 /** Where a notice's row takes the reviewer, by where its target is drawn (D148): its file, the file a test's stitch sits on, its cell, or its group's block; none for an unplaced notice. */

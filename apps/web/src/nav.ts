@@ -14,7 +14,12 @@
  * same way, and a map a watch pushed (D106), whose weather the world
  * cross-fades in over the ground it shows, or whose new ground it names the
  * framing to draw afresh at, and a target `atis mcp` asked the tab to show,
- * which the world flies to and lights (D178). Neither imports the
+ * which the world flies to and lights (D178). It holds the selection as
+ * well, the one module or file a click on the map or a row in the chrome
+ * chose, and what is pointed at, the thing under the pointer on the map or
+ * under it in a row (D209 (selection-line)): either side sets them, both hear
+ * them, and the line keeps them itself, so the chrome's panels select and
+ * point with no world drawn. Neither imports the
  * other: `main.ts` hands both the same line, and an ask made before the world
  * is drawn, or with no world at all, as in a DOM test, goes nowhere. Pure, so
  * a test reads it straight.
@@ -30,6 +35,31 @@ import { FIELD } from './walk.js';
 import type { Stop } from './walk.js';
 import type { Framing } from './watch.js';
 
+/** What is selected (D209 (selection-line)): a stop that is not the field, so a module, by its cell, or a file, by its path and the cell that holds it. */
+export type Selected = Exclude<Stop, { readonly kind: 'field' }>;
+
+/** Whether a selection also flies the camera to what it selects, or leaves the view where it stands. */
+export type Move = 'fly' | 'stay';
+
+/** Which side points: the world, at what lies under the pointer on the map, or the chrome, at what a row under the pointer names. */
+export type PointFrom = 'world' | 'chrome';
+
+/** What is pointed at: a target, a file's path or a cell's id as notices and the hover write them, and the side that points at it. */
+export type Pointed = { readonly target: string; readonly from: PointFrom };
+
+/** A selection's target: the file's path or the module's cell id, as notices and the hover write them. */
+export const targetOf = (selected: Selected): string => (selected.kind === 'cell' ? selected.cell : selected.path);
+
+/** Whether two selections name the same thing, however each was written down. */
+const alike = (a: Selected | undefined, b: Selected | undefined): boolean => a === b || (a !== undefined && b !== undefined && a.kind === b.kind && a.cell === b.cell && targetOf(a) === targetOf(b));
+
+/** The selection a target names in a map: the file with that path, else the module with that cell id; none for a target the map's terrain holds neither of, a shore file's among them. */
+export const selectedOf = (map: MapJson, target: string): Selected | undefined => {
+  const file = map.terrain.organelles.find((each) => each.id === target);
+  if (file !== undefined) return { kind: 'organelle', path: file.id, cell: file.cell };
+  return map.terrain.cells.some((cell) => cell.id === target) ? { kind: 'cell', cell: target } : undefined;
+};
+
 /** What the world does when the chrome asks: centre the view on a layout point, fly to a stop, spread or gather the open cell's exploded view, draw or take away its wiring, or write the words of the target the pointer is over in the chrome, or none. */
 export type Steering = {
   readonly lookAt: (point: Point) => void;
@@ -43,6 +73,10 @@ export type Steering = {
   readonly swap?: (map: MapJson) => Framing | undefined;
   /** Fly to what an agent named over `atis mcp`, and light it (D178). */
   readonly highlight?: (highlight: Highlight) => void;
+  /** Take the selection, or none once it is cleared: ring it and keep its name written, and fly to it when the move is `fly` (D209 (selection-line)). */
+  readonly select?: (selected: Selected | undefined, move: Move) => void;
+  /** Ring and name what a row in the chrome points at, or nothing once the chrome points at none (D209 (selection-line)). */
+  readonly point?: (target: string | undefined) => void;
 };
 
 export type Nav = {
@@ -58,7 +92,26 @@ export type Nav = {
   readonly opened: () => Opened | undefined;
   /** The world opens a cell, spreads or gathers its view, draws or takes away its wiring, or closes it. */
   readonly open: (opened: Opened | undefined) => void;
-  /** Hear the outline, the stop or the open cell move. */
+  /** The selection, a module or a file; none until something is selected and once it is cleared. The same value until it moves, so React reads it as a snapshot. */
+  readonly selected: () => Selected | undefined;
+  /**
+   * Select a module or a file, or clear the selection with none, from either
+   * side (D209 (selection-line)). A selection that moved is kept and heard,
+   * and the world is asked to take it; one that did not move is heard by
+   * nobody, and the world is asked again only to fly to it.
+   */
+  readonly select: (next: Selected | undefined, move: Move) => void;
+  /** What is pointed at, and from which side; none while nothing is. The same value until it moves. */
+  readonly pointed: () => Pointed | undefined;
+  /**
+   * Point at a target from one side, or let go of it with none (D209
+   * (selection-line)). Either side's pointing takes the other's place, and a
+   * side lets go only of what it pointed at itself. A pointing that moved is
+   * heard, and the world is asked to ring what the chrome now points at, or
+   * nothing; its own pointing it is never asked back.
+   */
+  readonly point: (target: string | undefined, from: PointFrom) => void;
+  /** Hear the outline, the stop, the open cell, the selection or the pointing move. */
   readonly subscribe: (listener: () => void) => () => void;
   /** Ask the world to centre the view on a layout point. */
   readonly lookAt: (point: Point) => void;
@@ -105,6 +158,10 @@ export const createNav = (): Nav => {
   let steering: Steering | undefined;
   let frame: number | undefined;
   let overlay: OverlayAsk;
+  let selected: Selected | undefined;
+  let pointed: Pointed | undefined;
+  /** What the chrome points at, which is all of the pointing the world is asked to draw. */
+  const fromChrome = (): string | undefined => (pointed?.from === 'chrome' ? pointed.target : undefined);
   const tell = (): void => listeners.forEach((listener) => listener());
   return {
     outline: () => outline,
@@ -124,6 +181,25 @@ export const createNav = (): Nav => {
       if (JSON.stringify(next) === JSON.stringify(opened)) return;
       opened = next;
       tell();
+    },
+    selected: () => selected,
+    select: (next, move) => {
+      const moved = !alike(next, selected);
+      if (moved) {
+        selected = next;
+        tell();
+      }
+      if (moved || (move === 'fly' && next !== undefined)) steering?.select?.(next, move);
+    },
+    pointed: () => pointed,
+    point: (target, from) => {
+      // A side lets go only of what it pointed at, and pointing again at what it points at moves nothing.
+      if (target === undefined ? pointed?.from !== from : pointed?.target === target && pointed.from === from) return;
+      const was = fromChrome();
+      pointed = target === undefined ? undefined : { target, from };
+      tell();
+      const now = fromChrome();
+      if (now !== was) steering?.point?.(now);
     },
     subscribe: (listener) => {
       listeners.add(listener);

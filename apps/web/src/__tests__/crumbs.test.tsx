@@ -12,7 +12,7 @@ import { CHROME_INK } from 'scene';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 
 import { Chrome, Crumbs } from '../chrome/index.js';
-import { createNav } from '../nav.js';
+import { createNav, selectedOf } from '../nav.js';
 import { createRegistry } from '../registry.js';
 import { FIELD } from '../walk.js';
 import type { Stop } from '../walk.js';
@@ -90,6 +90,61 @@ test('the breadcrumb reads the stop down from the field, the stop it stands at i
   expect(element('[data-crumb="0"]').style.color).toBe('');
 });
 
+test("while something is selected the breadcrumb reads the selection in the stop's place, the walk's stop again once it is cleared, and a selection the map shown does not hold as none (D207 (click-selects))", async () => {
+  const nav = createNav();
+  await act(async () => root.render(<Crumbs map={DEMO} registry={createRegistry()} nav={nav} />));
+  expect(element('[data-crumbs]').dataset['crumbsOf']).toBe('walk');
+  // A click moves no camera, so the stop stays the field and the line reads what was selected.
+  act(() => nav.select(selectedOf(DEMO, 'folder:libs/core/src/pm'), 'stay'));
+  expect(nav.stop()).toEqual(FIELD);
+  expect(element('[data-crumbs]').textContent).toBe('field › libs/core › src/pm');
+  expect(element('[data-crumbs]').dataset['crumbs']).toBe('cell');
+  expect(element('[data-crumbs]').dataset['crumbsOf']).toBe('selection');
+  // A file, the added one marked as the walk marks it; the selection is read over a stop the walk has since settled on.
+  act(() => nav.select(selectedOf(DEMO, 'libs/core/src/pm/tools.ts'), 'stay'));
+  act(() => nav.settle({ kind: 'cell', cell: 'package:apps/cli' }));
+  expect(element('[data-crumbs]').textContent).toBe('field › libs/core › src/pm › +tools.ts');
+  expect(element('[data-crumbs]').dataset['crumbs']).toBe('organelle');
+  expect(element('[data-crumb="3"]').style.color).toBe(rgb(CHROME_INK));
+  // A file selected inside a package's slide is the same file wherever it was picked: the line reads it by its target.
+  act(() => nav.select({ kind: 'organelle', path: 'apps/cli/src/doctor.ts', cell: 'package:apps/cli' }, 'stay'));
+  expect(element('[data-crumbs]').textContent).toBe('field › apps/cli › src/doctor.ts › doctor.ts');
+  // Cleared, the walk's stop shows again.
+  act(() => nav.select(undefined, 'stay'));
+  expect(element('[data-crumbs]').textContent).toBe('field › apps/cli');
+  expect(element('[data-crumbs]').dataset['crumbsOf']).toBe('walk');
+  // A selection the map shown holds neither a file nor a module for reads as none.
+  act(() => nav.select({ kind: 'cell', cell: 'folder:gone' }, 'stay'));
+  expect(element('[data-crumbs]').textContent).toBe('field › apps/cli');
+  expect(element('[data-crumbs]').dataset['crumbsOf']).toBe('walk');
+});
+
+test("the HUD's reach opens on the selected module, on the cell the world has open while a file or nothing is selected, and on the whole reach with neither (D232 (reach-by-module))", async () => {
+  const nav = createNav();
+  await act(async () => root.render(<Chrome state={{ status: 'ready', url: '/map.json', map: DEMO }} registry={createRegistry()} nav={nav} dev={false} />));
+  await click('[data-block="reach"]');
+  const headings = (): readonly (string | null)[] => [...host.querySelectorAll('[data-parts="reach"] [data-part] h4')].map((heading) => heading.textContent);
+  const whole = headings();
+  const pm = ['listSlots · 1 file', 'resolveSlot · 2 files', 'resolveTool · 1 file'];
+  expect(whole).not.toEqual(pm);
+  // A selected module is what the reach opens on, with no slide open: one the token keeps shut, or one whose slide shows no files.
+  await act(async () => nav.select(selectedOf(DEMO, 'folder:libs/core/src/pm'), 'stay'));
+  expect(headings()).toEqual(pm);
+  // A selected file names no module, so the reach falls back to the open cell: the slide the file floats on.
+  await act(async () => nav.open({ cell: 'folder:libs/core/src/pm', exploded: false, wired: false }));
+  await act(async () => nav.select(selectedOf(DEMO, 'libs/core/src/pm/tools.ts'), 'stay'));
+  expect(headings()).toEqual(pm);
+  // The file selected on the map, where no slide is open, leaves the reach whole; so does nothing selected.
+  await act(async () => nav.open(undefined));
+  expect(headings()).toEqual(whole);
+  await act(async () => nav.select(undefined, 'stay'));
+  expect(headings()).toEqual(whole);
+  // The selected module is read before the open cell where they differ.
+  await act(async () => nav.open({ cell: 'folder:libs/core/src/pm', exploded: false, wired: false }));
+  await act(async () => nav.select(selectedOf(DEMO, 'package:apps/cli'), 'stay'));
+  expect(headings()).not.toEqual(pm);
+});
+
 test('while a cell is open the breadcrumb ends in a button that asks the world to explode its view, or gather it (step 40)', async () => {
   const nav = createNav();
   const explode = vi.fn();
@@ -142,22 +197,27 @@ test("where the change's wiring reaches the open cell, a second button asks the 
   expect(wire).toHaveBeenCalledTimes(1);
 });
 
-test("a notice's row flies the world to its target, and a shore target's row brings its block into view (D148, D153)", async () => {
+test("a notice's row selects its target and asks the world to fly there, and a shore target's row brings its block into view (D148, D153, D281 (notice-selects))", async () => {
   const nav = createNav();
   const visit = vi.fn();
-  nav.steer({ lookAt: vi.fn(), visit });
+  const select = vi.fn();
+  nav.steer({ lookAt: vi.fn(), visit, select });
   const scrolled = vi.fn();
   Element.prototype.scrollIntoView = scrolled;
   const map: MapJson = { ...DEMO, notices: [...DEMO.notices.slice(0, 1), notice('README.md'), notice('nowhere.ts')] };
   await act(async () => root.render(<Chrome state={{ status: 'ready', url: '/map.json', map }} registry={createRegistry()} nav={nav} dev={false} />));
   await click('[data-notice="1"]');
-  expect(visit).toHaveBeenCalledWith(INDEX);
+  // The selection is the whole ask: the world flies by it, and no bare visit follows.
+  expect(nav.selected()).toEqual(INDEX);
+  expect(select).toHaveBeenCalledWith(INDEX, 'fly');
+  expect(visit).not.toHaveBeenCalled();
   await click('[data-notice="2"]');
   expect(scrolled).toHaveBeenCalledTimes(1);
   expect(scrolled.mock.contexts[0]).toBe(host.querySelector('[data-rail] [data-group="docs"]'));
   // An unplaced notice leads nowhere, and says so by taking no click.
   await click('[data-notice="3"]');
-  expect(visit).toHaveBeenCalledTimes(1);
+  expect(select).toHaveBeenCalledTimes(1);
+  expect(nav.selected()).toEqual(INDEX);
   expect(element('[data-notice="3"]').style.cursor).toBe('default');
   expect(element('[data-notice="1"]').style.cursor).toBe('pointer');
   // The breadcrumb stands under the status line.

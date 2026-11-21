@@ -88,6 +88,8 @@ const TERRAIN = 'terrain';
 const STRUCTURE = 'structure';
 const ENTRIES = 'entries';
 const ENTRY = '.json';
+/** The approved shape's document (D212 (approved-private)). */
+const APPROVED = 'approved.json';
 /** How many commits back from a base the cache looks for an ancestor's terrain to relax from (D97). */
 const ANCESTRY = 1000;
 const TESTS = '__tests__';
@@ -163,6 +165,18 @@ export function structurePath(repo: string, sha: string): string {
 /** Where the entry points fallow listed for a head commit are kept, beside the structures (D136). */
 export function entriesPath(repo: string, sha: string): string {
   return join(keptDirectory(repo), ENTRIES, `${sha}${ENTRY}`);
+}
+
+/**
+ * Where the approved shape is kept (D212 (approved-private)): one document
+ * for the repository, beside its terrains under
+ * `git rev-parse --git-common-dir`, so every worktree of it holds to the one
+ * shape and nothing lands in a working tree. The watch stamps it, so
+ * approving rebuilds the map (D314 (approved-stamp)). Throws where git finds
+ * no repository.
+ */
+export function approvedPath(repo: string): string {
+  return join(keptDirectory(repo), APPROVED);
 }
 
 /** Write an entry, atomically; under the git directory, git never shows it, so nothing edits the repository's own ignores. */

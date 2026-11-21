@@ -5,13 +5,18 @@
  * maps over it, and `atis mcp` its highlights (`highlight.ts`). Under
  * `--watch` every map the watch rebuilds comes as `{ "kind": "map", "map": … }`,
  * the server sending the one it holds as the page connects, so a commit
- * landing while the page loaded is never missed. A kind the page does not
+ * landing while the page loaded is never missed. A watching run says what
+ * its watch is doing as `{ "kind": "watch", "state": … }`, `following` or
+ * `rebuilding`, as the page connects and each time it moves, and a run with
+ * no watch never does, which is how the page knows whether anything follows
+ * the repository for it (D336 (watch-says)). A kind the page does not
  * know is dropped, as weft's studio drops one, and so is a map that fails
  * core's guard: the page keeps the map it has (C2). A map on the same ground
  * as the one shown, one layout with the same cells and files on it, has its
  * weather cross-faded in over the terrain the world already draws (P2); one
  * on other ground, a file added or gone, is drawn afresh at the framing the
- * reader stands at. Pure, so a test reads it straight.
+ * reader stands at, with what they had selected selected again
+ * (D337 (selection-carried)). Pure, so a test reads it straight.
  */
 
 import { assertMap } from 'core';
@@ -20,8 +25,8 @@ import type { Point } from 'scene';
 
 import { servedToken } from './load.js';
 
-/** Where the reader stands: the camera's zoom over the fit, its tilt off overhead in degrees, and the layout point the free screen is centred on. */
-export type Framing = { readonly zoom: number; readonly tilt: number; readonly centre?: Point | undefined };
+/** Where the reader stands: the camera's zoom over the fit, its tilt off overhead in degrees, the layout point the free screen is centred on, and the target of what is selected, a file's path or a cell's id (D337 (selection-carried)). */
+export type Framing = { readonly zoom: number; readonly tilt: number; readonly centre?: Point | undefined; readonly select?: string | undefined };
 
 /** The socket a served page opens: the served `/socket` with the run's token; none for a page that names a map of its own, which nobody serves who could send one (D178). */
 export const socketUrl = (search: string, host: string): string | undefined => {
@@ -43,6 +48,21 @@ export const pushedMap = (text: string): MapJson | undefined => {
   }
 };
 
+/** What a watching run says its watch is doing (D336 (watch-says)): following the repository, or measuring the map it moved to. */
+export type WatchState = 'following' | 'rebuilding';
+
+/** What a socket's message says the watch is doing; none for any other kind, text that is not JSON, or a state the page does not know. */
+export const pushedWatch = (text: string): WatchState | undefined => {
+  try {
+    const message: unknown = JSON.parse(text);
+    if (!isRecord(message) || message['kind'] !== 'watch') return undefined;
+    const state = message['state'];
+    return state === 'following' || state === 'rebuilding' ? state : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
 /** Whether a pushed map is the one the page already holds: one build, by the moment it was made and the head it was made of. */
 export const sameBuild = (a: MapJson, b: MapJson): boolean => a.meta.generated_at === b.meta.generated_at && a.meta.head === b.meta.head;
 
@@ -56,12 +76,14 @@ export const sameGround = (a: MapJson, b: MapJson): boolean =>
 /** A number as a URL carries it: a few places, no more. */
 const short = (value: number, places: number): string => String(Number(value.toFixed(places)));
 
-/** The page's address with the framing in its query (`zoom`, `tilt`, `centre`), so a page drawn afresh opens where the reader stood. */
-export const framedUrl = (href: string, { zoom, tilt, centre }: Framing): string => {
+/** The page's address with the framing in its query (`zoom`, `tilt`, `centre`, `select`), so a page drawn afresh opens where the reader stood, on what they had selected; a framing with no centre or no selection takes the one the address had out of it. */
+export const framedUrl = (href: string, { zoom, tilt, centre, select }: Framing): string => {
   const url = new URL(href);
   url.searchParams.set('zoom', short(zoom, 4));
   url.searchParams.set('tilt', short(tilt, 2));
   if (centre === undefined) url.searchParams.delete('centre');
   else url.searchParams.set('centre', `${short(centre[0], 2)},${short(centre[1], 2)}`);
+  if (select === undefined) url.searchParams.delete('select');
+  else url.searchParams.set('select', select);
   return url.href;
 };

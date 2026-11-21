@@ -12,7 +12,7 @@ import { IFR_HUE, SECONDARY_BOX_WIDTH, STITCH_LENGTH } from 'scene';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 
 import { Chrome, Column, Notices, Rail } from '../chrome/index.js';
-import { createNav } from '../nav.js';
+import { createNav, selectedOf } from '../nav.js';
 import { boxStyle, categoryHue, marksOnShore, rowsOf, runsOf, tallyOf, thresholdsOf } from '../notices.js';
 import { createRegistry } from '../registry.js';
 import { screenType } from '../screen.js';
@@ -20,8 +20,10 @@ import { screenType } from '../screen.js';
 /**
  * The notices as the world draws them (§5.4, step 34): each target's run of
  * boxes with its strongest tier and its light, the ranked list's rows and
- * tally, the boxes a shore block wears (D153), and the chrome's column
- * carrying the list over the rail, each box in its tier's style.
+ * tally, the boxes a shore block wears (D153), a row selecting what it leads
+ * to (D281 (notice-selects)), and the chrome's column carrying the list over
+ * the tree and the rail in one scroll (D278 (column-folds)), each box in its
+ * tier's style.
  */
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
@@ -179,14 +181,78 @@ test("a notice on a shore file wears its box on its group's block in the rail, a
   expect(element('[data-group="docs"] button [data-mark]').style.background).toBe('rgb(240, 84, 106)');
 });
 
-test('the chrome carries the column once the map is read, the list at its head and the rail beneath', async () => {
+const click = (selector: string): Promise<void> =>
+  act(async () => {
+    element(selector).dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  });
+
+test("a row whose target is on the map selects it and asks the world to fly there; one on the shore selects nothing and brings its group's block into view (D281 (notice-selects))", async () => {
+  const nav = createNav();
+  const select = vi.fn();
+  const visit = vi.fn();
+  nav.steer({ lookAt: vi.fn(), visit, select });
+  const scrolled = vi.fn();
+  Element.prototype.scrollIntoView = scrolled;
+  const map = withNotices([...DEMO.notices.slice(0, 1), noticeOf('secondary', 'red-check-slot', 'README.md'), noticeOf('tertiary', 'red-check-slot', 'lint')]);
+  await act(async () => root.render(<Column map={map} registry={createRegistry()} nav={nav} />));
+  await click('[data-notice="1"]');
+  const index = selectedOf(DEMO, 'libs/core/src/pm/index.ts');
+  expect(index).toEqual({ kind: 'organelle', path: 'libs/core/src/pm/index.ts', cell: 'folder:libs/core/src/pm' });
+  expect(nav.selected()).toEqual(index);
+  expect(select).toHaveBeenCalledWith(index, 'fly');
+  // The selection is the whole ask: no bare visit follows it.
+  expect(visit).not.toHaveBeenCalled();
+  // The tree beneath the list lights the row the notice selected.
+  expect(element('[data-tree] [data-selected]').dataset['row']).toBe('libs/core/src/pm/index.ts');
+  // A second press flies there again, though the selection did not move.
+  await click('[data-notice="1"]');
+  expect(select).toHaveBeenCalledTimes(2);
+  // A shore target moves no selection: its group's block is scrolled to, and the shore is opened first where it was folded away.
+  await click('[data-fold="shore"]');
+  expect(host.querySelector('[data-rail] [data-group="docs"]')).toBeNull();
+  await click('[data-notice="2"]');
+  expect(nav.selected()).toEqual(index);
+  expect(select).toHaveBeenCalledTimes(2);
+  expect(scrolled).toHaveBeenCalledTimes(1);
+  expect(scrolled.mock.contexts[0]).toBe(host.querySelector('[data-rail] [data-group="docs"]'));
+  // An unplaced notice leads nowhere.
+  await click('[data-notice="3"]');
+  expect(select).toHaveBeenCalledTimes(2);
+  expect(scrolled).toHaveBeenCalledTimes(1);
+});
+
+test("the list stands under a header that folds it away, the tally still on it, and brings it back (D278 (column-folds))", async () => {
+  await act(async () => root.render(<Notices map={DEMO} registry={createRegistry()} />));
+  const fold = element('[data-fold="notices"]');
+  expect(fold.getAttribute('aria-expanded')).toBe('true');
+  expect(element('[data-notices] header').style.position).toBe('sticky');
+  await click('[data-fold="notices"]');
+  expect(fold.getAttribute('aria-expanded')).toBe('false');
+  expect(all('[data-notice]')).toHaveLength(0);
+  expect(element('[data-tally]').textContent).toBe('1·2·3');
+  await click('[data-fold="notices"]');
+  expect(all('[data-notice]')).toHaveLength(6);
+});
+
+test('the chrome carries the column once the map is read: the list at its head, the tree beneath it and the rail last, in one scroll (D278 (column-folds))', async () => {
   const registry = createRegistry();
   await act(async () => root.render(<Chrome state={{ status: 'loading', url: '/map.json' }} registry={registry} dev={false} />));
   expect(host.querySelector('[data-column]')).toBeNull();
   await act(async () => root.render(<Chrome state={{ status: 'ready', url: '/map.json', map: DEMO }} registry={registry} dev={false} />));
   const column = element('[data-column]');
-  expect([...column.children].map((child) => child.getAttribute('aria-label'))).toEqual(['notices', 'shore']);
+  const parts = [...column.children].filter((child): child is HTMLElement => child instanceof HTMLElement);
+  expect(parts.map((child) => child.getAttribute('aria-label'))).toEqual(['notices', 'tree', 'shore']);
+  // The column is the one scroll: no part scrolls by itself or is held to a share of it, and each stands under its own header.
+  expect(column.style.overflowY).toBe('auto');
+  for (const part of parts) {
+    expect(part.style.overflowY).toBe('');
+    expect(part.style.maxHeight).toBe('');
+    expect(part.querySelector('header [data-fold]')?.getAttribute('data-fold')).toBe(part.getAttribute('aria-label'));
+  }
   expect(all('[data-column] [data-notice]')).toHaveLength(6);
+  expect(all('[data-column] [data-tree] [data-row]').length).toBeGreaterThan(0);
+  // A column handed no line to the world has no tree to light: the list stands over the rail.
   await act(async () => root.render(<Column map={ASHORE} registry={registry} />));
+  expect([...element('[data-column]').children].map((child) => child.getAttribute('aria-label'))).toEqual(['notices', 'shore']);
   expect(all('[data-column] [data-notice]')).toHaveLength(3);
 });

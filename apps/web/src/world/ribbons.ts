@@ -6,7 +6,11 @@
  * and a new cross-module import in the change hue (C11). A renamed file's
  * leader runs in the same mesh, a ribbon per dash at its own width and with
  * no arrowhead (D40, D97); widths are laid into the geometry when the world
- * is built, so a moved width shows on the next map, not the next frame. They
+ * is built, so a moved width shows on the next map, not the next frame. On
+ * the screen a ribbon is never narrower than `WEATHER.ribbonLeast` pixels nor
+ * wider than `WEATHER.ribbonMost`, its arrowhead held with it about its tip,
+ * so a line across a wide field reads from far off and one seen close is a
+ * line and not a band (D341 (ribbon-width-on-screen)). They
  * show from LOD1, and the bloom sees a small share of their light, so a
  * tangle of cycles reads as lines and not as haze. A frame of a range fades
  * its ribbons in or out as a whole while the scrubber's cross-fade runs, and
@@ -28,7 +32,7 @@
 
 import { BufferAttribute, BufferGeometry, DataTexture, DoubleSide, Mesh, MeshBasicNodeMaterial } from 'three/webgpu';
 import type { UniformNode } from 'three/webgpu';
-import { attribute, mrt, positionLocal, sin, texture, uniform, vec2, vec3, vec4 } from 'three/tsl';
+import { attribute, clamp, float, max, mix, mrt, positionLocal, sin, step, texture, uniform, vec2, vec3, vec4 } from 'three/tsl';
 import type { Grid } from 'scene';
 
 import { hueIndex } from './palette.js';
@@ -41,6 +45,9 @@ type Point = readonly [number, number];
 
 /** How far above the marks the ribbons run. */
 const LIFT = 1;
+
+/** The least width on the screen, in pixels, a ribbon's is held from: under it the loop has not yet said how many pixels a unit takes, and the ribbon keeps its width on the ground. */
+const WIDTH_LEAST = 1e-4;
 
 /** The longest piece a swaying ribbon is laid in, in layout units: short enough that a wave bends it smoothly at any length the dev panel sets inside reason. */
 const SWAY_PIECE = 2;
@@ -87,9 +94,10 @@ const swayShare = (along: number, length: number, size: number): number => {
 };
 
 /** One ribbon's vertices: a strip along its points, each with how it sways, and the arrowhead's three, which never do. */
-const lay = (ribbon: Ribbon, positions: number[], hues: number[], sways: number[], index: number[]): void => {
+const lay = (ribbon: Ribbon, positions: number[], hues: number[], sides: number[], sways: number[], index: number[]): void => {
   const base = positions.length / 3;
-  const half = (ribbon.width ?? RIBBON_WIDTH) / 2;
+  const width = ribbon.width ?? RIBBON_WIDTH;
+  const half = width / 2;
   const points = measured(ribbon.sway ? pieced(ribbon.points) : ribbon.points);
   const length = points.at(-1)?.along ?? 0;
   points.forEach(({ at: [x, y], along }, i) => {
@@ -98,7 +106,9 @@ const lay = (ribbon: Ribbon, positions: number[], hues: number[], sways: number[
     const span = Math.hypot(nx - px, ny - py) || 1;
     const ax = -(ny - py) / span;
     const ay = (nx - px) / span;
-    positions.push(x + ax * half, 0, y + ay * half, x - ax * half, 0, y - ay * half);
+    // Both vertices lie on the bow's own line; each carries which way is across and how far its edge stands off, which the vertex stage holds to the screen's bounds (D341 (ribbon-width-on-screen)).
+    positions.push(x, 0, y, x, 0, y);
+    sides.push(ax, ay, half, width, ax, ay, -half, width);
     hues.push(hueIndex(ribbon.hue), hueIndex(ribbon.hue));
     // Both edges of the strip sway the same way across it, so the ribbon keeps its width.
     const share = ribbon.sway ? swayShare(along, length, ribbon.arrow?.size ?? 0) : 0;
@@ -114,14 +124,16 @@ const lay = (ribbon: Ribbon, positions: number[], hues: number[], sways: number[
   const tip = positions.length / 3;
   const bx = x - Math.cos(angle) * size;
   const by = y - Math.sin(angle) * size;
-  positions.push(x, 0, y, bx - Math.sin(angle) * (size / 2), 0, by + Math.cos(angle) * (size / 2), bx + Math.sin(angle) * (size / 2), 0, by - Math.cos(angle) * (size / 2));
+  // The arrowhead's three stand at its tip, each carrying where it lies from there, so it grows and shrinks about the tip as its line widens and narrows and stays on the rim.
+  positions.push(x, 0, y, x, 0, y, x, 0, y);
+  sides.push(0, 0, 0, width, bx - Math.sin(angle) * (size / 2) - x, by + Math.cos(angle) * (size / 2) - y, 1, width, bx + Math.sin(angle) * (size / 2) - x, by - Math.cos(angle) * (size / 2) - y, 1, width);
   hues.push(hueIndex(ribbon.hue), hueIndex(ribbon.hue), hueIndex(ribbon.hue));
   sways.push(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
   index.push(tip, tip + 1, tip + 2);
 };
 
 /** The tokens a sway is timed and sized from, read live (D156): how far and how fast, the scene's, and one wave's length along the bow, the weather look's. */
-export type SwayLook = { readonly tokens: { readonly RIBBON_SWAY: number; readonly RIBBON_SWAY_HZ: number }; readonly weather: { readonly ribbonWave: number } };
+export type SwayLook = { readonly tokens: { readonly RIBBON_SWAY: number; readonly RIBBON_SWAY_HZ: number }; readonly weather: { readonly ribbonWave: number; readonly ribbonLeast: number; readonly ribbonMost: number } };
 
 /**
  * The ribbons as the world draws them: the mesh, the bloom's share of their
@@ -129,18 +141,29 @@ export type SwayLook = { readonly tokens: { readonly RIBBON_SWAY: number; readon
  * it has faded out (D100), and the sway, run to the scheduler's time in
  * milliseconds since load, `still` under reduced motion (Q84).
  */
-export type Ribbons = { readonly mesh: Mesh; readonly bloom: Float; readonly fade: Float; readonly sway: (t: number, still: boolean) => void; readonly dispose: () => void };
+export type Ribbons = {
+  readonly mesh: Mesh;
+  readonly bloom: Float;
+  readonly fade: Float;
+  readonly sway: (t: number, still: boolean) => void;
+  /** Each frame: the pixels one layout unit takes on the screen, which a ribbon's width is held by (D341 (ribbon-width-on-screen)). */
+  readonly frame: (pixelsPerUnit: number) => void;
+  readonly dispose: () => void;
+};
 
 export const createRibbons = (ribbons: readonly Ribbon[], relief: DataTexture, grid: Grid, amp: Float, lift: Float, surface: Float, palette: Palette, look: SwayLook): Ribbons => {
   const positions: number[] = [];
   const hues: number[] = [];
+  const sides: number[] = [];
   const sways: number[] = [];
   const index: number[] = [];
-  for (const ribbon of ribbons) lay(ribbon, positions, hues, sways, index);
+  for (const ribbon of ribbons) lay(ribbon, positions, hues, sides, sways, index);
   const swaying = ribbons.some((ribbon) => ribbon.sway);
   const geometry = new BufferGeometry();
   geometry.setAttribute('position', new BufferAttribute(Float32Array.from(positions), 3));
   geometry.setAttribute('hue', new BufferAttribute(Float32Array.from(hues), 1));
+  // Each vertex's place off its line: which way, how far, and its ribbon's width on the ground.
+  geometry.setAttribute('side', new BufferAttribute(Float32Array.from(sides), 4));
   // Each vertex's sway: which way is across the ribbon there, the share of the sway it takes, and how far along the bow it lies.
   if (swaying) geometry.setAttribute('sway', new BufferAttribute(Float32Array.from(sways), 4));
   geometry.setIndex(new BufferAttribute(Uint32Array.from(index), 1));
@@ -152,12 +175,21 @@ export const createRibbons = (ribbons: readonly Ribbon[], relief: DataTexture, g
   const swayTurn = uniform(0);
   const swayReach = uniform(0);
   const swayWave = uniform(0);
+  // A ribbon's width on the screen (D341 (ribbon-width-on-screen)): its width on the ground while that lies between the two bounds, and held at the nearer bound past either, so a line across a wide field still reads from far off and one seen close is never a band. Nothing is held until the loop's first frame says how many pixels a unit takes.
+  const scale = uniform(0);
+  const least = uniform(look.weather.ribbonLeast);
+  const most = uniform(look.weather.ribbonMost);
+  const off = attribute('side', 'vec4');
+  const onScreen = off.w.mul(scale);
+  const held = clamp(onScreen, least, max(least, most)).div(max(onScreen, float(WIDTH_LEAST)));
+  const stretch = mix(float(1), held, step(float(WIDTH_LEAST), onScreen));
+  const edge = { x: positionLocal.x.add(off.x.mul(off.z).mul(stretch)), z: positionLocal.z.add(off.y.mul(off.z).mul(stretch)) };
   // A swaying vertex stands across the ribbon from its place by the wave where it lies along the bow; with no swaying ribbon nothing is read or moved.
   const moved = ((): { readonly x: typeof positionLocal.x; readonly z: typeof positionLocal.z } => {
-    if (!swaying) return { x: positionLocal.x, z: positionLocal.z };
+    if (!swaying) return edge;
     const each = attribute('sway', 'vec4');
     const swing = sin(swayTurn.sub(each.w.mul(swayWave))).mul(each.z).mul(swayReach);
-    return { x: positionLocal.x.add(each.x.mul(swing)), z: positionLocal.z.add(each.y.mul(swing)) };
+    return { x: edge.x.add(each.x.mul(swing)), z: edge.z.add(each.y.mul(swing)) };
   })();
   const uvAt = vec2(moved.x.div(grid.resolution).add(0.5).div(grid.columns), moved.z.div(grid.resolution).add(0.5).div(grid.rows));
   const height = texture(relief, uvAt);
@@ -186,5 +218,10 @@ export const createRibbons = (ribbons: readonly Ribbon[], relief: DataTexture, g
     geometry.dispose();
     material.dispose();
   };
-  return { mesh, bloom, fade, sway, dispose };
+  const frame = (pixelsPerUnit: number): void => {
+    scale.value = pixelsPerUnit;
+    least.value = look.weather.ribbonLeast;
+    most.value = look.weather.ribbonMost;
+  };
+  return { mesh, bloom, fade, sway, frame, dispose };
 };

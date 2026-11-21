@@ -3,10 +3,10 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import * as scene from 'scene';
-import { MOTION_TOKENS, createScheduler } from 'scene';
+import { LOD_GATES, MOTION_TOKENS, createScheduler, levelAt, lodPlan } from 'scene';
 import { expect, test } from 'vitest';
 
-import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, NOTICE, PLANET, SKIN, SKY, SPACE, WALK, WEATHER } from '../materials.js';
+import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, NOTICE, PANEL, SKIN, SKY, SPACE, WALK, WEATHER } from '../materials.js';
 import { MATERIALS_TITLE, SECTIONS, createRegistry, kindOf } from '../registry.js';
 import type { Store } from '../registry.js';
 
@@ -49,12 +49,11 @@ test("the panel's sections are the design doc's headings, each listing its table
 /** A material object's fields as the registry names them. */
 const fields = (object: string, from: object): string[] => Object.keys(from).map((field) => `${object}.${field}`);
 
-test("the materials section lists every field of the world's skin, space, planet, lights, sky, bloom, weather, notices, relief, levels and camera, hover and walk, the minimap's, the slide's and the wiring's", () => {
+test("the materials section lists every field of the world's skin, space, lights, sky, bloom, weather, notices, relief, levels and camera, hover and walk, the minimap's, the slide's, the wiring's and the side panels'", () => {
   const section = SECTIONS.find((each) => each.title === MATERIALS_TITLE);
   expect(section?.names).toEqual([
     ...fields('SKIN', SKIN),
     ...fields('SPACE', SPACE),
-    ...fields('PLANET', PLANET),
     ...fields('LIGHTING', LIGHTING),
     ...fields('SKY', SKY),
     ...fields('BLOOM', BLOOM),
@@ -69,7 +68,48 @@ test("the materials section lists every field of the world's skin, space, planet
     ...fields('MINIMAP', scene.MINIMAP),
     ...fields('INTERIOR', INTERIOR),
     ...fields('WIRING', scene.WIRING_SPACING),
+    ...fields('PANEL', PANEL),
   ]);
+});
+
+/** The nearest and the farthest the camera zooms, over the fit (`world/camera.ts`). */
+const ZOOMS = [0.5, 1, 1.45, 1.7, 5, 6, 24, 80, 200];
+
+test('the levels rest parked: no zoom the camera reaches reads the far field, so the surface is lit at every one, none reaches the plate or the sheet, and nothing opens by zoom (D204 (parked-levels))', () => {
+  const [first, second, third, fourth] = LEVELS.gates;
+  expect(first).toEqual({ enter: 0, exit: 0 });
+  expect(second).toEqual(LOD_GATES[1]);
+  expect(third).toEqual({ enter: 1000000, exit: 1000000 });
+  expect(fourth).toEqual(third);
+  for (const zoom of ZOOMS) {
+    // Read afresh as the opening frame is, and coming out from the deepest level the parked gates allow.
+    for (const from of [0, 1, 2] as const) {
+      const level = levelAt(from, zoom, LEVELS.gates);
+      expect(level, `zoom ${String(zoom)} from level ${String(from)}`).toBeGreaterThanOrEqual(1);
+      expect(level).toBeLessThanOrEqual(2);
+    }
+    // The surface's layer is whole, the far field's dark never drawn in its place.
+    expect(lodPlan(undefined, zoom, 0, 300, LEVELS.gates).opacity[1]).toBe(1);
+  }
+  expect(LEVELS.autoOpen).toBe(0);
+  expect(LEVELS.openOnSelect).toBe(1);
+  // The scene's own gates are as they were, for the one switch to read past the first in the parked ones' place (D240 (far-zoom-lit)).
+  expect(LOD_GATES[0]).toEqual({ enter: 1.7, exit: 1.45 });
+  expect(LOD_GATES.slice(2)).toEqual([{ enter: 24, exit: 20 }, { enter: 80, exit: 66 }]);
+});
+
+test("a stored override stands for a token that rests at a list of objects, so a tab's store moves the parked gates as it moves the switch (D204 (parked-levels))", () => {
+  const legacy = { 'LEVELS.gates': LOD_GATES, 'LEVELS.autoOpen': 1, 'LEVELS.openOnSelect': 0 };
+  const registry = createRegistry(memory(JSON.stringify(legacy)));
+  expect(registry.changes().map((change) => change.name)).toEqual(['LEVELS.gates', 'LEVELS.autoOpen', 'LEVELS.openOnSelect']);
+  const levels = registry.view(LEVELS, 'LEVELS');
+  expect(levels.gates).toEqual(LOD_GATES);
+  expect(levels.autoOpen).toBe(1);
+  expect(levels.openOnSelect).toBe(0);
+  expect(levelAt(0, 1, levels.gates)).toBe(0);
+  // Stored at its rest value it is no override, and a number where the list rests is dropped.
+  expect(createRegistry(memory(JSON.stringify({ 'LEVELS.gates': LEVELS.gates }))).changes()).toEqual([]);
+  expect(createRegistry(memory(JSON.stringify({ 'LEVELS.gates': 3 }))).changes()).toEqual([]);
 });
 
 test('every listed token rests at a value, named once', () => {

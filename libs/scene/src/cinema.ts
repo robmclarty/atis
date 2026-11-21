@@ -1,14 +1,15 @@
 /**
  * cinema: how a still for a pull request's comment is framed (D174, D175). A
  * comment's reader cannot zoom, so the still frames what the change is about
- * rather than the tab's opening frame, which is the far field's planet, a dot
- * at a comment's size: the box round every target a notice names and every
- * changed file the terrain places, filling a share of the picture. The zoom
- * over the fit is held between just past the surface's gate, so the still is
- * never the planet, and short of the cells' level, so it is never a file's
- * plate. The world's `?cinema` page stands its camera here, and the comment's
- * flat still, the minimap zoomed in, frames its drawing here, so the two
- * frame one change alike. Pure, so a test reads it straight (C3).
+ * rather than the tab's opening frame, which is the whole map, the change a
+ * few dots on it at a comment's size: the box round every target a notice
+ * names and every changed file the terrain places, filling a share of the
+ * picture. The zoom over the fit is held between just past the scene's gate
+ * for the surface, so the still is never the far field, and short of the
+ * cells' level, so it is never a file's plate. The world's `?cinema` page
+ * stands its camera here, and the comment's flat still, the minimap zoomed
+ * in, frames its drawing here, so the two frame one change alike. Pure, so a
+ * test reads it straight (C3).
  */
 
 import type { MapJson } from 'core';
@@ -22,7 +23,7 @@ export type CinemaLook = { readonly share: number; readonly farthest: number; re
  * The share of the picture the box round the change's notices and files
  * fills, and the farthest and nearest zoom over the fit the still may stand
  * at, just past the surface's gate (`LOD_GATES`, 1.7) and short of the cells'
- * level (6), so it is never the far field's planet nor a file's plate.
+ * level (6), so it is never the far field nor a file's plate.
  */
 export const CINEMA: CinemaLook = { share: 0.7, farthest: 2, nearest: 3 };
 

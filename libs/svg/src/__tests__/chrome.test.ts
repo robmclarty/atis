@@ -360,7 +360,15 @@ function committedMaps(): readonly MapJson[] {
     });
 }
 
-test('every HUD block fits its text at the widest fallback face, on the longest Standing tail the fixtures carry', () => {
+/**
+ * How long the sweep of every committed fixture may take. It renders the
+ * sheet for some thirty maps: a second alone, about four under the full
+ * check's coverage, and past the 5 seconds a test is given unasked once the
+ * suite shares the machine with the browser tests.
+ */
+const SWEEP_MS = 60_000;
+
+test('every HUD block fits its text at the widest fallback face, on the longest Standing tail the fixtures carry', { timeout: SWEEP_MS }, () => {
   const maps = committedMaps();
   expect(maps.length).toBeGreaterThanOrEqual(5);
   const blocks = [demo(), ...maps].flatMap((map) => hudBlocks(renderSvg(map)));

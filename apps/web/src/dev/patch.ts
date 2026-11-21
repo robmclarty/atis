@@ -10,14 +10,28 @@ import type { Change } from '../registry.js';
 /** Where the scene's tokens rest. */
 const TOKENS = 'libs/scene/src/tokens.ts';
 
-/** Where each material object rests. */
+/** Where the world's own materials rest. */
+const MATERIALS = 'apps/web/src/materials.ts';
+
+/** Where each material object rests: the world's own in its materials, the scene's each in its own file. */
 const SOURCE_OF: Readonly<Record<string, string>> = {
-  SKIN: 'apps/web/src/materials.ts',
-  LIGHTING: 'apps/web/src/materials.ts',
-  SKY: 'apps/web/src/materials.ts',
-  BLOOM: 'apps/web/src/materials.ts',
-  WEATHER: 'apps/web/src/materials.ts',
+  SKIN: MATERIALS,
+  SPACE: MATERIALS,
+  LIGHTING: MATERIALS,
+  SKY: MATERIALS,
+  BLOOM: MATERIALS,
+  WEATHER: MATERIALS,
+  NOTICE: MATERIALS,
   RELIEF: 'libs/scene/src/heightfield.ts',
+  LEVELS: MATERIALS,
+  CAMERA: MATERIALS,
+  CINEMA: 'libs/scene/src/cinema.ts',
+  HOVER: MATERIALS,
+  WALK: MATERIALS,
+  MINIMAP: 'libs/scene/src/minimap.ts',
+  INTERIOR: MATERIALS,
+  WIRING: 'libs/scene/src/wiring.ts',
+  PANEL: MATERIALS,
 };
 
 /** A value as the source writes it: single-quoted strings, bare keys, a space inside each bracket. */

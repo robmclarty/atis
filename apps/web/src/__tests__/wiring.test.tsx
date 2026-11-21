@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { assertMap } from 'core';
+import type { MapJson } from 'core';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
@@ -22,6 +23,9 @@ import { createRegistry } from '../registry.js';
  * ink and the rest dotted, each file a box outlined in the change hue where
  * the change touched it, and each wire a line ending on an arrowhead; laid
  * again when a spacing token moves, and saying so when it cannot be laid.
+ * The inspector hosts the same plate for the module it shows (D260
+ * (wiring-hosted)): in the panel's flow, whatever the world has open, saying
+ * so while it is laid and where no wire reaches the module.
  */
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
@@ -105,4 +109,59 @@ test('a spacing token moved in the panel lays the plate again with it, and a pla
   await act(async () => root.render(<WiringPlate map={DEMO} registry={registry} nav={nav} lay={failing} />));
   await settle();
   expect(host.querySelector('[data-wiring-failed]')?.textContent).toBe('the wiring could not be laid out: elk refused');
+});
+
+test("a panel hosts a module's plate with no cell open: in its own flow at the width it is given, saying so while the plate is laid (D260 (wiring-hosted))", async () => {
+  const nav = createNav();
+  const laying = Promise.withResolvers<Plate>();
+  const lay = vi.fn((_wiring: Wiring, _spacing: WiringSpacing): Promise<Plate> => laying.promise);
+  await act(async () => root.render(<WiringPlate map={DEMO} registry={createRegistry()} nav={nav} cell={PM} width={380} lay={lay} />));
+  // The world has nothing open, and the plate is asked for all the same.
+  expect(nav.opened()).toBeUndefined();
+  expect(lay).toHaveBeenCalledTimes(1);
+  expect(lay.mock.calls[0]?.[0].cell).toBe(PM);
+  expect(host.querySelector('[data-wiring-laying]')?.textContent).toBe('laying out the wiring');
+  expect(host.querySelector('[data-wiring]')).toBeNull();
+
+  const plate = await layWiring(lay.mock.calls[0]?.[0] ?? { cell: PM, homes: [], edges: [] });
+  await act(async () => laying.resolve(plate));
+  const figure = host.querySelector<HTMLElement>(`[data-wiring="${PM}"]`);
+  expect(figure?.hasAttribute('data-wiring-hosted')).toBe(true);
+  // It stands in the panel's flow and takes the pointer, so the panel scrolls it; the plate over the world is fixed and lets the pointer through.
+  expect(figure?.style.position).toBe('');
+  expect(figure?.style.width).toBe('380px');
+  expect(figure?.style.overflow).toBe('auto');
+  expect(figure?.style.pointerEvents).toBe('auto');
+  expect(all('[data-wiring-file]')).toHaveLength(7);
+  // The plate is drawn at the size it was laid, never shrunk to the panel.
+  expect(host.querySelector('svg')?.getAttribute('width')).toBe(String(plate.width));
+  expect(host.querySelector<SVGElement>('svg')?.style.maxWidth).toBe('');
+
+  // The open cell's own plate still stands over the world, apart from the hosted one.
+  await act(async () => root.render(<WiringPlate map={DEMO} registry={createRegistry()} nav={nav} lay={() => Promise.resolve(plate)} />));
+  expect(host.querySelector('[data-wiring]')).toBeNull();
+  wired(nav, true);
+  await settle();
+  const over = host.querySelector<HTMLElement>(`[data-wiring="${PM}"]`);
+  expect(over?.hasAttribute('data-wiring-hosted')).toBe(false);
+  expect(over?.style.position).toBe('fixed');
+  expect(over?.style.pointerEvents).toBe('none');
+});
+
+test('a hosted plate says why it has nothing to draw, where the plate over the world shows nothing (C2)', async () => {
+  const nav = createNav();
+  const lay = vi.fn(layWiring);
+  // No wire of the change ends in the module.
+  const unwired: MapJson = { ...DEMO, weather: { ...DEMO.weather, wiring: [] } };
+  await act(async () => root.render(<WiringPlate map={unwired} registry={createRegistry()} nav={nav} cell={PM} lay={lay} />));
+  expect(host.querySelector('[data-wiring-none]')?.textContent).toBe("no import with a changed file at either end touches this module's own files");
+  // A map written before the wiring was recorded has none to read.
+  const { wiring: _wiring, ...weather } = DEMO.weather;
+  await act(async () => root.render(<WiringPlate map={{ ...DEMO, weather }} registry={createRegistry()} nav={nav} cell={PM} lay={lay} />));
+  expect(host.querySelector('[data-wiring-none]')?.textContent).toBe('the map records no wiring');
+  expect(lay).not.toHaveBeenCalled();
+  // Over the world the same map draws no plate and says nothing.
+  wired(nav, true);
+  await act(async () => root.render(<WiringPlate map={unwired} registry={createRegistry()} nav={nav} lay={lay} />));
+  expect(host.innerHTML).toBe('');
 });

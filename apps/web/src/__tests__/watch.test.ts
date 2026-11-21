@@ -7,7 +7,7 @@ import type { MapJson } from 'core';
 import { expect, test } from 'vitest';
 
 import { createNav } from '../nav.js';
-import { framedUrl, pushedMap, sameBuild, sameGround, socketUrl } from '../watch.js';
+import { framedUrl, pushedMap, pushedWatch, sameBuild, sameGround, socketUrl } from '../watch.js';
 
 /** The page's socket (D106, D178): where it listens, what it reads off the socket, and which pushes keep the ground. */
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -33,6 +33,20 @@ test('the socket carries a map by its kind; any other kind, text that is not JSO
   expect(pushedMap('[]')).toBeUndefined();
 });
 
+test('the socket says what a watching run is doing by a kind of its own, and anything else says nothing of it (D336 (watch-says))', () => {
+  expect(pushedWatch('{"kind":"watch","state":"following"}')).toBe('following');
+  expect(pushedWatch('{"kind":"watch","state":"rebuilding"}')).toBe('rebuilding');
+  // A state the page does not know, another kind, and text that is not a message are each nothing, so the line's word stands.
+  expect(pushedWatch('{"kind":"watch","state":"resting"}')).toBeUndefined();
+  expect(pushedWatch('{"kind":"watch"}')).toBeUndefined();
+  expect(pushedWatch(`{"kind":"map","map":${DEMO_TEXT.trimEnd()}}`)).toBeUndefined();
+  expect(pushedWatch('{"kind":"highlight","notice":1}')).toBeUndefined();
+  expect(pushedWatch('not json')).toBeUndefined();
+  expect(pushedWatch('"following"')).toBeUndefined();
+  // And the watch's word is no map.
+  expect(pushedMap('{"kind":"watch","state":"following"}')).toBeUndefined();
+});
+
 test('a map is the one shown when it is the same build, and lies on the same ground when its layout, cells and files are', () => {
   expect(sameBuild(DEMO, assertMap(JSON.parse(DEMO_TEXT)))).toBe(true);
   expect(sameBuild(DEMO, later)).toBe(false);
@@ -50,6 +64,14 @@ test('a map is the one shown when it is the same build, and lies on the same gro
 test('a page drawn afresh opens where the reader stood: the zoom, the tilt and the centre in its query, the rest kept', () => {
   expect(framedUrl('http://127.0.0.1:9/?token=abc&backend=webgl', { zoom: 2.345678, tilt: 12.3456, centre: [120.456, 80.004] })).toBe('http://127.0.0.1:9/?token=abc&backend=webgl&zoom=2.3457&tilt=12.35&centre=120.46%2C80');
   expect(framedUrl('http://127.0.0.1:9/?token=abc&zoom=1&centre=1%2C2', { zoom: 3, tilt: 0 })).toBe('http://127.0.0.1:9/?token=abc&zoom=3&tilt=0');
+});
+
+test('a page drawn afresh names what was selected, a file by its path or a module by its cell, and one drawn with nothing selected names none (D337 (selection-carried))', () => {
+  expect(framedUrl('http://127.0.0.1:9/?token=abc', { zoom: 2, tilt: 0, select: 'libs/core/src/pm/tools.ts' })).toBe('http://127.0.0.1:9/?token=abc&zoom=2&tilt=0&select=libs%2Fcore%2Fsrc%2Fpm%2Ftools.ts');
+  expect(framedUrl('http://127.0.0.1:9/?token=abc', { zoom: 2, tilt: 0, select: 'folder:libs/core/src/pm' })).toBe('http://127.0.0.1:9/?token=abc&zoom=2&tilt=0&select=folder%3Alibs%2Fcore%2Fsrc%2Fpm');
+  // The address a reload came from may name an older selection: the one held now takes its place, and none takes it out.
+  expect(framedUrl('http://127.0.0.1:9/?token=abc&select=apps%2Fcli%2Fsrc%2Fdoctor.ts', { zoom: 2, tilt: 0, select: 'folder:libs/core/src/pm' })).toBe('http://127.0.0.1:9/?token=abc&select=folder%3Alibs%2Fcore%2Fsrc%2Fpm&zoom=2&tilt=0');
+  expect(framedUrl('http://127.0.0.1:9/?token=abc&select=apps%2Fcli%2Fsrc%2Fdoctor.ts', { zoom: 2, tilt: 0 })).toBe('http://127.0.0.1:9/?token=abc&zoom=2&tilt=0');
 });
 
 test('a push brings the scrubber back to the map\'s own weather and asks the world, which says whether it took the weather in place', () => {

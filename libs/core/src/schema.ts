@@ -507,6 +507,50 @@ export const OVERLAY_NAMES = ['trouble_spots', 'ugly_spots', 'coverage_gaps', 'd
 
 export type OverlayName = (typeof OVERLAY_NAMES)[number];
 
+/** Every way a map departs from the shape its owner approved (D210 (approved-block)), in the order they are told. */
+export const DEPARTURE_KINDS = ['module-added', 'module-removed', 'files-grown', 'lines-grown', 'interface-widened', 'past-interface-up', 'fan-out-up', 'dependency-added'] as const;
+
+export type DepartureKind = (typeof DEPARTURE_KINDS)[number];
+
+/**
+ * One departure from the approved shape (D210 (approved-block)): what
+ * happened, to which module, and why it is told, in words. `target` is the
+ * module's path, a cell's `path` and not its id, since an id carries the
+ * cell's kind and a module that gains an interface is still the same module;
+ * for `dependency-added` it is the outside package's name. A path does not
+ * name one module, though: a workspace member is a `package` cell, and the
+ * loose files at its root a `directory` cell with the same path. So `cell`
+ * says which one is meant (D218 (departure-cell)): the id of the cell of this
+ * map the departure is about, whose path is `target`, or for `module-removed`
+ * the id the module had in the approved shape, its kind and `target` joined by
+ * a colon, which is the id of no cell the head holds a file of: the terrain
+ * has no such cell, or has one whose every file the map's change deleted
+ * (D334 (removed-off-head)). `dependency-added` is about no
+ * module and carries none. `was` and `now` are the count the kind is about,
+ * as approved and as the map has it, each set only where it was measured on
+ * that side and never a zero standing for a missing one (C2). `names` are
+ * what the kind is about by name, an interface's new exports for one, sorted.
+ */
+export type Departure = {
+  readonly kind: DepartureKind;
+  readonly target: string;
+  readonly cell?: string;
+  readonly why: string;
+  readonly was?: number;
+  readonly now?: number;
+  readonly names?: readonly string[];
+};
+
+/**
+ * The map against the shape its owner approved (D210 (approved-block)): `at`
+ * is the head that shape was approved at, as that map's `meta.head` wrote
+ * it, a commit's sha or `working-tree`, and `departures` is every way this
+ * map differs from it, none when it keeps the shape, sorted by target, then
+ * by kind, then by cell, each as `<` orders two strings, one of a kind for a
+ * cell (C3).
+ */
+export type ApprovedBlock = { readonly at: string; readonly departures: readonly Departure[] };
+
 export type MapJson = {
   readonly meta: Meta;
   readonly terrain: Terrain;
@@ -515,6 +559,12 @@ export type MapJson = {
   readonly sequence?: Sequence;
   /** Set exactly on a `repo` map (D101). */
   readonly overlays?: Overlays;
+  /**
+   * Set only where a shape was approved (D210 (approved-block)); an added key
+   * (D85). Absent, no shape was approved, which is not the same as a map that
+   * keeps its shape: that one carries the block with no departures.
+   */
+  readonly approved?: ApprovedBlock;
 };
 
 /** The `atis reach` answer's contract version: its own, so a consumer pins it without pinning the map. */
@@ -777,9 +827,12 @@ function assertShape(value: unknown): asserts value is MapJson {
 
   const cells = expectArray(terrain['cells'], 'terrain.cells');
   const cellIds = new Set<string>();
+  const cellPaths = new Map<string, unknown>();
   cells.forEach((raw, index) => {
     const cell = expectRecord(raw, `terrain.cells[${String(index)}]`);
-    cellIds.add(expectString(cell['id'], `terrain.cells[${String(index)}].id`));
+    const id = expectString(cell['id'], `terrain.cells[${String(index)}].id`);
+    cellIds.add(id);
+    cellPaths.set(id, cell['path']);
     if (cell['exports'] !== undefined) {
       expectArray(cell['exports'], `terrain.cells[${String(index)}].exports`).forEach((name, at) => expectString(name, `terrain.cells[${String(index)}].exports[${String(at)}]`));
     }
@@ -847,6 +900,9 @@ function assertShape(value: unknown): asserts value is MapJson {
     if (sequence !== undefined) fail('sequence', 'a repo map has no range to frame');
     assertOverlays(root['overlays'], placed);
   }
+
+  // The approved block stands only where a shape was approved; a map with none says nothing of one (D210 (approved-block)).
+  if (root['approved'] !== undefined) assertApprovedBlock(root['approved'], 'approved', { paths: cellPaths, held: heldCells(terrain, expectRecord(root['weather'], 'weather')) });
 }
 
 const OVERLAY_KEYS: ReadonlySet<string> = new Set([...OVERLAY_NAMES, 'muted']);
@@ -1154,6 +1210,98 @@ function assertWeather(value: unknown, path: string, placed: Placed, unplaced: R
     });
   });
   return changedPaths;
+}
+
+function isDepartureKind(value: unknown): value is DepartureKind {
+  return DEPARTURE_KINDS.some((kind) => kind === value);
+}
+
+const CELL_KINDS: readonly CellKind[] = ['package', 'folder', 'single', 'directory'];
+
+/**
+ * The ids of the cells the map's head holds a file of: each cell with a file
+ * the map's change did not delete, and every cell that holds it. A change
+ * map's terrain keeps the place of a file its change deleted (D32), so a
+ * cell can stand there with nothing of the head in it. Read once the terrain
+ * and the weather have passed their own checks.
+ */
+function heldCells(terrain: Readonly<Record<string, unknown>>, weather: Readonly<Record<string, unknown>>): ReadonlySet<string> {
+  const gone = new Set<unknown>();
+  for (const raw of expectArray(weather['changed'], 'weather.changed')) {
+    const entry = expectRecord(raw, 'weather.changed');
+    if (entry['kind'] === 'deleted') gone.add(entry['path']);
+  }
+  const parents = new Map<unknown, unknown>();
+  for (const raw of expectArray(terrain['cells'], 'terrain.cells')) {
+    const cell = expectRecord(raw, 'terrain.cells');
+    parents.set(cell['id'], cell['parent']);
+  }
+  const held = new Set<string>();
+  for (const raw of expectArray(terrain['organelles'], 'terrain.organelles')) {
+    const organelle = expectRecord(raw, 'terrain.organelles');
+    if (gone.has(organelle['path'])) continue;
+    // A cell already held has every cell that holds it held too, so the walk up stops there, and at a ring of parents.
+    let id = organelle['cell'];
+    while (typeof id === 'string' && !held.has(id)) {
+      held.add(id);
+      id = parents.get(id);
+    }
+  }
+  return held;
+}
+
+/** What a departure's cell is held to: each cell of the terrain with its path, and the ids of those the head holds a file of. */
+type Standing = { readonly paths: ReadonlyMap<string, unknown>; readonly held: ReadonlySet<string> };
+
+/**
+ * One departure: its kind, its target, the cell it is about, its words, and
+ * the counts and names it carries; returns the key the list is sorted by. The
+ * cell is one the terrain holds at the target's path, or for a module removed
+ * an id of that path that is no cell the head holds a file of (D334
+ * (removed-off-head)), and a new dependency names none (D218
+ * (departure-cell)).
+ */
+function assertDeparture(value: unknown, path: string, standing: Standing): string {
+  const cellPaths = standing.paths;
+  const departure = expectRecord(value, path);
+  const kind = departure['kind'];
+  if (!isDepartureKind(kind)) fail(`${path}.kind`, `expected one of ${DEPARTURE_KINDS.join(', ')}`);
+  const target = expectString(departure['target'], `${path}.target`);
+  if (target === '') fail(`${path}.target`, 'expected a module path or a package name');
+  let cell = '';
+  if (kind === 'dependency-added') {
+    if (departure['cell'] !== undefined) fail(`${path}.cell`, 'a new dependency is about no module');
+  } else {
+    cell = expectString(departure['cell'], `${path}.cell`);
+    if (kind === 'module-removed') {
+      if (standing.held.has(cell)) fail(`${path}.cell`, `the head still holds a file of the cell "${cell}"`);
+      if (!CELL_KINDS.some((each) => cell === `${each}:${target}`)) fail(`${path}.cell`, `expected the id the module at "${target}" had, its kind and its path`);
+    } else {
+      if (!cellPaths.has(cell)) fail(`${path}.cell`, `unknown cell "${cell}"`);
+      if (cellPaths.get(cell) !== target) fail(`${path}.target`, `the cell "${cell}" is not at "${target}"`);
+    }
+  }
+  if (expectString(departure['why'], `${path}.why`) === '') fail(`${path}.why`, 'expected the reason in words');
+  for (const side of ['was', 'now']) {
+    if (departure[side] !== undefined && !isCount(departure[side])) fail(`${path}.${side}`, 'expected a non-negative number');
+  }
+  if (departure['names'] !== undefined) {
+    expectArray(departure['names'], `${path}.names`).forEach((name, index) => expectString(name, `${path}.names[${String(index)}]`));
+  }
+  return `${target}\n${kind}\n${cell}`;
+}
+
+/** The approved block (D210 (approved-block)): the head the shape was approved at, and the departures from it, sorted and one of a kind for a cell. */
+function assertApprovedBlock(value: unknown, path: string, standing: Standing): void {
+  const approved = expectRecord(value, path);
+  if (expectString(approved['at'], `${path}.at`) === '') fail(`${path}.at`, 'expected the head the shape was approved at');
+  let previous: string | undefined;
+  expectArray(approved['departures'], `${path}.departures`).forEach((raw, index) => {
+    const at = `${path}.departures[${String(index)}]`;
+    const key = assertDeparture(raw, at, standing);
+    if (previous !== undefined && previous >= key) fail(at, 'expected the departures sorted by target, then kind, then cell, and one of a kind for a cell');
+    previous = key;
+  });
 }
 
 /** Turn an unknown value into a trusted `MapJson`, or throw naming the offending path. */

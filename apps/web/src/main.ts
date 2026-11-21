@@ -5,7 +5,9 @@
  * comes through one registry (D156), which the dev panel writes and the tab's
  * session keeps. A page the CLI served listens on its socket: for the maps
  * a watch pushes, each new one handed to the world and the chrome (D106),
- * and for what an agent asks it to show over `atis mcp` (D178). A page the
+ * for what the watch says it is doing, which the status line says
+ * (D336 (watch-says)), and for what an agent asks it to show over
+ * `atis mcp` (D178). A page the
  * CLI served a tour beside the map reads it too, and the chrome plays it
  * (D112). A page opened as a still for a comment draws no chrome (`?cinema`,
  * D108).
@@ -21,10 +23,11 @@ import type { MapState } from './load.js';
 import { pushedHighlight } from './highlight.js';
 import { loadTour, tourUrl } from './tour.js';
 import type { Tour } from './tour.js';
-import { createNav } from './nav.js';
+import { createNav, selectedOf, targetOf } from './nav.js';
 import { createRegistry, sessionStore } from './registry.js';
 import { viewOf } from './view.js';
-import { framedUrl, pushedMap, sameBuild, socketUrl } from './watch.js';
+import { framedUrl, pushedMap, pushedWatch, sameBuild, socketUrl } from './watch.js';
+import type { WatchState } from './watch.js';
 import { drawWorld } from './world/index.js';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#world');
@@ -51,7 +54,20 @@ const token = servedToken(location.search);
 const nav = createNav();
 // The tour served beside the map, read alongside it when the URL says one is served (D112).
 let tour: Tour | undefined;
-const show = (state: MapState): void => chrome.render(createElement(Chrome, { state, registry, nav, dev: import.meta.env.DEV, token, tour, shapes: view.shapes }));
+// The PR the page was told of, which the world's diff sheet and the chrome's inspector both link.
+const pr = prOf(location.search);
+// What the run's watch last said it is doing, which the status line says (D336 (watch-says)): nothing on a run with no watch, whose socket is open all the same, and nothing once the socket closes. The chrome is drawn again from the state it last showed when the word moves.
+let watch: WatchState | undefined;
+let last: MapState | undefined;
+const show = (state: MapState): void => {
+  last = state;
+  chrome.render(createElement(Chrome, { state, registry, nav, dev: import.meta.env.DEV, token, tour, shapes: view.shapes, pr, live: watch !== undefined, rebuilding: watch === 'rebuilding' }));
+};
+const watching = (state: WatchState | undefined): void => {
+  if (state === watch) return;
+  watch = state;
+  if (last !== undefined) show(last);
+};
 
 const url = mapUrl(location.search);
 show({ status: 'loading', url });
@@ -59,15 +75,27 @@ const touring = tourUrl(location.search);
 const toured = touring === undefined ? Promise.resolve(undefined) : loadTour(touring, (target) => fetch(target));
 const state = await loadMap(url, (target) => fetch(target));
 tour = await toured;
+// A page a watch drew afresh names what the reader had selected (D337 (selection-carried)): it is selected on the line before the chrome and the world are drawn, where this map still holds it, so the inspector opens on it, the tree brings its row into view and a module's slide opens, with the camera left where the address puts it.
+if (state.status === 'ready' && view.select !== undefined) {
+  const carried = selectedOf(state.map, view.select);
+  if (carried !== undefined) nav.select(carried, 'stay');
+}
 show(state);
 if (state.status === 'ready') {
-  await drawWorld(canvas, state.map, view, registry, nav, { token, pr: prOf(location.search) });
+  await drawWorld(canvas, state.map, view, registry, nav, { token, pr });
   const socket = socketUrl(location.search, location.host);
   // What an agent names, flown to and lit (D178); and each map the watch pushes that is not the one shown: its weather swapped in by the world, or its new ground drawn afresh where the reader stands (D106).
   let shown = state.map;
   if (socket !== undefined) {
-    new WebSocket(socket).addEventListener('message', (event: MessageEvent<unknown>) => {
+    const line = new WebSocket(socket);
+    line.addEventListener('close', () => watching(undefined));
+    line.addEventListener('message', (event: MessageEvent<unknown>) => {
       const text = typeof event.data === 'string' ? event.data : '';
+      const said = pushedWatch(text);
+      if (said !== undefined) {
+        watching(said);
+        return;
+      }
       const highlight = pushedHighlight(text);
       if (highlight !== undefined) {
         nav.highlight(highlight);
@@ -77,7 +105,9 @@ if (state.status === 'ready') {
       if (next === undefined || sameBuild(shown, next)) return;
       const framing = nav.swap(next);
       if (framing !== undefined) {
-        location.replace(framedUrl(location.href, framing));
+        // New ground is drawn afresh where the reader stands, on what they had selected (D337 (selection-carried)).
+        const held = nav.selected();
+        location.replace(framedUrl(location.href, { ...framing, select: held === undefined ? undefined : targetOf(held) }));
         return;
       }
       shown = next;
