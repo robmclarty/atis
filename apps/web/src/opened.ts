@@ -16,16 +16,38 @@
  * closed by hand stays closed while the
  * view's centre is still in it, so it does not spring back open on the next
  * frame. The exploded view and the wiring overlay (step 41) are toggles on the
- * open cell, and both go when the cell closes or another opens. Pure, so a
- * test walks it event by event; the world measures the shares (`fillOf`).
+ * open cell, and both go when the cell closes or another opens.
+ *
+ * On the one surface none of that opens a cell (D204 (parked-levels)): there
+ * the selection does (D205 (open-on-select)). The world reads the cell the
+ * selection holds open (`selection.ts`) and hands it in as a `select` event,
+ * frame after frame, so the open cell is whatever the selection says and
+ * nothing else: no share of the screen opens or closes it, at any zoom, and
+ * none is remembered as closed by hand. The exploded view and the wiring stay
+ * while the same cell stays.
+ *
+ * Pure, so a test walks it event by event; the world measures the shares
+ * (`fillOf`).
  */
 
-import type { Lod, Pick } from 'scene';
+import { LOD_GATES } from 'scene';
+import type { Lod, LodGate, Pick } from 'scene';
 
 import type { Stop } from './walk.js';
 
 /** The level of detail a cell may open from: §6's LOD1, the surface; the far field withholds the cells (§5.6). */
 export const OPEN_LOD: Lod = 1;
+
+/**
+ * The gates the levels of detail are read through. At rest they are the
+ * token's own, parked (D204 (parked-levels)). With the old levels' switch on
+ * the scene's stand in for the cell's, the file's and the diff's, and the
+ * first stays the token's (D240 (far-zoom-lit)): the planet that stood over
+ * the far field is gone (D213 (planet-goes)), and read through the scene's
+ * first gate the far zoom would be the map unlit with nothing over it. So the
+ * switch brings back the slide, the plate and the sheet, and never the dark.
+ */
+export const gatesOf = (levels: { readonly gates: readonly LodGate[]; readonly autoOpen: number }): readonly LodGate[] => (levels.autoOpen > 0 ? [...levels.gates.slice(0, 1), ...LOD_GATES.slice(1)] : levels.gates);
 
 /** What the chrome hears of the open cell: which, whether its exploded view is spread, and whether its wiring is drawn. */
 export type Opened = { readonly cell: string; readonly exploded: boolean; readonly wired: boolean };
@@ -42,7 +64,9 @@ export type OpenEvent =
   /** A click on the canvas: what lay under it at the camera's level, a file of the open cell where it has floated, and whether a cell would hold open at this view. */
   | { readonly kind: 'click'; readonly lod: Lod; readonly pick: Pick | undefined; readonly holds: (cell: string) => boolean }
   | { readonly kind: 'explode' }
-  | { readonly kind: 'wire' };
+  | { readonly kind: 'wire' }
+  /** The cell the selection holds open as a slide, or none (D205 (open-on-select)): it opens, moves there or closes, whatever the view. */
+  | { readonly kind: 'select'; readonly cell: string | undefined };
 
 /** The cell a stop stands in, if any. */
 export const cellOf = (stop: Stop): string | undefined => (stop.kind === 'field' ? undefined : stop.cell);
@@ -83,6 +107,9 @@ export const openedBy = (state: OpenState, event: OpenEvent): OpenState => {
       return state.open === undefined ? state : { ...state, exploded: !state.exploded };
     case 'wire':
       return state.open === undefined ? state : { ...state, wired: !state.wired };
+    case 'select':
+      if (event.cell === undefined) return CLOSED;
+      return event.cell === state.open ? state : openCell(event.cell);
     default:
       return state;
   }

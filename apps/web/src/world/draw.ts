@@ -10,10 +10,10 @@
  * (step 29, C12): the settle's amplitude and lift, and the levels of detail,
  * which keep the key light and the sky off at the far field and bring them,
  * the organelles and the weather's surface marks up as the surface resolves.
- * The far zoom is a dark planet under its dependencies' stars, on a canvas of
- * its own over the world's (D170): it grows as the view comes in until it
- * fills the frame, and LOD1's cross-fade hands it to the flat world; while it
- * shows, the pointer hovers nothing on the flat ground beneath it. The weather is
+ * The planet that stood over the far zoom is gone (D213 (planet-goes)), so
+ * the surface is lit from the farthest zoom in: no zoom the camera reaches
+ * reads the far field at rest, nor under the old levels' switch, which leaves
+ * the first gate to its token (D240 (far-zoom-lit)). The weather is
  * step 26's derivation drawn: the reach in the skin, every mark on a file as
  * one instanced mesh, the storms as bolts, the exceptional edges as ribbons,
  * and the slot names and old paths as flat tags over the canvas (step 33).
@@ -35,12 +35,41 @@
  * own geometry where its ray meets the skin, and the thing under it is
  * outlined and tagged at the scheduler's eased hover (step 38). The chrome's
  * line (`nav.ts`) hears the view's outline on the ground for the minimap,
- * and moves the camera where the minimap asks (D154). A notice's row, the
+ * and moves the camera where the minimap asks (D154). A click selects (D207
+ * (click-selects)): a file, a module by its ground, or nothing on open space,
+ * built from what it picked by its target and set on the line, and the camera
+ * does not move. The selection, whichever side set it, is ringed steadily
+ * under the hover's outline, keeps its words written, and is named on the
+ * canvas; a row in the chrome that selects asks the world to fly there too
+ * (D209 (selection-line)). The two sides point at each other over the same
+ * line: the world says what the pointer is over on the map, so its row
+ * lights in the chrome, and what a row there points at is outlined on the
+ * map and its words written (D234 (pointed-ring)); the canvas names what is
+ * pointed at and from which side. A file large enough on the screen is named
+ * unasked, once the camera rests, after every word asked for has its place
+ * (D206 (detail-by-size), D233 (asked-before-sized)), up to the token's
+ * budget of names (D245 (name-budget-token)) and under no block of the
+ * chrome (D246 (names-off-chrome)). A notice's row, the
  * arrows, Enter and Escape fly the camera to a stop along the scheduler's
  * fly-to, and the skin swings as it lands; the stop goes back over the line
- * for the HUD's breadcrumb (step 39). A target an agent names over
- * `atis mcp` flies there too, and is lit: its labels written until the
- * reader takes the camera, and a notice flared at its anchor (D178). From the surface on, the innermost cell
+ * for the HUD's breadcrumb (step 39). The keys walk from the selection, else
+ * from that stop: Enter selects where it lands, an arrow carries a selection
+ * to the sibling it walks to, and Escape clears a selection before it
+ * ascends (D231 (keys-walk-selection), D225 (escape-clears)). A view moved by
+ * hand stands at the file under its centre once that file is drawn large
+ * enough to be named (D230 (file-stop-by-size)). A target an agent names over
+ * `atis mcp` flies there too, is selected, and is lit: its labels written until the
+ * reader takes the camera, and a notice flared at its anchor (D178). On the
+ * one surface a selected module opens in place as a stained slide (D205
+ * (open-on-select)): the cell the selection holds open is read off it every
+ * frame (`selection.ts`, D220 (slide-by-selection)), so selecting another
+ * module moves the slide, a file selected on it keeps it, clearing the
+ * selection closes it, and no zoom and no share of the screen opens or closes
+ * anything; closed, its files come home over the slide's own fade (D221
+ * (home-by-time)). The tab opens framed on the ground the world draws, not on
+ * the layout with the shore's strip the world never draws (D222
+ * (terrain-frame)). Under the old levels, which one token brings back (D204
+ * (parked-levels)), from the surface on, the innermost cell
  * under the view's centre opens as a stained slide once its skin fills the
  * cell gate's share of the free screen, if its slide shows files (step 40,
  * D155, D165), a single-file module opening as the package it floats in
@@ -77,8 +106,8 @@
  * canvas also says which level of detail it draws at. On a map of a range,
  * the scrubber's step to another commit cross-fades the weather over the one
  * terrain (D100): that frame's marks, tags and labels are laid as a layer of
- * their own and fade in as the last frame's fade out, the skin's reach and
- * the planet's lights mixing the same way, at the scheduler's cross-fade and
+ * their own and fade in as the last frame's fade out, the skin's reach
+ * mixing the same way, at the scheduler's cross-fade and
  * cut under reduced motion (C12), the relief, the tissue and the files never
  * moving (P2); the canvas says which frame it shows and when the fade has
  * settled. A map a watch pushes on the ground drawn cross-fades its weather
@@ -107,12 +136,12 @@
 import { AgXToneMapping, AmbientLight, Color, DataUtils, DirectionalLight, RenderPipeline, Scene, Vector3, WebGPUCoordinateSystem, WebGPURenderer } from 'three/webgpu';
 import { emissive, mrt, output, pass } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
-import { CINEMA, FIELD_FILL, LOD_GATES, MEMBRANE_WOBBLE, MEMBRANE_WOBBLE_HZ, MOTION_TOKENS, NUCLEUS_TOKENS, RIBBON_SWAY, RIBBON_SWAY_HZ, REACH_ORIGIN_OPACITY, RELIEF, bandLabelsFor, cellSlide, cellWiring, cinemaFocus, compositesOf, compositesOpen, createPicker, createScheduler, fileLevelOf, fillOf, gridFor, instances, interiorOf, planetShown, slideCellOf, surfacePoint } from 'scene';
+import { CINEMA, FIELD_FILL, MEMBRANE_WOBBLE, MEMBRANE_WOBBLE_HZ, MOTION_TOKENS, NUCLEUS_TOKENS, RIBBON_SWAY, RIBBON_SWAY_HZ, REACH_ORIGIN_OPACITY, RELIEF, bandLabelsFor, cellSlide, cellWiring, cinemaFocus, compositesOf, compositesOpen, createPicker, createScheduler, fileLevelOf, fillOf, gridFor, instances, interiorOf, slideCellOf, surfacePoint } from 'scene';
 import type { FileLevel, LabelBox, Lod, Pick, Point, Slide } from 'scene';
 import type { MapJson, OverlayName } from 'core';
 
 import { RAIL_WIDTH, zoomFor } from '../fit.js';
-import { askedOf, slideWords } from '../asked.js';
+import { askedOf, namedBySize, slideWords } from '../asked.js';
 import { diffLevelOf, loadDiff } from '../diff.js';
 import type { DiffAnswer, DiffLevel } from '../diff.js';
 import { litIn, revealGroup } from '../highlight.js';
@@ -120,15 +149,17 @@ import type { Highlight } from '../highlight.js';
 import { hoverOf } from '../hover.js';
 import type { Hovered } from '../hover.js';
 import { marksOf } from '../marks.js';
-import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, NOTICE, PLANET, SKIN, SKY, SPACE, WALK, WEATHER } from '../materials.js';
-import type { Nav } from '../nav.js';
+import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, NOTICE, SKIN, SKY, SPACE, WALK, WEATHER } from '../materials.js';
+import { selectedOf, targetOf } from '../nav.js';
+import type { Nav, Pointed, Selected } from '../nav.js';
 import { frameMap, lastFrame as ownFrame } from '../frames.js';
 import { shownOverlay } from '../overlays.js';
 import type { OverlayAsk } from '../overlays.js';
-import { categoryHue, runsOf } from '../notices.js';
-import { CLOSED, OPEN_LOD, openedBy, openedOf } from '../opened.js';
+import { runsOf } from '../notices.js';
+import { CLOSED, OPEN_LOD, gatesOf, openedBy, openedOf } from '../opened.js';
 import type { OpenState } from '../opened.js';
 import type { Registry } from '../registry.js';
+import { openedFor, selectedBy, targetOfPick } from '../selection.js';
 import type { View } from '../view.js';
 import { FIELD, createWalk, ownsKey } from '../walk.js';
 import type { Stop } from '../walk.js';
@@ -147,7 +178,6 @@ import type { Labels } from './labels.js';
 import { ORGANELLE_LOOK, createOrganelles } from './organelles.js';
 import { PALETTE_LOOK, createPalette } from './palette.js';
 import type { Palette } from './palette.js';
-import { createPlanet } from './planet.js';
 import { createRibbons } from './ribbons.js';
 import type { Ribbons } from './ribbons.js';
 import { createSectors } from './sectors.js';
@@ -159,9 +189,8 @@ import { BAND_LABEL_LOOK, createSpace } from './space.js';
 /** How far off the key light stands: far enough that its direction is one across the layout. */
 const CAMERA_REACH = 1000;
 
-/** A press that moves no further than this, in pixels, and lasts no longer than this, is a click. */
-const CLICK_SLOP = 4;
-const CLICK_MS = 400;
+/** The gate a slide a selection closed brings its files home by (D221 (home-by-time)): the share handed in beside it is how far home they have yet to come, so they are home at none of it and where they floated at all of it. */
+const HOMING_GATE = { open: 1, close: 1, home: 0 };
 
 /** A stretch of the layout: the box round some points on it. */
 type Box = { readonly x0: number; readonly y0: number; readonly x1: number; readonly y1: number };
@@ -211,7 +240,7 @@ const claimsOf = (height: number): { readonly top: number; readonly bottom: numb
   };
 };
 
-/** The chrome's boxes over the field's left side, in pixels, which a band's label keeps off (D196): the HUD at the top left, and the legend and the minimap at the bottom left. */
+/** The chrome's boxes over the field's left side, in pixels, which a band's label keeps off (D196), and a name written unasked (D246 (names-off-chrome)): the HUD at the top left, and the legend and the minimap at the bottom left. */
 const chromeBoxes = (): readonly LabelBox[] =>
   ['[data-hud]', '[data-legend]', '[data-minimap]'].flatMap((selector) => {
     const box = claimOf(selector);
@@ -300,13 +329,11 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   const nucleusTokens = registry.view(NUCLEUS_TOKENS);
   const interior = createInterior(heightAt, skin.resolution, interiorLook, registry.view(SLIDE_CHROME));
   scene.add(...interior.meshes);
-  // The far zoom's planet (D170): over the rules, which are the flat world's, and under everything else.
-  const planet = createPlanet(map, registry.view(PLANET, 'PLANET'), () => ({ change: tokens.CHANGE_HUE, ifr: tokens.IFR_HUE, category: categoryHue(current.map.weather.checks.category, tokens), field: tokens.FIELD_FILL }));
   // The file level's plate (§6's LOD3, D102): over the slide's leaders and the labels, under the hover's tag and the slide's words; the diff level's sheet over the plate it cross-fades from.
   const filePlate = createFilePlate(registry.view(FILE_LOOK));
   const diffSheet = createDiffSheet(registry.view(DIFF_LOOK));
   // The layers over the canvas in the order they stack, each over the one before it and all of them under the chrome.
-  canvas.after(space.rules, planet.element, interior.leaders, hover.outline, ...current.labels.elements, filePlate.element, diffSheet.element, hover.tag, interior.words);
+  canvas.after(space.rules, interior.leaders, hover.outline, ...current.labels.elements, filePlate.element, diffSheet.element, hover.tag, interior.words);
   // Which cell is open, the slide laid for it, and the level the last frame was drawn at, which a click is read against.
   let opening: OpenState = CLOSED;
   let slide: Slide | undefined;
@@ -338,13 +365,44 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   let litTarget: string | undefined;
   const barrelOf = new Map(map.terrain.cells.map((cell) => [cell.id, cell.barrel] as const));
   let placedLod: number | undefined;
+  // The selection (D207 (click-selects)): as the line last held it, and held to the map the world draws, where a selection that map holds neither a file nor a module for is none (D209 (selection-line)).
+  let chosen: Selected | undefined;
+  let held: Selected | undefined;
+  /** Take the selection the line holds, when it moved: its words are asked for from here on, and the canvas names it. */
+  const take = (next: Selected | undefined): void => {
+    if (next === chosen) return;
+    chosen = next;
+    held = selectedBy(map, held, { kind: 'select', selected: next });
+    placeLabels = true;
+    if (held === undefined) delete canvas.dataset['selected'];
+    else canvas.dataset['selected'] = targetOf(held);
+  };
+  // What is pointed at (D209 (selection-line)): as the line last held it, and what a row of the chrome points at, held to the map the world draws. The world's own pointing is the thing under the pointer, which it outlines and names already.
+  let aimed: Pointed | undefined;
+  let rowPointed: Selected | undefined;
+  /** Take the pointing the line holds, when it moved: what a row points at is ringed and its words asked for from here on, and the canvas names what is pointed at and from which side. */
+  const heed = (next: Pointed | undefined): void => {
+    if (next === aimed) return;
+    aimed = next;
+    const at = next === undefined ? undefined : selectedOf(map, next.target);
+    rowPointed = next?.from === 'chrome' ? at : undefined;
+    placeLabels = true;
+    if (next === undefined || at === undefined) {
+      delete canvas.dataset['pointed'];
+      delete canvas.dataset['pointedBy'];
+    } else {
+      canvas.dataset['pointed'] = targetOf(at);
+      canvas.dataset['pointedBy'] = next.from;
+    }
+  };
   // The free screen beside the rail, or the whole canvas in a still for a comment, which draws no chrome (D108).
   const chrome = { right: view.cinema === true ? 0 : RAIL_WIDTH };
   // What the chrome claims of the screen's top and foot, which the slide's tags keep clear of (P25), and how many frames ago it was read.
   let claims = { top: 0, bottom: 0 };
   let claimsAge = CLAIMS_EVERY;
-  // The chrome's boxes the bands' labels keep off, read as often, how many times the field's labels have been laid out, and what the bands' labels were last placed for.
+  // The chrome's boxes the bands' labels and the names written unasked keep off, read as often, what they were when last read, how many times the field's labels have been laid out, and what the bands' labels were last placed for.
   let chromeClaims: readonly LabelBox[] = [];
+  let chromeRead = '';
   let chromeAge = CLAIMS_EVERY;
   let placings = 0;
   let bandsPlacedFor = '';
@@ -360,11 +418,33 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   globalThis.addEventListener('resize', fit);
   const reduced = globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches;
   canvas.dataset['motion'] = reduced ? 'reduced' : 'full';
+  const levels = registry.view(LEVELS, 'LEVELS');
+  // The walk (step 39): the stop the view stands at, and the flight under way to the next one, eased by the scheduler's fly-to.
+  const walk = createWalk(map);
+  const walkLook = registry.view(WALK, 'WALK');
+  const layout = map.terrain.layout ?? { width: 1, height: 1 };
+  /** The view that frames a stretch of the ground: centred on it, at the zoom where it fills the walk's share of the free screen. */
+  const frameOf = (box: Box): { readonly centre: Point; readonly zoom: number } => ({ centre: [(box.x0 + box.x1) / 2, (box.y0 + box.y1) / 2], zoom: clampZoom(zoomFor(layout, box, canvas.clientWidth, canvas.clientHeight, chrome, walkLook.share)) });
+  /**
+   * Where the field stands on the one surface (D222 (terrain-frame)): framed
+   * on the ground the world draws, centred in the free screen. The fit frames
+   * the whole layout, the shore's strip above the first band with it, which
+   * the world never draws, so a tab opened at the fit showed the map small
+   * and low under empty sky. The fit and what zoom 1 means are as they were;
+   * only where the tab opens, and where the walk flies for the field, moved.
+   * None under the old levels, whose far field is the whole layout at the fit
+   * (D204 (parked-levels)), and none on a map that lays nothing out.
+   */
+  const fieldFrame = (): { readonly centre: Point; readonly zoom: number } | undefined => {
+    const ground = levels.autoOpen > 0 ? undefined : walk.ground();
+    return ground === undefined ? undefined : frameOf(ground);
+  };
+  // A page that names no zoom and no centre opens at the field.
+  const home = view.framed === true ? undefined : fieldFrame();
   // A still opens on what the change is about, the rail's room given to the world, framed as the comment's flat still frames it (D108, D175).
-  const opened = view.cinema === true ? { ...view, ...cinemaFocus(map, canvas.clientWidth, canvas.clientHeight, registry.view(CINEMA, 'CINEMA')) } : view;
+  const opened = view.cinema === true ? { ...view, ...cinemaFocus(map, canvas.clientWidth, canvas.clientHeight, registry.view(CINEMA, 'CINEMA')) } : home === undefined ? view : { ...view, ...home };
   const controls = createControls(camera, canvas, map, opened, chrome, reduced);
   const cameraLook = registry.view(CAMERA, 'CAMERA');
-  const levels = registry.view(LEVELS, 'LEVELS');
   // The labels ride their anchors while the camera moves and are laid out afresh once it rests.
   controls.addEventListener('rest', () => {
     placeLabels = true;
@@ -395,6 +475,12 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   let closedComposites: ReadonlySet<string> = new Set();
   // Each placed file's cell and radius, for a file the surface draws where it last floated.
   const placed = new Map(instances(map).map((file) => [file.id, file] as const));
+  // The one file of each single-file module a package holds, which floats on the package's slide in the module's stead (D167).
+  const floaterOf = new Map([...placed.values()].flatMap((file) => (slideCellOf(map, file.cell) === file.cell ? [] : [[file.cell, file.id] as const])));
+  /** The file a selection or a pointing stands for on a slide (D247 (single-as-its-file)): the file itself, or a single-file module's one file, since the slide of the package it floats in covers the module's skin and shows the file alone. */
+  const fileOn = (thing: Selected | undefined): string | undefined => (thing === undefined ? undefined : thing.kind === 'organelle' ? thing.path : floaterOf.get(thing.cell));
+  // The package each file stands in on a map past 5,000 files, where a package is drawn as one body until the view nears it (step 66).
+  const compositeOf = new Map(composites.flatMap((composite) => composite.files.map((file) => [file, composite.id] as const)));
   // The files of a closed cell the surface draws where they last floated (D165), as the scheduler last said.
   let floatedOnSurface: ReadonlyMap<string, Point> = new Map();
   /** The body of the opened cell under a layout point, where it has floated, a file reaching `slop` past its edge. */
@@ -441,6 +527,43 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     return hovered === undefined || body === undefined ? hovered : { ...hovered, ring: body.outline.ring };
   };
   let bodies: ReturnType<typeof interiorOf> = [];
+  /** A thing's ring as last laid on the map, and what it was laid for: the thing, the frame's map, and where the surface draws a floated file. */
+  type Laid = { readonly key: string; readonly map: MapJson; readonly ring: readonly Point[] | undefined };
+  /**
+   * A ring that follows one module or file from frame to frame: the outline
+   * the selection is ringed in (D207 (click-selects)), and the one round what
+   * a row of the chrome points at (D209 (selection-line)). A module's
+   * membrane, or a file's own shape where the map draws it, the outline its
+   * body is drawn in while a slide floats it; a single-file module is ringed
+   * in its file's body while its package's slide floats that (D247
+   * (single-as-its-file)). It is laid again only when the
+   * thing, the frame's map or where the file floats moves, so the same ring
+   * is handed back until then.
+   */
+  const ringer = (): ((thing: Selected | undefined) => readonly Point[] | undefined) => {
+    let laid: Laid | undefined;
+    return (thing) => {
+      if (thing === undefined) return undefined;
+      if (thing.kind === 'cell') {
+        // The slide of the package a single-file module floats in covers the module's skin, so its ring there would lie round bare ground: it is ringed where its file floats.
+        const floater = floaterOf.get(thing.cell);
+        const floating = floater === undefined ? undefined : bodies.find((each) => each.id === floater);
+        if (floating !== undefined) return floating.outline.ring;
+        if (laid?.key !== thing.cell || laid.map !== current.map) laid = { key: thing.cell, map: current.map, ring: hoverOf(current.map, { kind: 'membrane', cell: thing.cell })?.ring };
+        return laid.ring;
+      }
+      const body = bodies.find((each) => each.id === thing.path);
+      if (body !== undefined) return body.outline.ring;
+      const file = placed.get(thing.path);
+      if (file === undefined) return undefined;
+      const [x, y] = floatedOnSurface.get(thing.path) ?? [file.x, file.y];
+      const at = `${thing.path}@${String(x)},${String(y)}`;
+      if (laid?.key !== at || laid.map !== current.map) laid = { key: at, map: current.map, ring: hoverOf(current.map, { kind: 'organelle', path: thing.path, cell: file.cell, x, y, r: file.r })?.ring };
+      return laid.ring;
+    };
+  };
+  const selectionRing = ringer();
+  const pointedRing = ringer();
   // The file the plate opens, the map it was read from, the plate as the scene lays it, and the change's entry for it, which only a changed file has (D102).
   let fileFocus: string | undefined;
   let fileMap: MapJson | undefined;
@@ -494,8 +617,9 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
 
   // A capture freezes the clock, so one seed and one time give one frame however long the page took (D94, D105).
   const { time: frozen } = view;
+  const clock = frozen === undefined ? (): number => performance.now() : (): number => frozen;
   const scheduler = createScheduler({
-    clock: frozen === undefined ? () => performance.now() : () => frozen,
+    clock,
     seed: view.seed,
     tiers: map.notices.map((notice) => notice.tier),
     reduced,
@@ -503,9 +627,29 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   });
   scheduler.load();
 
+  // When each cell a slide showed last closed, and when it opened again if it has, on the scheduler's clock (D221 (home-by-time)).
+  const homing = new Map<string, { readonly from: number; readonly until?: number }>();
+  /**
+   * How far from home a closed cell's files still are on the one surface, 1
+   * where they floated to 0 home (D221 (home-by-time)): they come home over
+   * the slide's own fade, as it fades out, whatever the zoom. The old levels
+   * brought them home by the share of the screen the cell filled, so a slide
+   * closed up close left its files where they floated until the view climbed;
+   * on the one surface the zoom moves nothing, so the clock does.
+   */
+  const awayOf = (cell: string): number => {
+    const closed = homing.get(cell);
+    if (closed === undefined || tokens.LOD_FADE_MS <= 0) return 0;
+    return 1 - Math.min(1, Math.max(0, ((closed.until ?? clock()) - closed.from) / tokens.LOD_FADE_MS));
+  };
   /** Take the open cell's next state: the scheduler opens or closes the slide, the skin swings as a cell opens, and the chrome hears of it. */
   const apply = (next: OpenState): void => {
     if (next.open !== opening.open) {
+      const now = clock();
+      // The cell that closes starts for home from here, and one opened again on its way floats on from as far as it had come (D221 (home-by-time)).
+      if (opening.open !== undefined) homing.set(opening.open, { from: now });
+      const back = next.open === undefined ? undefined : homing.get(next.open);
+      if (next.open !== undefined && back !== undefined && back.until === undefined) homing.set(next.open, { ...back, until: now });
       scheduler.open(next.open);
       if (next.open === undefined) delete canvas.dataset['open'];
       else {
@@ -519,7 +663,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     opening = next;
     nav.open(openedOf(next));
   };
-  // A click on the canvas, a press of the left button that neither moved nor lingered, opens the cell under it or closes the open one (D155).
+  // A click on the canvas, a press of the left button that neither moved nor lingered, selects what lies under it (D207 (click-selects)): a file, a module by its ground, or nothing on open space. The camera does not move.
   let pressed: { readonly x: number; readonly y: number; readonly at: number } | undefined;
   canvas.addEventListener('pointerdown', (event) => {
     pressed = event.button === 0 ? { x: event.clientX, y: event.clientY, at: performance.now() } : undefined;
@@ -527,19 +671,18 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   canvas.addEventListener('pointerup', (event) => {
     const press = pressed;
     pressed = undefined;
-    if (press === undefined || Math.hypot(event.clientX - press.x, event.clientY - press.y) > CLICK_SLOP || performance.now() - press.at > CLICK_MS) return;
+    if (press === undefined || Math.hypot(event.clientX - press.x, event.clientY - press.y) > hoverLook.clickSlop || performance.now() - press.at > hoverLook.clickMs) return;
     const ground = groundAt({ x: event.clientX, y: event.clientY });
-    // A file of the opened cell answers the click where it has floated, so a click on it keeps its cell open (D165); a module answers as the package it floats in (D167); a cell whose slide shows no files answers as open ground.
+    // The click selects what the pointer rings (D224 (click-as-hover)): picked with the hover's reach past a file's edge, so a file too small to aim at is selected where it is outlined, and nothing at the far field, where nothing is. The selection is built from the pick's target, never from its cell (D209 (selection-line)); what it opens is read off it each frame (D220 (slide-by-selection)).
+    const under = ground === undefined || lastLod === 0 ? undefined : pickAt(ground, lastLod, hoverLook.slop / pixelsPerUnit(camera, canvas.clientWidth));
+    nav.select(selectedBy(map, held, { kind: 'click', target: targetOfPick(under) }), 'stay');
+    if (levels.autoOpen <= 0) return;
+    // The old levels open a cell by the click too (D155, D204 (parked-levels)). A file of the opened cell answers the click where it has floated, so a click on it keeps its cell open (D165); a module answers as the package it floats in (D167); a cell whose slide shows no files answers as open ground.
     const found = ground === undefined ? undefined : pickAt(ground, lastLod, 0);
     const picked = found === undefined ? undefined : { ...found, cell: slideCellOf(map, found.cell) };
     const pick = picked?.kind === 'membrane' && !withFiles.has(picked.cell) ? undefined : picked;
-    apply(openedBy(opening, { kind: 'click', lod: lastLod, pick, holds: levels.autoOpen > 0 ? holdsIn(boxOf(outlineOf(camera, canvas.clientWidth, chrome))) : () => false }));
+    apply(openedBy(opening, { kind: 'click', lod: lastLod, pick, holds: holdsIn(boxOf(outlineOf(camera, canvas.clientWidth, chrome))) }));
   });
-
-  // The walk (step 39): the stop the view stands at, and the flight under way to the next one, eased by the scheduler's fly-to.
-  const walk = createWalk(map);
-  const walkLook = registry.view(WALK, 'WALK');
-  const layout = map.terrain.layout ?? { width: 1, height: 1 };
 
   // The cell's gate (D165): a cell's box, the share of the free screen its skin fills at the camera's zoom, the cell to open under a point, and whether a cell holds open.
   const cellBoxes = new Map<string, Box | undefined>();
@@ -558,6 +701,11 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   };
   // A cell whose slide shows no files, a package whose files all sit in the folders it holds, has nothing to show but holes, so it never opens and its ground is open ground; a package of modules shows them (D167).
   const withFiles = new Set([...placed.values()].map((file) => slideCellOf(map, file.cell)));
+  /** The cell whose slide shows a cell's files, or none where that slide would show no files. */
+  const slideOf = (cell: string): string | undefined => {
+    const shows = slideCellOf(map, cell);
+    return withFiles.has(shows) ? shows : undefined;
+  };
   /** The innermost cell under a layout point, or the package a single-file module there floats in (D167), once its skin fills the gate's share of the free screen and its slide shows files: the cell that opens there. A cell that holds it never opens in its stead, so zooming in on a folder opens the folder. */
   const openableAt = (point: Point): string | undefined => {
     // A still for a comment stays on the surface: a slide opens only to a reader's zoom.
@@ -583,14 +731,29 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     nav.settle(next);
   };
   const visit = (next: Stop): void => {
+    // The field is flown to where the tab opened on it (D222 (terrain-frame)); every other stop, and the field under the old levels, to its own box.
     const box = walk.box(next, walkLook.fileContext);
+    const to = (next.kind === 'field' ? fieldFrame() : undefined) ?? (box === undefined ? undefined : frameOf(box));
     const from = standOf(controls, camera, canvas.clientWidth, chrome);
-    if (box === undefined || from === undefined) return;
-    flight = { from, to: [(box.x0 + box.x1) / 2, (box.y0 + box.y1) / 2], zoom: clampZoom(zoomFor(layout, box, canvas.clientWidth, canvas.clientHeight, chrome, walkLook.share)) };
+    if (to === undefined || from === undefined) return;
+    flight = { from, to: to.centre, zoom: to.zoom };
     handled = false;
     readStop = false;
     settle(next);
     scheduler.flyTo();
+  };
+  /**
+   * Fly to a stop the keys or a highlight lead to, selecting it on the way
+   * when asked (D231 (keys-walk-selection)): the selection goes over the
+   * line, which asks the world back to take it and fly, so the ring, the
+   * slide, the breadcrumb and the chrome's panels all follow the one move.
+   * The field is no selection, and a stop the map drawn does not hold is
+   * only flown to.
+   */
+  const stepTo = (next: Stop, select: boolean): void => {
+    const chosenNext = !select || next.kind === 'field' ? undefined : selectedBy(map, held, { kind: 'select', selected: next });
+    if (chosenNext === undefined) visit(next);
+    else nav.select(chosenNext, 'fly');
   };
   const byHand = (): void => {
     flight = undefined;
@@ -625,7 +788,6 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     current = layerOf(next, shownName);
     hover.tag.before(...current.labels.elements);
     skin.reach(next);
-    planet.weather(next);
     lightOf = new Map(runsOf(next).map((run) => [run.target, run.light] as const));
     scheduler.scrub(next.notices.map((notice) => notice.tier));
     relaySlide = true;
@@ -666,7 +828,9 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   };
   /**
    * What an agent named over `atis mcp` (D178), or the tour's stepper steps
-   * to (D112), held to the map the world draws: the camera flies to its stop, or the rail brings its shore
+   * to (D112), held to the map the world draws: the camera flies to its stop,
+   * which is selected on the way, so the chrome's panels open on what the
+   * agent or the tour is showing (D207 (click-selects)), or the rail brings its shore
    * group's block into view, its labels are written as a notice row's hover
    * writes them until the reader takes the camera, and a notice flares at its
    * anchor, as the scheduler allows one flare in flight (C12). The canvas
@@ -675,7 +839,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   const highlight = (asked: Highlight): void => {
     const lit = litIn(source, asked);
     if (lit === undefined) return;
-    if (lit.destination.kind === 'stop') visit(lit.destination.stop);
+    if (lit.destination.kind === 'stop') stepTo(lit.destination.stop, true);
     else revealGroup(lit.destination.group);
     litTarget = lit.target;
     placeLabels = true;
@@ -700,13 +864,28 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     overlay,
     swap,
     highlight,
+    // The line's selection moved, or a row asks to fly to the one it holds (D209 (selection-line)): the world takes it, and flies only when asked (D207 (click-selects)).
+    select: (selected, move) => {
+      take(selected);
+      if (move === 'fly' && held !== undefined) visit(held);
+    },
+    // A row of the chrome points at a module or a file, or at nothing again (D209 (selection-line)): the world rings it and writes its words.
+    point: () => heed(nav.pointed()),
   });
-  // The arrows walk to a sibling, Enter descends and Escape ascends, unless the key is the focused element's own or the chrome already took it (an open legend folds away on Escape); with a cell open, Escape closes it first, x spreads or gathers its exploded view (D155), and w draws or takes away its wiring.
+  // A selection made, or a row pointed at, before the world was drawn is not told again: both are read as the world starts.
+  take(nav.selected());
+  heed(nav.pointed());
+  // The arrows walk to a sibling, Enter descends and Escape ascends, unless the key is the focused element's own or the chrome already took it (an open legend folds away on Escape); Escape first closes a cell the old levels opened, then clears the selection, which closes the slide it held open (D225 (escape-clears)), and only then ascends; with a cell open, x spreads or gathers its exploded view (D155), and w draws or takes away its wiring. The keys walk from where the breadcrumb stands, the selection, else the walk's stop; Enter selects where it lands, and an arrow carries a selection to the sibling it walks to (D231 (keys-walk-selection)).
   globalThis.addEventListener('keydown', (event) => {
     if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || ownsKey(event.target, event.key)) return;
-    if (event.key === 'Escape' && opening.open !== undefined) {
+    if (event.key === 'Escape' && opening.open !== undefined && levels.autoOpen > 0) {
       event.preventDefault();
       apply(openedBy(opening, { kind: 'escape' }));
+      return;
+    }
+    if (event.key === 'Escape' && nav.selected() !== undefined) {
+      event.preventDefault();
+      nav.select(selectedBy(map, held, { kind: 'escape' }), 'stay');
       return;
     }
     if (event.key === 'x' || event.key === 'X') {
@@ -722,10 +901,10 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       return;
     }
     const middle = standOf(controls, camera, canvas.clientWidth, chrome)?.centre;
-    const next = middle === undefined ? undefined : walk.key(stop, event.key, middle);
+    const next = middle === undefined ? undefined : walk.key(held ?? stop, event.key, middle);
     if (next === undefined) return;
     event.preventDefault();
-    visit(next);
+    stepTo(next, event.key === 'Enter' || held !== undefined);
   });
 
   // The loop's passes so far: the first draws the first complete frame, and the second finds it on the screen.
@@ -733,7 +912,6 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   let compositeOpen: readonly boolean[] = [];
   let shownLod: Lod | undefined;
   let floatedShown: number | undefined;
-  let planetOn: boolean | undefined;
   await renderer.setAnimationLoop(() => {
     if (passes === 1) {
       performance.mark('atis:ready');
@@ -766,8 +944,8 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       lastLod,
       { open: levels.compositeOpen, close: levels.compositeClose },
     );
-    // The camera's zoom over the fit is the one scalar the levels of detail read. The one switch brings every old level back (D204 (parked-levels)): while `autoOpen` is on the scene's own gates stand in for the parked ones.
-    const gates = levels.autoOpen > 0 ? LOD_GATES : levels.gates;
+    // The camera's zoom over the fit is the one scalar the levels of detail read. The one switch brings the old levels back (D204 (parked-levels)): while `autoOpen` is on the scene's own gates stand in for the parked ones, but for the first, which stays the token's, so the far zoom is the lit surface there too (D240 (far-zoom-lit)).
+    const gates = gatesOf(levels);
     const frame = scheduler.frame(camera.zoom, gates, compositeOpen);
     if (composites.length > 0) {
       skin.openComposites(frame.composites);
@@ -775,6 +953,8 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       if (closed.size !== closedComposites.size || [...closed].some((id) => !closedComposites.has(id))) {
         closedComposites = closed;
         pickAgain = true;
+        // A package that opened into its modules draws its files, which may now be named by their size.
+        placeLabels = true;
       }
       const shown = `${String(compositeOpen.filter((open) => !open).length)}/${String(composites.length)}`;
       if (canvas.dataset['composites'] !== shown) canvas.dataset['composites'] = shown;
@@ -788,9 +968,17 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       canvas.dataset['lod'] = String(lod);
     }
     const middle = standOf(controls, camera, canvas.clientWidth, chrome)?.centre;
-    // The opened cell (D155, D165): from the surface on, the innermost cell under the view's centre opens once it fills the gate's share, and holds while any of it stays in view at the share it holds at.
-    const under = middle === undefined || lod < OPEN_LOD || levels.autoOpen <= 0 ? undefined : openableAt(middle);
-    apply(openedBy(opening, { kind: 'frame', lod, under, holds: holdsIn(boxOf(outline)) }));
+    take(nav.selected());
+    heed(nav.pointed());
+    if (levels.autoOpen > 0) {
+      // The opened cell under the old levels (D155, D165, D204 (parked-levels)): from the surface on, the innermost cell under the view's centre opens once it fills the gate's share, and holds while any of it stays in view at the share it holds at.
+      const under = middle === undefined || lod < OPEN_LOD ? undefined : openableAt(middle);
+      apply(openedBy(opening, { kind: 'frame', lod, under, holds: holdsIn(boxOf(outline)) }));
+    } else {
+      // The opened cell on the one surface (D205 (open-on-select), D220 (slide-by-selection)): the one the selection holds open, read off it every frame, so a click, a row in the chrome, Escape and the token all move it the one way, and the zoom and the share of the screen a module fills are never asked. A still for a comment opens none (D108).
+      const wanted = view.cinema === true || levels.openOnSelect <= 0 ? undefined : openedFor(held, opening.open, slideOf);
+      apply(openedBy(opening, { kind: 'select', cell: wanted }));
+    }
     // A flight moves the view along the scheduler's ease, centre straight across and zoom by its ratio, and the skin swings once it lands.
     if (flight !== undefined) {
       const progress = frame.fly ?? 1;
@@ -803,8 +991,10 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       }
     }
     if (readStop && flight === undefined) {
-      // Under the walk's own zoom the view stands at the field, whatever lies under its centre: no level says so now that the far field's is parked (D219 (field-by-zoom)).
-      if (middle !== undefined) settle(walk.stopAt(middle, camera.zoom < walkLook.fieldZoom ? 0 : lod));
+      // Under the walk's own zoom the view stands at the field, whatever lies under its centre: no level says so now that the far field's is parked (D219 (field-by-zoom)). The zoom is measured over the frame the field stands at, which is the fit only under the old levels (D223 (field-over-frame)): on a map with a deep shore the tab opens well past 1.7 times the fit, with the whole ground in view.
+      // The one surface has no file level, so past the field the view stands at the file under its centre once that file is drawn large enough to be named, and at its module while it is smaller (D230 (file-stop-by-size)); under the old levels the file's level says so as it did.
+      const least = levels.autoOpen > 0 ? undefined : levels.fileNameFrom / pixelsPerUnit(camera, canvas.clientWidth);
+      if (middle !== undefined) settle(walk.stopAt(middle, camera.zoom < walkLook.fieldZoom * (fieldFrame()?.zoom ?? 1) ? 0 : lod, least));
       readStop = false;
     }
     // The slide (step 40): laid when the cell it shows changes, its bodies laid every frame where the scene has them, and the surface's files and marks in it giving way as it fades in.
@@ -818,7 +1008,9 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     }
     // The float (D165): measured on the free screen's shorter side, and a closed cell's files held where they floated until the view climbs on.
     const free = Math.max(1, canvas.clientWidth - chrome.right);
-    const floated = scheduler.float(map, { screen: Math.min(free, canvas.clientHeight) / pixelsPerUnit(camera, canvas.clientWidth), fill: fillOfCell, gate: { open: levels.cellOpen, close: levels.cellClose, home: levels.cellHome }, gather: interiorLook.gather });
+    // A closed cell's files come home by the share of the screen it fills under the old levels, and by the clock on the one surface (D221 (home-by-time)).
+    const homeward = levels.autoOpen > 0 ? { fill: fillOfCell, gate: { open: levels.cellOpen, close: levels.cellClose, home: levels.cellHome } } : { fill: awayOf, gate: HOMING_GATE };
+    const floated = scheduler.float(map, { screen: Math.min(free, canvas.clientHeight) / pixelsPerUnit(camera, canvas.clientWidth), ...homeward, gather: interiorLook.gather });
     floatedOnSurface = floated.surface;
     if (floated.surface.size !== floatedShown) {
       floatedShown = floated.surface.size;
@@ -885,30 +1077,31 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     glow.threshold.value = bloomLook.threshold;
     post.render();
     space.render(camera, canvas.clientWidth, canvas.clientHeight, surface);
-    // The planet is LOD0's layer: whole at the far zoom, and faded out as the surface fades in past LOD1's gate.
-    const planetLayer = frame.lod === undefined ? 1 : planetShown(frame.lod);
-    planet.render(
-      { camera, width: canvas.clientWidth, height: canvas.clientHeight, free, pixelsPerUnit: pixelsPerUnit(camera, canvas.clientWidth), centre: middle, zoom: camera.zoom, gate: gates[0] ?? LOD_GATES[0] ?? { enter: 1.7, exit: 1.45 } },
-      planetLayer,
-      frame.notices.map((notice) => notice.gain),
-      mixed,
-    );
-    if (planetLayer > 0 !== planetOn) {
-      planetOn = planetLayer > 0;
-      canvas.dataset['planet'] = planetOn ? 'on' : 'off';
+    // The chrome's boxes are read a few times a second, before the labels are placed: a name written unasked keeps off them (D246 (names-off-chrome)), so the labels are laid again when a block of the HUD or the legend opens or folds away.
+    if ((chromeAge += 1) >= CLAIMS_EVERY) {
+      chromeAge = 0;
+      chromeClaims = chromeBoxes();
+      const read = chromeClaims.flatMap((box) => [box.x, box.y, box.width, box.height]).join();
+      if (read !== chromeRead) {
+        chromeRead = read;
+        placeLabels = true;
+      }
     }
     if (placeLabels || lod !== placedLod) {
-      for (const layer of layers()) layer.labels.place(viewportOf(camera, canvas.clientWidth), lod, slide, askedOf(fieldTarget, rowTarget ?? litTarget));
+      const viewport = viewportOf(camera, canvas.clientWidth);
+      const asked = askedOf(fieldTarget, rowTarget ?? litTarget, held === undefined ? undefined : targetOf(held), rowPointed === undefined ? undefined : targetOf(rowPointed));
+      // The files large enough on the screen are named unasked (D206 (detail-by-size)), but for those of a package drawn as one body, which are not drawn. They fade in as a level of detail does, and cut in under reduced motion and on a frozen clock, where a capture takes one frame (D105).
+      const sized = namedBySize(closedComposites.size === 0 ? placed.values() : [...placed.values()].filter((file) => !closedComposites.has(compositeOf.get(file.id) ?? '')), viewport, levels.fileNameFrom);
+      const fade = reduced || frozen !== undefined ? 0 : tokens.LOD_FADE_MS;
+      // Such a name is written under no block of the chrome, which lies over the labels: the column at the right, and the HUD, the legend and the minimap at the left (D246 (names-off-chrome)).
+      const column = chrome.right <= 0 ? [] : [{ x: canvas.clientWidth - chrome.right, y: 0, width: chrome.right, height: canvas.clientHeight }];
+      for (const layer of layers()) layer.labels.place(viewport, lod, slide, asked, { files: sized, budget: levels.fileNameBudget, fade, off: [...column, ...chromeClaims] });
       placeLabels = false;
       placedLod = lod;
       placings += 1;
     }
     for (const layer of layers()) layer.labels.render(camera, canvas.clientWidth, canvas.clientHeight, surface * (layer === current ? mixed : 1 - mixed));
     // Each band's quiet label (D196): placed again on a frame the view, the level, the field's labels, the chrome or their tokens moved, along its rule on the level ground and clear of the labels and marks just drawn and of the chrome.
-    if ((chromeAge += 1) >= CLAIMS_EVERY) {
-      chromeAge = 0;
-      chromeClaims = chromeBoxes();
-    }
     const bandsFor = [
       lod,
       placings,
@@ -950,7 +1143,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     }
     filePlate.render(camera, canvas.clientWidth, canvas.clientHeight, free, focus === undefined ? undefined : new Vector3(focus.x, heightAt(focus.x, focus.y), focus.y), fileLevel, fileShown * (1 - diffShown));
     diffSheet.render(canvas.clientHeight, free, diffLevel, diffShown);
-    const words = slideWords(open.exploded, fieldTarget, slide === undefined ? undefined : barrelOf.get(slide.cell));
+    const words = slideWords(open.exploded, fieldTarget, slide === undefined ? undefined : barrelOf.get(slide.cell), fileOn(held), fileOn(rowPointed));
     // The chrome's claims are read again a few times a second while a slide shows: the HUD's blocks and the legend open and close under it.
     if (slide !== undefined && (claimsAge += 1) >= CLAIMS_EVERY) {
       claimsAge = 0;
@@ -959,17 +1152,21 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     interior.render(camera, canvas.clientWidth, canvas.clientHeight, { top: claims.top, bottom: claims.bottom, left: 0, right: chrome.right }, pixelsPerUnit(camera, canvas.clientWidth), open.exploded, words);
     // A slide's files float under a still pointer, so the hover follows them each frame while one shows.
     if (pickAgain || lod !== pickedLod || (bodies.length > 0 && !reduced)) {
-      // On the planet the flat ground lies under it, so nothing there answers the pointer (D170).
+      // At the far field, which only a first gate moved by hand reaches, the files are not drawn, so nothing there answers the pointer.
       const hovered = pointer === undefined || lod === 0 ? undefined : hoveredAt(pointer, lod);
       hover.show(hovered, pointer);
       if (hovered?.target !== fieldTarget) {
         fieldTarget = hovered?.target;
         placeLabels = true;
+        // The line hears what the pointer is over on the map, and that it left, so the row that names it in the chrome lights with it (D209 (selection-line)).
+        nav.point(fieldTarget, 'world');
       }
       scheduler.hover(hovered !== undefined);
       pickAgain = false;
       pickedLod = lod;
     }
+    hover.select(selectionRing(held));
+    hover.point(pointedRing(rowPointed));
     hover.render(camera, canvas.clientWidth, canvas.clientHeight, frame.hover);
     if (frame.lift === 0) canvas.dataset['world'] = 'settled';
   });

@@ -3,7 +3,8 @@
  * Vite in-process with a map, never from a shared `dist/`; the installed
  * Chrome launched headless, else a Chromium on the PATH (D145); and the old
  * levels written into a tab's token store before its page loads, for a test
- * of a path the one surface has parked (D204 (parked-levels)).
+ * of a path the one surface has parked (D204 (parked-levels)), or any other
+ * token a test wants off its rest value (`withTokens`).
  */
 
 import { accessSync, constants, readFileSync } from 'node:fs';
@@ -107,24 +108,30 @@ export const serve = async (body: string = readFileSync(DEMO, 'utf8'), served: r
 
 /**
  * The old levels, as the one token that brings them back (D204
- * (parked-levels)): with it on the world reads the scene's own gates, opens a
- * cell by the share of the screen it fills, and opens none by a selection
- * (D205 (open-on-select)).
+ * (parked-levels)): with it on the world reads the scene's own gates past the
+ * first (D240 (far-zoom-lit)), opens a cell by the share of the screen it
+ * fills, and opens none by a selection (D205 (open-on-select)).
  */
 const LEGACY = { 'LEVELS.autoOpen': 1 };
 
 /**
- * Write the old levels into a tab's token store before each page it loads from
- * here on, as a reviewer's dev panel would have left them: the planet at the
- * far zoom, a cell opening as a slide by zoom, the file's plate and the diff's
- * sheet past their gates. Called before the page goes anywhere, by a test of
- * one of those parked paths.
+ * Write token overrides into a tab's store before each page it loads from here
+ * on, as a reviewer's dev panel would have left them, each by its name in the
+ * registry, as `LEVELS.openOnSelect`. Called before the page goes anywhere.
  */
-export const legacy = async (page: Page): Promise<void> => {
+export const withTokens = async (page: Page, overrides: Readonly<Record<string, unknown>>): Promise<void> => {
   await page.addInitScript(
     ({ key, text }) => {
       sessionStorage.setItem(key, text);
     },
-    { key: STORE_KEY, text: JSON.stringify(LEGACY) },
+    { key: STORE_KEY, text: JSON.stringify(overrides) },
   );
 };
+
+/**
+ * Write the old levels into a tab's token store before each page it loads from
+ * here on: a cell opening as a slide by zoom, and the file's plate and the
+ * diff's sheet past their gates. Called before the page goes anywhere, by a
+ * test of one of those parked paths.
+ */
+export const legacy = async (page: Page): Promise<void> => withTokens(page, LEGACY);

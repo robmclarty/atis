@@ -84,6 +84,22 @@ test('a view moved by hand shows the field from far off, the cell under its cent
   expect(WALK.stopAt([400, 600], 3)).toEqual(FIELD);
 });
 
+test('on the one surface, which has no file level, a view moved by hand stands at the file under its centre once the file is drawn large enough, and at its cell while it is smaller (D230 (file-stop-by-size))', () => {
+  const index = DEMO.terrain.layout?.positions['libs/core/src/pm/index.ts'] ?? { x: 0, y: 0, r: 0 };
+  const at = [index.x, index.y] as const;
+  // The least radius a file is stood at is the caller's, in layout units: the file's own radius is large enough, and anything past it is not.
+  expect(WALK.stopAt(at, 1, index.r)).toEqual(INDEX);
+  expect(WALK.stopAt(at, 2, index.r / 2)).toEqual(INDEX);
+  expect(WALK.stopAt(at, 2, index.r * 1.01)).toEqual(PM);
+  // At none, every file under the centre is stood at; at a radius no file has, none is, whatever the level.
+  expect(WALK.stopAt(at, 1, 0)).toEqual(INDEX);
+  expect(WALK.stopAt(at, 4, Number.POSITIVE_INFINITY)).toEqual(PM);
+  // A cell's own ground and open space read as they did, and the far field is the field.
+  expect(WALK.stopAt(IN_PM, 2, 0)).toEqual(PM);
+  expect(WALK.stopAt([400, 600], 2, 0)).toEqual(FIELD);
+  expect(WALK.stopAt(at, 0, 0)).toEqual(FIELD);
+});
+
 test('each stop frames its own ground: the layout, a cell’s skin, a file with room round it', () => {
   const layout = DEMO.terrain.layout;
   expect(WALK.box(FIELD, 4)).toEqual({ x0: 0, y0: 0, x1: layout?.width, y1: layout?.height });
@@ -91,6 +107,26 @@ test('each stop frames its own ground: the layout, a cell’s skin, a file with 
   expect(WALK.box(PM, 4)).toEqual({ x0: Math.min(...contour.map(([x]) => x)), y0: Math.min(...contour.map(([, y]) => y)), x1: Math.max(...contour.map(([x]) => x)), y1: Math.max(...contour.map(([, y]) => y)) });
   const index = layout?.positions['libs/core/src/pm/index.ts'] ?? { x: 0, y: 0, r: 0 };
   expect(WALK.box(INDEX, 4)).toEqual({ x0: index.x - 4 * index.r, y0: index.y - 4 * index.r, x1: index.x + 4 * index.r, y1: index.y + 4 * index.r });
+});
+
+test("the ground the world draws is the box round every cell's skin and every placed file, which leaves the shore's strip out (D222 (terrain-frame))", () => {
+  const layout = DEMO.terrain.layout;
+  const cells = new Set(DEMO.terrain.cells.map((each) => each.id));
+  const skins = Object.entries(layout?.contours ?? {}).flatMap(([id, contour]) => (cells.has(id) ? contour : []));
+  const ground = WALK.ground();
+  expect(ground).toEqual({ x0: Math.min(...skins.map(([x]) => x)), y0: Math.min(...skins.map(([, y]) => y)), x1: Math.max(...skins.map(([x]) => x)), y1: Math.max(...skins.map(([, y]) => y)) });
+  // The layout's first stretch is the shore's, and the ground starts under it; the layout is wider than the ground too.
+  expect(ground?.y0).toBeGreaterThanOrEqual(layout?.shore.y1 ?? Number.POSITIVE_INFINITY);
+  expect((ground?.x1 ?? 0) - (ground?.x0 ?? 0)).toBeLessThan(layout?.width ?? 0);
+  // Every placed file lies on it.
+  for (const organelle of DEMO.terrain.organelles) {
+    const at = layout?.positions[organelle.id];
+    expect(at !== undefined && ground !== undefined && at.x - at.r >= ground.x0 && at.x + at.r <= ground.x1 && at.y - at.r >= ground.y0 && at.y + at.r <= ground.y1, organelle.id).toBe(true);
+  }
+  // Asked again it is the same box, and a map that lays nothing out has no ground.
+  expect(WALK.ground()).toBe(ground);
+  const { layout: _gone, ...unlaid } = DEMO.terrain;
+  expect(createWalk({ ...DEMO, terrain: unlaid }).ground()).toBeUndefined();
 });
 
 test("a notice's row leads to where its target is drawn: its file, the file a test's stitch sits on, its cell, or its group's block (D148, D153)", () => {
