@@ -12,7 +12,7 @@ import { IFR_HUE, SECONDARY_BOX_WIDTH, STITCH_LENGTH } from 'scene';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 
 import { Chrome, Column, Notices, Rail } from '../chrome/index.js';
-import { createNav } from '../nav.js';
+import { createNav, selectedOf } from '../nav.js';
 import { boxStyle, categoryHue, marksOnShore, rowsOf, runsOf, tallyOf, thresholdsOf } from '../notices.js';
 import { createRegistry } from '../registry.js';
 import { screenType } from '../screen.js';
@@ -20,9 +20,10 @@ import { screenType } from '../screen.js';
 /**
  * The notices as the world draws them (§5.4, step 34): each target's run of
  * boxes with its strongest tier and its light, the ranked list's rows and
- * tally, the boxes a shore block wears (D153), and the chrome's column
- * carrying the list over the tree and the rail in one scroll
- * (D278 (column-folds)), each box in its tier's style.
+ * tally, the boxes a shore block wears (D153), a row selecting what it leads
+ * to (D281 (notice-selects)), and the chrome's column carrying the list over
+ * the tree and the rail in one scroll (D278 (column-folds)), each box in its
+ * tier's style.
  */
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
@@ -185,15 +186,39 @@ const click = (selector: string): Promise<void> =>
     element(selector).dispatchEvent(new MouseEvent('click', { bubbles: true }));
   });
 
-test("a row on the shore brings its group's block into view, and opens the shore first where it was folded away (D278 (column-folds))", async () => {
+test("a row whose target is on the map selects it and asks the world to fly there; one on the shore selects nothing and brings its group's block into view (D281 (notice-selects))", async () => {
+  const nav = createNav();
+  const select = vi.fn();
+  const visit = vi.fn();
+  nav.steer({ lookAt: vi.fn(), visit, select });
   const scrolled = vi.fn();
   Element.prototype.scrollIntoView = scrolled;
-  await act(async () => root.render(<Column map={ASHORE} registry={createRegistry()} nav={createNav()} />));
+  const map = withNotices([...DEMO.notices.slice(0, 1), noticeOf('secondary', 'red-check-slot', 'README.md'), noticeOf('tertiary', 'red-check-slot', 'lint')]);
+  await act(async () => root.render(<Column map={map} registry={createRegistry()} nav={nav} />));
+  await click('[data-notice="1"]');
+  const index = selectedOf(DEMO, 'libs/core/src/pm/index.ts');
+  expect(index).toEqual({ kind: 'organelle', path: 'libs/core/src/pm/index.ts', cell: 'folder:libs/core/src/pm' });
+  expect(nav.selected()).toEqual(index);
+  expect(select).toHaveBeenCalledWith(index, 'fly');
+  // A world that takes no selection still flies by the bare visit.
+  expect(visit).toHaveBeenCalledWith(index);
+  // The tree beneath the list lights the row the notice selected.
+  expect(element('[data-tree] [data-selected]').dataset['row']).toBe('libs/core/src/pm/index.ts');
+  // A second press flies there again, though the selection did not move.
+  await click('[data-notice="1"]');
+  expect(select).toHaveBeenCalledTimes(2);
+  // A shore target moves no selection: its group's block is scrolled to, and the shore is opened first where it was folded away.
   await click('[data-fold="shore"]');
   expect(host.querySelector('[data-rail] [data-group="docs"]')).toBeNull();
-  await click('[data-notice="1"]');
+  await click('[data-notice="2"]');
+  expect(nav.selected()).toEqual(index);
+  expect(select).toHaveBeenCalledTimes(2);
   expect(scrolled).toHaveBeenCalledTimes(1);
   expect(scrolled.mock.contexts[0]).toBe(host.querySelector('[data-rail] [data-group="docs"]'));
+  // An unplaced notice leads nowhere.
+  await click('[data-notice="3"]');
+  expect(select).toHaveBeenCalledTimes(2);
+  expect(scrolled).toHaveBeenCalledTimes(1);
 });
 
 test("the list stands under a header that folds it away, the tally still on it, and brings it back (D278 (column-folds))", async () => {

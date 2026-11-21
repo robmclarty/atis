@@ -7,11 +7,11 @@
  * whose target nothing draws says so, since it hangs no marks and no leader
  * (D148). It is the brutalist material (D12): one monospace face, hard
  * edges, nothing that glows, in the shared tokens read live through the
- * registry (D156). A click on a row flies the camera to where its target is
- * drawn, or, for a target on the shore, brings its group's block in the rail
- * into view (step 39, D153), and while the pointer is over a row the world
- * writes its target's labels, which it writes for nothing unasked (D168).
- * The list is the first part of the
+ * registry (D156). A click on a row selects what its target is drawn at and
+ * flies the camera there (D281 (notice-selects)), or, for a target on the
+ * shore, brings its group's block in the rail into view (step 39, D153), and
+ * while the pointer is over a row the world writes its target's labels, which
+ * it writes for nothing unasked (D168). The list is the first part of the
  * chrome's column, as long as its rows, under a header that folds it away
  * (D278 (column-folds)).
  */
@@ -45,6 +45,7 @@ import { useMemo } from 'react';
 import type { ReactElement } from 'react';
 import type { MapJson } from 'core';
 
+import { selectedOf, targetOf } from '../nav.js';
 import type { Nav } from '../nav.js';
 import { categoryHue, rowsOf, tallyOf } from '../notices.js';
 import { screenType } from '../screen.js';
@@ -85,11 +86,22 @@ const LOOK = {
 /** The fold the list stands under, by name, and the name its header is written with. */
 const NOTICES = 'notices';
 
-/** Go where a notice's row leads: fly the world to its stop, or bring its shore group's block into view, the shore opened first where it is folded away. */
+/**
+ * Go where a notice's row leads: select its stop and fly the world there, or
+ * bring its shore group's block into view. The selection is built from the
+ * map by the stop's target, as every caller builds one (D209
+ * (selection-line)). The bare visit is still asked after it
+ * (D281 (notice-selects)): a world that takes no selection flies by it, and
+ * one that does is asked for the same flight twice in one turn, which it
+ * flies once.
+ */
 const go = (map: MapJson, rank: number, nav: Nav | undefined): void => {
   const destination = destinationOf(map, rank);
-  if (destination?.kind === 'stop') nav?.visit(destination.stop);
   if (destination?.kind === 'group') revealShore(destination.group);
+  if (destination?.kind !== 'stop' || nav === undefined) return;
+  const selected = destination.stop.kind === 'field' ? undefined : selectedOf(map, targetOf(destination.stop));
+  if (selected !== undefined) nav.select(selected, 'fly');
+  nav.visit(destination.stop);
 };
 
 /** The ranked list for a map, read live from the registry; with the line to the world, a row's click flies there. */
