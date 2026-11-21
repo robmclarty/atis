@@ -766,8 +766,9 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       lastLod,
       { open: levels.compositeOpen, close: levels.compositeClose },
     );
-    // The camera's zoom over the fit is the one scalar the levels of detail read.
-    const frame = scheduler.frame(camera.zoom, levels.gates, compositeOpen);
+    // The camera's zoom over the fit is the one scalar the levels of detail read. The one switch brings every old level back (D204 (parked-levels)): while `autoOpen` is on the scene's own gates stand in for the parked ones.
+    const gates = levels.autoOpen > 0 ? LOD_GATES : levels.gates;
+    const frame = scheduler.frame(camera.zoom, gates, compositeOpen);
     if (composites.length > 0) {
       skin.openComposites(frame.composites);
       const closed = new Set(composites.flatMap((composite, index) => ((frame.composites[index] ?? 1) < 0.5 ? [composite.id] : [])));
@@ -886,7 +887,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     // The planet is LOD0's layer: whole at the far zoom, and faded out as the surface fades in past LOD1's gate.
     const planetLayer = frame.lod === undefined ? 1 : planetShown(frame.lod);
     planet.render(
-      { camera, width: canvas.clientWidth, height: canvas.clientHeight, free, pixelsPerUnit: pixelsPerUnit(camera, canvas.clientWidth), centre: middle, zoom: camera.zoom, gate: levels.gates[0] ?? LOD_GATES[0] ?? { enter: 1.7, exit: 1.45 } },
+      { camera, width: canvas.clientWidth, height: canvas.clientHeight, free, pixelsPerUnit: pixelsPerUnit(camera, canvas.clientWidth), centre: middle, zoom: camera.zoom, gate: gates[0] ?? LOD_GATES[0] ?? { enter: 1.7, exit: 1.45 } },
       planetLayer,
       frame.notices.map((notice) => notice.gain),
       mixed,

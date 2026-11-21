@@ -282,8 +282,10 @@ export const CAMERA: CameraLook = { smooth: 0.1, dragSmooth: 0.05 };
  * the far field and its planet is never shown; the two deep gates rest out of
  * the camera's reach, so the file's plate and the diff's sheet never open; and
  * `autoOpen` rests at 0, so no cell opens as a slide by the share of the
- * screen it fills. The scene's own gates (`LOD_GATES`) are as they were:
- * `gates` set to them and `autoOpen` to 1 bring the old levels back.
+ * screen it fills. `autoOpen` is the one switch that brings the old levels
+ * back: above 0 the scene's own gates (`LOD_GATES`), which are as they were,
+ * stand in for `gates`, so the far field, the plate and the sheet come back
+ * with the slide, and no slide opens by a selection.
  * `openOnSelect` is the one way a slide opens at rest (D205
  * (open-on-select)): selecting a module opens it in place, whatever the zoom.
  * What the levels showed resolves by its size on the screen instead (D206
@@ -298,9 +300,9 @@ export type LevelsLook = {
   readonly cellHome: number;
   readonly compositeOpen: number;
   readonly compositeClose: number;
-  /** Above 0, the old levels' opening by zoom is on: a cell opens as a slide by the share of the free screen it fills, and a click opens one that would hold. At 0 neither does. */
+  /** Above 0, the old levels are on, all of them: the scene's own gates are read in place of `gates`, a cell opens as a slide by the share of the free screen it fills, and a click opens one that would hold. At 0 none of it is, and `gates` is read. */
   readonly autoOpen: number;
-  /** Above 0, selecting a module opens it as the living slide in place, and clearing the selection closes it. At 0 a selection is only ringed and named. */
+  /** Above 0, selecting a module opens it as the living slide in place, and clearing the selection closes it. At 0, and while `autoOpen` is above 0, a selection is only ringed and named. */
   readonly openOnSelect: number;
   /** The radius on the screen, in pixels, from which a file's name is written unasked. */
   readonly fileNameFrom: number;

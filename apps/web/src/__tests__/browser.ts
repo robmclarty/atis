@@ -15,8 +15,6 @@ import type { Browser, Page } from 'playwright-core';
 import { createServer } from 'vite';
 import type { Plugin, ViteDevServer } from 'vite';
 
-import { LOD_GATES } from 'scene';
-
 import { STORE_KEY } from '../registry.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -108,11 +106,12 @@ export const serve = async (body: string = readFileSync(DEMO, 'utf8'), served: r
 };
 
 /**
- * The old levels, as the tokens that bring them back (D204 (parked-levels)):
- * the scene's own gates, a cell opening by the share of the screen it fills,
- * and no slide opened by a selection (D205 (open-on-select)).
+ * The old levels, as the one token that brings them back (D204
+ * (parked-levels)): with it on the world reads the scene's own gates, opens a
+ * cell by the share of the screen it fills, and opens none by a selection
+ * (D205 (open-on-select)).
  */
-const LEGACY = { 'LEVELS.gates': LOD_GATES, 'LEVELS.autoOpen': 1, 'LEVELS.openOnSelect': 0 };
+const LEGACY = { 'LEVELS.autoOpen': 1 };
 
 /**
  * Write the old levels into a tab's token store before each page it loads from

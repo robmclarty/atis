@@ -93,11 +93,11 @@ test('the levels rest parked: no zoom the camera reaches reads the far field or 
   }
   expect(LEVELS.autoOpen).toBe(0);
   expect(LEVELS.openOnSelect).toBe(1);
-  // The scene's own gates are as they were, for the old levels to be set back to.
+  // The scene's own gates are as they were, for the one switch to read in the parked ones' place.
   expect(LOD_GATES[0]).toEqual({ enter: 1.7, exit: 1.45 });
 });
 
-test("a stored override stands for a token that rests at a list of objects, so a tab's store brings the old levels back (D204 (parked-levels))", () => {
+test("a stored override stands for a token that rests at a list of objects, so a tab's store moves the parked gates as it moves the switch (D204 (parked-levels))", () => {
   const legacy = { 'LEVELS.gates': LOD_GATES, 'LEVELS.autoOpen': 1, 'LEVELS.openOnSelect': 0 };
   const registry = createRegistry(memory(JSON.stringify(legacy)));
   expect(registry.changes().map((change) => change.name)).toEqual(['LEVELS.gates', 'LEVELS.autoOpen', 'LEVELS.openOnSelect']);
