@@ -73,9 +73,13 @@ test('a map no check was read for says it is structure only, and a checked map s
   expect(renderToStaticMarkup(<Chrome state={{ status: 'ready', url: '/map.json', map: UNCHECKED }} registry={createRegistry()} dev={false} />)).toContain('structure only: no checks ran');
 });
 
+const READY = { status: 'ready', url: '/map.json', map: DEMO } as const;
+
+/** The line's markup with the socket open, closed, or none. */
+const line = (live: boolean | undefined, state: Parameters<typeof Status>[0]['state'] = READY): string => renderToStaticMarkup(<Status state={state} registry={createRegistry()} live={live} />);
+
 test('the status line says live while the socket to the CLI is open, and nothing of it once it closes or where there is none (D106)', () => {
-  const ready = { status: 'ready', url: '/map.json', map: DEMO } as const;
-  const line = (live: boolean | undefined, state: Parameters<typeof Status>[0]['state'] = ready): string => renderToStaticMarkup(<Status state={state} registry={createRegistry()} live={live} />);
+  const ready = READY;
   expect(line(true)).toContain('demo against main · live');
   expect(line(true)).toContain('data-live');
   for (const closed of [false, undefined]) {

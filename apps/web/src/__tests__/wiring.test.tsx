@@ -113,13 +113,8 @@ test('a spacing token moved in the panel lays the plate again with it, and a pla
 
 test("a panel hosts a module's plate with no cell open: in its own flow at the width it is given, saying so while the plate is laid (D260 (wiring-hosted))", async () => {
   const nav = createNav();
-  let release: (plate: Plate) => void = () => undefined;
-  const lay = vi.fn(
-    (_wiring: Wiring, _spacing: WiringSpacing): Promise<Plate> =>
-      new Promise((resolve) => {
-        release = resolve;
-      }),
-  );
+  const laying = Promise.withResolvers<Plate>();
+  const lay = vi.fn((_wiring: Wiring, _spacing: WiringSpacing): Promise<Plate> => laying.promise);
   await act(async () => root.render(<WiringPlate map={DEMO} registry={createRegistry()} nav={nav} cell={PM} width={380} lay={lay} />));
   // The world has nothing open, and the plate is asked for all the same.
   expect(nav.opened()).toBeUndefined();
@@ -129,7 +124,7 @@ test("a panel hosts a module's plate with no cell open: in its own flow at the w
   expect(host.querySelector('[data-wiring]')).toBeNull();
 
   const plate = await layWiring(lay.mock.calls[0]?.[0] ?? { cell: PM, homes: [], edges: [] });
-  await act(async () => release(plate));
+  await act(async () => laying.resolve(plate));
   const figure = host.querySelector<HTMLElement>(`[data-wiring="${PM}"]`);
   expect(figure?.hasAttribute('data-wiring-hosted')).toBe(true);
   // It stands in the panel's flow and takes the pointer, so the panel scrolls it; the plate over the world is fixed and lets the pointer through.
@@ -143,10 +138,9 @@ test("a panel hosts a module's plate with no cell open: in its own flow at the w
   expect(host.querySelector<SVGElement>('svg')?.style.maxWidth).toBe('');
 
   // The open cell's own plate still stands over the world, apart from the hosted one.
-  await act(async () => root.render(<WiringPlate map={DEMO} registry={createRegistry()} nav={nav} lay={layWiring} />));
+  await act(async () => root.render(<WiringPlate map={DEMO} registry={createRegistry()} nav={nav} lay={() => Promise.resolve(plate)} />));
   expect(host.querySelector('[data-wiring]')).toBeNull();
   wired(nav, true);
-  await settle();
   await settle();
   const over = host.querySelector<HTMLElement>(`[data-wiring="${PM}"]`);
   expect(over?.hasAttribute('data-wiring-hosted')).toBe(false);
