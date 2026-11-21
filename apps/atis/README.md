@@ -89,12 +89,22 @@ or run your checks again, and the tab follows.
 atis --working-tree --watch
 ```
 
-follows the working tree's uncommitted edits too: an edit that stages nothing is read at
-the next look, twice a second, and the map is rebuilt, so the tab keeps up with you, or
-with a coding agent, as the files are written. The same holds once the strip under the HUD
-has switched the tab to the working tree. A file that is written all the time and not
-ignored, as a dev server's log is, keeps the watch rebuilding, and the terminal says so
-once; the cure is to ignore the file.
+follows the working tree's uncommitted edits too: an edit that stages nothing is noticed
+within about a second, the map is rebuilt, and the tab follows you, or a coding agent, as
+the files are written. The same holds once the strip under the HUD has switched the tab to
+the working tree. A file that is written all the time and not ignored, as a dev server's
+log is, keeps the watch rebuilding, and the terminal says so once; the cure is to ignore
+the file.
+
+- The status line says `live` while a watch follows the repository, and only then: a run
+  with no `--watch` does not say it, and its tab stands still until you run atis again.
+- A rebuild takes as long as measuring the map does. On atis's own repository, about 180
+  files, an edit shows in the tab nine or ten seconds after it is written. The status line
+  says `live · rebuilding` from the moment the edit is noticed until the map arrives.
+- An edit inside files the map already holds is pushed in place, and the view, the
+  selection and the open panels stay as they are. One that adds or removes a file, or
+  changes what a module exports, draws the page afresh where you stood, with what you had
+  selected selected again.
 
 ### Posting to a pull request
 
@@ -150,8 +160,8 @@ approved shape as it is kept and approves nothing.
 
 Every map built after carries its departures from the approved shape: a module added or
 removed, one grown in files, lines or fan out, an interface widened or entered past, an
-outside package added. The world lists them in the inspector and counts them on the
-folder tree's rows. It is a way to keep watch on the structure of a repository someone
+outside package added. The world says how many there are in its status line, lists them
+in the inspector and counts them on the folder tree's rows. It is a way to keep watch on the structure of a repository someone
 else is writing, a coding agent included: read the shape, approve it, and the next map
 says how it has moved.
 
@@ -322,9 +332,11 @@ system's reduced motion setting.
   reading of the repository from its structure alone, which needs no checks: the largest
   modules and files, the most depended-on, imports past an interface, unreachable files,
   the longest functions, the packages it depends on, and the departures from the approved
-  shape.
-- When atis serves the tab from a repository, the inspector also shows any file's code,
-  read-only, with links that open it in your editor. The text is read from git's objects at
+  shape. Where no local fallow was found to name the entry points, a file is not called
+  unreachable: the list is headed as the files no manifest's entry point reaches, and
+  says why.
+- When atis serves the tab from a repository, the inspector also shows the code of any
+  file on the map, read-only, with links that open it in your editor. The text is read from git's objects at
   the map's head, never from the disk, and served on `127.0.0.1` behind the run's token.
 - The column at the right is one scroll of three parts, each under a header that folds it:
   the notices, the folder tree and the shore. Point at a tree row and the map rings its
