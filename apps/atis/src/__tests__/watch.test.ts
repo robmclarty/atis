@@ -8,7 +8,7 @@ import type { MapJson } from 'core';
 import { afterAll, expect, test } from 'vitest';
 import { WebSocket } from 'ws';
 
-import { serveRun } from '../run.js';
+import { approveRun, serveRun } from '../run.js';
 import type { HeadAsked } from '../run.js';
 import { serve } from '../serve.js';
 import type { Served, ServedFile } from '../serve.js';
@@ -24,7 +24,8 @@ import { signatureOf, watchRepo, watchedIn } from '../watch.js';
  * the working tree the signature has a term that moves with what the tree
  * holds uncommitted, so an edit that stages nothing is pushed too
  * (D313 (watch-working-term)), and the approved shape's document is stamped
- * in every signature, so approving rebuilds (D314 (approved-stamp)).
+ * in every signature, so approving rebuilds (D314 (approved-stamp)) and the
+ * tab is pushed a map that carries its departures (D212 (approved-private)).
  */
 const TOKEN = 'c5f3e4d6a7b8c9d0e1f2a3b4c5d6e7f8';
 const MINUTE = 60_000;
@@ -432,4 +433,46 @@ test('a watch at a commit rebuilds nothing for an edit that stages nothing, and 
   expect((await textAt(served, 'src/square.ts')).text).toBe(text);
   await settled();
   expect(lines).toHaveLength(2);
+}, MINUTE);
+
+test('under --watch, approving pushes a map that carries the approved block, the next commit brings its departures, and a switch to another base says once what was left out (D314 (approved-stamp), D212 (approved-private), D308 (same-terrain))', async () => {
+  const repo = twoCommits();
+  const head = git(repo, 'rev-parse', 'HEAD');
+  git(repo, 'tag', 'v2');
+  const { served, lines } = await watching(repo);
+  const origin = `http://127.0.0.1:${String(served.port)}`;
+  const { next } = await listen(served);
+  const first = await next();
+  expect('approved' in first).toBe(false);
+
+  // Approved with the flags the run maps with, while it runs: the document's stamp moves, and the map is rebuilt with the block on it.
+  expect(approveRun({ repo, base: 'v1', verbose: false }).exitCode).toBe(0);
+  const kept = await next();
+  expect(kept.approved).toEqual({ at: head, departures: [] });
+  expect(kept.terrain.layout).toEqual(first.terrain.layout);
+
+  // A commit that founds a module departs from it, on the map the tab is pushed.
+  mkdirSync(join(repo, 'src', 'paint'));
+  writeFileSync(join(repo, 'src', 'paint', 'colour.ts'), 'export const RED = 0xff0000;\n');
+  git(repo, 'add', '.');
+  git(repo, 'commit', '--quiet', '-m', 'feat: name a colour');
+  const painted = await next();
+  expect(painted.approved).toEqual({ at: head, departures: [{ kind: 'module-added', target: 'src/paint', cell: 'directory:src/paint', why: 'a module the approved shape did not hold', now: 1 }] });
+  // Over the base the shape was approved over, nothing was left out, so nothing is said beside the two maps.
+  await settled();
+  expect(lines).toHaveLength(2);
+  expect(lines.every((line) => line.startsWith('atis: watched '))).toBe(true);
+
+  // The page switches to another base: the block is still on the map, and the line says which three readings it lacks.
+  const switched = await fetch(`${origin}/base?token=${TOKEN}`, { method: 'POST', headers: { origin, 'content-type': 'application/json' }, body: JSON.stringify({ base: 'v2' }) });
+  expect(switched.status).toBe(200);
+  expect(assertMap(await switched.json()).approved?.at).toBe(head);
+  const note = `atis: the approved shape was cut over ${git(repo, 'rev-parse', '--short=7', 'v1')} and this map over ${head.slice(0, 7)}, so lines, fan out and interfaces with no barrel were not compared; run atis approve with this map's flags to compare them\n`;
+  expect(lines.at(-1)).toBe(note);
+
+  // Rebuilt over that base again, the line stands and is not said twice.
+  const sha = commitSquare(repo, 'return area(side, side) + 0;', 'fix: square a side again');
+  await expect.poll(() => lines.at(-1), { timeout: 10_000 }).toBe(`atis: watched ${sha.slice(0, 7)}: NOINST, 2 files changed, 0 notices\n`);
+  await settled();
+  expect(lines.filter((line) => line === note)).toHaveLength(1);
 }, MINUTE);
