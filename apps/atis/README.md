@@ -99,8 +99,9 @@ the file.
 - The status line says `live` while a watch follows the repository, and only then: a run
   with no `--watch` does not say it, and its tab stands still until you run atis again.
 - A rebuild takes as long as measuring the map does. On atis's own repository, about 180
-  files, an edit shows in the tab nine or ten seconds after it is written. The status line
-  says `live · rebuilding` from the moment the edit is noticed until the map arrives.
+  files, an edit shows in the tab four to ten seconds after it is written, by how busy the
+  machine is. The status line says `live · rebuilding` from the moment the edit is noticed
+  until the map arrives.
 - An edit inside files the map already holds is pushed in place, and the view, the
   selection and the open panels stay as they are. One that adds or removes a file, or
   changes what a module exports, draws the page afresh where you stood, with what you had

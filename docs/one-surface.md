@@ -875,8 +875,10 @@ block (D314 (approved-stamp)).
 - An edit is noticed in about a second, one tick to see it and one for it to
   hold still. The rest of the wait is the rebuild. On this repository, 182
   files on the map, an uncommitted edit reached the tab 9 to 10 seconds
-  after the write, where one `--working-tree --out` build took 5 seconds.
-  The status line says `rebuilding` through it.
+  after the write in the review's run, in Chrome on WebGPU, where one
+  `--working-tree --out` build took 5 seconds; and 3.7 seconds in the last
+  pass's own run of the built atis, headless on WebGL 2 on a quieter
+  machine, with `rebuilding` on the status line 0.8 seconds after the write.
 
 ## Who owned which file
 
@@ -1751,12 +1753,12 @@ explicit deletion list, because the dead-code check cannot see leftovers in
 
 ### The watch and the local server
 
-- The tab follows an uncommitted edit in 9 to 10 seconds on this repository,
-  not the second the plan's by-hand check hoped for. About one second is the
-  noticing; the rest is the rebuild and what the page does with the map,
-  and where it goes was not measured. The status line says `rebuilding`
-  through it (D336 (watch-says)). A cheaper rebuild for a working-tree edit
-  is the real cure.
+- The tab follows an uncommitted edit in 4 to 10 seconds on this repository,
+  by how busy the machine is, not the second the plan's by-hand check hoped
+  for. About one second is the noticing; the rest is the rebuild and what
+  the page does with the map, and where it goes was not measured. The status
+  line says `rebuilding` through it (D336 (watch-says)). A cheaper rebuild
+  for a working-tree edit is the real cure.
 - A rebuild blocks the server while it runs, so the code tab stalls; the
   cache never evicts; and the tab reloads in full when a file is added or an
   export changes, keeping the camera and the selection and nothing else.
@@ -1792,10 +1794,13 @@ opened cell, and they show on the map as well.
   machine. Four more ran at 3.3 to 3.9 s in that run and are the next to
   time out: the tree's pointer case, the scene's continuous-spectrum case
   and two of the chrome's.
-- The last pass's five fixes are held by unit, jsdom and browser cases. Of
-  them only the selection named in the address was driven in a browser, on
-  the dev server; the watch's word was driven against a real server and
-  socket in the CLI's tests, and not with a page on it.
+- The last pass's five fixes are held by unit, jsdom and browser cases, and
+  were then driven once on the built atis, headless, on a scratch clone with
+  no `node_modules`: `live` under `--working-tree --watch` and not without
+  it, `rebuilding` after an edit, the code's sheet keeping its scroll and
+  focus through the push, the selection kept through the redraw a new file
+  brings, the muted `reachable` fact, and the tokens panel opened by its
+  key. That run is in no test.
 - The core track reported that three corpus fixtures, `checkride-pr2`,
   `fascicle-pr4` and `fascicle-pr5`, do not pass today's map guard, from
   before this session.
