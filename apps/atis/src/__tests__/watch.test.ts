@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -8,10 +8,12 @@ import type { MapJson } from 'core';
 import { afterAll, expect, test } from 'vitest';
 import { WebSocket } from 'ws';
 
-import { serveRun } from '../run.js';
+import { approveRun, serveRun } from '../run.js';
+import type { HeadAsked } from '../run.js';
 import { serve } from '../serve.js';
-import type { Served } from '../serve.js';
+import type { Served, ServedFile } from '../serve.js';
 import { signatureOf, watchRepo, watchedIn } from '../watch.js';
+import type { Watched } from '../watch.js';
 
 /**
  * `--watch` (D106): a served run reads the head side's signature (`HEAD`'s
@@ -19,7 +21,12 @@ import { signatureOf, watchRepo, watchedIn } from '../watch.js';
  * moved and held still, and pushes it to the tab over a socket on the same
  * loopback port that answers only the run's token from the page's own
  * `Origin` (D134). Driven here through two commits of a temp repo, each map
- * pushed lying on the terrain the first was drawn on (P2).
+ * pushed lying on the terrain the first was drawn on (P2). While the head is
+ * the working tree the signature has a term that moves with what the tree
+ * holds uncommitted, so an edit that stages nothing is pushed too
+ * (D313 (watch-working-term)), and the approved shape's document is stamped
+ * in every signature, so approving rebuilds (D314 (approved-stamp)) and the
+ * tab is pushed a map that carries its departures (D212 (approved-private)).
  */
 const TOKEN = 'c5f3e4d6a7b8c9d0e1f2a3b4c5d6e7f8';
 const MINUTE = 60_000;
@@ -105,10 +112,10 @@ const listen = async (served: Served, origin = `http://127.0.0.1:${String(served
   return { next, socket };
 };
 
-/** A served run of `repo` over `v1` under a watch, its lines collected. */
-const watching = async (repo: string): Promise<{ readonly served: Served; readonly lines: string[]; readonly stdout: string }> => {
+/** A served run of `repo` over `v1` under a watch, at `HEAD` unless another head is asked for, its lines collected. */
+const watching = async (repo: string, head?: HeadAsked): Promise<{ readonly served: Served; readonly lines: string[]; readonly stdout: string }> => {
   const lines: string[] = [];
-  const outcome = await serveRun({ repo, base: 'v1', assets: stubApp(), open: false, verbose: false, token: TOKEN, watch: true, watchEvery: EVERY, watchLog: (line) => lines.push(line) });
+  const outcome = await serveRun({ repo, base: 'v1', head, assets: stubApp(), open: false, verbose: false, token: TOKEN, watch: true, watchEvery: EVERY, watchLog: (line) => lines.push(line) });
   const { served } = outcome;
   if (served === undefined) throw new Error(outcome.stderr);
   closers.push(served.close);
@@ -236,8 +243,10 @@ test('the signature moves with HEAD, the index and the summary, and the watch ha
 
   // Three writes in one burst are one change handed on; a later write is another.
   let changes = 0;
-  const watch = watchRepo(watched, await signatureOf(watched), () => {
+  const handed: unknown[] = [];
+  const watch = watchRepo(watched, await signatureOf(watched), (moved) => {
     changes += 1;
+    handed.push(moved);
     return Promise.resolve();
   }, EVERY);
   closers.push(() => {
@@ -251,4 +260,318 @@ test('the signature moves with HEAD, the index and the summary, and the watch ha
   writeFileSync(join(repo, '.check', 'summary.json'), '{"schema_version":1,"run":4}\n');
   await expect.poll(() => changes, { timeout: 5000 }).toBe(2);
   watch.close();
+  // Each held still before it was handed on, and git was asked for no working tree.
+  expect(handed).toEqual([{ restless: false, unread: false }, { restless: false, unread: false }]);
 });
+
+/** `src/square.ts` with a body of its own, written and not staged. */
+const editSquare = (repo: string, body: string): string => {
+  const text = `import { area } from './shapes.js';\n\nexport function square(side: number): number {\n  ${body}\n}\n`;
+  writeFileSync(join(repo, 'src', 'square.ts'), text);
+  return text;
+};
+
+/** A file's text as a served run answers it, and the git object it read it from. */
+const textAt = async (served: Served, path: string): Promise<ServedFile> => {
+  const answered = await fetch(`http://127.0.0.1:${String(served.port)}/file/${path}?token=${TOKEN}`);
+  expect(answered.status).toBe(200);
+  return (await answered.json()) as ServedFile;
+};
+
+/** Long enough for a signature that moved to have been read, held still and handed on. */
+const settled = (): Promise<void> => new Promise((done) => setTimeout(done, EVERY * 8));
+
+test('while the head is the working tree the signature moves with an unstaged edit, a second edit to the same file and a new untracked file, and a head that is a commit has no such term (D313 (watch-working-term))', async () => {
+  const repo = twoCommits();
+  const square = readFileSync(join(repo, 'src', 'square.ts'), 'utf8');
+  /** What git's status lists, read as the watch reads it, without refreshing the index, whose stamp is a term of the signature. */
+  const status = (): string => git(repo, '--no-optional-locks', 'status', '--porcelain');
+  const commit = watchedIn(repo);
+  const working = watchedIn(repo, () => true);
+  const committed = await signatureOf(commit);
+  const clean = await signatureOf(working);
+  // The working tree's signature is the commit's with one term more.
+  expect(clean.startsWith(`${committed} `)).toBe(true);
+  expect(clean.slice(committed.length + 1)).toMatch(/^[0-9a-f]{64}$/);
+  expect(await signatureOf(working)).toBe(clean);
+
+  const seen = [clean];
+  const moved = async (): Promise<void> => {
+    const now = await signatureOf(working);
+    expect(seen).not.toContain(now);
+    seen.push(now);
+  };
+  // An edit that stages nothing; then a second to the same file, which git's status lists as it did.
+  editSquare(repo, 'return area(side, side) + 0;');
+  const listed = status();
+  await moved();
+  editSquare(repo, 'return Math.abs(area(side, side));');
+  expect(status()).toBe(listed);
+  await moved();
+  // A file git has never been told of, and a second write to it.
+  writeFileSync(join(repo, 'src', 'circle.ts'), 'export const TAU = Math.PI * 2;\n');
+  await moved();
+  writeFileSync(join(repo, 'src', 'circle.ts'), 'export const TAU = 2 * Math.PI;\nexport const PI = Math.PI;\n');
+  await moved();
+  // A tracked file removed, and one put back as the commit has it, which clears it from the listing.
+  rmSync(join(repo, 'src', 'shapes.ts'));
+  await moved();
+  writeFileSync(join(repo, 'src', 'square.ts'), square);
+  expect(status()).not.toContain('square');
+  await moved();
+
+  // An ignored file is no part of the working tree's tree, so it moves nothing (D99).
+  writeFileSync(join(repo, '.git', 'info', 'exclude'), '*.log\n');
+  const before = await signatureOf(working);
+  writeFileSync(join(repo, 'debug.log'), 'noise\n');
+  expect(await signatureOf(working)).toBe(before);
+  // None of it moved the signature of a head that is a commit, which rebuilds nothing for an edit that is not committed.
+  expect(await signatureOf(commit)).toBe(committed);
+});
+
+test('reading the working tree never writes the index, and a rename is followed through the path it went to (D313 (watch-working-term))', async () => {
+  const repo = twoCommits();
+  const working = watchedIn(repo, () => true);
+  // A file written again as it was: its stamp moved and its content did not, which is when git's status would refresh the index.
+  await new Promise((later) => setTimeout(later, 20));
+  writeFileSync(join(repo, 'src', 'shapes.ts'), readFileSync(join(repo, 'src', 'shapes.ts')));
+  const index = statSync(working.index).mtimeMs;
+  const first = await signatureOf(working);
+  expect(await signatureOf(working)).toBe(first);
+  expect(statSync(working.index).mtimeMs).toBe(index);
+
+  git(repo, 'mv', 'src/shapes.ts', 'src/area.ts');
+  const renamed = await signatureOf(working);
+  expect(renamed).not.toBe(first);
+  writeFileSync(join(repo, 'src', 'area.ts'), 'export function area(width: number, height: number): number {\n  return Math.abs(width * height);\n}\n');
+  const edited = await signatureOf(working);
+  expect(edited).not.toBe(renamed);
+  writeFileSync(join(repo, 'src', 'area.ts'), 'export function area(width: number, height: number): number {\n  return Math.abs(width) * Math.abs(height);\n}\n');
+  expect(await signatureOf(working)).not.toBe(edited);
+});
+
+test("the approved shape's document is stamped in every signature, so approving rebuilds, whatever the head (D314 (approved-stamp))", async () => {
+  const repo = twoCommits();
+  const [commit, working] = [watchedIn(repo), watchedIn(repo, () => true)];
+  expect(commit.approved).toBe(join(repo, '.git', 'atis', 'approved.json'));
+  const before = [await signatureOf(commit), await signatureOf(working)];
+  mkdirSync(join(repo, '.git', 'atis'), { recursive: true });
+  writeFileSync(commit.approved, '{"schema_version":1,"kind":"atis.approved"}\n');
+  const approved = [await signatureOf(commit), await signatureOf(working)];
+  expect(approved[0]).not.toBe(before[0]);
+  expect(approved[1]).not.toBe(before[1]);
+  // The document lies under the git directory, so writing it is no uncommitted change: only its own stamp moved.
+  expect(approved[1]?.split(' ').at(-1)).toBe(before[1]?.split(' ').at(-1));
+  expect(git(repo, 'status', '--porcelain')).toBe('');
+
+  // Approving again is handed on by the watch as any move is.
+  let changes = 0;
+  const watch = watchRepo(commit, approved[0] ?? '', () => {
+    changes += 1;
+    return Promise.resolve();
+  }, EVERY);
+  closers.push(() => {
+    watch.close();
+    return Promise.resolve();
+  });
+  writeFileSync(commit.approved, '{"schema_version":1,"kind":"atis.approved","modules":[]}\n');
+  await expect.poll(() => changes, { timeout: 5000 }).toBe(1);
+  watch.close();
+});
+
+/** A file written every few milliseconds and never ignored, as a dev server's log is; the caller stops it. */
+const chatter = (repo: string): (() => void) => {
+  let line = 0;
+  const timer = setInterval(() => {
+    line += 1;
+    writeFileSync(join(repo, 'dev.log'), `line ${String(line)}\n`);
+  }, 5);
+  const stop = (): void => clearInterval(timer);
+  closers.push(() => {
+    stop();
+    return Promise.resolve();
+  });
+  return stop;
+};
+
+test('a signature that never holds still is handed on as it stands once it has moved for ten ticks, and after a rebuild the watch rests as long as the rebuild took (D328 (watch-bounds))', async () => {
+  const repo = twoCommits();
+  const watched = watchedIn(repo, () => true);
+  const TOOK = 250;
+  const moves: { readonly restless: boolean; readonly began: number; readonly ended: number }[] = [];
+  const watch = watchRepo(watched, await signatureOf(watched), async ({ restless }) => {
+    const began = performance.now();
+    await new Promise((rebuilt) => setTimeout(rebuilt, TOOK));
+    moves.push({ restless, began, ended: performance.now() });
+  }, EVERY);
+  closers.push(() => {
+    watch.close();
+    return Promise.resolve();
+  });
+  const stop = chatter(repo);
+  // Without the ceiling no tick ever reads the signature it read before, and nothing is handed on while the file is written.
+  await expect.poll(() => moves.filter((move) => move.restless).length, { timeout: 30_000 }).toBeGreaterThanOrEqual(2);
+  stop();
+  watch.close();
+  // No rebuild began until as long had passed since the one before as that one took.
+  for (const [at, move] of moves.entries()) {
+    const before = moves[at - 1];
+    if (before !== undefined) expect(move.began - before.ended).toBeGreaterThanOrEqual(before.ended - before.began);
+  }
+  // Ten ticks of the test's tick is the wait before the first.
+  expect(moves[0]?.restless).toBe(true);
+}, MINUTE);
+
+test("a working tree git cannot list is one fixed term, so the rest of the signature still moves and is handed on, said unread; and a link is stamped as the link, never as the file it names (D313 (watch-working-term))", async () => {
+  const repo = twoCommits();
+  // The same files watched from a directory git finds no repository in, as a status git refuses is read.
+  const lost: Watched = { ...watchedIn(repo, () => true), repo: temp('lost') };
+  const before = await signatureOf(lost);
+  expect(before.split(' ').at(-1)).toBe('unread');
+  expect(await signatureOf(lost)).toBe(before);
+  const handed: unknown[] = [];
+  const watch = watchRepo(lost, before, (moved) => {
+    handed.push(moved);
+    return Promise.resolve();
+  }, EVERY);
+  closers.push(() => {
+    watch.close();
+    return Promise.resolve();
+  });
+  mkdirSync(join(repo, '.check'));
+  writeFileSync(join(repo, '.check', 'summary.json'), '{"schema_version":1}\n');
+  await expect.poll(() => handed, { timeout: 5000 }).toEqual([{ restless: false, unread: true }]);
+  watch.close();
+
+  // A link the tree holds, to a file outside it: the tree records the path it names, so a write to that file moves nothing.
+  const outside = join(temp('outside'), 'notes.txt');
+  writeFileSync(outside, 'first\n');
+  symlinkSync(outside, join(repo, 'notes.txt'));
+  const working = watchedIn(repo, () => true);
+  const linked = await signatureOf(working);
+  await new Promise((later) => setTimeout(later, 20));
+  writeFileSync(outside, 'second, and longer\n');
+  expect(await signatureOf(working)).toBe(linked);
+  // The link itself named anew is a move.
+  rmSync(join(repo, 'notes.txt'));
+  symlinkSync(join(repo, 'package.json'), join(repo, 'notes.txt'));
+  expect(await signatureOf(working)).not.toBe(linked);
+});
+
+test('under --watch, a file written all the time and never ignored is rebuilt for without waiting for it to hold still, and the run says so once (D328 (watch-bounds))', async () => {
+  const repo = twoCommits();
+  const { served, lines } = await watching(repo, { workingTree: true });
+  const { next } = await listen(served);
+  await next();
+  const stop = chatter(repo);
+  const restless = 'atis: the watch rebuilt without waiting, since what it follows had not held still for 0.4 s; a file written all the time and not ignored, as a log is, keeps it rebuilding\n';
+  const watchedLines = (): number => lines.filter((line) => line.startsWith('atis: watched working-tree: ')).length;
+  await expect.poll(() => lines.includes(restless) && watchedLines() >= 3, { timeout: 45_000 }).toBe(true);
+  stop();
+  // The tab was pushed each of those maps, and the line was not said again for each.
+  expect(lines.filter((line) => line === restless).length).toBeLessThan(watchedLines());
+  expect((await next()).meta.head).toBe('working-tree');
+}, MINUTE);
+
+test("under --watch with the working tree as the head, an edit that stages nothing is rebuilt and pushed, then a second edit to the same file, then a new untracked file, each file's text read from the tree that map was measured from (D313 (watch-working-term), D312 (tree-beside-map))", async () => {
+  const repo = twoCommits();
+  const head = git(repo, 'rev-parse', 'HEAD');
+  const { served, lines } = await watching(repo, { workingTree: true });
+  const { next } = await listen(served);
+  const first = await next();
+  expect(first.meta.head).toBe('working-tree');
+  expect(first.weather.changed.map((file) => file.path)).toEqual(['src/square.ts']);
+  const clean = await textAt(served, 'src/square.ts');
+
+  const trees = [clean.at];
+  for (const body of ['return area(side, side) + 0;', 'return Math.abs(area(side, side));']) {
+    const text = editSquare(repo, body);
+    const pushed = await next();
+    expect(pushed.meta.head).toBe('working-tree');
+    expect(pushed.weather.changed.map((file) => file.path)).toEqual(['src/square.ts']);
+    expect(pushed.terrain.layout).toEqual(first.terrain.layout);
+    // The text is the edit's, read from a tree no map before this one was measured from.
+    const read = await textAt(served, 'src/square.ts');
+    expect(read.text).toBe(text);
+    expect(trees).not.toContain(read.at);
+    trees.push(read.at);
+  }
+  writeFileSync(join(repo, 'src', 'circle.ts'), 'export const TAU = Math.PI * 2;\n');
+  const added = await next();
+  expect(added.weather.changed.map((file) => [file.path, file.kind])).toEqual([['src/circle.ts', 'added'], ['src/square.ts', 'added']]);
+  expect((await textAt(served, 'src/circle.ts')).text).toBe('export const TAU = Math.PI * 2;\n');
+
+  // Three edits, three maps: reading the tree moved nothing the watch reads, so no map was rebuilt for nothing.
+  await settled();
+  expect(lines).toEqual([1, 1, 2].map((files) => `atis: watched working-tree: NOINST, ${String(files)} file${files === 1 ? '' : 's'} changed, 0 notices\n`));
+  // Nothing was staged or committed for it.
+  expect(git(repo, 'rev-parse', 'HEAD')).toBe(head);
+  expect(git(repo, 'status', '--porcelain', '--untracked-files=all').split('\n').map((line) => line.trim())).toEqual(['M src/square.ts', '?? src/circle.ts']);
+}, MINUTE);
+
+test('a watch at a commit rebuilds nothing for an edit that stages nothing, and follows the working tree once the page has switched to it (D313 (watch-working-term))', async () => {
+  const repo = twoCommits();
+  const { served, lines } = await watching(repo);
+  const origin = `http://127.0.0.1:${String(served.port)}`;
+  const { next } = await listen(served);
+  expect((await next()).meta.head).toBe(git(repo, 'rev-parse', 'HEAD'));
+  editSquare(repo, 'return area(side, side) + 0;');
+  await settled();
+  expect(lines).toEqual([]);
+
+  const switched = await fetch(`${origin}/base?token=${TOKEN}`, { method: 'POST', headers: { origin, 'content-type': 'application/json' }, body: JSON.stringify({ base: 'v1', working_tree: true }) });
+  expect(switched.status).toBe(200);
+  expect(assertMap(await switched.json()).meta.head).toBe('working-tree');
+  // The signature has a term more from here, which is a move: the watch measures the working tree once more, and settles.
+  expect((await next()).meta.head).toBe('working-tree');
+  await settled();
+  expect(lines).toHaveLength(1);
+
+  const text = editSquare(repo, 'return Math.abs(area(side, side));');
+  expect((await next()).meta.head).toBe('working-tree');
+  expect((await textAt(served, 'src/square.ts')).text).toBe(text);
+  await settled();
+  expect(lines).toHaveLength(2);
+}, MINUTE);
+
+test('under --watch, approving pushes a map that carries the approved block, the next commit brings its departures, and a switch to another base says once what was left out (D314 (approved-stamp), D212 (approved-private), D308 (same-terrain))', async () => {
+  const repo = twoCommits();
+  const head = git(repo, 'rev-parse', 'HEAD');
+  git(repo, 'tag', 'v2');
+  const { served, lines } = await watching(repo);
+  const origin = `http://127.0.0.1:${String(served.port)}`;
+  const { next } = await listen(served);
+  const first = await next();
+  expect('approved' in first).toBe(false);
+
+  // Approved with the flags the run maps with, while it runs: the document's stamp moves, and the map is rebuilt with the block on it.
+  expect(approveRun({ repo, base: 'v1', verbose: false }).exitCode).toBe(0);
+  const kept = await next();
+  expect(kept.approved).toEqual({ at: head, departures: [] });
+  expect(kept.terrain.layout).toEqual(first.terrain.layout);
+
+  // A commit that founds a module departs from it, on the map the tab is pushed.
+  mkdirSync(join(repo, 'src', 'paint'));
+  writeFileSync(join(repo, 'src', 'paint', 'colour.ts'), 'export const RED = 0xff0000;\n');
+  git(repo, 'add', '.');
+  git(repo, 'commit', '--quiet', '-m', 'feat: name a colour');
+  const painted = await next();
+  expect(painted.approved).toEqual({ at: head, departures: [{ kind: 'module-added', target: 'src/paint', cell: 'directory:src/paint', why: 'a module the approved shape did not hold', now: 1 }] });
+  // Over the base the shape was approved over, nothing was left out, so nothing is said beside the two maps.
+  await settled();
+  expect(lines).toHaveLength(2);
+  expect(lines.every((line) => line.startsWith('atis: watched '))).toBe(true);
+
+  // The page switches to another base: the block is still on the map, and the line says which three readings it lacks.
+  const switched = await fetch(`${origin}/base?token=${TOKEN}`, { method: 'POST', headers: { origin, 'content-type': 'application/json' }, body: JSON.stringify({ base: 'v2' }) });
+  expect(switched.status).toBe(200);
+  expect(assertMap(await switched.json()).approved?.at).toBe(head);
+  const note = `atis: the approved shape was cut over ${git(repo, 'rev-parse', '--short=7', 'v1')} and this map over ${head.slice(0, 7)}, so lines, fan out and interfaces with no barrel were not compared; run atis approve with this map's flags to compare them\n`;
+  expect(lines.at(-1)).toBe(note);
+
+  // Rebuilt over that base again, the line stands and is not said twice.
+  const sha = commitSquare(repo, 'return area(side, side) + 0;', 'fix: square a side again');
+  await expect.poll(() => lines.at(-1), { timeout: 10_000 }).toBe(`atis: watched ${sha.slice(0, 7)}: NOINST, 2 files changed, 0 notices\n`);
+  await settled();
+  expect(lines.filter((line) => line === note)).toHaveLength(1);
+}, MINUTE);

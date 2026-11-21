@@ -7,8 +7,10 @@
  * (D92), `serve`, the loopback server beneath both, `fingerprintRun`, which
  * writes the terrain alone for a README (D107), `commentRun`, which posts
  * the map to the branch's pull request (D108), `mcpRun`, which serves the
- * tools an agent points at the map with (D110), and `reachRun`, which answers
- * what a change to some paths would reach before it is made.
+ * tools an agent points at the map with (D110), `reachRun`, which answers
+ * what a change to some paths would reach before it is made, and
+ * `approveRun`, which keeps the shape of a map as the one its owner approved
+ * (D212 (approved-private)).
  */
 
 import { SCHEMA_VERSION } from 'core';
@@ -31,6 +33,9 @@ export const USAGE = `${NAME} ${VERSION}: a weather map for code changes.
   atis fingerprint --out <svg> [--repo <path>] [--head <ref>]
   atis mcp [--repo <path>] [--map <file>]
   atis reach [--json] [--history <n> | --no-history] [--repo <path>] <paths...>
+  atis approve [--base <ref> | --last-commit | --last-tag]
+               [--head <ref> | --working-tree] [--whole-repo] [--repo <path>]
+  atis approve --show [--repo <path>]
 
 With no --out, --svg or --png, atis serves the world on 127.0.0.1 at a port of
 its own, opens it in a tab, and runs until interrupted.
@@ -54,6 +59,18 @@ and a path that names nothing at HEAD yet is listed as new. It prints a
 table, or with --json one object of kind atis.reach, the same bytes for one
 commit and one set of paths. No reach is too much: it exits 0 once it has
 answered.
+
+atis approve records the shape of the repository you accept: every module
+the head holds, with its files, its lines, its interface and its fan out, and
+the outside packages it imports. It measures the map the same flags would
+draw, the change over the trunk at HEAD with none, and keeps that map's shape
+as atis/approved.json in the git directory, in place of the one before, so
+nothing lands in the working tree. Every map built after carries its
+departures from the approved shape: a module added or removed, one grown in
+files, lines or fan out, an interface widened or entered past, an outside
+package added. Lines, fan out and an interface with no barrel are compared
+only by a map over the base the shape was approved over, so approve with the
+flags you map with; a map over another base says they were left out.
 
   --repo <path>   the repository to read (default: the working directory)
   --map <file>    for atis mcp, the map reach and explain read when no tab is
@@ -100,7 +117,9 @@ answered.
                   commands that reach the network, and only when typed
   --watch         keep serving the world and, when HEAD, the index or
                   .check/summary.json changes, rebuild the map and push its
-                  weather to the open tab over the terrain it already shows
+                  weather to the open tab over the terrain it already shows;
+                  with --working-tree, or once the tab has switched to the
+                  working tree, an edit that stages nothing is followed too
   --tour <file>   play a reviewer's tour in the served world, a stepper that
                   flies to each stop with its sentence; the tour must be one
                   written for this map's base and head, by the workspace's
@@ -111,6 +130,8 @@ answered.
                   directory
   --history <n>   read the newest <n> commits of history (default 5000)
   --json          for atis reach, print the answer as JSON rather than a table
+  --show          for atis approve, print the approved shape as it is kept and
+                  approve nothing
   --no-history    for atis reach, read no history: import reach alone
   --verbose       print per-source timings, and each cache's hit or miss, on
                   stderr
@@ -122,6 +143,7 @@ base of the base and the head, weather from the head, and at most six ranked
 notices.
 The terrain is kept per merge base under atis/ in the repository's git
 directory (git rev-parse --git-common-dir), which every worktree of it shares,
-so atis writes nothing in the working tree.
+so atis writes nothing in the working tree. The approved shape is kept beside
+it, one for the repository.
 https://github.com/robmclarty/atis
 `;

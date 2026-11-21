@@ -17,7 +17,7 @@ import type { OverlayName } from 'core';
 
 import { USAGE, VERSION } from './index.js';
 import { mcpRun } from './mcp.js';
-import { commentRun, fingerprintRun, pngRun, reachRun, run, serveRun } from './run.js';
+import { approveRun, commentRun, fingerprintRun, pngRun, reachRun, run, serveRun } from './run.js';
 import type { HeadAsked, Outcome, RangeAsked } from './run.js';
 import type { BaseAsked } from './sources/index.js';
 
@@ -319,8 +319,69 @@ function reachCommand(argv: readonly string[]): Promise<Outcome> {
   return Promise.resolve(reachRun(positionals, { repo: values.repo ?? process.cwd(), json: values.json === true, history: values.history !== false, window, cache: values.cache !== false }));
 }
 
+/**
+ * The flags `atis approve` takes (D212 (approved-private)): the ones a map
+ * run names its map by, since the shape approved is that map's
+ * (D323 (approve-as-mapped)), and `--show`, which approves nothing. A range
+ * is no flag of it: a shape is approved at one head.
+ */
+const APPROVE_FLAGS = {
+  repo: FLAGS.repo,
+  base: FLAGS.base,
+  'last-commit': FLAGS['last-commit'],
+  'last-tag': FLAGS['last-tag'],
+  head: FLAGS.head,
+  'working-tree': FLAGS['working-tree'],
+  'whole-repo': FLAGS['whole-repo'],
+  show: { type: 'boolean' },
+  cache: FLAGS.cache,
+  history: FLAGS.history,
+  verbose: FLAGS.verbose,
+  help: FLAGS.help,
+} as const;
+
+/**
+ * `atis approve`: keep the shape of the map the flags ask for as the approved
+ * one, read by every map built after (D212 (approved-private)). The flags
+ * name the base and the head as they do for a map, and are misuse in the
+ * same pairs (C4). `--show` prints the shape already kept and measures
+ * nothing, so a flag that names a map is misuse beside it.
+ */
+function approveCommand(argv: readonly string[]): Promise<Outcome> {
+  let flags: Flags & { readonly show?: boolean | undefined };
+  try {
+    ({ values: flags } = parseArgs({ args: [...argv], options: APPROVE_FLAGS, allowPositionals: false, allowNegative: true }));
+  } catch (error) {
+    return Promise.resolve(misuse(error instanceof Error ? error.message : String(error)));
+  }
+  if (flags.help === true) return Promise.resolve({ exitCode: 0, stdout: USAGE, stderr: '' });
+  const repo = flags.repo ?? process.cwd();
+  if (flags.show === true) {
+    const named = [
+      flags.base === undefined ? [] : ['--base'],
+      flags['last-commit'] === true ? ['--last-commit'] : [],
+      flags['last-tag'] === true ? ['--last-tag'] : [],
+      flags.head === undefined ? [] : ['--head'],
+      flags['working-tree'] === true ? ['--working-tree'] : [],
+      flags['whole-repo'] === true ? ['--whole-repo'] : [],
+    ].flat();
+    if (named.length > 0) return Promise.resolve(misuse(`--show prints the shape already approved and measures no map; drop ${named.join(' and ')}`));
+    return Promise.resolve(approveRun({ repo, show: true, verbose: false }));
+  }
+  const whole = wholeRepoOf(flags);
+  if ('reason' in whole) return Promise.resolve(misuse(whole.reason));
+  const asked = baseOf(flags);
+  if ('reason' in asked) return Promise.resolve(misuse(asked.reason));
+  const headAsked = headOf(flags);
+  if ('reason' in headAsked) return Promise.resolve(misuse(headAsked.reason));
+  const window = windowOf(flags.history);
+  if (typeof window === 'object') return Promise.resolve(misuse(window.reason));
+  return Promise.resolve(approveRun({ repo, base: asked.base, head: headAsked.head, wholeRepo: whole.wholeRepo, verbose: flags.verbose === true, cache: flags.cache !== false, history: window }));
+}
+
 /** The verbs atis takes ahead of its flags, each a command that is not a map (D104). */
 const COMMANDS: ReadonlyMap<string, Command> = new Map([
+  ['approve', approveCommand],
   ['fingerprint', fingerprintCommand],
   ['mcp', mcpCommand],
   ['reach', reachCommand],
