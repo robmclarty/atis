@@ -184,6 +184,10 @@ test('with nothing selected the panel is one thin tab at the rail, which opens t
     expect(section.querySelectorAll('[data-inspector-row]')).toHaveLength(list.rows.length);
     for (const row of list.rows) expect(section.textContent).toContain(row.words);
   }
+  // A path may break after each slash, so a long one wraps between its segments; its words read the same.
+  const longest = element(`[data-inspector-section="largest-files"] [data-inspector-row="${DOCTOR}"]`);
+  expect(longest.querySelectorAll('wbr')).toHaveLength(3);
+  expect(longest.textContent).toBe(`${DOCTOR}212 lines`);
   // No shape was approved: the one muted line, and no row.
   const departures = element('[data-inspector-section="departures"]');
   expect(departures.querySelector('[data-inspector-muted]')?.textContent).toBe(NO_APPROVED_SHAPE);
@@ -765,6 +769,7 @@ test('the panel lies over the map at the rail, as wide as its token, live throug
   await select(nav, PM);
   const panel = element('aside');
   expect(panel.style.position).toBe('fixed');
+  // With no HUD drawn above it, as here, it starts at the top.
   expect(panel.style.top).toBe('0px');
   expect(panel.style.bottom).toBe('0px');
   // It stands at the rail's left edge and claims no screen of its own: the rail's width is the one claim, as it was.
@@ -787,6 +792,37 @@ test('the panel lies over the map at the rail, as wide as its token, live throug
   await flatAt('[data-inspector-tab="code"]');
   await flatAt('[data-inspector-step="map"]');
   expect(host.innerHTML).toContain(rgb(CHROME_RULE));
+});
+
+test("the panel starts beneath the HUD's row of grade blocks and follows its foot as the row wraps, so a selection covers no grade (D263 (below-the-grades))", async () => {
+  // A stand-in for the row the HUD draws, and for the observer the page follows its size with.
+  const grades = document.createElement('nav');
+  grades.setAttribute('data-hud', '');
+  document.body.append(grades);
+  let foot = 67.4;
+  grades.getBoundingClientRect = () => new DOMRect(0, 0, 900, foot);
+  const watched: { readonly row: Element; readonly resized: () => void; live: boolean }[] = [];
+  vi.stubGlobal('ResizeObserver', function Following(this: { observe: (row: Element) => void; disconnect: () => void }, resized: () => void) {
+    this.observe = (row) => watched.push({ row, resized, live: true });
+    this.disconnect = () => watched.forEach((each) => Object.assign(each, { live: false }));
+  });
+  const { nav } = await draw();
+  expect(watched.map((each) => each.row)).toEqual([grades]);
+  await select(nav, PM);
+  // A whole pixel under the row, never a part of one over it.
+  expect(element('aside').style.top).toBe('68px');
+  expect(element('aside').style.bottom).toBe('0px');
+  // The screen narrows and the row wraps to a third line: the panel moves down with it.
+  foot = 101;
+  await act(async () => watched[0]?.resized());
+  expect(element('aside').style.top).toBe('101px');
+  // The thin tab stands half way down the rail, wherever the row ends.
+  await act(async () => nav.select(undefined, 'stay'));
+  expect(element('[data-inspector="closed"]').style.top).toBe('50%');
+  act(() => root.unmount());
+  expect(watched.every((each) => !each.live)).toBe(true);
+  root = createRoot(host);
+  grades.remove();
 });
 
 test('a selection the map no longer holds reads as none, and the panel comes back when a map that holds it is drawn', async () => {

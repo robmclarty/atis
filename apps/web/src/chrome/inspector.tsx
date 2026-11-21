@@ -9,7 +9,9 @@
  * and the PR's link stands beside a diff when the page was told one.
  *
  * It lies over the map, at the rail's left edge, and claims none of the free
- * screen (D215 (inspector-overlay)): the map is fitted as it was. With
+ * screen (D215 (inspector-overlay)): the map is fitted as it was. It stands
+ * beneath the HUD's row of grade blocks, which runs to the rail too, so a
+ * selection never covers a grade (D263 (below-the-grades)). With
  * nothing selected it is one thin tab, `map`, which opens the map view, so
  * it covers nothing unasked (D261 (map-tab)). Its words are `inspector.ts`'s
  * and `reading.ts`'s models, written as they come: a fact the map did not
@@ -200,8 +202,22 @@ const Section = ({ ui, id, title, adds, children }: { readonly ui: Ui; readonly 
   </section>
 );
 
-/** A row's name, which takes the room the row has and breaks where it must. */
-const Words = ({ children, bold = false }: { readonly children: ReactNode; readonly bold?: boolean }): ReactElement => <span style={{ flex: '1 1 auto', minWidth: 0, overflowWrap: 'anywhere', ...(bold ? { fontWeight: 'bold' } : {}) }}>{children}</span>;
+/** A path with a place to break after each slash, so a long one wraps between its segments before it wraps inside one. */
+const pathWords = (path: string): ReactNode =>
+  path.split('/').map((segment, at, segments) => (
+    // A path's segments have no name of their own and never move, so each is known by its place.
+    <Fragment key={at}>
+      {segment}
+      {at < segments.length - 1 && (
+        <>
+          /<wbr />
+        </>
+      )}
+    </Fragment>
+  ));
+
+/** A row's name, which takes the room the row has and breaks where it must: a path between its segments first. */
+const Words = ({ children }: { readonly children: ReactNode }): ReactElement => <span style={{ flex: '1 1 auto', minWidth: 0, overflowWrap: 'anywhere' }}>{typeof children === 'string' ? pathWords(children) : children}</span>;
 
 /** What a row says past its name, at its right edge. */
 const Tail = ({ color, children }: { readonly color: string; readonly children: ReactNode }): ReactElement => <span style={{ flex: 'none', color, whiteSpace: 'nowrap' }}>{children}</span>;
@@ -339,7 +355,7 @@ const ReadingRowOf = ({ ui, row }: { readonly ui: Ui; readonly row: ReadingRow }
   <Row ui={ui} selects={row.selects}>
     {row.hue !== undefined && <span data-inspector-hue={row.hue} aria-hidden="true" style={{ flex: 'none', alignSelf: 'center', width: ui.type.small * 0.6, height: ui.type.small * 0.6, background: packageInk(row.hue, ui.look) }} />}
     <Words>
-      <span style={{ display: 'block' }}>{row.words}</span>
+      <span style={{ display: 'block' }}>{pathWords(row.words)}</span>
       {(row.tail !== undefined || row.muted !== undefined) && (
         <Under ui={ui} {...(row.muted === undefined ? {} : { 'data-inspector-muted': '' })}>
           {[...(row.tail === undefined ? [] : [row.tail]), ...(row.muted === undefined ? [] : [row.muted])].join(` ${MIDDLE} `)}
@@ -630,6 +646,30 @@ const Trail = ({ ui, trail, toMap }: { readonly ui: Ui; readonly trail: readonly
   );
 };
 
+/** The HUD's row of grade blocks, by the mark `hud.tsx` draws it with. */
+const GRADES = '[data-hud]';
+
+/**
+ * How far down the page the HUD's row of grade blocks reaches, in pixels,
+ * which is where the panel starts (D263 (below-the-grades)). The row runs to
+ * the rail and wraps as the screen narrows, so its foot is measured and
+ * followed as it moves; nought where there is no row, or nothing to measure
+ * it with, and the panel then starts at the top.
+ */
+const useGradesFoot = (): number => {
+  const [foot, setFoot] = useState(0);
+  useEffect(() => {
+    const row = document.querySelector(GRADES);
+    if (row === null || typeof ResizeObserver === 'undefined') return undefined;
+    const measure = (): void => setFoot(Math.ceil(row.getBoundingClientRect().bottom));
+    const watching = new ResizeObserver(measure);
+    watching.observe(row);
+    measure();
+    return () => watching.disconnect();
+  }, []);
+  return foot;
+};
+
 /** The four arrows, and which way each steps: on to the next row, or back to the one before. */
 const ARROWS: Readonly<Record<string, 1 | -1>> = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 };
 
@@ -736,6 +776,7 @@ export const Inspector = ({ map, registry, nav, token, pr }: InspectorProps): Re
   const [moduleTab, setModuleTab] = useState<ModuleTab>('facts');
   const [fileTab, setFileTab] = useState<FileTab>('facts');
   const [functions, setFunctions] = useState(false);
+  const top = useGradesFoot();
 
   // What this panel points at, so it lets go of that alone: another panel's row may have taken the chrome's pointing since.
   const mine = useRef<string | undefined>(undefined);
@@ -793,7 +834,7 @@ export const Inspector = ({ map, registry, nav, token, pr }: InspectorProps): Re
       onKeyDown={onKeyDown}
       style={{
         position: 'fixed',
-        top: 0,
+        top,
         right: RAIL_WIDTH,
         bottom: 0,
         width: panel.inspectorWidth,
@@ -804,6 +845,7 @@ export const Inspector = ({ map, registry, nav, token, pr }: InspectorProps): Re
         background: look.CHROME_GROUND,
         color: look.CHROME_INK,
         borderLeft: rule,
+        borderTop: rule,
         fontFamily: look.FONT_FAMILY,
         fontSize: ui.type.text,
         lineHeight: look.NOTICE_LEADING,
@@ -814,7 +856,7 @@ export const Inspector = ({ map, registry, nav, token, pr }: InspectorProps): Re
       <PointingOf nav={nav}>
         <header data-inspector-head style={{ flex: 'none', display: 'flex', alignItems: 'flex-start', gap: look.CHROME_PAD / 2, padding: look.CHROME_PAD }}>
           {model.kind === 'map' ? (
-            <strong style={{ flex: '1 1 auto', fontVariant: 'small-caps' }}>
+            <strong style={{ flex: '1 1 auto' }}>
               map <span style={{ color: look.CHROME_MUTED, fontWeight: 'normal' }}>{MIDDLE} read from its structure alone</span>
             </strong>
           ) : (
