@@ -28,7 +28,9 @@
  * Escape clears the selection, or folds the map view away; the arrows step
  * the focus through its rows, or scroll a sheet of code that has it; and
  * Enter is a button's or a link's to take, and goes nowhere else. Each is
- * marked handled, so the camera does not walk under a panel being read.
+ * marked handled, so the camera does not walk under a panel being read. A
+ * row whose click swaps the view goes with it, and the focus it held is
+ * kept in the panel (D272 (focus-stays)).
  */
 
 import {
@@ -811,18 +813,43 @@ export const Inspector = ({ map, registry, nav, token, pr }: InspectorProps): Re
     },
     [nav],
   );
-  const choose = useCallback((next: Selected): void => nav.select(next, 'fly'), [nav]);
+
+  // The view a row or a step asked for while the focus was inside the panel: the focus is kept in the panel once it shows (D272 (focus-stays)).
+  const aside = useRef<HTMLElement | null>(null);
+  const wanted = useRef<Selected | 'map' | undefined>(undefined);
+  const choose = useCallback(
+    (next: Selected): void => {
+      const now = nav.selected();
+      // The selection it already holds, as the fly to asks for, swaps no view, so there is no focus to keep.
+      const moves = now === undefined || targetOf(now) !== targetOf(next);
+      if (moves && aside.current?.contains(document.activeElement) === true) wanted.current = next;
+      nav.select(next, 'fly');
+    },
+    [nav],
+  );
 
   const fileShown: FileTab = model.kind === 'file' && fileTabsOf(model).includes(fileTab) ? fileTab : 'facts';
   const shown = model.kind === 'map' ? `map ${String(mapOpen)}` : `${targetOf(model.selected)} ${model.kind === 'module' ? moduleTab : fileShown}`;
   // A row that goes while the pointer rests on it never sees the pointer leave, so what it pointed at is let go when the view changes and when the panel goes.
   useEffect(() => () => point(undefined), [shown, point]);
 
+  // A row's button goes with the view its click swaps, and the focus it held would fall to the page, where the next arrow walks the camera. The panel takes it, so the keys stay its own (D262 (panel-keys)).
+  const at = model.kind === 'map' ? undefined : targetOf(model.selected);
+  useEffect(() => {
+    const want = wanted.current;
+    wanted.current = undefined;
+    const root = aside.current;
+    // The view that came is the one asked for: the map view with nothing selected, else the selection's own.
+    const arrived = want !== undefined && at === (want === 'map' ? undefined : targetOf(want));
+    if (arrived && root !== null && !root.contains(document.activeElement)) root.focus({ preventScroll: true });
+  }, [shown, at]);
+
   const ui: Ui = { map, look, type: screenType(look), hue: categoryHue(map.weather.checks.category, look), choose, point };
   if (model.kind === 'map' && !mapOpen) return <MapTab ui={ui} open={() => setMapOpen(true)} />;
 
   const close = (): void => (model.kind === 'map' ? setMapOpen(false) : nav.select(undefined, 'stay'));
   const toMap = (): void => {
+    if (aside.current?.contains(document.activeElement) === true) wanted.current = 'map';
     setMapOpen(true);
     nav.select(undefined, 'stay');
   };
@@ -844,6 +871,7 @@ export const Inspector = ({ map, registry, nav, token, pr }: InspectorProps): Re
 
   return (
     <aside
+      ref={aside}
       data-inspector={model.kind}
       {...(model.kind === 'map' ? {} : { 'data-inspector-target': targetOf(model.selected) })}
       aria-label="inspector"

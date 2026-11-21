@@ -796,6 +796,58 @@ test('the arrows step the focus through the panel and never reach the camera, an
   expect(nav.pointed()).toBeUndefined();
 });
 
+test("the focus stays in the panel when a row's click swaps its view, so the next key is still the panel's (D272 (focus-stays))", async () => {
+  const { nav } = await draw();
+  await select(nav, PM);
+  await click('[data-inspector-tab="files"]');
+  const row = element(`[data-inspector-row="${SLOTS}"]`);
+  await act(async () => row.focus());
+  expect(document.activeElement).toBe(row);
+  // Enter on the row is its click: the panel turns to the file and the row goes with the list.
+  await act(async () => row.click());
+  const panel = element('aside');
+  expect(panel.getAttribute('data-inspector-target')).toBe(SLOTS);
+  expect(row.isConnected).toBe(false);
+  expect(document.activeElement).toBe(panel);
+  // The next arrow is the panel's, never the camera's, and lands on its first stop.
+  expect(await press('ArrowDown', panel)).toBe(true);
+  const first = element('[data-inspector-step="map"]');
+  expect(document.activeElement).toBe(first);
+  // The map's step goes with the head it stood in, and the map view keeps the focus too.
+  await act(async () => first.click());
+  expect(element('aside').getAttribute('data-inspector')).toBe('map');
+  expect(document.activeElement).toBe(element('aside'));
+  expect(await press('Enter', element('aside'))).toBe(true);
+
+  // A step that stays where it is keeps the focus itself.
+  await select(nav, PM);
+  const up = element(`[data-inspector-step="${CORE}"]`);
+  await act(async () => up.focus());
+  await act(async () => up.click());
+  expect(nav.selected()).toEqual({ kind: 'cell', cell: CORE });
+  expect(document.activeElement).toBe(element(`[data-inspector-step="${CORE}"]`));
+});
+
+test('the panel takes no focus it was not left: not from a click with the focus elsewhere, nor from a selection made on the map', async () => {
+  const { nav } = await draw();
+  await click('[data-inspector="closed"]');
+  // The pointer clicks a row while the focus is on the page: the view swaps and the focus stays where it was.
+  await click(`[data-inspector-section="largest-modules"] [data-inspector-row="${PM}"]`);
+  expect(element('aside').getAttribute('data-inspector-target')).toBe(PM);
+  expect(document.activeElement).toBe(document.body);
+  // The fly to asks for the selection the panel already shows, which swaps no view.
+  const fly = element('[data-inspector-fly]');
+  await act(async () => fly.focus());
+  await act(async () => fly.click());
+  expect(document.activeElement).toBe(fly);
+  // The reader goes back to the map and selects there: the panel turns to it and leaves the focus on the page.
+  await act(async () => fly.blur());
+  await select(nav, DOCTOR);
+  expect(element('aside').getAttribute('data-inspector-target')).toBe(DOCTOR);
+  expect(document.activeElement).toBe(document.body);
+  expect(await press('ArrowDown', document.body)).toBe(false);
+});
+
 test('an arrow scrolls a sheet of code that has the focus, in place of stepping off it', async () => {
   serve({ [`/file/${INDEX}`]: { status: 200, body: SERVED } });
   const { nav } = await draw(DEMO, { token: TOKEN });
