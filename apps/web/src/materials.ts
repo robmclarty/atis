@@ -11,7 +11,8 @@
  * minimap's look and a still's framing are the scene's (`MINIMAP`, `CINEMA`),
  * since the comment's still and the fingerprint draw with them too (D175).
  * The levels rest parked, the world one lit surface at every zoom (D204
- * (parked-levels)).
+ * (parked-levels)), and the side panels' sizes ride here too (D208
+ * (side-panels)).
  */
 
 import { CELL_GATE, COMPOSITE_GATE, INTERIOR_LAYOUT, PLANET_LAYOUT } from 'scene';
@@ -285,6 +286,10 @@ export const CAMERA: CameraLook = { smooth: 0.1, dragSmooth: 0.05 };
  * `gates` set to them and `autoOpen` to 1 bring the old levels back.
  * `openOnSelect` is the one way a slide opens at rest (D205
  * (open-on-select)): selecting a module opens it in place, whatever the zoom.
+ * What the levels showed resolves by its size on the screen instead (D206
+ * (detail-by-size)): a file's name once its radius passes `fileNameFrom`
+ * pixels, and its functions' granules between `granuleFrom` and
+ * `granuleFull`.
  */
 export type LevelsLook = {
   readonly gates: readonly LodGate[];
@@ -297,6 +302,11 @@ export type LevelsLook = {
   readonly autoOpen: number;
   /** Above 0, selecting a module opens it as the living slide in place, and clearing the selection closes it. At 0 a selection is only ringed and named. */
   readonly openOnSelect: number;
+  /** The radius on the screen, in pixels, from which a file's name is written unasked. */
+  readonly fileNameFrom: number;
+  /** A function's granule fades in as its radius on the screen grows from `granuleFrom` pixels, where none of it shows, to `granuleFull`, where all of it does. */
+  readonly granuleFrom: number;
+  readonly granuleFull: number;
 };
 
 export const LEVELS: LevelsLook = {
@@ -308,6 +318,9 @@ export const LEVELS: LevelsLook = {
   compositeClose: COMPOSITE_GATE.close,
   autoOpen: 0,
   openOnSelect: 1,
+  fileNameFrom: 18,
+  granuleFrom: 1.5,
+  granuleFull: 4,
 };
 
 /**
@@ -315,16 +328,24 @@ export const LEVELS: LevelsLook = {
  * this width, a flat annotation in the chrome's manner that never blooms
  * (D12); a file answers the pointer this many pixels past its edge, so one too
  * small to aim at still does; and its tag stands this many pixels right of and
- * below the pointer.
+ * below the pointer. The selection beside it (D207 (click-selects)): what a
+ * click selects is ringed steadily in `selectInk` at `selectWidth`, the
+ * hover's own ink drawn heavier, so it reads over a hover and claims no
+ * state's hue; and a press is a click while it moves no more than `clickSlop`
+ * pixels and lasts no longer than `clickMs` milliseconds.
  */
 export type HoverLook = {
   readonly ink: string;
   readonly width: number;
   readonly slop: number;
   readonly tagGap: number;
+  readonly selectInk: string;
+  readonly selectWidth: number;
+  readonly clickSlop: number;
+  readonly clickMs: number;
 };
 
-export const HOVER: HoverLook = { ink: '#e6edf3', width: 1.5, slop: 4, tagGap: 14 };
+export const HOVER: HoverLook = { ink: '#e6edf3', width: 1.5, slop: 4, tagGap: 14, selectInk: '#e6edf3', selectWidth: 2.5, clickSlop: 4, clickMs: 400 };
 
 /**
  * The walk's framing (step 39): a stop the camera flies to fills this share of
@@ -361,3 +382,18 @@ export type InteriorLook = InteriorLayout & {
 };
 
 export const INTERIOR: InteriorLook = { ...INTERIOR_LAYOUT, slide: '#efe6d3', slideOpacity: 0.94, frame: '#1e2733', body: '#b9a9cc', bodyStroke: '#6f5f8a', strokeWidth: 1, stainShare: 1, lift: 4, granuleShade: 0.35 };
+
+/**
+ * The side panels (D208 (side-panels)): the inspector's width in pixels,
+ * laid over the map beside the notice column, and the size its code and diff
+ * are set at; and the folder tree's row height and the indent of each depth,
+ * in pixels.
+ */
+export type PanelLook = {
+  readonly inspectorWidth: number;
+  readonly codeSize: number;
+  readonly treeRow: number;
+  readonly treeIndent: number;
+};
+
+export const PANEL: PanelLook = { inspectorWidth: 420, codeSize: 11, treeRow: 16, treeIndent: 10 };

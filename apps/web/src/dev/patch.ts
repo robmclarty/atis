@@ -18,6 +18,7 @@ const SOURCE_OF: Readonly<Record<string, string>> = {
   BLOOM: 'apps/web/src/materials.ts',
   WEATHER: 'apps/web/src/materials.ts',
   RELIEF: 'libs/scene/src/heightfield.ts',
+  PANEL: 'apps/web/src/materials.ts',
 };
 
 /** A value as the source writes it: single-quoted strings, bare keys, a space inside each bracket. */

@@ -441,10 +441,11 @@ leader's dots.
 The world's own look, beside the sheet's tokens above: the skin, the space
 ground it lies on, the planet the far zoom draws and its lights, the sky its sheen mirrors, the bloom, the weather's and the notices' light in
 the world, the relief, the levels of detail and the camera, and the chrome the
-world alone draws (the hover, the walk's framing, the minimap, an opened cell's
-slide and its wiring plate). Each is a field of one object, defined once: the
+world alone draws (the hover and the selection, the walk's framing, the minimap,
+an opened cell's slide and its wiring plate, and the side panels). Each is a
+field of one object, defined once: the
 skin, the space ground, the planet, lights, sky, bloom, weather, notices, levels, camera,
-hover, walk and slide in `apps/web/src/materials.ts`, the relief in
+hover, walk, slide and side panels in `apps/web/src/materials.ts`, the relief in
 `libs/scene/src/heightfield.ts` (`RELIEF`), a still's framing in
 `libs/scene/src/cinema.ts` (`CINEMA`), the minimap's look in
 `libs/scene/src/minimap.ts` (`MINIMAP`), the planet's shape in
@@ -641,7 +642,8 @@ at these values. Two tokens bring them back, for the old levels to be judged
 beside the one surface: `LEVELS.gates` set to the scene's own gates and
 `LEVELS.autoOpen` to `1`. An override lasts for the tab's session, so reset the
 tokens, or open a fresh tab, before judging the one surface again. At rest a
-slide opens one way, by `LEVELS.openOnSelect`.
+slide opens one way, by `LEVELS.openOnSelect`, and what the levels showed
+resolves by its size on the screen (D206 (detail-by-size)).
 
 | Token | Value | Use |
 | --- | --- | --- |
@@ -653,13 +655,16 @@ slide opens one way, by `LEVELS.openOnSelect`.
 | `LEVELS.compositeClose` | `0.25` | the share a package holds open at, and closes back into one composite under as the view zooms out; every package is open from LOD2 on |
 | `LEVELS.autoOpen` | `0` | the switch for the old levels' opening by zoom (D204 (parked-levels)): at `0` no cell opens as a slide by the share of the screen it fills, and a click opens none; above `0` a cell opens at `LEVELS.cellOpen` as it did, and a click opens one that would hold. The planet, the plate and the sheet come back with `LEVELS.gates` alone |
 | `LEVELS.openOnSelect` | `1` | above `0`, selecting a module opens it as the living slide in place, at any zoom, and clearing the selection closes it (D205 (open-on-select)); at `0` a selection is only ringed and named. Zoom alone opens and closes nothing either way |
+| `LEVELS.fileNameFrom` | `18` | the radius on the screen, in pixels, from which a file's name is written unasked, under the labels' collision rule and budget (D206 (detail-by-size)); set very high, a name is written only when asked for, and at `0` every file is named at every zoom |
+| `LEVELS.granuleFrom` | `1.5` | the radius on the screen, in pixels, at which a function's granule starts to show inside its file on the map (D206 (detail-by-size)); below it the granule is not drawn |
+| `LEVELS.granuleFull` | `4` | the radius at which it shows whole, faded in between the two |
 | `CAMERA.smooth` | `0.1` | how long, in seconds, the camera settles on an input: a wheel's steps read as one continuous zoom, and nothing coasts once the pointer stops; reduced motion settles at once |
 | `CAMERA.dragSmooth` | `0.05` | the shorter settle a drag takes |
 | `CINEMA.share` | `0.7` | in a still for a pull request's comment, the minimap's flat still the comment posts (D174, D175) and the world's `?cinema` page alike, the share of the picture the box round the change's notices and changed files on the terrain fills, in whichever of its width and height it fills first; no chrome stands beside it |
 | `CINEMA.farthest` | `2` | the farthest zoom over the fit the still stands at, just past the surface's gate, so a change spread over the whole field is never drawn as the far zoom's planet; a box too wide for it is centred and cropped |
 | `CINEMA.nearest` | `3` | the nearest it stands at, well short of the cells' level, so a change of one small file is framed with its cell and its neighbours round it rather than as a file's plate |
 
-### The hover and the walk
+### The hover, the selection and the walk
 
 | Token | Value | Use |
 | --- | --- | --- |
@@ -667,6 +672,10 @@ slide opens one way, by `LEVELS.openOnSelect`.
 | `HOVER.width` | `1.5` | the outline's width, in pixels |
 | `HOVER.slop` | `4` | how far past its edge, in pixels, a file answers the pointer |
 | `HOVER.tagGap` | `14` | how far right of and below the pointer the hover's tag stands, in pixels |
+| `HOVER.selectInk` | `#e6edf3` | the ink of the steady ring round what a click selected, a file or a module (D207 (click-selects)): the hover's own ink, so it claims no state's hue; flat and never blooming |
+| `HOVER.selectWidth` | `2.5` | the ring's width, in pixels: a pixel heavier than the hover's outline, so the selection reads under a hover and apart from one |
+| `HOVER.clickSlop` | `4` | how far, in pixels, a press may move and still be a click, not a drag |
+| `HOVER.clickMs` | `400` | how long, in milliseconds, a press may last and still be a click |
 | `WALK.share` | `0.8` | the share of the free screen a stop the camera flies to fills, in whichever of its width and height it fills first |
 | `WALK.fileContext` | `6` | how many of a file's radii of ground a file stop is framed with |
 
@@ -728,6 +737,18 @@ fingerprint is 480 by 300 with an 8-pixel margin (`FINGERPRINT`).
 | `WIRING.nodeGap` | `10` | the gap between two files in a column |
 | `WIRING.layerGap` | `36` | the gap between two columns, importers left of importees |
 | `WIRING.framePad` | `8` | the pad inside a home's frame and round the plate |
+
+### The side panels: the inspector and the tree
+
+The chrome's two panels beside the map (D208 (side-panels)): the inspector,
+laid over the map beside the notice column, and the folder tree in that column.
+
+| Token | Value | Use |
+| --- | --- | --- |
+| `PANEL.inspectorWidth` | `420` | the inspector's width, in pixels |
+| `PANEL.codeSize` | `11` | the type size its code and its diff are set at, in pixels |
+| `PANEL.treeRow` | `16` | the height of one row of the folder tree, in pixels |
+| `PANEL.treeIndent` | `10` | how far each depth of the tree is set in from the one above, in pixels |
 
 ## Motion
 

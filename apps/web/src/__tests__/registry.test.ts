@@ -6,7 +6,7 @@ import * as scene from 'scene';
 import { LOD_GATES, MOTION_TOKENS, createScheduler, levelAt, lodPlan, planetShown } from 'scene';
 import { expect, test } from 'vitest';
 
-import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, NOTICE, PLANET, SKIN, SKY, SPACE, WALK, WEATHER } from '../materials.js';
+import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, NOTICE, PANEL, PLANET, SKIN, SKY, SPACE, WALK, WEATHER } from '../materials.js';
 import { MATERIALS_TITLE, SECTIONS, createRegistry, kindOf } from '../registry.js';
 import type { Store } from '../registry.js';
 
@@ -49,7 +49,7 @@ test("the panel's sections are the design doc's headings, each listing its table
 /** A material object's fields as the registry names them. */
 const fields = (object: string, from: object): string[] => Object.keys(from).map((field) => `${object}.${field}`);
 
-test("the materials section lists every field of the world's skin, space, planet, lights, sky, bloom, weather, notices, relief, levels and camera, hover and walk, the minimap's, the slide's and the wiring's", () => {
+test("the materials section lists every field of the world's skin, space, planet, lights, sky, bloom, weather, notices, relief, levels and camera, hover and walk, the minimap's, the slide's, the wiring's and the side panels'", () => {
   const section = SECTIONS.find((each) => each.title === MATERIALS_TITLE);
   expect(section?.names).toEqual([
     ...fields('SKIN', SKIN),
@@ -69,6 +69,7 @@ test("the materials section lists every field of the world's skin, space, planet
     ...fields('MINIMAP', scene.MINIMAP),
     ...fields('INTERIOR', INTERIOR),
     ...fields('WIRING', scene.WIRING_SPACING),
+    ...fields('PANEL', PANEL),
   ]);
 });
 
