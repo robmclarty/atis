@@ -237,8 +237,9 @@ export const CAMERA: CameraLook = { smooth: 0.1, dragSmooth: 0.05 };
  * (open-on-select)): selecting a module opens it in place, whatever the zoom.
  * What the levels showed resolves by its size on the screen instead (D206
  * (detail-by-size)): a file's name once its radius passes `fileNameFrom`
- * pixels, and its functions' granules between `granuleFrom` and
- * `granuleFull`.
+ * pixels, at most `fileNameBudget` of them at once (D245
+ * (name-budget-token)), and its functions' granules between `granuleFrom`
+ * and `granuleFull`.
  */
 export type LevelsLook = {
   readonly gates: readonly LodGate[];
@@ -253,6 +254,8 @@ export type LevelsLook = {
   readonly openOnSelect: number;
   /** The radius on the screen, in pixels, from which a file's name is written unasked, and from which a view moved by hand stands at the file under its centre (D230 (file-stop-by-size)). */
   readonly fileNameFrom: number;
+  /** The most names the world writes unasked at once, at any zoom; the labels' collision rule caps them below it (D235 (names-one-budget), D245 (name-budget-token)). At 0 none is written unasked. */
+  readonly fileNameBudget: number;
   /** A function's granule fades in as its radius on the screen grows from `granuleFrom` pixels, where none of it shows, to `granuleFull`, where all of it does. */
   readonly granuleFrom: number;
   readonly granuleFull: number;
@@ -268,6 +271,7 @@ export const LEVELS: LevelsLook = {
   autoOpen: 0,
   openOnSelect: 1,
   fileNameFrom: 18,
+  fileNameBudget: 80,
   granuleFrom: 1.5,
   granuleFull: 4,
 };

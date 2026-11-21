@@ -20,7 +20,8 @@
  * at, which the canvas names with the side that points, and lets go on
  * leaving (D209 (selection-line)). A file large enough on the screen is named
  * unasked and a smaller one beside it is not, until `LEVELS.fileNameFrom`
- * says otherwise (D206 (detail-by-size)). A single-file module, selected, is
+ * says otherwise (D206 (detail-by-size)); `LEVELS.fileNameBudget` caps how
+ * many are (D245 (name-budget-token)). A single-file module, selected, is
  * ringed where its file floats on the slide of the package it floats in, and
  * that file's tag stays written (D247 (single-as-its-file)). Enter walks in and selects where it
  * lands, an arrow carries the selection to the sibling it walks to, and
@@ -436,6 +437,45 @@ const near = async (page: Page, url: string, centre: Point): Promise<readonly st
   await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
   return complaints;
 };
+
+test('the names written unasked are capped by their budget, with a clean console (D245 (name-budget-token))', { timeout: 150_000 }, async () => {
+  const { server, url } = await serve();
+  const browser = await launch();
+  try {
+    const files = instances(MAP);
+    const viewport = { x: CENTRE[0] - MIDDLE[0] / PER_UNIT, y: CENTRE[1] - MIDDLE[1] / PER_UNIT, width: VIEWPORT.width / PER_UNIT, height: VIEWPORT.height / PER_UNIT, pixelsPerUnit: PER_UNIT };
+    const large = [...namedBySize(files, viewport, LEVELS.fileNameFrom)];
+    expect(large.length).toBeGreaterThan(1);
+
+    // With a budget of one name, one of the large files is named and the others are not; with none, none is, and a name is still written when asked for.
+    const one = await browser.newPage({ viewport: VIEWPORT });
+    await withTokens(one, { 'LEVELS.fileNameBudget': 1 });
+    const oneComplaints = await framed(one, url);
+    const open = await onCanvas(one, OPEN, 'open space');
+    await one.mouse.move(open[0], open[1]);
+    await expect.poll(async () => (await namedOn(one)).length, { timeout: 30_000 }).toBe(1);
+    await one.waitForTimeout(600);
+    const named = await namedOn(one);
+    expect(named).toHaveLength(1);
+    expect(large).toContain(named[0]);
+    expect(oneComplaints).toEqual([]);
+    await one.close();
+    const none = await browser.newPage({ viewport: VIEWPORT });
+    await withTokens(none, { 'LEVELS.fileNameBudget': 0 });
+    const noneComplaints = await framed(none, url);
+    await none.mouse.move(open[0], open[1]);
+    await none.waitForTimeout(600);
+    expect(await namedOn(none)).toEqual([]);
+    const slots = await onCanvas(none, [LAYOUT.positions[SLOTS]?.x ?? 0, LAYOUT.positions[SLOTS]?.y ?? 0], 'the large file');
+    await none.mouse.move(slots[0], slots[1]);
+    await none.waitForSelector(`[data-labels] [data-target="${SLOTS}"]:not([data-named])`, { state: 'attached', timeout: 30_000 });
+    expect(noneComplaints).toEqual([]);
+    await none.close();
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
 
 test('a single-file module, selected, opens the slide of the package it floats in, is ringed there where its file floats, and keeps that file\'s tag written, with a clean console (D247 (single-as-its-file))', { timeout: 120_000 }, async () => {
   const { server, url } = await serve();

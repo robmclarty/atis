@@ -47,7 +47,8 @@
  * map and its words written (D234 (pointed-ring)); the canvas names what is
  * pointed at and from which side. A file large enough on the screen is named
  * unasked, once the camera rests, after every word asked for has its place
- * (D206 (detail-by-size), D233 (asked-before-sized)). A notice's row, the
+ * (D206 (detail-by-size), D233 (asked-before-sized)), up to the token's
+ * budget of names (D245 (name-budget-token)). A notice's row, the
  * arrows, Enter and Escape fly the camera to a stop along the scheduler's
  * fly-to, and the skin swings as it lands; the stop goes back over the line
  * for the HUD's breadcrumb (step 39). The keys walk from the selection, else
@@ -1080,7 +1081,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       // The files large enough on the screen are named unasked (D206 (detail-by-size)), but for those of a package drawn as one body, which are not drawn. They fade in as a level of detail does, and cut in under reduced motion and on a frozen clock, where a capture takes one frame (D105).
       const sized = namedBySize(closedComposites.size === 0 ? placed.values() : [...placed.values()].filter((file) => !closedComposites.has(compositeOf.get(file.id) ?? '')), viewport, levels.fileNameFrom);
       const fade = reduced || frozen !== undefined ? 0 : tokens.LOD_FADE_MS;
-      for (const layer of layers()) layer.labels.place(viewport, lod, slide, asked, { files: sized, fade, right: chrome.right });
+      for (const layer of layers()) layer.labels.place(viewport, lod, slide, asked, { files: sized, budget: levels.fileNameBudget, fade, right: chrome.right });
       placeLabels = false;
       placedLod = lod;
       placings += 1;

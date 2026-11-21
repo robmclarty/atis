@@ -20,8 +20,8 @@
  * file large enough on the screen (D206 (detail-by-size)): the caller says
  * which files those are, and they are placed after everything asked for,
  * in the room that leaves, under the same collision rule and one budget
- * at every level, each fading in the first time it is written (D233
- * (asked-before-sized)). The addons import
+ * at every level, which the caller hands in, each fading in the first time
+ * it is written (D233 (asked-before-sized)). The addons import
  * three's core build by its bare name; the app's Vite config resolves that
  * name to the WebGPU build the world draws with, so one copy of three loads
  * and the console stays clean.
@@ -99,8 +99,8 @@ export const LABEL_LOOK = {
 };
 export type LabelLook = typeof LABEL_LOOK;
 
-/** The names the world writes unasked (D206 (detail-by-size)): the files large enough on the screen to be named, how long one new to the screen takes to fade in, in milliseconds, none cutting it in, and how many pixels of the screen's right edge the chrome covers, which such a name keeps off. */
-export type Unasked = { readonly files: ReadonlySet<string>; readonly fade: number; readonly right: number };
+/** The names the world writes unasked (D206 (detail-by-size)): the files large enough on the screen to be named, the most of them written at once (D245 (name-budget-token)), how long one new to the screen takes to fade in, in milliseconds, none cutting it in, and how many pixels of the screen's right edge the chrome covers, which such a name keeps off. */
+export type Unasked = { readonly files: ReadonlySet<string>; readonly budget: number; readonly fade: number; readonly right: number };
 
 export type Labels = {
   /** The layers over the canvas, in the order they stack: the leaders, then the text. */
@@ -208,15 +208,18 @@ const slideGround = (slide: Slide, viewport: Viewport): readonly (readonly Point
 
 /**
  * How the names written by size are set (D206 (detail-by-size)): as every
- * label is, but under one budget at every level, the scene's own for its
- * deepest. The scene's budget steps with the zoom's levels, 12 names under
- * zoom 6 and 40 from it, which suited names nobody had asked for at a level
- * of their own. On the one surface the files past the threshold are exactly
- * what the zoom has brought near, most of all just under zoom 6, where a
- * budget of 12 left two in three of them unnamed; the collision rule is what
- * caps them (D235 (names-one-budget)).
+ * label is, but under one budget at every level, `most` names. The scene's
+ * budget steps with the zoom's levels, 12 names under zoom 6 and 40 from it,
+ * which suited names nobody had asked for at a level of their own. On the
+ * one surface the files past the threshold are exactly what the zoom has
+ * brought near, most of all just under zoom 6, where a budget of 12 left two
+ * in three of them unnamed; at rest the budget is the scene's for its
+ * deepest level, and the collision rule is what caps the names (D235
+ * (names-one-budget)). It is a live token, `LEVELS.fileNameBudget`, so how
+ * many names a real repo wears is tuned in the running tab (D245
+ * (name-budget-token)).
  */
-const SIZED: typeof LABELING = { ...LABELING, budget: { 0: 0, 1: LABELING.budget[4], 2: LABELING.budget[4], 3: LABELING.budget[4], 4: LABELING.budget[4] } };
+const sizedBy = (most: number): typeof LABELING => ({ ...LABELING, budget: { 0: 0, 1: most, 2: most, 3: most, 4: most } });
 
 /** A placed label's box as a ring of layout units, which the scene keeps a later label off as it keeps one off a slide. */
 const ringOf = (box: LabelBox, viewport: Viewport): readonly Point[] => {
@@ -308,7 +311,7 @@ export const createLabels = (map: MapJson, tags: readonly Label[], heightAt: Hei
     }
   };
 
-  const place = (viewport: Viewport, lod: Lod, slide: Slide | undefined, asked: ReadonlySet<string>, { files: large, fade, right }: Unasked): void => {
+  const place = (viewport: Viewport, lod: Lod, slide: Slide | undefined, asked: ReadonlySet<string>, { files: large, budget, fade, right }: Unasked): void => {
     const ppu = viewport.pixelsPerUnit;
     layRuns(ppu);
     const asks = asksFor(map, asked);
@@ -335,10 +338,12 @@ export const createLabels = (map: MapJson, tags: readonly Label[], heightAt: Hei
     const askedFor = labelsFor(map, lod, viewport, LABELING, off, asked);
     // Then the files large enough on the screen (D206 (detail-by-size)), but for those just placed: each where it clears the slide, the chrome's column and every asked label, under one budget at every level, a noticed one by its first notice's label.
     const unasked = new Set([...large].filter((id) => !asked.has(id)));
+    // The most names written unasked, a noticed file's counted with the rest (D245 (name-budget-token)): the scene's budget counts only the files no notice names, so the whole list is held to it too.
+    const most = Number.isFinite(budget) ? Math.max(0, Math.floor(budget)) : 0;
     // A name nobody asked for is not written under the chrome's column, where it would be cut off or never seen.
     const across = viewport.width * ppu;
     const column = right <= 0 ? [] : [ringOf({ x: across - right, y: 0, width: right, height: viewport.height * ppu }, viewport)];
-    const bySize = unasked.size === 0 ? [] : oncePerTarget(labelsFor(map, lod, viewport, SIZED, [...off, ...column, ...askedFor.map((label) => ringOf(label.box, viewport))], unasked));
+    const bySize = unasked.size === 0 || most === 0 ? [] : oncePerTarget(labelsFor(map, lod, viewport, sizedBy(most), [...off, ...column, ...askedFor.map((label) => ringOf(label.box, viewport))], unasked)).slice(0, most);
     const shown = [...askedFor.map((label) => ({ label, unasked: false })), ...bySize.map((label) => ({ label, unasked: true }))].filter(({ label }) => label.rank !== undefined || !onSlide.has(label.target));
     const before = written;
     written = new Set(shown.map(({ label }) => label.target));
