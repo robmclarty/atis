@@ -3,6 +3,7 @@
  * scanned repository, the diff and the check artifacts into `map.json`.
  */
 
+export * from './approved.js';
 export * from './before.js';
 export * from './config.js';
 export * from './dependencies.js';
