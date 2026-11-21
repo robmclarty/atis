@@ -30,6 +30,16 @@
  * D225 (escape-clears)); under the old levels it first closes the slide the
  * zoom opened. And a view moved by hand stands at the file under its centre
  * once that file is large enough to be named (D230 (file-stop-by-size)).
+ *
+ * With the chrome's panels on the same line (D208 (side-panels)): a row of
+ * the folder tree under the pointer is ringed on the map, which the canvas
+ * names as pointed at by the chrome, and a press on a module's row selects
+ * it, flies there and opens its slide; a file under the pointer on the map
+ * lights its row in the tree; a click on a file opens the inspector on its
+ * facts, and on a changed file's diff, a row to a line, where the run serves
+ * one; no name is written for its size under the open inspector (D246
+ * (names-off-chrome)); and a press on the map takes the focus off a panel
+ * that held it, so the keys are the map's again (D331 (press-returns-keys)).
  */
 
 import { readFileSync } from 'node:fs';
@@ -42,15 +52,22 @@ import { LABELING, instances } from 'scene';
 
 import { namedBySize } from '../asked.js';
 import { RAIL_WIDTH, fitFrame } from '../fit.js';
-import { HOVER, LEVELS, WALK } from '../materials.js';
+import { HOVER, LEVELS, PANEL, WALK } from '../materials.js';
 import { bandRules } from '../space.js';
 import { FIELD, createWalk } from '../walk.js';
 import type { Stop } from '../walk.js';
-import { DEMO, launch, legacy, serve, withTokens } from './browser.js';
+import { DEMO, launch, legacy, serve, serveDiff, withTokens } from './browser.js';
 
 type Point = readonly [number, number];
 
-const VIEWPORT = { width: 960, height: 720 };
+/**
+ * The window these cases are judged in. A selection opens the inspector over
+ * the map beside the column (D215 (inspector-overlay)), so the window is as
+ * much wider as the inspector is: the screen left of an open inspector is the
+ * free screen the frames here were first laid out on, and nothing a case
+ * clicks or points at after a selection lies under the panel.
+ */
+const VIEWPORT = { width: 960 + PANEL.inspectorWidth, height: 720 };
 const MAP = assertMap(JSON.parse(readFileSync(DEMO, 'utf8')));
 const { layout: LAID } = MAP.terrain;
 if (LAID === undefined) throw new Error('the demo lays nothing out');
@@ -75,8 +92,8 @@ const PER_UNIT = (ZOOM * VIEWPORT.height) / (2 * fitFrame(LAYOUT, VIEWPORT.width
 /** Where a layout point lies on the screen at the frame. */
 const screenOf = ([x, y]: Point): Point => [MIDDLE[0] + (x - CENTRE[0]) * PER_UNIT, MIDDLE[1] + (y - CENTRE[1]) * PER_UNIT];
 
-/** The part of the free screen the chrome leaves clear at this viewport: under the HUD, over the minimap, left of the column. */
-const clear = ([x, y]: Point): boolean => x > 120 && x < VIEWPORT.width - RAIL_WIDTH - 40 && y > 160 && y < 500;
+/** The part of the free screen the chrome leaves clear at this viewport: under the HUD, over the minimap, left of the column and of the inspector once a selection opens it. */
+const clear = ([x, y]: Point): boolean => x > 120 && x < VIEWPORT.width - RAIL_WIDTH - PANEL.inspectorWidth - 40 && y > 160 && y < 500;
 
 /** Every cell's skin, and every placed file, on the demo's layout. */
 const SKINS = MAP.terrain.cells.flatMap((cell) => {
@@ -474,24 +491,28 @@ test('the names written unasked are capped by their budget, and none is written 
     await none.close();
 
     // Framed so a file large enough to be named, which no notice names, lies under the HUD, every place its name could take covered by it: the name is not written, where the others in view are, and no name written unasked lies on a block of the chrome.
+    // In a window too narrow for the HUD's blocks to stand in two rows they wrap, and the HUD is tall enough to cover every such place; nothing is selected here, so no panel opens over the narrower map.
+    const narrow = { width: 960, height: 720 };
+    const mid: Point = [(narrow.width - RAIL_WIDTH) / 2, narrow.height / 2];
+    const unit = (NEAR * narrow.height) / (2 * fitFrame(LAYOUT, narrow.width, narrow.height, { right: RAIL_WIDTH }).halfH);
     const at = LAYOUT.positions[SLOTS] ?? { x: 0, y: 0, r: 0 };
     expect(MAP.notices.map((notice) => notice.target)).not.toContain(SLOTS);
-    const under: Point = [MIDDLE[0], 40];
-    const centre: Point = [at.x, at.y + (MIDDLE[1] - under[1]) / NEAR_UNIT];
-    const page = await browser.newPage({ viewport: VIEWPORT });
+    const under: Point = [mid[0], 40];
+    const centre: Point = [at.x, at.y + (mid[1] - under[1]) / unit];
+    const page = await browser.newPage({ viewport: narrow });
     const complaints = await near(page, url, centre);
-    const frame = { x: centre[0] - MIDDLE[0] / NEAR_UNIT, y: centre[1] - MIDDLE[1] / NEAR_UNIT, width: VIEWPORT.width / NEAR_UNIT, height: VIEWPORT.height / NEAR_UNIT, pixelsPerUnit: NEAR_UNIT };
+    const frame = { x: centre[0] - mid[0] / unit, y: centre[1] - mid[1] / unit, width: narrow.width / unit, height: narrow.height / unit, pixelsPerUnit: unit };
     expect([...namedBySize(files, frame, LEVELS.fileNameFrom)]).toContain(SLOTS);
     const hud = await page.$eval('[data-hud]', (block) => block.getBoundingClientRect().toJSON() as { readonly left: number; readonly top: number; readonly right: number; readonly bottom: number });
-    const [x, y] = nearOf(centre, [at.x, at.y]);
+    const [x, y]: Point = [mid[0] + (at.x - centre[0]) * unit, mid[1] + (at.y - centre[1]) * unit];
     // A name stands a gap off its file's edge, to a side, above or below, and is a line of type tall.
-    const reach = at.r * NEAR_UNIT + LABELING.gap + LABELING.fontSize + 2 * LABELING.pad;
+    const reach = at.r * unit + LABELING.gap + LABELING.fontSize + 2 * LABELING.pad;
     expect(x - 200 > hud.left && x + 200 < hud.right && y + reach < hud.bottom, "every place the file's name could take lies under the HUD").toBe(true);
     await expect.poll(async () => (await namedOn(page)).length, { timeout: 30_000 }).toBeGreaterThan(0);
     await page.waitForTimeout(600);
     expect(await namedOn(page)).not.toContain(SLOTS);
     const covered = await page.evaluate(() => {
-      const blocks = ['[data-hud]', '[data-legend]', '[data-minimap]', '[data-column]'].flatMap((selector) => {
+      const blocks = ['[data-hud]', '[data-legend]', '[data-minimap]', '[data-column]', '[data-inspector]'].flatMap((selector) => {
         const block = document.querySelector(selector)?.getBoundingClientRect();
         return block === undefined || block.height <= 0 ? [] : [block];
       });
@@ -534,7 +555,8 @@ test('a single-file module, selected, opens the slide of the package it floats i
     expect(ring.across).toBeGreaterThan(at.r * NEAR_UNIT);
     expect(await page.getAttribute('#world', 'data-selected')).toBe(single);
     // The pointer gone to open space, the file's tag stays written on the slide, and no other's.
-    const [ox, oy] = nearOf(centre, [at.x + 60, at.y]);
+    // Open space to the module's left: its right lies under the inspector the selection opened.
+    const [ox, oy] = nearOf(centre, [at.x - 60, at.y]);
     expect(await page.evaluate(([px, py]) => document.elementFromPoint(px ?? 0, py ?? 0)?.id, [ox, oy]), 'open space lies where the canvas takes the pointer').toBe('world');
     await page.mouse.move(ox, oy);
     await page.waitForFunction(() => document.querySelector<HTMLElement>('[data-hover-tag]')?.style.display === 'none', undefined, { timeout: 30_000 });
@@ -693,6 +715,193 @@ test('under the old levels Escape first closes the slide the zoom opened and lea
     if (up === undefined) throw new Error('the pm module has nothing above it on the demo');
     await expect.poll(() => crumbsOf(page), { timeout: 30_000 }).toEqual({ kind: up.kind, of: 'walk', line: walk.crumbs(up).join(' › ') });
     expect(complaints).toEqual([]);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+/** A box on the screen, as the page measures one. */
+type Rect = { readonly left: number; readonly top: number; readonly right: number; readonly bottom: number };
+
+/** An element's box on the screen. */
+const rectOf = async (page: Page, selector: string): Promise<Rect> => page.$eval(selector, (element) => element.getBoundingClientRect().toJSON() as Rect);
+
+/** A ring as the page draws it, by its kind: whether it shows, and the middle and the width of its box on the screen. */
+const ringAt = async (page: Page, kind: 'selected' | 'pointed'): Promise<{ readonly shown: boolean; readonly middle: Point; readonly across: number }> =>
+  page.$eval(`[data-hover] [data-ring="${kind}"]`, (ring) => {
+    const box = ring.getBoundingClientRect();
+    return {
+      shown: ring instanceof SVGElement && ring.style.display !== 'none' && ring.parentElement instanceof SVGElement && ring.parentElement.style.display !== 'none',
+      middle: [box.left + box.width / 2, box.top + box.height / 2] as const,
+      across: box.width,
+    };
+  });
+
+/** A row of the folder tree, by the path it is of. */
+const treeRow = (path: string): string => `[data-tree] [data-row="${path}"]`;
+
+test("a row of the folder tree under the pointer is ringed on the map, which names it as pointed at by the chrome; a press on a module's row selects it, flies there and opens its slide; and a file under the pointer on the map lights its row in the tree, with a clean console (D209 (selection-line), D279 (pointing-opens))", { timeout: 180_000 }, async () => {
+  const { server, url } = await serve();
+  const browser = await launch();
+  try {
+    const page = await browser.newPage({ viewport: VIEWPORT });
+    const complaints = await framed(page, url);
+    const open = await onCanvas(page, OPEN, 'open space');
+    // The notices folded away, the tree stands at the column's top with its rows on the screen.
+    await page.click('[data-fold="notices"]');
+    await page.waitForSelector(treeRow(TOOLS), { timeout: 30_000 });
+
+    // The pointer on a file's row: the line hears it from the chrome, the canvas names it and the side, and the map rings it where it is drawn.
+    await page.hover(treeRow(TOOLS));
+    await page.waitForSelector(`#world[data-pointed="${TOOLS}"][data-pointed-by="chrome"]`, { timeout: 30_000 });
+    await page.waitForSelector(`${treeRow(TOOLS)}[data-pointed]`, { timeout: 30_000 });
+    const at = LAYOUT.positions[TOOLS] ?? { x: 0, y: 0, r: 0 };
+    const [fx, fy] = screenOf([at.x, at.y]);
+    await expect.poll(async () => (await ringAt(page, 'pointed')).shown, { timeout: 30_000 }).toBe(true);
+    const ring = await ringAt(page, 'pointed');
+    expect(Math.hypot(ring.middle[0] - fx, ring.middle[1] - fy), "the ring lies round the row's file on the map").toBeLessThan(at.r * PER_UNIT);
+    // Its name is written on the map because the row asks for it.
+    await page.waitForSelector(`[data-labels] [data-target="${TOOLS}"]:not([data-named])`, { state: 'attached', timeout: 30_000 });
+    // Off the row, onto open space on the map, the chrome lets go and the ring goes.
+    await page.mouse.move(open[0], open[1]);
+    await page.waitForSelector('#world:not([data-pointed]):not([data-pointed-by])', { timeout: 30_000 });
+    await expect.poll(async () => (await ringAt(page, 'pointed')).shown, { timeout: 30_000 }).toBe(false);
+    expect(await page.getAttribute('#world', 'data-selected')).toBeNull();
+
+    // A file under the pointer on the map lights its row in the tree, which opens the way to it, and lets go with the pointer.
+    const text = await onCanvas(page, [LAYOUT.positions[TEXT]?.x ?? 0, LAYOUT.positions[TEXT]?.y ?? 0], 'the small file');
+    await page.mouse.move(text[0], text[1]);
+    await page.waitForSelector(`#world[data-pointed="${TEXT}"][data-pointed-by="world"]`, { timeout: 30_000 });
+    await page.waitForSelector(`${treeRow(TEXT)}[data-pointed]`, { timeout: 30_000 });
+    expect(await page.$$eval('[data-tree] [data-row][data-pointed]', (rows) => rows.map((row) => row.getAttribute('data-row')))).toEqual([TEXT]);
+    await page.mouse.move(open[0], open[1]);
+    await page.waitForSelector('[data-tree] [data-row][data-pointed]', { state: 'detached', timeout: 30_000 });
+
+    // A press on a module's row selects the module and asks the world to fly there: the canvas names it, its slide opens in place, the breadcrumb reads the selection, and the camera lands framed on it.
+    const util = 'libs/core/src/util';
+    const before = await ringAt(page, 'selected');
+    expect(before.shown).toBe(false);
+    await page.click(treeRow(util));
+    await page.waitForSelector(`#world[data-selected="${UTIL}"][data-open="${UTIL}"]`, { timeout: 30_000 });
+    await page.waitForSelector(`${treeRow(util)}[data-selected]`, { timeout: 30_000 });
+    await expect.poll(async () => (await crumbsOf(page)).of, { timeout: 30_000 }).toBe('selection');
+    await page.waitForFunction(() => document.querySelectorAll('[data-interior-tag]').length === 2, undefined, { timeout: 30_000 });
+    // Flown there, the module stands in the middle of the free screen, wider than the frame the page opened at drew it.
+    const contour = LAYOUT.contours?.[UTIL] ?? [];
+    const drawnAcross = (Math.max(...contour.map(([x]) => x)) - Math.min(...contour.map(([x]) => x))) * PER_UNIT;
+    // The flight frames the module's own box, which its skin's ring stands a little off, so the ring's middle is held to a tenth of the free screen's lesser side: where the page opened, the module stood more than twice that from the middle.
+    const nigh = 0.1 * Math.min(VIEWPORT.width - RAIL_WIDTH, VIEWPORT.height);
+    const [ux, uy] = screenOf([contour.reduce((total, [x]) => total + x, 0) / contour.length, contour.reduce((total, [, y]) => total + y, 0) / contour.length]);
+    expect(Math.hypot(ux - MIDDLE[0], uy - MIDDLE[1])).toBeGreaterThan(2 * nigh);
+    await expect.poll(async () => Math.hypot((await ringAt(page, 'selected')).middle[0] - MIDDLE[0], (await ringAt(page, 'selected')).middle[1] - MIDDLE[1]), { timeout: 30_000 }).toBeLessThan(nigh);
+    expect((await ringAt(page, 'selected')).across).toBeGreaterThan(drawnAcross * 1.5);
+    // The inspector opened on the module the row selected.
+    await page.waitForSelector(`aside[data-inspector="module"][data-inspector-target="${UTIL}"]`, { timeout: 30_000 });
+    expect(complaints).toEqual([]);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+test("a click on a file on the map opens the inspector on its facts, and on a changed file's diff a row to a line where the run serves one; no name is written for its size under the open inspector; and a press on the map takes the focus off the panel, so the keys are the map's again, with a clean console (D208 (side-panels), D246 (names-off-chrome), D331 (press-returns-keys))", { timeout: 180_000 }, async () => {
+  const diff = { path: TOOLS, diff: `diff --git a/${TOOLS} b/${TOOLS}\nnew file mode 100644\n--- /dev/null\n+++ b/${TOOLS}\n@@ -0,0 +1,2 @@\n+export const localBin = 'node_modules/.bin';\n+export const toolName = (name: string): string => name;\n`, root: '/work/demo', editor: 'vscode://file{root}/{path}:{line}' };
+  const { server, url } = await serve(undefined, [serveDiff(TOOLS, 't0', JSON.stringify(diff))]);
+  const browser = await launch();
+  try {
+    const page = await browser.newPage({ viewport: VIEWPORT });
+    const complaints: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error' || message.type() === 'warning') complaints.push(`${message.type()}: ${message.text()}`);
+    });
+    page.on('pageerror', (error) => complaints.push(`pageerror: ${error.message}`));
+    // A served page opens its socket too (D178), stood in for by the browser's own, which sends nothing.
+    await page.routeWebSocket(/\/socket\?token=t0$/, () => undefined);
+    await page.goto(`${url}/?backend=webgl&token=t0&zoom=${String(ZOOM)}&centre=${CENTRE.join(',')}`);
+    await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
+    const files = instances(MAP);
+    const viewport = { x: CENTRE[0] - MIDDLE[0] / PER_UNIT, y: CENTRE[1] - MIDDLE[1] / PER_UNIT, width: VIEWPORT.width / PER_UNIT, height: VIEWPORT.height / PER_UNIT, pixelsPerUnit: PER_UNIT };
+    const large = [...namedBySize(files, viewport, LEVELS.fileNameFrom)].toSorted();
+
+    // With nothing selected the panel is its thin tab, and the large files are named.
+    await page.waitForSelector('button[data-inspector="closed"]', { timeout: 30_000 });
+    const open = await onCanvas(page, OPEN, 'open space');
+    await page.mouse.move(open[0], open[1]);
+    await expect.poll(() => namedOn(page), { timeout: 30_000 }).toEqual(large);
+
+    // A click on a changed file selects it, and the inspector opens on it: its path, and its facts as the map carries them.
+    const tools = MAP.terrain.organelles.find((file) => file.id === TOOLS);
+    if (tools === undefined) throw new Error('the demo lost pm/tools.ts');
+    const file = await onCanvas(page, [LAYOUT.positions[TOOLS]?.x ?? 0, LAYOUT.positions[TOOLS]?.y ?? 0], 'the file');
+    await page.mouse.click(file[0], file[1]);
+    await page.waitForSelector(`#world[data-selected="${TOOLS}"]`, { timeout: 30_000 });
+    await page.waitForSelector(`aside[data-inspector="file"][data-inspector-target="${TOOLS}"]`, { timeout: 30_000 });
+    expect(await page.textContent('[data-inspector-title]')).toContain('tools.ts');
+    expect(await page.textContent('[data-inspector-fact="lines"]')).toBe(String(tools.loc));
+    expect(await page.textContent('[data-inspector-fact="band"]')).toBe(String(tools.band));
+    expect(await page.textContent('[data-inspector-fact="change"]')).toContain('added');
+    expect(await page.$$eval('[data-inspector-tab]', (tabs) => tabs.map((tab) => tab.getAttribute('data-inspector-tab')))).toEqual(['facts', 'diff', 'code']);
+    // The row in the tree is the selection's too.
+    await page.waitForSelector(`${treeRow(TOOLS)}[data-selected]`, { state: 'attached', timeout: 30_000 });
+
+    // Its diff tab shows the diff the run serves, a row to a line.
+    await page.click('[data-inspector-tab="diff"]');
+    await page.waitForSelector('[data-inspector-diff-row="added"]', { timeout: 30_000 });
+    expect(await page.$$eval('[data-inspector-diff-row]', (rows) => rows.map((row) => [row.getAttribute('data-inspector-diff-row'), row.getAttribute('data-inspector-line')]))).toEqual([
+      ['hunk', '1'],
+      ['added', '1'],
+      ['added', '2'],
+    ]);
+
+    // A press on a tab leaves the focus inside the panel, whose keys are then its own; a press on the map takes it off, and Escape there is the map's, which clears the selection.
+    await page.click('[data-inspector-tab="facts"]');
+    expect(await page.evaluate(() => document.activeElement?.closest('[data-inspector]') !== null && document.activeElement !== document.body)).toBe(true);
+    expect(await page.evaluate(([px, py]) => document.elementFromPoint(px ?? 0, py ?? 0)?.id, open), 'open space still lies where the canvas takes the pointer').toBe('world');
+    await page.mouse.move(open[0], open[1]);
+    await page.mouse.down();
+    expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
+    // The press moved nowhere and is let up at once: a click on open space, which clears the selection, and the panel folds back to its tab.
+    await page.mouse.up();
+    await page.waitForSelector('#world:not([data-selected])', { timeout: 30_000 });
+    await page.waitForSelector('aside[data-inspector="file"]', { state: 'detached', timeout: 30_000 });
+    expect(complaints).toEqual([]);
+    await page.close();
+
+    // The open panel lies over the map, and no name is written for a file's size under it. Framed closer, so every file is large enough to be named, with the util module's files just left of where the panel opens and the pm module's under it.
+    const text = LAYOUT.positions[TEXT] ?? { x: 0, y: 0, r: 0 };
+    const slots = LAYOUT.positions[SLOTS] ?? { x: 0, y: 0, r: 0 };
+    const edge = VIEWPORT.width - RAIL_WIDTH - PANEL.inspectorWidth;
+    const centre: Point = [text.x - (edge - 30 - MIDDLE[0]) / NEAR_UNIT, slots.y + (MIDDLE[1] - 150) / NEAR_UNIT];
+    const close = await browser.newPage({ viewport: VIEWPORT });
+    const closeComplaints = await near(close, url, centre);
+    const frame = { x: centre[0] - MIDDLE[0] / NEAR_UNIT, y: centre[1] - MIDDLE[1] / NEAR_UNIT, width: VIEWPORT.width / NEAR_UNIT, height: VIEWPORT.height / NEAR_UNIT, pixelsPerUnit: NEAR_UNIT };
+    expect([...namedBySize(files, frame, LEVELS.fileNameFrom)]).toEqual(expect.arrayContaining([SLOTS, TEXT]));
+    expect(MAP.notices.map((notice) => notice.target)).not.toContain(SLOTS);
+    // With the panel its thin tab, the file is named where it stands.
+    const [sx, sy] = nearOf(centre, [slots.x, slots.y]);
+    expect(sx - slots.r * NEAR_UNIT, 'the file lies right of where the panel opens').toBeGreaterThan(edge);
+    await expect.poll(() => namedOn(close), { timeout: 30_000 }).toContain(SLOTS);
+    // A click on a file left of it opens the panel over the other, whose name goes; none written for its size lies under the panel.
+    const [tx, ty] = nearOf(centre, [text.x, text.y]);
+    expect(await close.evaluate(([px, py]) => document.elementFromPoint(px ?? 0, py ?? 0)?.id, [tx, ty]), 'the file lies where the canvas takes the pointer').toBe('world');
+    await close.mouse.click(tx, ty);
+    await close.waitForSelector(`aside[data-inspector="file"][data-inspector-target="${TEXT}"]`, { timeout: 30_000 });
+    const panel = await rectOf(close, 'aside[data-inspector]');
+    expect(sx > panel.left && sx < panel.right && sy > panel.top && sy < panel.bottom, 'the file lies under the open panel').toBe(true);
+    await expect.poll(() => namedOn(close), { timeout: 30_000 }).not.toContain(SLOTS);
+    await close.waitForTimeout(600);
+    const covered = await close.evaluate(() => {
+      const block = document.querySelector('aside[data-inspector]')?.getBoundingClientRect();
+      return [...document.querySelectorAll('[data-labels] [data-target][data-named="size"]')].flatMap((label) => {
+        const box = label.firstElementChild?.getBoundingClientRect();
+        return block !== undefined && box !== undefined && box.left < block.right && box.right > block.left && box.top < block.bottom && box.bottom > block.top ? [label.getAttribute('data-target')] : [];
+      });
+    });
+    expect(covered).toEqual([]);
+    // Left of the panel the names stand as they did.
+    expect((await namedOn(close)).length).toBeGreaterThan(0);
+    expect(closeComplaints).toEqual([]);
   } finally {
     await browser.close();
     await server.close();

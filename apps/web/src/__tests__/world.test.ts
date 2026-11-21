@@ -380,8 +380,10 @@ test("framed on one cell where it fills the screen, the world opens it as a slid
     await page.keyboard.press('Escape');
     await page.waitForSelector('#world:not([data-open])', { timeout: 30_000 });
     await page.waitForFunction(() => Number(document.querySelector('#world')?.getAttribute('data-floated') ?? '0') > 0, undefined, { timeout: 30_000 });
-    // Zoomed out on toward the field, a wheel step at a time, they come home.
-    await page.mouse.move(onBody[0], onBody[1]);
+    // Zoomed out on toward the field, a wheel step at a time, they come home. The file clicked is still selected, and the inspector it opened lies over where it floated, so the wheel turns over the map left of the panel.
+    const clearOf: readonly [number, number] = [200, 330];
+    expect(await page.evaluate(([px, py]) => document.elementFromPoint(px ?? 0, py ?? 0)?.id, clearOf), 'the canvas takes the pointer left of the inspector').toBe('world');
+    await page.mouse.move(clearOf[0], clearOf[1]);
     const climb = async (turns: number): Promise<void> => {
       if (turns === 0 || (await page.getAttribute('#world', 'data-floated')) === '0') return;
       await page.mouse.wheel(0, 240);

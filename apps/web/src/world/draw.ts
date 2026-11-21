@@ -240,9 +240,9 @@ const claimsOf = (height: number): { readonly top: number; readonly bottom: numb
   };
 };
 
-/** The chrome's boxes over the field's left side, in pixels, which a band's label keeps off (D196), and a name written unasked (D246 (names-off-chrome)): the HUD at the top left, and the legend and the minimap at the bottom left. */
+/** The chrome's boxes over the field, in pixels, which a band's label keeps off (D196), and a name written unasked (D246 (names-off-chrome)): the HUD at the top left, the legend and the minimap at the bottom left, and the inspector, which lies over the map beside the column, its thin tab while it is closed (D215 (inspector-overlay)). */
 const chromeBoxes = (): readonly LabelBox[] =>
-  ['[data-hud]', '[data-legend]', '[data-minimap]'].flatMap((selector) => {
+  ['[data-hud]', '[data-legend]', '[data-minimap]', '[data-inspector]'].flatMap((selector) => {
     const box = claimOf(selector);
     return box === undefined ? [] : [{ x: box.left, y: box.top, width: box.width, height: box.height }];
   });
@@ -667,6 +667,9 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   let pressed: { readonly x: number; readonly y: number; readonly at: number } | undefined;
   canvas.addEventListener('pointerdown', (event) => {
     pressed = event.button === 0 ? { x: event.clientX, y: event.clientY, at: performance.now() } : undefined;
+    // A press on the map takes the focus off whatever in the chrome held it, so the arrows, Enter and Escape are the map's again (D331 (press-returns-keys)): a panel keeps the focus after a row's click and its keys with it (D272 (focus-stays)), and the world does not leave it to the browser to move the focus off a press on a canvas.
+    const focused = document.activeElement;
+    if (focused instanceof HTMLElement && focused !== document.body) focused.blur();
   });
   canvas.addEventListener('pointerup', (event) => {
     const press = pressed;
