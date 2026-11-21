@@ -45,7 +45,9 @@
  * line: the world says what the pointer is over on the map, so its row
  * lights in the chrome, and what a row there points at is outlined on the
  * map and its words written (D234 (pointed-ring)); the canvas names what is
- * pointed at and from which side. A notice's row, the
+ * pointed at and from which side. A file large enough on the screen is named
+ * unasked, once the camera rests, after every word asked for has its place
+ * (D206 (detail-by-size), D233 (asked-before-sized)). A notice's row, the
  * arrows, Enter and Escape fly the camera to a stop along the scheduler's
  * fly-to, and the skin swings as it lands; the stop goes back over the line
  * for the HUD's breadcrumb (step 39). A target an agent names over
@@ -132,7 +134,7 @@ import type { FileLevel, LabelBox, Lod, Pick, Point, Slide } from 'scene';
 import type { MapJson, OverlayName } from 'core';
 
 import { RAIL_WIDTH, zoomFor } from '../fit.js';
-import { askedOf, slideWords } from '../asked.js';
+import { askedOf, namedBySize, slideWords } from '../asked.js';
 import { diffLevelOf, loadDiff } from '../diff.js';
 import type { DiffAnswer, DiffLevel } from '../diff.js';
 import { litIn, revealGroup } from '../highlight.js';
@@ -468,6 +470,8 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   let closedComposites: ReadonlySet<string> = new Set();
   // Each placed file's cell and radius, for a file the surface draws where it last floated.
   const placed = new Map(instances(map).map((file) => [file.id, file] as const));
+  // The package each file stands in on a map past 5,000 files, where a package is drawn as one body until the view nears it (step 66).
+  const compositeOf = new Map(composites.flatMap((composite) => composite.files.map((file) => [file, composite.id] as const)));
   // The files of a closed cell the surface draws where they last floated (D165), as the scheduler last said.
   let floatedOnSurface: ReadonlyMap<string, Point> = new Map();
   /** The body of the opened cell under a layout point, where it has floated, a file reaching `slop` past its edge. */
@@ -921,6 +925,8 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       if (closed.size !== closedComposites.size || [...closed].some((id) => !closedComposites.has(id))) {
         closedComposites = closed;
         pickAgain = true;
+        // A package that opened into its modules draws its files, which may now be named by their size.
+        placeLabels = true;
       }
       const shown = `${String(compositeOpen.filter((open) => !open).length)}/${String(composites.length)}`;
       if (canvas.dataset['composites'] !== shown) canvas.dataset['composites'] = shown;
@@ -1054,8 +1060,12 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       canvas.dataset['planet'] = planetOn ? 'on' : 'off';
     }
     if (placeLabels || lod !== placedLod) {
+      const viewport = viewportOf(camera, canvas.clientWidth);
       const asked = askedOf(fieldTarget, rowTarget ?? litTarget, held === undefined ? undefined : targetOf(held), rowPointed === undefined ? undefined : targetOf(rowPointed));
-      for (const layer of layers()) layer.labels.place(viewportOf(camera, canvas.clientWidth), lod, slide, asked);
+      // The files large enough on the screen are named unasked (D206 (detail-by-size)), but for those of a package drawn as one body, which are not drawn. They fade in as a level of detail does, and cut in under reduced motion and on a frozen clock, where a capture takes one frame (D105).
+      const sized = namedBySize(closedComposites.size === 0 ? placed.values() : [...placed.values()].filter((file) => !closedComposites.has(compositeOf.get(file.id) ?? '')), viewport, levels.fileNameFrom);
+      const fade = reduced || frozen !== undefined ? 0 : tokens.LOD_FADE_MS;
+      for (const layer of layers()) layer.labels.place(viewport, lod, slide, asked, { files: sized, fade, right: chrome.right });
       placeLabels = false;
       placedLod = lod;
       placings += 1;

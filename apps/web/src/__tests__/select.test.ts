@@ -157,7 +157,8 @@ test('a click selects a file or a module and rings and names it, a selected modu
     await page.waitForFunction(() => document.querySelector<HTMLElement>('[data-hover-tag]')?.style.display === 'none', undefined, { timeout: 30_000 });
     await page.waitForTimeout(600);
     expect(await ringOf(page)).toMatchObject({ shown: true, ink: HOVER.selectInk, width: String(HOVER.selectWidth) });
-    expect(await page.$$eval('[data-labels] [data-target]', (labels) => [...new Set(labels.map((label) => label.getAttribute('data-target')))])).toEqual([TOOLS]);
+    // Of the words asked for, its are the only ones; a name the world writes for a file's size is no ask (D206 (detail-by-size)).
+    expect(await page.$$eval('[data-labels] [data-target]:not([data-named])', (labels) => [...new Set(labels.map((label) => label.getAttribute('data-target')))])).toEqual([TOOLS]);
     expect(await opened()).toBeNull();
 
     // A click on a module's ground selects the module, and it opens in place as the slide, tagging its files.

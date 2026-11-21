@@ -139,11 +139,12 @@ test('the world draws the demo map headless on WebGL 2, lit at the surface, with
     expect(reading.lit / reading.pixels).toBeGreaterThan(0.05);
     expect(reading.shades).toBeGreaterThan(64);
 
-    // The world writes no word unasked (D168): at load no label and no storm's slot, only the numbered boxes; the pointer
+    // The world writes no word unasked (D168) but the name of a file large enough on the screen, which says it was written for its size
+    // and is `select.test.ts`'s to judge (D206 (detail-by-size)): at load no other label and no storm's slot, only the numbered boxes; the pointer
     // over a file writes its labels, and leaving it takes them away again. A target's run of boxes hangs from its point,
     // so the file hovered is a noticed one whose point lies on the canvas.
     const written = async (): Promise<readonly (string | null)[]> =>
-      page.$$eval('[data-labels] [data-target], [data-labels] [data-label="storm"], [data-labels] [data-label="rename"]', (elements) =>
+      page.$$eval('[data-labels] [data-target]:not([data-named]), [data-labels] [data-label="storm"], [data-labels] [data-label="rename"]', (elements) =>
         elements.filter((element) => element instanceof HTMLElement && element.style.display !== 'none').map((element) => element.getAttribute('data-target') ?? element.textContent),
       );
     expect(await written()).toEqual([]);
@@ -159,11 +160,11 @@ test('the world draws the demo map headless on WebGL 2, lit at the surface, with
     if (hovered === undefined) throw new Error('no noticed file of the demo lies on the canvas at the surface');
     await page.mouse.move(hovered.x, hovered.y);
     // A label hangs from a hanger of no size, so it is waited on as there rather than as seen.
-    await page.waitForSelector(`[data-labels] [data-target="${hovered.target}"]`, { state: 'attached', timeout: 30_000 });
-    expect(new Set(await page.$$eval('[data-labels] [data-target]', (elements) => elements.map((element) => element.getAttribute('data-target'))))).toEqual(new Set([hovered.target]));
-    expect(await page.getAttribute(`[data-labels] [data-target="${hovered.target}"]`, 'data-label')).toBe('notice');
+    await page.waitForSelector(`[data-labels] [data-target="${hovered.target}"]:not([data-named])`, { state: 'attached', timeout: 30_000 });
+    expect(new Set(await page.$$eval('[data-labels] [data-target]:not([data-named])', (elements) => elements.map((element) => element.getAttribute('data-target'))))).toEqual(new Set([hovered.target]));
+    expect(await page.getAttribute(`[data-labels] [data-target="${hovered.target}"]:not([data-named])`, 'data-label')).toBe('notice');
     await page.mouse.move(2, 715);
-    await page.waitForSelector(`[data-labels] [data-target="${hovered.target}"]`, { state: 'detached', timeout: 30_000 });
+    await page.waitForSelector(`[data-labels] [data-target="${hovered.target}"]:not([data-named])`, { state: 'detached', timeout: 30_000 });
     expect(await written()).toEqual([]);
     expect(complaints).toEqual([]);
   } finally {
@@ -951,10 +952,10 @@ test('served, a pushed map on the ground drawn cross-fades its weather in withou
     await expect.poll(() => sockets.length, { timeout: 30_000 }).toBe(2);
     const [primary] = demo.notices as readonly { readonly target: string }[];
     if (primary === undefined) throw new Error('the demo ranks no notice');
-    expect(await page.$$(`[data-labels] [data-target="${primary.target}"]`)).toHaveLength(0);
+    expect(await page.$$(`[data-labels] [data-target="${primary.target}"]:not([data-named])`)).toHaveLength(0);
     sockets[1]?.send(JSON.stringify({ kind: 'highlight', notice: 1 }));
     await page.waitForSelector('#world[data-highlight="notice 1"]', { timeout: 30_000 });
-    await page.waitForSelector(`[data-labels] [data-target="${primary.target}"]`, { state: 'attached', timeout: 30_000 });
+    await page.waitForSelector(`[data-labels] [data-target="${primary.target}"]:not([data-named])`, { state: 'attached', timeout: 30_000 });
     // A file flies to its stop the same way.
     sockets[1]?.send(JSON.stringify({ kind: 'highlight', file: 'apps/cli/src/doctor.ts' }));
     await page.waitForSelector('#world[data-highlight="apps/cli/src/doctor.ts"]', { timeout: 30_000 });

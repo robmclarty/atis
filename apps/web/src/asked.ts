@@ -11,15 +11,40 @@
  * it or the body is the selected file, and the barrel's exports with them, or
  * while the pointer is over the barrel. The
  * numbered notice boxes, the HUD, the notice column, the shore rail and the
- * minimap are not asked for: they stay as they are. Pure, so a test reads it
- * straight.
+ * minimap are not asked for: they stay as they are.
+ *
+ * One thing is written unasked (D206 (detail-by-size)): the name of a file
+ * large enough on the screen, once its radius there passes
+ * `LEVELS.fileNameFrom` pixels. `namedBySize` says which files those are for
+ * a view; the labels' collision rule and budget then cap them, after
+ * everything asked for has its place. Pure, so a test reads it straight.
  */
 
 import type { MapJson } from 'core';
+import type { Viewport } from 'scene';
 
 /** The targets the world is asked about: the file or cell under the pointer on the field, the target of the notice row the pointer is over, the selection's, which stays asked for until it is cleared (D207 (click-selects)), and the one a row of the chrome points at (D209 (selection-line)). */
 export const askedOf = (field: string | undefined, row: string | undefined, selected?: string, pointed?: string): ReadonlySet<string> =>
   new Set([field, row, selected, pointed].filter((target): target is string => target !== undefined));
+
+/** A file where the map draws it: its path, its centre and its radius, in layout units. */
+type Placed = { readonly id: string; readonly x: number; readonly y: number; readonly r: number };
+
+/**
+ * The files large enough on the screen to be named unasked (D206
+ * (detail-by-size)): those whose centre the view shows and whose radius there
+ * is at least `from` pixels. At `0` that is every file in view, and at a
+ * threshold no file reaches it is none, so a name is written only when asked
+ * for.
+ */
+export const namedBySize = (files: Iterable<Placed>, viewport: Viewport, from: number): ReadonlySet<string> => {
+  const named = new Set<string>();
+  for (const file of files) {
+    if (file.x < viewport.x || file.x > viewport.x + viewport.width || file.y < viewport.y || file.y > viewport.y + viewport.height) continue;
+    if (file.r * viewport.pixelsPerUnit >= from) named.add(file.id);
+  }
+  return named;
+};
 
 /** Whether a tag that belongs to `target` is asked for: the target itself, or a cell that holds an asked file, however deep. */
 export const asksFor = (map: MapJson, asked: ReadonlySet<string>): ((target: string) => boolean) => {
