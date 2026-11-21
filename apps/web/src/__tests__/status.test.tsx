@@ -75,24 +75,39 @@ test('a map no check was read for says it is structure only, and a checked map s
 
 const READY = { status: 'ready', url: '/map.json', map: DEMO } as const;
 
-/** The line's markup with the socket open, closed, or none. */
-const line = (live: boolean | undefined, state: Parameters<typeof Status>[0]['state'] = READY): string => renderToStaticMarkup(<Status state={state} registry={createRegistry()} live={live} />);
+/** The line's markup on a run whose watch follows the repository, on one with no watch, or on a page with no socket. */
+const line = (live: boolean | undefined, state: Parameters<typeof Status>[0]['state'] = READY, rebuilding?: boolean): string =>
+  renderToStaticMarkup(<Status state={state} registry={createRegistry()} live={live} rebuilding={rebuilding} />);
 
-test('the status line says live while the socket to the CLI is open, and nothing of it once it closes or where there is none (D106)', () => {
+test('the status line says live while a watch follows the repository, and nothing of it on a run with no watch or a page with no socket (D106, D336 (watch-says))', () => {
   const ready = READY;
   expect(line(true)).toContain('demo against main · live');
   expect(line(true)).toContain('data-live');
-  for (const closed of [false, undefined]) {
-    expect(line(closed)).not.toContain('live');
-    expect(line(closed)).toContain('>demo against main<');
+  for (const unwatched of [false, undefined]) {
+    expect(line(unwatched)).not.toContain('live');
+    expect(line(unwatched)).toContain('>demo against main<');
   }
-  // The socket opens before the map is read, and the line says so then too.
+  // The watch says so before the map is read, and the line says it then too.
   expect(line(true, { status: 'loading', url: '/map.json' })).toContain('reading /map.json · live');
   // Every part the line carries stands in one order: the map, that it is structure only, the demo switch, then live.
   expect(renderToStaticMarkup(<Status state={{ status: 'ready', url: '/map.json', map: UNCHECKED }} registry={createRegistry()} shapes="demo" live />)).toContain('>demo against main · structure only: no checks ran · shapes: demo · live<');
-  // The chrome hands the socket's state it was given to its status line.
+  // The chrome hands the watch's word it was given to its status line.
   expect(renderToStaticMarkup(<Chrome state={ready} registry={createRegistry()} dev={false} live />)).toContain('demo against main · live');
   expect(renderToStaticMarkup(<Chrome state={ready} registry={createRegistry()} dev={false} live={false} />)).not.toContain('· live');
+});
+
+test('while the watch measures a map the line says rebuilding after live, so a tab that has not moved yet does not look as if it missed the edit (D336 (watch-says))', () => {
+  const building = line(true, READY, true);
+  expect(building).toContain('>demo against main · live · rebuilding<');
+  expect(building).toContain('data-rebuilding');
+  // Following again, the word goes.
+  expect(line(true, READY, false)).toContain('>demo against main · live<');
+  expect(line(true, READY, false)).not.toContain('data-rebuilding');
+  // Nothing rebuilds for a page no watch follows.
+  expect(line(false, READY, true)).toContain('>demo against main<');
+  expect(line(undefined, READY, true)).not.toContain('rebuilding');
+  // The chrome hands it on.
+  expect(renderToStaticMarkup(<Chrome state={READY} registry={createRegistry()} dev={false} live rebuilding />)).toContain('demo against main · live · rebuilding');
 });
 
 test('the chrome never glows: no shadow, blur or gradient in its style', () => {

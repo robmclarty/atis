@@ -1154,7 +1154,9 @@ const rebuiltOf = ({ map, tree }: Measured): Rebuilt => ({ map: serialize(map), 
  * mid-scan is never missed, and each time the signature moves it rebuilds
  * the map over the base the page last switched to, else as the flags asked,
  * through the terrain cache, and pushes it to the tab; a rebuild that fails
- * keeps the map the tab holds and says why (D106). While the head is the
+ * keeps the map the tab holds and says why (D106). The tab is told when a
+ * rebuild starts and when it is over, whichever way it went
+ * (D336 (watch-says)). While the head is the
  * working tree, the signature moves with an edit that stages nothing too, so
  * the tab follows a coding agent as it writes (D313 (watch-working-term)).
  * A file that never holds still is rebuilt for without waiting once it has
@@ -1240,6 +1242,11 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
               stirring = restless;
               if (unread && !unlisted) log("atis: git could not list the working tree's uncommitted files, so until it can the watch follows no edit that stages nothing\n");
               unlisted = unread;
+              // The measure holds the process until it is done, so the pages are told a map is on its way first, and the word is let out before it starts (D336 (watch-says)).
+              served.say('rebuilding');
+              await new Promise<void>((sent) => {
+                setImmediate(sent);
+              });
               try {
                 const switched = served.asked();
                 const next = switched === undefined ? measure(options.repo, asTyped) : mapOver(options, switched);
@@ -1248,6 +1255,8 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
                 noted(next);
               } catch (error) {
                 log(`atis: the watch kept the last map: ${messageOf(error)}\n`);
+              } finally {
+                served.say('following');
               }
             },
             every,

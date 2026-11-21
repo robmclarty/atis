@@ -81,17 +81,25 @@ const stubApp = (): string => {
   return dir;
 };
 
-/** The maps a socket hears, in order: each read waits for the next to arrive. */
-type Listening = { readonly next: () => Promise<MapJson>; readonly socket: WebSocket };
+/** The maps a socket hears, in order: each read waits for the next to arrive; and everything it hears by its kind, a map as `map` and the watch's word as its state (D336 (watch-says)). */
+type Listening = { readonly next: () => Promise<MapJson>; readonly socket: WebSocket; readonly said: readonly string[] };
 
 /** Open the page's socket on a served run, as the page opens it: the token in its query, the page's own `Origin`. */
 const listen = async (served: Served, origin = `http://127.0.0.1:${String(served.port)}`): Promise<Listening> => {
   const socket = new WebSocket(`ws://127.0.0.1:${String(served.port)}/socket?token=${TOKEN}`, { origin });
   const heard: MapJson[] = [];
+  const said: string[] = [];
   const waiting: ((map: MapJson) => void)[] = [];
   socket.on('message', (data: Buffer) => {
-    const message = JSON.parse(data.toString('utf8')) as { readonly kind: string; readonly map: unknown };
+    const message = JSON.parse(data.toString('utf8')) as { readonly kind: string; readonly map: unknown; readonly state: unknown };
+    // The socket carries two kinds under a watch and no third: what the watch is doing, and a map.
+    if (message.kind === 'watch') {
+      expect(Object.keys(message).toSorted()).toEqual(['kind', 'state']);
+      said.push(String(message.state));
+      return;
+    }
     expect(message.kind).toBe('map');
+    said.push('map');
     const map = assertMap(message.map);
     const waiter = waiting.shift();
     if (waiter === undefined) heard.push(map);
@@ -109,7 +117,7 @@ const listen = async (served: Served, origin = `http://127.0.0.1:${String(served
     const ready = heard.shift();
     return ready === undefined ? new Promise((arrived) => waiting.push(arrived)) : Promise.resolve(ready);
   };
-  return { next, socket };
+  return { next, socket, said };
 };
 
 /** A served run of `repo` over `v1` under a watch, at `HEAD` unless another head is asked for, its lines collected. */
@@ -127,12 +135,14 @@ test('under --watch, each new commit is rebuilt and pushed to the open socket, o
   const { served, lines, stdout } = await watching(repo);
   expect(served.url).toBe(`http://127.0.0.1:${String(served.port)}/?token=${TOKEN}`);
   expect(stdout).toContain(', watching (Ctrl-C to stop)');
-  const { next } = await listen(served);
+  const { next, said } = await listen(served);
 
   // The socket hears the map the server holds as it opens, so a commit landing while the page loads is never missed.
   const first = await next();
   expect(first.meta.head).toBe(git(repo, 'rev-parse', 'HEAD'));
   expect(first.weather.changed.map((file) => file.path)).toEqual(['src/square.ts']);
+  // Before the map it hears that a watch follows the repository, which is what the page's `live` stands on (D336 (watch-says)).
+  expect(said).toEqual(['following', 'map']);
 
   for (const [body, subject] of [
     ['return area(side, side) + 0;', 'fix: square a side again'],
@@ -151,6 +161,8 @@ test('under --watch, each new commit is rebuilt and pushed to the open socket, o
     expect(assertMap(await held.json()).meta.head).toBe(sha);
   }
   expect(lines).toHaveLength(2);
+  // Each rebuild is told as it starts, before its map, and as it ends (D336 (watch-says)).
+  await expect.poll(() => said).toEqual(['following', 'map', 'rebuilding', 'map', 'following', 'rebuilding', 'map', 'following']);
 }, MINUTE);
 
 test('a watch keeps to the base the page switched to, and a rebuild that fails keeps the last map and says why (D106)', async () => {
@@ -160,7 +172,7 @@ test('a watch keeps to the base the page switched to, and a rebuild that fails k
   const switched = await fetch(`${origin}/base?token=${TOKEN}`, { method: 'POST', headers: { origin, 'content-type': 'application/json' }, body: JSON.stringify({ base: 'HEAD~1' }) });
   expect(switched.status).toBe(200);
   expect(served.asked()).toEqual({ base: 'HEAD~1' });
-  const { next } = await listen(served);
+  const { next, said } = await listen(served);
   expect((await next()).meta.base_typed).toBe('--base HEAD~1');
 
   // The base is kept as the page typed it, so HEAD~1 is read again at the new head: the change is the newest commit alone.
@@ -176,9 +188,11 @@ test('a watch keeps to the base the page switched to, and a rebuild that fails k
   await expect.poll(() => lines.at(-1), { timeout: 10_000 }).toMatch(/^atis: the watch kept the last map: /);
   const held = await fetch(`${origin}/map.json?token=${TOKEN}`);
   expect(assertMap(await held.json()).meta.head).toBe(sha);
+  // The rebuild that failed was told as it started and as it ended, with no map between, so the page does not say `rebuilding` for good (D336 (watch-says)).
+  await expect.poll(() => said).toEqual(['following', 'map', 'rebuilding', 'map', 'following', 'rebuilding', 'following']);
 }, MINUTE);
 
-test("the socket answers only the run's token from the page's own origin on loopback, on every served run, and only a watch sends the map held as a page connects (D134, D178)", async () => {
+test("the socket answers only the run's token from the page's own origin on loopback, on every served run, and only a watch says it follows and sends the map held as a page connects (D134, D178, D336 (watch-says))", async () => {
   const { served } = await watching(twoCommits());
   const port = String(served.port);
   const refused = async (path: string, headers: Readonly<Record<string, string>>): Promise<number> =>
@@ -206,7 +220,7 @@ test("the socket answers only the run's token from the page's own origin on loop
   ]);
   expect(answers).toEqual([403, 403, 403, 403, 403, 404, 101]);
 
-  // A run served without a watch takes the socket too, for a highlight to ride (D178), and sends nothing as the page connects.
+  // A run served without a watch takes the socket too, for a highlight to ride (D178), and sends nothing as the page connects: no map, and no word that anything follows the repository, so the page never says `live` (D336 (watch-says)).
   const still = await serve({ assets: stubApp(), map: '{}\n', token: TOKEN });
   closers.push(still.close);
   expect(still.url).toBe(`http://127.0.0.1:${String(still.port)}/?token=${TOKEN}`);

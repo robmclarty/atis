@@ -7,7 +7,7 @@ import type { MapJson } from 'core';
 import { expect, test } from 'vitest';
 
 import { createNav } from '../nav.js';
-import { framedUrl, pushedMap, sameBuild, sameGround, socketUrl } from '../watch.js';
+import { framedUrl, pushedMap, pushedWatch, sameBuild, sameGround, socketUrl } from '../watch.js';
 
 /** The page's socket (D106, D178): where it listens, what it reads off the socket, and which pushes keep the ground. */
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -31,6 +31,20 @@ test('the socket carries a map by its kind; any other kind, text that is not JSO
   expect(pushedMap('{"kind":"map","map":{"meta":{}}}')).toBeUndefined();
   expect(pushedMap('not json')).toBeUndefined();
   expect(pushedMap('[]')).toBeUndefined();
+});
+
+test('the socket says what a watching run is doing by a kind of its own, and anything else says nothing of it (D336 (watch-says))', () => {
+  expect(pushedWatch('{"kind":"watch","state":"following"}')).toBe('following');
+  expect(pushedWatch('{"kind":"watch","state":"rebuilding"}')).toBe('rebuilding');
+  // A state the page does not know, another kind, and text that is not a message are each nothing, so the line's word stands.
+  expect(pushedWatch('{"kind":"watch","state":"resting"}')).toBeUndefined();
+  expect(pushedWatch('{"kind":"watch"}')).toBeUndefined();
+  expect(pushedWatch(`{"kind":"map","map":${DEMO_TEXT.trimEnd()}}`)).toBeUndefined();
+  expect(pushedWatch('{"kind":"highlight","notice":1}')).toBeUndefined();
+  expect(pushedWatch('not json')).toBeUndefined();
+  expect(pushedWatch('"following"')).toBeUndefined();
+  // And the watch's word is no map.
+  expect(pushedMap('{"kind":"watch","state":"following"}')).toBeUndefined();
 });
 
 test('a map is the one shown when it is the same build, and lies on the same ground when its layout, cells and files are', () => {

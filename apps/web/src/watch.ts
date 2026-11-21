@@ -5,7 +5,11 @@
  * maps over it, and `atis mcp` its highlights (`highlight.ts`). Under
  * `--watch` every map the watch rebuilds comes as `{ "kind": "map", "map": … }`,
  * the server sending the one it holds as the page connects, so a commit
- * landing while the page loaded is never missed. A kind the page does not
+ * landing while the page loaded is never missed. A watching run says what
+ * its watch is doing as `{ "kind": "watch", "state": … }`, `following` or
+ * `rebuilding`, as the page connects and each time it moves, and a run with
+ * no watch never does, which is how the page knows whether anything follows
+ * the repository for it (D336 (watch-says)). A kind the page does not
  * know is dropped, as weft's studio drops one, and so is a map that fails
  * core's guard: the page keeps the map it has (C2). A map on the same ground
  * as the one shown, one layout with the same cells and files on it, has its
@@ -38,6 +42,21 @@ export const pushedMap = (text: string): MapJson | undefined => {
   try {
     const message: unknown = JSON.parse(text);
     return isRecord(message) && message['kind'] === 'map' ? assertMap(message['map']) : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+/** What a watching run says its watch is doing (D336 (watch-says)): following the repository, or measuring the map it moved to. */
+export type WatchState = 'following' | 'rebuilding';
+
+/** What a socket's message says the watch is doing; none for any other kind, text that is not JSON, or a state the page does not know. */
+export const pushedWatch = (text: string): WatchState | undefined => {
+  try {
+    const message: unknown = JSON.parse(text);
+    if (!isRecord(message) || message['kind'] !== 'watch') return undefined;
+    const state = message['state'];
+    return state === 'following' || state === 'rebuilding' ? state : undefined;
   } catch {
     return undefined;
   }

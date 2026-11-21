@@ -6,9 +6,11 @@
  * nothing that glows, blurs or grades. While the demo switch is on the line
  * says so, since an opened cell's shapes are then no reading of the map (D202).
  * A map no check was read for says it is structure only, so nobody takes a
- * map with no weather on it for a clean one (C2), and a page whose socket to
- * the CLI is open says it is live, since a watch can then push it a map
- * (D106, D208 (side-panels)).
+ * map with no weather on it for a clean one (C2), and a page whose run
+ * watches the repository says it is live, and that a map is being rebuilt
+ * while one is (D106, D208 (side-panels), D336 (watch-says)). A run with no
+ * watch says neither, though its socket is open, since nothing follows the
+ * repository for it.
  */
 
 import { CHROME_GROUND, CHROME_INK, CHROME_MUTED, CHROME_PAD, FONT_FAMILY, HUD_FONT_SIZE, IFR_HUE } from 'scene';
@@ -27,8 +29,11 @@ const SHAPES_DEMO_WORDS = 'shapes: demo';
 /** What the line adds for a map read with no `.check/` trusted: it shows the repo's structure and no check's verdict. */
 const STRUCTURE_ONLY_WORDS = 'structure only: no checks ran';
 
-/** What the line adds while the page's socket to the CLI is open. */
+/** What the line adds while the run's watch follows the repository. */
 const LIVE_WORDS = 'live';
+
+/** What the line adds while the watch measures a map the repository moved to. */
+const REBUILDING_WORDS = 'rebuilding';
 
 /** What stands between the line's parts. */
 const BETWEEN = ' · ';
@@ -56,15 +61,18 @@ type StatusProps = {
   readonly state: MapState;
   readonly registry: Registry;
   readonly shapes?: 'demo' | undefined;
-  /** Whether the page's socket to the CLI is open (D106); none on a page with no socket. The line says `live` while it is, and nothing of it otherwise. */
+  /** Whether the run's watch follows the repository (D106, D336 (watch-says)). The line says `live` while it does, and nothing of it otherwise. */
   readonly live?: boolean | undefined;
+  /** Whether the watch is measuring a map the repository moved to; the line says `rebuilding` after `live` until it is done. */
+  readonly rebuilding?: boolean | undefined;
 };
 
-export const Status = ({ state, registry, shapes, live }: StatusProps): ReactElement => {
+export const Status = ({ state, registry, shapes, live, rebuilding }: StatusProps): ReactElement => {
   useLive(registry);
   const look = registry.view(LOOK);
   const structureOnly = state.status === 'ready' && state.map.meta.instruments.mode !== 'check';
-  const words = [wordsOf(state), ...(structureOnly ? [STRUCTURE_ONLY_WORDS] : []), ...(shapes === undefined ? [] : [SHAPES_DEMO_WORDS]), ...(live === true ? [LIVE_WORDS] : [])];
+  const building = live === true && rebuilding === true;
+  const words = [wordsOf(state), ...(structureOnly ? [STRUCTURE_ONLY_WORDS] : []), ...(shapes === undefined ? [] : [SHAPES_DEMO_WORDS]), ...(live === true ? [LIVE_WORDS] : []), ...(building ? [REBUILDING_WORDS] : [])];
   return (
     <p
       role="status"
@@ -72,6 +80,7 @@ export const Status = ({ state, registry, shapes, live }: StatusProps): ReactEle
       {...(shapes === undefined ? {} : { 'data-shapes': shapes })}
       {...(structureOnly ? { 'data-structure-only': '' } : {})}
       {...(live === true ? { 'data-live': '' } : {})}
+      {...(building ? { 'data-rebuilding': '' } : {})}
       style={{
         margin: 0,
         padding: look.CHROME_PAD,

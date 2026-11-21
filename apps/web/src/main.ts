@@ -5,7 +5,9 @@
  * comes through one registry (D156), which the dev panel writes and the tab's
  * session keeps. A page the CLI served listens on its socket: for the maps
  * a watch pushes, each new one handed to the world and the chrome (D106),
- * and for what an agent asks it to show over `atis mcp` (D178). A page the
+ * for what the watch says it is doing, which the status line says
+ * (D336 (watch-says)), and for what an agent asks it to show over
+ * `atis mcp` (D178). A page the
  * CLI served a tour beside the map reads it too, and the chrome plays it
  * (D112). A page opened as a still for a comment draws no chrome (`?cinema`,
  * D108).
@@ -24,7 +26,8 @@ import type { Tour } from './tour.js';
 import { createNav } from './nav.js';
 import { createRegistry, sessionStore } from './registry.js';
 import { viewOf } from './view.js';
-import { framedUrl, pushedMap, sameBuild, socketUrl } from './watch.js';
+import { framedUrl, pushedMap, pushedWatch, sameBuild, socketUrl } from './watch.js';
+import type { WatchState } from './watch.js';
 import { drawWorld } from './world/index.js';
 
 const canvas = document.querySelector<HTMLCanvasElement>('#world');
@@ -53,15 +56,16 @@ const nav = createNav();
 let tour: Tour | undefined;
 // The PR the page was told of, which the world's diff sheet and the chrome's inspector both link.
 const pr = prOf(location.search);
-// Whether the socket to the CLI is open, which the status line says; the chrome is drawn again from the state it last showed when the socket opens or closes.
-let live = false;
+// What the run's watch last said it is doing, which the status line says (D336 (watch-says)): nothing on a run with no watch, whose socket is open all the same, and nothing once the socket closes. The chrome is drawn again from the state it last showed when the word moves.
+let watch: WatchState | undefined;
 let last: MapState | undefined;
 const show = (state: MapState): void => {
   last = state;
-  chrome.render(createElement(Chrome, { state, registry, nav, dev: import.meta.env.DEV, token, tour, shapes: view.shapes, pr, live }));
+  chrome.render(createElement(Chrome, { state, registry, nav, dev: import.meta.env.DEV, token, tour, shapes: view.shapes, pr, live: watch !== undefined, rebuilding: watch === 'rebuilding' }));
 };
-const listening = (open: boolean): void => {
-  live = open;
+const watching = (state: WatchState | undefined): void => {
+  if (state === watch) return;
+  watch = state;
   if (last !== undefined) show(last);
 };
 
@@ -79,10 +83,14 @@ if (state.status === 'ready') {
   let shown = state.map;
   if (socket !== undefined) {
     const line = new WebSocket(socket);
-    line.addEventListener('open', () => listening(true));
-    line.addEventListener('close', () => listening(false));
+    line.addEventListener('close', () => watching(undefined));
     line.addEventListener('message', (event: MessageEvent<unknown>) => {
       const text = typeof event.data === 'string' ? event.data : '';
+      const said = pushedWatch(text);
+      if (said !== undefined) {
+        watching(said);
+        return;
+      }
       const highlight = pushedHighlight(text);
       if (highlight !== undefined) {
         nav.highlight(highlight);

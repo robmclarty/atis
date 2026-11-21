@@ -39,7 +39,12 @@
  * `Origin`. Under `--watch` every map the watch rebuilds is pushed over it as
  * `{ "kind": "map", "map": … }`, a message kind as weft's watch sends, the
  * page reading only the kinds it knows, and as weft's does, the server sends
- * the map it holds as the page connects (D106). The page sends nothing on it.
+ * the map it holds as the page connects (D106). A watching run also says
+ * what the watch is doing, `{ "kind": "watch", "state": … }`, to each page
+ * as it connects and whenever it moves: `following`, or `rebuilding` while a
+ * map is measured, so the page says `live` only where something follows the
+ * repository and says when a map is on its way (D336 (watch-says)). A run
+ * with no watch says neither. The page sends nothing on it.
  * The second write, `POST /highlight`, is how `atis mcp` points at the map
  * (D110): with the token and this server's own `Origin`, as the first, it
  * names a file the held map places or a notice by its rank, anything else
@@ -124,7 +129,7 @@ export type ServeOptions = {
   readonly rebase?: Rebase | undefined;
   /** The tree the map's head was written as, when that head is the working tree: what `/file/<path>` reads, since no commit holds it (D312 (tree-beside-map)); left out, a working tree's map serves no file's text. */
   readonly tree?: string | undefined;
-  /** Send each page the map held as its socket connects, so a map the watch rebuilt while the page loaded is never missed (D106); the socket itself is taken on every run (D178). */
+  /** Send each page what the watch is doing and the map held as its socket connects, so a map the watch rebuilt while the page loaded is never missed (D106, D336 (watch-says)); the socket itself is taken on every run (D178). */
   readonly watch?: boolean | undefined;
   /** A tour written for the map, as its JSON text, served at `/tour.json` (D112, D183); left out, the path is not served and the page plays none. */
   readonly tour?: string | undefined;
@@ -135,6 +140,9 @@ export type HighlightRequest = { readonly file: string } | { readonly notice: nu
 
 /** What `POST /highlight` answers once it relays: how many open pages it reached, none when no tab is open. */
 export type Highlighted = { readonly pages: number };
+
+/** What a watching run says of its watch on the socket (D336 (watch-says)): it follows the repository, or it is measuring the map the repository moved to. */
+export type WatchState = 'following' | 'rebuilding';
 
 /** How `atis mcp` reaches the run serving a repository's tab (D138): its port on loopback, its token, and its process. */
 export type Serving = { readonly port: number; readonly token: string; readonly pid: number };
@@ -149,6 +157,8 @@ export type Served = {
   readonly asked: () => BaseRequest | undefined;
   /** Hold a rebuilt map in place of the one held, and push it to every open socket (D106). */
   readonly push: (rebuilt: Rebuilt) => void;
+  /** Say what the watch is doing to every open socket, and to each page that connects from here on (D336 (watch-says)). */
+  readonly say: (state: WatchState) => void;
   /** Stop answering and drop every connection. */
   readonly close: () => Promise<void>;
 };
@@ -572,6 +582,9 @@ export const serve = async ({ assets, map: first, token, checks: given, rebase, 
   const editor = repo === undefined ? undefined : await editorOf(repo);
   /** The held map as the socket carries it, a kind and the map, without parsing the map the server only serves. */
   const pushed = (): string => `{"kind":"map","map":${map.trimEnd()}}`;
+  // What the watch is doing, as the socket carries it (D336 (watch-says)).
+  let watching: WatchState = 'following';
+  const said = (): string => JSON.stringify({ kind: 'watch', state: watching });
   /** Hold a rebuilt map in place of the one held, its raw output served for the slots it holds and its files' text read from the tree it came with, or from its commit when it came with none. */
   const hold = (rebuilt: Rebuilt): void => {
     map = rebuilt.map;
@@ -820,7 +833,9 @@ export const serve = async ({ assets, map: first, token, checks: given, rebase, 
     }
     sockets.handleUpgrade(request, socket, head, (client) => {
       client.on('error', () => client.terminate());
-      if (watch) client.send(pushed());
+      if (!watch) return;
+      client.send(said());
+      client.send(pushed());
     });
   });
   const bound = server.address();
@@ -835,6 +850,10 @@ export const serve = async ({ assets, map: first, token, checks: given, rebase, 
     push: (rebuilt) => {
       hold(rebuilt);
       relay(pushed());
+    },
+    say: (state) => {
+      watching = state;
+      relay(said());
     },
     close: () =>
       new Promise<void>((closed, failed) => {
