@@ -19,10 +19,13 @@
  * a head that is the working tree, from the tree that head was written as,
  * handed in beside the map (D312 (tree-beside-map)), so the text is the
  * bytes the map was measured from and no path a request names is ever joined
- * onto a directory. It answers JSON with the diff's root and editor, never a
- * type the file's name suggests, with `nosniff`; a file past the size cap is
- * a 413 (D310 (file-cap)), one holding a NUL byte a 415, and anything that
- * is no file in that object a 404 (D311 (file-blob)). It answers only a
+ * onto a directory. `git cat-file` does the reading, since it takes a path
+ * as that path whatever it spells, where `git show` reads two dots in a
+ * file's name as a range of commits (D311 (file-blob)). It answers JSON
+ * with the diff's root and editor, never a type the file's name suggests,
+ * with `nosniff`; a file past the size cap is a 413 (D310 (file-cap)), one
+ * holding a NUL byte a 415, and anything that is no file in that object a
+ * 404 (D311 (file-blob)). It answers only a
  * `Host` of `127.0.0.1:<port>` or `localhost:<port>`, and the map, the raw
  * output, the diff, the file's text and the write only to the run's token: a
  * page in another tab can reach a loopback port, and through DNS rebinding
@@ -516,6 +519,14 @@ const UNREAD = {
  * the cap is never read (D310 (file-cap)), and a NUL byte makes it no text.
  * `at` is a full sha, so what git is handed can never be a flag, and `path`
  * follows its colon, where git reads it from the tree's root.
+ *
+ * All three readings are `git cat-file`, which takes `<sha>:<path>` as one
+ * object's name and nothing else (D311 (file-blob)). `git show` reads the
+ * same words as a range of commits first: a file named `src/a..private`
+ * answered the log of a branch called `private`, with its authors and its
+ * patches, in place of its own text, and a repository under review names its
+ * files as it likes. `cat-file blob` also refuses what is no blob, so the
+ * bytes can only be those of the file asked about.
  */
 const storedAt = async (repo: string, at: string, path: string): Promise<Buffer | keyof typeof UNREAD> => {
   const object = `${at}:${path}`;
@@ -523,7 +534,7 @@ const storedAt = async (repo: string, at: string, path: string): Promise<Buffer 
   const bytes = size === undefined ? Number.NaN : Number(size.toString('utf8').trim());
   if (type?.toString('utf8').trim() !== 'blob' || !Number.isSafeInteger(bytes)) return 404;
   if (bytes > FILE_LIMIT) return 413;
-  const stored = await gitBytes(repo, ['show', object], FILE_LIMIT);
+  const stored = await gitBytes(repo, ['cat-file', 'blob', object], FILE_LIMIT);
   if (stored === undefined) return 404;
   return stored.includes(0) ? 415 : stored;
 };

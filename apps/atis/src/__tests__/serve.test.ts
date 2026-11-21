@@ -798,6 +798,31 @@ test('a binary file is a 415, a file past the cap a 413 and one at it is served,
   expect(readFileSync(join(repo, 'link.txt'), 'utf8')).toBe('outside the repository\n');
 });
 
+test("a file whose name reads as a range of commits is served its own text, never another branch's log (D311 (file-blob))", async () => {
+  const { repo } = library();
+  // A branch the map's head does not hold, with a commit git would list were the name read as `src/a..private`.
+  git(repo, 'checkout', '--quiet', '-b', 'private');
+  writeFileSync(join(repo, 'secret.txt'), 'only on the private branch\n');
+  git(repo, 'add', '.');
+  git(repo, '-c', 'user.name=Owner Name', '-c', 'user.email=owner@private.example', 'commit', '--quiet', '-m', 'feat: keep a secret');
+  git(repo, 'branch', 'team/secret');
+  git(repo, 'checkout', '--quiet', 'main');
+  // Names that open, close or are split by the two or three dots of a range, and ones that end as a revision's suffix does.
+  const named = ['src/a', 'src/a..private', 'src/a...private', 'src/a..', 'src/a..main', '..main', 'src/a..team/secret', 'src/a^!', 'src/a@{0}'];
+  for (const path of named) {
+    mkdirSync(dirname(join(repo, path)), { recursive: true });
+    writeFileSync(join(repo, path), `the text of ${path}\n`);
+  }
+  git(repo, 'add', '.');
+  git(repo, 'commit', '--quiet', '-m', 'feat: name files as ranges');
+  const head = git(repo, 'rev-parse', 'HEAD');
+  const at = async (served: Served): Promise<readonly string[]> => (await Promise.all(named.map((path) => textAt(served, path.split('/').map(encodeURIComponent).join('/'))))).map((read) => read.text);
+  const own = named.map((path) => `the text of ${path}\n`);
+  expect(await at(await filing(repo, fileMap(head, named)))).toEqual(own);
+  // The same names under a working tree's head, read from its tree.
+  expect(await at(await filing(repo, fileMap('working-tree', named), workingTree(repo)))).toEqual(own);
+});
+
 test("a working tree's file is read from the tree its head was written as, handed in beside the map, never from the disk; with no such tree, or a head that is no commit's sha, nothing is served (D312 (tree-beside-map))", async () => {
   const { repo, head } = library();
   const edited = 'export function area(width: number, height: number): number {\n  return Math.abs(width * height);\n}\n';
