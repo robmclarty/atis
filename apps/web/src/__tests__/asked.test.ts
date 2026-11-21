@@ -65,3 +65,20 @@ test("an opened cell's tags show as its exploded view spreads, or one at a time 
   const spread = slideWords(1, 'libs/core/src/pm/slots.ts', undefined);
   expect([spread.tag(INDEX), spread.tag('libs/core/src/pm/slots.ts'), spread.exports]).toEqual([1, 1, 1]);
 });
+
+test("the selection's target stays asked for with nothing under the pointer, beside what the pointer and a row ask for, and inside an opened cell the selected file's tag stays written (D207 (click-selects))", () => {
+  const SLOTS = 'libs/core/src/pm/slots.ts';
+  expect([...askedOf(undefined, undefined, INDEX)]).toEqual([INDEX]);
+  expect([...askedOf(SLOTS, PM, INDEX)].toSorted()).toEqual([PM, INDEX, SLOTS].toSorted());
+  // Selected and hovered at once, the target is asked for once.
+  expect([...askedOf(INDEX, undefined, INDEX)]).toEqual([INDEX]);
+  // A selected file asks for its cell's storm as a hovered one does, and a selected cell for its own.
+  const asks = asksFor(DEMO, askedOf(undefined, undefined, SLOTS));
+  expect([asks(SLOTS), asks(PM), asks(INDEX)]).toEqual([true, true, false]);
+  expect(asksFor(DEMO, askedOf(undefined, undefined, PM))(PM)).toBe(true);
+  // On the slide, the selected file's tag is written in full at rest, the pointer's beside it, and the exports are not.
+  const kept = slideWords(0, undefined, INDEX, SLOTS);
+  expect([kept.tag(SLOTS), kept.tag(INDEX), kept.exports]).toEqual([1, 0, 0]);
+  const both = slideWords(0, 'libs/core/src/pm/tools.ts', INDEX, SLOTS);
+  expect([both.tag(SLOTS), both.tag('libs/core/src/pm/tools.ts'), both.tag(INDEX)]).toEqual([1, 1, 0]);
+});
