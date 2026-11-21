@@ -4,8 +4,8 @@
  * the HUD's grade blocks over it (§7), with the legend folded into its `key` block (D87, D166), on a map of a range the
  * scrubber under them, every block drawn from the frame it stands at (D100), on a whole repo's map its overlay toggles
  * (D101), in served mode the base selector (D99, C13), and the breadcrumb
- * under it (§6), in served mode with a tour beside the map its stepper under the breadcrumb (D112), the minimap in the bottom-left corner (D154), and the right-hand column, the ranked notices over the shore rail
- * (§5.4, D153); over them all, the open cell's wiring plate while it is toggled on (step 41); and, behind a switch, the dev panel (D156): off and absent by
+ * under it (§6), in served mode with a tour beside the map its stepper under the breadcrumb (D112), the minimap in the bottom-left corner (D154), and the right-hand column, the ranked notices over the folder tree over the shore rail
+ * (§5.4, D153), with the inspector beside it, which says what is selected (D208 (side-panels)); over them all, the open cell's wiring plate while it is toggled on (step 41); and, behind a switch, the dev panel (D156): off and absent by
  * default, its code fetched only when it is first opened. A development build shows a toggle for it; a published
  * build opens it only through a key combination, which the docs never name.
  * `--png` and a glance reading press nothing, so they never see it.
@@ -27,6 +27,7 @@ import { Bases } from './bases.js';
 import { Column } from './column.js';
 import { Crumbs } from './crumbs.js';
 import { Hud } from './hud.js';
+import { Inspector } from './inspector.js';
 import { useLive } from './live.js';
 import { Minimap } from './minimap.js';
 import { OverlayToggles } from './overlays.js';
@@ -85,9 +86,11 @@ export type ChromeProps = {
   readonly tour?: Tour | undefined;
   /** The demo switch, when the page asked for it, which the status line names (D202). */
   readonly shapes?: 'demo' | undefined;
+  /** The PR the page was told of, which the inspector links beside a file's diff (D208 (side-panels)); none, and it links none. */
+  readonly pr?: string | undefined;
 };
 
-export const Chrome = ({ state, registry, nav: given, dev, token, load = loadPanel, post, reload, tour, shapes }: ChromeProps): ReactElement => {
+export const Chrome = ({ state, registry, nav: given, dev, token, load = loadPanel, post, reload, tour, shapes, pr }: ChromeProps): ReactElement => {
   const [open, setOpen] = useState(false);
   const own = useMemo(() => createNav(), []);
   const nav = given ?? own;
@@ -129,6 +132,7 @@ export const Chrome = ({ state, registry, nav: given, dev, token, load = loadPan
         )}
       </div>
       {map !== undefined && <Column map={map} registry={registry} nav={nav} />}
+      {map !== undefined && <Inspector map={map} registry={registry} nav={nav} token={token} pr={pr} />}
       {map !== undefined && (
         <Corner registry={registry}>
           <Minimap map={map} registry={registry} nav={nav} />

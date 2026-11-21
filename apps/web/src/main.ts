@@ -51,7 +51,9 @@ const token = servedToken(location.search);
 const nav = createNav();
 // The tour served beside the map, read alongside it when the URL says one is served (D112).
 let tour: Tour | undefined;
-const show = (state: MapState): void => chrome.render(createElement(Chrome, { state, registry, nav, dev: import.meta.env.DEV, token, tour, shapes: view.shapes }));
+// The PR the page was told of, which the world's diff sheet and the chrome's inspector both link.
+const pr = prOf(location.search);
+const show = (state: MapState): void => chrome.render(createElement(Chrome, { state, registry, nav, dev: import.meta.env.DEV, token, tour, shapes: view.shapes, pr }));
 
 const url = mapUrl(location.search);
 show({ status: 'loading', url });
@@ -61,7 +63,7 @@ const state = await loadMap(url, (target) => fetch(target));
 tour = await toured;
 show(state);
 if (state.status === 'ready') {
-  await drawWorld(canvas, state.map, view, registry, nav, { token, pr: prOf(location.search) });
+  await drawWorld(canvas, state.map, view, registry, nav, { token, pr });
   const socket = socketUrl(location.search, location.host);
   // What an agent names, flown to and lit (D178); and each map the watch pushes that is not the one shown: its weather swapped in by the world, or its new ground drawn afresh where the reader stands (D106).
   let shown = state.map;

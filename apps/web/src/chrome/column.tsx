@@ -3,7 +3,9 @@
  * notices at its head and the shore rail beneath it (D153), one flat column
  * on the chrome's ground with a hard rule where it meets the world, in the
  * brutalist material (D12). The list takes up to half the column and scrolls
- * past that; the rail takes the rest and scrolls on its own. The world is
+ * past that; the rail takes the rest and scrolls on its own. Between them
+ * stands the folder tree (D208 (side-panels)), where the column has the line
+ * to the world the tree reads its selection from. The world is
  * fitted into the screen left of it (`fit.ts`).
  */
 
@@ -17,6 +19,7 @@ import type { Registry } from '../registry.js';
 import { useLive } from './live.js';
 import { Notices } from './notices.js';
 import { Rail } from './rail.js';
+import { Tree } from './tree.js';
 
 /** The tokens the column is drawn with, at rest: the shape its live view takes. */
 const LOOK = { CHROME_GROUND, CHROME_INK, CHROME_RULE, CHROME_STROKE_WIDTH, FONT_FAMILY };
@@ -44,6 +47,7 @@ export const Column = ({ map, registry, nav }: { readonly map: MapJson; readonly
       }}
     >
       <Notices map={map} registry={registry} nav={nav} />
+      {nav !== undefined && <Tree map={map} registry={registry} nav={nav} />}
       <Rail map={map} registry={registry} />
     </aside>
   );
