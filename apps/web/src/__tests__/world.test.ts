@@ -7,7 +7,8 @@
  *
  * The levels rest parked (D204 (parked-levels)): a tab opens on the lit
  * surface with no zoom asked for and no planet, and framed on a cell or a
- * file at any zoom it opens no slide, no plate and no sheet. The cases below
+ * file at any zoom it opens no slide, no plate and no sheet by the zoom; what
+ * a click selects and opens is `select.test.ts`'s to judge. The cases below
  * that walk a parked path, the planet, a cell opened by zoom, the plate, the
  * sheet and the far zoom's bare bands, first write the old levels into the
  * tab's token store (`legacy`), as a dev panel would have left them.
@@ -240,7 +241,7 @@ const middleOf = (cell: string): readonly [number, number] => {
   return [contour.reduce((total, [x]) => total + x, 0) / contour.length, contour.reduce((total, [, y]) => total + y, 0) / contour.length];
 };
 
-test('the tab opens on the lit surface with no zoom asked for and no planet, and framed on a cell or a file at any zoom it opens no slide, no plate and no sheet, by zoom or by a click, with a clean console (D204 (parked-levels))', { timeout: 120_000 }, async () => {
+test('the tab opens on the lit surface with no zoom asked for and no planet, and framed on a cell or a file at any zoom it opens no slide, no plate and no sheet by the zoom, with a clean console (D204 (parked-levels))', { timeout: 120_000 }, async () => {
   const { server, url } = await serve();
   const browser = await launch();
   try {
@@ -273,7 +274,7 @@ test('the tab opens on the lit surface with no zoom asked for and no planet, and
     expect(reading.lit / reading.pixels).toBeGreaterThan(0.05);
     expect(reading.shades).toBeGreaterThan(64);
 
-    // Framed on a cell where the old levels opened it as a slide: it stays the surface, and a click on it opens nothing either.
+    // Framed on a cell where the old levels opened it as a slide: it stays the surface. What a click on it opens is the selection's to say, and `select.test.ts` judges it (D205 (open-on-select)).
     const cell = 'folder:libs/core/src/pm';
     const [x, y] = middleOf(cell);
     // With the whole map in view the walk stands at the field though a cell lies under the view's centre, as it did while the far field was a level (D219 (field-by-zoom)); framed on the cell, it stands at the cell.
@@ -285,10 +286,6 @@ test('the tab opens on the lit surface with no zoom asked for and no planet, and
     await page.waitForTimeout(600);
     expect(await page.getAttribute('#world', 'data-lod')).toBe('2');
     expect(await page.getAttribute('[data-crumbs]', 'data-crumbs')).toBe('cell');
-    await nothingOpen();
-    // The middle of the free screen, where the cell is centred.
-    await page.mouse.click(350, 360);
-    await page.waitForTimeout(600);
     await nothingOpen();
 
     // Framed on a changed file past where the old levels opened its plate and then its diff: the same surface, nearer.
