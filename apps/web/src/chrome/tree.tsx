@@ -186,7 +186,7 @@ const Lead = ({ node, open, paint, asks }: { readonly node: TreeNode; readonly o
 const Hidden = ({ kind, count, what, ink, paint }: { readonly kind: string; readonly count: number; readonly what: string; readonly ink: string; readonly paint: Paint }): ReactElement => {
   const side = paint.look.SHORE_GRID_CELL;
   return (
-    <span data-row-hides={kind} title={`${String(count)} ${what} within`} style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 2, color: ink }}>
+    <span data-row-hides={kind} title={`${String(count)} ${what} within`} style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', gap: paint.look.NOTICE_BOX_GAP, color: ink }}>
       <span style={{ width: side, height: side, boxSizing: 'border-box', borderRadius: '50%', ...markPaint(kind, paint.look) }} />
       {count}
     </span>
