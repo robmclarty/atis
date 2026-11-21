@@ -52,6 +52,11 @@ export type Hover = {
 
 const SVG = 'http://www.w3.org/2000/svg';
 
+/** Write an outline's attribute only where it moved: a steady ring is traced every frame, and at rest it traces the path the page already holds, which is then left alone. */
+const set = (drawn: SVGPathElement, name: string, value: string): void => {
+  if (drawn.getAttribute(name) !== value) drawn.setAttribute(name, value);
+};
+
 /** The hover's layers over the canvas, outlines lifted to the skin's resting height as the caller reads it. */
 export const createHover = (heightAt: (x: number, y: number) => number, look: HoverLook, tagLook: TagLook): Hover => {
   const outline = document.createElementNS(SVG, 'svg');
@@ -132,19 +137,19 @@ export const createHover = (heightAt: (x: number, y: number) => number, look: Ho
       sized = [width, height];
     }
     if (ringed) {
-      ring.setAttribute('d', traced(selectedLifted, camera, width, height));
-      ring.setAttribute('stroke', look.selectInk);
-      ring.setAttribute('stroke-width', String(look.selectWidth));
+      set(ring, 'd', traced(selectedLifted, camera, width, height));
+      set(ring, 'stroke', look.selectInk);
+      set(ring, 'stroke-width', String(look.selectWidth));
     }
     if (aiming) {
-      aimed.setAttribute('d', traced(pointedLifted, camera, width, height));
-      aimed.setAttribute('stroke', look.ink);
-      aimed.setAttribute('stroke-width', String(look.width));
+      set(aimed, 'd', traced(pointedLifted, camera, width, height));
+      set(aimed, 'stroke', look.ink);
+      set(aimed, 'stroke-width', String(look.width));
     }
     if (!visible) return;
-    path.setAttribute('d', traced(lifted, camera, width, height));
-    path.setAttribute('stroke', look.ink);
-    path.setAttribute('stroke-width', String(look.width));
+    set(path, 'd', traced(lifted, camera, width, height));
+    set(path, 'stroke', look.ink);
+    set(path, 'stroke-width', String(look.width));
     path.style.opacity = String(eased);
     if (pointer === undefined) return;
     Object.assign(tag.style, {
