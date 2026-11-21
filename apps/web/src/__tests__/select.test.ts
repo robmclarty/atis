@@ -15,6 +15,17 @@
  * names. And a tab that names no zoom and no centre opens framed on the
  * ground the world draws, in the middle of the free screen, not on the layout
  * with the shore's strip the world never draws (D222 (terrain-frame)).
+ *
+ * The pointer on a file or a module's ground tells the line what it points
+ * at, which the canvas names with the side that points, and lets go on
+ * leaving (D209 (selection-line)). A file large enough on the screen is named
+ * unasked and a smaller one beside it is not, until `LEVELS.fileNameFrom`
+ * says otherwise (D206 (detail-by-size)). Enter walks in and selects where it
+ * lands, an arrow carries the selection to the sibling it walks to, and
+ * Escape clears the selection before it ascends (D231 (keys-walk-selection),
+ * D225 (escape-clears)); under the old levels it first closes the slide the
+ * zoom opened. And a view moved by hand stands at the file under its centre
+ * once that file is large enough to be named (D230 (file-stop-by-size)).
  */
 
 import { readFileSync } from 'node:fs';
@@ -23,12 +34,15 @@ import type { Page } from 'playwright-core';
 import { expect, test } from 'vitest';
 
 import { assertMap, withinContour } from 'core';
+import { instances } from 'scene';
 
+import { namedBySize } from '../asked.js';
 import { RAIL_WIDTH, fitFrame } from '../fit.js';
-import { HOVER, WALK } from '../materials.js';
+import { HOVER, LEVELS, WALK } from '../materials.js';
 import { bandRules } from '../space.js';
-import { createWalk } from '../walk.js';
-import { DEMO, launch, serve, withTokens } from './browser.js';
+import { FIELD, createWalk } from '../walk.js';
+import type { Stop } from '../walk.js';
+import { DEMO, launch, legacy, serve, withTokens } from './browser.js';
 
 type Point = readonly [number, number];
 
@@ -41,6 +55,8 @@ const LAYOUT = LAID;
 const PM = 'folder:libs/core/src/pm';
 const UTIL = 'directory:libs/core/src/util';
 const TOOLS = 'libs/core/src/pm/tools.ts';
+const SLOTS = 'libs/core/src/pm/slots.ts';
+const TEXT = 'libs/core/src/util/text.ts';
 
 /** The frame the selection is judged in: both modules on the free screen, with open ground beside them. */
 const ZOOM = 2;
@@ -132,6 +148,25 @@ const wheelUntil = async (page: Page, delta: number, passed: (across: number) =>
   await wheelUntil(page, delta, passed, turns - 1);
 };
 
+/** A point just inside the rim of a file floating in the open slide, where its leader ends and the canvas takes the pointer. */
+const floatingBody = async (page: Page): Promise<Point> => {
+  const onBody = await page.$$eval('[data-interior-leader]', (lines) =>
+    lines
+      .map((line) => {
+        const [, , x1, y1, x2, y2] = (line.getAttribute('points') ?? '').split(/[ ,]/).map(Number);
+        const length = Math.hypot((x2 ?? 0) - (x1 ?? 0), (y2 ?? 0) - (y1 ?? 0)) || 1;
+        return [(x2 ?? 0) + (((x2 ?? 0) - (x1 ?? 0)) / length) * 4, (y2 ?? 0) + (((y2 ?? 0) - (y1 ?? 0)) / length) * 4] as const;
+      })
+      .find(([px, py]) => document.elementFromPoint(px, py)?.id === 'world'),
+  );
+  if (onBody === undefined) throw new Error('no floating file of the open slide lies where the canvas takes the pointer');
+  return onBody;
+};
+
+/** The breadcrumb as the page reads it: the kind of stop it stands at, whether that is the selection or the walk's stop, and its line. */
+const crumbsOf = async (page: Page): Promise<{ readonly kind: string | null; readonly of: string | null; readonly line: string }> =>
+  page.$eval('[data-crumbs]', (line) => ({ kind: line.getAttribute('data-crumbs'), of: line.getAttribute('data-crumbs-of'), line: [...line.querySelectorAll('[data-crumb]')].map((crumb) => crumb.textContent).join(' › ') }));
+
 test('a click selects a file or a module and rings and names it, a selected module opens in place as a slide that moves with the selection and holds at any zoom, and Escape or a click on open space clears it and closes the slide, with a clean console (D207 (click-selects), D205 (open-on-select))', { timeout: 180_000 }, async () => {
   const { server, url } = await serve();
   const browser = await launch();
@@ -184,16 +219,7 @@ test('a click selects a file or a module and rings and names it, a selected modu
     await page.waitForFunction(() => document.querySelectorAll('[data-interior-leader]').length === 4, undefined, { timeout: 30_000 });
 
     // A click on a file floating in the slide, just inside its rim where its leader ends, selects the file and keeps its module's slide open.
-    const onBody = await page.$$eval('[data-interior-leader]', (lines) =>
-      lines
-        .map((line) => {
-          const [, , x1, y1, x2, y2] = (line.getAttribute('points') ?? '').split(/[ ,]/).map(Number);
-          const length = Math.hypot((x2 ?? 0) - (x1 ?? 0), (y2 ?? 0) - (y1 ?? 0)) || 1;
-          return [(x2 ?? 0) + (((x2 ?? 0) - (x1 ?? 0)) / length) * 4, (y2 ?? 0) + (((y2 ?? 0) - (y1 ?? 0)) / length) * 4] as const;
-        })
-        .find(([px, py]) => document.elementFromPoint(px, py)?.id === 'world'),
-    );
-    if (onBody === undefined) throw new Error('no floating file of the open slide lies where the canvas takes the pointer');
+    const onBody = await floatingBody(page);
     await page.mouse.click(onBody[0], onBody[1]);
     await page.waitForSelector('#world[data-selected^="libs/core/src/pm/"]', { timeout: 30_000 });
     expect(await opened()).toBe(PM);
@@ -307,6 +333,226 @@ test('a tab that names no zoom and no centre opens framed on the ground the worl
     await page.goto(`${url}/?backend=webgl&zoom=1`);
     await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
     await framedAt([LAYOUT.width / 2, LAYOUT.height / 2], VIEWPORT.height / (2 * fitFrame(LAYOUT, VIEWPORT.width, VIEWPORT.height, { right: RAIL_WIDTH }).halfH));
+    expect(complaints).toEqual([]);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+test('the pointer on a file or a module tells the line what it points at and lets go on leaving, and a file large enough on the screen is named unasked where a smaller one is not, until its token says otherwise, with a clean console (D209 (selection-line), D206 (detail-by-size))', { timeout: 180_000 }, async () => {
+  const { server, url } = await serve();
+  const browser = await launch();
+  try {
+    const page = await browser.newPage({ viewport: VIEWPORT });
+    const complaints = await framed(page, url);
+    const open = await onCanvas(page, OPEN, 'open space');
+    const pointed = async (): Promise<readonly (string | null)[]> => [await page.getAttribute('#world', 'data-pointed'), await page.getAttribute('#world', 'data-pointed-by')];
+    /** The files whose names the world wrote for their size, and those it wrote because it was asked. */
+    const bySize = async (): Promise<readonly string[]> => (await page.$$eval('[data-labels] [data-target][data-named="size"]', (labels) => labels.map((label) => label.getAttribute('data-target') ?? ''))).toSorted();
+    const asked = async (): Promise<readonly (string | null)[]> => page.$$eval('[data-labels] [data-target]:not([data-named])', (labels) => [...new Set(labels.map((label) => label.getAttribute('data-target')))]);
+
+    // What the frame shows of the layout, as the labels are placed over it, and the files in it large enough to be named and too small to be.
+    const viewport = { x: CENTRE[0] - MIDDLE[0] / PER_UNIT, y: CENTRE[1] - MIDDLE[1] / PER_UNIT, width: VIEWPORT.width / PER_UNIT, height: VIEWPORT.height / PER_UNIT, pixelsPerUnit: PER_UNIT };
+    const files = instances(MAP);
+    const large = [...namedBySize(files, viewport, LEVELS.fileNameFrom)].toSorted();
+    const inView = [...namedBySize(files, viewport, 0)];
+    expect(large).toContain(SLOTS);
+    expect(inView).toContain(TEXT);
+    expect(large).not.toContain(TEXT);
+
+    // At load, the pointer on open space, nothing is pointed at and nothing is asked for; the large files are named, each once, and no smaller one.
+    await page.mouse.move(open[0], open[1]);
+    await expect.poll(bySize, { timeout: 30_000 }).toEqual(large);
+    expect(await asked()).toEqual([]);
+    expect(await pointed()).toEqual([null, null]);
+
+    // The pointer on a file too small to be named: the line hears it from the world, the canvas names it, and its name is written because it is asked for.
+    const text = await onCanvas(page, [LAYOUT.positions[TEXT]?.x ?? 0, LAYOUT.positions[TEXT]?.y ?? 0], 'the small file');
+    await page.mouse.move(text[0], text[1]);
+    await page.waitForSelector(`#world[data-pointed="${TEXT}"][data-pointed-by="world"]`, { timeout: 30_000 });
+    await page.waitForSelector(`[data-labels] [data-target="${TEXT}"]:not([data-named])`, { state: 'attached', timeout: 30_000 });
+    expect(await asked()).toEqual([TEXT]);
+    expect(await bySize()).toEqual(large);
+    // Off it, onto open space, the world lets go, and the name goes with the ask.
+    await page.mouse.move(open[0], open[1]);
+    await page.waitForSelector('#world:not([data-pointed]):not([data-pointed-by])', { timeout: 30_000 });
+    await page.waitForSelector(`[data-labels] [data-target="${TEXT}"]`, { state: 'detached', timeout: 30_000 });
+
+    // A module is pointed at by its ground.
+    const util = await onCanvas(page, groundOf(UTIL), "the util module's ground");
+    await page.mouse.move(util[0], util[1]);
+    await page.waitForSelector(`#world[data-pointed="${UTIL}"][data-pointed-by="world"]`, { timeout: 30_000 });
+
+    // On a file already named for its size, the name is asked for now, and is written once; off it, it is written for its size again.
+    const slots = await onCanvas(page, [LAYOUT.positions[SLOTS]?.x ?? 0, LAYOUT.positions[SLOTS]?.y ?? 0], 'the large file');
+    await page.mouse.move(slots[0], slots[1]);
+    await page.waitForSelector(`#world[data-pointed="${SLOTS}"][data-pointed-by="world"]`, { timeout: 30_000 });
+    await page.waitForSelector(`[data-labels] [data-target="${SLOTS}"]:not([data-named])`, { state: 'attached', timeout: 30_000 });
+    expect(await page.$$eval(`[data-labels] [data-target="${SLOTS}"]`, (labels) => labels.length)).toBe(1);
+    expect(await bySize()).toEqual(large.filter((path) => path !== SLOTS));
+    await page.mouse.move(open[0], open[1]);
+    await page.waitForSelector('#world:not([data-pointed])', { timeout: 30_000 });
+    await expect.poll(bySize, { timeout: 30_000 }).toEqual(large);
+    expect(await asked()).toEqual([]);
+    expect(complaints).toEqual([]);
+
+    // With the threshold out of any file's reach, a name is written only when asked for.
+    const quiet = await browser.newPage({ viewport: VIEWPORT });
+    await withTokens(quiet, { 'LEVELS.fileNameFrom': 1_000_000 });
+    const quietComplaints = await framed(quiet, url);
+    await quiet.mouse.move(open[0], open[1]);
+    await quiet.waitForTimeout(600);
+    expect(await quiet.$$eval('[data-labels] [data-target]', (labels) => labels.length)).toBe(0);
+    await quiet.mouse.move(slots[0], slots[1]);
+    await quiet.waitForSelector(`[data-labels] [data-target="${SLOTS}"]:not([data-named])`, { state: 'attached', timeout: 30_000 });
+    expect(quietComplaints).toEqual([]);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+/** The middle of a stop's own ground, where the camera stands once it has flown there. */
+const standOf = (walk: ReturnType<typeof createWalk>, stop: Stop): Point => {
+  const box = walk.box(stop, WALK.fileContext);
+  if (box === undefined) throw new Error('the demo frames no ground for the stop');
+  return [(box.x0 + box.x1) / 2, (box.y0 + box.y1) / 2];
+};
+
+/** A stop that is a module, or the test has walked somewhere the demo does not lead. */
+const moduleOf = (stop: Stop | undefined, what: string): Extract<Stop, { readonly kind: 'cell' }> => {
+  if (stop?.kind !== 'cell') throw new Error(`${what} is no module on the demo`);
+  return stop;
+};
+
+test('Enter walks in and selects where it lands, an arrow carries the selection to the sibling it walks to, Escape clears the selection before it ascends, and a view moved by hand stands at the file under its centre once it is large enough, with a clean console (D231 (keys-walk-selection), D225 (escape-clears), D230 (file-stop-by-size))', { timeout: 180_000 }, async () => {
+  const { server, url } = await serve();
+  const browser = await launch();
+  try {
+    const page = await browser.newPage({ viewport: VIEWPORT });
+    const complaints: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error' || message.type() === 'warning') complaints.push(`${message.type()}: ${message.text()}`);
+    });
+    page.on('pageerror', (error) => complaints.push(`pageerror: ${error.message}`));
+    const walk = createWalk(MAP);
+    const ground = walk.ground();
+    if (ground === undefined) throw new Error('the demo lays no ground out');
+    const lineOf = (stop: Stop): string => walk.crumbs(stop).join(' › ');
+    /** Wait for the breadcrumb to stand where it is meant to, and for the flight there to land. */
+    const standing = async (kind: string, of: string, line: string): Promise<void> => {
+      await expect.poll(() => crumbsOf(page), { timeout: 30_000 }).toEqual({ kind, of, line });
+      await page.waitForTimeout(1_000);
+    };
+    const selected = async (): Promise<string | null> => page.getAttribute('#world', 'data-selected');
+
+    // The tab opens at the field with nothing selected. The stops the keys lead to are the walk's own, from where the camera stands.
+    await page.goto(`${url}/?backend=webgl`);
+    await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
+    await standing('field', 'walk', 'field');
+    expect(await selected()).toBeNull();
+    const first = moduleOf(walk.key(FIELD, 'Enter', [(ground.x0 + ground.x1) / 2, (ground.y0 + ground.y1) / 2]), 'the first step in');
+    const second = moduleOf(walk.key(first, 'Enter', standOf(walk, first)), 'the second step in');
+    const down = walk.key(second, 'ArrowDown', standOf(walk, second));
+    const beside = moduleOf(down ?? walk.key(second, 'ArrowUp', standOf(walk, second)), "the second step's sibling");
+    const [there, back] = down === undefined ? ['ArrowUp', 'ArrowDown'] : ['ArrowDown', 'ArrowUp'];
+
+    // Enter walks in to the module under the view, selects it, and the selection opens it; the breadcrumb reads the selection.
+    await page.keyboard.press('Enter');
+    await page.waitForSelector(`#world[data-selected="${first.cell}"][data-open="${first.cell}"]`, { timeout: 30_000 });
+    await standing('cell', 'selection', lineOf(first));
+    // Enter again walks in from the selection, and the slide moves with it.
+    await page.keyboard.press('Enter');
+    await page.waitForSelector(`#world[data-selected="${second.cell}"][data-open="${second.cell}"]`, { timeout: 30_000 });
+    await standing('cell', 'selection', lineOf(second));
+    // An arrow carries the selection to the sibling it walks to.
+    await page.keyboard.press(there);
+    await page.waitForSelector(`#world[data-selected="${beside.cell}"][data-open="${beside.cell}"]`, { timeout: 30_000 });
+    await standing('cell', 'selection', lineOf(beside));
+
+    // Escape clears the selection and closes its slide, and the camera stays: the breadcrumb falls back to the walk's stop, which is where the arrow flew.
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('#world:not([data-selected]):not([data-open])', { timeout: 30_000 });
+    await standing('cell', 'walk', lineOf(beside));
+    // With nothing selected an arrow walks and selects nothing.
+    await page.keyboard.press(back);
+    await standing('cell', 'walk', lineOf(second));
+    expect(await selected()).toBeNull();
+    // And Escape now ascends, a step at a time, to the field and no further.
+    await page.keyboard.press('Escape');
+    await standing('cell', 'walk', lineOf(first));
+    await page.keyboard.press('Escape');
+    await standing('field', 'walk', 'field');
+    await page.keyboard.press('Escape');
+    await standing('field', 'walk', 'field');
+    expect(await selected()).toBeNull();
+    expect(await page.getAttribute('#world', 'data-open')).toBeNull();
+
+    // A view moved by hand: framed on a file still too small to be named, the walk stands at its module; the wheel turned in about it, it stands at the file, and turned out again, at the module.
+    const at = LAYOUT.positions[TEXT] ?? { x: 0, y: 0, r: 0 };
+    expect(at.r * PER_UNIT).toBeLessThan(LEVELS.fileNameFrom);
+    await page.goto(`${url}/?backend=webgl&zoom=${String(ZOOM)}&centre=${String(at.x)},${String(at.y)}`);
+    await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
+    await standing('cell', 'walk', lineOf({ kind: 'cell', cell: UTIL }));
+    expect(await page.evaluate(([px, py]) => document.elementFromPoint(px ?? 0, py ?? 0)?.id, MIDDLE), 'the canvas takes the pointer at the middle of the free screen').toBe('world');
+    await page.mouse.move(MIDDLE[0], MIDDLE[1]);
+    /** Turn the wheel a step at a time, letting the view rest after each, until the breadcrumb stands at a kind of stop or the turns run out. */
+    const wheelTo = async (delta: number, kind: string, turns: number): Promise<void> => {
+      if (turns === 0 || (await crumbsOf(page)).kind === kind) return;
+      await page.mouse.wheel(0, delta);
+      await page.waitForTimeout(700);
+      await wheelTo(delta, kind, turns - 1);
+    };
+    await wheelTo(-240, 'organelle', 12);
+    await standing('organelle', 'walk', lineOf({ kind: 'organelle', path: TEXT, cell: UTIL }));
+    await wheelTo(240, 'cell', 12);
+    await standing('cell', 'walk', lineOf({ kind: 'cell', cell: UTIL }));
+    expect(complaints).toEqual([]);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+test('under the old levels Escape first closes the slide the zoom opened and leaves the selection, then clears the selection, and only then ascends, with a clean console (D225 (escape-clears), D204 (parked-levels))', { timeout: 150_000 }, async () => {
+  const { server, url } = await serve();
+  const browser = await launch();
+  try {
+    const page = await browser.newPage({ viewport: VIEWPORT });
+    const complaints: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error' || message.type() === 'warning') complaints.push(`${message.type()}: ${message.text()}`);
+    });
+    page.on('pageerror', (error) => complaints.push(`pageerror: ${error.message}`));
+    const walk = createWalk(MAP);
+    const pm: Stop = { kind: 'cell', cell: PM };
+    // Framed on the pm module's middle where it fills the screen, the old levels open it by the zoom.
+    const contour = LAYOUT.contours?.[PM] ?? [];
+    const middle: Point = [contour.reduce((total, [x]) => total + x, 0) / contour.length, contour.reduce((total, [, y]) => total + y, 0) / contour.length];
+    await legacy(page);
+    await page.goto(`${url}/?backend=webgl&zoom=8&centre=${middle.join(',')}`);
+    await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
+    await page.waitForSelector(`#world[data-open="${PM}"]`, { timeout: 30_000 });
+    await page.waitForFunction(() => document.querySelectorAll('[data-interior-leader]').length === 4, undefined, { timeout: 30_000 });
+    await expect.poll(() => crumbsOf(page), { timeout: 30_000 }).toEqual({ kind: 'cell', of: 'walk', line: walk.crumbs(pm).join(' › ') });
+
+    // A click on a file floating in the slide selects it, and the slide the zoom opened holds.
+    const onBody = await floatingBody(page);
+    await page.mouse.click(onBody[0], onBody[1]);
+    await page.waitForSelector(`#world[data-selected^="libs/core/src/pm/"][data-open="${PM}"]`, { timeout: 30_000 });
+    expect((await crumbsOf(page)).of).toBe('selection');
+
+    // The first Escape closes the slide and leaves the selection; the second clears the selection and leaves the camera; the third ascends.
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('#world[data-selected^="libs/core/src/pm/"]:not([data-open])', { timeout: 30_000 });
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('#world:not([data-selected]):not([data-open])', { timeout: 30_000 });
+    await expect.poll(() => crumbsOf(page), { timeout: 30_000 }).toEqual({ kind: 'cell', of: 'walk', line: walk.crumbs(pm).join(' › ') });
+    await page.keyboard.press('Escape');
+    const up = walk.ascend(pm);
+    if (up === undefined) throw new Error('the pm module has nothing above it on the demo');
+    await expect.poll(() => crumbsOf(page), { timeout: 30_000 }).toEqual({ kind: up.kind, of: 'walk', line: walk.crumbs(up).join(' › ') });
     expect(complaints).toEqual([]);
   } finally {
     await browser.close();
