@@ -20,7 +20,9 @@
  * at, which the canvas names with the side that points, and lets go on
  * leaving (D209 (selection-line)). A file large enough on the screen is named
  * unasked and a smaller one beside it is not, until `LEVELS.fileNameFrom`
- * says otherwise (D206 (detail-by-size)). Enter walks in and selects where it
+ * says otherwise (D206 (detail-by-size)). A single-file module, selected, is
+ * ringed where its file floats on the slide of the package it floats in, and
+ * that file's tag stays written (D247 (single-as-its-file)). Enter walks in and selects where it
  * lands, an arrow carries the selection to the sibling it walks to, and
  * Escape clears the selection before it ascends (D231 (keys-walk-selection),
  * D225 (escape-clears)); under the old levels it first closes the slide the
@@ -53,6 +55,8 @@ if (LAID === undefined) throw new Error('the demo lays nothing out');
 const LAYOUT = LAID;
 
 const PM = 'folder:libs/core/src/pm';
+const CLI = 'package:apps/cli';
+const DOCTOR = 'apps/cli/src/doctor.ts';
 const UTIL = 'directory:libs/core/src/util';
 const TOOLS = 'libs/core/src/pm/tools.ts';
 const SLOTS = 'libs/core/src/pm/slots.ts';
@@ -96,12 +100,12 @@ const farthest = (points: readonly Point[], off: (point: Point) => number): Poin
 /** How far a point keeps from every skin's edge, by the nearest point any contour is drawn through. */
 const offEdges = ([x, y]: Point): number => Math.min(...SKINS.flatMap((each) => each.contour.map(([sx, sy]) => Math.hypot(sx - x, sy - y))));
 
-/** A point of a module's own ground, on the clear screen, as far from every file and every skin's edge as its skin lets it be: a click there is on the module, on no file, and on no other module. */
-const groundOf = (cell: string): Point => {
+/** A point of a module's own ground, on the clear screen at the frame unless told where else it shows, as far from every file and every skin's edge as its skin lets it be: a click there is on the module, on no file, and on no other module. */
+const groundOf = (cell: string, shown: (point: Point) => boolean = (point) => clear(screenOf(point))): Point => {
   const skin = SKINS.find((each) => each.cell === cell)?.contour ?? [];
   const inner = SKINS.filter((each) => each.cell !== cell && each.contour.every(([x, y]) => withinContour(skin, x, y)));
   return farthest(
-    GRID.filter((point) => clear(screenOf(point)) && withinContour(skin, point[0], point[1]) && inner.every((each) => !withinContour(each.contour, point[0], point[1]))),
+    GRID.filter((point) => shown(point) && withinContour(skin, point[0], point[1]) && inner.every((each) => !withinContour(each.contour, point[0], point[1]))),
     (point) => Math.min(offEdges(point), ...FILES.map((file) => Math.hypot(file.x - point[0], file.y - point[1]) - file.r)),
   );
 };
@@ -283,6 +287,9 @@ test('with LEVELS.openOnSelect at 0 a click on a module only rings and names it,
   }
 });
 
+/** The files whose names the world wrote for their size, in path order. */
+const namedOn = async (page: Page): Promise<readonly string[]> => (await page.$$eval('[data-labels] [data-target][data-named="size"]', (labels) => labels.map((label) => label.getAttribute('data-target') ?? ''))).toSorted();
+
 /** The path the hover's tag writes with the pointer on a point of the screen, once the tag shows. */
 const hoveredAt = async (page: Page, [x, y]: Point): Promise<string | null> => {
   expect(await page.evaluate(([px, py]) => document.elementFromPoint(px ?? 0, py ?? 0)?.id, [x, y]), 'the canvas takes the pointer there').toBe('world');
@@ -349,7 +356,7 @@ test('the pointer on a file or a module tells the line what it points at and let
     const open = await onCanvas(page, OPEN, 'open space');
     const pointed = async (): Promise<readonly (string | null)[]> => [await page.getAttribute('#world', 'data-pointed'), await page.getAttribute('#world', 'data-pointed-by')];
     /** The files whose names the world wrote for their size, and those it wrote because it was asked. */
-    const bySize = async (): Promise<readonly string[]> => (await page.$$eval('[data-labels] [data-target][data-named="size"]', (labels) => labels.map((label) => label.getAttribute('data-target') ?? ''))).toSorted();
+    const bySize = async (): Promise<readonly string[]> => namedOn(page);
     const asked = async (): Promise<readonly (string | null)[]> => page.$$eval('[data-labels] [data-target]:not([data-named])', (labels) => [...new Set(labels.map((label) => label.getAttribute('data-target')))]);
 
     // What the frame shows of the layout, as the labels are placed over it, and the files in it large enough to be named and too small to be.
@@ -407,6 +414,67 @@ test('the pointer on a file or a module tells the line what it points at and let
     await quiet.mouse.move(slots[0], slots[1]);
     await quiet.waitForSelector(`[data-labels] [data-target="${SLOTS}"]:not([data-named])`, { state: 'attached', timeout: 30_000 });
     expect(quietComplaints).toEqual([]);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+/** A closer frame, for what is judged by its place on the screen: how many pixels a layout unit takes there, and where a layout point lies with `centre` in the middle of the free screen. */
+const NEAR = 3;
+const NEAR_UNIT = (PER_UNIT * NEAR) / ZOOM;
+const nearOf = (centre: Point, [x, y]: Point): Point => [MIDDLE[0] + (x - centre[0]) * NEAR_UNIT, MIDDLE[1] + (y - centre[1]) * NEAR_UNIT];
+
+/** A page on the demo at the closer frame about a layout point, with its console's complaints collected. */
+const near = async (page: Page, url: string, centre: Point): Promise<readonly string[]> => {
+  const complaints: string[] = [];
+  page.on('console', (message) => {
+    if (message.type() === 'error' || message.type() === 'warning') complaints.push(`${message.type()}: ${message.text()}`);
+  });
+  page.on('pageerror', (error) => complaints.push(`pageerror: ${error.message}`));
+  await page.goto(`${url}/?backend=webgl&zoom=${String(NEAR)}&centre=${centre.join(',')}`);
+  await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
+  return complaints;
+};
+
+test('a single-file module, selected, opens the slide of the package it floats in, is ringed there where its file floats, and keeps that file\'s tag written, with a clean console (D247 (single-as-its-file))', { timeout: 120_000 }, async () => {
+  const { server, url } = await serve();
+  const browser = await launch();
+  try {
+    const single = `single:${DOCTOR}`;
+    const at = LAYOUT.positions[DOCTOR] ?? { x: 0, y: 0, r: 0 };
+    const centre: Point = [at.x, at.y];
+    const page = await browser.newPage({ viewport: VIEWPORT });
+    const complaints = await near(page, url, centre);
+    const contour = LAYOUT.contours?.[single] ?? [];
+    const across = (Math.max(...contour.map(([x]) => x)) - Math.min(...contour.map(([x]) => x))) * NEAR_UNIT;
+    // The module's skin is far wider than its one file, so a ring round the one is told from a ring round the other by its width.
+    expect(across * 0.75).toBeGreaterThan(2 * at.r * NEAR_UNIT * 1.2);
+
+    // A click on the module's own ground, off its file, selects the module, which is ringed along its skin, and opens its package's slide.
+    const [gx, gy] = nearOf(centre, groundOf(single, () => true));
+    expect(await page.evaluate(([px, py]) => document.elementFromPoint(px ?? 0, py ?? 0)?.id, [gx, gy]), "the module's ground lies where the canvas takes the pointer").toBe('world');
+    await page.mouse.click(gx, gy);
+    await page.waitForSelector(`#world[data-selected="${single}"][data-open="${CLI}"]`, { timeout: 30_000 });
+    // The slide covers the module's skin, so the ring leaves it for the file's body, far smaller, where the slide floats it.
+    await expect.poll(async () => (await ringOf(page)).across, { timeout: 30_000 }).toBeLessThan(across * 0.75);
+    const ring = await ringOf(page);
+    expect(ring).toMatchObject({ shown: true, ink: HOVER.selectInk, width: String(HOVER.selectWidth) });
+    expect(ring.across).toBeGreaterThan(at.r * NEAR_UNIT);
+    expect(await page.getAttribute('#world', 'data-selected')).toBe(single);
+    // The pointer gone to open space, the file's tag stays written on the slide, and no other's.
+    const [ox, oy] = nearOf(centre, [at.x + 60, at.y]);
+    expect(await page.evaluate(([px, py]) => document.elementFromPoint(px ?? 0, py ?? 0)?.id, [ox, oy]), 'open space lies where the canvas takes the pointer').toBe('world');
+    await page.mouse.move(ox, oy);
+    await page.waitForFunction(() => document.querySelector<HTMLElement>('[data-hover-tag]')?.style.display === 'none', undefined, { timeout: 30_000 });
+    await page.waitForTimeout(400);
+    expect(await page.$$eval('[data-interior-tag]', (tags) => tags.filter((tag) => tag instanceof HTMLElement && tag.style.display !== 'none').map((tag) => tag.getAttribute('data-interior-tag')))).toEqual([DOCTOR]);
+
+    // Escape clears the selection and closes the slide, and the ring goes.
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('#world:not([data-selected]):not([data-open])', { timeout: 30_000 });
+    expect((await ringOf(page)).shown).toBe(false);
+    expect(complaints).toEqual([]);
   } finally {
     await browser.close();
     await server.close();

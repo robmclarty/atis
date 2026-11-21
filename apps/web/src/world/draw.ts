@@ -472,6 +472,10 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   let closedComposites: ReadonlySet<string> = new Set();
   // Each placed file's cell and radius, for a file the surface draws where it last floated.
   const placed = new Map(instances(map).map((file) => [file.id, file] as const));
+  // The one file of each single-file module a package holds, which floats on the package's slide in the module's stead (D167).
+  const floaterOf = new Map([...placed.values()].flatMap((file) => (slideCellOf(map, file.cell) === file.cell ? [] : [[file.cell, file.id] as const])));
+  /** The file a selection or a pointing stands for on a slide (D247 (single-as-its-file)): the file itself, or a single-file module's one file, since the slide of the package it floats in covers the module's skin and shows the file alone. */
+  const fileOn = (thing: Selected | undefined): string | undefined => (thing === undefined ? undefined : thing.kind === 'organelle' ? thing.path : floaterOf.get(thing.cell));
   // The package each file stands in on a map past 5,000 files, where a package is drawn as one body until the view nears it (step 66).
   const compositeOf = new Map(composites.flatMap((composite) => composite.files.map((file) => [file, composite.id] as const)));
   // The files of a closed cell the surface draws where they last floated (D165), as the scheduler last said.
@@ -527,7 +531,9 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
    * the selection is ringed in (D207 (click-selects)), and the one round what
    * a row of the chrome points at (D209 (selection-line)). A module's
    * membrane, or a file's own shape where the map draws it, the outline its
-   * body is drawn in while a slide floats it. It is laid again only when the
+   * body is drawn in while a slide floats it; a single-file module is ringed
+   * in its file's body while its package's slide floats that (D247
+   * (single-as-its-file)). It is laid again only when the
    * thing, the frame's map or where the file floats moves, so the same ring
    * is handed back until then.
    */
@@ -536,6 +542,10 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     return (thing) => {
       if (thing === undefined) return undefined;
       if (thing.kind === 'cell') {
+        // The slide of the package a single-file module floats in covers the module's skin, so its ring there would lie round bare ground: it is ringed where its file floats.
+        const floater = floaterOf.get(thing.cell);
+        const floating = floater === undefined ? undefined : bodies.find((each) => each.id === floater);
+        if (floating !== undefined) return floating.outline.ring;
         if (laid?.key !== thing.cell || laid.map !== current.map) laid = { key: thing.cell, map: current.map, ring: hoverOf(current.map, { kind: 'membrane', cell: thing.cell })?.ring };
         return laid.ring;
       }
@@ -1122,7 +1132,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     }
     filePlate.render(camera, canvas.clientWidth, canvas.clientHeight, free, focus === undefined ? undefined : new Vector3(focus.x, heightAt(focus.x, focus.y), focus.y), fileLevel, fileShown * (1 - diffShown));
     diffSheet.render(canvas.clientHeight, free, diffLevel, diffShown);
-    const words = slideWords(open.exploded, fieldTarget, slide === undefined ? undefined : barrelOf.get(slide.cell), held?.kind === 'organelle' ? held.path : undefined, rowPointed?.kind === 'organelle' ? rowPointed.path : undefined);
+    const words = slideWords(open.exploded, fieldTarget, slide === undefined ? undefined : barrelOf.get(slide.cell), fileOn(held), fileOn(rowPointed));
     // The chrome's claims are read again a few times a second while a slide shows: the HUD's blocks and the legend open and close under it.
     if (slide !== undefined && (claimsAge += 1) >= CLAIMS_EVERY) {
       claimsAge = 0;
