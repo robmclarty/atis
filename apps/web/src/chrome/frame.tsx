@@ -60,6 +60,8 @@ const TOGGLE: CSSProperties = {
   border: `1px solid ${CHROME_MUTED}`,
   padding: '1px 6px',
   cursor: 'pointer',
+  // The chrome's root passes the pointer through to the camera (`main.ts`), so the button takes it back, as every block that is pressed does.
+  pointerEvents: 'auto',
 };
 
 /** The chrome's bottom-left corner: the minimap, a pad in from the edges. It takes no pointer events of its own. */
