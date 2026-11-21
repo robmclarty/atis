@@ -90,10 +90,9 @@ const NOTICES = 'notices';
  * Go where a notice's row leads: select its stop and fly the world there, or
  * bring its shore group's block into view. The selection is built from the
  * map by the stop's target, as every caller builds one (D209
- * (selection-line)). The bare visit is still asked after it
- * (D281 (notice-selects)): a world that takes no selection flies by it, and
- * one that does is asked for the same flight twice in one turn, which it
- * flies once.
+ * (selection-line)), and the selection is the whole ask: the world that
+ * takes it flies there, so no bare visit follows it (D281
+ * (notice-selects)).
  */
 const go = (map: MapJson, rank: number, nav: Nav | undefined): void => {
   const destination = destinationOf(map, rank);
@@ -101,7 +100,6 @@ const go = (map: MapJson, rank: number, nav: Nav | undefined): void => {
   if (destination?.kind !== 'stop' || nav === undefined) return;
   const selected = destination.stop.kind === 'field' ? undefined : selectedOf(map, targetOf(destination.stop));
   if (selected !== undefined) nav.select(selected, 'fly');
-  nav.visit(destination.stop);
 };
 
 /** The ranked list for a map, read live from the registry; with the line to the world, a row's click flies there. */

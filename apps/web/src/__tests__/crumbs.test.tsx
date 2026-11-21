@@ -197,22 +197,27 @@ test("where the change's wiring reaches the open cell, a second button asks the 
   expect(wire).toHaveBeenCalledTimes(1);
 });
 
-test("a notice's row flies the world to its target, and a shore target's row brings its block into view (D148, D153)", async () => {
+test("a notice's row selects its target and asks the world to fly there, and a shore target's row brings its block into view (D148, D153, D281 (notice-selects))", async () => {
   const nav = createNav();
   const visit = vi.fn();
-  nav.steer({ lookAt: vi.fn(), visit });
+  const select = vi.fn();
+  nav.steer({ lookAt: vi.fn(), visit, select });
   const scrolled = vi.fn();
   Element.prototype.scrollIntoView = scrolled;
   const map: MapJson = { ...DEMO, notices: [...DEMO.notices.slice(0, 1), notice('README.md'), notice('nowhere.ts')] };
   await act(async () => root.render(<Chrome state={{ status: 'ready', url: '/map.json', map }} registry={createRegistry()} nav={nav} dev={false} />));
   await click('[data-notice="1"]');
-  expect(visit).toHaveBeenCalledWith(INDEX);
+  // The selection is the whole ask: the world flies by it, and no bare visit follows.
+  expect(nav.selected()).toEqual(INDEX);
+  expect(select).toHaveBeenCalledWith(INDEX, 'fly');
+  expect(visit).not.toHaveBeenCalled();
   await click('[data-notice="2"]');
   expect(scrolled).toHaveBeenCalledTimes(1);
   expect(scrolled.mock.contexts[0]).toBe(host.querySelector('[data-rail] [data-group="docs"]'));
   // An unplaced notice leads nowhere, and says so by taking no click.
   await click('[data-notice="3"]');
-  expect(visit).toHaveBeenCalledTimes(1);
+  expect(select).toHaveBeenCalledTimes(1);
+  expect(nav.selected()).toEqual(INDEX);
   expect(element('[data-notice="3"]').style.cursor).toBe('default');
   expect(element('[data-notice="1"]').style.cursor).toBe('pointer');
   // The breadcrumb stands under the status line.

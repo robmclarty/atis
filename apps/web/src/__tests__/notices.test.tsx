@@ -200,8 +200,8 @@ test("a row whose target is on the map selects it and asks the world to fly ther
   expect(index).toEqual({ kind: 'organelle', path: 'libs/core/src/pm/index.ts', cell: 'folder:libs/core/src/pm' });
   expect(nav.selected()).toEqual(index);
   expect(select).toHaveBeenCalledWith(index, 'fly');
-  // A world that takes no selection still flies by the bare visit.
-  expect(visit).toHaveBeenCalledWith(index);
+  // The selection is the whole ask: no bare visit follows it.
+  expect(visit).not.toHaveBeenCalled();
   // The tree beneath the list lights the row the notice selected.
   expect(element('[data-tree] [data-selected]').dataset['row']).toBe('libs/core/src/pm/index.ts');
   // A second press flies there again, though the selection did not move.
