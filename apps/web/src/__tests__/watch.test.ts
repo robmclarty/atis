@@ -66,6 +66,14 @@ test('a page drawn afresh opens where the reader stood: the zoom, the tilt and t
   expect(framedUrl('http://127.0.0.1:9/?token=abc&zoom=1&centre=1%2C2', { zoom: 3, tilt: 0 })).toBe('http://127.0.0.1:9/?token=abc&zoom=3&tilt=0');
 });
 
+test('a page drawn afresh names what was selected, a file by its path or a module by its cell, and one drawn with nothing selected names none (D337 (selection-carried))', () => {
+  expect(framedUrl('http://127.0.0.1:9/?token=abc', { zoom: 2, tilt: 0, select: 'libs/core/src/pm/tools.ts' })).toBe('http://127.0.0.1:9/?token=abc&zoom=2&tilt=0&select=libs%2Fcore%2Fsrc%2Fpm%2Ftools.ts');
+  expect(framedUrl('http://127.0.0.1:9/?token=abc', { zoom: 2, tilt: 0, select: 'folder:libs/core/src/pm' })).toBe('http://127.0.0.1:9/?token=abc&zoom=2&tilt=0&select=folder%3Alibs%2Fcore%2Fsrc%2Fpm');
+  // The address a reload came from may name an older selection: the one held now takes its place, and none takes it out.
+  expect(framedUrl('http://127.0.0.1:9/?token=abc&select=apps%2Fcli%2Fsrc%2Fdoctor.ts', { zoom: 2, tilt: 0, select: 'folder:libs/core/src/pm' })).toBe('http://127.0.0.1:9/?token=abc&select=folder%3Alibs%2Fcore%2Fsrc%2Fpm&zoom=2&tilt=0');
+  expect(framedUrl('http://127.0.0.1:9/?token=abc&select=apps%2Fcli%2Fsrc%2Fdoctor.ts', { zoom: 2, tilt: 0 })).toBe('http://127.0.0.1:9/?token=abc&zoom=2&tilt=0');
+});
+
 test('a push brings the scrubber back to the map\'s own weather and asks the world, which says whether it took the weather in place', () => {
   const nav = createNav();
   expect(nav.swap(later)).toBeUndefined();

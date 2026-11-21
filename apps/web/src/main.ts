@@ -23,7 +23,7 @@ import type { MapState } from './load.js';
 import { pushedHighlight } from './highlight.js';
 import { loadTour, tourUrl } from './tour.js';
 import type { Tour } from './tour.js';
-import { createNav } from './nav.js';
+import { createNav, selectedOf, targetOf } from './nav.js';
 import { createRegistry, sessionStore } from './registry.js';
 import { viewOf } from './view.js';
 import { framedUrl, pushedMap, pushedWatch, sameBuild, socketUrl } from './watch.js';
@@ -75,6 +75,11 @@ const touring = tourUrl(location.search);
 const toured = touring === undefined ? Promise.resolve(undefined) : loadTour(touring, (target) => fetch(target));
 const state = await loadMap(url, (target) => fetch(target));
 tour = await toured;
+// A page a watch drew afresh names what the reader had selected (D337 (selection-carried)): it is selected on the line before the chrome and the world are drawn, where this map still holds it, so the inspector opens on it, the tree brings its row into view and a module's slide opens, with the camera left where the address puts it.
+if (state.status === 'ready' && view.select !== undefined) {
+  const carried = selectedOf(state.map, view.select);
+  if (carried !== undefined) nav.select(carried, 'stay');
+}
 show(state);
 if (state.status === 'ready') {
   await drawWorld(canvas, state.map, view, registry, nav, { token, pr });
@@ -100,7 +105,9 @@ if (state.status === 'ready') {
       if (next === undefined || sameBuild(shown, next)) return;
       const framing = nav.swap(next);
       if (framing !== undefined) {
-        location.replace(framedUrl(location.href, framing));
+        // New ground is drawn afresh where the reader stands, on what they had selected (D337 (selection-carried)).
+        const held = nav.selected();
+        location.replace(framedUrl(location.href, { ...framing, select: held === undefined ? undefined : targetOf(held) }));
         return;
       }
       shown = next;

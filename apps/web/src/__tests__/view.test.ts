@@ -78,3 +78,12 @@ test('the page asks for a still with ?cinema, framed by the scene as the comment
   expect(viewOf('?cinema=1').cinema).toBe(true);
   expect(viewOf('')).not.toHaveProperty('cinema');
 });
+
+test('a page may name what it opens with selected, a file by its path or a module by its cell, and names none by leaving it out or empty (D337 (selection-carried))', () => {
+  expect(viewOf('?select=libs%2Fcore%2Fsrc%2Fpm%2Ftools.ts').select).toBe('libs/core/src/pm/tools.ts');
+  expect(viewOf('?zoom=2&select=folder%3Alibs%2Fcore%2Fsrc%2Fpm').select).toBe('folder:libs/core/src/pm');
+  expect(viewOf('?select=')).not.toHaveProperty('select');
+  expect(viewOf('')).not.toHaveProperty('select');
+  // A selection frames nothing: the camera opens where the rest of the address puts it.
+  expect(viewOf('?select=libs%2Fcore%2Fsrc%2Fpm%2Ftools.ts')).not.toHaveProperty('framed');
+});

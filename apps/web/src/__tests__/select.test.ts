@@ -42,6 +42,11 @@
  * that held it, so the keys are the map's again (D331 (press-returns-keys)).
  * The functions are granules on the map: the canvas says how many the scene
  * lays, or why none, and they are in the frame (D206 (detail-by-size)).
+ *
+ * A page that names a selection in its address, as one a watch drew afresh
+ * does, opens with it selected and the camera where the address puts it: the
+ * inspector on it, its row in the tree in view, and a module's slide open
+ * (D337 (selection-carried)).
  */
 
 import { readFileSync } from 'node:fs';
@@ -988,5 +993,56 @@ test("the functions are granules on the map: the canvas says how many the scene 
   } finally {
     await again.close();
     await second.server.close();
+  }
+});
+
+test("a page whose address names a selection opens with it selected and the camera where the address puts it: a file with the inspector on it and its row in the tree in view, a module with its slide open, and a target the map does not hold with nothing selected, with a clean console (D337 (selection-carried))", { timeout: 180_000 }, async () => {
+  const { server, url } = await serve();
+  const browser = await launch();
+  try {
+    const page = await browser.newPage({ viewport: VIEWPORT });
+    const complaints: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error' || message.type() === 'warning') complaints.push(`${message.type()}: ${message.text()}`);
+    });
+    page.on('pageerror', (error) => complaints.push(`pageerror: ${error.message}`));
+    const at = `${url}/?backend=webgl&zoom=${String(ZOOM)}&centre=${CENTRE.join(',')}`;
+    const opened = async (select: string): Promise<void> => {
+      await page.goto(`${at}&select=${encodeURIComponent(select)}`);
+      await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
+    };
+
+    // A file: selected on the map with no click, ringed, with the inspector open on it and its row lit in the tree, inside the column's view.
+    await opened(TOOLS);
+    await page.waitForSelector(`#world[data-selected="${TOOLS}"]`, { timeout: 30_000 });
+    await expect.poll(async () => (await ringOf(page)).shown, { timeout: 30_000 }).toBe(true);
+    await page.waitForSelector(`aside[data-inspector="file"][data-inspector-target="${TOOLS}"]`, { timeout: 30_000 });
+    // The column scrolls by whole pixels and a row's box does not lie on them, so the row is in view to within one.
+    const rowOf = (): Promise<{ readonly selected: boolean; readonly inView: boolean }> =>
+      page.$eval(`[data-tree] [data-row][data-target="${TOOLS}"]`, (found) => {
+        const box = found.getBoundingClientRect();
+        const column = found.closest('[data-column]')?.getBoundingClientRect();
+        return { selected: found.hasAttribute('data-selected'), inView: column !== undefined && box.top >= column.top - 1 && box.bottom <= column.bottom + 1 };
+      });
+    await expect.poll(rowOf, { timeout: 30_000 }).toEqual({ selected: true, inView: true });
+    // The camera stands where the address put it, not flown to the file: the ring lies round the file where the frame's arithmetic puts it, and a file's selection opens nothing.
+    const ring = await ringAt(page, 'selected');
+    const [fx, fy] = screenOf([LAYOUT.positions[TOOLS]?.x ?? 0, LAYOUT.positions[TOOLS]?.y ?? 0]);
+    expect(Math.hypot(ring.middle[0] - fx, ring.middle[1] - fy)).toBeLessThan(6);
+    expect(await page.getAttribute('#world', 'data-open')).toBeNull();
+
+    // A module: selected, and open in place as its slide.
+    await opened(PM);
+    await page.waitForSelector(`#world[data-selected="${PM}"]`, { timeout: 30_000 });
+    await page.waitForSelector(`#world[data-open="${PM}"]`, { timeout: 30_000 });
+
+    // A target the map does not hold, as a file the edit deleted is not: nothing is selected, and the panel is its thin tab.
+    await opened('libs/core/src/pm/gone.ts');
+    await page.waitForSelector('button[data-inspector="closed"]', { timeout: 30_000 });
+    expect(await page.getAttribute('#world', 'data-selected')).toBeNull();
+    expect(complaints).toEqual([]);
+  } finally {
+    await browser.close();
+    await server.close();
   }
 });

@@ -15,7 +15,10 @@
  * (step 40). A page that names a zoom or a centre is `framed`: it opens where
  * it says, measured on the whole layout as ever. One that names neither
  * leaves the opening frame to the world, which frames the ground it draws
- * (D222 (terrain-frame)). `?cinema` frames the world as a still, with no chrome, on what
+ * (D222 (terrain-frame)). `?select=<target>` opens the page with a file, by
+ * its path, or a module, by its cell's id, selected, the camera where the
+ * rest of the query puts it: how a page a watch drew afresh keeps the
+ * reader's selection (D337 (selection-carried)). `?cinema` frames the world as a still, with no chrome, on what
  * the change is about, where the scene frames the comment's flat still
  * (`libs/scene/src/cinema.ts`, D108, D175). `?shapes=demo` cycles an opened
  * cell's files across the whole shape spectrum by their place in path order,
@@ -42,6 +45,8 @@ export type View = {
   readonly centre?: Point;
   /** The page named a zoom or a centre, so the frame opens where it says; left out, the world frames the ground it draws (D222 (terrain-frame)). */
   readonly framed?: true;
+  /** The target the page opens with selected, a file's path or a cell's id; the page selects it only where its map holds it (D337 (selection-carried)). */
+  readonly select?: string;
   /** A still for a comment: no chrome, the frame on what the change is about, and no cell opening as a slide (D108). */
   readonly cinema?: true;
   /** The demo switch: an opened cell's files take scores across the spectrum by path order, in place of their trouble (D202). */
@@ -73,6 +78,7 @@ export const viewOf = (search: string): View => {
   const zoom = asked > 0 ? asked : 1;
   const time = numberOr(params.get('time'), Number.NaN);
   const centre = pointOr(params.get('centre'));
+  const select = params.get('select') ?? '';
   return {
     backend: params.get('backend') === 'webgl' ? 'webgl' : 'webgpu',
     zoom,
@@ -81,6 +87,7 @@ export const viewOf = (search: string): View => {
     ...(Number.isFinite(time) && time >= 0 ? { time } : {}),
     ...(centre === undefined ? {} : { centre }),
     ...(asked > 0 || centre !== undefined ? { framed: true as const } : {}),
+    ...(select === '' ? {} : { select }),
     ...(params.get('cinema') === null ? {} : { cinema: true as const }),
     ...(params.get('shapes') === 'demo' ? { shapes: 'demo' as const } : {}),
   };
