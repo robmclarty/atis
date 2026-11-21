@@ -122,7 +122,7 @@ test('every state but ready says why the tab shows no text, so a fixture says it
     "no server reads a fixture's files, so no code",
     'reading the file',
     "the server refused: the token is wrong or missing, or the page is not on this run's address",
-    'the server answered no text for it',
+    'no text came back for it',
     'the file is larger than the server reads',
     'the file is not text',
   ]);

@@ -87,7 +87,7 @@ const NOTES: Readonly<Record<SourceAnswer['status'], string>> = {
   loading: 'reading the file',
   ready: '',
   refused: "the server refused: the token is wrong or missing, or the page is not on this run's address",
-  absent: 'the server answered no text for it',
+  absent: 'no text came back for it',
   large: 'the file is larger than the server reads',
   binary: 'the file is not text',
 };
