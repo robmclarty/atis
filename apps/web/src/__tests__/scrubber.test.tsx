@@ -95,6 +95,21 @@ test("a frame shows the one terrain under its commit's weather and notices, its 
   expect(() => assertMap(first)).not.toThrow();
 });
 
+test("an older frame of a range carries no approved block: the departures are the head's, which alone was held against the shape (D333 (departures-of-head))", () => {
+  const approved = { at: RANGED.meta.head, departures: [{ kind: 'dependency-added' as const, target: 'kleur', why: 'an outside package the approved shape did not import' }] };
+  const held = assertMap({ ...RANGED, approved });
+  // The last frame is the map itself, block and all.
+  expect(frameMap(held, 1)).toBe(held);
+  expect(frameMap(held, 1).approved).toEqual(approved);
+  // The frame before it is another commit's weather, and says nothing of how the head departs.
+  const first = frameMap(held, 0);
+  expect(first.meta.head).toBe(FIRST);
+  expect('approved' in first).toBe(false);
+  expect(first.terrain).toBe(held.terrain);
+  // And it is still a map every reader takes.
+  expect(() => assertMap(first)).not.toThrow();
+});
+
 test('`,` steps back a commit and `.` on one, held at the ends, and the caption names the commit', () => {
   expect(stepped(RANGED, undefined, ',')).toBe(0);
   expect(stepped(RANGED, 0, ',')).toBe(0);
