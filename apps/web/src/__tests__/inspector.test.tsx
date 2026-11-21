@@ -218,6 +218,25 @@ test('the map view lists every outside package with its hue, and says muted wher
   for (const section of all('[data-inspector-section]')) expect(section.querySelectorAll('[data-inspector-none]').length * section.querySelectorAll(':scope > p[data-inspector-muted]').length).toBe(0);
 });
 
+test("the panel's own looks are live through the registry: how many rows a ranked list shows, and the amber of a package a lesser advisory names (D156)", async () => {
+  const [first, ...rest] = DEMO.weather.dependencies ?? [];
+  if (first === undefined) throw new Error('the demo imports no outside package');
+  // One package a moderate advisory names, which the scene's rule for a star marks amber (D170).
+  const audited: MapJson = { ...DEMO, weather: { ...DEMO.weather, dependencies: [{ ...first, advisories: 1, severity: 'moderate' }, ...rest] } };
+  const { registry } = await draw(audited);
+  await click('[data-inspector="closed"]');
+  const rowsOf = (id: string): number => element(`[data-inspector-section="${id}"]`).querySelectorAll('[data-inspector-row]').length;
+  const amber = (): string | undefined => element('[data-inspector-section="outside-packages"]').querySelector<HTMLElement>('[data-inspector-hue="amber"]')?.style.background;
+  expect(rowsOf('largest-files')).toBe(5);
+  expect(amber()).toBe(rgb('#e9a93c'));
+  act(() => registry.set('PANEL.readingRows', 2));
+  expect(rowsOf('largest-files')).toBe(2);
+  // The outside packages are listed whole whatever the rows (D252 (packages-whole)).
+  expect(rowsOf('outside-packages')).toBe(3);
+  act(() => registry.set('PANEL.amber', '#ffcc00'));
+  expect(amber()).toBe(rgb('#ffcc00'));
+});
+
 test('the map view reads the same on a map no check was read for (D251 (reading-no-checks))', async () => {
   await draw(UNCHECKED);
   await click('[data-inspector="closed"]');
@@ -531,7 +550,7 @@ test("a file's untested lines are written as runs, a list measured empty says no
 });
 
 test("a file's functions rest behind a toggle that is off: on, each is its name, where it starts, its size and the thresholds it breaks", async () => {
-  const { nav } = await draw();
+  const { nav, registry } = await draw();
   await select(nav, TOOLS);
   const toggle = element('[data-inspector-functions]');
   expect(toggle.getAttribute('data-inspector-functions')).toBe('off');
@@ -543,6 +562,10 @@ test("a file's functions rest behind a toggle that is off: on, each is its name,
   expect(element('[data-inspector-functions]').getAttribute('aria-pressed')).toBe('true');
   const list = element('[data-inspector-functions-list]');
   expect(list.querySelector('[data-inspector-adds]')?.textContent).toBe('3');
+  // The list takes at most its share of the panel's height before it scrolls, live through the registry.
+  expect(list.style.maxHeight).toBe('40%');
+  act(() => registry.set('PANEL.functionsShare', '60%'));
+  expect(element('[data-inspector-functions-list]').style.maxHeight).toBe('60%');
   expect([...list.querySelectorAll('[data-inspector-function]')].map((fn) => fn.textContent)).toEqual(['localBin', 'resolveTool', 'toolName']);
   expect([...list.querySelectorAll('[data-inspector-row]')].map((row) => row.textContent)).toEqual(['localBinbreaks no thresholdline 4 · 30 lines', 'resolveToolbreaks crap, cyclomaticline 41 · 38 lines', 'toolNamebreaks no thresholdline 82 · 10 lines']);
   // A breach is in the ink, and none is muted.
@@ -630,6 +653,9 @@ test('served, the code tab shows the text a row to a line, the changed lines mar
   expect(sheet.style.whiteSpace).toBe('pre');
   act(() => registry.set('PANEL.codeSize', 14));
   expect(element(`[data-inspector-code="${INDEX}"]`).style.fontSize).toBe('14px');
+  expect(element(`[data-inspector-code="${INDEX}"]`).style.lineHeight).toBe('1.45');
+  act(() => registry.set('PANEL.codeLeading', 1.8));
+  expect(element(`[data-inspector-code="${INDEX}"]`).style.lineHeight).toBe('1.8');
 
   // The functions' rows link into the editor once the text's answer carries the template.
   await click('[data-inspector-functions]');

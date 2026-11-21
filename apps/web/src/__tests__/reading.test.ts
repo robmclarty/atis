@@ -7,8 +7,9 @@ import type { Cell, Dependency, MapJson, Organelle } from 'core';
 import { expect, test } from 'vitest';
 
 import { NO_APPROVED_SHAPE } from '../inspector.js';
+import { PANEL } from '../materials.js';
 import { selectedOf } from '../nav.js';
-import { READING_ORDER, READING_ROWS, readingOf } from '../reading.js';
+import { READING_ORDER, readingOf } from '../reading.js';
 import type { ReadingId, ReadingList } from '../reading.js';
 
 /**
@@ -101,7 +102,7 @@ test('the largest modules are ranked by their lines, each a package or a module 
 
 test('the largest files are ranked by their lines and cut to a short list that says how many it ranked, a deleted file left out', () => {
   const list = listOf(STRIPPED, 'largest-files');
-  expect(READING_ROWS).toBe(5);
+  expect(PANEL.readingRows).toBe(5);
   expect(list.of).toBe(8);
   expect(list.rows.map((row) => [row.words, row.count])).toEqual([
     [DOCTOR, '212 lines'],
@@ -369,7 +370,7 @@ test('on every committed fixture each list is rows, or none, or a reason, and ev
       const said = [list.rows.length > 0, list.empty !== undefined, list.muted !== undefined].filter(Boolean);
       expect(said, `${name} ${list.id}`).toHaveLength(1);
       expect(list.of, `${name} ${list.id}`).toBeGreaterThanOrEqual(list.rows.length);
-      if (list.id !== 'outside-packages') expect(list.rows.length, `${name} ${list.id}`).toBeLessThanOrEqual(READING_ROWS);
+      if (list.id !== 'outside-packages') expect(list.rows.length, `${name} ${list.id}`).toBeLessThanOrEqual(PANEL.readingRows);
       for (const row of list.rows) {
         if (row.selects?.kind === 'cell') expect(cells.has(row.selects.cell), `${name} ${row.words}`).toBe(true);
         if (row.selects?.kind === 'organelle') expect(files.get(row.selects.path), `${name} ${row.words}`).toBe(row.selects.cell);

@@ -32,10 +32,8 @@ import type { StarHue } from 'scene';
 
 import { counted, departuresIn } from './inspector.js';
 import type { Departures } from './inspector.js';
+import { PANEL } from './materials.js';
 import type { Selected } from './nav.js';
-
-/** How many rows a ranked list shows at most, until the panel's size is a live token of its own. */
-export const READING_ROWS = 5;
 
 /** The lists of a reading, by their id, in the order the map view draws them. */
 export const READING_ORDER = ['largest-modules', 'largest-files', 'most-depended-on', 'most-outward', 'past-interface', 'unreachable', 'longest-functions', 'outside-packages'] as const;
@@ -239,7 +237,7 @@ const outsidePackages = (map: MapJson): ReadingList => {
  * lists come in `READING_ORDER`, every one of them on every map, so a list
  * the map cannot fill still says why.
  */
-export const readingOf = (map: MapJson, most: number = READING_ROWS): Reading => {
+export const readingOf = (map: MapJson, most: number = PANEL.readingRows): Reading => {
   const deleted = new Set(map.weather.changed.filter((file) => file.kind === 'deleted').map((file) => file.path));
   const files = map.terrain.organelles.filter((file) => !deleted.has(file.id));
   const lists: Readonly<Record<ReadingId, ReadingList>> = {

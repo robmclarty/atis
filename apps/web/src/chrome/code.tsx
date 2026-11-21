@@ -43,9 +43,6 @@ export type TextLook = {
 /** How many characters of a git object's sha the tab writes. */
 const SHORT_SHA = 7;
 
-/** The leading of a line of code, a share of its size. */
-const LEADING = 1.45;
-
 /** How wide the mark down a changed line's edge is, in pixels. */
 const EDGE = 2;
 
@@ -64,7 +61,7 @@ const Says = ({ look, children, ...marks }: { readonly look: TextLook; readonly 
 );
 
 /** The scrolled sheet a text's rows stand on: one face, no wrapping, so a line is a line. */
-const sheetOf = (look: TextLook, size: number): CSSProperties => ({ flex: '1 1 auto', minHeight: 0, overflow: 'auto', margin: 0, fontFamily: look.FONT_FAMILY, fontSize: size, lineHeight: LEADING, whiteSpace: 'pre', tabSize: 2 });
+const sheetOf = (look: TextLook, size: number, leading: number): CSSProperties => ({ flex: '1 1 auto', minHeight: 0, overflow: 'auto', margin: 0, fontFamily: look.FONT_FAMILY, fontSize: size, lineHeight: leading, whiteSpace: 'pre', tabSize: 2 });
 
 /** The gutter a row's number stands in, `digits` characters wide, held at the sheet's left edge as the text scrolls under it. */
 const gutterOf = (look: TextLook, digits: number, color: string): CSSProperties => ({
@@ -96,10 +93,12 @@ export type CodeProps = {
   readonly look: TextLook;
   /** The text's size in pixels, `PANEL.codeSize`. */
   readonly size: number;
+  /** The leading of a line, a share of its size, `PANEL.codeLeading`. */
+  readonly leading: number;
 };
 
 /** A file's text, read-only, a row to a line; or what the answer is, in words, where it is not the text. */
-export const Code = ({ path, answer, hunks, functions, apart, look, size }: CodeProps): ReactElement => {
+export const Code = ({ path, answer, hunks, functions, apart, look, size, leading }: CodeProps): ReactElement => {
   const text = answer.status === 'ready' ? answer.source.text : undefined;
   const lines = useMemo(() => (text === undefined ? [] : codeLines(text, hunks)), [text, hunks]);
   const starts = useMemo(() => new Map(functions.map((fn) => [fn.line, fn.name] as const)), [functions]);
@@ -137,7 +136,7 @@ export const Code = ({ path, answer, hunks, functions, apart, look, size }: Code
           the file is empty
         </Says>
       ) : (
-        <div data-inspector-code={path} data-inspector-sheet tabIndex={0} style={sheetOf(look, size)}>
+        <div data-inspector-code={path} data-inspector-sheet tabIndex={0} style={sheetOf(look, size, leading)}>
           {lines.map((line) => {
             const name = starts.get(line.line);
             const href = name === undefined ? undefined : link(line.line);
@@ -186,10 +185,12 @@ export type DiffProps = {
   readonly look: TextLook;
   /** The text's size in pixels, `PANEL.codeSize`. */
   readonly size: number;
+  /** The leading of a line, a share of its size, `PANEL.codeLeading`. */
+  readonly leading: number;
 };
 
 /** A changed file's diff, read-only: its rows once it is served, else its hunks' line ranges and why there is no more. */
-export const Diff = ({ level, look, size }: DiffProps): ReactElement => {
+export const Diff = ({ level, look, size, leading }: DiffProps): ReactElement => {
   const digits = digitsOf(level.rows.flatMap((row) => (row.kind === 'deleted' ? [] : [row.line])));
   return (
     <>
@@ -219,7 +220,7 @@ export const Diff = ({ level, look, size }: DiffProps): ReactElement => {
           </ul>
         </>
       ) : (
-        <div data-inspector-diff={level.path} data-inspector-sheet tabIndex={0} style={sheetOf(look, size)}>
+        <div data-inspector-diff={level.path} data-inspector-sheet tabIndex={0} style={sheetOf(look, size, leading)}>
           {/* A diff's rows have no name of their own and never move, so each is known by its place. */}
           {level.rows.map((row, at) => (
             <div key={at} data-inspector-diff-row={row.kind} {...(row.kind === 'deleted' ? {} : { 'data-inspector-line': row.line })} style={{ display: 'flex', width: 'max-content', minWidth: '100%', color: inkOf(row, look) }}>

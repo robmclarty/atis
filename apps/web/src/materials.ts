@@ -346,15 +346,23 @@ export const INTERIOR: InteriorLook = { ...INTERIOR_LAYOUT, slide: '#efe6d3', sl
 
 /**
  * The side panels (D208 (side-panels)): the inspector's width in pixels,
- * laid over the map beside the notice column, and the size its code and diff
- * are set at; and the folder tree's row height and the indent of each depth,
- * in pixels.
+ * laid over the map beside the notice column; the size its code and diff are
+ * set at, and their leading, a share of that size; how many rows each ranked
+ * list of its map view shows at most; the most of its height a file's
+ * functions take beneath a tab before they scroll, as CSS writes a length;
+ * the amber an outside package a lesser advisory names is marked in, which
+ * its star wore on the planet (D170); and the folder tree's row height and
+ * the indent of each depth, in pixels.
  */
 export type PanelLook = {
   readonly inspectorWidth: number;
   readonly codeSize: number;
+  readonly codeLeading: number;
+  readonly readingRows: number;
+  readonly functionsShare: string;
+  readonly amber: string;
   readonly treeRow: number;
   readonly treeIndent: number;
 };
 
-export const PANEL: PanelLook = { inspectorWidth: 420, codeSize: 11, treeRow: 16, treeIndent: 10 };
+export const PANEL: PanelLook = { inspectorWidth: 420, codeSize: 11, codeLeading: 1.45, readingRows: 5, functionsShare: '40%', amber: '#e9a93c', treeRow: 16, treeIndent: 10 };

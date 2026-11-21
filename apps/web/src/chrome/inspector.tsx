@@ -68,6 +68,7 @@ import { RAIL_WIDTH } from '../fit.js';
 import { LOOSE_FILES, counted, inspect, runsIn } from '../inspector.js';
 import type { Crumb, Departures, Fact, FileChange, FileModel, FunctionRow, Measured, ModuleModel, NoticeMark } from '../inspector.js';
 import { PANEL } from '../materials.js';
+import type { PanelLook } from '../materials.js';
 import { selectedOf, targetOf } from '../nav.js';
 import type { Nav, Selected } from '../nav.js';
 import { categoryHue } from '../notices.js';
@@ -115,12 +116,6 @@ const BETWEEN = ' › ';
 /** The dot between the parts of one line. */
 const MIDDLE = '·';
 
-/** The ink of an outside package a lesser advisory names, the amber its star wore on the planet (D170), until the panel has a live token for it. */
-const PACKAGE_AMBER = '#e9a93c';
-
-/** The share of the panel's height a file's functions may take beneath its tab before they scroll, until it is a live token. */
-const FUNCTIONS_SHARE = '40%';
-
 /** How far an arrow scrolls a sheet of code that has the focus, in pixels. */
 const SCROLL_STEP = 40;
 
@@ -154,6 +149,8 @@ type Ui = {
   readonly map: MapJson;
   readonly look: Look;
   readonly type: ReturnType<typeof screenType>;
+  /** The panel's own tokens, read live: its code's leading, its lists' rows, its functions' share and its amber. */
+  readonly panel: PanelLook;
   /** The map's category hue, which a primary notice's box is solid in. */
   readonly hue: string;
   /** Select what a row names and ask the world to fly there. */
@@ -349,17 +346,17 @@ const DepartureList = ({ ui, departures, kept }: { readonly ui: Ui; readonly dep
   </Section>
 );
 
-/** The ink each of a package's hues is written in, by the scene's rule for its star (D170): the state hues, amber for a lesser advisory, the ink for one an audit read clean, the muted grey for one no audit read. */
-const packageInk = (hue: StarHue, look: Look): string => {
+/** The ink each of a package's hues is written in, by the scene's rule for its star (D170): the state hues, `PANEL.amber` for a lesser advisory, the ink for one an audit read clean, the muted grey for one no audit read. */
+const packageInk = (hue: StarHue, look: Look, amber: string): string => {
   if (hue === 'ifr') return look.IFR_HUE;
-  if (hue === 'amber') return PACKAGE_AMBER;
+  if (hue === 'amber') return amber;
   if (hue === 'change') return look.CHANGE_HUE;
   return hue === 'clean' ? look.CHROME_INK : look.CHROME_MUTED;
 };
 
 const ReadingRowOf = ({ ui, row }: { readonly ui: Ui; readonly row: ReadingRow }): ReactElement => (
   <Row ui={ui} selects={row.selects}>
-    {row.hue !== undefined && <span data-inspector-hue={row.hue} aria-hidden="true" style={{ flex: 'none', alignSelf: 'center', width: ui.type.small * 0.6, height: ui.type.small * 0.6, background: packageInk(row.hue, ui.look) }} />}
+    {row.hue !== undefined && <span data-inspector-hue={row.hue} aria-hidden="true" style={{ flex: 'none', alignSelf: 'center', width: ui.type.small * 0.6, height: ui.type.small * 0.6, background: packageInk(row.hue, ui.look, ui.panel.amber) }} />}
     <Words>
       <span style={{ display: 'block' }}>{pathWords(row.words)}</span>
       {(row.tail !== undefined || row.muted !== undefined) && (
@@ -398,7 +395,9 @@ const ReadingListOf = ({ ui, list }: { readonly ui: Ui; readonly list: ReadingLi
 
 /** The map view: the structure's lists in their order, then the departures from the approved shape. */
 const MapView = ({ ui }: { readonly ui: Ui }): ReactElement => {
-  const reading = useMemo(() => readingOf(ui.map), [ui.map]);
+  // Each ranked list is cut to `PANEL.readingRows`, read live.
+  const most = ui.panel.readingRows;
+  const reading = useMemo(() => readingOf(ui.map, most), [ui.map, most]);
   return (
     <>
       {reading.lists.map((list) => (
@@ -564,7 +563,7 @@ const Functions = ({ ui, model, answers }: { readonly ui: Ui; readonly model: Fi
   const { functions } = model;
   const { look } = ui;
   return (
-    <div data-inspector-functions-list style={{ flex: 'none', maxHeight: FUNCTIONS_SHARE, overflowY: 'auto', padding: look.CHROME_PAD, borderTop: `${String(look.CHROME_STROKE_WIDTH)}px solid ${look.CHROME_RULE}` }}>
+    <div data-inspector-functions-list style={{ flex: 'none', maxHeight: ui.panel.functionsShare, overflowY: 'auto', padding: look.CHROME_PAD, borderTop: `${String(look.CHROME_STROKE_WIDTH)}px solid ${look.CHROME_RULE}` }}>
       <Section ui={ui} id="functions" title="functions" adds={'muted' in functions ? undefined : String(functions.value.length)}>
         {'muted' in functions ? (
           <Says ui={ui} muted>
@@ -625,7 +624,7 @@ const CodeTab = ({ ui, model, answers, size }: { readonly ui: Ui; readonly model
   }
   const apart = otherCommitNote(ui.map.meta.head, answer);
   const own = apart === undefined;
-  return <Code path={model.path} answer={answer} hunks={own ? (model.change?.hunks ?? NO_HUNKS) : NO_HUNKS} functions={own ? functions : NO_FUNCTIONS} apart={apart} look={ui.look} size={size} />;
+  return <Code path={model.path} answer={answer} hunks={own ? (model.change?.hunks ?? NO_HUNKS) : NO_HUNKS} functions={own ? functions : NO_FUNCTIONS} apart={apart} look={ui.look} size={size} leading={ui.panel.codeLeading} />;
 };
 
 /** A changed file's diff tab: `diff.ts`'s level for it, from the server's answer, none on a fixture, and the PR the page was told of. */
@@ -634,7 +633,7 @@ const DiffTab = ({ ui, model, answers, pr, size }: { readonly ui: Ui; readonly m
   const answer = useSyncExternalStore(answers.subscribe, read, read);
   const changed = useMemo(() => ui.map.weather.changed.find((file) => file.path === model.path), [ui.map, model.path]);
   const level = useMemo(() => (changed === undefined ? undefined : diffLevelOf(changed, answer, pr)), [changed, answer, pr]);
-  return level === undefined ? null : <Diff level={level} look={ui.look} size={size} />;
+  return level === undefined ? null : <Diff level={level} look={ui.look} size={size} leading={ui.panel.codeLeading} />;
 };
 
 /** The way down to the selection as the panel's head: each step a button, the map's clearing the selection for the map view, a module's or the file's selecting it. */
@@ -844,7 +843,7 @@ export const Inspector = ({ map, registry, nav, token, pr }: InspectorProps): Re
     if (arrived && root !== null && !root.contains(document.activeElement)) root.focus({ preventScroll: true });
   }, [shown, at]);
 
-  const ui: Ui = { map, look, type: screenType(look), hue: categoryHue(map.weather.checks.category, look), choose, point };
+  const ui: Ui = { map, look, type: screenType(look), panel, hue: categoryHue(map.weather.checks.category, look), choose, point };
   if (model.kind === 'map' && !mapOpen) return <MapTab ui={ui} open={() => setMapOpen(true)} />;
 
   const close = (): void => (model.kind === 'map' ? setMapOpen(false) : nav.select(undefined, 'stay'));

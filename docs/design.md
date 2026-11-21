@@ -701,6 +701,10 @@ laid over the map beside the notice column, and the folder tree in that column.
 | --- | --- | --- |
 | `PANEL.inspectorWidth` | `420` | the inspector's width, in pixels |
 | `PANEL.codeSize` | `11` | the type size its code and its diff are set at, in pixels |
+| `PANEL.codeLeading` | `1.45` | the leading of a line of its code and its diff, a share of `PANEL.codeSize` |
+| `PANEL.readingRows` | `5` | the most rows each ranked list of its map view shows; the outside packages are listed whole (D252 (packages-whole)) |
+| `PANEL.functionsShare` | `40%` | the most of the panel's height a file's functions take beneath its tab before they scroll, as CSS writes a length (D264 (functions-beneath)) |
+| `PANEL.amber` | `#e9a93c` | the mark of an outside package a lesser advisory names, the amber its star wore on the planet (D170) |
 | `PANEL.treeRow` | `16` | the height of one row of the folder tree, in pixels |
 | `PANEL.treeIndent` | `10` | how far each depth of the tree is set in from the one above, in pixels |
 
