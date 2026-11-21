@@ -436,6 +436,7 @@ pnpm build && node apps/atis/dist/cli.js --version
 - [docs/design.md](./docs/design.md): the look, its tokens and their sources.
 - [docs/one-surface.md](./docs/one-surface.md): the world as one lit surface, its panels,
   what is parked, and the decisions that made it.
+- [docs/one-surface-tradeoffs.md](./docs/one-surface-tradeoffs.md): what that change gave up.
 - [docs/glance-test.md](./docs/glance-test.md): how the map is judged, and every reading so far.
 - [docs/prior-art.md](./docs/prior-art.md) and [docs/inspiration.md](./docs/inspiration.md):
   what it borrows, and from whom.

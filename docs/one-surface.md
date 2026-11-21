@@ -9,6 +9,8 @@ was deferred, and the parts of the founding record this departs from.
 The token tables live in [design.md](design.md). The founding record,
 [SPEC.md](../SPEC.md), is left as it was written; where this session departs
 from it, [what this supersedes](#what-this-supersedes) says so.
+What `main` gave up for it is in
+[one-surface-tradeoffs.md](one-surface-tradeoffs.md).
 
 The first version of this file was written before the parallel tracks started,
 as the contracts they were told to build against. The close-out brought it to
