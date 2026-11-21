@@ -10,7 +10,9 @@
  * watches the repository says it is live, and that a map is being rebuilt
  * while one is (D106, D208 (side-panels), D336 (watch-says)). A run with no
  * watch says neither, though its socket is open, since nothing follows the
- * repository for it.
+ * repository for it. A map that departs from its approved shape says by how
+ * many departures, so the count is on the first frame wherever the column
+ * is scrolled to (D339 (departures-in-status)).
  */
 
 import { CHROME_GROUND, CHROME_INK, CHROME_MUTED, CHROME_PAD, FONT_FAMILY, HUD_FONT_SIZE, IFR_HUE } from 'scene';
@@ -34,6 +36,12 @@ const LIVE_WORDS = 'live';
 
 /** What the line adds while the watch measures a map the repository moved to. */
 const REBUILDING_WORDS = 'rebuilding';
+
+/** How many departures from its approved shape a map tells; none for a map that keeps its shape, has none approved, or is not read yet. */
+const departuresOf = (state: MapState): number => (state.status === 'ready' ? (state.map.approved?.departures.length ?? 0) : 0);
+
+/** What the line adds for a map that departs from its approved shape. */
+const departedWords = (count: number): string => `${String(count)} ${count === 1 ? 'departure' : 'departures'} from the approved shape`;
 
 /** What stands between the line's parts. */
 const BETWEEN = ' · ';
@@ -71,14 +79,16 @@ export const Status = ({ state, registry, shapes, live, rebuilding }: StatusProp
   useLive(registry);
   const look = registry.view(LOOK);
   const structureOnly = state.status === 'ready' && state.map.meta.instruments.mode !== 'check';
+  const departed = departuresOf(state);
   const building = live === true && rebuilding === true;
-  const words = [wordsOf(state), ...(structureOnly ? [STRUCTURE_ONLY_WORDS] : []), ...(shapes === undefined ? [] : [SHAPES_DEMO_WORDS]), ...(live === true ? [LIVE_WORDS] : []), ...(building ? [REBUILDING_WORDS] : [])];
+  const words = [wordsOf(state), ...(structureOnly ? [STRUCTURE_ONLY_WORDS] : []), ...(shapes === undefined ? [] : [SHAPES_DEMO_WORDS]), ...(departed === 0 ? [] : [departedWords(departed)]), ...(live === true ? [LIVE_WORDS] : []), ...(building ? [REBUILDING_WORDS] : [])];
   return (
     <p
       role="status"
       data-status={state.status}
       {...(shapes === undefined ? {} : { 'data-shapes': shapes })}
       {...(structureOnly ? { 'data-structure-only': '' } : {})}
+      {...(departed === 0 ? {} : { 'data-departed': String(departed) })}
       {...(live === true ? { 'data-live': '' } : {})}
       {...(building ? { 'data-rebuilding': '' } : {})}
       style={{

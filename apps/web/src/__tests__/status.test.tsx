@@ -110,6 +110,24 @@ test('while the watch measures a map the line says rebuilding after live, so a t
   expect(renderToStaticMarkup(<Chrome state={READY} registry={createRegistry()} dev={false} live rebuilding />)).toContain('demo against main · live · rebuilding');
 });
 
+test('a map that departs from its approved shape says by how many, before live; one that keeps its shape, or has none approved, says nothing of it (D339 (departures-in-status))', () => {
+  const departure = { kind: 'dependency-added', target: 'kleur', why: 'kleur is imported and the approved shape did not hold it' } as const;
+  const one = assertMap({ ...DEMO, approved: { at: DEMO.meta.head, departures: [departure] } });
+  const two = assertMap({ ...DEMO, approved: { at: DEMO.meta.head, departures: [{ ...departure, target: 'chalk', why: 'chalk is imported and the approved shape did not hold it' }, departure] } });
+  const kept = assertMap({ ...DEMO, approved: { at: DEMO.meta.head, departures: [] } });
+  const at = (map: MapJson, live?: boolean): string => line(live, { status: 'ready', url: '/map.json', map });
+  expect(at(one)).toContain('>demo against main · 1 departure from the approved shape<');
+  expect(at(one)).toContain('data-departed="1"');
+  expect(at(two, true)).toContain('>demo against main · 2 departures from the approved shape · live<');
+  expect(at(two, true)).toContain('data-departed="2"');
+  for (const quiet of [at(kept), at(DEMO)]) {
+    expect(quiet).toContain('>demo against main<');
+    expect(quiet).not.toContain('data-departed');
+  }
+  // The chrome's own line says it.
+  expect(renderToStaticMarkup(<Chrome state={{ status: 'ready', url: '/map.json', map: one }} registry={createRegistry()} dev={false} />)).toContain('1 departure from the approved shape');
+});
+
 test('the chrome never glows: no shadow, blur or gradient in its style', () => {
   const html = markup({ status: 'ready', url: '/map.json', map: DEMO });
   expect(html).not.toMatch(/shadow|blur|gradient|filter/);
