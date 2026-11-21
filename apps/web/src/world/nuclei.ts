@@ -4,14 +4,17 @@
  * at rest (`nucleiOf`), and a granule is one small fan of one geometry, sized
  * and placed by its instance's four numbers: no radii texture, since every
  * granule here is round (D294 (granules-round)). Each vertex reads the skin's
- * relief where it lands, as a file's does, and the mesh sits just above the
- * marks and is drawn after them, so a stain never covers a function (D295
- * (granules-over-marks)).
+ * relief where it lands, as a file's does, and the mesh is drawn after the
+ * marks, so a stain never covers a function (D295 (granules-over-marks)). It
+ * is drawn after the ribbons too, which share the marks' place in the frame,
+ * so a granule lies over a ribbon where one's bow crosses a file (D299
+ * (granules-over-ribbons)).
  *
  * A granule is base tissue: unlit, the file's fill darkened by the slide's
- * own `INTERIOR.granuleShade`, and no light the bloom sees; it dims the light
- * beneath it by its own opacity and adds none (D296 (granules-dim-bloom),
- * D152, D11).
+ * own `INTERIOR.granuleShade`, and no light the bloom sees. The bloom's
+ * target does not blend, so a granule blots the light under its disc from the
+ * moment it has any size, ahead of its own ink, as a file blots the skin's
+ * (D298 (granules-blot-bloom), D152, D11).
  *
  * It resolves by its size on the screen and by nothing else (D206
  * (detail-by-size)): the loop hands in the pixels one layout unit takes, and
@@ -46,9 +49,9 @@ type Float = UniformNode<'float', number>;
 
 /** How many segments a granule's disc is drawn in, as a round granule's is on the slide. */
 const SEGMENTS = 12;
-/** How far above the skin a granule sits, in the heightfield's units: over the files (0.6) and the marks on them (0.9), under the ribbons (1) and the bolts (1.2). */
+/** How far above the skin a granule sits, in the heightfield's units, between the marks (0.9) and the ribbons (1). It keeps a granule clear of the skin, which alone writes depth; among the files, the marks, the ribbons and the bolts it orders nothing, since none of them does, and `RENDER_ORDER` alone says which is drawn over which. */
 const LIFT = 0.95;
-/** Where the granules are drawn in the frame: after the marks and the ribbons (2), before the bolts and an opened slide (3), whichever of them was made last (D295 (granules-over-marks)). */
+/** Where the granules are drawn in the frame: after the marks and the ribbons, which share 2 so nothing can be drawn between them, and before the bolts and an opened slide (3), whichever of them was made last (D295 (granules-over-marks), D299 (granules-over-ribbons)). */
 const RENDER_ORDER = 2.5;
 /** The least the fade's two bounds are taken to stand apart, in pixels, so bounds set equal cut and never divide by nothing. */
 const FADE_LEAST = 1e-4;
@@ -125,9 +128,11 @@ const none = (why: string): Nuclei => ({
 /**
  * The granules of a map on the skin's relief, at the skin's amplitude and
  * lift and on the surface's layer, as the files are, in the registry's live
- * look. `composites` are the map's: with any, no granule is drawn.
+ * look. `composites` are the map's: with any, no granule is drawn. Left out,
+ * the scene reads them from the map, so a map past the threshold draws none
+ * whether or not the caller remembered them.
  */
-export const createNuclei = (map: MapJson, relief: DataTexture, grid: Grid, amp: Float, lift: Float, surface: Float, look: NucleiLook, composites: readonly Composite[] = []): Nuclei => {
+export const createNuclei = (map: MapJson, relief: DataTexture, grid: Grid, amp: Float, lift: Float, surface: Float, look: NucleiLook, composites?: readonly Composite[]): Nuclei => {
   const first = nucleiOf(map, composites, look.nucleus);
   if (first.off !== undefined) return none(`off: ${first.off}`);
   const positions = map.terrain.layout?.positions ?? {};
@@ -220,8 +225,9 @@ export const createNuclei = (map: MapJson, relief: DataTexture, grid: Grid, amp:
   const shown = surface.mul(drawn);
   material.colorNode = ink;
   material.opacityNode = shown;
-  // Base tissue never blooms (D152, D11): a granule writes no light, and dims what lies beneath it by its own opacity, as the slide's bodies do (D296 (granules-dim-bloom)).
-  material.mrtNode = mrt({ emissive: vec4(0, 0, 0, shown) });
+  // Base tissue never blooms (D152, D11): a granule writes no light. Only the pass's own colour blends; every other target takes what is written whole, so this
+  // replaces the light beneath the disc at any opacity. Alpha 1, as the files write, keeps that the same where a backend blends every target by the material (D298 (granules-blot-bloom)).
+  material.mrtNode = mrt({ emissive: vec4(0, 0, 0, 1) });
 
   const mesh = new Mesh(geometry, material);
   mesh.frustumCulled = false;
@@ -255,7 +261,8 @@ export const createNuclei = (map: MapJson, relief: DataTexture, grid: Grid, amp:
       from.value = look.levels.granuleFrom;
       full.value = look.levels.granuleFull;
       inked();
-      if (laidBy(look.nucleus) !== laidFor) lay(nucleiOf(map, composites, look.nucleus).granules);
+      // No composites stand on this map, or there would be no mesh to lay in.
+      if (laidBy(look.nucleus) !== laidFor) lay(nucleiOf(map, [], look.nucleus).granules);
     },
     hide: (cell, fade) => {
       const number = cell === undefined ? 0 : (cellNumber.get(cell) ?? 0);
