@@ -82,8 +82,17 @@ test('a count of functions alone makes no granule, and neither does a file the l
   const { [TOOLS]: _place, ...positions } = DEMO.terrain.layout?.positions ?? {};
   const unplaced: MapJson = { ...DEMO, terrain: { ...DEMO.terrain, ...(DEMO.terrain.layout === undefined ? {} : { layout: { ...DEMO.terrain.layout, positions } }) } };
   expect(of(nucleiOf(unplaced).granules, TOOLS)).toEqual([]);
+});
+
+test('a map none of whose placed files carries function data has no granules and says nobody read them, which a file that names no functions does not (C2)', () => {
+  const unread: MapJson = { ...DEMO, terrain: { ...DEMO.terrain, organelles: DEMO.terrain.organelles.map(({ functions: _functions, ...rest }) => ({ ...rest, function_count: 3 })) } };
+  expect(nucleiOf(unread)).toEqual({ granules: [], off: 'no function data' });
+  // A map the layout placed nothing on has no file to carry any.
   const { layout: _layout, ...bare } = DEMO.terrain;
-  expect(nucleiOf({ ...DEMO, terrain: bare }).granules).toEqual([]);
+  expect(nucleiOf({ ...DEMO, terrain: bare })).toEqual({ granules: [], off: 'no function data' });
+  // Function data that names no function is read, and is none: no reason is given.
+  const empty: MapJson = { ...DEMO, terrain: { ...DEMO.terrain, organelles: DEMO.terrain.organelles.map((organelle) => (organelle.functions === undefined ? organelle : { ...organelle, functions: [] })) } };
+  expect(nucleiOf(empty)).toEqual({ granules: [] });
 });
 
 test("each granule lies inside its file's padded core, in layout units, about the place the layout gave the file", () => {
@@ -154,4 +163,7 @@ test('a map whose packages stand as composites has no granules, and says why', (
   const composites = compositesOf(DEMO, placed - 1);
   expect(composites.length).toBeGreaterThan(0);
   expect(nucleiOf(DEMO, composites)).toEqual({ granules: [], off: 'composites' });
+  // The composites are the first reason given, whatever the files carry.
+  const unread: MapJson = { ...DEMO, terrain: { ...DEMO.terrain, organelles: DEMO.terrain.organelles.map(({ functions: _functions, ...rest }) => rest) } };
+  expect(nucleiOf(unread, composites).off).toBe('composites');
 });

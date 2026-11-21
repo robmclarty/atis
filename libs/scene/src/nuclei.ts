@@ -16,7 +16,9 @@
  * Past 5,000 placed files, where each package stands as one composite (C14),
  * the map draws none and says why (D292 (granules-off-composites)): a closed
  * package draws none of its files, and the cost of a granule per function on
- * a repo that size is not measured.
+ * a repo that size is not measured. A map none of whose placed files carries
+ * function data says that too, since no granules there means nobody read the
+ * functions, not that there are none (D293 (granules-unmeasured), C2).
  *
  * Pure (C1), and one map and one set of tokens give one list, in path order
  * and then line order (C3).
@@ -48,8 +50,11 @@ export type RestGranule = {
   readonly breached: boolean;
 };
 
-/** The map's granules at rest, files in path order and each file's in line order; or none and why, on a map whose packages stand as composites. */
-export type RestNuclei = { readonly granules: readonly RestGranule[]; readonly off?: 'composites' };
+/** Why a map draws no granules at all: its packages stand as composites, or none of its placed files carries function data. */
+export type NucleiOff = 'composites' | 'no function data';
+
+/** The map's granules at rest, files in path order and each file's in line order; or none and why. */
+export type RestNuclei = { readonly granules: readonly RestGranule[]; readonly off?: NucleiOff };
 
 /**
  * Every placed file's granules at rest. `composites` are the map's, as
@@ -59,6 +64,7 @@ export type RestNuclei = { readonly granules: readonly RestGranule[]; readonly o
 export function nucleiOf(map: MapJson, composites: readonly Composite[] = compositesOf(map), tokens: NucleusTokens = NUCLEUS_TOKENS): RestNuclei {
   if (composites.length > 0) return { granules: [], off: 'composites' };
   const positions = map.terrain.layout?.positions ?? {};
+  if (!map.terrain.organelles.some((organelle) => organelle.functions !== undefined && positions[organelle.id] !== undefined)) return { granules: [], off: 'no function data' };
   // The lines of the largest file each module's slide shows, read once a module.
   const most = new Map<string, number>();
   const mostLinesOf = (module: string): number => {
