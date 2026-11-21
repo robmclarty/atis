@@ -12,13 +12,22 @@
  * A later map is reduced exactly as the approved one was, and the two
  * reductions are compared (D305 (one-reduction)), so a count is held against
  * the same count read the same way. What a map carries is the limit of it.
- * A module's files, the names it exports, the imports past its interface and
- * the outside packages are the head's on every map. Its lines and its fan
- * out are the terrain's, which on a change map is the base's with the files
- * the change added (D32), so a file the change only modified moves neither.
- * Two maps cut over one base compare exactly; a shape approved from one base
- * and held against a map of another differs in those two counts by whatever
- * lay between the bases.
+ *
+ * A module's files, the names a barrel or a single file exports, the imports
+ * past an interface and the outside packages are the head's on every map.
+ * Three readings are the terrain's instead: a module's lines, its fan out,
+ * and the names of an interface that is no barrel and so is found by who
+ * imports it. A change map's terrain is its base's tree with the files the
+ * change added (D32, D39), so there those three are the base's: a file the
+ * change only modified moves none of them, and they are told for new files
+ * alone (D309 (no-diff-estimate)).
+ *
+ * So the three are compared only between terrains that can be: both cut
+ * from one commit, or each its head's own, as a whole-repo map's is
+ * (D308 (same-terrain)). Held against a map over another base they would
+ * tell what the approved change itself edited, since the document holds the
+ * base's numbers under the head's name, and there they yield nothing.
+ * `sharesTerrain` says which it is, for whoever must say so in words.
  */
 
 import { DEPARTURE_KINDS } from './schema.js';
@@ -59,12 +68,16 @@ export type ApprovedModule = {
  * The approved shape (D212 (approved-private)): the head it was approved at,
  * as that map's `meta.head` wrote it, every module that head holds, sorted by
  * path and then by kind, and the outside packages it imports, sorted, absent
- * where the map listed none (D301 (unread-lists)).
+ * where the map listed none (D301 (unread-lists)). `over` is the commit that
+ * map's terrain was cut from, its `meta.merge_base`: the base of a change, or
+ * the head itself where the terrain was the head's own
+ * (D308 (same-terrain)). A document that names none shares no map's terrain.
  */
 export type Approved = {
   readonly schema_version: typeof APPROVED_SCHEMA_VERSION;
   readonly kind: typeof APPROVED_KIND;
   readonly approved_at: string;
+  readonly over?: string;
   readonly modules: readonly ApprovedModule[];
   readonly dependencies?: readonly string[];
 };
@@ -205,9 +218,10 @@ function heldOf(map: MapJson): readonly Held[] {
 
 /**
  * Reduce a map to the shape its owner approves (D212 (approved-private)):
- * the head it is of, every module that head holds, and the outside packages
- * it imports where the map lists them. It reads the map alone and holds no
- * clock, so one map reduces to one document, byte for byte (C3).
+ * the head it is of, the commit its terrain is cut from, every module that
+ * head holds, and the outside packages it imports where the map lists them.
+ * It reads the map alone and holds no clock, so one map reduces to one
+ * document, byte for byte (C3).
  */
 export function approvedOf(map: MapJson): Approved {
   const dependencies = map.weather.dependencies?.map((dependency) => dependency.name);
@@ -215,6 +229,7 @@ export function approvedOf(map: MapJson): Approved {
     schema_version: APPROVED_SCHEMA_VERSION,
     kind: APPROVED_KIND,
     approved_at: map.meta.head,
+    over: map.meta.merge_base,
     modules: heldOf(map)
       .map((held) => held.module)
       .toSorted(byModule),
@@ -298,6 +313,7 @@ function assertShape(value: unknown): asserts value is Approved {
   if (value['schema_version'] !== APPROVED_SCHEMA_VERSION) fail('$.schema_version', `expected ${String(APPROVED_SCHEMA_VERSION)}`);
   if (value['kind'] !== APPROVED_KIND) fail('$.kind', `expected "${APPROVED_KIND}"`);
   if (typeof value['approved_at'] !== 'string' || value['approved_at'] === '') fail('$.approved_at', 'expected the head the shape was approved at');
+  if (value['over'] !== undefined && (typeof value['over'] !== 'string' || value['over'] === '')) fail('$.over', 'expected the commit the terrain was cut from');
   assertModules(value['modules'], '$.modules');
   if (value['dependencies'] !== undefined) assertNames(value['dependencies'], '$.dependencies');
 }
@@ -333,12 +349,49 @@ function newNames(was: ApprovedModule, now: ApprovedModule): readonly string[] {
 }
 
 /**
+ * Whether the approved shape and a map read their terrains alike, so that
+ * what a terrain counts can be held against it (D308 (same-terrain)): both
+ * are cut from one commit, or each is its head's own and so exact. A change
+ * map's terrain is its base's (D32), so a shape approved from a change shares
+ * none with a map over another base, a whole-repo map of the very same head
+ * among them: the base's numbers on one side would meet the head's on the
+ * other, and what the approved change itself edited would read as grown
+ * since. A document that names no commit shares none either.
+ */
+export function sharesTerrain(doc: Approved, map: MapJson): boolean {
+  if (doc.over === undefined) return false;
+  if (doc.over === map.meta.merge_base) return true;
+  return doc.over === doc.approved_at && map.meta.merge_base === map.meta.head;
+}
+
+/**
+ * Whether a module's interface is found by who imports it, which the
+ * terrain's edges decide: it has no barrel, the one interface imports are
+ * counted `through` (D192), and it is no single file, which is its own.
+ */
+function isEnteredByEdges(module: ApprovedModule): boolean {
+  return module.kind !== 'single' && module.through === undefined;
+}
+
+/** Whether a kind of growth, between these two readings of one module, is read from the terrain and not from the head (D308 (same-terrain)). */
+function readsTerrain(kind: GrowthKind, was: ApprovedModule, now: ApprovedModule): boolean {
+  if (kind === 'lines-grown' || kind === 'fan-out-up') return true;
+  return kind === 'interface-widened' && (isEnteredByEdges(was) || isEnteredByEdges(now));
+}
+
+/** What a module's counts are held to: the limits, and whether the two terrains can be compared (D308 (same-terrain)). */
+type Measure = { readonly limits: DepartureLimits; readonly shared: boolean };
+
+/**
  * The counts of one module that grew past their limits since it was approved.
  * A count either side carries none of yields nothing, never a zero that
- * would read as growth from none or to none (C2).
+ * would read as growth from none or to none (C2); and a count the terrain
+ * gives yields nothing between two terrains that share no commit, where it
+ * was not measured against the same ground (D308 (same-terrain)).
  */
-function grownOf(cell: string, was: ApprovedModule, now: ApprovedModule, limits: DepartureLimits): readonly Departure[] {
+function grownOf(cell: string, was: ApprovedModule, now: ApprovedModule, { limits, shared }: Measure): readonly Departure[] {
   return GROWTH_KINDS.flatMap((kind): Departure[] => {
+    if (!shared && readsTerrain(kind, was, now)) return [];
     const [before, after] = [COUNT_OF[kind](was), COUNT_OF[kind](now)];
     if (before === undefined || after === undefined || !isPast(before, after, limits[kind])) return [];
     const told = { kind, target: now.path, cell, why: WHY[kind], was: before, now: after };
@@ -383,12 +436,15 @@ function orderOf(departure: Departure): string {
  * to a cell of the map by its path and by whether it is a package, never by
  * its id and never by its path alone (D218 (departure-cell)); each departure
  * about a module names the map's cell, or for a module removed the id it had.
+ * Lines, fan out and an interface with no barrel are held only against a map
+ * that shares the shape's terrain (D308 (same-terrain)).
  */
 export function departuresOf(doc: Approved, map: MapJson, limits: DepartureLimits = DEPARTURE_LIMITS): readonly Departure[] {
   const approved = new Map(doc.modules.map((module) => [keyOf(module), module] as const));
+  const measure: Measure = { limits, shared: sharesTerrain(doc, map) };
   const moved = heldOf(map).flatMap(({ cell, module }): readonly Departure[] => {
     const was = approved.get(keyOf(module));
-    if (was !== undefined) return grownOf(cell, was, module, limits);
+    if (was !== undefined) return grownOf(cell, was, module, measure);
     return [{ kind: 'module-added', target: module.path, cell, why: WHY['module-added'], now: module.files }];
   });
   return [...moved, ...removedOf(doc, map), ...dependenciesOf(doc, map)].toSorted((a, b) => byText(orderOf(a), orderOf(b)));
