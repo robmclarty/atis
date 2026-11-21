@@ -389,8 +389,11 @@ const NUCLEUS_DRAW = 170;
 /** The densest a spiral of granules is laid, as the share of its disc they cover: past it equal neighbours on the spiral would lie over one another. */
 const NUCLEUS_PACK_MOST = 0.55;
 
+/** What a nucleus is laid from: the file's path, its lines, and the functions the head scan read in it, where it read any. A file on a slide is one, and so is a file at rest on the map (D290 (nucleus-by-number)). */
+export type NucleusFile = Pick<SlideFile, 'id' | 'lines' | 'functions'>;
+
 /** Each file's nucleus as last laid, so a frame that asks again for the same core and tokens gets the one laid. */
-const NUCLEI = new WeakMap<SlideFile, { readonly key: string; readonly nucleus: Nucleus }>();
+const NUCLEI = new WeakMap<NucleusFile, { readonly key: string; readonly nucleus: Nucleus }>();
 
 /**
  * A file's nucleus inside its outline (D197): one granule per function the
@@ -410,12 +413,15 @@ const NUCLEI = new WeakMap<SlideFile, { readonly key: string; readonly nucleus: 
  * counted. None for a file the scan read no functions in, never one made
  * from a count alone (C2). The granules lie from the body's middle and do
  * not pulse or turn: one file, one core and one set of tokens give one
- * nucleus (C3).
+ * nucleus (C3). `mostLines` is the line count the fill is measured against,
+ * handed in as a number (D290 (nucleus-by-number)): the slide's largest file
+ * for a body on a slide, and the same for a file at rest on the map, which
+ * has no slide to read it from.
  */
-export function nucleusOf(file: SlideFile, outline: Outline, slide: Slide, tokens: NucleusTokens = NUCLEUS_TOKENS): Nucleus | undefined {
+export function nucleusOf(file: NucleusFile, outline: Outline, mostLines: number, tokens: NucleusTokens = NUCLEUS_TOKENS): Nucleus | undefined {
   const functions = file.functions;
-  if (functions === undefined || functions.length === 0 || file.lines <= 0 || slide.mostLines <= 0 || outline.core <= 0) return undefined;
-  const key = [outline.core, slide.mostLines, tokens.NUCLEUS_FILL, tokens.NUCLEUS_PAD, tokens.NUCLEUS_MOST].join(' ');
+  if (functions === undefined || functions.length === 0 || file.lines <= 0 || mostLines <= 0 || outline.core <= 0) return undefined;
+  const key = [outline.core, mostLines, tokens.NUCLEUS_FILL, tokens.NUCLEUS_PAD, tokens.NUCLEUS_MOST].join(' ');
   const last = NUCLEI.get(file);
   if (last?.key === key) return last.nucleus;
 
@@ -428,7 +434,7 @@ export function nucleusOf(file: SlideFile, outline: Outline, slide: Slide, token
       .map((each) => each.index),
   );
   const drawn = functions.filter((_, index) => kept.has(index));
-  const fill = clamp01(tokens.NUCLEUS_FILL) * Math.min(1, file.lines / slide.mostLines);
+  const fill = clamp01(tokens.NUCLEUS_FILL) * Math.min(1, file.lines / mostLines);
   const pad = clamp01(tokens.NUCLEUS_PAD);
   const limit = outline.core * (1 - pad);
   // A full nucleus spans the padded core, so the spiral is as dense as that takes, and never so dense its granules overlap.
@@ -488,7 +494,7 @@ export function interiorOf(slide: Slide, motion: InteriorMotion = {}): readonly 
     const r = file.rest.r;
     const score = demo?.get(file.id) ?? file.score;
     const outline = outlineOf(file.id, { x, y, r }, score, shape(score));
-    const nucleus = nucleusOf(file, outline, slide, motion.nucleus);
+    const nucleus = nucleusOf(file, outline, slide.mostLines, motion.nucleus);
     return { ...file, score, x, y, r, outline, ...(nucleus === undefined ? {} : { nucleus }) };
   });
 }
