@@ -296,6 +296,9 @@ test('the tab opens on the lit surface with no zoom asked for and no planet, and
     await page.waitForTimeout(600);
     expect(await page.getAttribute('#world', 'data-lod')).toBe('2');
     await nothingOpen();
+    // No level says the view is at a file now, so its size on the screen does: this near, the walk stands at the file (D230 (file-stop-by-size)).
+    expect(await page.getAttribute('[data-crumbs]', 'data-crumbs')).toBe('organelle');
+    expect(await page.textContent('[data-crumbs] [data-crumb]:last-child')).toBe('+tools.ts');
     expect(complaints).toEqual([]);
   } finally {
     await browser.close();

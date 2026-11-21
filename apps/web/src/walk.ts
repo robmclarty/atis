@@ -10,7 +10,11 @@
  * group's block in the rail when the shore holds it (D153). When the reviewer
  * moves the camera by hand, the stop is read back off the view: the field
  * from the far field, and from the surface on, the cell under the view's
- * centre, or the file there at the file's level. The walk also says where
+ * centre, or the file there. Under the old levels a file is the stop from the
+ * file's level on. The one surface never reaches that level, so there the
+ * caller says how large a file must be drawn to be stood at, and a file under
+ * the centre is the stop once it is that large (D230 (file-stop-by-size)).
+ * The walk also says where
  * the ground the world draws lies on the layout, the box round every cell's
  * skin and every placed file: the layout holds the shore's strip above its
  * first band too, which the world never draws, so the tab opens framed on
@@ -49,8 +53,13 @@ export type Walk = {
   /** Into the child of a stop under a layout point, else the child nearest it. */
   readonly descend: (stop: Stop, toward: Point) => Stop | undefined;
   readonly sibling: (stop: Stop, direction: Direction) => Stop | undefined;
-  /** The stop a view shows: what lies under its centre at its level of detail. */
-  readonly stopAt: (centre: Point, lod: Lod) => Stop;
+  /**
+   * The stop a view shows: what lies under its centre at its level of detail.
+   * A file there is the stop from the file's level on, or, given `least`, the
+   * least radius in layout units a file is stood at, once the file is that
+   * large, whatever the level (D230 (file-stop-by-size)); under it, its cell.
+   */
+  readonly stopAt: (centre: Point, lod: Lod, least?: number) => Stop;
   /** Where a key takes the walk from a stop, the view centred on `centre`; none for a key the walk does not take or a way that leads nowhere. */
   readonly key: (stop: Stop, key: string, centre: Point) => Stop | undefined;
 };
@@ -59,6 +68,9 @@ const STEPS: Readonly<Record<string, Direction>> = { ArrowLeft: 'left', ArrowRig
 
 /** Each direction on the layout, y down as the screen's is when the view looks north. */
 const HEADINGS: Readonly<Record<Direction, Point>> = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] };
+
+/** The level of detail a file is stood at from, under the old levels (§6). */
+const FILE_LOD = 3;
 
 /** How much a sibling off the arrow's line counts against it beside how far along the line it lies. */
 const OFF_LINE = 2;
@@ -206,12 +218,13 @@ export const createWalk = (map: MapJson): Walk => {
       .toSorted((a, b) => a.score - b.score || byPath(idOf(a.stop), idOf(b.stop)))[0]?.stop;
   };
 
-  const stopAt = (point: Point, lod: Lod): Stop => {
+  const stopAt = (point: Point, lod: Lod, least?: number): Stop => {
     if (lod === 0) return FIELD;
     const pick = picker.pick(point, lod, 0);
     if (pick === undefined) return FIELD;
     if (pick.kind === 'membrane') return cellStop(pick.cell);
-    return lod >= 3 ? (fileStop(pick.path) ?? cellStop(pick.cell)) : cellStop(pick.cell);
+    const stood = least === undefined ? lod >= FILE_LOD : pick.r >= least;
+    return stood ? (fileStop(pick.path) ?? cellStop(pick.cell)) : cellStop(pick.cell);
   };
 
   /** A cell's name in the breadcrumb: its path below the cell that holds it, or its whole path at the top. */

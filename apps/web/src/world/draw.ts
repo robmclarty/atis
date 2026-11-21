@@ -50,7 +50,9 @@
  * (D206 (detail-by-size), D233 (asked-before-sized)). A notice's row, the
  * arrows, Enter and Escape fly the camera to a stop along the scheduler's
  * fly-to, and the skin swings as it lands; the stop goes back over the line
- * for the HUD's breadcrumb (step 39). A target an agent names over
+ * for the HUD's breadcrumb (step 39). A view moved by
+ * hand stands at the file under its centre once that file is drawn large
+ * enough to be named (D230 (file-stop-by-size)). A target an agent names over
  * `atis mcp` flies there too, and is lit: its labels written until the
  * reader takes the camera, and a notice flared at its anchor (D178). On the
  * one surface a selected module opens in place as a stained slide (D205
@@ -964,7 +966,9 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     }
     if (readStop && flight === undefined) {
       // Under the walk's own zoom the view stands at the field, whatever lies under its centre: no level says so now that the far field's is parked (D219 (field-by-zoom)). The zoom is measured over the frame the field stands at, which is the fit only under the old levels (D223 (field-over-frame)): on a map with a deep shore the tab opens well past 1.7 times the fit, with the whole ground in view.
-      if (middle !== undefined) settle(walk.stopAt(middle, camera.zoom < walkLook.fieldZoom * (fieldFrame()?.zoom ?? 1) ? 0 : lod));
+      // The one surface has no file level, so past the field the view stands at the file under its centre once that file is drawn large enough to be named, and at its module while it is smaller (D230 (file-stop-by-size)); under the old levels the file's level says so as it did.
+      const least = levels.autoOpen > 0 ? undefined : levels.fileNameFrom / pixelsPerUnit(camera, canvas.clientWidth);
+      if (middle !== undefined) settle(walk.stopAt(middle, camera.zoom < walkLook.fieldZoom * (fieldFrame()?.zoom ?? 1) ? 0 : lod, least));
       readStop = false;
     }
     // The slide (step 40): laid when the cell it shows changes, its bodies laid every frame where the scene has them, and the surface's files and marks in it giving way as it fades in.

@@ -304,7 +304,7 @@ export type LevelsLook = {
   readonly autoOpen: number;
   /** Above 0, selecting a module opens it as the living slide in place, and clearing the selection closes it. At 0, and while `autoOpen` is above 0, a selection is only ringed and named. */
   readonly openOnSelect: number;
-  /** The radius on the screen, in pixels, from which a file's name is written unasked. */
+  /** The radius on the screen, in pixels, from which a file's name is written unasked, and from which a view moved by hand stands at the file under its centre (D230 (file-stop-by-size)). */
   readonly fileNameFrom: number;
   /** A function's granule fades in as its radius on the screen grows from `granuleFrom` pixels, where none of it shows, to `granuleFull`, where all of it does. */
   readonly granuleFrom: number;
