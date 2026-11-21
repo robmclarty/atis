@@ -100,7 +100,9 @@ answered.
                   commands that reach the network, and only when typed
   --watch         keep serving the world and, when HEAD, the index or
                   .check/summary.json changes, rebuild the map and push its
-                  weather to the open tab over the terrain it already shows
+                  weather to the open tab over the terrain it already shows;
+                  with --working-tree, or once the tab has switched to the
+                  working tree, an edit that stages nothing is followed too
   --tour <file>   play a reviewer's tour in the served world, a stepper that
                   flies to each stop with its sentence; the tour must be one
                   written for this map's base and head, by the workspace's

@@ -1044,11 +1044,14 @@ const rebuiltOf = ({ map, tree }: Measured): Rebuilt => ({ map: serialize(map), 
  * mid-scan is never missed, and each time the signature moves it rebuilds
  * the map over the base the page last switched to, else as the flags asked,
  * through the terrain cache, and pushes it to the tab; a rebuild that fails
- * keeps the map the tab holds and says why (D106). While it serves, it says
- * how to reach it in the `atis/serve.json` its working tree's git directory
- * keeps, so `atis mcp` started in the same working tree can point at the tab
- * (D138, D190); a repository that will not take the file is still served,
- * and the run says `atis mcp` will not find it.
+ * keeps the map the tab holds and says why (D106). While the head is the
+ * working tree, the signature moves with an edit that stages nothing too, so
+ * the tab follows a coding agent as it writes (D313 (watch-working-term)).
+ * While it serves, it says how to reach it in the `atis/serve.json` its
+ * working tree's git directory keeps, so `atis mcp` started in the same
+ * working tree can point at the tab (D138, D190); a repository that will not
+ * take the file is still served, and the run says `atis mcp` will not find
+ * it.
  * Handed `--tour`, it serves the tour beside the map for the world to play,
  * once it holds it to the map: a tour written for another base or head exits
  * 2 naming both, since its stops would fly to files this map may not place
@@ -1064,7 +1067,10 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
     const repo = resolve(options.repo);
     // The tour is read before the scan is spent, so a broken file fails at once (C4).
     const tour = options.tour === undefined ? undefined : tourAt(resolve(options.tour));
-    const watched = options.watch === true ? watchedIn(repo) : undefined;
+    // The head the watch follows is the working tree by the flag, or once the page has switched to it, as `mapOver` reads the two (D313 (watch-working-term)).
+    let asked: Served['asked'] | undefined;
+    const byFlag = typeof options.head === 'object';
+    const watched = options.watch === true ? watchedIn(repo, () => byFlag || asked?.()?.working_tree === true) : undefined;
     const from = watched === undefined ? undefined : await signatureOf(watched);
     const asTyped = { base: options.base, head: options.head, range: options.range, wholeRepo: options.wholeRepo, cache: options.cache !== false, history: options.history };
     const measured = measure(options.repo, asTyped);
@@ -1087,6 +1093,7 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
       tour: tour?.text,
     });
     timings.push({ source: 'serve', ms: Math.round(performance.now() - started) });
+    asked = served.asked;
     const log = options.watchLog ?? ((line: string) => process.stderr.write(line));
     const watching =
       watched === undefined || from === undefined
