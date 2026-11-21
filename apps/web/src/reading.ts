@@ -157,15 +157,23 @@ const pastInterface = (map: MapJson, most: number): ReadingList => {
   return { ...ranked(id, title, rows, most, 'no import goes past an interface'), ...note };
 };
 
-/** The files no entry point reaches, the largest first, with where the entry points were read from when it was the manifests alone (D22). */
+/**
+ * The files no entry point reaches, the largest first (D22). Where the entry
+ * points were read from the manifests alone the list is headed by what it
+ * is, the files no manifest's entry point reaches, and says where they were
+ * read from: an entry no manifest names, as a page's script is, reaches
+ * files this list then holds, so it is not a list of dead files
+ * (D338 (reach-by-manifests)).
+ */
 const unreachable = (map: MapJson, files: readonly Organelle[], most: number): ReadingList => {
   const rows = files
     .filter((file) => !file.reachable)
     .toSorted((a, b) => b.loc - a.loc || byText(a.id, b.id))
     .map((file): ReadingRow => ({ words: file.id, count: counted(file.loc, 'line'), selects: fileStop(file) }));
   const { entry_points: source, entry_points_reason: reason } = map.meta.instruments;
-  const note = source === 'manifests' ? { note: `the entry points were read from the manifests alone${reason === undefined ? '' : `: ${reason}`}` } : {};
-  return { ...ranked('unreachable', 'unreachable files', rows, most, 'an entry point reaches every file'), ...note };
+  if (source !== 'manifests') return ranked('unreachable', 'unreachable files', rows, most, 'an entry point reaches every file');
+  const note = `the entry points were read from the manifests alone${reason === undefined ? '' : `: ${reason}`}`;
+  return { ...ranked('unreachable', "files no manifest's entry point reaches", rows, most, "a manifest's entry point reaches every file"), note };
 };
 
 /** The longest functions the head scan read, each selecting its file; muted where it read functions in no file (D102). */

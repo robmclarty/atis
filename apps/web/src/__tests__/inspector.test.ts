@@ -323,6 +323,24 @@ test('a file the change did not touch has no change to show, and one the history
   expect(unseen.functions).toEqual({ muted: 'the head scan read no functions in it' });
 });
 
+test("a file no entry point reaches says no where fallow read the entry points, and is muted with why where the manifests alone named them, since an entry no manifest names may reach it (D338 (reach-by-manifests), C2)", () => {
+  const adrift = (instruments: Partial<MapJson['meta']['instruments']>): MapJson => ({
+    ...DEMO,
+    meta: { ...DEMO.meta, instruments: { ...DEMO.meta.instruments, ...instruments } },
+    terrain: { ...DEMO.terrain, organelles: DEMO.terrain.organelles.map((file) => (file.id === SLOTS ? { ...file, reachable: false } : file)) },
+  });
+  // Fallow read the entry points, and none reaches the file: that is a reading.
+  expect(factsOf(fileAt(adrift({ entry_points: 'fallow' }), SLOTS))['reachable']).toEqual({ label: 'reachable', value: 'no' });
+  // The manifests alone: no entry they name reaches it, which is not the same as none does.
+  const byManifests = adrift({ entry_points: 'manifests', entry_points_reason: 'typescript: no local fallow at node_modules/.bin/fallow' });
+  expect(factsOf(fileAt(byManifests, SLOTS))['reachable']).toEqual({
+    label: 'reachable',
+    muted: "no manifest's entry point reaches it, and the entry points were read from the manifests alone: typescript: no local fallow at node_modules/.bin/fallow",
+  });
+  // A file a manifest's entry does reach is reached, whatever read the entry points.
+  expect(factsOf(fileAt(byManifests, TOOLS))['reachable']).toEqual({ label: 'reachable', value: 'yes' });
+});
+
 test("a renamed file says where it came from, and a whole repo's map says it is of no change", () => {
   const changed = DEMO.weather.changed.map((file) => (file.path === 'libs/core/src/pm/index.ts' ? { ...file, kind: 'renamed' as const, from: 'libs/core/src/pm/main.ts' } : file));
   const renamed = fileAt({ ...DEMO, weather: { ...DEMO.weather, changed } }, 'libs/core/src/pm/index.ts');

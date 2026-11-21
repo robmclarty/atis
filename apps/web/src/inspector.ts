@@ -506,6 +506,21 @@ const changeFact = (map: MapJson, changed: ChangedFile | undefined): Fact => {
   return fact('change', `${moved} ${DOT} +${String(changed.added)} ${MINUS}${String(changed.deleted)}`);
 };
 
+/**
+ * Whether an entry point reaches a file (D22). A file one reaches is
+ * reached, wherever the entry points were read from. One that none reaches
+ * is known to be unreached only where fallow read them: the manifests alone
+ * name no page's script and no entry a tool finds by convention, so there
+ * the map cannot say, and the fact is muted with why, as any fact the map
+ * did not measure is (C2, D338 (reach-by-manifests)).
+ */
+const reachableFact = (map: MapJson, file: Organelle): Fact => {
+  if (file.reachable) return fact('reachable', 'yes');
+  const { entry_points: source, entry_points_reason: reason } = map.meta.instruments;
+  if (source !== 'manifests') return fact('reachable', 'no');
+  return mutedFact('reachable', `no manifest's entry point reaches it, and the entry points were read from the manifests alone${reason === undefined ? '' : `: ${reason}`}`);
+};
+
 const fileFacts = (map: MapJson, file: Organelle, changed: ChangedFile | undefined): readonly Fact[] => {
   const gone = changed?.kind === 'deleted';
   const age = file.stability?.age_days ?? file.age_days;
@@ -514,7 +529,7 @@ const fileFacts = (map: MapJson, file: Organelle, changed: ChangedFile | undefin
   return [
     fact('lines', String(file.loc)),
     fact('band', String(file.band)),
-    fact('reachable', file.reachable ? 'yes' : 'no'),
+    reachableFact(map, file),
     file.ties === undefined
       ? mutedFact('ties', gone ? 'a deleted file ties nothing at head' : 'the map carries no ties for it')
       : fact('ties', `${String(file.ties.inside)} inside its module, ${String(file.ties.outside)} outside`),

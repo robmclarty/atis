@@ -227,7 +227,7 @@ test('a map that carries no fan for its modules mutes both fan lists, where fans
   expect(listOf(apart, 'most-depended-on').muted).toBeUndefined();
 });
 
-test('the unreachable files are the ones no entry point reaches, the largest first, and none is said as none', () => {
+test("the unreachable files are the ones no entry point reaches, the largest first, and none is said as none; where the manifests alone named the entry points the list is headed by what it is and says so (D338 (reach-by-manifests))", () => {
   expect(listOf(STRIPPED, 'unreachable')).toEqual({ id: 'unreachable', title: 'unreachable files', rows: [], of: 0, empty: 'an entry point reaches every file' });
 
   const adrift = new Set([SLOTS, 'libs/core/src/util/text.ts', 'libs/core/src/pm/legacy.ts']);
@@ -237,16 +237,28 @@ test('the unreachable files are the ones no entry point reaches, the largest fir
     meta: { ...STRIPPED.meta, instruments: { ...STRIPPED.meta.instruments, entry_points: 'manifests', entry_points_reason: 'fallow is not installed' } },
     terrain: { ...STRIPPED.terrain, organelles },
   };
+  const rows = [
+    { words: SLOTS, count: '88 lines', selects: { kind: 'organelle', path: SLOTS, cell: PM } },
+    { words: 'libs/core/src/util/text.ts', count: '37 lines', selects: { kind: 'organelle', path: 'libs/core/src/util/text.ts', cell: UTIL } },
+  ];
   expect(listOf(map, 'unreachable')).toEqual({
     id: 'unreachable',
-    title: 'unreachable files',
+    title: "files no manifest's entry point reaches",
     of: 2,
-    rows: [
-      { words: SLOTS, count: '88 lines', selects: { kind: 'organelle', path: SLOTS, cell: PM } },
-      { words: 'libs/core/src/util/text.ts', count: '37 lines', selects: { kind: 'organelle', path: 'libs/core/src/util/text.ts', cell: UTIL } },
-    ],
+    rows,
     note: 'the entry points were read from the manifests alone: fallow is not installed',
   });
+  // With none, the manifests' reading says only what it can.
+  expect(listOf({ ...map, terrain: STRIPPED.terrain }, 'unreachable')).toEqual({
+    id: 'unreachable',
+    title: "files no manifest's entry point reaches",
+    rows: [],
+    of: 0,
+    empty: "a manifest's entry point reaches every file",
+    note: 'the entry points were read from the manifests alone: fallow is not installed',
+  });
+  // The same files where fallow read the entry points are unreachable, with nothing to add.
+  expect(listOf({ ...map, meta: { ...map.meta, instruments: { ...STRIPPED.meta.instruments, entry_points: 'fallow' } } }, 'unreachable')).toEqual({ id: 'unreachable', title: 'unreachable files', of: 2, rows });
 });
 
 test('the longest functions are ranked by the lines they span, each naming its file and line and selecting the file', () => {
