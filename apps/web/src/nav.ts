@@ -50,6 +50,9 @@ export type Pointed = { readonly target: string; readonly from: PointFrom };
 /** A selection's target: the file's path or the module's cell id, as notices and the hover write them. */
 export const targetOf = (selected: Selected): string => (selected.kind === 'cell' ? selected.cell : selected.path);
 
+/** Whether two selections name the same thing, however each was written down. */
+const alike = (a: Selected | undefined, b: Selected | undefined): boolean => a === b || (a !== undefined && b !== undefined && a.kind === b.kind && a.cell === b.cell && targetOf(a) === targetOf(b));
+
 /** The selection a target names in a map: the file with that path, else the module with that cell id; none for a target the map's terrain holds neither of, a shore file's among them. */
 export const selectedOf = (map: MapJson, target: string): Selected | undefined => {
   const file = map.terrain.organelles.find((each) => each.id === target);
@@ -181,7 +184,7 @@ export const createNav = (): Nav => {
     },
     selected: () => selected,
     select: (next, move) => {
-      const moved = JSON.stringify(next) !== JSON.stringify(selected);
+      const moved = !alike(next, selected);
       if (moved) {
         selected = next;
         tell();

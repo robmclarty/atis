@@ -59,7 +59,8 @@ test('a selection that did not move is heard by nobody and stays the same value,
   nav.select(INDEX, 'stay');
   const held = nav.selected();
   nav.select({ ...INDEX }, 'stay');
-  nav.select({ ...INDEX }, 'fly');
+  // The same file written down in another order is the same selection.
+  nav.select({ cell: INDEX.cell, path: 'libs/core/src/pm/index.ts', kind: 'organelle' }, 'fly');
   expect(nav.selected()).toBe(held);
   expect(heard).toHaveBeenCalledTimes(1);
 
@@ -92,6 +93,12 @@ test('the world is asked to take each selection that moved, to fly again to one 
     [INDEX, 'fly'],
     [undefined, 'stay'],
   ]);
+
+  // A module and a file in it are two selections, and so are two files of one module.
+  nav.select(PM, 'stay');
+  nav.select(INDEX, 'stay');
+  nav.select({ kind: 'organelle', path: TOOLS, cell: PM.cell }, 'stay');
+  expect(selects.slice(4).map(([selected]) => (selected === undefined ? undefined : targetOf(selected)))).toEqual([PM.cell, INDEX.path, TOOLS]);
 });
 
 test('the listeners hear a selection before the world is asked to take it, and a world that lets go is asked no more', () => {
