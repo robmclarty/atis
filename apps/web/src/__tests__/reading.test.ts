@@ -85,15 +85,15 @@ test('every list is there on every map, in the order the map view draws them, th
   expect(reading.departures).toEqual({ approved: false, words: NO_APPROVED_SHAPE });
 });
 
-test('the largest modules are ranked by their lines, each a package or a module with the files inside its contour', () => {
+test('the largest modules are ranked by their lines, each a package or a module with the files inside its contour, as the head holds them (D332 (counts-of-head))', () => {
   expect(listOf(STRIPPED, 'largest-modules')).toEqual({
     id: 'largest-modules',
     title: 'largest modules',
     of: 5,
     rows: [
-      { words: 'libs/core', count: '363 lines', tail: 'package, 7 files', selects: cell(CORE) },
-      { words: 'libs/core/src/pm', count: '260 lines', tail: 'module, 4 files', selects: cell(PM) },
+      { words: 'libs/core', count: '318 lines', tail: 'package, 6 files', selects: cell(CORE) },
       { words: 'apps/cli', count: '236 lines', tail: 'package, 2 files', selects: cell(CLI) },
+      { words: 'libs/core/src/pm', count: '215 lines', tail: 'module, 3 files', selects: cell(PM) },
       { words: DOCTOR, count: '212 lines', tail: 'module, 1 file', selects: cell(`single:${DOCTOR}`) },
       { words: 'libs/core/src/util', count: '89 lines', tail: 'module, a directory, 2 files', selects: cell(UTIL) },
     ],

@@ -14,9 +14,10 @@
  * outside package's hue, and where none was read the row says so.
  *
  * It is of the head (D254 (reading-of-head)): a file the change deleted is
- * still on the map, and is left out of every list of files and of functions.
- * A module's own counts are the map's, which holds that file until the next
- * terrain.
+ * still on the map, and is left out of every list of files and of functions,
+ * and of a module's files and lines, which are what the head holds, as the
+ * module's own facts and the approved shape count them (D332
+ * (counts-of-head)).
  *
  * Each list is short and ranked, and each row carries the stop a click on it
  * selects. A list with no rows says which of two things it means: `empty`,
@@ -30,7 +31,7 @@ import type { Cell, Dependency, MapJson, Organelle } from 'core';
 import { starHue } from 'scene';
 import type { StarHue } from 'scene';
 
-import { counted, departuresIn } from './inspector.js';
+import { counted, departuresIn, heldAtHead } from './inspector.js';
 import type { Departures } from './inspector.js';
 import { PANEL } from './materials.js';
 import type { Selected } from './nav.js';
@@ -89,27 +90,13 @@ const ranked = (id: ReadingId, title: string, rows: readonly ReadingRow[], most:
 
 const mutedList = (id: ReadingId, title: string, muted: string): ReadingList => ({ id, title, rows: [], of: 0, muted });
 
-/** How many files each cell holds inside its contour, its held cells' included, as its lines are counted (D250 (contour-counts)). */
-const filesInside = (cells: readonly Cell[]): ReadonlyMap<string, number> => {
-  const counts = new Map(cells.map((cell) => [cell.id, cell.organelles.length] as const));
-  const byId = new Map(cells.map((cell) => [cell.id, cell] as const));
-  for (const cell of cells) {
-    const seen = new Set([cell.id]);
-    let holder = cell.parent === undefined ? undefined : byId.get(cell.parent);
-    while (holder !== undefined && !seen.has(holder.id)) {
-      seen.add(holder.id);
-      counts.set(holder.id, (counts.get(holder.id) ?? 0) + cell.organelles.length);
-      holder = holder.parent === undefined ? undefined : byId.get(holder.parent);
-    }
-  }
-  return counts;
-};
-
 const largestModules = (map: MapJson, most: number): ReadingList => {
-  const files = filesInside(map.terrain.cells);
+  // A module is counted by its whole contour (D250 (contour-counts)), in the files and lines the head holds (D332 (counts-of-head)).
+  const tallies = heldAtHead(map);
+  const linesOf = (cell: Cell): number => tallies.get(cell.id)?.lines ?? 0;
   const rows = map.terrain.cells
-    .toSorted((a, b) => b.body_loc - a.body_loc || byText(a.id, b.id))
-    .map((cell): ReadingRow => ({ words: cell.path, count: counted(cell.body_loc, 'line'), tail: `${nounOf(cell)}, ${counted(files.get(cell.id) ?? 0, 'file')}`, selects: cellStop(cell) }));
+    .toSorted((a, b) => linesOf(b) - linesOf(a) || byText(a.id, b.id))
+    .map((cell): ReadingRow => ({ words: cell.path, count: counted(linesOf(cell), 'line'), tail: `${nounOf(cell)}, ${counted(tallies.get(cell.id)?.files ?? 0, 'file')}`, selects: cellStop(cell) }));
   return ranked('largest-modules', 'largest modules', rows, most, 'the map holds no module');
 };
 

@@ -2,11 +2,11 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { assertMap } from 'core';
+import { approvedOf, assertMap, departuresOf, withApproved } from 'core';
 import type { ApprovedBlock, MapJson } from 'core';
 import { expect, test } from 'vitest';
 
-import { NO_APPROVED_SHAPE, counted, departuresIn, inspect, runsIn } from '../inspector.js';
+import { NO_APPROVED_SHAPE, counted, departuresIn, heldAtHead, inspect, runsIn } from '../inspector.js';
 import type { Fact, FileModel, Inspected, ModuleModel } from '../inspector.js';
 import { selectedOf } from '../nav.js';
 import type { Selected } from '../nav.js';
@@ -84,8 +84,9 @@ test("a module is its way down from the map, its facts as the map counts them, a
   expect(pm.facts).toEqual([
     { label: 'kind', value: 'module, a folder with an interface file' },
     { label: 'band', value: '3' },
-    { label: 'files', value: '4' },
-    { label: 'lines', value: '260' },
+    // The change deleted `legacy.ts` and its 45 lines: the head holds three files, and the fact says the fourth went.
+    { label: 'files', value: '3 · 1 deleted by the change' },
+    { label: 'lines', value: '215' },
     { label: 'interface', value: '3 exports' },
     { label: 'fan in', value: '2' },
     { label: 'fan out', value: '1' },
@@ -119,14 +120,14 @@ test('a package is counted by its whole contour: its own files and those of the 
   expect(core.trail).toEqual([{ words: 'map' }, { words: 'libs/core', selects: { kind: 'cell', cell: CORE } }]);
   expect(factsOf(core)).toMatchObject({
     kind: { value: 'package' },
-    files: { value: '7 · 1 its own, 6 in 2 modules it holds' },
-    lines: { value: '363' },
+    files: { value: '6 · 1 its own, 5 in 2 modules it holds · 1 deleted by the change' },
+    lines: { value: '318' },
     'through the interface': { value: '1' },
     'past the interface': { value: '1' },
   });
   expect(core.holds).toEqual([
     { selects: { kind: 'cell', cell: 'directory:libs/core/src/util' }, words: 'src/util', files: 2, lines: 89 },
-    { selects: { kind: 'cell', cell: PM }, words: 'src/pm', files: 4, lines: 260 },
+    { selects: { kind: 'cell', cell: PM }, words: 'src/pm', files: 3, lines: 215 },
   ]);
   expect(core.files.map((file) => [file.words, file.held])).toEqual([
     ['src/index.ts', undefined],
@@ -494,7 +495,14 @@ const moduleFaults = (map: MapJson, id: string): readonly string[] => {
   const last = model.trail.at(-1)?.selects;
   if (model.selected.cell !== id || last?.kind !== 'cell' || last.cell !== id) faults.push(`${id} is not where its way down ends`);
   if (!model.facts.every(sound)) faults.push(`${id} has a fact that is no words`);
-  if (model.files.length !== cell.organelles.length + model.holds.reduce((total, held) => total + held.files, 0)) faults.push(`${id} lists other files than its contour holds`);
+  // The files inside the contour, found the other way round from the model: each file whose cell is this one or is held by it, however deep.
+  const within = (at: string | undefined, seen: ReadonlySet<string> = new Set()): boolean => at !== undefined && !seen.has(at) && (at === id || within(parents.get(at), new Set([...seen, at])));
+  const contour = map.terrain.organelles.filter((file) => within(file.cell));
+  const gone = new Set(map.weather.changed.filter((file) => file.kind === 'deleted').map((file) => file.path));
+  // The list is the whole contour, a file the change deleted among them, marked; the counts are the head's, which holds no such file (D332 (counts-of-head)).
+  if (model.files.length !== contour.length) faults.push(`${id} lists other files than its contour holds`);
+  const own = cell.organelles.filter((path) => !gone.has(path)).length;
+  if (own + model.holds.reduce((total, held) => total + held.files, 0) !== contour.filter((file) => !gone.has(file.path)).length) faults.push(`${id} counts other files than the head holds in its contour`);
   for (const row of model.files) {
     const file = files.get(row.path);
     const selects = row.selects.kind === 'organelle' && row.selects.path === file?.id && row.selects.cell === file.cell;
@@ -561,4 +569,49 @@ test('line numbers are written as runs, each run of neighbours by its two ends',
   expect(runsIn([3, 4, 9, 10, 11, 20])).toBe('3-4, 9-11, 20');
   // Out of order and written twice, they are the same lines.
   expect(runsIn([5, 3, 4, 4, 1])).toBe('1, 3-5');
+});
+
+test("a module's files and lines are what the head holds, the count the approved shape takes of it, on every committed map (D332 (counts-of-head), D300 (held-at-head))", () => {
+  for (const [name, map] of [['demo', DEMO] as const, ...COMMITTED]) {
+    const tallies = heldAtHead(map);
+    const approved = approvedOf(map).modules;
+    // The approved shape lists each module the head holds a file of, by its path and kind, which is its cell's id.
+    expect(approved.map((module) => `${module.kind}:${module.path}`).toSorted(), name).toEqual([...tallies].flatMap(([cell, tally]) => (tally.files === 0 ? [] : [cell])).toSorted());
+    for (const module of approved) {
+      const cell = `${module.kind}:${module.path}`;
+      expect([cell, tallies.get(cell)?.files, tallies.get(cell)?.lines], name).toEqual([cell, module.files, module.loc]);
+      // The fact the panel writes leads with that count, and the lines are it whole.
+      const facts = factsOf(moduleAt(map, cell));
+      const files = facts['files'];
+      expect(files !== undefined && 'value' in files ? files.value.split(' ')[0] : undefined, `${name} ${cell}`).toBe(String(module.files));
+      expect(facts['lines'], `${name} ${cell}`).toEqual({ label: 'lines', value: String(module.loc) });
+    }
+  }
+}, SWEEP_MS);
+
+test("a departure's count of files, and of lines, is the number the module's fact gives, on a module the change deleted a file of (D332 (counts-of-head))", () => {
+  // The shape approved at the demo's head holds three files in `pm`: the fourth, `legacy.ts`, the change deleted.
+  const doc = approvedOf(DEMO);
+  expect(doc.modules.find((module) => module.path === 'libs/core/src/pm')?.files).toBe(3);
+  // Three more files in `pm`, enough to be told as grown.
+  const tools = DEMO.terrain.organelles.find((file) => file.id === TOOLS);
+  if (tools === undefined) throw new Error('the demo lost pm/tools.ts');
+  const more = ['one', 'two', 'three'].map((word) => ({ ...tools, id: `libs/core/src/pm/${word}.ts`, path: `libs/core/src/pm/${word}.ts` }));
+  const grown: MapJson = {
+    ...DEMO,
+    terrain: { ...DEMO.terrain, organelles: [...DEMO.terrain.organelles, ...more], cells: DEMO.terrain.cells.map((cell) => (cell.id === PM ? { ...cell, organelles: [...cell.organelles, ...more.map((file) => file.id)] } : cell)) },
+  };
+  const told = departuresOf(doc, grown).find((departure) => departure.kind === 'files-grown' && departure.cell === PM);
+  expect([told?.was, told?.now]).toEqual([3, 6]);
+  const pm = moduleAt(withApproved(grown, doc), PM);
+  expect(factsOf(pm)['files']).toEqual({ label: 'files', value: '6 · 1 deleted by the change' });
+  // Its lines grew with them, and that row's count ends in the lines fact's number as well.
+  expect(factsOf(pm)['lines']).toEqual({ label: 'lines', value: '503' });
+  expect(pm.departures).toMatchObject({
+    approved: true,
+    rows: [
+      { kind: 'files-grown', count: '3 → 6' },
+      { kind: 'lines-grown', count: '215 → 503' },
+    ],
+  });
 });

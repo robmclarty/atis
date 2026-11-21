@@ -14,9 +14,14 @@
  * muted. A count of none is a value; a count nothing took is a reason.
  *
  * A module is counted by its whole contour (D250 (contour-counts)): its own
- * files and those of every module it holds, as the map counts its lines, its
- * fans and what goes through and past its interface. Its departures are its
- * contour's too (D270 (departures-by-contour)).
+ * files and those of every module it holds, as the map counts its fans and
+ * what goes through and past its interface. Its files and its lines are what
+ * the head holds there (D332 (counts-of-head)): a file the map's change
+ * deleted still has a place on the terrain, and is counted for neither, as
+ * the approved shape counts neither (D300 (held-at-head)), so a departure's
+ * `was` and `now` are the numbers the facts beside it give. How many the
+ * change deleted is said after the count. Its departures are its contour's
+ * too (D270 (departures-by-contour)).
  *
  * The words are the panels' plain nouns (D216 (plain-nouns)): package,
  * module, file and function, beside the map's own. Pure: no React, no DOM,
@@ -64,7 +69,7 @@ export type FileRow = {
   readonly notices: readonly number[];
 };
 
-/** One module a module holds: what a click on its row selects, its name below its holder, and its files and lines. */
+/** One module a module holds: what a click on its row selects, its name below its holder, and its files and lines as the head holds them. */
 export type ModuleRow = { readonly selects: Selected; readonly words: string; readonly files: number; readonly lines: number };
 
 /** One exported name: lit where the reach crossed the module's membrane by it, with the files outside the module it carried the reach to, nearest first. */
@@ -215,13 +220,45 @@ const cellSelection = (cell: Cell): Selected => ({ kind: 'cell', cell: cell.id }
 /** The selection a file's row sets, as `selectedOf` writes it for the file's path: its own cell beside it, never a slide's (D209 (selection-line)). */
 const fileSelection = (file: Organelle): Selected => ({ kind: 'organelle', path: file.id, cell: file.cell });
 
-/** What the model is read through: the map's cells, files and changed files by their ids and the cells each cell holds, each looked up once. */
+/** What the head holds inside one module's contour: how many files and their lines, and how many files there the map's change deleted, which are counted for neither. */
+export type HeadTally = { readonly files: number; readonly lines: number; readonly deleted: number };
+
+const NO_TALLY: HeadTally = { files: 0, lines: 0, deleted: 0 };
+
+/**
+ * Each module's files and lines as the head holds them, by cell id (D332
+ * (counts-of-head)): every file of the cell and of each cell it holds,
+ * short of the files the map's own change deleted, which a change map's
+ * terrain keeps a place for. It is the count the approved shape takes
+ * (D300 (held-at-head)), so the two are one number. A cell with no file
+ * left tallies none, and is still in the answer.
+ */
+export const heldAtHead = (map: MapJson): ReadonlyMap<string, HeadTally> => {
+  const parents = new Map(map.terrain.cells.map((cell) => [cell.id, cell.parent] as const));
+  const gone = new Set(map.weather.changed.filter((file) => file.kind === 'deleted').map((file) => file.path));
+  const tallies = new Map<string, HeadTally>(map.terrain.cells.map((cell) => [cell.id, NO_TALLY] as const));
+  for (const file of map.terrain.organelles) {
+    const deleted = gone.has(file.path);
+    const seen = new Set<string>();
+    let id: string | undefined = file.cell;
+    while (id !== undefined && !seen.has(id)) {
+      seen.add(id);
+      const tally = tallies.get(id) ?? NO_TALLY;
+      tallies.set(id, deleted ? { ...tally, deleted: tally.deleted + 1 } : { ...tally, files: tally.files + 1, lines: tally.lines + file.loc });
+      id = parents.get(id);
+    }
+  }
+  return tallies;
+};
+
+/** What the model is read through: the map's cells, files and changed files by their ids, the cells each cell holds and what the head holds in each, each looked up once. */
 type Index = {
   readonly map: MapJson;
   readonly cells: ReadonlyMap<string, Cell>;
   readonly held: ReadonlyMap<string, readonly Cell[]>;
   readonly files: ReadonlyMap<string, Organelle>;
   readonly changed: ReadonlyMap<string, ChangedFile>;
+  readonly tallies: ReadonlyMap<string, HeadTally>;
 };
 
 const indexOf = (map: MapJson): Index => {
@@ -235,6 +272,7 @@ const indexOf = (map: MapJson): Index => {
     held,
     files: new Map(map.terrain.organelles.map((file) => [file.id, file] as const)),
     changed: new Map(map.weather.changed.map((file) => [file.path, file] as const)),
+    tallies: heldAtHead(map),
   };
 };
 
@@ -373,18 +411,22 @@ const unenteredWhy = (index: Index, cell: Cell): string => {
 /** A fan as a fact: the count the map carries, or that it carries none. */
 const fanFact = (label: string, fan: number | undefined): Fact => (fan === undefined ? mutedFact(label, 'the map carries no count for it') : fact(label, String(fan)));
 
-/** How many files a module holds: all of them and, where it holds modules, how many are its own. */
-const filesWords = (cell: Cell, files: number, held: number): string =>
-  held === 0 ? String(files) : `${String(files)} ${DOT} ${String(cell.organelles.length)} its own, ${String(files - cell.organelles.length)} in ${counted(held, 'module')} it holds`;
+/** How many files a module holds at the head: all of them, where it holds modules how many are its own, and how many more the change deleted (D332 (counts-of-head)). */
+const filesWords = (index: Index, cell: Cell, tally: HeadTally, held: number): string => {
+  const own = cell.organelles.filter((path) => index.changed.get(path)?.kind !== 'deleted').length;
+  const parts = [String(tally.files), ...(held === 0 ? [] : [`${String(own)} its own, ${String(tally.files - own)} in ${counted(held, 'module')} it holds`]), ...(tally.deleted === 0 ? [] : [`${String(tally.deleted)} deleted by the change`])];
+  return parts.join(` ${DOT} `);
+};
 
-const moduleFacts = (index: Index, cell: Cell, files: number, held: number): readonly Fact[] => {
+const moduleFacts = (index: Index, cell: Cell, held: number): readonly Fact[] => {
   const { integrity } = cell;
+  const tally = index.tallies.get(cell.id) ?? NO_TALLY;
   const entered = (label: string, count: (entries: NonNullable<Cell['integrity']>) => number): Fact => (integrity === undefined ? mutedFact(label, unenteredWhy(index, cell)) : fact(label, String(count(integrity))));
   return [
     fact('kind', MODULE_WORDS[cell.kind]),
     fact('band', String(cell.band)),
-    fact('files', filesWords(cell, files, held)),
-    fact('lines', String(cell.body_loc)),
+    fact('files', filesWords(index, cell, tally, held)),
+    fact('lines', String(tally.lines)),
     fact('interface', counted(cell.exports?.length ?? cell.interface_size, 'export')),
     fanFact('fan in', cell.fan_in),
     fanFact('fan out', cell.fan_out),
@@ -427,14 +469,14 @@ const moduleOf = (index: Index, cell: Cell): ModuleModel => {
   const inside = new Set([...contour.map((each) => each.id), ...files.map((file) => file.path)]);
   const holds = (index.held.get(cell.id) ?? [])
     .toSorted((a, b) => byText(a.id, b.id))
-    .map((each): ModuleRow => ({ selects: cellSelection(each), words: moduleWords(each.path, cell.path), files: contourOf(index, each).reduce((total, held) => total + held.organelles.length, 0), lines: each.body_loc }));
+    .map((each): ModuleRow => ({ selects: cellSelection(each), words: moduleWords(each.path, cell.path), files: (index.tallies.get(each.id) ?? NO_TALLY).files, lines: (index.tallies.get(each.id) ?? NO_TALLY).lines }));
   return {
     kind: 'module',
     selected: cellSelection(cell),
     noun: cell.kind === 'package' ? 'package' : 'module',
     path: cell.path,
     trail: trailOf(index, cell),
-    facts: moduleFacts(index, cell, files.length, contour.length - 1),
+    facts: moduleFacts(index, cell, contour.length - 1),
     files,
     holds,
     exports: exportsOf(map, cell),

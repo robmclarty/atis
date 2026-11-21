@@ -395,7 +395,7 @@ test("a module's head is the way down to it, each step a button, with a fly to; 
   const model = inspect(DEMO, pick(DEMO, PM));
   if (model.kind !== 'module') throw new Error('the demo holds the module');
   expect(all('[data-inspector-facts] dt').map((label) => label.textContent)).toEqual(model.facts.map((each) => each.label));
-  expect(fact('files').textContent).toBe('4');
+  expect(fact('files').textContent).toBe('3 · 1 deleted by the change');
   expect(fact('through the interface').textContent).toBe('2');
   expect(fact('through the interface').hasAttribute('data-inspector-muted')).toBe(false);
   // The notices on it and on its files, each its numbered box.
@@ -412,7 +412,7 @@ test("a module's head is the way down to it, each step a button, with a fly to; 
   await click(`[data-inspector-step="${CORE}"]`);
   expect(nav.selected()).toEqual({ kind: 'cell', cell: CORE });
   expect(element('[data-inspector-title]').textContent).toBe('package · libs/core');
-  expect(fact('files').textContent).toBe('7 · 1 its own, 6 in 2 modules it holds');
+  expect(fact('files').textContent).toBe('6 · 1 its own, 5 in 2 modules it holds · 1 deleted by the change');
   expect(all('[data-inspector-section="holds"] [data-inspector-row]').map((row) => row.getAttribute('data-inspector-row'))).toEqual([UTIL, PM]);
   await click(`[data-inspector-section="holds"] [data-inspector-row="${UTIL}"]`);
   expect(nav.selected()).toEqual({ kind: 'cell', cell: UTIL });
