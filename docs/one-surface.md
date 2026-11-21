@@ -145,7 +145,10 @@ starts at the foot of the HUD's row of grade blocks
   (D251 (reading-no-checks)). The largest modules and files, the most
   depended-on, the most outward-reaching, imports past an interface,
   unreachable files, the longest functions, the outside packages listed whole
-  (D252 (packages-whole)), then the departures from the approved shape.
+  (D252 (packages-whole)), then the departures from the approved shape. Where
+  the manifests alone named the entry points, the unreachable list is headed
+  `files no manifest's entry point reaches` and says why, and such a file's
+  own `reachable` fact is muted (D338 (reach-by-manifests)).
 - For a module: its facts, its file list, the modules it holds, its exports
   with the names a change reached lit, and its wiring as a tab. Its counts are
   its whole contour's (D250 (contour-counts)), in the files and lines the head
@@ -211,7 +214,14 @@ The lines the panels and the status line write for a state, each exactly:
   from the working tree;
 - `none: the map keeps its approved shape`, or `the package` or `the module`,
   in the inspector;
-- `structure only: no checks ran` and `live` on the status line;
+- `structure only: no checks ran` on the status line, on a map no check was
+  read for;
+- `2 departures from the approved shape`, or `1 departure from …`, on the
+  status line, and nothing there for a map that keeps its shape or has none
+  (D339 (departures-in-status));
+- `live` on the status line while a watch follows the repository, and
+  `live · rebuilding` while it measures a map (D336 (watch-says)); a run with
+  no `--watch` says neither;
 - `N on the map · M not` and `not on the map` in the tree, and `≠N` on a row
   that wears departures.
 
@@ -428,7 +438,16 @@ Elsewhere:
   `data-row-kind` (`directory`, `file` or `shore`), `data-target` where it
   has one, `data-selected`, `data-pointed` and `data-muted`.
   `[data-tree] [data-approved]` is the header's line about the approved shape.
-- The status line carries `[data-structure-only]` and `[data-live]`.
+- The status line carries `[data-structure-only]`, `[data-departed="<count>"]`
+  on a map with departures, `[data-live]` under a watch and
+  `[data-rebuilding]` while the watch measures a map.
+
+In the page's address, beside the framing a redrawn page already carried
+(`zoom`, `tilt`, `centre`):
+
+- `?select=<target>` opens the page with a file, by its path, or a module,
+  by its cell's id, selected, where the map holds it, and leaves the camera
+  where the rest of the address puts it (D337 (selection-carried)).
 
 A fold is opened from outside the chrome by a document event
 (D285 (unfold-by-event)):
@@ -708,12 +727,16 @@ export type TreeProps = {
 - The inspector is mounted in `apps/web/src/chrome/frame.tsx` straight after
   the column, and the tree in `apps/web/src/chrome/column.tsx` between the
   notices and the shore rail, where the column was handed a line.
-- The chrome takes the link as an optional prop, `pr`, and a second,
-  `live?: boolean | undefined`, which `apps/web/src/main.ts` sets from the
-  socket to the CLI: `true` once it opens, `false` once it closes and on a
-  page with no socket. `Status` in `apps/web/src/chrome/status.tsx` writes
-  `live` for it, and `structure only: no checks ran` from
-  `state.map.meta.instruments`.
+- The chrome takes the link as an optional prop, `pr`, and two more,
+  `live?: boolean | undefined` and `rebuilding?: boolean | undefined`, which
+  `apps/web/src/main.ts` sets from what the run's watch says on the socket
+  (D336 (watch-says)): `live` once it has said anything and until the socket
+  closes, `rebuilding` while its last word was that. Both are false on a run
+  with no watch, whose socket is open all the same, and on a page with no
+  socket. `Status` in `apps/web/src/chrome/status.tsx` writes `live` and
+  `rebuilding` for them, `structure only: no checks ran` from
+  `state.map.meta.instruments`, and the count of departures from
+  `state.map.approved` (D339 (departures-in-status)).
 - Both are exported through `apps/web/src/chrome/index.ts`. The inspector's
   code sheet, `chrome/code.tsx`, and the column's fold, `chrome/fold.tsx`, are
   not: a test reaches them through the panels.
@@ -760,6 +783,14 @@ The page holds each file's answer in one of seven states:
 There is no eighth state. A request that fails any other way reads as
 `absent`.
 
+The answers are kept by map and by path, and a map a watch pushed, or a frame
+the scrubber stepped to, is another map and is asked afresh
+(D253 (read-is-ask)). While that answer is on its way the path's last answer
+stands in for it, and `loading` only for a path never answered
+(D335 (answer-stands)), so the sheet of code or diff a reader is in stays
+mounted with its scroll and its focus. The diff's answer is kept the same
+way.
+
 What the route holds to:
 
 - It never joins the request's path onto the disk, never chooses a content
@@ -804,8 +835,22 @@ The server's read-only paths are now six: the page, its assets, `/map.json`,
 
 ### The watch
 
-Not a contract between tracks, but what the tab's `live` stands on. While the
-head is the working tree, by `--working-tree` or once the page has switched
+Not a contract between tracks, but what the tab's `live` stands on. A watching
+run says what its watch is doing on the socket, beside the maps it pushes
+(D336 (watch-says)):
+
+```json
+{ "kind": "watch", "state": "following" }
+{ "kind": "watch", "state": "rebuilding" }
+```
+
+`following` goes to each page as it connects, before the map held;
+`rebuilding` to every page as a rebuild starts, and `following` again as it
+ends, with a map before it or, where the rebuild failed, with none. A run with
+no watch sends neither, and its page never says `live`. The page drops a state
+it does not know.
+
+While the head is the working tree, by `--working-tree` or once the page has switched
 its base to it, the watch's signature gains a term that moves with uncommitted
 content: a hash of git's status listing with each listed path's size and
 modified time (D313 (watch-working-term)). The approved document's stamp is a
@@ -823,6 +868,15 @@ block (D314 (approved-stamp)).
   stages nothing is not.
 - A push over unchanged ground lays the granules again from the pushed map
   (D330 (granules-follow-push)).
+- A map on other ground, a file added or gone or a cell changed, is drawn
+  afresh: the page reloads at the framing the reader stood at, with the
+  selection's target in its address, and selects it again where the new map
+  holds it (D337 (selection-carried)).
+- An edit is noticed in about a second, one tick to see it and one for it to
+  hold still. The rest of the wait is the rebuild. On this repository, 182
+  files on the map, an uncommitted edit reached the tab 9 to 10 seconds
+  after the write, where one `--working-tree --out` build took 5 seconds.
+  The status line says `rebuilding` through it.
 
 ## Who owned which file
 
@@ -894,6 +948,21 @@ How to do it: run `pnpm --filter web dev`, open the tab on a map, press
 the tab's session. Reset the tokens, or open a fresh tab, before judging the
 one surface again: a stale override brings the old behaviour back and looks
 like a bug.
+
+The dev server reads a map only from inside this checkout: `?map=/@fs/<path>`
+for a map written anywhere else is answered 403, which is Vite's rule and not
+atis's. So to compare old and new on another repository, use the tab atis
+serves for it. That tab is a published build and shows no `tokens` button.
+Two ways in:
+
+- The panel opens there by its key combination (D156 (dev-panel)), which the
+  docs do not name; it is `opens` in `apps/web/src/chrome/frame.tsx`.
+- Or write the override into the tab's session store by hand, in the
+  browser's console, and reload:
+  `sessionStorage.setItem('atis.tokens', '{"LEVELS.autoOpen":1}')`.
+  `sessionStorage.removeItem('atis.tokens')` and a reload take it back. The
+  second way was run on a served tab at the close-out and opened the slide
+  by zoom with nothing selected.
 
 What the switch does not bring back, and what it does that it did not before:
 
@@ -1002,9 +1071,25 @@ The close-out, between the tracks:
   (D334 (removed-off-head)).
 - Four of the inspector's baked looks made live tokens.
 
-Not built, of what the plan listed: carrying the selection across a watch's
-reload, and framing a flight in the screen left of the open inspector. Both
-are under [Deferred](#deferred).
+The last pass, after two reviews of the finished build, one driving a served
+run in a browser and one reading the integration:
+
+- The sheets of code and diff kept through a pushed map and a scrubber's
+  step, with their scroll and focus (D335 (answer-stands)).
+- `live` said only under a watch, and `rebuilding` while a map is measured
+  (D336 (watch-says)).
+- The selection carried through a page a watch draws afresh
+  (D337 (selection-carried)), the first half of the step the plan cut.
+- A file's reachability muted, and the list headed by what it is, where the
+  manifests alone named the entry points (D338 (reach-by-manifests)).
+- The count of departures in the status line
+  (D339 (departures-in-status)).
+
+What the reviews found and the last pass left is under
+[Deferred](#deferred), each with what was seen.
+
+Not built, of what the plan listed: framing a flight in the screen left of
+the open inspector. It is under [Deferred](#deferred).
 
 ## The decisions
 
@@ -1377,7 +1462,7 @@ Unused: D306 and D307.
 
 Unused: D315 to D319, D326 and D327.
 
-### The close-out: D330 to D334
+### The close-out: D330 to D339
 
 - **D330 (granules-follow-push).** A map a watch pushes over unchanged ground
   takes the place of the granules' mesh: the old one is removed and disposed
@@ -1408,8 +1493,46 @@ Unused: D315 to D319, D326 and D327.
   a later base, while one born and deleted on the branch was told at once. It
   amends D304 (removed-off-terrain). All 29 fixture maps that pass the guard
   were held against two documents each, and none was refused.
+- **D335 (answer-stands).** While a map's own answer for a file's text or
+  diff is on its way, the answer the path last had over any map stands in
+  for it, and `loading` only for a path never answered. Every map a watch
+  pushes and every frame the scrubber steps to is another map, asked afresh
+  (D253 (read-is-ask)); before, its first read was `loading`, so the sheet
+  was unmounted and came back at its top, and a sheet that held the focus
+  dropped it to the page, where the next arrow walked the selection to a
+  sibling. A text of another commit is shown bare until its own lands
+  (D271 (marks-of-own-commit)).
+- **D336 (watch-says).** A watching run says what its watch is doing on the
+  socket, `following` or `rebuilding`, and the page says `live` only once it
+  has heard it, and `rebuilding` beside it while a map is measured. Before,
+  `live` meant the socket was open, and the socket opens on every served
+  run, so a run with no `--watch` said it and never followed. `rebuilding`
+  is there because a rebuild takes seconds and the tab otherwise looks as if
+  it missed the edit. The measure holds the process, so the word is sent and
+  the loop turned once before it starts.
+- **D337 (selection-carried).** A page a watch draws afresh names the
+  selection's target in its address, `?select=`, beside the zoom and the
+  centre, and selects it on the line before the chrome and the world are
+  drawn, where the new map holds it. The inspector opens on it, the tree
+  brings its row into view and a module's slide opens; the camera stays
+  where the address puts it. A target the new map lacks selects nothing. The
+  open tab of the inspector, the functions' toggle and the column's folds
+  are not carried.
+- **D338 (reach-by-manifests).** Where the entry points were read from the
+  manifests alone, a file none of them reaches is not said to be
+  unreachable: its `reachable` fact is muted with why, and the map view
+  heads its list `files no manifest's entry point reaches`. A manifest names
+  no page's script, so on a clone with no local fallow the whole of a Vite
+  app read as unreachable, 86 of 182 files on this repository. A file an
+  entry does reach still says `yes`, and a map fallow read is unchanged.
+- **D339 (departures-in-status).** A map that departs from its approved
+  shape says by how many in the status line. With six notices the tree's
+  header, which carries the count, starts below a 900-pixel window, and the
+  inspector lists departures last, so the count was on no first frame. The
+  line reads the run's head, on an older frame of a range as well, where the
+  panels list none (D333 (departures-of-head)).
 
-The next free number is D335.
+The next free number is D340.
 
 ## Deferred
 
@@ -1428,10 +1551,10 @@ explicit deletion list, because the dead-code check cannot see leftovers in
 
 ### The camera and the selection
 
-- Carrying the selection across a watch's reload: a `select` on the watch's
-  framing, `?select=` in the page's address, applied when the world starts.
-  Today a reload, which the tab does whenever a file is added, drops the
-  selection.
+- The rest of what a redrawn page drops. The selection is carried
+  (D337 (selection-carried)); the inspector's open tab, the functions'
+  toggle and the column's folds are not, and a page reloaded by a switch of
+  base in the strip under the HUD carries no selection at all.
 - Framing a flight in the screen left of the open inspector. Today `fly to`
   frames a module in the middle of the free screen, so part of it lies under
   the panel.
@@ -1451,6 +1574,28 @@ explicit deletion list, because the dead-code check cannot see leftovers in
 - The selected module's ring does not follow its slide's dark membrane
   exactly, and a file with two notices has its name written on both sides of
   its ring. Both were seen by eye at the close-out and left.
+- A slide's right-hand column of tags is laid against the column's edge
+  alone, so for a module in the middle of the free screen it lies under the
+  open inspector, which a selection always opens. Names by size and the
+  bands' labels keep off the panel (D246 (names-off-chrome)); the tags do
+  not. Read from the code, in `apps/web/src/world/draw.ts` where the
+  interior is handed its margins; not looked at in a browser.
+- A module whose files sit in distant depth bands opens as a long thin
+  strip the height of the map, with its files at the ends and the ring as
+  two lines beside it. Seen on
+  `apps/atis/fixtures/check-targets/api/internal/greet` on this repository.
+- Deep zoom over open ground is a black frame, with no star, rule or name,
+  about 600 pixels of wheel from the fit. The breadcrumb reads `field`
+  there, so Escape has nowhere to walk out to and does nothing; only the
+  minimap says where the camera is. Escape at the field returning to the
+  opening frame would cure it.
+- The hover's tag is drawn across a name already written for the file's
+  size, and near the open inspector it runs under the panel and is cut off.
+  In a frame flown to, three names by size, `go.ts`, `gotest.ts` and
+  `python.ts`, were drawn on top of one another: the names by size and the
+  asked labels are not held to one collision pass.
+- At the largest zoom a file's outline and its granules show their straight
+  sides.
 
 ### The lines and the look of the surface
 
@@ -1468,6 +1613,15 @@ explicit deletion list, because the dead-code check cannot see leftovers in
   at 4 or more layout units a texel and look soft when magnified, now that no
   slide covers them. A vector layer for the membranes is a large job.
 - The starfield turning to dust at the far zoom on very wide layouts.
+- The lines for added imports scale with the zoom. At about zoom 14 on a
+  change map, where names and granules read well, they are bands some 15
+  pixels wide across most of the frame. A cap on their width in screen
+  pixels, as a live token, would hold them. Whether the build before this
+  session did the same was not compared.
+- At the far zoom on a tall layout, `fixtures/corpus-6` fully zoomed out, a
+  hard-edged, darker rectangle with fewer stars stands round the map and
+  well above its topmost module. It did not show on this repository's own
+  wide map. The planet used to cover that range of zoom.
 
 ### The granules
 
@@ -1488,6 +1642,14 @@ explicit deletion list, because the dead-code check cannot see leftovers in
   every zoom, the far ones where none shows included.
 - Baked in `apps/web/src/world/nuclei.ts`: the lift above the skin, the draw
   order and the 12 segments of a disc.
+- Every push over the same ground lays the mesh and makes its material
+  again (D330 (granules-follow-push)), a push where only the weather, the
+  notices or the approved block moved included, as after `atis approve`
+  under a watch. It is the 0.5 to 0.7 s above, inside the socket's message
+  handler, with the pipeline compiled again. A signature of the function
+  data the mesh was laid from would skip it.
+- `restyle`, `move` and the comparison of what is shown each allocate a
+  little every frame; nothing is allocated per granule.
 
 ### The inspector
 
@@ -1511,6 +1673,21 @@ explicit deletion list, because the dead-code check cannot see leftovers in
   head's `map` step and not to the first row of the body.
 - The `mutants` fact for a file with many is a long wall of
   `line N NoCoverage`.
+- A file shows two counts of lines that differ and neither says what it
+  counts: the `lines` fact is the map's count, 386 for
+  `apps/web/src/world/skin.ts`, and the code tab's head counts the text's
+  lines, 415.
+- With no health report every function's row carries its own
+  `no health report was read`, which doubles the list's height. It wants
+  saying once, at the list's head.
+- In the map view the departures are the last list, under every outside
+  package, 18 on this repository. The status line now carries their count
+  (D339 (departures-in-status)); listing them first when there are any is
+  still to do.
+- Every row of the panel is drawn again each time the pointing moves, the
+  plain rows of functions and of outside packages included, since each reads
+  the pointed target from one context. The tree's rows were narrowed to the
+  two a move touches; the inspector's were not.
 - The tally of what the head holds is taken once for each model and once for
   each reading, each a pass over the map's files; unmeasured on a large map.
 - Still baked: the step a focused sheet scrolls by, the width of a changed
@@ -1528,6 +1705,16 @@ explicit deletion list, because the dead-code check cannot see leftovers in
   row and leaves open the directories it opened, as the plan specified. If
   that feels restless on a real repo, the rule is in one place, `newsOf` in
   `apps/web/src/chrome/tree.tsx`.
+- On the default run the tree starts below the fold. At 1440 by 900 six
+  notices fill the column, and the tree's header measured at 902 pixels
+  down, so no row shows until the reader scrolls or folds the notices, and a
+  reload sends the column back to its top unless something is selected. The
+  notices are as long as their rows by decision (D278 (column-folds)); a cap
+  on their share, or folding them past a few rows, is a call for the owner.
+- A click on a notice selects, and the tree answers a moved selection by
+  scrolling the one column to its row, so the list the reader was working
+  down is pushed out of view. Read from the code, not looked at in a
+  browser.
 
 ### The structure reading
 
@@ -1536,6 +1723,12 @@ explicit deletion list, because the dead-code check cannot see leftovers in
 - A fixture map with no instruments.
 - Departures as ranked notices, as an overlay, or as a block of the HUD,
   which is held block for block to the still sheet.
+- Entry points a manifest does not name. With no local fallow they are read
+  from the manifests alone, and a page's script in an `index.html`, as a
+  Vite app has, is no entry there, so everything it reaches is listed as not
+  reached. The panels now say so in place of calling those files unreachable
+  (D338 (reach-by-manifests)); reading such entries is in the CLI's scan and
+  moves what the map says of every such repository.
 - On every committed fixture map but the demo, `imports past an interface` is
   muted, because those maps were written before the map carried that count.
   Regenerating the fixtures would fill the list.
@@ -1558,9 +1751,17 @@ explicit deletion list, because the dead-code check cannot see leftovers in
 
 ### The watch and the local server
 
+- The tab follows an uncommitted edit in 9 to 10 seconds on this repository,
+  not the second the plan's by-hand check hoped for. About one second is the
+  noticing; the rest is the rebuild and what the page does with the map,
+  and where it goes was not measured. The status line says `rebuilding`
+  through it (D336 (watch-says)). A cheaper rebuild for a working-tree edit
+  is the real cure.
 - A rebuild blocks the server while it runs, so the code tab stalls; the
   cache never evicts; and the tab reloads in full when a file is added or an
-  export changes.
+  export changes, keeping the camera and the selection and nothing else.
+- A rebuild asked for by the strip under the HUD, a switch of base, is not
+  told as `rebuilding`: only the watch's own are.
 - Each rebuild of the working tree writes the tree's objects into the
   repository unreferenced. The watch's rest limits how often. Git prunes them
   on its own schedule, and `git prune` clears them sooner.
@@ -1584,10 +1785,17 @@ opened cell, and they show on the map as well.
   and has not been measured again.
 - The intermediate commits of the CLI's close-out and of the wiring were not
   each checked alone; the tips were.
-- Three heavy tests sit near vitest's 5-second default and time out when the
-  machine is busy: the HUD's block-for-block case, the still sheet's
-  every-block-fits case and the scene's 400-function nucleus case. Each
-  passes alone. An explicit timeout on each would not weaken them.
+- Six heavy sweeps now name a 60-second limit of their own: the HUD's
+  block-for-block case, the still sheet's every-block-fits case, the scene's
+  400-function nucleus case and three of the lanes' sweeps. They sat near
+  vitest's 5-second default and timed out under the full check on a busy
+  machine. Four more ran at 3.3 to 3.9 s in that run and are the next to
+  time out: the tree's pointer case, the scene's continuous-spectrum case
+  and two of the chrome's.
+- The last pass's five fixes are held by unit, jsdom and browser cases. Of
+  them only the selection named in the address was driven in a browser, on
+  the dev server; the watch's word was driven against a real server and
+  socket in the CLI's tests, and not with a page on it.
 - The core track reported that three corpus fixtures, `checkride-pr2`,
   `fascicle-pr4` and `fascicle-pr5`, do not pass today's map guard, from
   before this session.
@@ -1597,6 +1805,8 @@ opened cell, and they show on the map as well.
 ### The founding record and the looks still baked
 
 - Amending [SPEC.md](../SPEC.md) itself.
+- In a development build the minimap is drawn over the tokens panel's last
+  rows, and the `tokens` button over the tree's.
 - Tokens for the looks still baked: the column's 260-pixel width, the zoom's
   bounds, the scene's label budget for asked labels, and the height of the
   stars' plane. The notice list's share of the column, which the plan listed
