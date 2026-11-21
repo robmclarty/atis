@@ -93,6 +93,26 @@ test('each stop frames its own ground: the layout, a cell’s skin, a file with 
   expect(WALK.box(INDEX, 4)).toEqual({ x0: index.x - 4 * index.r, y0: index.y - 4 * index.r, x1: index.x + 4 * index.r, y1: index.y + 4 * index.r });
 });
 
+test("the ground the world draws is the box round every cell's skin and every placed file, which leaves the shore's strip out (D222 (terrain-frame))", () => {
+  const layout = DEMO.terrain.layout;
+  const cells = new Set(DEMO.terrain.cells.map((each) => each.id));
+  const skins = Object.entries(layout?.contours ?? {}).flatMap(([id, contour]) => (cells.has(id) ? contour : []));
+  const ground = WALK.ground();
+  expect(ground).toEqual({ x0: Math.min(...skins.map(([x]) => x)), y0: Math.min(...skins.map(([, y]) => y)), x1: Math.max(...skins.map(([x]) => x)), y1: Math.max(...skins.map(([, y]) => y)) });
+  // The layout's first stretch is the shore's, and the ground starts under it; the layout is wider than the ground too.
+  expect(ground?.y0).toBeGreaterThanOrEqual(layout?.shore.y1 ?? Number.POSITIVE_INFINITY);
+  expect((ground?.x1 ?? 0) - (ground?.x0 ?? 0)).toBeLessThan(layout?.width ?? 0);
+  // Every placed file lies on it.
+  for (const organelle of DEMO.terrain.organelles) {
+    const at = layout?.positions[organelle.id];
+    expect(at !== undefined && ground !== undefined && at.x - at.r >= ground.x0 && at.x + at.r <= ground.x1 && at.y - at.r >= ground.y0 && at.y + at.r <= ground.y1, organelle.id).toBe(true);
+  }
+  // Asked again it is the same box, and a map that lays nothing out has no ground.
+  expect(WALK.ground()).toBe(ground);
+  const { layout: _gone, ...unlaid } = DEMO.terrain;
+  expect(createWalk({ ...DEMO, terrain: unlaid }).ground()).toBeUndefined();
+});
+
 test("a notice's row leads to where its target is drawn: its file, the file a test's stitch sits on, its cell, or its group's block (D148, D153)", () => {
   expect(destinationOf(DEMO, 1)).toEqual({ kind: 'stop', stop: INDEX });
   expect(destinationOf(noticed('libs/core/src/__tests__/pm.test.ts'), 1)).toEqual({ kind: 'stop', stop: INDEX });

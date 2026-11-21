@@ -53,6 +53,17 @@ test('the centre is a layout point, `x,y`, else the frame opens on the layout\'s
   expect(viewOf('')).not.toHaveProperty('centre');
 });
 
+test('a page that names a zoom or a centre is framed where it says, and one that names neither, or gets the zoom wrong, leaves the opening frame to the world (D222 (terrain-frame))', () => {
+  expect(viewOf('')).not.toHaveProperty('framed');
+  expect(viewOf('?backend=webgl&tilt=20&seed=3')).not.toHaveProperty('framed');
+  expect(viewOf('?zoom=far')).not.toHaveProperty('framed');
+  expect(viewOf('?zoom=0')).not.toHaveProperty('framed');
+  expect(viewOf('?zoom=1').framed).toBe(true);
+  expect(viewOf('?zoom=2.5').framed).toBe(true);
+  expect(viewOf('?centre=120,340')).toMatchObject({ zoom: 1, framed: true });
+  expect(viewOf('?centre=120')).not.toHaveProperty('framed');
+});
+
 test('only ?shapes=demo turns the demo switch on; any other value is ignored (D202)', () => {
   expect(viewOf('?shapes=demo').shapes).toBe('demo');
   expect(viewOf('?zoom=2&shapes=demo&tilt=10')).toMatchObject({ zoom: 2, tilt: 10, shapes: 'demo' });

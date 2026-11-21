@@ -10,7 +10,11 @@
  * group's block in the rail when the shore holds it (D153). When the reviewer
  * moves the camera by hand, the stop is read back off the view: the field
  * from the far field, and from the surface on, the cell under the view's
- * centre, or the file there at the file's level.
+ * centre, or the file there at the file's level. The walk also says where
+ * the ground the world draws lies on the layout, the box round every cell's
+ * skin and every placed file: the layout holds the shore's strip above its
+ * first band too, which the world never draws, so the tab opens framed on
+ * the ground and not on the layout (D222 (terrain-frame)).
  *
  * Pure but for `ownsKey`, which reads the focused element, so a test walks a
  * fixture's own cells.
@@ -39,6 +43,8 @@ export type Walk = {
   readonly crumbs: (stop: Stop) => readonly string[];
   /** What a stop frames: the layout for the field, a cell's skin, and a file with `context` times its radius round it. */
   readonly box: (stop: Stop, context: number) => Box | undefined;
+  /** The ground the world draws: the box round every cell's skin and every placed file, the shore's strip left out; none on a map that lays nothing out (D222 (terrain-frame)). */
+  readonly ground: () => Box | undefined;
   readonly ascend: (stop: Stop) => Stop | undefined;
   /** Into the child of a stop under a layout point, else the child nearest it. */
   readonly descend: (stop: Stop, toward: Point) => Stop | undefined;
@@ -62,6 +68,10 @@ function byPath(a: string, b: string): number {
 }
 
 const centreOf = (box: Box): Point => [(box.x0 + box.x1) / 2, (box.y0 + box.y1) / 2];
+
+/** The box round some boxes; none round none. */
+const round = (boxes: readonly Box[]): Box | undefined =>
+  boxes.length === 0 ? undefined : { x0: Math.min(...boxes.map((each) => each.x0)), y0: Math.min(...boxes.map((each) => each.y0)), x1: Math.max(...boxes.map((each) => each.x1)), y1: Math.max(...boxes.map((each) => each.y1)) };
 
 const same = (a: Stop, b: Stop): boolean => (a.kind === 'field' ? b.kind === 'field' : a.kind === 'cell' ? b.kind === 'cell' && b.cell === a.cell : b.kind === 'organelle' && b.path === a.path);
 
@@ -109,6 +119,15 @@ export const createWalk = (map: MapJson): Walk => {
     if (file === undefined) return undefined;
     const reach = file.r * context;
     return { x0: file.x - reach, y0: file.y - reach, x1: file.x + reach, y1: file.y + reach };
+  };
+
+  // The ground is one for the map, so it is measured once, the first time it is asked for.
+  let drawn: { readonly box: Box | undefined } | undefined;
+  const ground = (): Box | undefined => {
+    drawn ??= {
+      box: round([...[...cells.keys()].flatMap((cell) => cellBox(cell) ?? []), ...[...files.values()].map((file) => ({ x0: file.x - file.r, y0: file.y - file.r, x1: file.x + file.r, y1: file.y + file.r }))]),
+    };
+    return drawn.box;
   };
 
   /** Where a stop stands on the layout, for the arrows' bearings. */
@@ -223,7 +242,7 @@ export const createWalk = (map: MapJson): Walk => {
     return undefined;
   };
 
-  return { crumbs, box, ascend, descend, sibling, stopAt, key };
+  return { crumbs, box, ground, ascend, descend, sibling, stopAt, key };
 };
 
 /** Where a notice's row takes the reviewer, by where its target is drawn (D148): its file, the file a test's stitch sits on, its cell, or its group's block; none for an unplaced notice. */

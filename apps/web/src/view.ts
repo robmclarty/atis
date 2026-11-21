@@ -12,7 +12,10 @@
  * is how `--png` takes one frame however long the page took to load (D105).
  * `?centre=x,y` opens the frame on that layout point rather than the
  * layout's middle, so a screenshot or the smoke test can frame one cell
- * (step 40). `?cinema` frames the world as a still, with no chrome, on what
+ * (step 40). A page that names a zoom or a centre is `framed`: it opens where
+ * it says, measured on the whole layout as ever. One that names neither
+ * leaves the opening frame to the world, which frames the ground it draws
+ * (D222 (terrain-frame)). `?cinema` frames the world as a still, with no chrome, on what
  * the change is about, where the scene frames the comment's flat still
  * (`libs/scene/src/cinema.ts`, D108, D175). `?shapes=demo` cycles an opened
  * cell's files across the whole shape spectrum by their place in path order,
@@ -37,6 +40,8 @@ export type View = {
   readonly time?: number;
   /** The layout point the frame opens centred on; the layout's middle when the page names none. */
   readonly centre?: Point;
+  /** The page named a zoom or a centre, so the frame opens where it says; left out, the world frames the ground it draws (D222 (terrain-frame)). */
+  readonly framed?: true;
   /** A still for a comment: no chrome, the frame on what the change is about, and no cell opening as a slide (D108). */
   readonly cinema?: true;
   /** The demo switch: an opened cell's files take scores across the spectrum by path order, in place of their trouble (D202). */
@@ -64,16 +69,18 @@ const pointOr = (value: string | null): Point | undefined => {
 /** The view the page asks for; every parameter it leaves out or gets wrong takes the opening frame's value. */
 export const viewOf = (search: string): View => {
   const params = new URLSearchParams(search);
-  const zoom = numberOr(params.get('zoom'), 1);
+  const asked = numberOr(params.get('zoom'), Number.NaN);
+  const zoom = asked > 0 ? asked : 1;
   const time = numberOr(params.get('time'), Number.NaN);
   const centre = pointOr(params.get('centre'));
   return {
     backend: params.get('backend') === 'webgl' ? 'webgl' : 'webgpu',
-    zoom: zoom > 0 ? zoom : 1,
+    zoom,
     tilt: Math.min(MAX_TILT, Math.max(0, numberOr(params.get('tilt'), 0))),
     seed: Math.trunc(numberOr(params.get('seed'), DEFAULT_SEED)),
     ...(Number.isFinite(time) && time >= 0 ? { time } : {}),
     ...(centre === undefined ? {} : { centre }),
+    ...(asked > 0 || centre !== undefined ? { framed: true as const } : {}),
     ...(params.get('cinema') === null ? {} : { cinema: true as const }),
     ...(params.get('shapes') === 'demo' ? { shapes: 'demo' as const } : {}),
   };
