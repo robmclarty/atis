@@ -335,7 +335,9 @@ emphasis rings.
 The shore, every tracked file that is not terrain (D48), is chrome rather than
 land (D153). The still sheet draws it as `#shore`, a band of flat blocks under
 the world at its full width, wrapping in rows (D158); the world draws the same
-blocks in a scrolled rail at the tab's right edge. `shoreRail` in
+blocks in a rail at the foot of the tab's right-hand column, which scrolls as
+one with the notices and the folder tree above it, each under a header that
+folds it (D278 (column-folds)). `shoreRail` in
 `libs/scene/src/shore.ts` orders them for both: the groups the change touched
 first, then the rest, each by name and `other` last. A touched block opens on
 a grid of every file in its group (D160): one small flat square per file,
@@ -439,17 +441,17 @@ leader's dots.
 ## World materials
 
 The world's own look, beside the sheet's tokens above: the skin, the space
-ground it lies on, the planet the far zoom draws and its lights, the sky its sheen mirrors, the bloom, the weather's and the notices' light in
+ground it lies on, its lights, the sky its sheen mirrors, the bloom, the
+weather's and the notices' light in
 the world, the relief, the levels of detail and the camera, and the chrome the
 world alone draws (the hover and the selection, the walk's framing, the minimap,
 an opened cell's slide and its wiring plate, and the side panels). Each is a
 field of one object, defined once: the
-skin, the space ground, the planet, lights, sky, bloom, weather, notices, levels, camera,
+skin, the space ground, lights, sky, bloom, weather, notices, levels, camera,
 hover, walk, slide and side panels in `apps/web/src/materials.ts`, the relief in
 `libs/scene/src/heightfield.ts` (`RELIEF`), a still's framing in
 `libs/scene/src/cinema.ts` (`CINEMA`), the minimap's look in
-`libs/scene/src/minimap.ts` (`MINIMAP`), the planet's shape in
-`libs/scene/src/planet.ts` (`PLANET_LAYOUT`), the slide's layout in
+`libs/scene/src/minimap.ts` (`MINIMAP`), the slide's layout in
 `libs/scene/src/interior.ts` (`INTERIOR_LAYOUT`) and the wiring plate's spacing
 in `libs/scene/src/wiring.ts` (`WIRING_SPACING`). The world reads every one
 through the registry, `OBJECT.field` by name, so the dev panel moves it on the
@@ -466,8 +468,81 @@ threshold at 0, since only the emissive target blooms at all (D152). Nothing in
 the base tissue blooms. Its faint rim and each cell's own light are emissive
 only in the colour pass. The skin's light is graded by the levels of detail: at
 the far field the key light, the sky and most of the ambient are off, so only
-the change's stains and the notices light the dark (§5.6), and at the far zoom
-the planet stands over it all (D170).
+the change's stains and the notices light the dark (§5.6). No zoom reaches the
+far field while the levels rest parked, so the skin is lit at every one
+(D204 (parked-levels), D240 (far-zoom-lit)), and the far field's tokens below
+move nothing at rest. The planet that stood over the far zoom is deleted from
+the world with its tokens (D213 (planet-goes)); the scene keeps its pure
+model, `libs/scene/src/planet.ts`, for the rule that gives an outside package
+its hue in the inspector.
+
+### The one surface
+
+The world is one lit surface, read by clicking and not by zooming. This is
+the short of it, for reading the tables below; the whole record, with the
+contracts and every decision, is [one-surface.md](one-surface.md).
+
+**One level.** The tab opens on the lit map, framed on the ground the world
+draws at `WALK.share` of the free screen (D222 (terrain-frame)). The wheel
+only magnifies: nothing opens, cross-fades or changes mode by the zoom. The
+stars, the bands, every module's body and membrane, the reach, every file
+with all its weather, the bolts, the lines and the notices' boxes are drawn
+from the farthest zoom to the nearest.
+
+**Detail by size.** What the levels showed resolves by its size on the
+screen, each by a pixel threshold that is a live token, and each fading in
+(D206 (detail-by-size)). A file's functions are round granules inside it on
+the map, from `LEVELS.granuleFrom` to `LEVELS.granuleFull`. A file's name is
+written from `LEVELS.fileNameFrom`, under `LEVELS.fileNameBudget`, after every
+label that was asked for and clear of the chrome's blocks.
+
+**Selection.** A click selects a file, a module or nothing, and the camera
+stays where it is (D207 (click-selects)). The selection wears a steady ring
+in `HOVER.selectInk` at `HOVER.selectWidth`, the hover's own ink a pixel
+heavier, so it claims no state's hue (C11 (one-meaning-per-channel)). What a
+row of the chrome points at wears the hover's outline, steady and with no
+tag. Selecting a module opens it in place as the living slide while
+`LEVELS.openOnSelect` is above `0` (D205 (open-on-select)): the slide's
+tokens below and the motion's shape and float tokens move a selected module
+and nothing else.
+
+**The inspector.** A panel of the chrome at the right, laid over the map and
+claiming none of the free screen (D215 (inspector-overlay)),
+`PANEL.inspectorWidth` wide, from the foot of the HUD's grade row down. It
+says in words what the selection is, a module's facts, files, exports and
+wiring or a file's facts, diff, code and functions, and with nothing selected
+a reading of the map's structure. It is the brutalist material: one monospace
+face, hard edges, nothing that glows. A fact that was not measured is the
+dash and its reason in `CHROME_MUTED`, never a number.
+
+**The tree.** The right-hand column is one scroll of three parts, the
+notices, the folder tree and the shore rail, each under a header that stays
+at the top and folds its part (D278 (column-folds)). A tree row is
+`PANEL.treeRow` high and set in by `PANEL.treeIndent` a depth. The selected
+row is filled in `HOVER.selectInk` and the pointed row outlined in
+`HOVER.ink`, the inks the map rings the same thing in.
+
+**The granules.** One instanced mesh of round discs, sized by the nucleus's
+tokens as a slide's granules are (`NUCLEUS_FILL`, `NUCLEUS_PAD`,
+`NUCLEUS_MOST`) and inked in the file's fill darkened by
+`INTERIOR.granuleShade`, so moving any of the four moves the map's granules
+and a slide's together. A granule adds no light, and blots the bloom under
+its disc from the moment it has any size (D298 (granules-blot-bloom)). At
+rest its contrast on an unstained file is low, about 1.19 to 1. A map that
+read no functions draws none, and neither does one past 5,000 placed files.
+
+**What is parked.** The slide a cell opened as by the share of the screen it
+filled, the file's plate and the diff's sheet are still built and are reached
+by nothing at rest (D204 (parked-levels)). `LEVELS.autoOpen` set to `1`
+brings all three back as they were, with the far zoom still lit;
+`LEVELS.openOnSelect` set to `0` leaves a click that only rings and names.
+The slide's, the plate's and the sheet's tokens are still listed in the dev
+panel, and those a selected module's slide does not read move nothing until
+the switch is on.
+
+**What was measured before.** [The world's budget](#the-worlds-budget) was
+measured with the old levels and with the planet as the opening frame. Its
+tables are kept as measured and have not been taken again.
 
 ### The skin
 
@@ -587,9 +662,10 @@ from the space ground's rules (D169, amending D151's terraces).
 
 The levels rest parked (D204 (parked-levels)): the world is one lit surface at
 every zoom, and nothing opens, cross-fades or changes mode as the wheel turns.
-The planet, the slide a cell opened as by the share of the screen it filled,
-the file's plate and the diff's sheet are all still built, and none is reached
-at these values. One token brings them all back, for the old levels to be
+The slide a cell opened as by the share of the screen it filled, the file's
+plate and the diff's sheet are all still built, and none is reached at these
+values. The planet is not among them: it is deleted (D213 (planet-goes)).
+One token brings the three back, for the old levels to be
 judged beside the one surface: `LEVELS.autoOpen` set to `1`, which reads the
 scene's own gates in place of `LEVELS.gates`. An override lasts for the tab's
 session, so reset the tokens, or open a fresh tab, before judging the one
@@ -707,6 +783,15 @@ laid over the map beside the notice column, and the folder tree in that column.
 | `PANEL.amber` | `#e9a93c` | the mark of an outside package a lesser advisory names, the amber its star wore on the planet (D170) |
 | `PANEL.treeRow` | `16` | the height of one row of the folder tree, in pixels |
 | `PANEL.treeIndent` | `10` | how far each depth of the tree is set in from the one above, in pixels |
+
+Four looks of the panels are still baked, each a constant where it is drawn
+and not yet a token: the step a focused sheet of code scrolls by on an arrow
+key, 40 pixels (`SCROLL_STEP` in `apps/web/src/chrome/inspector.tsx`); the
+width of the edge that marks a changed line, 2 pixels (`EDGE` in
+`apps/web/src/chrome/code.tsx`); the thin `map` tab's place, half way down
+the column's edge, with its padding; and the flat buttons' padding. The
+tree's scroll margin of two rows and its header's stacking order are
+placement, not looks.
 
 ## Motion
 
@@ -1000,12 +1085,12 @@ purpose, not by omission:
   stars' plane, 0.3 above the level field and eight times the layout's longer
   side across (`STAR_LIFT`, `STAR_REACH` in `apps/web/src/world/space.ts`):
   geometry the seed and the tokens above draw on, not a look;
-- the planet's placing of its stars (`STAR_MARGIN`, the share of the free
-  screen a star may reach so its glow stays on it, and `STAR_TRIES`, the places
-  one draws before it takes the clearest, in `libs/scene/src/planet.ts`), the
-  light the least-imported package still casts on the rim (`RIM_FLOOR`), and the
-  samples round the rim it is laid at (`RIM_SAMPLES` in
-  `apps/web/src/world/planet.ts`): placement and resolution, not a look;
+- how a granule is drawn on the map (`apps/web/src/world/nuclei.ts`): the 12
+  segments of its disc (`SEGMENTS`), its lift above the skin (`LIFT`, 0.95,
+  which only keeps it clear of the one mesh that writes depth) and its place
+  in the draw order, after the files and the marks and before the bolts
+  (`RENDER_ORDER`, 2.5; D295 (granules-over-marks)): resolution and order,
+  not a look;
 - how a swaying ribbon is laid (`apps/web/src/world/ribbons.ts`): the pieces it
   is cut into, 2 units or less (`SWAY_PIECE`), and the stretch its sway eases
   in and out over at each end, 12 units (`SWAY_EASE`), both laid into the
@@ -1162,6 +1247,18 @@ The verdict leaves five rulings for the refine before wave 2:
   placed, so the one notice that breathes has no light, in the world or the SVG.
 
 ## The world's budget
+
+Every table in this section was measured before the world became one surface,
+with the planet as the opening frame and the old levels live. `idle` is ten
+seconds of the planet over an unlit far field, and the sweep runs from that
+far field through the surface until a cell opens by its share of the screen.
+The tab does none of that now ([the one surface](#the-one-surface)): it opens
+on the lit map, a sweep opens nothing, and a frame at rest also lays names by
+size, granules where a map carries functions and stands under 5,000 files,
+and two panels of chrome. None of it has been measured, and the script was
+not run in the session that built it. The tables are kept as they were
+measured: they hold for the world as it was on their dates, and are the
+nearest reading there is for the world as it is.
 
 C14 holds the world to 60 fps at 5,000 files and to a first frame about 2 s after
 the map arrives, and to 30 fps at 20,000 files with composites; the frame rates
