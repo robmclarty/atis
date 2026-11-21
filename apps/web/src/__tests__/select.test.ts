@@ -40,15 +40,18 @@
  * one; no name is written for its size under the open inspector (D246
  * (names-off-chrome)); and a press on the map takes the focus off a panel
  * that held it, so the keys are the map's again (D331 (press-returns-keys)).
+ * The functions are granules on the map: the canvas says how many the scene
+ * lays, or why none, and they are in the frame (D206 (detail-by-size)).
  */
 
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import type { Page } from 'playwright-core';
 import { expect, test } from 'vitest';
 
 import { assertMap, withinContour } from 'core';
-import { LABELING, instances } from 'scene';
+import { LABELING, instances, nucleiOf } from 'scene';
 
 import { namedBySize } from '../asked.js';
 import { RAIL_WIDTH, fitFrame } from '../fit.js';
@@ -56,7 +59,7 @@ import { HOVER, LEVELS, PANEL, WALK } from '../materials.js';
 import { bandRules } from '../space.js';
 import { FIELD, createWalk } from '../walk.js';
 import type { Stop } from '../walk.js';
-import { DEMO, launch, legacy, serve, serveDiff, withTokens } from './browser.js';
+import { DEMO, WEB, launch, legacy, serve, serveDiff, withTokens } from './browser.js';
 
 type Point = readonly [number, number];
 
@@ -905,5 +908,85 @@ test("a click on a file on the map opens the inspector on its facts, and on a ch
   } finally {
     await browser.close();
     await server.close();
+  }
+});
+
+/** A file of the demo with functions, the largest on the screen, and the frame its granules are judged in: close enough that each is drawn whole. */
+const GRANULED = DOCTOR;
+const GRANULE_ZOOM = 8;
+
+test("the functions are granules on the map: the canvas says how many the scene lays, they are in the frame where a file with functions is drawn large and not where the tokens put them out of reach, and a map that read no function says so in words, with a clean console (D206 (detail-by-size), D293 (granules-unmeasured))", { timeout: 240_000 }, async () => {
+  const { server, url } = await serve();
+  const browser = await launch();
+  try {
+    const laid = nucleiOf(MAP);
+    expect(laid.off).toBeUndefined();
+    expect(laid.granules.length).toBeGreaterThan(0);
+    const at = LAYOUT.positions[GRANULED] ?? { x: 0, y: 0, r: 0 };
+    expect(laid.granules.filter((granule) => granule.file === GRANULED).length).toBeGreaterThan(1);
+    const perUnit = (PER_UNIT * GRANULE_ZOOM) / ZOOM;
+    // Every granule of the file is past the upper bound of the fade at this frame, so each is drawn whole.
+    for (const granule of laid.granules.filter((each) => each.file === GRANULED)) expect(granule.r * perUnit).toBeGreaterThan(LEVELS.granuleFull);
+    // The file's own disc on the screen, about the middle of the free screen, where no block of the chrome lies.
+    const half = Math.floor(at.r * perUnit);
+    const clip = { x: Math.round(MIDDLE[0]) - half, y: Math.round(MIDDLE[1]) - half, width: 2 * half, height: 2 * half };
+    /** The world's own canvas at that file, the clock frozen and the motion reduced so one frame is every frame, with every layer over the canvas hidden. */
+    const frameOn = async (overrides: Readonly<Record<string, unknown>>): Promise<{ readonly said: string | null; readonly frames: readonly [Buffer, Buffer]; readonly complaints: readonly string[] }> => {
+      const page = await browser.newPage({ viewport: VIEWPORT, reducedMotion: 'reduce' });
+      await withTokens(page, overrides);
+      const complaints: string[] = [];
+      page.on('console', (message) => {
+        if (message.type() === 'error' || message.type() === 'warning') complaints.push(`${message.type()}: ${message.text()}`);
+      });
+      page.on('pageerror', (error) => complaints.push(`pageerror: ${error.message}`));
+      await page.goto(`${url}/?backend=webgl&time=60000&zoom=${String(GRANULE_ZOOM)}&centre=${String(at.x)},${String(at.y)}`);
+      await page.waitForSelector('#world[data-ready="true"]', { timeout: 90_000 });
+      await page.evaluate(() => {
+        for (const element of document.body.children) if (element instanceof HTMLElement && element.id !== 'world') element.style.visibility = 'hidden';
+      });
+      await page.waitForTimeout(1_000);
+      const first = await page.screenshot({ type: 'png', clip });
+      await page.waitForTimeout(400);
+      const frames = [first, await page.screenshot({ type: 'png', clip })] as const;
+      const said = await page.getAttribute('#world', 'data-nuclei');
+      await page.close();
+      return { said, frames, complaints };
+    };
+
+    // At rest the canvas says how many granules the scene lays, and the frame holds still.
+    const rest = await frameOn({});
+    expect(rest.said).toBe(String(laid.granules.length));
+    expect(rest.frames[0].equals(rest.frames[1]), 'the frame holds still on a frozen clock').toBe(true);
+    expect(rest.complaints).toEqual([]);
+    // With the fade's bounds past any size a granule reaches, the same granules are laid and none is drawn: the frame at the file is another.
+    const out = await frameOn({ 'LEVELS.granuleFrom': 1_000_000, 'LEVELS.granuleFull': 2_000_000 });
+    expect(out.said).toBe(String(laid.granules.length));
+    expect(out.frames[0].equals(out.frames[1])).toBe(true);
+    expect(out.frames[0].equals(rest.frames[0]), "the file's granules are in the frame at rest and not with the fade out of reach").toBe(false);
+    expect(out.complaints).toEqual([]);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+
+  // A map whose scan read no function lays none, and the canvas says why in words, never a count.
+  const bare = readFileSync(join(WEB, '..', '..', 'fixtures', 'corpus-1', 'map.json'), 'utf8');
+  expect(nucleiOf(assertMap(JSON.parse(bare)))).toEqual({ granules: [], off: 'no function data' });
+  const second = await serve(bare);
+  const again = await launch();
+  try {
+    const page = await again.newPage({ viewport: VIEWPORT });
+    const complaints: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error' || message.type() === 'warning') complaints.push(`${message.type()}: ${message.text()}`);
+    });
+    page.on('pageerror', (error) => complaints.push(`pageerror: ${error.message}`));
+    await page.goto(`${second.url}/?backend=webgl`);
+    await page.waitForSelector('#world[data-ready="true"]', { timeout: 90_000 });
+    expect(await page.getAttribute('#world', 'data-nuclei')).toBe('off: no function data');
+    expect(complaints).toEqual([]);
+  } finally {
+    await again.close();
+    await second.server.close();
   }
 });

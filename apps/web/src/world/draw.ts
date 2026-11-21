@@ -175,6 +175,7 @@ import { TAG_LOOK, createHover } from './hover.js';
 import { SLIDE_CHROME, createInterior } from './interior.js';
 import { LABEL_LOOK, createLabels, viewportOf } from './labels.js';
 import type { Labels } from './labels.js';
+import { createNuclei } from './nuclei.js';
 import { ORGANELLE_LOOK, createOrganelles } from './organelles.js';
 import { PALETTE_LOOK, createPalette } from './palette.js';
 import type { Palette } from './palette.js';
@@ -419,6 +420,13 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   const reduced = globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches;
   canvas.dataset['motion'] = reduced ? 'reduced' : 'full';
   const levels = registry.view(LEVELS, 'LEVELS');
+  // Every file's functions as granules on the map itself (D206 (detail-by-size)), resolved by their size on the screen and by nothing else: laid from the map the weather comes from, so a watch's push lays them again (D330 (granules-follow-push)), and none on a map of composites or one that read no function (D292 (granules-off-composites), D293 (granules-unmeasured)). The canvas says how many, or why none.
+  const nucleiOn = (from: MapJson): ReturnType<typeof createNuclei> => createNuclei(from, skin.relief, grid, skin.amp, skin.lift, organelles.surface, { tissue: tokens, interior: interiorLook, levels, nucleus: nucleusTokens }, composites);
+  let nuclei = nucleiOn(map);
+  // One mesh or none: a map that draws no granule has nothing to add, and the scene takes no empty ask.
+  for (const mesh of nuclei.meshes) scene.add(mesh);
+  let nucleiShown = nuclei.shown();
+  canvas.dataset['nuclei'] = nucleiShown;
   // The walk (step 39): the stop the view stands at, and the flight under way to the next one, eased by the scheduler's fly-to.
   const walk = createWalk(map);
   const walkLook = registry.view(WALK, 'WALK');
@@ -826,6 +834,11 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     if (shownFrame === undefined) delete canvas.dataset['frame'];
     else canvas.dataset['frame'] = String(shownFrame);
     canvas.dataset['pushed'] = String(Number(canvas.dataset['pushed'] ?? '0') + 1);
+    // A file's functions can change with the ground unchanged, and the granules are laid from the map handed in, so the pushed map's take the place of the last one's (D330 (granules-follow-push)).
+    for (const mesh of nuclei.meshes) scene.remove(mesh);
+    nuclei.dispose();
+    nuclei = nucleiOn(next);
+    for (const mesh of nuclei.meshes) scene.add(mesh);
     relay(frameMap(next, shownFrame));
     return undefined;
   };
@@ -1020,6 +1033,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       canvas.dataset['floated'] = String(floatedShown);
     }
     organelles.move(floated.surface);
+    nuclei.move(floated.surface);
     for (const layer of layers()) layer.sectors.move(floated.surface);
     bodies = slide === undefined || open.shown <= 0 ? [] : interiorOf(slide, { drifted: floated.open, reduced, shape: scheduler.shape, nucleus: nucleusTokens, ...(view.shapes === undefined ? {} : { shapes: view.shapes }) });
     interior.show(bodies, open.shown, (id) => {
@@ -1027,6 +1041,8 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       return light === undefined ? 1 : (frame.notices[light]?.gain ?? 1);
     });
     organelles.hide(slide?.cell, open.shown);
+    // The map's granules give way under a slide with their files, since the slide draws its own.
+    nuclei.hide(slide?.cell, open.shown);
     for (const layer of layers()) layer.sectors.hide(slide?.cell, open.shown);
     if (open.exploded >= 1 !== exploded) {
       exploded = open.exploded >= 1;
@@ -1053,6 +1069,14 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     // At the far field the files are not drawn at all, rather than drawn at no opacity, once the first frame has drawn them and laid their pipeline.
     for (const mesh of organelles.meshes) mesh.visible = surface > 0 || passes < 2;
     organelles.restyle();
+    // The granules resolve by the pixels a layout unit takes (D206 (detail-by-size)), are drawn with the files and not at the far field, and say how many are laid whenever a nucleus token moves that.
+    nuclei.frame(pixelsPerUnit(camera, canvas.clientWidth));
+    for (const mesh of nuclei.meshes) mesh.visible = surface > 0 || passes < 2;
+    nuclei.restyle();
+    if (nuclei.shown() !== nucleiShown) {
+      nucleiShown = nuclei.shown();
+      canvas.dataset['nuclei'] = nucleiShown;
+    }
     for (const layer of layers()) {
       layer.palette.restyle();
       layer.sectors.fade.value = layer === current ? mixed : 1 - mixed;
