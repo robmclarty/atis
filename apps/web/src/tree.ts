@@ -143,9 +143,10 @@ const standing = (root: Dir): ReadonlyMap<string, 'directory' | 'leaf'> => {
 };
 
 /**
- * The module a directory's row selects: where a package and a directory share
- * the path, the package, the outer body (D218 (departure-cell)); the loose
- * files at its root are rows of their own beneath it.
+ * The module a directory's row selects (D275 (tree-row-target)): where a
+ * package and a directory share the path, the package, the outer body
+ * (D218 (departure-cell)); the loose files at its root are rows of their own
+ * beneath it.
  */
 const moduleAt = (cells: readonly Cell[]): Cell | undefined => cells.find((cell) => cell.kind === 'package') ?? cells[0];
 
@@ -156,7 +157,7 @@ const standingAt = (paths: ReadonlyMap<string, 'directory' | 'leaf'>, rooted: bo
   return path;
 };
 
-/** How many departures each row wears: a module's own on its row, and a module that is gone on the nearest row still standing; an outside package's on none. */
+/** How many departures each row wears (D283 (lost-departure)): a module's own on its row, and a module that is gone on the nearest row still standing; an outside package's on none, which the header's count alone holds. */
 const departuresOn = (departures: readonly Departure[], index: ReadonlyMap<string, string>, lost: (path: string) => string | undefined): ReadonlyMap<string, number> => {
   const held = new Map<string, number>();
   for (const departure of departures) {
@@ -250,7 +251,7 @@ export const treeOf = (map: MapJson): TreeModel => {
   const paths = standing(root);
   const cellsAt = Map.groupBy(map.terrain.cells, (cell) => cell.path);
   const rooted = cellsAt.has(ROOT);
-  // A cell lights the row at its path, a single file's module the file's; then a file's id lights its own row, as the line looks a file up before a module.
+  // A cell lights the row at its path, a single file's module the file's; then a file's id lights its own row, as the line looks a file up before a module (D275 (tree-row-target)).
   const index = new Map<string, string>();
   for (const cell of map.terrain.cells) if (cell.path === ROOT ? rooted : paths.has(cell.path)) index.set(cell.id, cell.path);
   for (const file of map.terrain.organelles) index.set(file.id, file.path);
@@ -266,6 +267,7 @@ export const treeOf = (map: MapJson): TreeModel => {
     departures: departuresOn(map.approved?.departures ?? [], index, (path) => standingAt(paths, rooted, path)),
     targets,
   };
+  // A module at the repo's root is the one row at the top, named for the repo; with none there, the top rows are what the root holds.
   const top = directoryOf(root, marks, map.meta.repo === '' ? ROOT : map.meta.repo);
   const roots = rooted ? [top] : top.children;
   return {
