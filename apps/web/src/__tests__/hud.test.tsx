@@ -120,7 +120,15 @@ const element = (selector: string): HTMLElement => {
   return found;
 };
 
-test("the world's blocks are the sheet's, block for block, on the demo, its four other categories and every committed fixture", () => {
+/**
+ * How long the sweep of every committed fixture may take. It draws the still
+ * sheet for some thirty maps: a second alone, about four under the full
+ * check's coverage, and past the 5 seconds a test is given unasked once the
+ * suite shares the machine with the browser tests.
+ */
+const SWEEP_MS = 60_000;
+
+test("the world's blocks are the sheet's, block for block, on the demo, its four other categories and every committed fixture", { timeout: SWEEP_MS }, () => {
   const maps: readonly (readonly [string, MapJson])[] = [['demo', DEMO], ...(['VFR', 'MVFR', 'LIFR', 'NOINST'] as const).map((category) => [category, variant(category)] as const), ...committedMaps()];
   expect(maps.length).toBeGreaterThan(10);
   for (const [name, map] of maps) {

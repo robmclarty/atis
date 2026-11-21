@@ -635,7 +635,15 @@ test('the largest file on the slide fills its share of its core and the rest by 
   expect((halved?.granules ?? []).reduce((total, granule) => total + Math.PI * granule.r ** 2, 0)).toBeLessThan(areaOf(tools) * 0.75);
 });
 
-test('past the most a nucleus draws, the largest functions are drawn and the rest counted on the tag, and every granule keeps inside the core while the shape pulses, turns and jitters at the spiky end (D197)', () => {
+/**
+ * How long the 400-function nucleus may take. It holds every point of the
+ * 200 rings it draws inside the body at four moments: under a second alone,
+ * over two under the full check's coverage, and past the 5 seconds a test is
+ * given unasked once the suite shares the machine with the browser tests.
+ */
+const CROWDED_NUCLEUS_MS = 60_000;
+
+test('past the most a nucleus draws, the largest functions are drawn and the rest counted on the tag, and every granule keeps inside the core while the shape pulses, turns and jitters at the spiky end (D197)', { timeout: CROWDED_NUCLEUS_MS }, () => {
   const functions = functionsOf(400);
   const slide = slideOf(PM, withFunctions(TOOLS, functions));
   // Under the demo switch the last file in path order stands at the spiky end, where the shape moves most.

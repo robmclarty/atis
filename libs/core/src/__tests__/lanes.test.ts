@@ -160,7 +160,15 @@ const FIELDS = SEEDS.map((seed) => {
   return { seed, shape, layout: computeLayout(shape.input) };
 });
 
-test('no skin crosses a skin of another package, and no file lies under one', () => {
+/**
+ * How long a sweep of the seeded fields may take. Each is a fraction of a
+ * second alone, and several times that under the full check, where coverage is
+ * on and the suite shares the machine with the browser tests: there they ran
+ * to either side of the 5 seconds a test is given unasked.
+ */
+const SWEEP_MS = 60_000;
+
+test('no skin crosses a skin of another package, and no file lies under one', { timeout: SWEEP_MS }, () => {
   for (const { seed, shape, layout } of FIELDS) {
     expect(trouble(layout, shape.input.cells, shape.input.organelles, otherPackages(shape.packages)), `seed ${String(seed)}`).toEqual([]);
   }
@@ -268,7 +276,7 @@ const CROWDS = SEEDS.map((seed) => {
   return { seed, input, layout: computeLayout(input) };
 });
 
-test('no two cells of which neither holds the other draw skins that cross or nest, and no file lies under a cell it is not in', () => {
+test('no two cells of which neither holds the other draw skins that cross or nest, and no file lies under a cell it is not in', { timeout: SWEEP_MS }, () => {
   for (const { seed, input, layout } of CROWDS) {
     expect(trouble(layout, input.cells, input.organelles, unrelated(input.cells)), `crowd ${String(seed)}`).toEqual([]);
   }
@@ -478,7 +486,7 @@ test("a change over a wrapped base's own field holds every file it left alone wh
   }
 });
 
-test("a change that gives a wrapped base's ladder another terrace relaxes from the base, since every row below the first would move", () => {
+test("a change that gives a wrapped base's ladder another terrace relaxes from the base, since every row below the first would move", { timeout: SWEEP_MS }, () => {
   const shape = WIDES[0]?.shape ?? wide(1, false);
   const { ground } = baseOf(shape.input);
   const deeper = shape.input.organelles.map((file, index) => (index === 1 ? { ...file, band: 3 } : file));
