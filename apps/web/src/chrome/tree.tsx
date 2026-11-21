@@ -410,7 +410,20 @@ export const Tree = ({ map, registry, nav }: TreeProps): ReactElement => {
     if (row !== undefined) bring(row);
   }, [revealed]);
 
+  // What the tree points at, so it lets go of that alone: the inspector points from the chrome's side too, and a row of its own may have taken the pointing since (D265 (own-pointing)).
+  const mine = useRef<string | undefined>(undefined);
   const asks = useMemo<Asks>(() => {
+    const point = (target: string | undefined): void => {
+      if (target !== undefined) {
+        mine.current = target;
+        nav.point(target, 'chrome');
+        return;
+      }
+      const was = mine.current;
+      mine.current = undefined;
+      const now = nav.pointed();
+      if (was !== undefined && now?.from === 'chrome' && now.target === was) nav.point(undefined, 'chrome');
+    };
     const select = (target: string): void => {
       // The selection is built from the map by the row's target, as every caller builds one (D209 (selection-line)).
       const next = selectedOf(map, target);
@@ -426,10 +439,10 @@ export const Tree = ({ map, registry, nav }: TreeProps): ReactElement => {
         return select(node.target);
       },
       toggle: toggleRow,
-      point: (target) => nav.point(target, 'chrome'),
+      point,
       focus: (node) => {
         setCursor(node.path);
-        nav.point(targetIn(node), 'chrome');
+        point(targetIn(node));
       },
     };
   }, [map, nav, setToggled]);

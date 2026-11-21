@@ -214,6 +214,23 @@ test('a row under the pointer points the map at what it names, and lets go when 
   expect(nav.pointed()).toEqual({ target: TOOLS, from: 'world' });
 });
 
+test("a row the pointer leaves lets go only of what the tree pointed at: another panel's pointing, taken from the chrome's side since, stands (D265 (own-pointing))", async () => {
+  const nav = await mount();
+  await pass(row(TOOLS), true);
+  expect(nav.pointed()).toEqual({ target: TOOLS, from: 'chrome' });
+  // The inspector's row takes the pointing, from the chrome's side as the tree's is, while the pointer still rests on the tree's row.
+  act(() => nav.point(FORMAT, 'chrome'));
+  await pass(row(TOOLS), false);
+  expect(nav.pointed()).toEqual({ target: FORMAT, from: 'chrome' });
+  // A row that names nothing on the map, under the pointer, lets go of nothing the tree did not point at either.
+  await pass(row('README.md'), true);
+  expect(nav.pointed()).toEqual({ target: FORMAT, from: 'chrome' });
+  // And what the tree points at next is its own to let go of again.
+  await pass(row(TOOLS), true);
+  await pass(row(TOOLS), false);
+  expect(nav.pointed()).toBeUndefined();
+});
+
 test("a press on a file's row, or on a module's, selects it and asks the world to fly there; a module's row opens as well", async () => {
   const nav = createNav();
   const select = vi.fn();
