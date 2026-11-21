@@ -12,7 +12,9 @@
  * space clears the selection and closes it, its files coming home with the
  * view still deep in, where the old levels held them floated (D221
  * (home-by-time)). With `LEVELS.openOnSelect` at `0` a click only rings and
- * names.
+ * names. And a tab that names no zoom and no centre opens framed on the
+ * ground the world draws, in the middle of the free screen, not on the layout
+ * with the shore's strip the world never draws (D222 (terrain-frame)).
  */
 
 import { readFileSync } from 'node:fs';
@@ -23,7 +25,9 @@ import { expect, test } from 'vitest';
 import { assertMap, withinContour } from 'core';
 
 import { RAIL_WIDTH, fitFrame } from '../fit.js';
-import { HOVER } from '../materials.js';
+import { HOVER, WALK } from '../materials.js';
+import { bandRules } from '../space.js';
+import { createWalk } from '../walk.js';
 import { DEMO, launch, serve, withTokens } from './browser.js';
 
 type Point = readonly [number, number];
@@ -245,6 +249,63 @@ test('with LEVELS.openOnSelect at 0 a click on a module only rings and names it,
     await page.waitForSelector(`#world[data-selected="${TOOLS}"]`, { timeout: 30_000 });
     await page.waitForTimeout(400);
     expect(await page.getAttribute('#world', 'data-open')).toBeNull();
+    expect(complaints).toEqual([]);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
+/** The path the hover's tag writes with the pointer on a point of the screen, once the tag shows. */
+const hoveredAt = async (page: Page, [x, y]: Point): Promise<string | null> => {
+  expect(await page.evaluate(([px, py]) => document.elementFromPoint(px ?? 0, py ?? 0)?.id, [x, y]), 'the canvas takes the pointer there').toBe('world');
+  // Off whatever it was on first, so the tag read is this point's.
+  await page.mouse.move(x, y);
+  await page.waitForFunction(() => document.querySelector<HTMLElement>('[data-hover-tag]')?.style.display !== 'none', undefined, { timeout: 30_000 });
+  return page.textContent('[data-hover-tag]');
+};
+
+test('a tab that names no zoom and no centre opens framed on the ground the world draws, in the middle of the free screen, and one that names a zoom is framed on the layout as ever, with a clean console (D222 (terrain-frame))', { timeout: 120_000 }, async () => {
+  const { server, url } = await serve();
+  const browser = await launch();
+  try {
+    const page = await browser.newPage({ viewport: VIEWPORT });
+    const complaints: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error' || message.type() === 'warning') complaints.push(`${message.type()}: ${message.text()}`);
+    });
+    page.on('pageerror', (error) => complaints.push(`pageerror: ${error.message}`));
+    const ground = createWalk(MAP).ground();
+    if (ground === undefined) throw new Error('the demo lays no ground out');
+    const rules = bandRules(MAP);
+    /** Where each band's rule lies on the screen, by the band it opens. */
+    const rulesAt = async (): Promise<ReadonlyMap<number, number>> =>
+      new Map(await page.$$eval('[data-rules] [data-rule]', (lines) => lines.map((line) => [Number(line.getAttribute('data-rule')), Number(line.getAttribute('y1'))] as const)));
+    /** The files at the ground's left, its foot and its right: each is under the pointer where a frame puts it only if the frame is the one meant, across and down. */
+    const probes = ['apps/cli/src/doctor.ts', 'libs/core/src/util/format.ts', TOOLS].map((path) => ({ path, at: LAYOUT.positions[path] ?? { x: 0, y: 0, r: 0 } }));
+    /** A frame is the one meant when every rule and every probe lies where it puts them: `centre` in the middle of the free screen, at `perUnit` pixels a layout unit. A level rule is drawn on a pixel's middle, so it lies within a pixel of its place. */
+    const framedAt = async (centre: Point, perUnit: number): Promise<void> => {
+      const place = ([x, y]: Point): Point => [MIDDLE[0] + (x - centre[0]) * perUnit, MIDDLE[1] + (y - centre[1]) * perUnit];
+      const drawn = await rulesAt();
+      expect(drawn.size).toBe(rules.length);
+      for (const rule of rules) expect(Math.abs((drawn.get(rule.band) ?? Number.NaN) - place([0, rule.y])[1]), `band ${String(rule.band)}'s rule`).toBeLessThanOrEqual(1);
+      const hovered = await probes.reduce<Promise<readonly (string | null)[]>>(async (before, probe) => [...(await before), await hoveredAt(page, place([probe.at.x, probe.at.y]))], Promise.resolve([]));
+      expect(hovered.map((text) => (text ?? '').replace(/^\+/, ''))).toEqual(probes.map((probe) => probe.path));
+    };
+
+    // The opening frame: the ground fills the walk's share of the free screen in the side it fills first, and its middle stands in the middle of the free screen. The shore's strip above it, which the world never draws, takes no room.
+    await page.goto(`${url}/?backend=webgl`);
+    await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
+    expect(await page.getAttribute('[data-crumbs]', 'data-crumbs')).toBe('field');
+    const share = Math.min(((VIEWPORT.width - RAIL_WIDTH) * WALK.share) / (ground.x1 - ground.x0), (VIEWPORT.height * WALK.share) / (ground.y1 - ground.y0));
+    await framedAt([(ground.x0 + ground.x1) / 2, (ground.y0 + ground.y1) / 2], share);
+    // And that is not the layout's own frame: the layout is taller than the ground by the shore's strip.
+    expect((ground.y0 + ground.y1) / 2).toBeGreaterThan(LAYOUT.height / 2);
+
+    // A page that names a zoom is framed on the whole layout at that zoom over the fit, about the layout's middle, as it always was.
+    await page.goto(`${url}/?backend=webgl&zoom=1`);
+    await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
+    await framedAt([LAYOUT.width / 2, LAYOUT.height / 2], VIEWPORT.height / (2 * fitFrame(LAYOUT, VIEWPORT.width, VIEWPORT.height, { right: RAIL_WIDTH }).halfH));
     expect(complaints).toEqual([]);
   } finally {
     await browser.close();

@@ -262,7 +262,7 @@ test('the tab opens on the lit surface with no zoom asked for and no planet, and
       expect(await page.$$eval('[data-file-plate], [data-diff-sheet]', (layers) => layers.filter((layer) => layer instanceof SVGElement || layer instanceof HTMLElement).filter((layer) => layer.style.display !== 'none').length)).toBe(0);
     };
 
-    // The opening frame, the whole layout fitted to the free screen: the surface, lit, where the planet stood.
+    // The opening frame, the ground the world draws framed in the free screen (D222 (terrain-frame)): the surface, lit, where the planet stood.
     await page.goto(`${url}/?backend=webgl`);
     await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
     expect(await page.getAttribute('#world', 'data-lod')).toBe('1');
@@ -270,7 +270,7 @@ test('the tab opens on the lit surface with no zoom asked for and no planet, and
     expect(await page.getAttribute('[data-crumbs]', 'data-crumbs')).toBe('field');
     await page.evaluate(() => document.querySelector<HTMLElement>('#chrome')?.style.setProperty('visibility', 'hidden'));
     const reading = await frameOf(page);
-    // The whole layout fitted to the free screen covers a smaller share of the frame than at zoom 2, and still one well clear of none.
+    // The whole ground in the free screen covers a smaller share of the frame than at zoom 2, and still one well clear of none.
     expect(reading.lit / reading.pixels).toBeGreaterThan(0.05);
     expect(reading.shades).toBeGreaterThan(64);
 

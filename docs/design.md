@@ -677,9 +677,9 @@ resolves by its size on the screen (D206 (detail-by-size)).
 | `HOVER.selectWidth` | `2.5` | the ring's width, in pixels: a pixel heavier than the hover's outline, so the selection reads under a hover and apart from one |
 | `HOVER.clickSlop` | `4` | how far, in pixels, a press may move and still be a click, not a drag |
 | `HOVER.clickMs` | `400` | how long, in milliseconds, a press may last and still be a click |
-| `WALK.share` | `0.8` | the share of the free screen a stop the camera flies to fills, in whichever of its width and height it fills first |
+| `WALK.share` | `0.8` | the share of the free screen a stop the camera flies to fills, in whichever of its width and height it fills first; the tab opens with the ground the world draws filling the same share, where the walk flies for the field (D222 (terrain-frame)) |
 | `WALK.fileContext` | `6` | how many of a file's radii of ground a file stop is framed with |
-| `WALK.fieldZoom` | `1.7` | the camera's zoom over the fit under which a view that came to rest stands at the field, whatever lies under its centre, so the breadcrumb reads `field` and Enter walks in to a module (D219 (field-by-zoom)); the zoom the far field's level gave way at before it was parked |
+| `WALK.fieldZoom` | `1.7` | how many times the zoom the field is framed at a view that came to rest may stand and still be at the field, whatever lies under its centre, so the breadcrumb reads `field` and Enter walks in to a module (D219 (field-by-zoom)). The field is framed on the ground at `WALK.share`, and at the fit while `LEVELS.autoOpen` is above `0` (D223 (field-over-frame)); it rests at the zoom the far field's level gave way at before it was parked |
 
 ### The minimap
 

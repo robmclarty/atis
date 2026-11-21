@@ -53,7 +53,9 @@
  * module moves the slide, a file selected on it keeps it, clearing the
  * selection closes it, and no zoom and no share of the screen opens or closes
  * anything; closed, its files come home over the slide's own fade (D221
- * (home-by-time)). Under the old levels, which one token brings back (D204
+ * (home-by-time)). The tab opens framed on the ground the world draws, not on
+ * the layout with the shore's strip the world never draws (D222
+ * (terrain-frame)). Under the old levels, which one token brings back (D204
  * (parked-levels)), from the surface on, the innermost cell
  * under the view's centre opens as a stained slide once its skin fills the
  * cell gate's share of the free screen, if its slide shows files (step 40,
@@ -387,11 +389,33 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   globalThis.addEventListener('resize', fit);
   const reduced = globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches;
   canvas.dataset['motion'] = reduced ? 'reduced' : 'full';
+  const levels = registry.view(LEVELS, 'LEVELS');
+  // The walk (step 39): the stop the view stands at, and the flight under way to the next one, eased by the scheduler's fly-to.
+  const walk = createWalk(map);
+  const walkLook = registry.view(WALK, 'WALK');
+  const layout = map.terrain.layout ?? { width: 1, height: 1 };
+  /** The view that frames a stretch of the ground: centred on it, at the zoom where it fills the walk's share of the free screen. */
+  const frameOf = (box: Box): { readonly centre: Point; readonly zoom: number } => ({ centre: [(box.x0 + box.x1) / 2, (box.y0 + box.y1) / 2], zoom: clampZoom(zoomFor(layout, box, canvas.clientWidth, canvas.clientHeight, chrome, walkLook.share)) });
+  /**
+   * Where the field stands on the one surface (D222 (terrain-frame)): framed
+   * on the ground the world draws, centred in the free screen. The fit frames
+   * the whole layout, the shore's strip above the first band with it, which
+   * the world never draws, so a tab opened at the fit showed the map small
+   * and low under empty sky. The fit and what zoom 1 means are as they were;
+   * only where the tab opens, and where the walk flies for the field, moved.
+   * None under the old levels, whose far field is the whole layout at the fit
+   * (D204 (parked-levels)), and none on a map that lays nothing out.
+   */
+  const fieldFrame = (): { readonly centre: Point; readonly zoom: number } | undefined => {
+    const ground = levels.autoOpen > 0 ? undefined : walk.ground();
+    return ground === undefined ? undefined : frameOf(ground);
+  };
+  // A page that names no zoom and no centre opens at the field.
+  const home = view.framed === true ? undefined : fieldFrame();
   // A still opens on what the change is about, the rail's room given to the world, framed as the comment's flat still frames it (D108, D175).
-  const opened = view.cinema === true ? { ...view, ...cinemaFocus(map, canvas.clientWidth, canvas.clientHeight, registry.view(CINEMA, 'CINEMA')) } : view;
+  const opened = view.cinema === true ? { ...view, ...cinemaFocus(map, canvas.clientWidth, canvas.clientHeight, registry.view(CINEMA, 'CINEMA')) } : home === undefined ? view : { ...view, ...home };
   const controls = createControls(camera, canvas, map, opened, chrome, reduced);
   const cameraLook = registry.view(CAMERA, 'CAMERA');
-  const levels = registry.view(LEVELS, 'LEVELS');
   // The labels ride their anchors while the camera moves and are laid out afresh once it rests.
   controls.addEventListener('rest', () => {
     placeLabels = true;
@@ -607,11 +631,6 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     apply(openedBy(opening, { kind: 'click', lod: lastLod, pick, holds: holdsIn(boxOf(outlineOf(camera, canvas.clientWidth, chrome))) }));
   });
 
-  // The walk (step 39): the stop the view stands at, and the flight under way to the next one, eased by the scheduler's fly-to.
-  const walk = createWalk(map);
-  const walkLook = registry.view(WALK, 'WALK');
-  const layout = map.terrain.layout ?? { width: 1, height: 1 };
-
   // The cell's gate (D165): a cell's box, the share of the free screen its skin fills at the camera's zoom, the cell to open under a point, and whether a cell holds open.
   const cellBoxes = new Map<string, Box | undefined>();
   const cellBox = (cell: string): Box | undefined => {
@@ -659,10 +678,12 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     nav.settle(next);
   };
   const visit = (next: Stop): void => {
+    // The field is flown to where the tab opened on it (D222 (terrain-frame)); every other stop, and the field under the old levels, to its own box.
     const box = walk.box(next, walkLook.fileContext);
+    const to = (next.kind === 'field' ? fieldFrame() : undefined) ?? (box === undefined ? undefined : frameOf(box));
     const from = standOf(controls, camera, canvas.clientWidth, chrome);
-    if (box === undefined || from === undefined) return;
-    flight = { from, to: [(box.x0 + box.x1) / 2, (box.y0 + box.y1) / 2], zoom: clampZoom(zoomFor(layout, box, canvas.clientWidth, canvas.clientHeight, chrome, walkLook.share)) };
+    if (to === undefined || from === undefined) return;
+    flight = { from, to: to.centre, zoom: to.zoom };
     handled = false;
     readStop = false;
     settle(next);
@@ -898,8 +919,8 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       }
     }
     if (readStop && flight === undefined) {
-      // Under the walk's own zoom the view stands at the field, whatever lies under its centre: no level says so now that the far field's is parked (D219 (field-by-zoom)).
-      if (middle !== undefined) settle(walk.stopAt(middle, camera.zoom < walkLook.fieldZoom ? 0 : lod));
+      // Under the walk's own zoom the view stands at the field, whatever lies under its centre: no level says so now that the far field's is parked (D219 (field-by-zoom)). The zoom is measured over the frame the field stands at, which is the fit only under the old levels (D223 (field-over-frame)): on a map with a deep shore the tab opens well past 1.7 times the fit, with the whole ground in view.
+      if (middle !== undefined) settle(walk.stopAt(middle, camera.zoom < walkLook.fieldZoom * (fieldFrame()?.zoom ?? 1) ? 0 : lod));
       readStop = false;
     }
     // The slide (step 40): laid when the cell it shows changes, its bodies laid every frame where the scene has them, and the surface's files and marks in it giving way as it fades in.
