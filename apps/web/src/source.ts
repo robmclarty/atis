@@ -11,8 +11,10 @@
  * The answers are kept in one small store, the diffs beside the texts, by
  * map and by path, so a tab that is opened twice asks once and a map a watch
  * pushed asks afresh (D253 (read-is-ask)): reading an answer is what asks
- * for it, as the world's own diff cache does, which is left as it is. Pure
- * but for the one fetch, which is injected, so a test reads it straight.
+ * for it, as the world's own diff cache does, which is left as it is. While
+ * a map's own answer is on its way the path's last one stands in for it
+ * (D335 (answer-stands)). Pure but for the one fetch, which is injected, so
+ * a test reads it straight.
  */
 
 import type { Hunk, MapJson } from 'core';
@@ -162,20 +164,30 @@ export type Answers = {
 /** The one diff answer that is on its way, one value, so a reader sees the same answer until it arrives. */
 const DIFF_LOADING: DiffAnswer = { status: 'loading' };
 
-/** One kind of answer by map and path: the held one, or the one it is asked with while `ask` is on its way, and then what `ask` resolved to. */
+/**
+ * One kind of answer by map and path: the held one, or what stands in while
+ * `ask` is on its way, and then what `ask` resolved to. What stands in is
+ * the answer the path last had over any map, and `loading` only for a path
+ * never answered (D335 (answer-stands)): a map a watch pushed, or a frame
+ * the scrubber stepped to, is another map and is asked afresh, and a reader
+ * of the code keeps the sheet, its scroll and its focus while it is.
+ */
 const kept = <T>(tell: () => void, loading: T, ask: (path: string) => Promise<T>): ((map: MapJson, path: string) => T) => {
   const byMap = new WeakMap<MapJson, Map<string, T>>();
+  const last = new Map<string, T>();
   return (map, path) => {
     const held = byMap.get(map) ?? new Map<string, T>();
     byMap.set(map, held);
     const answer = held.get(path);
     if (answer !== undefined) return answer;
-    held.set(path, loading);
+    const standing = last.get(path) ?? loading;
+    held.set(path, standing);
     void ask(path).then((arrived) => {
       held.set(path, arrived);
+      last.set(path, arrived);
       tell();
     });
-    return loading;
+    return standing;
   };
 };
 

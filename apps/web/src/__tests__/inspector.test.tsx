@@ -668,6 +668,59 @@ test('served, the code tab shows the text a row to a line, the changed lines mar
   expect(host.querySelector(`[data-inspector-code="${INDEX}"]`)).not.toBeNull();
 });
 
+test('a map a watch pushed leaves the sheets of code and diff where they are, with their scroll and the focus, while their text is read again (D335 (answer-stands))', async () => {
+  const edited: ServedSource = { ...SERVED, text: `${TEXT}// line 32\n` };
+  let text = SERVED;
+  const asked: string[] = [];
+  // The first map's answers come at once; a pushed map's wait to be let go.
+  let hold: { readonly promise: Promise<void>; readonly resolve: () => void } | undefined;
+  vi.stubGlobal('fetch', async (url: string) => {
+    asked.push(url);
+    await hold?.promise;
+    return url.startsWith('/diff/') ? { ok: true, status: 200, json: async () => ({ path: INDEX, diff: DIFF, root: ROOT, editor: DEFAULT_EDITOR }) } : { ok: true, status: 200, json: async () => text };
+  });
+  const { nav, registry } = await draw(DEMO, { token: TOKEN });
+  await select(nav, INDEX);
+  await click('[data-inspector-tab="diff"]');
+  await click('[data-inspector-tab="code"]');
+  await settle();
+  const sheet = element(`[data-inspector-code="${INDEX}"]`);
+  sheet.scrollTop = 120;
+  act(() => sheet.focus());
+  expect(document.activeElement).toBe(sheet);
+
+  // The watch pushes a map over the same ground: another object, so the text is asked for again, and the sheet is the one the reader was in.
+  text = edited;
+  hold = Promise.withResolvers<void>();
+  const pushed: MapJson = { ...DEMO };
+  await act(async () => root.render(<Inspector map={pushed} registry={registry} nav={nav} token={TOKEN} />));
+  expect(asked.filter((url) => url.startsWith(`/file/${INDEX}`))).toHaveLength(2);
+  expect(host.querySelector('[data-inspector-code-note]')).toBeNull();
+  expect(element(`[data-inspector-code="${INDEX}"]`)).toBe(sheet);
+  expect(sheet.scrollTop).toBe(120);
+  expect(document.activeElement).toBe(sheet);
+  expect(all(`[data-inspector-code="${INDEX}"] [data-inspector-line]`)).toHaveLength(31);
+
+  // The fresh text lands in the same sheet.
+  hold.resolve();
+  await settle();
+  expect(element(`[data-inspector-code="${INDEX}"]`)).toBe(sheet);
+  expect(all(`[data-inspector-code="${INDEX}"] [data-inspector-line]`)).toHaveLength(32);
+  expect(sheet.scrollTop).toBe(120);
+  expect(document.activeElement).toBe(sheet);
+
+  // The diff's sheet stands the same way while its own answer is read again.
+  await click('[data-inspector-tab="diff"]');
+  const diff = element(`[data-inspector-diff="${INDEX}"]`);
+  hold = Promise.withResolvers<void>();
+  await act(async () => root.render(<Inspector map={{ ...DEMO }} registry={registry} nav={nav} token={TOKEN} />));
+  expect(host.querySelector('[data-inspector-diff-note]')).toBeNull();
+  expect(element(`[data-inspector-diff="${INDEX}"]`)).toBe(diff);
+  hold.resolve();
+  await settle();
+  expect(element(`[data-inspector-diff="${INDEX}"]`)).toBe(diff);
+});
+
 test("a text read at another commit than the map's is shown bare, with why: no changed line and no function is marked on it (D271 (marks-of-own-commit))", async () => {
   serve({ [`/file/${INDEX}`]: { status: 200, body: SERVED } });
   // A frame the scrubber stands at: the map is of an earlier commit, and the server still reads the head it holds.

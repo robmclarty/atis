@@ -259,12 +259,55 @@ test('answers are kept by map and by path: another file and another map each ask
 
   // A map a watch pushed is another map, so the file is read again; the first map's answer stands.
   const pushed: MapJson = { ...DEMO };
-  expect(answers.source(pushed, PATH)).toEqual({ status: 'loading' });
-  await settled();
+  answers.source(pushed, PATH);
   expect(asked).toHaveLength(3);
+  await settled();
   expect(answers.source(pushed, PATH)).toEqual({ status: 'ready', source: SERVED });
   expect(answers.source(DEMO, PATH)).toEqual({ status: 'ready', source: SERVED });
   expect(asked).toHaveLength(3);
+});
+
+test("while another map's answer is on its way the path's last answer stands in for it, and loading only for a path never answered (D335 (answer-stands))", async () => {
+  const { fetch, asked, answer } = held();
+  const answers = createAnswers('a1', fetch);
+  const heard = vi.fn();
+  answers.subscribe(heard);
+  const url = '/file/libs/core/src/pm/tools.ts?token=a1';
+  const diffUrl = '/diff/libs/core/src/pm/tools.ts?token=a1';
+  answers.source(DEMO, PATH);
+  answers.diff(DEMO, PATH);
+  answer(url, 200, SERVED);
+  answer(diffUrl, 200, SERVED_DIFF);
+  await settled();
+  const first = answers.source(DEMO, PATH);
+  const firstDiff = answers.diff(DEMO, PATH);
+  expect(first).toEqual({ status: 'ready', source: SERVED });
+  expect(firstDiff).toEqual({ status: 'served', diff: SERVED_DIFF });
+  expect(heard).toHaveBeenCalledTimes(2);
+
+  // A map a watch pushed: asked afresh, and until that answer lands the reader holds the text and the diff they had, the same values.
+  const pushed: MapJson = { ...DEMO };
+  expect(answers.source(pushed, PATH)).toBe(first);
+  expect(answers.source(pushed, PATH)).toBe(first);
+  expect(answers.diff(pushed, PATH)).toBe(firstDiff);
+  expect(asked).toEqual([url, diffUrl, url, diffUrl]);
+  expect(heard).toHaveBeenCalledTimes(2);
+  // A path never answered has nothing to stand in.
+  expect(answers.source(pushed, 'libs/core/src/pm/slots.ts')).toEqual({ status: 'loading' });
+
+  // The fresh text takes its place, and is what stands in for the next map; the first map keeps its own.
+  const edited: ServedSource = { ...SERVED, text: `${TEXT}// one more line\n` };
+  answer(url, 200, edited);
+  await settled();
+  expect(heard).toHaveBeenCalledTimes(3);
+  expect(answers.source(pushed, PATH)).toEqual({ status: 'ready', source: edited });
+  expect(answers.source(DEMO, PATH)).toBe(first);
+  expect(answers.source({ ...DEMO }, PATH)).toEqual({ status: 'ready', source: edited });
+
+  // A refusal that arrives stands in too: the reader is not shown a text the server no longer gives.
+  answer(url, 413, {});
+  await settled();
+  expect(answers.source({ ...DEMO }, PATH)).toEqual({ status: 'large' });
 });
 
 test("a store handed no fetch reads with the page's own", async () => {
