@@ -887,6 +887,11 @@ test("served for real, a file on the terrain and one on the shore are read at th
   if (committed.served === undefined) throw new Error(committed.stderr);
   servers.push(committed.served);
   expect(await textAt(committed.served, 'src/square.ts')).toEqual({ path: 'src/square.ts', text: square, at: head, root: repo, editor: DEFAULT_EDITOR });
+  // The answer's `at` is the head the served map itself names, the whole sha, byte for byte: the page marks a text's changed lines only where the two are equal (D271 (marks-of-own-commit)), so a short sha or another object's here would show every file bare.
+  const mapped = assertMap(JSON.parse((await get(committed.served.port, `/map.json?token=${TOKEN}`)).body));
+  expect(mapped.meta.head).toMatch(/^[0-9a-f]{40}$/);
+  expect((await textAt(committed.served, 'src/square.ts')).at).toBe(mapped.meta.head);
+  expect((await textAt(committed.served, 'package.json')).at).toBe(mapped.meta.head);
   expect((await textAt(committed.served, 'package.json')).text).toContain('"name": "demo"');
   expect((await fileAt(committed.served, '.git%2Fconfig')).status).toBe(404);
   await committed.served.close();
@@ -901,6 +906,8 @@ test("served for real, a file on the terrain and one on the shore are read at th
   expect(read.at).toMatch(/^[0-9a-f]{40}$/);
   expect(read.at).not.toBe(head);
   expect(git(repo, 'cat-file', '-t', read.at)).toBe('tree');
+  // A working tree's map names no commit, so the page has none to hold the tree's sha against, and marks the text as it comes.
+  expect(assertMap(JSON.parse((await get(working.served.port, `/map.json?token=${TOKEN}`)).body)).meta.head).toBe('working-tree');
 }, 60_000);
 
 test("served from a directory inside the repository, the map, a file's text and a diff are the whole repository's, read from its root (D329 (repo-root))", async () => {
