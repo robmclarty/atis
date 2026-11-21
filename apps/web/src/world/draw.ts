@@ -41,7 +41,11 @@
  * does not move. The selection, whichever side set it, is ringed steadily
  * under the hover's outline, keeps its words written, and is named on the
  * canvas; a row in the chrome that selects asks the world to fly there too
- * (D209 (selection-line)). A notice's row, the
+ * (D209 (selection-line)). The two sides point at each other over the same
+ * line: the world says what the pointer is over on the map, so its row
+ * lights in the chrome, and what a row there points at is outlined on the
+ * map and its words written (D234 (pointed-ring)); the canvas names what is
+ * pointed at and from which side. A notice's row, the
  * arrows, Enter and Escape fly the camera to a stop along the scheduler's
  * fly-to, and the skin swings as it lands; the stop goes back over the line
  * for the HUD's breadcrumb (step 39). A target an agent names over
@@ -137,8 +141,8 @@ import { hoverOf } from '../hover.js';
 import type { Hovered } from '../hover.js';
 import { marksOf } from '../marks.js';
 import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, NOTICE, PLANET, SKIN, SKY, SPACE, WALK, WEATHER } from '../materials.js';
-import { targetOf } from '../nav.js';
-import type { Nav, Selected } from '../nav.js';
+import { selectedOf, targetOf } from '../nav.js';
+import type { Nav, Pointed, Selected } from '../nav.js';
 import { frameMap, lastFrame as ownFrame } from '../frames.js';
 import { shownOverlay } from '../overlays.js';
 import type { OverlayAsk } from '../overlays.js';
@@ -367,6 +371,24 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     if (held === undefined) delete canvas.dataset['selected'];
     else canvas.dataset['selected'] = targetOf(held);
   };
+  // What is pointed at (D209 (selection-line)): as the line last held it, and what a row of the chrome points at, held to the map the world draws. The world's own pointing is the thing under the pointer, which it outlines and names already.
+  let aimed: Pointed | undefined;
+  let rowPointed: Selected | undefined;
+  /** Take the pointing the line holds, when it moved: what a row points at is ringed and its words asked for from here on, and the canvas names what is pointed at and from which side. */
+  const heed = (next: Pointed | undefined): void => {
+    if (next === aimed) return;
+    aimed = next;
+    const at = next === undefined ? undefined : selectedOf(map, next.target);
+    rowPointed = next?.from === 'chrome' ? at : undefined;
+    placeLabels = true;
+    if (next === undefined || at === undefined) {
+      delete canvas.dataset['pointed'];
+      delete canvas.dataset['pointedBy'];
+    } else {
+      canvas.dataset['pointed'] = targetOf(at);
+      canvas.dataset['pointedBy'] = next.from;
+    }
+  };
   // The free screen beside the rail, or the whole canvas in a still for a comment, which draws no chrome (D108).
   const chrome = { right: view.cinema === true ? 0 : RAIL_WIDTH };
   // What the chrome claims of the screen's top and foot, which the slide's tags keep clear of (P25), and how many frames ago it was read.
@@ -492,25 +514,37 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     return hovered === undefined || body === undefined ? hovered : { ...hovered, ring: body.outline.ring };
   };
   let bodies: ReturnType<typeof interiorOf> = [];
-  // The selection's ring as last laid on the map, and what it was laid for: the selection, the frame's map, and where the surface draws a floated file.
-  let ringed: { readonly key: string; readonly map: MapJson; readonly ring: readonly Point[] | undefined } | undefined;
-  /** The outline the selection is ringed in (D207 (click-selects)): a module's membrane, or a file's own shape where the map draws it, the outline its body is drawn in while a slide floats it. */
-  const selectionRing = (): readonly Point[] | undefined => {
-    const selected = held;
-    if (selected === undefined) return undefined;
-    if (selected.kind === 'cell') {
-      if (ringed?.key !== selected.cell || ringed.map !== current.map) ringed = { key: selected.cell, map: current.map, ring: hoverOf(current.map, { kind: 'membrane', cell: selected.cell })?.ring };
-      return ringed.ring;
-    }
-    const body = bodies.find((each) => each.id === selected.path);
-    if (body !== undefined) return body.outline.ring;
-    const file = placed.get(selected.path);
-    if (file === undefined) return undefined;
-    const [x, y] = floatedOnSurface.get(selected.path) ?? [file.x, file.y];
-    const laid = `${selected.path}@${String(x)},${String(y)}`;
-    if (ringed?.key !== laid || ringed.map !== current.map) ringed = { key: laid, map: current.map, ring: hoverOf(current.map, { kind: 'organelle', path: selected.path, cell: file.cell, x, y, r: file.r })?.ring };
-    return ringed.ring;
+  /** A thing's ring as last laid on the map, and what it was laid for: the thing, the frame's map, and where the surface draws a floated file. */
+  type Laid = { readonly key: string; readonly map: MapJson; readonly ring: readonly Point[] | undefined };
+  /**
+   * A ring that follows one module or file from frame to frame: the outline
+   * the selection is ringed in (D207 (click-selects)), and the one round what
+   * a row of the chrome points at (D209 (selection-line)). A module's
+   * membrane, or a file's own shape where the map draws it, the outline its
+   * body is drawn in while a slide floats it. It is laid again only when the
+   * thing, the frame's map or where the file floats moves, so the same ring
+   * is handed back until then.
+   */
+  const ringer = (): ((thing: Selected | undefined) => readonly Point[] | undefined) => {
+    let laid: Laid | undefined;
+    return (thing) => {
+      if (thing === undefined) return undefined;
+      if (thing.kind === 'cell') {
+        if (laid?.key !== thing.cell || laid.map !== current.map) laid = { key: thing.cell, map: current.map, ring: hoverOf(current.map, { kind: 'membrane', cell: thing.cell })?.ring };
+        return laid.ring;
+      }
+      const body = bodies.find((each) => each.id === thing.path);
+      if (body !== undefined) return body.outline.ring;
+      const file = placed.get(thing.path);
+      if (file === undefined) return undefined;
+      const [x, y] = floatedOnSurface.get(thing.path) ?? [file.x, file.y];
+      const at = `${thing.path}@${String(x)},${String(y)}`;
+      if (laid?.key !== at || laid.map !== current.map) laid = { key: at, map: current.map, ring: hoverOf(current.map, { kind: 'organelle', path: thing.path, cell: file.cell, x, y, r: file.r })?.ring };
+      return laid.ring;
+    };
   };
+  const selectionRing = ringer();
+  const pointedRing = ringer();
   // The file the plate opens, the map it was read from, the plate as the scene lays it, and the change's entry for it, which only a changed file has (D102).
   let fileFocus: string | undefined;
   let fileMap: MapJson | undefined;
@@ -802,9 +836,12 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       take(selected);
       if (move === 'fly' && held !== undefined) visit(held);
     },
+    // A row of the chrome points at a module or a file, or at nothing again (D209 (selection-line)): the world rings it and writes its words.
+    point: () => heed(nav.pointed()),
   });
-  // A selection made before the world was drawn is not told again: it is read as the world starts.
+  // A selection made, or a row pointed at, before the world was drawn is not told again: both are read as the world starts.
   take(nav.selected());
+  heed(nav.pointed());
   // The arrows walk to a sibling, Enter descends and Escape ascends, unless the key is the focused element's own or the chrome already took it (an open legend folds away on Escape); Escape first closes a cell the old levels opened, then clears the selection, which closes the slide it held open (D225 (escape-clears)), and only then ascends; with a cell open, x spreads or gathers its exploded view (D155), and w draws or takes away its wiring.
   globalThis.addEventListener('keydown', (event) => {
     if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || ownsKey(event.target, event.key)) return;
@@ -898,6 +935,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     }
     const middle = standOf(controls, camera, canvas.clientWidth, chrome)?.centre;
     take(nav.selected());
+    heed(nav.pointed());
     if (levels.autoOpen > 0) {
       // The opened cell under the old levels (D155, D165, D204 (parked-levels)): from the surface on, the innermost cell under the view's centre opens once it fills the gate's share, and holds while any of it stays in view at the share it holds at.
       const under = middle === undefined || lod < OPEN_LOD ? undefined : openableAt(middle);
@@ -1016,7 +1054,8 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       canvas.dataset['planet'] = planetOn ? 'on' : 'off';
     }
     if (placeLabels || lod !== placedLod) {
-      for (const layer of layers()) layer.labels.place(viewportOf(camera, canvas.clientWidth), lod, slide, askedOf(fieldTarget, rowTarget ?? litTarget, held === undefined ? undefined : targetOf(held)));
+      const asked = askedOf(fieldTarget, rowTarget ?? litTarget, held === undefined ? undefined : targetOf(held), rowPointed === undefined ? undefined : targetOf(rowPointed));
+      for (const layer of layers()) layer.labels.place(viewportOf(camera, canvas.clientWidth), lod, slide, asked);
       placeLabels = false;
       placedLod = lod;
       placings += 1;
@@ -1068,7 +1107,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     }
     filePlate.render(camera, canvas.clientWidth, canvas.clientHeight, free, focus === undefined ? undefined : new Vector3(focus.x, heightAt(focus.x, focus.y), focus.y), fileLevel, fileShown * (1 - diffShown));
     diffSheet.render(canvas.clientHeight, free, diffLevel, diffShown);
-    const words = slideWords(open.exploded, fieldTarget, slide === undefined ? undefined : barrelOf.get(slide.cell), held?.kind === 'organelle' ? held.path : undefined);
+    const words = slideWords(open.exploded, fieldTarget, slide === undefined ? undefined : barrelOf.get(slide.cell), held?.kind === 'organelle' ? held.path : undefined, rowPointed?.kind === 'organelle' ? rowPointed.path : undefined);
     // The chrome's claims are read again a few times a second while a slide shows: the HUD's blocks and the legend open and close under it.
     if (slide !== undefined && (claimsAge += 1) >= CLAIMS_EVERY) {
       claimsAge = 0;
@@ -1083,12 +1122,15 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       if (hovered?.target !== fieldTarget) {
         fieldTarget = hovered?.target;
         placeLabels = true;
+        // The line hears what the pointer is over on the map, and that it left, so the row that names it in the chrome lights with it (D209 (selection-line)).
+        nav.point(fieldTarget, 'world');
       }
       scheduler.hover(hovered !== undefined);
       pickAgain = false;
       pickedLod = lod;
     }
-    hover.select(selectionRing());
+    hover.select(selectionRing(held));
+    hover.point(pointedRing(rowPointed));
     hover.render(camera, canvas.clientWidth, canvas.clientHeight, frame.hover);
     if (frame.lift === 0) canvas.dataset['world'] = 'settled';
   });

@@ -82,3 +82,17 @@ test("the selection's target stays asked for with nothing under the pointer, bes
   const both = slideWords(0, 'libs/core/src/pm/tools.ts', INDEX, SLOTS);
   expect([both.tag(SLOTS), both.tag('libs/core/src/pm/tools.ts'), both.tag(INDEX)]).toEqual([1, 1, 0]);
 });
+
+test("what a row of the chrome points at is asked for beside the pointer's, a notice row's and the selection's, and inside an opened cell its tag is written (D209 (selection-line))", () => {
+  const SLOTS = 'libs/core/src/pm/slots.ts';
+  const TOOLS = 'libs/core/src/pm/tools.ts';
+  expect([...askedOf(undefined, undefined, undefined, SLOTS)]).toEqual([SLOTS]);
+  expect([...askedOf(TOOLS, PM, INDEX, SLOTS)].toSorted()).toEqual([PM, INDEX, SLOTS, TOOLS].toSorted());
+  // A row that points at the selection asks for it once, and a pointed module for its own storm.
+  expect([...askedOf(undefined, undefined, INDEX, INDEX)]).toEqual([INDEX]);
+  expect(asksFor(DEMO, askedOf(undefined, undefined, undefined, PM))(PM)).toBe(true);
+  // On the slide, the pointed file's tag is written in full at rest beside the selection's, and no other's.
+  const words = slideWords(0, undefined, INDEX, SLOTS, TOOLS);
+  expect([words.tag(SLOTS), words.tag(TOOLS), words.tag(INDEX), words.exports]).toEqual([1, 1, 0, 0]);
+  expect(slideWords(0, undefined, INDEX, undefined, TOOLS).tag(TOOLS)).toBe(1);
+});

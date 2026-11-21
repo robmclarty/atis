@@ -14,6 +14,14 @@
  * `HOVER.selectInk` at `HOVER.selectWidth`, the hover's ink drawn heavier. It
  * is steady: it eases neither in nor out, and stays for as long as the
  * selection does, wherever the pointer is.
+ *
+ * What a row of the chrome points at is outlined in the layer too (D209
+ * (selection-line)): the pointer is over the thing's row in the tree or the
+ * inspector and not over the thing, so it is drawn as the thing under the
+ * pointer is, in `HOVER.ink` at `HOVER.width`, between the selection's ring
+ * and the hover's outline, with no tag, since the row beside the pointer
+ * already says its path. It shows at once and goes at once: the row's own
+ * light is what eases (D234 (pointed-ring)).
  */
 
 import { Vector3 } from 'three/webgpu';
@@ -36,7 +44,9 @@ export type Hover = {
   readonly show: (hovered: Hovered | undefined, pointer: { readonly x: number; readonly y: number } | undefined) => void;
   /** The selection's outline, in layout units, or none once nothing is selected (D207 (click-selects)). The same ring handed in again costs nothing, so the caller hands it in every frame, and a new one where its thing floats. */
   readonly select: (ring: readonly Point[] | undefined) => void;
-  /** Draw the selection's ring, steady, and over it the outline of the thing under the pointer for this camera and canvas, with the tag beside the pointer, at the eased hover. */
+  /** The outline of what a row of the chrome points at, in layout units, or none once it points at nothing (D209 (selection-line)). Handed in every frame as the selection's is. */
+  readonly point: (ring: readonly Point[] | undefined) => void;
+  /** Draw the selection's ring, steady, over it the outline of what the chrome points at, and over both the outline of the thing under the pointer for this camera and canvas, with the tag beside the pointer, at the eased hover. */
   readonly render: (camera: Camera, width: number, height: number, eased: number) => void;
 };
 
@@ -55,10 +65,11 @@ export const createHover = (heightAt: (x: number, y: number) => number, look: Ho
     drawn.style.display = 'none';
     return drawn;
   };
-  // The selection's ring lies under the pointer's outline, so a hover over the selected thing reads on it.
+  // The selection's ring lies under the pointer's outline, so a hover over the selected thing reads on it; what the chrome points at lies between the two.
   const ring = stroke('selected');
+  const aimed = stroke('pointed');
   const path = stroke('hover');
-  outline.append(ring, path);
+  outline.append(ring, aimed, path);
   const tag = document.createElement('div');
   tag.dataset['hoverTag'] = '';
   Object.assign(tag.style, { position: 'fixed', left: '0', top: '0', pointerEvents: 'none', whiteSpace: 'nowrap', display: 'none' });
@@ -67,6 +78,8 @@ export const createHover = (heightAt: (x: number, y: number) => number, look: Ho
   let lifted: readonly Vector3[] = [];
   let selected: readonly Point[] | undefined;
   let selectedLifted: readonly Vector3[] = [];
+  let pointed: readonly Point[] | undefined;
+  let pointedLifted: readonly Vector3[] = [];
   let pointer: { readonly x: number; readonly y: number } | undefined;
   let sized: readonly [number, number] = [0, 0];
 
@@ -78,18 +91,27 @@ export const createHover = (heightAt: (x: number, y: number) => number, look: Ho
     tag.textContent = hovered.text;
   };
 
+  /** A ring's points at the skin's resting height. */
+  const lift = (points: readonly Point[] | undefined): readonly Vector3[] => (points === undefined ? [] : points.map(([x, y]) => new Vector3(x, heightAt(x, y), y)));
+
   const select = (next: readonly Point[] | undefined): void => {
     if (next === selected) return;
     selected = next;
-    selectedLifted = next === undefined ? [] : next.map(([x, y]) => new Vector3(x, heightAt(x, y), y));
+    selectedLifted = lift(next);
+  };
+
+  const point = (next: readonly Point[] | undefined): void => {
+    if (next === pointed) return;
+    pointed = next;
+    pointedLifted = lift(next);
   };
 
   const projected = new Vector3();
   /** A closed outline's path on the screen, through its points where the camera shows them. */
   const traced = (points: readonly Vector3[], camera: Camera, width: number, height: number): string =>
     `M${points
-      .map((point) => {
-        projected.copy(point).project(camera);
+      .map((corner) => {
+        projected.copy(corner).project(camera);
         return `${(((projected.x + 1) / 2) * width).toFixed(1)} ${(((1 - projected.y) / 2) * height).toFixed(1)}`;
       })
       .join('L')}Z`;
@@ -97,11 +119,13 @@ export const createHover = (heightAt: (x: number, y: number) => number, look: Ho
   const render = (camera: Camera, width: number, height: number, eased: number): void => {
     const visible = shown !== undefined && eased > 0;
     const ringed = selectedLifted.length > 0;
-    outline.style.display = visible || ringed ? '' : 'none';
+    const aiming = pointedLifted.length > 0;
+    outline.style.display = visible || ringed || aiming ? '' : 'none';
     tag.style.display = visible && pointer !== undefined ? '' : 'none';
     ring.style.display = ringed ? '' : 'none';
+    aimed.style.display = aiming ? '' : 'none';
     path.style.display = visible ? '' : 'none';
-    if (!visible && !ringed) return;
+    if (!visible && !ringed && !aiming) return;
     if (sized[0] !== width || sized[1] !== height) {
       outline.setAttribute('width', String(width));
       outline.setAttribute('height', String(height));
@@ -111,6 +135,11 @@ export const createHover = (heightAt: (x: number, y: number) => number, look: Ho
       ring.setAttribute('d', traced(selectedLifted, camera, width, height));
       ring.setAttribute('stroke', look.selectInk);
       ring.setAttribute('stroke-width', String(look.selectWidth));
+    }
+    if (aiming) {
+      aimed.setAttribute('d', traced(pointedLifted, camera, width, height));
+      aimed.setAttribute('stroke', look.ink);
+      aimed.setAttribute('stroke-width', String(look.width));
     }
     if (!visible) return;
     path.setAttribute('d', traced(lifted, camera, width, height));
@@ -129,5 +158,5 @@ export const createHover = (heightAt: (x: number, y: number) => number, look: Ho
     });
   };
 
-  return { outline, tag, show, select, render };
+  return { outline, tag, show, select, point, render };
 };
