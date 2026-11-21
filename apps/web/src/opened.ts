@@ -16,8 +16,18 @@
  * closed by hand stays closed while the
  * view's centre is still in it, so it does not spring back open on the next
  * frame. The exploded view and the wiring overlay (step 41) are toggles on the
- * open cell, and both go when the cell closes or another opens. Pure, so a
- * test walks it event by event; the world measures the shares (`fillOf`).
+ * open cell, and both go when the cell closes or another opens.
+ *
+ * On the one surface none of that opens a cell (D204 (parked-levels)): there
+ * the selection does (D205 (open-on-select)). The world reads the cell the
+ * selection holds open (`selection.ts`) and hands it in as a `select` event,
+ * frame after frame, so the open cell is whatever the selection says and
+ * nothing else: no share of the screen opens or closes it, at any zoom, and
+ * none is remembered as closed by hand. The exploded view and the wiring stay
+ * while the same cell stays.
+ *
+ * Pure, so a test walks it event by event; the world measures the shares
+ * (`fillOf`).
  */
 
 import type { Lod, Pick } from 'scene';
@@ -42,7 +52,9 @@ export type OpenEvent =
   /** A click on the canvas: what lay under it at the camera's level, a file of the open cell where it has floated, and whether a cell would hold open at this view. */
   | { readonly kind: 'click'; readonly lod: Lod; readonly pick: Pick | undefined; readonly holds: (cell: string) => boolean }
   | { readonly kind: 'explode' }
-  | { readonly kind: 'wire' };
+  | { readonly kind: 'wire' }
+  /** The cell the selection holds open as a slide, or none (D205 (open-on-select)): it opens, moves there or closes, whatever the view. */
+  | { readonly kind: 'select'; readonly cell: string | undefined };
 
 /** The cell a stop stands in, if any. */
 export const cellOf = (stop: Stop): string | undefined => (stop.kind === 'field' ? undefined : stop.cell);
@@ -83,6 +95,9 @@ export const openedBy = (state: OpenState, event: OpenEvent): OpenState => {
       return state.open === undefined ? state : { ...state, exploded: !state.exploded };
     case 'wire':
       return state.open === undefined ? state : { ...state, wired: !state.wired };
+    case 'select':
+      if (event.cell === undefined) return CLOSED;
+      return event.cell === state.open ? state : openCell(event.cell);
     default:
       return state;
   }

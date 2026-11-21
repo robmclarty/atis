@@ -23,6 +23,8 @@ const ALL = (): boolean => true;
 const frame = (under: string | undefined, lod: 0 | 1 | 2 | 3 | 4 = 1, holds: (cell: string) => boolean = ALL): OpenEvent => ({ kind: 'frame', lod, under, holds });
 const click = (pick: Pick | undefined, holds: (cell: string) => boolean = ALL, lod: 0 | 1 | 2 | 3 | 4 = 1): OpenEvent => ({ kind: 'click', lod, pick, holds });
 const membrane = (cell: string): OpenEvent => click({ kind: 'membrane', cell });
+/** The selection holds a cell open, or none. */
+const select = (cell: string | undefined): OpenEvent => ({ kind: 'select', cell });
 
 /** The state after each event in turn. */
 const walk = (events: readonly OpenEvent[], from: OpenState = CLOSED): OpenState => events.reduce(openedBy, from);
@@ -97,6 +99,22 @@ test('the wiring toggles on the open cell alone, beside the exploded view, and g
   expect(walk([membrane(UTIL)], wired)).toEqual({ open: UTIL, exploded: false, wired: false });
   expect(walk([{ kind: 'escape' }], wired)).toEqual({ exploded: false, wired: false, dismissed: PM });
   expect(walk([frame(PM, 0)], wired)).toEqual(CLOSED);
+});
+
+test('on the one surface the selection alone says which cell is open: it opens, moves and closes with it, keeps its exploded view and wiring while it stays, and remembers no cell as closed by hand (D205 (open-on-select))', () => {
+  expect(walk([select(PM)])).toEqual({ open: PM, exploded: false, wired: false });
+  // Read again frame after frame, the same cell stays as it is, exploded and wired.
+  const spread = walk([select(PM), { kind: 'explode' }, { kind: 'wire' }]);
+  expect(walk([select(PM), select(PM)], spread)).toBe(spread);
+  // Another cell selected moves the slide there, gathered and unwired.
+  expect(walk([select(UTIL)], spread)).toEqual({ open: UTIL, exploded: false, wired: false });
+  // Nothing held open closes it, and leaves no cell dismissed, so selecting it again opens it at once.
+  expect(walk([select(undefined)], spread)).toEqual(CLOSED);
+  expect(walk([select(undefined), select(PM)], spread)).toEqual({ open: PM, exploded: false, wired: false });
+  expect(walk([select(undefined)])).toEqual(CLOSED);
+  // A cell an old level closed by hand is no longer held closed once the selection speaks.
+  expect(walk([frame(PM), { kind: 'escape' }, select(undefined)])).toEqual(CLOSED);
+  expect(walk([frame(PM), { kind: 'escape' }, select(PM)])).toEqual({ open: PM, exploded: false, wired: false });
 });
 
 test('a stop names the cell it stands in', () => {
