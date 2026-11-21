@@ -4,13 +4,13 @@ import { fileURLToPath } from 'node:url';
 
 import { expect, test } from 'vitest';
 
-import { APPROVED_KIND, APPROVED_SCHEMA_VERSION, approvedOf, assertApproved } from '../approved.js';
+import { APPROVED_KIND, APPROVED_SCHEMA_VERSION, DEPARTURE_LIMITS, approvedOf, assertApproved, departuresOf, withApproved } from '../approved.js';
 import type { Approved, ApprovedModule } from '../approved.js';
 import { DEFAULT_CONFIG } from '../config.js';
 import { buildMap } from '../map.js';
 import type { BuildInputs } from '../map.js';
-import { assertMap } from '../schema.js';
-import type { Cell, MapJson } from '../schema.js';
+import { DEPARTURE_KINDS, assertMap } from '../schema.js';
+import type { Cell, Departure, MapJson, Organelle } from '../schema.js';
 
 /**
  * The maps are read from committed JSON with `node:fs`, as the map's own
@@ -27,13 +27,51 @@ function corpus(name: string): MapJson {
   return assertMap(JSON.parse(readFileSync(join(HERE, '..', '..', '..', '..', 'fixtures', name, 'map.json'), 'utf8')));
 }
 
+const CLI = 'package:apps/cli';
 const CORE = 'package:libs/core';
 const PM = 'folder:libs/core/src/pm';
 const UTIL = 'directory:libs/core/src/util';
+const DOCTOR = 'single:apps/cli/src/doctor.ts';
 
 /** The map with one of its cells changed. */
 function recell(map: MapJson, id: string, change: (cell: Cell) => Cell): MapJson {
   return { ...map, terrain: { ...map.terrain, cells: map.terrain.cells.map((cell) => (cell.id === id ? change(cell) : cell)) } };
+}
+
+const file = (path: string, cell: string, loc: number): Organelle => ({ id: path, path, cell, band: 0, reachable: true, loc, dents: [] });
+
+/** The map with files more in one of its cells, each of `loc` lines. */
+function grow(map: MapJson, cell: string, paths: readonly string[], loc = 1): MapJson {
+  const grown = recell(map, cell, (each) => ({ ...each, organelles: [...each.organelles, ...paths] }));
+  return { ...grown, terrain: { ...grown.terrain, organelles: [...grown.terrain.organelles, ...paths.map((path) => file(path, cell, loc))] } };
+}
+
+/** The map with a directory module more inside `libs/core`, holding `files` files of one line each. */
+function found(map: MapJson, path: string, files: readonly string[]): MapJson {
+  const cell: Cell = { id: `directory:${path}`, path, kind: 'directory', parent: CORE, organelles: [], band: 4, interface_size: 0, body_loc: files.length, dents: [] };
+  return grow({ ...map, terrain: { ...map.terrain, cells: [...map.terrain.cells, cell] } }, cell.id, files.map((name) => `${path}/${name}`));
+}
+
+/** The map with one file's lines set. */
+function reline(map: MapJson, path: string, loc: number): MapJson {
+  return { ...map, terrain: { ...map.terrain, organelles: map.terrain.organelles.map((organelle) => (organelle.path === path ? { ...organelle, loc } : organelle)) } };
+}
+
+/** The map short of one cell: the cell, its files, their places, and the reach into it. */
+function without(map: MapJson, id: string): MapJson {
+  const { layout } = map.terrain;
+  const gone = new Set(map.terrain.organelles.filter((organelle) => organelle.cell === id).map((organelle) => organelle.path));
+  const positions = Object.fromEntries(Object.entries(layout?.positions ?? {}).filter(([path]) => !gone.has(path)));
+  return {
+    ...map,
+    terrain: {
+      ...map.terrain,
+      cells: map.terrain.cells.filter((cell) => cell.id !== id),
+      organelles: map.terrain.organelles.filter((organelle) => organelle.cell !== id),
+      ...(layout === undefined ? {} : { layout: { ...layout, positions } }),
+    },
+    weather: { ...map.weather, reach: map.weather.reach.filter((entry) => entry.cell !== id) },
+  };
 }
 
 function moduleAt(doc: Approved, path: string, kind?: ApprovedModule['kind']): ApprovedModule {
@@ -41,6 +79,9 @@ function moduleAt(doc: Approved, path: string, kind?: ApprovedModule['kind']): A
   if (held === undefined) throw new Error(`no module at ${path}`);
   return held;
 }
+
+/** A departure as the list is ordered by: its target, its kind and its cell. */
+const told = (departures: readonly Departure[]): readonly string[] => departures.map((departure) => [departure.target, departure.kind, departure.cell ?? '-'].join(' '));
 
 const APPROVED = approvedOf(DEMO);
 
@@ -73,10 +114,25 @@ test('the reduction holds no clock: a map generated at another time reduces to t
   expect(JSON.stringify(approvedOf(DEMO))).toBe(JSON.stringify(APPROVED));
 });
 
-test.each(['round-two-3', 'corpus-12', 'corpus-6', 'go-1', 'corpus-8'])('the corpus map %s reduces to a document its guard accepts', (name) => {
+test('a map held against its own approved shape keeps it, which is a block with no departures and not an absent one', () => {
+  expect(departuresOf(APPROVED, DEMO, DEPARTURE_LIMITS)).toEqual([]);
+  const kept = withApproved(DEMO, APPROVED);
+  expect(kept.approved).toEqual({ at: DEMO.meta.head, departures: [] });
+  expect(() => assertMap(kept)).not.toThrow();
+  expect({ ...kept, approved: undefined }).toEqual({ ...DEMO, approved: undefined });
+});
+
+test('with no document nothing was approved, and the map comes back as it was', () => {
+  expect(withApproved(DEMO, undefined)).toBe(DEMO);
+  expect(withApproved(DEMO, undefined)).not.toHaveProperty('approved');
+});
+
+test.each(['round-two-3', 'corpus-12', 'corpus-6', 'go-1', 'corpus-8'])('the corpus map %s reduces to a document its guard accepts, and keeps its own shape', (name) => {
   const map = corpus(name);
   const doc = approvedOf(map);
   expect(assertApproved(JSON.parse(JSON.stringify(doc)))).toEqual(doc);
+  expect(departuresOf(doc, map)).toEqual([]);
+  expect(() => assertMap(withApproved(map, doc))).not.toThrow();
 
   // Where the change deleted nothing inside a module, what the head holds of
   // it is what the map counts of it: its files and its `body_loc`.
@@ -89,54 +145,242 @@ test.each(['round-two-3', 'corpus-12', 'corpus-6', 'go-1', 'corpus-8'])('the cor
   }
 });
 
-test('a module whose every file the change deleted is no module of the head (D300 (held-at-head))', () => {
+test('a module whose every file the change deleted is no module of the head, and is not told removed while the terrain keeps its cell (D300 (held-at-head), D304 (removed-off-terrain))', () => {
   const map = corpus('corpus-6');
-  expect(map.terrain.cells.map((each) => each.id)).toContain('single:packages/cli/src/help.ts');
+  const cell = 'single:packages/cli/src/help.ts';
+  expect(map.terrain.cells.map((each) => each.id)).toContain(cell);
   expect(approvedOf(map).modules.map((module) => module.path)).not.toContain('packages/cli/src/help.ts');
 
   // The shape as it stood before the change: the same terrain, nothing deleted.
   const before = approvedOf({ ...map, weather: { ...map.weather, changed: [] } });
   expect(moduleAt(before, 'packages/cli/src/help.ts')).toMatchObject({ kind: 'single', files: 1 });
+  const departures = departuresOf(before, map);
+  expect(departures.filter((departure) => departure.kind === 'module-removed' || departure.kind === 'module-added')).toEqual([]);
+  expect(() => assertMap(withApproved(map, before))).not.toThrow();
 });
 
-test('what the map carries none of is left out of the document, never written as a zero or an empty list (C2, D301 (unread-lists))', () => {
-  // A directory has no barrel, so no import goes through or past one.
+test('a module the approved shape did not hold is told added, with the files it holds', () => {
+  const later = found(DEMO, 'libs/core/src/net', ['fetch.ts']);
+  expect(departuresOf(APPROVED, later)).toEqual([
+    { kind: 'module-added', target: 'libs/core/src/net', cell: 'directory:libs/core/src/net', why: 'a module the approved shape did not hold', now: 1 },
+  ]);
+  expect(() => assertMap(withApproved(later, APPROVED))).not.toThrow();
+});
+
+test('a module the approved shape held and the terrain no longer does is told removed, under the id it had (D304 (removed-off-terrain))', () => {
+  const earlier = approvedOf(found(DEMO, 'libs/core/src/old', ['a.ts', 'b.ts']));
+  expect(departuresOf(earlier, DEMO)).toEqual([
+    { kind: 'module-removed', target: 'libs/core/src/old', cell: 'directory:libs/core/src/old', why: 'a module the approved shape held', was: 2 },
+  ]);
+  expect(() => assertMap(withApproved(DEMO, earlier))).not.toThrow();
+});
+
+test('files grown past the limit are told for the module and for the package whose contour holds them, and fewer are not', () => {
+  const three = grow(DEMO, PM, ['libs/core/src/pm/a.ts', 'libs/core/src/pm/b.ts', 'libs/core/src/pm/c.ts']);
+  expect(departuresOf(APPROVED, three)).toEqual([
+    { kind: 'files-grown', target: 'libs/core', cell: CORE, why: 'it holds more files than approved', was: 6, now: 9 },
+    { kind: 'files-grown', target: 'libs/core/src/pm', cell: PM, why: 'it holds more files than approved', was: 3, now: 6 },
+  ]);
+  expect(() => assertMap(withApproved(three, APPROVED))).not.toThrow();
+  expect(departuresOf(APPROVED, grow(DEMO, PM, ['libs/core/src/pm/a.ts', 'libs/core/src/pm/b.ts']))).toEqual([]);
+});
+
+test('lines grown past the limit are told, and the limits handed in decide it (D303 (departure-limits))', () => {
+  const longer = reline(DEMO, 'apps/cli/src/doctor.ts', 400);
+  expect(departuresOf(APPROVED, longer)).toEqual([
+    { kind: 'lines-grown', target: 'apps/cli', cell: CLI, why: 'it holds more lines than approved', was: 236, now: 424 },
+    { kind: 'lines-grown', target: 'apps/cli/src/doctor.ts', cell: DOCTOR, why: 'it holds more lines than approved', was: 212, now: 400 },
+  ]);
+  expect(() => assertMap(withApproved(longer, APPROVED))).not.toThrow();
+
+  // 99 lines more is under `by`; twice the lines is a `ratio` neither reaches.
+  expect(departuresOf(APPROVED, reline(DEMO, 'apps/cli/src/doctor.ts', 311))).toEqual([]);
+  expect(departuresOf(APPROVED, longer, { ...DEPARTURE_LIMITS, 'lines-grown': { by: 100, ratio: 2 } })).toEqual([]);
+  // A limit of nothing still tells only what grew.
+  const any = { by: 0, ratio: 0 };
+  const loose = { 'files-grown': any, 'lines-grown': any, 'interface-widened': any, 'past-interface-up': any, 'fan-out-up': any };
+  expect(departuresOf(APPROVED, DEMO, loose)).toEqual([]);
+  expect(told(departuresOf(APPROVED, reline(DEMO, 'apps/cli/src/doctor.ts', 213), loose))).toEqual([`apps/cli lines-grown ${CLI}`, `apps/cli/src/doctor.ts lines-grown ${DOCTOR}`]);
+});
+
+test('an interface that exports more names than approved is told widened by the names it gained, and one that only renamed a name is not (D302 (interface-by-name))', () => {
+  const wider = recell(DEMO, PM, (cell) => ({ ...cell, exports: [...(cell.exports ?? []), 'resolveAll', 'detectTool'] }));
+  expect(departuresOf(APPROVED, wider)).toEqual([
+    { kind: 'interface-widened', target: 'libs/core/src/pm', cell: PM, why: 'its interface exports more names than approved', was: 3, now: 5, names: ['detectTool', 'resolveAll'] },
+  ]);
+  expect(() => assertMap(withApproved(wider, APPROVED))).not.toThrow();
+
+  const renamed = recell(DEMO, PM, (cell) => ({ ...cell, exports: ['listSlots', 'resolveSlot', 'resolveTools'] }));
+  expect(departuresOf(APPROVED, renamed)).toEqual([]);
+  // The terrain's own count is the base's on a change map, so it alone widens nothing.
+  expect(departuresOf(APPROVED, recell(DEMO, PM, (cell) => ({ ...cell, interface_size: 9 })))).toEqual([]);
+});
+
+test('more imports past an interface than approved are told, and more fan out past its limit', () => {
+  const past = recell(DEMO, CORE, (cell) => ({ ...cell, integrity: { through: 1, past: 3 } }));
+  expect(departuresOf(APPROVED, past)).toEqual([
+    { kind: 'past-interface-up', target: 'libs/core', cell: CORE, why: 'more imports enter past its interface than approved', was: 1, now: 3 },
+  ]);
+  expect(() => assertMap(withApproved(past, APPROVED))).not.toThrow();
+  // More through the interface is what an interface is for.
+  expect(departuresOf(APPROVED, recell(DEMO, CORE, (cell) => ({ ...cell, integrity: { through: 40, past: 1 } })))).toEqual([]);
+
+  const reaching = recell(DEMO, CLI, (cell) => ({ ...cell, fan_out: 5 }));
+  expect(departuresOf(APPROVED, reaching)).toEqual([
+    { kind: 'fan-out-up', target: 'apps/cli', cell: CLI, why: 'it reads more files outside itself than approved', was: 2, now: 5 },
+  ]);
+  expect(() => assertMap(withApproved(reaching, APPROVED))).not.toThrow();
+  expect(departuresOf(APPROVED, recell(DEMO, CLI, (cell) => ({ ...cell, fan_out: 4 })))).toEqual([]);
+});
+
+test('an outside package the approved shape did not import is told added, about no module', () => {
+  const dependencies = [...(DEMO.weather.dependencies ?? []), { name: 'zod', importers: 1 }];
+  const later: MapJson = { ...DEMO, weather: { ...DEMO.weather, dependencies } };
+  expect(departuresOf(APPROVED, later)).toEqual([{ kind: 'dependency-added', target: 'zod', why: 'an outside package the approved shape did not import' }]);
+  expect(() => assertMap(withApproved(later, APPROVED))).not.toThrow();
+  // One the shape imported and the map no longer does is no departure.
+  expect(departuresOf({ ...APPROVED, dependencies: [...(APPROVED.dependencies ?? []), 'zod'] }, DEMO)).toEqual([]);
+});
+
+test('every kind at once comes in the order the map\'s guard requires: by target, then kind, then cell', () => {
+  const earlier = approvedOf(found(DEMO, 'libs/core/src/old', ['a.ts']));
+  const steps: readonly ((map: MapJson) => MapJson)[] = [
+    (map) => found(map, 'libs/core/src/net', ['fetch.ts']),
+    (map) => grow(map, PM, ['libs/core/src/pm/a.ts', 'libs/core/src/pm/b.ts', 'libs/core/src/pm/c.ts']),
+    (map) => reline(map, 'apps/cli/src/doctor.ts', 400),
+    (map) => recell(map, PM, (cell) => ({ ...cell, exports: [...(cell.exports ?? []), 'resolveAll'] })),
+    (map) => recell(map, CORE, (cell) => ({ ...cell, integrity: { through: 1, past: 3 } })),
+    (map) => recell(map, CLI, (cell) => ({ ...cell, fan_out: 5 })),
+    (map) => ({ ...map, weather: { ...map.weather, dependencies: [...(map.weather.dependencies ?? []), { name: 'zod', importers: 1 }] } }),
+  ];
+  const later = steps.reduce((map, step) => step(map), DEMO);
+  const { approved } = withApproved(later, earlier);
+
+  expect(told(approved?.departures ?? [])).toEqual([
+    `apps/cli fan-out-up ${CLI}`,
+    `apps/cli lines-grown ${CLI}`,
+    `apps/cli/src/doctor.ts lines-grown ${DOCTOR}`,
+    `libs/core files-grown ${CORE}`,
+    `libs/core past-interface-up ${CORE}`,
+    'libs/core/src/net module-added directory:libs/core/src/net',
+    'libs/core/src/old module-removed directory:libs/core/src/old',
+    `libs/core/src/pm files-grown ${PM}`,
+    `libs/core/src/pm interface-widened ${PM}`,
+    'zod dependency-added -',
+  ]);
+  expect(new Set(approved?.departures.map((departure) => departure.kind))).toEqual(new Set(DEPARTURE_KINDS));
+  expect(approved?.at).toBe(DEMO.meta.head);
+  expect(() => assertMap(withApproved(later, earlier))).not.toThrow();
+});
+
+test('a module with no barrel has no imports past an interface on either side, so none is told and none reads as zero (C2)', () => {
   const util = moduleAt(APPROVED, 'libs/core/src/util');
   expect(util).not.toHaveProperty('past');
   expect(util).not.toHaveProperty('through');
+
+  // The directory gains an interface file: a folder now, under a new id, with
+  // imports counted past its barrel. It is the same module, matched by its
+  // path, so it is neither removed nor added, and a count approved as nothing
+  // measured is not a count of none to have grown from.
+  const folder = 'folder:libs/core/src/util';
+  const barrelled: MapJson = {
+    ...DEMO,
+    terrain: {
+      ...DEMO.terrain,
+      cells: DEMO.terrain.cells.map((cell) => (cell.id === UTIL ? { ...cell, id: folder, kind: 'folder', barrel: 'libs/core/src/util/index.ts', integrity: { through: 2, past: 4 } } : cell)),
+      organelles: DEMO.terrain.organelles.map((organelle) => (organelle.cell === UTIL ? { ...organelle, cell: folder } : organelle)),
+    },
+  };
+  expect(departuresOf(APPROVED, barrelled)).toEqual([]);
+  // What does grow in it is told under the id the map gives it now.
+  expect(departuresOf(APPROVED, grow(barrelled, folder, ['libs/core/src/util/a.ts', 'libs/core/src/util/b.ts', 'libs/core/src/util/c.ts']))).toEqual([
+    { kind: 'files-grown', target: 'libs/core', cell: CORE, why: 'it holds more files than approved', was: 6, now: 9 },
+    { kind: 'files-grown', target: 'libs/core/src/util', cell: folder, why: 'it holds more files than approved', was: 2, now: 5 },
+  ]);
+
+  // The other way round: approved with a count, and the map carries none now.
   const unbarrelled = recell(DEMO, CORE, ({ integrity: _integrity, ...cell }) => cell);
   expect(moduleAt(approvedOf(unbarrelled), 'libs/core')).not.toHaveProperty('past');
+  expect(departuresOf(APPROVED, unbarrelled)).toEqual([]);
+});
 
-  // An interface the map counts names of and read none of: the names are not known.
-  const unnamed = approvedOf(recell(DEMO, PM, ({ exports: _exports, ...cell }) => cell));
+test('a count or a list either side carries none of yields nothing (C2, D301 (unread-lists))', () => {
+  // Fan out: approved with none, and the map with none.
+  const unfanned: Approved = { ...APPROVED, modules: APPROVED.modules.map(({ fan_out: _fan, ...module }) => module) };
+  expect(departuresOf(unfanned, recell(DEMO, CLI, (cell) => ({ ...cell, fan_out: 50 })))).toEqual([]);
+  expect(departuresOf(APPROVED, recell(DEMO, CLI, ({ fan_out: _fan, ...cell }) => cell))).toEqual([]);
+
+  // An interface the map counts names of and read none of: the names are not
+  // known, so the document lists none, and it widens from nothing later.
+  const unread = recell(DEMO, PM, ({ exports: _exports, ...cell }) => cell);
+  const unnamed = approvedOf(unread);
   expect(moduleAt(unnamed, 'libs/core/src/pm')).not.toHaveProperty('exports');
   expect(moduleAt(unnamed, 'libs/core/src/pm').interface_size).toBe(3);
   expect(() => assertApproved(unnamed)).not.toThrow();
+  expect(departuresOf(unnamed, recell(DEMO, PM, (cell) => ({ ...cell, exports: [...(cell.exports ?? []), 'resolveAll'] })))).toEqual([]);
+  expect(departuresOf(APPROVED, unread)).toEqual([]);
 
-  // An interface that counts no name exports none, which is known.
+  // An interface that counts no name exports none, which is known, and a name it gains is told.
   const closed = recell(DEMO, UTIL, ({ exports: _exports, ...cell }) => ({ ...cell, interface_size: 0 }));
   expect(moduleAt(approvedOf(closed), 'libs/core/src/util').exports).toEqual([]);
+  expect(departuresOf(approvedOf(closed), DEMO)).toEqual([
+    { kind: 'interface-widened', target: 'libs/core/src/util', cell: UTIL, why: 'its interface exports more names than approved', was: 0, now: 1, names: ['formatSlot'] },
+  ]);
 
-  // A map that lists no outside packages approves none.
+  // Outside packages: a map that lists none approves none, and tells none added either way.
   const { dependencies: _dependencies, ...weather } = DEMO.weather;
   const unlisted: MapJson = { ...DEMO, weather };
   expect(approvedOf(unlisted)).not.toHaveProperty('dependencies');
   expect(() => assertApproved(approvedOf(unlisted))).not.toThrow();
+  expect(departuresOf(approvedOf(unlisted), DEMO)).toEqual([]);
+  expect(departuresOf(APPROVED, unlisted)).toEqual([]);
 });
 
-test('a package and the directory of loose files at its root share a path, and are listed by kind under it (D218 (departure-cell))', () => {
-  const doc = approvedOf(corpus('round-two-3'));
+test('a package and the directory of loose files at its root share a path and are held apart by whether the kind is package (D218 (departure-cell))', () => {
+  const map = corpus('round-two-3');
+  const doc = approvedOf(map);
+  // Sorted by path, then by kind: the directory before the package.
   expect(doc.modules.filter((module) => module.path === '.').map((module) => [module.kind, module.files, module.loc])).toEqual([
     ['directory', 3, 130],
     ['package', 76, 7472],
   ]);
+
+  // One loose file grows, and both contours that hold it grow with it: two
+  // departures of one kind at one path, told apart by the cell.
+  const longer = reline(map, 'dangerfile.ts', 2000 + (map.terrain.organelles.find((organelle) => organelle.path === 'dangerfile.ts')?.loc ?? 0));
+  expect(departuresOf(doc, longer)).toEqual([
+    { kind: 'lines-grown', target: '.', cell: 'directory:.', why: 'it holds more lines than approved', was: 130, now: 2130 },
+    { kind: 'lines-grown', target: '.', cell: 'package:.', why: 'it holds more lines than approved', was: 7472, now: 9472 },
+  ]);
+  expect(() => assertMap(withApproved(longer, doc))).not.toThrow();
+
+  // The directory half goes and the package stays at the path.
+  const halved = without(map, 'directory:.');
+  expect(departuresOf(doc, halved)).toEqual([{ kind: 'module-removed', target: '.', cell: 'directory:.', why: 'a module the approved shape held', was: 3 }]);
+  expect(() => assertMap(withApproved(halved, doc))).not.toThrow();
+
+  // A shape that held one of the pair never has it compared with the other: the other is new.
+  const only = (kind: ApprovedModule['kind']): Approved => ({ ...doc, modules: doc.modules.filter((module) => module.path !== '.' || module.kind === kind) });
+  expect(departuresOf(only('package'), map)).toEqual([{ kind: 'module-added', target: '.', cell: 'directory:.', why: 'a module the approved shape did not hold', now: 3 }]);
+  expect(departuresOf(only('directory'), map)).toEqual([{ kind: 'module-added', target: '.', cell: 'package:.', why: 'a module the approved shape did not hold', now: 76 }]);
 });
 
-test('a map built with no check artifacts approves the same shape', () => {
+test('a map built with no check artifacts approves the same shape and departs from it the same way', () => {
   const bare: MapJson = buildMap({ ...DEMO_INPUTS, check: { mode: 'git-only', reason: '.check/ is absent' } }, DEFAULT_CONFIG);
   expect(bare.meta.instruments.mode).toBe('git-only');
   expect(bare.weather.checks.category).toBe('NOINST');
+
   expect(approvedOf(bare)).toEqual(APPROVED);
+  expect(withApproved(bare, APPROVED).approved).toEqual({ at: DEMO.meta.head, departures: [] });
+  expect(() => assertMap(withApproved(bare, APPROVED))).not.toThrow();
+
+  const later = found(grow(bare, PM, ['libs/core/src/pm/a.ts', 'libs/core/src/pm/b.ts', 'libs/core/src/pm/c.ts']), 'libs/core/src/net', ['fetch.ts']);
+  expect(told(departuresOf(APPROVED, later))).toEqual([
+    `libs/core files-grown ${CORE}`,
+    'libs/core/src/net module-added directory:libs/core/src/net',
+    `libs/core/src/pm files-grown ${PM}`,
+  ]);
+  expect(() => assertMap(withApproved(later, APPROVED))).not.toThrow();
 });
 
 test('the guard accepts a document with only what every module carries, and one with no outside packages listed', () => {
