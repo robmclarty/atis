@@ -354,9 +354,11 @@ function summary(map: MapJson): string {
   return `${map.weather.checks.category}, ${counted(map.weather.changed.length, 'file')} changed, ${counted(map.notices.length, 'notice')}`;
 }
 
-/** The map built, the timings so far, which the caller adds its own to, and what the terrain cache, each side's structure and the head's entry points did, where the run read them. */
+/** The map built, the tree a working tree's head was written as (D99), the timings so far, which the caller adds its own to, and what the terrain cache, each side's structure and the head's entry points did, where the run read them. */
 type Measured = {
   readonly map: MapJson;
+  /** The working tree as a tree object, when it is the map's head: the object the served run reads a file's text from, since no commit holds it (D312 (tree-beside-map)). */
+  readonly tree?: string;
   readonly timings: Timing[];
   readonly cache: string;
   readonly structure?: { readonly base: string; readonly head: string };
@@ -714,7 +716,7 @@ function measure(repoPath: string, asked: Asked): Measured {
         ...(frames === undefined ? {} : { frames }),
       }, config),
     );
-    return { map, timings, cache: ground.cache, structure: { base: baseStructure.cache, head: structureCache }, entries: top.read.entries };
+    return { map, ...(working ? { tree } : {}), timings, cache: ground.cache, structure: { base: baseStructure.cache, head: structureCache }, entries: top.read.entries };
   } finally {
     for (const extraction of extractions) rmSync(extraction.root, { recursive: true, force: true });
   }
@@ -1001,10 +1003,10 @@ export async function pngRun(options: PngRunOptions): Promise<Outcome> {
  * kept draws the ground it drew before (P2). A range or a whole-repo map
  * gives way to one change over the base asked for.
  */
-function mapOver(options: ServeRunOptions, request: BaseRequest): MapJson {
+function mapOver(options: ServeRunOptions, request: BaseRequest): Measured {
   const base = request.last === undefined ? request.base : { last: request.last };
   const head = request.working_tree === true ? { workingTree: true as const } : options.head;
-  return measure(options.repo, { base, head, cache: options.cache !== false, history: options.history }).map;
+  return measure(options.repo, { base, head, cache: options.cache !== false, history: options.history });
 }
 
 /** A tour as `apps/tour` writes it, read only as far as the run checks it: the base and head of the map it was written for, over stops the page reads (D183). */
@@ -1031,8 +1033,8 @@ function tourAt(path: string): TourSides {
 /** A map's two sides as a tour names them, `main..a1b2c3d`. */
 const sidesNamed = (base: string, head: string): string => `${base}..${shortSha(head)}`;
 
-/** A map as the server holds it: its JSON text, and the slots its raw output may be served for. */
-const rebuiltOf = (map: MapJson): Rebuilt => ({ map: serialize(map), slots: map.weather.checks.slots.map((slot) => slot.name) });
+/** A map as the server holds it: its JSON text, the slots its raw output may be served for, and the tree a working tree's head was written as, which its files' text is read from (D312 (tree-beside-map)). */
+const rebuiltOf = ({ map, tree }: Measured): Rebuilt => ({ map: serialize(map), slots: map.weather.checks.slots.map((slot) => slot.name), ...(tree === undefined ? {} : { tree }) });
 
 /**
  * Read the repository, build the map and serve it with the built web app on
@@ -1079,6 +1081,8 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
       token,
       checks: { dir: join(options.repo, '.check'), slots: map.weather.checks.slots.map((slot) => slot.name) },
       rebase: { repo, rebuild: (request) => Promise.resolve(rebuiltOf(mapOver(options, request))) },
+      // A working tree's head is no commit, so the tree it was written as goes with the map for a file's text to be read from (D312 (tree-beside-map)).
+      tree: measured.tree,
       watch: watched !== undefined,
       tour: tour?.text,
     });
@@ -1093,9 +1097,9 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
             async () => {
               try {
                 const switched = served.asked();
-                const next = switched === undefined ? measure(options.repo, asTyped).map : mapOver(options, switched);
+                const next = switched === undefined ? measure(options.repo, asTyped) : mapOver(options, switched);
                 served.push(rebuiltOf(next));
-                log(`atis: watched ${shortSha(next.meta.head)}: ${summary(next)}\n`);
+                log(`atis: watched ${shortSha(next.map.meta.head)}: ${summary(next.map)}\n`);
               } catch (error) {
                 log(`atis: the watch kept the last map: ${messageOf(error)}\n`);
               }
