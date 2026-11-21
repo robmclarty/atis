@@ -189,7 +189,7 @@ test.each(['round-two-3', 'corpus-12', 'corpus-6', 'go-1', 'corpus-8'])('the cor
   }
 });
 
-test('a module whose every file the change deleted is no module of the head, and is not told removed while the terrain keeps its cell (D300 (held-at-head), D304 (removed-off-terrain))', () => {
+test("a module whose every file the change deleted is no module of the head, and is told removed at once, under the id of the cell the terrain keeps for it (D300 (held-at-head), D334 (removed-off-head))", () => {
   const map = corpus('corpus-6');
   const cell = 'single:packages/cli/src/help.ts';
   expect(map.terrain.cells.map((each) => each.id)).toContain(cell);
@@ -199,8 +199,25 @@ test('a module whose every file the change deleted is no module of the head, and
   const before = approvedOf({ ...map, weather: { ...map.weather, changed: [] } });
   expect(moduleAt(before, 'packages/cli/src/help.ts')).toMatchObject({ kind: 'single', files: 1 });
   const departures = departuresOf(before, map);
-  expect(departures.filter((departure) => departure.kind === 'module-removed' || departure.kind === 'module-added')).toEqual([]);
+  expect(departures.filter((departure) => departure.kind === 'module-added')).toEqual([]);
+  // Each module the change emptied is told removed, the single-file one among them, and none the head still holds a file of.
+  const removed = departures.filter((departure) => departure.kind === 'module-removed');
+  expect(removed).toContainEqual({ kind: 'module-removed', target: 'packages/cli/src/help.ts', cell, why: 'a module the approved shape held', was: 1 });
+  const held = new Set(approvedOf(map).modules.map((module) => `${module.kind}:${module.path}`));
+  expect(removed.filter((departure) => held.has(departure.cell ?? ''))).toEqual([]);
+  expect(removed.map((departure) => departure.cell ?? '').toSorted()).toEqual(before.modules.map((module) => `${module.kind}:${module.path}`).filter((id) => !held.has(id)).toSorted());
+  // The map's guard takes the block: the head holds no file of a cell it calls removed.
   expect(() => assertMap(withApproved(map, before))).not.toThrow();
+  // And the shape approved at this head no longer holds the module, so it is told once and not again.
+  expect(departuresOf(approvedOf(map), map)).toEqual([]);
+});
+
+test("a module the change deleted one file of is still a module of the head: it is not told removed (D334 (removed-off-head))", () => {
+  // The demo's change deletes `legacy.ts` from `pm`, which holds three files more.
+  const before = approvedOf({ ...DEMO, weather: { ...DEMO.weather, changed: [] } });
+  expect(moduleAt(before, 'libs/core/src/pm')).toMatchObject({ files: 4 });
+  expect(moduleAt(approvedOf(DEMO), 'libs/core/src/pm')).toMatchObject({ files: 3 });
+  expect(departuresOf(before, DEMO).filter((departure) => departure.kind === 'module-removed')).toEqual([]);
 });
 
 test('a module the approved shape did not hold is told added, with the files it holds', () => {
@@ -211,7 +228,7 @@ test('a module the approved shape did not hold is told added, with the files it 
   expect(() => assertMap(withApproved(later, APPROVED))).not.toThrow();
 });
 
-test('a module the approved shape held and the terrain no longer does is told removed, under the id it had (D304 (removed-off-terrain))', () => {
+test('a module the approved shape held and the terrain no longer does is told removed, under the id it had (D334 (removed-off-head))', () => {
   const earlier = approvedOf(found(DEMO, 'libs/core/src/old', ['a.ts', 'b.ts']));
   expect(departuresOf(earlier, DEMO)).toEqual([
     { kind: 'module-removed', target: 'libs/core/src/old', cell: 'directory:libs/core/src/old', why: 'a module the approved shape held', was: 2 },

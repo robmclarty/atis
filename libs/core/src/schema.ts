@@ -523,7 +523,9 @@ export type DepartureKind = (typeof DEPARTURE_KINDS)[number];
  * says which one is meant (D218 (departure-cell)): the id of the cell of this
  * map the departure is about, whose path is `target`, or for `module-removed`
  * the id the module had in the approved shape, its kind and `target` joined by
- * a colon, which no cell of this map has. `dependency-added` is about no
+ * a colon, which is the id of no cell the head holds a file of: the terrain
+ * has no such cell, or has one whose every file the map's change deleted
+ * (D334 (removed-off-head)). `dependency-added` is about no
  * module and carries none. `was` and `now` are the count the kind is about,
  * as approved and as the map has it, each set only where it was measured on
  * that side and never a zero standing for a missing one (C2). `names` are
@@ -900,7 +902,7 @@ function assertShape(value: unknown): asserts value is MapJson {
   }
 
   // The approved block stands only where a shape was approved; a map with none says nothing of one (D210 (approved-block)).
-  if (root['approved'] !== undefined) assertApprovedBlock(root['approved'], 'approved', cellPaths);
+  if (root['approved'] !== undefined) assertApprovedBlock(root['approved'], 'approved', { paths: cellPaths, held: heldCells(terrain, expectRecord(root['weather'], 'weather')) });
 }
 
 const OVERLAY_KEYS: ReadonlySet<string> = new Set([...OVERLAY_NAMES, 'muted']);
@@ -1217,13 +1219,50 @@ function isDepartureKind(value: unknown): value is DepartureKind {
 const CELL_KINDS: readonly CellKind[] = ['package', 'folder', 'single', 'directory'];
 
 /**
+ * The ids of the cells the map's head holds a file of: each cell with a file
+ * the map's change did not delete, and every cell that holds it. A change
+ * map's terrain keeps the place of a file its change deleted (D32), so a
+ * cell can stand there with nothing of the head in it. Read once the terrain
+ * and the weather have passed their own checks.
+ */
+function heldCells(terrain: Readonly<Record<string, unknown>>, weather: Readonly<Record<string, unknown>>): ReadonlySet<string> {
+  const gone = new Set<unknown>();
+  for (const raw of expectArray(weather['changed'], 'weather.changed')) {
+    const entry = expectRecord(raw, 'weather.changed');
+    if (entry['kind'] === 'deleted') gone.add(entry['path']);
+  }
+  const parents = new Map<unknown, unknown>();
+  for (const raw of expectArray(terrain['cells'], 'terrain.cells')) {
+    const cell = expectRecord(raw, 'terrain.cells');
+    parents.set(cell['id'], cell['parent']);
+  }
+  const held = new Set<string>();
+  for (const raw of expectArray(terrain['organelles'], 'terrain.organelles')) {
+    const organelle = expectRecord(raw, 'terrain.organelles');
+    if (gone.has(organelle['path'])) continue;
+    // A cell already held has every cell that holds it held too, so the walk up stops there, and at a ring of parents.
+    let id = organelle['cell'];
+    while (typeof id === 'string' && !held.has(id)) {
+      held.add(id);
+      id = parents.get(id);
+    }
+  }
+  return held;
+}
+
+/** What a departure's cell is held to: each cell of the terrain with its path, and the ids of those the head holds a file of. */
+type Standing = { readonly paths: ReadonlyMap<string, unknown>; readonly held: ReadonlySet<string> };
+
+/**
  * One departure: its kind, its target, the cell it is about, its words, and
  * the counts and names it carries; returns the key the list is sorted by. The
  * cell is one the terrain holds at the target's path, or for a module removed
- * an id of that path the terrain does not hold, and a new dependency names
- * none (D218 (departure-cell)).
+ * an id of that path that is no cell the head holds a file of (D334
+ * (removed-off-head)), and a new dependency names none (D218
+ * (departure-cell)).
  */
-function assertDeparture(value: unknown, path: string, cellPaths: ReadonlyMap<string, unknown>): string {
+function assertDeparture(value: unknown, path: string, standing: Standing): string {
+  const cellPaths = standing.paths;
   const departure = expectRecord(value, path);
   const kind = departure['kind'];
   if (!isDepartureKind(kind)) fail(`${path}.kind`, `expected one of ${DEPARTURE_KINDS.join(', ')}`);
@@ -1235,7 +1274,7 @@ function assertDeparture(value: unknown, path: string, cellPaths: ReadonlyMap<st
   } else {
     cell = expectString(departure['cell'], `${path}.cell`);
     if (kind === 'module-removed') {
-      if (cellPaths.has(cell)) fail(`${path}.cell`, `the terrain still holds the cell "${cell}"`);
+      if (standing.held.has(cell)) fail(`${path}.cell`, `the head still holds a file of the cell "${cell}"`);
       if (!CELL_KINDS.some((each) => cell === `${each}:${target}`)) fail(`${path}.cell`, `expected the id the module at "${target}" had, its kind and its path`);
     } else {
       if (!cellPaths.has(cell)) fail(`${path}.cell`, `unknown cell "${cell}"`);
@@ -1253,13 +1292,13 @@ function assertDeparture(value: unknown, path: string, cellPaths: ReadonlyMap<st
 }
 
 /** The approved block (D210 (approved-block)): the head the shape was approved at, and the departures from it, sorted and one of a kind for a cell. */
-function assertApprovedBlock(value: unknown, path: string, cellPaths: ReadonlyMap<string, unknown>): void {
+function assertApprovedBlock(value: unknown, path: string, standing: Standing): void {
   const approved = expectRecord(value, path);
   if (expectString(approved['at'], `${path}.at`) === '') fail(`${path}.at`, 'expected the head the shape was approved at');
   let previous: string | undefined;
   expectArray(approved['departures'], `${path}.departures`).forEach((raw, index) => {
     const at = `${path}.departures[${String(index)}]`;
-    const key = assertDeparture(raw, at, cellPaths);
+    const key = assertDeparture(raw, at, standing);
     if (previous !== undefined && previous >= key) fail(at, 'expected the departures sorted by target, then kind, then cell, and one of a kind for a cell');
     previous = key;
   });

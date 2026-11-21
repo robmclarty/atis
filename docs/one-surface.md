@@ -361,9 +361,16 @@ What the block means and what the guard holds it to:
     module up by its path.
   - For `module-removed`, `cell` is the id the module had in the approved
     shape, its kind and its path joined by a colon as `directory:src/gone`,
-    and no cell of this map has that id. Another cell may still stand at the
-    path: the directory half of a pair can go while the package stays. A
-    reader has nothing to select and writes the row muted.
+    and the head holds no file of a cell with that id
+    (D334 (removed-off-head)). Either the terrain has no such cell, or it has
+    one whose every file the map's change deleted: a change map's terrain
+    keeps the place of a deleted file, so a module deleted on a branch is
+    told removed at once, under the id of the cell still standing there. The
+    guard refuses the kind only for a cell that still holds a file the change
+    did not delete, its own or one of a cell it holds. Another cell may still
+    stand at the path: the directory half of a pair can go while the package
+    stays. A reader writes the row muted, and selects the cell only where
+    `selectedOf(map, departure.cell)` finds one.
   - For `dependency-added` there is no `cell`: the departure is about no
     module.
 - `why` is the reason in words, never empty.

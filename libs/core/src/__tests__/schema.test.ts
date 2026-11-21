@@ -465,10 +465,33 @@ test('accepts a departure of one kind for each of a package and the directory of
 
   expect(() => assertMap(pairedMap({ at: 'a'.repeat(40), departures: [grownAt('package:.'), grownAt('directory:.')] }))).toThrow(/approved\.departures\[1\]: expected the departures sorted by target, then kind, then cell/);
   expect(() => assertMap(pairedMap({ at: 'a'.repeat(40), departures: [grownAt('package:.'), grownAt('package:.')] }))).toThrow(/approved\.departures\[1\]: expected the departures sorted/);
-  expect(() => assertMap(pairedMap({ at: 'a'.repeat(40), departures: [{ kind: 'module-removed', target: '.', cell: 'directory:.', why: 'gone' }] }))).toThrow(/approved\.departures\[0\]\.cell: the terrain still holds the cell "directory:\."/);
+  expect(() => assertMap(pairedMap({ at: 'a'.repeat(40), departures: [{ kind: 'module-removed', target: '.', cell: 'directory:.', why: 'gone' }] }))).toThrow(/approved\.departures\[0\]\.cell: the head still holds a file of the cell "directory:\."/);
 });
 
-test('rejects an approved block that is not one, a departure of no known kind, one naming a cell the terrain does not hold, one not at its target or a removed one it does hold, and a list out of order (D210 (approved-block))', () => {
+test("accepts a module told removed whose cell the terrain still holds once the map's change deleted its every file, and refuses it while the head holds one, its own or a held cell's (D334 (removed-off-head))", () => {
+  const removed = { at: 'a'.repeat(40), departures: [{ kind: 'module-removed', target: '.', cell: 'directory:.', why: 'a module the approved shape held', was: 1 }] };
+  const paired = pairedMap(removed) as MapJson;
+  // The change deleted the directory's one loose file: its cell keeps its place on the change's terrain (D32), and the head holds nothing of it.
+  const gone = { ...paired, weather: { ...paired.weather, changed: [changedEntry({ path: 'build.ts', kind: 'deleted', cell: 'directory:.', is_barrel: false })] } };
+  expect(assertMap(gone)).toEqual(gone);
+  // A change that only edited the file left it at the head, so the module is not gone.
+  const edited = { ...paired, weather: { ...paired.weather, changed: [changedEntry({ path: 'build.ts', kind: 'modified', cell: 'directory:.', is_barrel: false })] } };
+  expect(() => assertMap(edited)).toThrow(/approved\.departures\[0\]\.cell: the head still holds a file of the cell "directory:\."/);
+  // A package is held by a file of a cell it holds, though the change deleted its own: the package is no module removed.
+  const [inner] = paired.terrain.organelles;
+  if (inner === undefined) throw new Error('the paired map lost its file');
+  const hollow = {
+    ...paired,
+    weather: { ...paired.weather, changed: [changedEntry({ path: inner.path, kind: 'deleted', cell: 'package:.' })] },
+    approved: { at: 'a'.repeat(40), departures: [{ kind: 'module-removed', target: '.', cell: 'package:.', why: 'a module the approved shape held', was: 2 }] },
+  };
+  expect(() => assertMap(hollow)).toThrow(/approved\.departures\[0\]\.cell: the head still holds a file of the cell "package:\."/);
+  // And with the loose file deleted too, the head holds nothing of either.
+  const empty = { ...hollow, weather: { ...hollow.weather, changed: [changedEntry({ path: 'build.ts', kind: 'deleted', cell: 'directory:.', is_barrel: false }), changedEntry({ path: inner.path, kind: 'deleted', cell: 'package:.' })] } };
+  expect(assertMap(empty)).toEqual(empty);
+});
+
+test('rejects an approved block that is not one, a departure of no known kind, one naming a cell the terrain does not hold, one not at its target or a removed one the head still holds a file of, and a list out of order (D210 (approved-block))', () => {
   const one = (departure: Record<string, unknown>): unknown => withApproved({ at: 'a'.repeat(40), departures: [{ kind: 'files-grown', target: MODULE, cell: CELL, why: 'it grew', ...departure }] });
   const cases: readonly [unknown, RegExp][] = [
     [withApproved('yes'), /approved: expected an object/],
@@ -486,7 +509,7 @@ test('rejects an approved block that is not one, a departure of no known kind, o
     [one({ cell: 'src/gone' }), /approved\.departures\[0\]\.cell: unknown cell "src\/gone"/],
     [one({ kind: 'module-added', cell: MODULE }), /approved\.departures\[0\]\.cell: unknown cell "src\/foo\/index\.ts"/],
     [one({ target: 'src/foo' }), /approved\.departures\[0\]\.target: the cell "src\/foo" is not at "src\/foo"/],
-    [one({ kind: 'module-removed' }), /approved\.departures\[0\]\.cell: the terrain still holds the cell "src\/foo"/],
+    [one({ kind: 'module-removed' }), /approved\.departures\[0\]\.cell: the head still holds a file of the cell "src\/foo"/],
     [one({ kind: 'module-removed', target: 'src/gone', cell: undefined }), /approved\.departures\[0\]\.cell: expected a string/],
     [one({ kind: 'module-removed', target: 'src/gone', cell: 'src/gone' }), /approved\.departures\[0\]\.cell: expected the id the module at "src\/gone" had/],
     [one({ kind: 'module-removed', target: 'src/gone', cell: 'directory:src/other' }), /approved\.departures\[0\]\.cell: expected the id the module at "src\/gone" had/],

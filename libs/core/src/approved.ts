@@ -400,14 +400,16 @@ function grownOf(cell: string, was: ApprovedModule, now: ApprovedModule, { limit
 }
 
 /**
- * The modules the approved shape held that this map's terrain holds no cell
- * for (D304 (removed-off-terrain)). The id each had is its kind and its path,
- * as core writes one. A module whose every file a change deleted still stands
- * on that change's terrain (D32), where the map's guard lets no departure
- * call its cell removed, so it is told once a map is cut without it.
+ * The modules the approved shape held that the map's head holds none of
+ * (D334 (removed-off-head)): no module the head holds matches it by its path
+ * and whether it is a package, and none has the id it had. The id each had is
+ * its kind and its path, as core writes one. A module whose every file the
+ * map's change deleted still has its cell on that change's terrain (D32),
+ * and is told removed all the same, under that cell's id: the head holds no
+ * file of it, which is what the map's guard asks of a cell called removed.
  */
-function removedOf(doc: Approved, map: MapJson): readonly Departure[] {
-  const standing = new Set(map.terrain.cells.flatMap((cell) => [cell.id, keyOf(cell)]));
+function removedOf(doc: Approved, held: readonly Held[]): readonly Departure[] {
+  const standing = new Set(held.flatMap(({ cell, module }) => [cell, keyOf(module)]));
   return doc.modules.flatMap((module): Departure[] => {
     const cell = `${module.kind}:${module.path}`;
     if (standing.has(cell) || standing.has(keyOf(module))) return [];
@@ -442,12 +444,13 @@ function orderOf(departure: Departure): string {
 export function departuresOf(doc: Approved, map: MapJson, limits: DepartureLimits = DEPARTURE_LIMITS): readonly Departure[] {
   const approved = new Map(doc.modules.map((module) => [keyOf(module), module] as const));
   const measure: Measure = { limits, shared: sharesTerrain(doc, map) };
-  const moved = heldOf(map).flatMap(({ cell, module }): readonly Departure[] => {
+  const held = heldOf(map);
+  const moved = held.flatMap(({ cell, module }): readonly Departure[] => {
     const was = approved.get(keyOf(module));
     if (was !== undefined) return grownOf(cell, was, module, measure);
     return [{ kind: 'module-added', target: module.path, cell, why: WHY['module-added'], now: module.files }];
   });
-  return [...moved, ...removedOf(doc, map), ...dependenciesOf(doc, map)].toSorted((a, b) => byText(orderOf(a), orderOf(b)));
+  return [...moved, ...removedOf(doc, held), ...dependenciesOf(doc, map)].toSorted((a, b) => byText(orderOf(a), orderOf(b)));
 }
 
 /**
