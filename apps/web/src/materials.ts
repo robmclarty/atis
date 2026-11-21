@@ -6,8 +6,8 @@
  * import so the registry (D156) and its tests read them in Node; `world/`
  * reads each through the registry, so the dev panel moves them live, and
  * `docs/design.md` records every field under "World materials". The levels of
- * detail's gates and the camera's give ride with them (step 44), and so do an
- * opened cell's slide (step 40) and the planet the far zoom draws (D170). The
+ * detail's gates and the camera's give ride with them (step 44), and so does
+ * an opened cell's slide (step 40). The
  * minimap's look and a still's framing are the scene's (`MINIMAP`, `CINEMA`),
  * since the comment's still and the fingerprint draw with them too (D175).
  * The levels rest parked, the world one lit surface at every zoom (D204
@@ -15,8 +15,8 @@
  * (side-panels)).
  */
 
-import { CELL_GATE, COMPOSITE_GATE, INTERIOR_LAYOUT, PLANET_LAYOUT } from 'scene';
-import type { InteriorLayout, LodGate, PlanetLayout } from 'scene';
+import { CELL_GATE, COMPOSITE_GATE, INTERIOR_LAYOUT } from 'scene';
+import type { InteriorLayout, LodGate } from 'scene';
 
 /** The skin's material: the albedos, the membrane line, how rough and how wet it is, the share of its albedo kept at the far field, the tissue's own faint light, and the shape of the ripple a membrane imported past its barrel runs with (D195). */
 export type SkinLook = {
@@ -96,62 +96,6 @@ export const SPACE: SpaceLook = {
   ruleOpacity: 0.16,
   ruleWidth: 1,
   labelOpacity: 0.5,
-};
-
-/**
- * The far zoom's planet (D170), beside its shape from the scene
- * (`PLANET_LAYOUT`): its dark body, a hair lighter at its middle than at its
- * limb; each light on it, at least this radius in pixels and else the file's
- * own disc on the sphere, its glow this many times as wide, this bright, and
- * dimming toward the limb until it faces the camera this much; the share of a
- * light's or a star's brightness its glow starts at past its core; each
- * star's radius in pixels for the fewest importers and the most, its glow
- * this many times as wide, this bright; the hues a star takes beside the
- * state hues it shares with the sheet, amber for a lesser advisory, dim white
- * with no finding, and muted grey with no audit read; and the rim the stars
- * light, reaching this share of the radius in from the limb and this share
- * out past it as a haze, this bright. None of it blooms: a light's glow is
- * its own.
- */
-export type PlanetLook = PlanetLayout & {
-  readonly body: string;
-  readonly bodyCore: string;
-  readonly lightMin: number;
-  readonly lightGlow: number;
-  readonly lightGain: number;
-  readonly limbFade: number;
-  readonly glowShare: number;
-  readonly starMin: number;
-  readonly starMax: number;
-  readonly starGlow: number;
-  readonly starGain: number;
-  readonly amber: string;
-  readonly clean: string;
-  readonly unread: string;
-  readonly rimDepth: number;
-  readonly rimHaze: number;
-  readonly rimGain: number;
-};
-
-export const PLANET: PlanetLook = {
-  ...PLANET_LAYOUT,
-  body: '#05070a',
-  bodyCore: '#0e131a',
-  lightMin: 1.4,
-  lightGlow: 3.5,
-  lightGain: 0.9,
-  limbFade: 0.2,
-  glowShare: 0.28,
-  starMin: 1.2,
-  starMax: 4.5,
-  starGlow: 4,
-  starGain: 0.9,
-  amber: '#e9a93c',
-  clean: '#c6d0dc',
-  unread: '#58616c',
-  rimDepth: 0.12,
-  rimHaze: 0.02,
-  rimGain: 0.7,
 };
 
 /** The bloom on the emissive target alone (D11, D12): how strong, how wide, and the light below which nothing blooms. */
@@ -279,13 +223,16 @@ export const CAMERA: CameraLook = { smooth: 0.1, dragSmooth: 0.05 };
  * The levels rest parked (D204 (parked-levels)): the world is one lit surface
  * at every zoom, and nothing opens, cross-fades or changes mode as the wheel
  * turns. The first gate rests at 0 and 0, so no zoom the camera reaches reads
- * the far field and its planet is never shown; the two deep gates rest out of
+ * the far field, which is the map unlit; the two deep gates rest out of
  * the camera's reach, so the file's plate and the diff's sheet never open; and
  * `autoOpen` rests at 0, so no cell opens as a slide by the share of the
  * screen it fills. `autoOpen` is the one switch that brings the old levels
  * back: above 0 the scene's own gates (`LOD_GATES`), which are as they were,
- * stand in for `gates`, so the far field, the plate and the sheet come back
- * with the slide, and no slide opens by a selection.
+ * stand in for all of `gates` but the first, so the plate and the sheet come
+ * back with the slide, and no slide opens by a selection. The first gate
+ * stays the token's under the switch (`gatesOf` in `opened.ts`, D240
+ * (far-zoom-lit)): the planet that stood over the far field is deleted (D213
+ * (planet-goes)), and nothing is left to draw there but the dark.
  * `openOnSelect` is the one way a slide opens at rest (D205
  * (open-on-select)): selecting a module opens it in place, whatever the zoom.
  * What the levels showed resolves by its size on the screen instead (D206
@@ -300,7 +247,7 @@ export type LevelsLook = {
   readonly cellHome: number;
   readonly compositeOpen: number;
   readonly compositeClose: number;
-  /** Above 0, the old levels are on, all of them: the scene's own gates are read in place of `gates`, a cell opens as a slide by the share of the free screen it fills, and a click opens one that would hold. At 0 none of it is, and `gates` is read. */
+  /** Above 0, the old levels are on: the scene's own gates are read in place of `gates` past its first, which is read either way (D240 (far-zoom-lit)), a cell opens as a slide by the share of the free screen it fills, and a click opens one that would hold. At 0 none of it is, and `gates` is read whole. */
   readonly autoOpen: number;
   /** Above 0, selecting a module opens it as the living slide in place, and clearing the selection closes it. At 0, and while `autoOpen` is above 0, a selection is only ringed and named. */
   readonly openOnSelect: number;

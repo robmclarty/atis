@@ -30,12 +30,24 @@
  * (`fillOf`).
  */
 
-import type { Lod, Pick } from 'scene';
+import { LOD_GATES } from 'scene';
+import type { Lod, LodGate, Pick } from 'scene';
 
 import type { Stop } from './walk.js';
 
 /** The level of detail a cell may open from: §6's LOD1, the surface; the far field withholds the cells (§5.6). */
 export const OPEN_LOD: Lod = 1;
+
+/**
+ * The gates the levels of detail are read through. At rest they are the
+ * token's own, parked (D204 (parked-levels)). With the old levels' switch on
+ * the scene's stand in for the cell's, the file's and the diff's, and the
+ * first stays the token's (D240 (far-zoom-lit)): the planet that stood over
+ * the far field is gone (D213 (planet-goes)), and read through the scene's
+ * first gate the far zoom would be the map unlit with nothing over it. So the
+ * switch brings back the slide, the plate and the sheet, and never the dark.
+ */
+export const gatesOf = (levels: { readonly gates: readonly LodGate[]; readonly autoOpen: number }): readonly LodGate[] => (levels.autoOpen > 0 ? [...levels.gates.slice(0, 1), ...LOD_GATES.slice(1)] : levels.gates);
 
 /** What the chrome hears of the open cell: which, whether its exploded view is spread, and whether its wiring is drawn. */
 export type Opened = { readonly cell: string; readonly exploded: boolean; readonly wired: boolean };

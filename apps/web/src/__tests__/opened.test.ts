@@ -1,7 +1,9 @@
 import { expect, test } from 'vitest';
 
-import { CLOSED, cellOf, openedBy, openedOf } from '../opened.js';
+import { LEVELS } from '../materials.js';
+import { CLOSED, cellOf, gatesOf, openedBy, openedOf } from '../opened.js';
 import type { OpenEvent, OpenState } from '../opened.js';
+import { LOD_GATES, levelAt, lodPlan } from 'scene';
 import type { Pick } from 'scene';
 import { FIELD } from '../walk.js';
 
@@ -121,4 +123,27 @@ test('a stop names the cell it stands in', () => {
   expect(cellOf(FIELD)).toBeUndefined();
   expect(cellOf({ kind: 'cell', cell: PM })).toBe(PM);
   expect(cellOf({ kind: 'organelle', path: 'libs/core/src/pm/index.ts', cell: PM })).toBe(PM);
+});
+
+/** The nearest and the farthest the camera zooms, over the fit, and the scene's own gates between. */
+const ZOOMS = [0.5, 1, 1.45, 1.7, 5, 6, 20, 24, 66, 80, 200];
+
+test("the old levels' switch reads the scene's gates for the cell, the file and the diff and leaves the first to its token, so no zoom is the far field unlit now the planet is gone (D240 (far-zoom-lit))", () => {
+  // At rest the token's own gates are read, as they are.
+  expect(gatesOf(LEVELS)).toBe(LEVELS.gates);
+  const old = gatesOf({ ...LEVELS, autoOpen: 1 });
+  expect(old).toEqual([LEVELS.gates[0], LOD_GATES[1], LOD_GATES[2], LOD_GATES[3]]);
+  expect(old[0]).toEqual({ enter: 0, exit: 0 });
+  for (const zoom of ZOOMS) {
+    // Read afresh as the opening frame is, and coming out from every level: never the far field, and the surface's layer whole.
+    for (const from of [0, 1, 2, 3, 4] as const) expect(levelAt(from, zoom, old), `zoom ${String(zoom)} from level ${String(from)}`).toBeGreaterThanOrEqual(1);
+    expect(lodPlan(undefined, zoom, 0, 300, old).opacity[1]).toBe(1);
+  }
+  // The plate and the sheet come back at the zooms they had.
+  expect(levelAt(0, 25, old)).toBe(3);
+  expect(levelAt(0, 81, old)).toBe(4);
+  // The first gate is still the token's to move: set by hand, it is read with the switch on and off.
+  const far = { enter: 1.7, exit: 1.45 };
+  expect(gatesOf({ gates: [far, ...LEVELS.gates.slice(1)], autoOpen: 1 })[0]).toEqual(far);
+  expect(levelAt(0, 1, gatesOf({ gates: [far, ...LEVELS.gates.slice(1)], autoOpen: 0 }))).toBe(0);
 });

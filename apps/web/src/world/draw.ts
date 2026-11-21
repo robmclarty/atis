@@ -10,10 +10,10 @@
  * (step 29, C12): the settle's amplitude and lift, and the levels of detail,
  * which keep the key light and the sky off at the far field and bring them,
  * the organelles and the weather's surface marks up as the surface resolves.
- * The far zoom is a dark planet under its dependencies' stars, on a canvas of
- * its own over the world's (D170): it grows as the view comes in until it
- * fills the frame, and LOD1's cross-fade hands it to the flat world; while it
- * shows, the pointer hovers nothing on the flat ground beneath it. The weather is
+ * The planet that stood over the far zoom is gone (D213 (planet-goes)), so
+ * the surface is lit from the farthest zoom in: no zoom the camera reaches
+ * reads the far field at rest, nor under the old levels' switch, which leaves
+ * the first gate to its token (D240 (far-zoom-lit)). The weather is
  * step 26's derivation drawn: the reach in the skin, every mark on a file as
  * one instanced mesh, the storms as bolts, the exceptional edges as ribbons,
  * and the slot names and old paths as flat tags over the canvas (step 33).
@@ -104,8 +104,8 @@
  * canvas also says which level of detail it draws at. On a map of a range,
  * the scrubber's step to another commit cross-fades the weather over the one
  * terrain (D100): that frame's marks, tags and labels are laid as a layer of
- * their own and fade in as the last frame's fade out, the skin's reach and
- * the planet's lights mixing the same way, at the scheduler's cross-fade and
+ * their own and fade in as the last frame's fade out, the skin's reach
+ * mixing the same way, at the scheduler's cross-fade and
  * cut under reduced motion (C12), the relief, the tissue and the files never
  * moving (P2); the canvas says which frame it shows and when the fade has
  * settled. A map a watch pushes on the ground drawn cross-fades its weather
@@ -134,7 +134,7 @@
 import { AgXToneMapping, AmbientLight, Color, DataUtils, DirectionalLight, RenderPipeline, Scene, Vector3, WebGPUCoordinateSystem, WebGPURenderer } from 'three/webgpu';
 import { emissive, mrt, output, pass } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
-import { CINEMA, FIELD_FILL, LOD_GATES, MEMBRANE_WOBBLE, MEMBRANE_WOBBLE_HZ, MOTION_TOKENS, NUCLEUS_TOKENS, RIBBON_SWAY, RIBBON_SWAY_HZ, REACH_ORIGIN_OPACITY, RELIEF, bandLabelsFor, cellSlide, cellWiring, cinemaFocus, compositesOf, compositesOpen, createPicker, createScheduler, fileLevelOf, fillOf, gridFor, instances, interiorOf, planetShown, slideCellOf, surfacePoint } from 'scene';
+import { CINEMA, FIELD_FILL, MEMBRANE_WOBBLE, MEMBRANE_WOBBLE_HZ, MOTION_TOKENS, NUCLEUS_TOKENS, RIBBON_SWAY, RIBBON_SWAY_HZ, REACH_ORIGIN_OPACITY, RELIEF, bandLabelsFor, cellSlide, cellWiring, cinemaFocus, compositesOf, compositesOpen, createPicker, createScheduler, fileLevelOf, fillOf, gridFor, instances, interiorOf, slideCellOf, surfacePoint } from 'scene';
 import type { FileLevel, LabelBox, Lod, Pick, Point, Slide } from 'scene';
 import type { MapJson, OverlayName } from 'core';
 
@@ -147,14 +147,14 @@ import type { Highlight } from '../highlight.js';
 import { hoverOf } from '../hover.js';
 import type { Hovered } from '../hover.js';
 import { marksOf } from '../marks.js';
-import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, NOTICE, PLANET, SKIN, SKY, SPACE, WALK, WEATHER } from '../materials.js';
+import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, NOTICE, SKIN, SKY, SPACE, WALK, WEATHER } from '../materials.js';
 import { selectedOf, targetOf } from '../nav.js';
 import type { Nav, Pointed, Selected } from '../nav.js';
 import { frameMap, lastFrame as ownFrame } from '../frames.js';
 import { shownOverlay } from '../overlays.js';
 import type { OverlayAsk } from '../overlays.js';
-import { categoryHue, runsOf } from '../notices.js';
-import { CLOSED, OPEN_LOD, openedBy, openedOf } from '../opened.js';
+import { runsOf } from '../notices.js';
+import { CLOSED, OPEN_LOD, gatesOf, openedBy, openedOf } from '../opened.js';
 import type { OpenState } from '../opened.js';
 import type { Registry } from '../registry.js';
 import { openedFor, selectedBy, targetOfPick } from '../selection.js';
@@ -176,7 +176,6 @@ import type { Labels } from './labels.js';
 import { ORGANELLE_LOOK, createOrganelles } from './organelles.js';
 import { PALETTE_LOOK, createPalette } from './palette.js';
 import type { Palette } from './palette.js';
-import { createPlanet } from './planet.js';
 import { createRibbons } from './ribbons.js';
 import type { Ribbons } from './ribbons.js';
 import { createSectors } from './sectors.js';
@@ -328,13 +327,11 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   const nucleusTokens = registry.view(NUCLEUS_TOKENS);
   const interior = createInterior(heightAt, skin.resolution, interiorLook, registry.view(SLIDE_CHROME));
   scene.add(...interior.meshes);
-  // The far zoom's planet (D170): over the rules, which are the flat world's, and under everything else.
-  const planet = createPlanet(map, registry.view(PLANET, 'PLANET'), () => ({ change: tokens.CHANGE_HUE, ifr: tokens.IFR_HUE, category: categoryHue(current.map.weather.checks.category, tokens), field: tokens.FIELD_FILL }));
   // The file level's plate (§6's LOD3, D102): over the slide's leaders and the labels, under the hover's tag and the slide's words; the diff level's sheet over the plate it cross-fades from.
   const filePlate = createFilePlate(registry.view(FILE_LOOK));
   const diffSheet = createDiffSheet(registry.view(DIFF_LOOK));
   // The layers over the canvas in the order they stack, each over the one before it and all of them under the chrome.
-  canvas.after(space.rules, planet.element, interior.leaders, hover.outline, ...current.labels.elements, filePlate.element, diffSheet.element, hover.tag, interior.words);
+  canvas.after(space.rules, interior.leaders, hover.outline, ...current.labels.elements, filePlate.element, diffSheet.element, hover.tag, interior.words);
   // Which cell is open, the slide laid for it, and the level the last frame was drawn at, which a click is read against.
   let opening: OpenState = CLOSED;
   let slide: Slide | undefined;
@@ -778,7 +775,6 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     current = layerOf(next, shownName);
     hover.tag.before(...current.labels.elements);
     skin.reach(next);
-    planet.weather(next);
     lightOf = new Map(runsOf(next).map((run) => [run.target, run.light] as const));
     scheduler.scrub(next.notices.map((notice) => notice.tier));
     relaySlide = true;
@@ -903,7 +899,6 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   let compositeOpen: readonly boolean[] = [];
   let shownLod: Lod | undefined;
   let floatedShown: number | undefined;
-  let planetOn: boolean | undefined;
   await renderer.setAnimationLoop(() => {
     if (passes === 1) {
       performance.mark('atis:ready');
@@ -936,8 +931,8 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       lastLod,
       { open: levels.compositeOpen, close: levels.compositeClose },
     );
-    // The camera's zoom over the fit is the one scalar the levels of detail read. The one switch brings every old level back (D204 (parked-levels)): while `autoOpen` is on the scene's own gates stand in for the parked ones.
-    const gates = levels.autoOpen > 0 ? LOD_GATES : levels.gates;
+    // The camera's zoom over the fit is the one scalar the levels of detail read. The one switch brings the old levels back (D204 (parked-levels)): while `autoOpen` is on the scene's own gates stand in for the parked ones, but for the first, which stays the token's, so the far zoom is the lit surface there too (D240 (far-zoom-lit)).
+    const gates = gatesOf(levels);
     const frame = scheduler.frame(camera.zoom, gates, compositeOpen);
     if (composites.length > 0) {
       skin.openComposites(frame.composites);
@@ -1069,18 +1064,6 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     glow.threshold.value = bloomLook.threshold;
     post.render();
     space.render(camera, canvas.clientWidth, canvas.clientHeight, surface);
-    // The planet is LOD0's layer: whole at the far zoom, and faded out as the surface fades in past LOD1's gate.
-    const planetLayer = frame.lod === undefined ? 1 : planetShown(frame.lod);
-    planet.render(
-      { camera, width: canvas.clientWidth, height: canvas.clientHeight, free, pixelsPerUnit: pixelsPerUnit(camera, canvas.clientWidth), centre: middle, zoom: camera.zoom, gate: gates[0] ?? LOD_GATES[0] ?? { enter: 1.7, exit: 1.45 } },
-      planetLayer,
-      frame.notices.map((notice) => notice.gain),
-      mixed,
-    );
-    if (planetLayer > 0 !== planetOn) {
-      planetOn = planetLayer > 0;
-      canvas.dataset['planet'] = planetOn ? 'on' : 'off';
-    }
     if (placeLabels || lod !== placedLod) {
       const viewport = viewportOf(camera, canvas.clientWidth);
       const asked = askedOf(fieldTarget, rowTarget ?? litTarget, held === undefined ? undefined : targetOf(held), rowPointed === undefined ? undefined : targetOf(rowPointed));
@@ -1148,7 +1131,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     interior.render(camera, canvas.clientWidth, canvas.clientHeight, { top: claims.top, bottom: claims.bottom, left: 0, right: chrome.right }, pixelsPerUnit(camera, canvas.clientWidth), open.exploded, words);
     // A slide's files float under a still pointer, so the hover follows them each frame while one shows.
     if (pickAgain || lod !== pickedLod || (bodies.length > 0 && !reduced)) {
-      // On the planet the flat ground lies under it, so nothing there answers the pointer (D170).
+      // At the far field, which only a first gate moved by hand reaches, the files are not drawn, so nothing there answers the pointer.
       const hovered = pointer === undefined || lod === 0 ? undefined : hoveredAt(pointer, lod);
       hover.show(hovered, pointer);
       if (hovered?.target !== fieldTarget) {

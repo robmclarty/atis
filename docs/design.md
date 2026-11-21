@@ -517,55 +517,6 @@ SVG keeps its bands (the terraces above).
 | `SPACE.ruleWidth` | `1` | the rule's width in screen pixels |
 | `SPACE.labelOpacity` | `0.5` | how much of each band's label shows, written in `SPACE.ruleInk` just under its rule (D196 (band-labels)): more than the rule, so its few words read, and faded with the surface's layer |
 
-### The planet at the far zoom
-
-At the far zoom the world draws the repository as a dark planet (D170), on a
-canvas of its own over the world's, under the labels and above the rules: the
-field's space, then one star per outside package the terrain imports, then the
-sphere, its pole touching the ground where the view faces, so a tilt or a turn
-tips it as it tips the ground. Each file the far field lights is a light where
-it sits on the sphere, in the change hue or, for the primary's file, the
-category hue, breathing with its notice; the rest of the sphere is dark. A
-star is sized by how many terrain files import its package and lit by its
-health: `IFR_HUE` for an advisory at high or critical, `PLANET.amber` for a
-lower one, `CHANGE_HUE` where the change added or moved it, `PLANET.clean` with
-no finding, and `PLANET.unread` where no audit was read (C2). Each star's light
-catches the rim facing it. The planet is a share of the free screen's
-half-diagonal, `PLANET.farFill` at the opening frame, growing as a power of the
-zoom to `PLANET.handFill` where LOD1 is left (`LEVELS.gates`), so it covers the
-frame on both sides of LOD1's gate and the level's cross-fade hands it to the
-flat world with no blink. The stars hang in the screen's plane in planet radii
-and grow apart with it, so coming in they leave the frame. While the planet
-shows, the pointer hovers nothing on the ground beneath it. Nothing on it
-moves of its own, and under reduced motion the primary's light holds (C12).
-
-| Token | Value | Use |
-| --- | --- | --- |
-| `PLANET.farFill` | `0.3` | the planet's radius at the opening frame, as a share of the free screen's half-diagonal |
-| `PLANET.handFill` | `2.5` | its radius where LOD1 is left, past 1 so it reaches beyond the frame's corners, and the layout keeps its arc length round it there |
-| `PLANET.cap` | `1.2` | the widest angle, in radians, the layout wraps to from the pole while the planet is small: the rest of the sphere stays dark |
-| `PLANET.starNear` | `1.45` | the nearest a star hangs to the planet's centre at the opening frame, in planet radii |
-| `PLANET.starGap` | `0.3` | the least room between two stars, in planet radii |
-| `PLANET.starSeed` | `1` | the seed each star draws its place from beside its package's name, so a package keeps its place from map to map (C3) |
-| `PLANET.rimSpread` | `6` | how narrowly a star's light falls on the rim: a power over the cosine of the angle off it |
-| `PLANET.body` | `#05070a` | the planet's body at its limb: near-black |
-| `PLANET.bodyCore` | `#0e131a` | its body at its middle, a hair lighter, so the disc reads as a sphere |
-| `PLANET.lightMin` | `1.4` | the least radius of a light on the planet, in pixels; else the file's own disc on the sphere |
-| `PLANET.lightGlow` | `3.5` | a light's glow, as a multiple of its radius |
-| `PLANET.lightGain` | `0.9` | how bright a light is |
-| `PLANET.limbFade` | `0.2` | how much a light must face the camera to shine whole: past the limb it dims to nothing, so a light rounds the sphere rather than sitting on its edge |
-| `PLANET.glowShare` | `0.28` | the share of a light's or a star's brightness its glow starts at, past the edge of its crisp core |
-| `PLANET.starMin` | `1.2` | a star's radius in pixels for the package the fewest files import |
-| `PLANET.starMax` | `4.5` | a star's radius for the package the most files import, under a square root between |
-| `PLANET.starGlow` | `4` | a star's glow, as a multiple of its radius |
-| `PLANET.starGain` | `0.9` | how bright a star is |
-| `PLANET.amber` | `#e9a93c` | a star whose package an advisory names below high |
-| `PLANET.clean` | `#c6d0dc` | a star whose package the audit read and named in no advisory: a dim white |
-| `PLANET.unread` | `#58616c` | a star with no audit read: muted grey, no evidence rather than a clean one (C2) |
-| `PLANET.rimDepth` | `0.12` | how far in from the limb the stars' light reaches, as a share of the planet's radius |
-| `PLANET.rimHaze` | `0.02` | how far past the limb it hazes, as a share of the radius |
-| `PLANET.rimGain` | `0.7` | how bright the rim's light is |
-
 ### The lights
 
 | Token | Value | Use |
@@ -648,13 +599,13 @@ resolves by its size on the screen (D206 (detail-by-size)).
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `LEVELS.gates` | `[{ enter: 0, exit: 0 }, { enter: 6, exit: 5 }, { enter: 1000000, exit: 1000000 }, { enter: 1000000, exit: 1000000 }]` | parked (D204 (parked-levels)): the zoom over the fit at which each of LOD1 to LOD4 is entered and left (§6). The first rests at 0 and 0, so no zoom the camera reaches reads the far field, and its planet never shows; the second draws nothing of its own, and past it the label budget is larger and every composite stands open; the last two rest past the camera's nearest zoom, 200, so the file's plate and the diff's sheet never open. Read only while `LEVELS.autoOpen` is `0`: above it the scene's own `LOD_GATES` are read in its place, `[{"enter":1.7,"exit":1.45},{"enter":6,"exit":5},{"enter":24,"exit":20},{"enter":80,"exit":66}]` |
+| `LEVELS.gates` | `[{ enter: 0, exit: 0 }, { enter: 6, exit: 5 }, { enter: 1000000, exit: 1000000 }, { enter: 1000000, exit: 1000000 }]` | parked (D204 (parked-levels)): the zoom over the fit at which each of LOD1 to LOD4 is entered and left (§6). The first rests at 0 and 0, so no zoom the camera reaches reads the far field, which is the map unlit, and it is read with `LEVELS.autoOpen` on as with it off (D240 (far-zoom-lit)); the second draws nothing of its own, and past it the label budget is larger and every composite stands open; the last two rest past the camera's nearest zoom, 200, so the file's plate and the diff's sheet never open. Past the first, read only while `LEVELS.autoOpen` is `0`: above it the scene's own `LOD_GATES` are read in the other three's place, `[{"enter":6,"exit":5},{"enter":24,"exit":20},{"enter":80,"exit":66}]` |
 | `LEVELS.cellOpen` | `0.6` | parked with `LEVELS.autoOpen`, and read only while that is above `0`: the share of the free screen, in whichever of its width and height it fills first, at which the cell under the view's centre opens as a slide, from the surface on, so the whole cell is seen as it opens (D165) |
 | `LEVELS.cellClose` | `0.45` | the share a cell opened by zoom holds open at while the view stays on it, and closes under as the view zooms out |
 | `LEVELS.cellHome` | `0.15` | the share at which a closed cell's files are home: the surface draws them where they last floated down to `LEVELS.cellClose`, and eases them home between the two |
 | `LEVELS.compositeOpen` | `0.35` | past 5,000 files, the share of the free screen at which a package on the screen opens from one composite into its cells and files at the surface (step 66); below `LEVELS.cellOpen`, so a package is open before any cell in it can open as a slide. Not parked: a rule for very large repos, which stays |
 | `LEVELS.compositeClose` | `0.25` | the share a package holds open at, and closes back into one composite under as the view zooms out; every package is open from LOD2 on |
-| `LEVELS.autoOpen` | `0` | the one switch for the old levels (D204 (parked-levels)): at `0` `LEVELS.gates` is read, no cell opens as a slide by the share of the screen it fills, and a click opens none; above `0` the scene's own `LOD_GATES` are read in place of `LEVELS.gates`, so the far field, the file's plate and the diff's sheet come back at their zooms, a cell opens at `LEVELS.cellOpen` as it did, a click opens one that would hold, and no slide opens by a selection |
+| `LEVELS.autoOpen` | `0` | the one switch for the old levels (D204 (parked-levels)): at `0` `LEVELS.gates` is read, no cell opens as a slide by the share of the screen it fills, and a click opens none; above `0` the scene's own `LOD_GATES` are read in place of `LEVELS.gates` past its first gate, so the file's plate and the diff's sheet come back at their zooms and the far zoom stays the lit surface (D240 (far-zoom-lit)), a cell opens at `LEVELS.cellOpen` as it did, a click opens one that would hold, and no slide opens by a selection |
 | `LEVELS.openOnSelect` | `1` | above `0`, selecting a module opens it as the living slide in place, at any zoom, and clearing the selection closes it (D205 (open-on-select)); at `0`, and while `LEVELS.autoOpen` is above `0`, a selection is only ringed and named. Zoom alone opens and closes nothing either way |
 | `LEVELS.fileNameFrom` | `18` | the radius on the screen, in pixels, from which a file's name is written unasked, where it clears every label asked for, under the labels' collision rule and one budget of 80 names at every zoom (D206 (detail-by-size), D233 (asked-before-sized), D235 (names-one-budget)); set very high, a name is written only when asked for, and at `0` every file is named at every zoom. A view moved by hand stands at the file under its centre, and the breadcrumb names it, from the same radius (D230 (file-stop-by-size)) |
 | `LEVELS.granuleFrom` | `1.5` | the radius on the screen, in pixels, at which a function's granule starts to show inside its file on the map (D206 (detail-by-size)); below it the granule is not drawn |
@@ -662,7 +613,7 @@ resolves by its size on the screen (D206 (detail-by-size)).
 | `CAMERA.smooth` | `0.1` | how long, in seconds, the camera settles on an input: a wheel's steps read as one continuous zoom, and nothing coasts once the pointer stops; reduced motion settles at once |
 | `CAMERA.dragSmooth` | `0.05` | the shorter settle a drag takes |
 | `CINEMA.share` | `0.7` | in a still for a pull request's comment, the minimap's flat still the comment posts (D174, D175) and the world's `?cinema` page alike, the share of the picture the box round the change's notices and changed files on the terrain fills, in whichever of its width and height it fills first; no chrome stands beside it |
-| `CINEMA.farthest` | `2` | the farthest zoom over the fit the still stands at, just past the surface's gate, so a change spread over the whole field is never drawn as the far zoom's planet; a box too wide for it is centred and cropped |
+| `CINEMA.farthest` | `2` | the farthest zoom over the fit the still stands at, just past the scene's own gate for the surface, so a change spread over the whole field is never drawn as the far field; a box too wide for it is centred and cropped |
 | `CINEMA.nearest` | `3` | the nearest it stands at, well short of the cells' level, so a change of one small file is framed with its cell and its neighbours round it rather than as a file's plate |
 
 ### The hover, the selection and the walk

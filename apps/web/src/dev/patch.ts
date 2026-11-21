@@ -17,7 +17,6 @@ const MATERIALS = 'apps/web/src/materials.ts';
 const SOURCE_OF: Readonly<Record<string, string>> = {
   SKIN: MATERIALS,
   SPACE: MATERIALS,
-  PLANET: MATERIALS,
   LIGHTING: MATERIALS,
   SKY: MATERIALS,
   BLOOM: MATERIALS,
