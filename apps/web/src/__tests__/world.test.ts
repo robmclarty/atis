@@ -956,12 +956,16 @@ test('served, a pushed map on the ground drawn cross-fades its weather in withou
     const [primary] = demo.notices as readonly { readonly target: string }[];
     if (primary === undefined) throw new Error('the demo ranks no notice');
     expect(await page.$$(`[data-labels] [data-target="${primary.target}"]:not([data-named])`)).toHaveLength(0);
+    expect(await page.getAttribute('#world', 'data-selected')).toBeNull();
     sockets[1]?.send(JSON.stringify({ kind: 'highlight', notice: 1 }));
     await page.waitForSelector('#world[data-highlight="notice 1"]', { timeout: 30_000 });
     await page.waitForSelector(`[data-labels] [data-target="${primary.target}"]:not([data-named])`, { state: 'attached', timeout: 30_000 });
-    // A file flies to its stop the same way.
+    // What it flies to is selected on the way, so the chrome's panels open on what the agent shows (D207 (click-selects)).
+    await page.waitForSelector(`#world[data-selected="${primary.target}"]`, { timeout: 30_000 });
+    // A file flies to its stop the same way, and the selection moves to it.
     sockets[1]?.send(JSON.stringify({ kind: 'highlight', file: 'apps/cli/src/doctor.ts' }));
     await page.waitForSelector('#world[data-highlight="apps/cli/src/doctor.ts"]', { timeout: 30_000 });
+    await page.waitForSelector('#world[data-selected="apps/cli/src/doctor.ts"]', { timeout: 30_000 });
     expect(complaints).toEqual([]);
   } finally {
     await browser.close();
@@ -1010,11 +1014,14 @@ test('served with a tour, the stepper flies the world to each stop in order, lig
     await page.click('[data-tour-step="on"]');
     await page.waitForSelector(`#world[data-highlight="stop ${first.target}"]`, { timeout: 30_000 });
     await page.waitForSelector(`[data-labels] [data-target="${first.target}"]`, { state: 'attached', timeout: 30_000 });
+    // The stop is selected as it is flown to (D207 (click-selects)).
+    await page.waitForSelector(`#world[data-selected="${first.target}"]`, { timeout: 30_000 });
     expect(await page.textContent('[data-tour-sentence]')).toBe(first.sentence);
     expect(await page.textContent('[data-tour-place]')).toBe('tour · 1 of 6');
     // On to the fifth, another file: the world flies there, and the breadcrumb stands at it.
     for (let step = 0; step < 4; step += 1) await page.click('[data-tour-step="on"]');
     await page.waitForSelector(`#world[data-highlight="stop ${fifth.target}"]`, { timeout: 30_000 });
+    await page.waitForSelector(`#world[data-selected="${fifth.target}"]`, { timeout: 30_000 });
     await page.waitForSelector('[data-crumbs="organelle"]', { timeout: 30_000 });
     // The breadcrumb names it as the walk does, an added file marked `+`.
     expect(await page.textContent('[data-crumbs] [data-crumb]:last-child')).toContain(fifth.target.split('/').at(-1));

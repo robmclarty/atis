@@ -50,10 +50,13 @@
  * (D206 (detail-by-size), D233 (asked-before-sized)). A notice's row, the
  * arrows, Enter and Escape fly the camera to a stop along the scheduler's
  * fly-to, and the skin swings as it lands; the stop goes back over the line
- * for the HUD's breadcrumb (step 39). A view moved by
+ * for the HUD's breadcrumb (step 39). The keys walk from the selection, else
+ * from that stop: Enter selects where it lands, an arrow carries a selection
+ * to the sibling it walks to, and Escape clears a selection before it
+ * ascends (D231 (keys-walk-selection), D225 (escape-clears)). A view moved by
  * hand stands at the file under its centre once that file is drawn large
  * enough to be named (D230 (file-stop-by-size)). A target an agent names over
- * `atis mcp` flies there too, and is lit: its labels written until the
+ * `atis mcp` flies there too, is selected, and is lit: its labels written until the
  * reader takes the camera, and a notice flared at its anchor (D178). On the
  * one surface a selected module opens in place as a stained slide (D205
  * (open-on-select)): the cell the selection holds open is read off it every
@@ -729,6 +732,19 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     settle(next);
     scheduler.flyTo();
   };
+  /**
+   * Fly to a stop the keys or a highlight lead to, selecting it on the way
+   * when asked (D231 (keys-walk-selection)): the selection goes over the
+   * line, which asks the world back to take it and fly, so the ring, the
+   * slide, the breadcrumb and the chrome's panels all follow the one move.
+   * The field is no selection, and a stop the map drawn does not hold is
+   * only flown to.
+   */
+  const stepTo = (next: Stop, select: boolean): void => {
+    const chosenNext = !select || next.kind === 'field' ? undefined : selectedBy(map, held, { kind: 'select', selected: next });
+    if (chosenNext === undefined) visit(next);
+    else nav.select(chosenNext, 'fly');
+  };
   const byHand = (): void => {
     flight = undefined;
     handled = true;
@@ -803,7 +819,9 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   };
   /**
    * What an agent named over `atis mcp` (D178), or the tour's stepper steps
-   * to (D112), held to the map the world draws: the camera flies to its stop, or the rail brings its shore
+   * to (D112), held to the map the world draws: the camera flies to its stop,
+   * which is selected on the way, so the chrome's panels open on what the
+   * agent or the tour is showing (D207 (click-selects)), or the rail brings its shore
    * group's block into view, its labels are written as a notice row's hover
    * writes them until the reader takes the camera, and a notice flares at its
    * anchor, as the scheduler allows one flare in flight (C12). The canvas
@@ -812,7 +830,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   const highlight = (asked: Highlight): void => {
     const lit = litIn(source, asked);
     if (lit === undefined) return;
-    if (lit.destination.kind === 'stop') visit(lit.destination.stop);
+    if (lit.destination.kind === 'stop') stepTo(lit.destination.stop, true);
     else revealGroup(lit.destination.group);
     litTarget = lit.target;
     placeLabels = true;
@@ -848,7 +866,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   // A selection made, or a row pointed at, before the world was drawn is not told again: both are read as the world starts.
   take(nav.selected());
   heed(nav.pointed());
-  // The arrows walk to a sibling, Enter descends and Escape ascends, unless the key is the focused element's own or the chrome already took it (an open legend folds away on Escape); Escape first closes a cell the old levels opened, then clears the selection, which closes the slide it held open (D225 (escape-clears)), and only then ascends; with a cell open, x spreads or gathers its exploded view (D155), and w draws or takes away its wiring.
+  // The arrows walk to a sibling, Enter descends and Escape ascends, unless the key is the focused element's own or the chrome already took it (an open legend folds away on Escape); Escape first closes a cell the old levels opened, then clears the selection, which closes the slide it held open (D225 (escape-clears)), and only then ascends; with a cell open, x spreads or gathers its exploded view (D155), and w draws or takes away its wiring. The keys walk from where the breadcrumb stands, the selection, else the walk's stop; Enter selects where it lands, and an arrow carries a selection to the sibling it walks to (D231 (keys-walk-selection)).
   globalThis.addEventListener('keydown', (event) => {
     if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || ownsKey(event.target, event.key)) return;
     if (event.key === 'Escape' && opening.open !== undefined && levels.autoOpen > 0) {
@@ -874,10 +892,10 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       return;
     }
     const middle = standOf(controls, camera, canvas.clientWidth, chrome)?.centre;
-    const next = middle === undefined ? undefined : walk.key(stop, event.key, middle);
+    const next = middle === undefined ? undefined : walk.key(held ?? stop, event.key, middle);
     if (next === undefined) return;
     event.preventDefault();
-    visit(next);
+    stepTo(next, event.key === 'Enter' || held !== undefined);
   });
 
   // The loop's passes so far: the first draws the first complete frame, and the second finds it on the screen.
