@@ -3,8 +3,16 @@
  * coverage thresholds leave out. It serves the app from Vite in-process with
  * the demo map, never from a shared `dist/`, opens it headless on the WebGL 2
  * path in the installed Chrome, else a Chromium on the PATH (D145), and fails
- * on a console error or a blank frame (`browser.ts` serves and launches). It
- * looks at the lit surface, past
+ * on a console error or a blank frame (`browser.ts` serves and launches).
+ *
+ * The levels rest parked (D204 (parked-levels)): a tab opens on the lit
+ * surface with no zoom asked for and no planet, and framed on a cell or a
+ * file at any zoom it opens no slide, no plate and no sheet. The cases below
+ * that walk a parked path, the planet, a cell opened by zoom, the plate, the
+ * sheet and the far zoom's bare bands, first write the old levels into the
+ * tab's token store (`legacy`), as a dev panel would have left them.
+ *
+ * It looks at the lit surface, past
  * LOD1's gate, since the far field is dark by design until the weather lights
  * it (D151); its field is space ruled at each band's boundary (D169), each
  * band captioned with its depth past LOD1's gate and bare at the far zoom
@@ -67,7 +75,7 @@ import { expect, test } from 'vitest';
 import { withinContour } from 'core';
 
 import { LEGEND } from '../hud.js';
-import { DEMO, WEB, launch, serve, serveDiff } from './browser.js';
+import { DEMO, WEB, launch, legacy, serve, serveDiff } from './browser.js';
 import { repoMap } from './repo-map.js';
 
 /** What a frame holds: how many of its pixels rise clear of the field, how many distinct colours it has, and how many pixels there are. */
@@ -174,6 +182,8 @@ test("the world opens on a dark planet under its dependencies' stars, lit where 
     });
     page.on('pageerror', (error) => complaints.push(`pageerror: ${error.message}`));
 
+    // The far zoom is parked (D204 (parked-levels)): the tab's tokens bring it back.
+    await legacy(page);
     await page.goto(`${url}/?backend=webgl`);
     await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
     expect(await page.getAttribute('#world', 'data-lod')).toBe('0');
@@ -230,6 +240,65 @@ const middleOf = (cell: string): readonly [number, number] => {
   return [contour.reduce((total, [x]) => total + x, 0) / contour.length, contour.reduce((total, [, y]) => total + y, 0) / contour.length];
 };
 
+test('the tab opens on the lit surface with no zoom asked for and no planet, and framed on a cell or a file at any zoom it opens no slide, no plate and no sheet, by zoom or by a click, with a clean console (D204 (parked-levels))', { timeout: 120_000 }, async () => {
+  const { server, url } = await serve();
+  const browser = await launch();
+  try {
+    const page = await browser.newPage({ viewport: { width: 960, height: 720 } });
+    const complaints: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error' || message.type() === 'warning') complaints.push(`${message.type()}: ${message.text()}`);
+    });
+    page.on('pageerror', (error) => complaints.push(`pageerror: ${error.message}`));
+    /** Nothing a level opened is open: no slide, no plate, no sheet, and the planet's canvas hidden. */
+    const nothingOpen = async (): Promise<void> => {
+      expect(await page.getAttribute('#world', 'data-open')).toBeNull();
+      expect(await page.getAttribute('#world', 'data-file')).toBeNull();
+      expect(await page.getAttribute('#world', 'data-diff')).toBeNull();
+      expect(await page.getAttribute('#world', 'data-planet')).toBe('off');
+      expect(await page.$eval('[data-planet-layer]', (element) => element instanceof HTMLElement && element.style.display === 'none')).toBe(true);
+      expect(await page.$$eval('[data-interior-tag]', (tags) => tags.length)).toBe(0);
+      expect(await page.$$eval('[data-file-plate], [data-diff-sheet]', (layers) => layers.filter((layer) => layer instanceof SVGElement || layer instanceof HTMLElement).filter((layer) => layer.style.display !== 'none').length)).toBe(0);
+    };
+
+    // The opening frame, the whole layout fitted to the free screen: the surface, lit, where the planet stood.
+    await page.goto(`${url}/?backend=webgl`);
+    await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
+    expect(await page.getAttribute('#world', 'data-lod')).toBe('1');
+    await nothingOpen();
+    await page.evaluate(() => document.querySelector<HTMLElement>('#chrome')?.style.setProperty('visibility', 'hidden'));
+    const reading = await frameOf(page);
+    // The whole layout fitted to the free screen covers a smaller share of the frame than at zoom 2, and still one well clear of none.
+    expect(reading.lit / reading.pixels).toBeGreaterThan(0.05);
+    expect(reading.shades).toBeGreaterThan(64);
+
+    // Framed on a cell where the old levels opened it as a slide: it stays the surface, and a click on it opens nothing either.
+    const cell = 'folder:libs/core/src/pm';
+    const [x, y] = middleOf(cell);
+    await page.goto(`${url}/?backend=webgl&zoom=8&centre=${String(x)},${String(y)}`);
+    await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
+    await page.waitForTimeout(600);
+    expect(await page.getAttribute('#world', 'data-lod')).toBe('2');
+    await nothingOpen();
+    // The middle of the free screen, where the cell is centred.
+    await page.mouse.click(350, 360);
+    await page.waitForTimeout(600);
+    await nothingOpen();
+
+    // Framed on a changed file past where the old levels opened its plate and then its diff: the same surface, nearer.
+    const tools = (JSON.parse(readFileSync(DEMO, 'utf8')) as { terrain: { layout: { positions: Record<string, { x: number; y: number }> } } }).terrain.layout.positions['libs/core/src/pm/tools.ts'];
+    await page.goto(`${url}/?backend=webgl&zoom=100&centre=${String(tools?.x)},${String(tools?.y)}`);
+    await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
+    await page.waitForTimeout(600);
+    expect(await page.getAttribute('#world', 'data-lod')).toBe('2');
+    await nothingOpen();
+    expect(complaints).toEqual([]);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});
+
 test("framed on one cell where it fills the screen, the world opens it as a slide that tags each of its files and holds open on a click on one, x spreads the exploded view and w lays its wiring out, and closed, the surface holds its files where they floated until the view climbs on, with a clean console", { timeout: 120_000 }, async () => {
   const { server, url } = await serve();
   const browser = await launch();
@@ -243,6 +312,8 @@ test("framed on one cell where it fills the screen, the world opens it as a slid
 
     const cell = 'folder:libs/core/src/pm';
     const [x, y] = middleOf(cell);
+    // A cell opening by zoom is parked (D204 (parked-levels)): the tab's tokens bring it back.
+    await legacy(page);
     await page.goto(`${url}/?backend=webgl&zoom=8&centre=${String(x)},${String(y)}`);
     await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
     await page.waitForSelector(`#world[data-open="${cell}"]`, { timeout: 30_000 });
@@ -383,7 +454,7 @@ test("framed on one cell where it fills the screen, the world opens it as a slid
   }
 });
 
-/** A page on the world framed on a cell past the cell's gate, opened, with its console's complaints collected. */
+/** A page on the world framed on a cell past the cell's gate, opened by zoom as the old levels open it (D204 (parked-levels)), with its console's complaints collected. */
 const openedOn = async (browser: Browser, url: string, cell: string, reducedMotion: 'reduce' | 'no-preference'): Promise<{ readonly page: Page; readonly complaints: readonly string[] }> => {
   const page = await browser.newPage({ viewport: { width: 960, height: 720 }, reducedMotion });
   const complaints: string[] = [];
@@ -392,6 +463,7 @@ const openedOn = async (browser: Browser, url: string, cell: string, reducedMoti
   });
   page.on('pageerror', (error) => complaints.push(`pageerror: ${error.message}`));
   const [x, y] = middleOf(cell);
+  await legacy(page);
   await page.goto(`${url}/?backend=webgl&zoom=8&centre=${String(x)},${String(y)}`);
   await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
   await page.waitForSelector(`#world[data-open="${cell}"]`, { timeout: 30_000 });
@@ -749,6 +821,8 @@ test('framed on one file past LOD3, it opens onto its plate: its functions, its 
     page.on('pageerror', (error) => complaints.push(`pageerror: ${error.message}`));
 
     const tools = (JSON.parse(readFileSync(DEMO, 'utf8')) as { terrain: { layout: { positions: Record<string, { x: number; y: number }> } } }).terrain.layout.positions['libs/core/src/pm/tools.ts'];
+    // The file's plate is parked (D204 (parked-levels)): the tab's tokens bring it back.
+    await legacy(page);
     await page.goto(`${url}/?backend=webgl&zoom=30&centre=${String(tools?.x)},${String(tools?.y)}`);
     await page.waitForSelector('#world[data-world="settled"][data-file="libs/core/src/pm/tools.ts"]', { timeout: 90_000 });
     expect(await page.getAttribute('#world', 'data-lod')).toBe('3');
@@ -784,6 +858,8 @@ test("past LOD4 the changed file's plate gives way to its diff: its hunk's line 
     const tools = (JSON.parse(readFileSync(DEMO, 'utf8')) as { terrain: { layout: { positions: Record<string, { x: number; y: number }> } } }).terrain.layout.positions[path];
     const framed = `backend=webgl&zoom=100&centre=${String(tools?.x)},${String(tools?.y)}&pr=${encodeURIComponent('https://github.com/o/r/pull/4')}`;
 
+    // The diff's sheet is parked (D204 (parked-levels)): the tab's tokens bring it back, for both pages.
+    await legacy(page);
     // No token, as a fixture has none: the hunk's line range alone, and why, with nothing to open but the PR.
     await page.goto(`${url}/?${framed}`);
     await page.waitForSelector(`#world[data-world="settled"][data-diff="${path}"]`, { timeout: 90_000 });
@@ -997,6 +1073,8 @@ test("each depth band is captioned with its depth under its rule at the surface,
       expect(caption.ink).toBe('#8796a8');
     }
 
+    // The far zoom is parked (D204 (parked-levels)): with the tab's tokens bringing it back, it writes no caption.
+    await legacy(page);
     await page.goto(`${url}/?backend=webgl&zoom=1`);
     await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
     expect(await page.getAttribute('#world', 'data-lod')).toBe('0');

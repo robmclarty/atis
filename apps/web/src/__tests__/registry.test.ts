@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import * as scene from 'scene';
-import { MOTION_TOKENS, createScheduler } from 'scene';
+import { LOD_GATES, MOTION_TOKENS, createScheduler, levelAt, lodPlan, planetShown } from 'scene';
 import { expect, test } from 'vitest';
 
 import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, NOTICE, PLANET, SKIN, SKY, SPACE, WALK, WEATHER } from '../materials.js';
@@ -70,6 +70,44 @@ test("the materials section lists every field of the world's skin, space, planet
     ...fields('INTERIOR', INTERIOR),
     ...fields('WIRING', scene.WIRING_SPACING),
   ]);
+});
+
+/** The nearest and the farthest the camera zooms, over the fit (`world/camera.ts`). */
+const ZOOMS = [0.5, 1, 1.45, 1.7, 5, 6, 24, 80, 200];
+
+test('the levels rest parked: no zoom the camera reaches reads the far field or shows its planet, none reaches the plate or the sheet, and nothing opens by zoom (D204 (parked-levels))', () => {
+  const [first, second, third, fourth] = LEVELS.gates;
+  expect(first).toEqual({ enter: 0, exit: 0 });
+  expect(second).toEqual(LOD_GATES[1]);
+  expect(third).toEqual({ enter: 1000000, exit: 1000000 });
+  expect(fourth).toEqual(third);
+  for (const zoom of ZOOMS) {
+    // Read afresh as the opening frame is, and coming out from the deepest level the parked gates allow.
+    for (const from of [0, 1, 2] as const) {
+      const level = levelAt(from, zoom, LEVELS.gates);
+      expect(level, `zoom ${String(zoom)} from level ${String(from)}`).toBeGreaterThanOrEqual(1);
+      expect(level).toBeLessThanOrEqual(2);
+    }
+    expect(planetShown(lodPlan(undefined, zoom, 0, 300, LEVELS.gates))).toBe(0);
+  }
+  expect(LEVELS.autoOpen).toBe(0);
+  expect(LEVELS.openOnSelect).toBe(1);
+  // The scene's own gates are as they were, for the old levels to be set back to.
+  expect(LOD_GATES[0]).toEqual({ enter: 1.7, exit: 1.45 });
+});
+
+test("a stored override stands for a token that rests at a list of objects, so a tab's store brings the old levels back (D204 (parked-levels))", () => {
+  const legacy = { 'LEVELS.gates': LOD_GATES, 'LEVELS.autoOpen': 1, 'LEVELS.openOnSelect': 0 };
+  const registry = createRegistry(memory(JSON.stringify(legacy)));
+  expect(registry.changes().map((change) => change.name)).toEqual(['LEVELS.gates', 'LEVELS.autoOpen', 'LEVELS.openOnSelect']);
+  const levels = registry.view(LEVELS, 'LEVELS');
+  expect(levels.gates).toEqual(LOD_GATES);
+  expect(levels.autoOpen).toBe(1);
+  expect(levels.openOnSelect).toBe(0);
+  expect(levelAt(0, 1, levels.gates)).toBe(0);
+  // Stored at its rest value it is no override, and a number where the list rests is dropped.
+  expect(createRegistry(memory(JSON.stringify({ 'LEVELS.gates': LEVELS.gates }))).changes()).toEqual([]);
+  expect(createRegistry(memory(JSON.stringify({ 'LEVELS.gates': 3 }))).changes()).toEqual([]);
 });
 
 test('every listed token rests at a value, named once', () => {

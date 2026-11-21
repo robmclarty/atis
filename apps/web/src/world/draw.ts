@@ -533,7 +533,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     const found = ground === undefined ? undefined : pickAt(ground, lastLod, 0);
     const picked = found === undefined ? undefined : { ...found, cell: slideCellOf(map, found.cell) };
     const pick = picked?.kind === 'membrane' && !withFiles.has(picked.cell) ? undefined : picked;
-    apply(openedBy(opening, { kind: 'click', lod: lastLod, pick, holds: holdsIn(boxOf(outlineOf(camera, canvas.clientWidth, chrome))) }));
+    apply(openedBy(opening, { kind: 'click', lod: lastLod, pick, holds: levels.autoOpen > 0 ? holdsIn(boxOf(outlineOf(camera, canvas.clientWidth, chrome))) : () => false }));
   });
 
   // The walk (step 39): the stop the view stands at, and the flight under way to the next one, eased by the scheduler's fly-to.
@@ -788,7 +788,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     }
     const middle = standOf(controls, camera, canvas.clientWidth, chrome)?.centre;
     // The opened cell (D155, D165): from the surface on, the innermost cell under the view's centre opens once it fills the gate's share, and holds while any of it stays in view at the share it holds at.
-    const under = middle === undefined || lod < OPEN_LOD ? undefined : openableAt(middle);
+    const under = middle === undefined || lod < OPEN_LOD || levels.autoOpen <= 0 ? undefined : openableAt(middle);
     apply(openedBy(opening, { kind: 'frame', lod, under, holds: holdsIn(boxOf(outline)) }));
     // A flight moves the view along the scheduler's ease, centre straight across and zoom by its ratio, and the skin swings once it lands.
     if (flight !== undefined) {

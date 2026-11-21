@@ -1,7 +1,9 @@
 /**
  * browser: what the world's browser tests share (D132). The app served from
- * Vite in-process with a map, never from a shared `dist/`, and the installed
- * Chrome launched headless, else a Chromium on the PATH (D145).
+ * Vite in-process with a map, never from a shared `dist/`; the installed
+ * Chrome launched headless, else a Chromium on the PATH (D145); and the old
+ * levels written into a tab's token store before its page loads, for a test
+ * of a path the one surface has parked (D204 (parked-levels)).
  */
 
 import { accessSync, constants, readFileSync } from 'node:fs';
@@ -9,9 +11,13 @@ import { delimiter, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { chromium } from 'playwright-core';
-import type { Browser } from 'playwright-core';
+import type { Browser, Page } from 'playwright-core';
 import { createServer } from 'vite';
 import type { Plugin, ViteDevServer } from 'vite';
+
+import { LOD_GATES } from 'scene';
+
+import { STORE_KEY } from '../registry.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 
@@ -99,4 +105,27 @@ export const serve = async (body: string = readFileSync(DEMO, 'utf8'), served: r
   const address = server.httpServer?.address();
   if (address === null || address === undefined || typeof address === 'string') throw new Error('vite did not bind a loopback port');
   return { server, url: `http://127.0.0.1:${String(address.port)}` };
+};
+
+/**
+ * The old levels, as the tokens that bring them back (D204 (parked-levels)):
+ * the scene's own gates, a cell opening by the share of the screen it fills,
+ * and no slide opened by a selection (D205 (open-on-select)).
+ */
+const LEGACY = { 'LEVELS.gates': LOD_GATES, 'LEVELS.autoOpen': 1, 'LEVELS.openOnSelect': 0 };
+
+/**
+ * Write the old levels into a tab's token store before each page it loads from
+ * here on, as a reviewer's dev panel would have left them: the planet at the
+ * far zoom, a cell opening as a slide by zoom, the file's plate and the diff's
+ * sheet past their gates. Called before the page goes anywhere, by a test of
+ * one of those parked paths.
+ */
+export const legacy = async (page: Page): Promise<void> => {
+  await page.addInitScript(
+    ({ key, text }) => {
+      sessionStorage.setItem(key, text);
+    },
+    { key: STORE_KEY, text: JSON.stringify(LEGACY) },
+  );
 };

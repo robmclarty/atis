@@ -10,9 +10,11 @@
  * opened cell's slide (step 40) and the planet the far zoom draws (D170). The
  * minimap's look and a still's framing are the scene's (`MINIMAP`, `CINEMA`),
  * since the comment's still and the fingerprint draw with them too (D175).
+ * The levels rest parked, the world one lit surface at every zoom (D204
+ * (parked-levels)).
  */
 
-import { CELL_GATE, COMPOSITE_GATE, INTERIOR_LAYOUT, LOD_GATES, PLANET_LAYOUT } from 'scene';
+import { CELL_GATE, COMPOSITE_GATE, INTERIOR_LAYOUT, PLANET_LAYOUT } from 'scene';
 import type { InteriorLayout, LodGate, PlanetLayout } from 'scene';
 
 /** The skin's material: the albedos, the membrane line, how rough and how wet it is, the share of its albedo kept at the far field, the tissue's own faint light, and the shape of the ripple a membrane imported past its barrel runs with (D195). */
@@ -272,6 +274,17 @@ export const CAMERA: CameraLook = { smooth: 0.1, dragSmooth: 0.05 };
  * and the composite's (step 66): the share a package past 5,000 files opens
  * at from one composite into its cells, and the share it holds open at
  * (`libs/scene/src/composites.ts`).
+ *
+ * The levels rest parked (D204 (parked-levels)): the world is one lit surface
+ * at every zoom, and nothing opens, cross-fades or changes mode as the wheel
+ * turns. The first gate rests at 0 and 0, so no zoom the camera reaches reads
+ * the far field and its planet is never shown; the two deep gates rest out of
+ * the camera's reach, so the file's plate and the diff's sheet never open; and
+ * `autoOpen` rests at 0, so no cell opens as a slide by the share of the
+ * screen it fills. The scene's own gates (`LOD_GATES`) are as they were:
+ * `gates` set to them and `autoOpen` to 1 bring the old levels back.
+ * `openOnSelect` is the one way a slide opens at rest (D205
+ * (open-on-select)): selecting a module opens it in place, whatever the zoom.
  */
 export type LevelsLook = {
   readonly gates: readonly LodGate[];
@@ -280,15 +293,21 @@ export type LevelsLook = {
   readonly cellHome: number;
   readonly compositeOpen: number;
   readonly compositeClose: number;
+  /** Above 0, the old levels' opening by zoom is on: a cell opens as a slide by the share of the free screen it fills, and a click opens one that would hold. At 0 neither does. */
+  readonly autoOpen: number;
+  /** Above 0, selecting a module opens it as the living slide in place, and clearing the selection closes it. At 0 a selection is only ringed and named. */
+  readonly openOnSelect: number;
 };
 
 export const LEVELS: LevelsLook = {
-  gates: LOD_GATES,
+  gates: [{ enter: 0, exit: 0 }, { enter: 6, exit: 5 }, { enter: 1000000, exit: 1000000 }, { enter: 1000000, exit: 1000000 }],
   cellOpen: CELL_GATE.open,
   cellClose: CELL_GATE.close,
   cellHome: CELL_GATE.home,
   compositeOpen: COMPOSITE_GATE.open,
   compositeClose: COMPOSITE_GATE.close,
+  autoOpen: 0,
+  openOnSelect: 1,
 };
 
 /**

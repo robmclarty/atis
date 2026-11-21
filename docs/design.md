@@ -633,14 +633,26 @@ from the space ground's rules (D169, amending D151's terraces).
 
 ### The levels of detail and the camera
 
+The levels rest parked (D204 (parked-levels)): the world is one lit surface at
+every zoom, and nothing opens, cross-fades or changes mode as the wheel turns.
+The planet, the slide a cell opened as by the share of the screen it filled,
+the file's plate and the diff's sheet are all still built, and none is reached
+at these values. Two tokens bring them back, for the old levels to be judged
+beside the one surface: `LEVELS.gates` set to the scene's own gates and
+`LEVELS.autoOpen` to `1`. An override lasts for the tab's session, so reset the
+tokens, or open a fresh tab, before judging the one surface again. At rest a
+slide opens one way, by `LEVELS.openOnSelect`.
+
 | Token | Value | Use |
 | --- | --- | --- |
-| `LEVELS.gates` | `[{ enter: 1.7, exit: 1.45 }, { enter: 6, exit: 5 }, { enter: 24, exit: 20 }, { enter: 80, exit: 66 }]` | the zoom over the fit at which each of LOD1 to LOD4 is entered and left (§6); LOD1's where the spike left it, the deeper ones an order of magnitude apart, each left at about five sixths of where it is entered |
-| `LEVELS.cellOpen` | `0.6` | the share of the free screen, in whichever of its width and height it fills first, at which the cell under the view's centre opens as a slide, from the surface on, so the whole cell is seen as it opens (D165) |
-| `LEVELS.cellClose` | `0.45` | the share it holds open at while the view stays on it, and closes under as the view zooms out |
+| `LEVELS.gates` | `[{ enter: 0, exit: 0 }, { enter: 6, exit: 5 }, { enter: 1000000, exit: 1000000 }, { enter: 1000000, exit: 1000000 }]` | parked (D204 (parked-levels)): the zoom over the fit at which each of LOD1 to LOD4 is entered and left (§6). The first rests at 0 and 0, so no zoom the camera reaches reads the far field, and its planet never shows; the second draws nothing of its own, and past it the label budget is larger and every composite stands open; the last two rest past the camera's nearest zoom, 200, so the file's plate and the diff's sheet never open. The old levels come back with this set to the scene's `LOD_GATES`, in the dev panel `[{"enter":1.7,"exit":1.45},{"enter":6,"exit":5},{"enter":24,"exit":20},{"enter":80,"exit":66}]`, and `LEVELS.autoOpen` set to `1` |
+| `LEVELS.cellOpen` | `0.6` | parked with `LEVELS.autoOpen`, and read only while that is above `0`: the share of the free screen, in whichever of its width and height it fills first, at which the cell under the view's centre opens as a slide, from the surface on, so the whole cell is seen as it opens (D165) |
+| `LEVELS.cellClose` | `0.45` | the share a cell opened by zoom holds open at while the view stays on it, and closes under as the view zooms out |
 | `LEVELS.cellHome` | `0.15` | the share at which a closed cell's files are home: the surface draws them where they last floated down to `LEVELS.cellClose`, and eases them home between the two |
-| `LEVELS.compositeOpen` | `0.35` | past 5,000 files, the share of the free screen at which a package on the screen opens from one composite into its cells and files at the surface (step 66); below `LEVELS.cellOpen`, so a package is open before any cell in it can open as a slide |
+| `LEVELS.compositeOpen` | `0.35` | past 5,000 files, the share of the free screen at which a package on the screen opens from one composite into its cells and files at the surface (step 66); below `LEVELS.cellOpen`, so a package is open before any cell in it can open as a slide. Not parked: a rule for very large repos, which stays |
 | `LEVELS.compositeClose` | `0.25` | the share a package holds open at, and closes back into one composite under as the view zooms out; every package is open from LOD2 on |
+| `LEVELS.autoOpen` | `0` | the switch for the old levels' opening by zoom (D204 (parked-levels)): at `0` no cell opens as a slide by the share of the screen it fills, and a click opens none; above `0` a cell opens at `LEVELS.cellOpen` as it did, and a click opens one that would hold. The planet, the plate and the sheet come back with `LEVELS.gates` alone |
+| `LEVELS.openOnSelect` | `1` | above `0`, selecting a module opens it as the living slide in place, at any zoom, and clearing the selection closes it (D205 (open-on-select)); at `0` a selection is only ringed and named. Zoom alone opens and closes nothing either way |
 | `CAMERA.smooth` | `0.1` | how long, in seconds, the camera settles on an input: a wheel's steps read as one continuous zoom, and nothing coasts once the pointer stops; reduced motion settles at once |
 | `CAMERA.dragSmooth` | `0.05` | the shorter settle a drag takes |
 | `CINEMA.share` | `0.7` | in a still for a pull request's comment, the minimap's flat still the comment posts (D174, D175) and the world's `?cinema` page alike, the share of the picture the box round the change's notices and changed files on the terrain fills, in whichever of its width and height it fills first; no chrome stands beside it |

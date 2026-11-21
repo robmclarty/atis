@@ -362,12 +362,12 @@ export const createRegistry = (store?: Store): Registry => {
   };
 };
 
-/** Where the overrides live in the tab. */
-const KEY = 'atis.tokens';
+/** Where the overrides live in the tab: the key a test writes a tab's overrides under before the page loads. */
+export const STORE_KEY = 'atis.tokens';
 
 /** The tab's `sessionStorage` as a store, or none where the page has no storage. */
 export const sessionStore = (): Store | undefined => {
   if (!('sessionStorage' in globalThis)) return undefined;
   const storage = globalThis.sessionStorage;
-  return { read: () => storage.getItem(KEY), write: (text) => storage.setItem(KEY, text) };
+  return { read: () => storage.getItem(STORE_KEY), write: (text) => storage.setItem(STORE_KEY, text) };
 };
