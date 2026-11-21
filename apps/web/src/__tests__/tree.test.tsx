@@ -306,6 +306,24 @@ test("the world's pointer draws the rows it brings and the rows whose light move
   expect(since()).toBeLessThanOrEqual(2 * opened + 2 * swept.length);
 });
 
+test('a path the map lists both as a file and as a directory has a row for each, and each takes its own keys', async () => {
+  const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  // A change that replaced a file with a directory of its name lists the path twice: the file that went, and the directory that came.
+  const groups = DEMO.terrain.groups.map((group) => (group.id === 'other' ? { ...group, files: [...group.files, PM] } : group));
+  await mount(createNav(), { ...DEMO, terrain: { ...DEMO.terrain, groups } });
+  const pair = all('[data-row]').filter((each) => each.dataset['row'] === PM);
+  expect(pair.map((each) => each.dataset['rowKind'])).toEqual(['directory', 'shore']);
+  expect(errors).not.toHaveBeenCalled();
+  // An arrow pressed on either goes to the row after it, not the row after its namesake.
+  const [directory, file] = pair;
+  if (directory === undefined || file === undefined) throw new Error('the pair is not drawn');
+  await press(directory, 'ArrowDown');
+  expect(document.activeElement).toBe(directory.nextElementSibling);
+  await press(file, 'ArrowUp');
+  expect(document.activeElement).toBe(file.previousElementSibling);
+  expect(errors).not.toHaveBeenCalled();
+});
+
 test('when the selection moves the way to its row opens and the row is lit, from the first frame on; a selection the map does not hold lights none', async () => {
   const nav = createNav();
   nav.select(selectedOf(DEMO, FORMAT), 'stay');

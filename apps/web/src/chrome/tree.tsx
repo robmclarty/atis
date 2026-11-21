@@ -353,6 +353,14 @@ const newsOf = (was: Heard, now: Heard): string | undefined => {
 /** The keys the tree takes, so the world's walk never hears them (D282 (tree-keys)). */
 const KEYS: ReadonlySet<string> = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter']);
 
+/**
+ * A row's key among the rows: its kind with its path (D286 (row-key)),
+ * since a change that put a directory where a file was lists the one path
+ * as both. The two are still one path to the line: a target that leads to
+ * it lights both rows, and the tree scrolls and steps out to the file's.
+ */
+const keyOf = (node: TreeNode): string => `${node.kind}:${node.path}`;
+
 /** The rows of a model as its directories stand, the place of each by its path, and the record of what was opened and closed with its setter. */
 const useRows = (model: TreeModel): { readonly rows: readonly TreeRow[]; readonly places: ReadonlyMap<string, number>; readonly toggled: Toggled; readonly setToggled: (next: (was: Toggled) => Toggled) => void } => {
   const [toggled, setToggled] = useState<Toggled>(() => new Map());
@@ -449,10 +457,11 @@ export const Tree = ({ map, registry, nav }: TreeProps): ReactElement => {
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     if (event.altKey || event.ctrlKey || event.metaKey || !KEYS.has(event.key)) return;
+    // The row is found by where it stands among the rows, not by its path, which a file and a directory can share (D286 (row-key)).
     const at = event.target instanceof Element ? event.target.closest('[data-row]') : null;
-    const index = places.get(at?.getAttribute('data-row') ?? '');
-    const row = index === undefined ? undefined : rows[index];
-    if (row === undefined || index === undefined) return;
+    const index = at === null ? -1 : [...(list.current?.children ?? [])].indexOf(at);
+    const row = rows[index];
+    if (row === undefined) return;
     // The world's walk hears no key a handler here has taken (`world/draw.ts`), so the camera stands still.
     event.preventDefault();
     step(event.key, row, index);
@@ -474,7 +483,7 @@ export const Tree = ({ map, registry, nav }: TreeProps): ReactElement => {
           <div data-rows ref={list} onKeyDown={onKeyDown}>
             {rows.map(({ node, depth }) => (
               <Row
-                key={node.path}
+                key={keyOf(node)}
                 node={node}
                 depth={depth}
                 open={node.kind === 'directory' && isOpen(toggled, node)}
