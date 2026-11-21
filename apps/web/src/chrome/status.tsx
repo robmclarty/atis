@@ -39,7 +39,15 @@ const inkOf = (state: MapState, look: typeof LOOK): string => {
   return look.CHROME_INK;
 };
 
-export const Status = ({ state, registry, shapes }: { readonly state: MapState; readonly registry: Registry; readonly shapes?: 'demo' | undefined }): ReactElement => {
+type StatusProps = {
+  readonly state: MapState;
+  readonly registry: Registry;
+  readonly shapes?: 'demo' | undefined;
+  /** Whether the page's socket to the CLI is open (D106); none on a page with no socket. Handed in now, and written as a word by the inspector's track (D208 (side-panels)). */
+  readonly live?: boolean | undefined;
+};
+
+export const Status = ({ state, registry, shapes }: StatusProps): ReactElement => {
   useLive(registry);
   const look = registry.view(LOOK);
   return (

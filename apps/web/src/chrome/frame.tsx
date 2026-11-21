@@ -90,9 +90,11 @@ export type ChromeProps = {
   readonly shapes?: 'demo' | undefined;
   /** The PR the page was told of, which the inspector links beside a file's diff (D208 (side-panels)); none, and it links none. */
   readonly pr?: string | undefined;
+  /** Whether the page's socket to the CLI is open, so a watch can push it a map (D106), which the status line says (D208 (side-panels)); none on a page with no socket. */
+  readonly live?: boolean | undefined;
 };
 
-export const Chrome = ({ state, registry, nav: given, dev, token, load = loadPanel, post, reload, tour, shapes, pr }: ChromeProps): ReactElement => {
+export const Chrome = ({ state, registry, nav: given, dev, token, load = loadPanel, post, reload, tour, shapes, pr, live }: ChromeProps): ReactElement => {
   const [open, setOpen] = useState(false);
   const own = useMemo(() => createNav(), []);
   const nav = given ?? own;
@@ -124,7 +126,7 @@ export const Chrome = ({ state, registry, nav: given, dev, token, load = loadPan
         {ranged !== undefined && <Scrubber map={ranged} registry={registry} nav={nav} />}
         {map !== undefined && <OverlayToggles map={map} registry={registry} nav={nav} />}
         {ranged !== undefined && token !== undefined && <Bases map={ranged} registry={registry} token={token} {...(post === undefined ? {} : { post })} {...(reload === undefined ? {} : { reload })} />}
-        <Status state={state} registry={registry} shapes={shapes} />
+        <Status state={state} registry={registry} shapes={shapes} live={live} />
         {map !== undefined && <Crumbs map={map} registry={registry} nav={nav} />}
         {ranged !== undefined && tour !== undefined && <TourStepper map={ranged} tour={tour} registry={registry} nav={nav} />}
         {open && (

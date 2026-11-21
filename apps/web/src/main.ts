@@ -53,7 +53,17 @@ const nav = createNav();
 let tour: Tour | undefined;
 // The PR the page was told of, which the world's diff sheet and the chrome's inspector both link.
 const pr = prOf(location.search);
-const show = (state: MapState): void => chrome.render(createElement(Chrome, { state, registry, nav, dev: import.meta.env.DEV, token, tour, shapes: view.shapes, pr }));
+// Whether the socket to the CLI is open, which the status line says; the chrome is drawn again from the state it last showed when the socket opens or closes.
+let live = false;
+let last: MapState | undefined;
+const show = (state: MapState): void => {
+  last = state;
+  chrome.render(createElement(Chrome, { state, registry, nav, dev: import.meta.env.DEV, token, tour, shapes: view.shapes, pr, live }));
+};
+const listening = (open: boolean): void => {
+  live = open;
+  if (last !== undefined) show(last);
+};
 
 const url = mapUrl(location.search);
 show({ status: 'loading', url });
@@ -68,7 +78,10 @@ if (state.status === 'ready') {
   // What an agent names, flown to and lit (D178); and each map the watch pushes that is not the one shown: its weather swapped in by the world, or its new ground drawn afresh where the reader stands (D106).
   let shown = state.map;
   if (socket !== undefined) {
-    new WebSocket(socket).addEventListener('message', (event: MessageEvent<unknown>) => {
+    const line = new WebSocket(socket);
+    line.addEventListener('open', () => listening(true));
+    line.addEventListener('close', () => listening(false));
+    line.addEventListener('message', (event: MessageEvent<unknown>) => {
       const text = typeof event.data === 'string' ? event.data : '';
       const highlight = pushedHighlight(text);
       if (highlight !== undefined) {
