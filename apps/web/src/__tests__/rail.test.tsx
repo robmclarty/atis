@@ -9,17 +9,19 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
 import { shoreRail } from 'scene';
-import { afterEach, beforeEach, expect, test } from 'vitest';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 
 import { Chrome, Rail } from '../chrome/index.js';
+import { revealGroup } from '../highlight.js';
 import { createRegistry } from '../registry.js';
 
 /**
  * The shore rail in a DOM (D153, D160): one block per group in the rail's
  * order, the touched ones open on a grid of their files and their changed
  * names, the rest collapsed to their name and count, a click opening any
- * block that has something to show, and the whole chrome carrying it once the
- * map is read.
+ * block that has something to show, the header that folds the whole shore
+ * away (D278 (column-folds)), and the whole chrome carrying it, last in its
+ * column, once the map is read.
  */
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
@@ -131,13 +133,55 @@ test("a red slot over a shore group hangs its bolt on the block's header, the ch
   expect(all('[data-group="config"] button [data-slot]').map((storm) => storm.getAttribute('data-slot'))).toEqual(['docs']);
 });
 
-test('the chrome carries the rail once the map is read, and not before', async () => {
+test('the chrome carries the rail once the map is read, and not before: the last part of its column, under the notices and the tree, scrolled with it', async () => {
   const registry = createRegistry();
   await act(async () => root.render(<Chrome state={{ status: 'loading', url: '/map.json' }} registry={registry} dev={false} />));
   expect(host.querySelector('[data-rail]')).toBeNull();
   await act(async () => root.render(<Chrome state={{ status: 'ready', url: '/map.json', map: DEMO }} registry={registry} dev={false} />));
-  expect(host.querySelector('[data-rail]')).not.toBeNull();
-  expect(host.querySelector('[data-rail]')?.textContent).not.toMatch(/shadow|blur|gradient/);
+  const rail = host.querySelector<HTMLElement>('[data-rail]');
+  expect(rail).not.toBeNull();
+  expect(rail?.textContent).not.toMatch(/shadow|blur|gradient/);
+  const column = host.querySelector<HTMLElement>('[data-column]');
+  expect([...(column?.children ?? [])].map((child) => child.getAttribute('aria-label'))).toEqual(['notices', 'tree', 'shore']);
+  expect(column?.lastElementChild).toBe(rail);
+  // The column scrolls, and the rail is as long as its blocks: nothing inside it scrolls by itself.
+  expect(column?.style.overflowY).toBe('auto');
+  expect([rail, ...(rail?.querySelectorAll<HTMLElement>('div, section') ?? [])].every((each) => each?.style.overflowY === '')).toBe(true);
+});
+
+test('the shore stands under a header that folds it away, its count still on it, and brings it back (D278 (column-folds))', async () => {
+  await mount();
+  const fold = host.querySelector('[data-fold="shore"]');
+  expect(fold?.getAttribute('aria-expanded')).toBe('true');
+  expect(host.querySelector<HTMLElement>('[data-rail] header')?.style.position).toBe('sticky');
+  await click('[data-fold="shore"]');
+  expect(fold?.getAttribute('aria-expanded')).toBe('false');
+  expect(all('[data-group]')).toHaveLength(0);
+  expect(host.querySelector('[data-rail] header')?.textContent).toContain(`${String(shoreRail(DEMO).length)} groups`);
+  await click('[data-fold="shore"]');
+  expect(all('[data-group]')).toHaveLength(shoreRail(DEMO).length);
+  expect(host.querySelector('[data-group="deps"]')?.hasAttribute('data-open')).toBe(true);
+});
+
+test("a folded shore opens, drawn, before the event that asks for it by name returns, so a reveal from outside the chrome finds its group's block (D285 (unfold-by-event))", async () => {
+  const scrolled = vi.fn();
+  Element.prototype.scrollIntoView = scrolled;
+  await mount();
+  await click('[data-fold="shore"]');
+  expect(all('[data-group]')).toHaveLength(0);
+  // Another fold's name is not the shore's to hear.
+  act(() => {
+    document.dispatchEvent(new CustomEvent('atis:unfold', { detail: 'tree' }));
+  });
+  expect(all('[data-group]')).toHaveLength(0);
+  // The bare event, as a caller that cannot import the chrome sends it, and the reveal straight after it, with no frame waited for.
+  act(() => {
+    document.dispatchEvent(new CustomEvent('atis:unfold', { detail: 'shore' }));
+    revealGroup('docs');
+  });
+  expect(scrolled).toHaveBeenCalledTimes(1);
+  expect(scrolled.mock.contexts[0]).toBe(host.querySelector('[data-rail] [data-group="docs"]'));
+  expect(host.querySelector('[data-fold="shore"]')?.getAttribute('aria-expanded')).toBe('true');
 });
 
 /** The pointer passing onto an element and off it again, as a browser sends it and React reads it. */

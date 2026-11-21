@@ -1,12 +1,14 @@
 /**
  * column: the chrome's right-hand column (§5.4, §7): the ranked list of
- * notices at its head and the shore rail beneath it (D153), one flat column
- * on the chrome's ground with a hard rule where it meets the world, in the
- * brutalist material (D12). The list takes up to half the column and scrolls
- * past that; the rail takes the rest and scrolls on its own. Between them
- * stands the folder tree (D208 (side-panels)), where the column has the line
- * to the world the tree reads its selection from. The world is
- * fitted into the screen left of it (`fit.ts`).
+ * notices at its head, the folder tree beneath it (D208 (side-panels)), where
+ * the column has the line to the world the tree reads its selection from,
+ * and the shore rail last (D153), one flat column on the chrome's ground
+ * with a hard rule where it meets the world, in the brutalist material
+ * (D12). It is one scrolled column (D278 (column-folds)): each part is as
+ * long as what it holds and stands under its own header, which folds it
+ * away, and no part is ever hidden behind another, so a row that leads to a
+ * shore group finds its block in the same scroll. The world is fitted into
+ * the screen left of it (`fit.ts`).
  */
 
 import { CHROME_GROUND, CHROME_INK, CHROME_RULE, CHROME_STROKE_WIDTH, FONT_FAMILY } from 'scene';
@@ -37,8 +39,7 @@ export const Column = ({ map, registry, nav }: { readonly map: MapJson; readonly
         bottom: 0,
         width: RAIL_WIDTH,
         boxSizing: 'border-box',
-        display: 'flex',
-        flexDirection: 'column',
+        overflowY: 'auto',
         background: look.CHROME_GROUND,
         color: look.CHROME_INK,
         borderLeft: `${String(look.CHROME_STROKE_WIDTH)}px solid ${look.CHROME_RULE}`,
