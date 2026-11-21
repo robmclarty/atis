@@ -77,6 +77,8 @@ export type SpaceLook = {
   readonly starSpacing: number;
   readonly starDensity: number;
   readonly starSeed: number;
+  /** The least gap on the screen between two cells of the star grid, in pixels: nearer than this, on a wide field seen whole, the grid is read coarser, a doubling at a time, so the stars thin as the view climbs and never pack into dust (D340 (stars-thin-far)). */
+  readonly starGap: number;
   /** The rule at each band's boundary: its ink, how much of it shows, and its width in screen pixels. */
   readonly ruleInk: string;
   readonly ruleOpacity: number;
@@ -92,6 +94,7 @@ export const SPACE: SpaceLook = {
   starSpacing: 22,
   starDensity: 0.3,
   starSeed: 1,
+  starGap: 20,
   ruleInk: '#8796a8',
   ruleOpacity: 0.16,
   ruleWidth: 1,
@@ -125,10 +128,13 @@ export type WeatherLook = {
   readonly markBloom: number;
   readonly ribbonBloom: number;
   readonly ribbonWave: number;
+  /** The narrowest and the widest a ribbon is drawn on the screen, in pixels: between them it keeps its width on the ground (D341 (ribbon-width-on-screen)). */
+  readonly ribbonLeast: number;
+  readonly ribbonMost: number;
 };
 
 // The reach's gain starts under the spike's 1.05: under AgX, added to the lit albedo and bloomed, that read as a white wash where the sheet lays a warm tint, so it opens lower for the panel to tune (D156).
-export const WEATHER: WeatherLook = { reachGain: 0.7, reachBloom: 0.2, reachBodyGain: 1.1, reachSoften: 2, markBloom: 1, ribbonBloom: 0.3, ribbonWave: 24 };
+export const WEATHER: WeatherLook = { reachGain: 0.7, reachBloom: 0.2, reachBodyGain: 1.1, reachSoften: 2, markBloom: 1, ribbonBloom: 0.3, ribbonWave: 24, ribbonLeast: 1.5, ribbonMost: 4 };
 
 /**
  * A notice's light on the field (§5.4, step 34): the primary's halo, a disc
@@ -259,6 +265,8 @@ export type LevelsLook = {
   /** A function's granule fades in as its radius on the screen grows from `granuleFrom` pixels, where none of it shows, to `granuleFull`, where all of it does. */
   readonly granuleFrom: number;
   readonly granuleFull: number;
+  /** The most granules laid at once. A map with no more functions than this, and none of whose packages stands as one body, lays them all as it opens; any other lays only those of the files in view, as the view comes to rest (D343 (granules-in-view)). Read when the map is laid. */
+  readonly granuleMost: number;
 };
 
 export const LEVELS: LevelsLook = {
@@ -274,6 +282,7 @@ export const LEVELS: LevelsLook = {
   fileNameBudget: 80,
   granuleFrom: 1.5,
   granuleFull: 4,
+  granuleMost: 12000,
 };
 
 /**

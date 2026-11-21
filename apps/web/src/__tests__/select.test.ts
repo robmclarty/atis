@@ -969,6 +969,15 @@ test("the functions are granules on the map: the canvas says how many the scene 
     expect(out.frames[0].equals(out.frames[1])).toBe(true);
     expect(out.frames[0].equals(rest.frames[0]), "the file's granules are in the frame at rest and not with the fade out of reach").toBe(false);
     expect(out.complaints).toEqual([]);
+    // A map with more functions than `LEVELS.granuleMost` lays only what the view shows, once it rests (D343 (granules-in-view)): the file in the middle of the frame is drawn as it was, and the canvas says how many are laid, in view.
+    const most = laid.granules.length - 1;
+    const own = laid.granules.filter((granule) => granule.file === GRANULED).length;
+    const viewed = await frameOn({ 'LEVELS.granuleMost': most });
+    const count = Number(/^(\d+) in view/.exec(viewed.said ?? '')?.[1]);
+    expect(count, viewed.said ?? 'nothing said').toBeGreaterThanOrEqual(own);
+    expect(count).toBeLessThanOrEqual(most);
+    expect(viewed.frames[0].equals(rest.frames[0]), "the file's granules are drawn the same when only the view's are laid").toBe(true);
+    expect(viewed.complaints).toEqual([]);
   } finally {
     await browser.close();
     await server.close();

@@ -529,7 +529,10 @@ tokens as a slide's granules are (`NUCLEUS_FILL`, `NUCLEUS_PAD`,
 and a slide's together. A granule adds no light, and blots the bloom under
 its disc from the moment it has any size (D298 (granules-blot-bloom)). At
 rest its contrast on an unstained file is low, about 1.19 to 1. A map that
-read no functions draws none, and neither does one past 5,000 placed files.
+read no functions draws none. One past 5,000 placed files, or with more
+functions than `LEVELS.granuleMost`, lays only those of the files in view
+that are drawn large enough to show one, once the view rests (D343
+(granules-in-view)).
 
 **What is parked.** The slide a cell opened as by the share of the screen it
 filled, the file's plate and the diff's sheet are still built and are reached
@@ -587,6 +590,7 @@ SVG keeps its bands (the terraces above).
 | `SPACE.starSpacing` | `22` | layout units between the star grid's cells, each holding one star at most |
 | `SPACE.starDensity` | `0.3` | the share of the grid's cells that hold a star |
 | `SPACE.starSeed` | `1` | the seed the star field is drawn from: one seed, one sky (C3) |
+| `SPACE.starGap` | `20` | the least gap on the screen between two cells of the star grid, in pixels: where the view climbs until they would stand nearer, the grid is read coarser, a doubling at a time and cross-faded between, so on a wide field seen whole the stars thin and never pack into dust; at `0` the grid is read as laid at every zoom (D340 (stars-thin-far)) |
 | `SPACE.ruleInk` | `#8796a8` | the ink of the rule at each band's boundary |
 | `SPACE.ruleOpacity` | `0.16` | how much of the rule shows: just enough to register, so it sits back from every mark |
 | `SPACE.ruleWidth` | `1` | the rule's width in screen pixels |
@@ -635,6 +639,8 @@ SVG keeps its bands (the terraces above).
 | `WEATHER.markBloom` | `1` | the share of a mark's light the bloom sees (the stains, rings, arcs, stitches and storms) |
 | `WEATHER.ribbonBloom` | `0.3` | the share of an exceptional edge's ribbon light the bloom sees |
 | `WEATHER.ribbonWave` | `24` | how long one wave of a swaying ribbon runs along its bow, in layout units (Q84 (oscillating-links)); with `RIBBON_SWAY_HZ` it sets how fast the wave travels, 7.2 units a second at rest |
+| `WEATHER.ribbonLeast` | `1.5` | the narrowest a ribbon is drawn on the screen, in pixels, so a line across a wide field still reads from far off (D341 (ribbon-width-on-screen)) |
+| `WEATHER.ribbonMost` | `4` | the widest it is drawn, in pixels, so a line seen close is a line and never a band; between the two a ribbon keeps its width on the ground, and its arrowhead is held to the same bounds |
 
 ### The notices' light
 
@@ -687,6 +693,7 @@ resolves by its size on the screen (D206 (detail-by-size)).
 | `LEVELS.fileNameBudget` | `80` | the most names written unasked at once, at any zoom, a noticed file's among them (D245 (name-budget-token)). It rests at the scene's label budget for its deepest level, where the collision rule is what caps the names, not the count (D235 (names-one-budget)); lower, the files that matter most keep theirs, a noticed one first, then a changed one, then by reach and by nearness to the view's centre; at `0` no name is written unasked, and a view moved by hand still stands at a file from `LEVELS.fileNameFrom`, which setting that one very high would stop |
 | `LEVELS.granuleFrom` | `1.5` | the radius on the screen, in pixels, at which a function's granule starts to show inside its file on the map (D206 (detail-by-size)); below it the granule is not drawn |
 | `LEVELS.granuleFull` | `4` | the radius at which it shows whole, faded in between the two |
+| `LEVELS.granuleMost` | `12000` | the most granules laid at once. A map with no more functions than this, none of whose packages stands as one body, lays them all as it opens; any other lays only those of the files in view that are drawn large enough to show one, once the view rests, whole files in path order up to this many, and the canvas counts the files left (D343 (granules-in-view)). Read when the map is laid |
 | `CAMERA.smooth` | `0.1` | how long, in seconds, the camera settles on an input: a wheel's steps read as one continuous zoom, and nothing coasts once the pointer stops; reduced motion settles at once |
 | `CAMERA.dragSmooth` | `0.05` | the shorter settle a drag takes |
 | `CINEMA.share` | `0.7` | in a still for a pull request's comment, the minimap's flat still the comment posts (D174, D175) and the world's `?cinema` page alike, the share of the picture the box round the change's notices and changed files on the terrain fills, in whichever of its width and height it fills first; no chrome stands beside it |
@@ -1254,7 +1261,7 @@ seconds of the planet over an unlit far field, and the sweep runs from that
 far field through the surface until a cell opens by its share of the screen.
 The tab does none of that now ([the one surface](#the-one-surface)): it opens
 on the lit map, a sweep opens nothing, and a frame at rest also lays names by
-size, granules where a map carries functions and stands under 5,000 files,
+size, granules where a map carries functions, those in view alone past 5,000 files,
 and two panels of chrome. None of it has been measured, and the script was
 not run in the session that built it. The tables are kept as they were
 measured: they hold for the world as it was on their dates, and are the

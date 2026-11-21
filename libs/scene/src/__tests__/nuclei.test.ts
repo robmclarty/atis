@@ -9,7 +9,7 @@ import { expect, test } from 'vitest';
 import { compositesOf } from '../composites.js';
 import { slideCellOf } from '../drift.js';
 import { cellSlide, interiorOf } from '../interior.js';
-import { nucleiOf } from '../nuclei.js';
+import { nucleiInView, nucleiOf, nucleiUnread } from '../nuclei.js';
 import type { RestGranule } from '../nuclei.js';
 import { outlineOf } from '../shape.js';
 import { NUCLEUS_FILL, NUCLEUS_MOST, NUCLEUS_PAD } from '../tokens.js';
@@ -170,6 +170,38 @@ test('a map whose packages stand as composites has no granules, and says why', (
   // The composites are the first reason given, whatever the files carry.
   const unread: MapJson = { ...DEMO, terrain: { ...DEMO.terrain, organelles: DEMO.terrain.organelles.map(({ functions: _functions, ...rest }) => rest) } };
   expect(nucleiOf(unread, composites).off).toBe('composites');
+});
+
+test('a view lays the granules of the files it shows that are drawn large enough and stand open, whole files in path order up to the most, and says how many files it left (D343 (granules-in-view))', () => {
+  const positions = DEMO.terrain.layout?.positions ?? {};
+  const everywhere = { x0: -1e9, y0: -1e9, x1: 1e9, y1: 1e9 };
+  const all = nucleiOf(DEMO).granules;
+  // The whole map in view, nothing too small and room for all: every granule the map lays, in the same order.
+  expect(nucleiInView(DEMO, { box: everywhere, least: 0, most: all.length })).toEqual({ granules: all, left: 0 });
+  // Whatever the map's composites: a view is how a map of them lays its granules.
+  expect(compositesOf(DEMO, 1).length).toBeGreaterThan(0);
+  // A box round one file lays that file's alone; a file only touching the box is in it.
+  const at = positions[DOCTOR] ?? { x: 0, y: 0, r: 0 };
+  const own = all.filter((granule) => granule.file === DOCTOR);
+  expect(own.length).toBeGreaterThan(1);
+  expect(nucleiInView(DEMO, { box: { x0: at.x - 0.1, y0: at.y - 0.1, x1: at.x + 0.1, y1: at.y + 0.1 }, least: 0, most: all.length })).toEqual({ granules: own, left: 0 });
+  expect(nucleiInView(DEMO, { box: { x0: at.x + at.r - 0.1, y0: at.y, x1: at.x + at.r + 0.1, y1: at.y }, least: 0, most: all.length }).granules.filter((granule) => granule.file === DOCTOR)).toEqual(own);
+  expect(nucleiInView(DEMO, { box: { x0: at.x + at.r + 0.1, y0: at.y, x1: at.x + at.r + 0.2, y1: at.y }, least: 0, most: all.length }).granules.some((granule) => granule.file === DOCTOR)).toBe(false);
+  // A file drawn smaller than the least shows no granule at this zoom, so none of its is laid.
+  expect(nucleiInView(DEMO, { box: everywhere, least: at.r, most: all.length }).granules.filter((granule) => granule.file === DOCTOR)).toEqual(own);
+  expect(nucleiInView(DEMO, { box: everywhere, least: at.r + 0.01, most: all.length }).granules.some((granule) => granule.file === DOCTOR)).toBe(false);
+  // A file that is not drawn, as one of a package standing closed, lays none.
+  expect(nucleiInView(DEMO, { box: everywhere, least: 0, most: all.length }, (file) => file === DOCTOR).granules).toEqual(all.filter((granule) => granule.file !== DOCTOR));
+  // Past the most, files are laid whole in path order and the rest counted, never cut mid-file and never passed over for a smaller one.
+  const files = [...new Set(all.map((granule) => granule.file))];
+  const first = all.filter((granule) => granule.file === files[0]);
+  const short = nucleiInView(DEMO, { box: everywhere, least: 0, most: first.length });
+  expect(short).toEqual({ granules: first, left: files.length - 1 });
+  expect(nucleiInView(DEMO, { box: everywhere, least: 0, most: first.length - 1 })).toEqual({ granules: [], left: files.length });
+  // The same view gives the same list (C3), and a map that read no function says so however it is asked.
+  expect(nucleiInView(DEMO, { box: everywhere, least: 0, most: first.length })).toEqual(short);
+  expect(nucleiUnread(DEMO)).toBeUndefined();
+  expect(nucleiUnread(scanned('retake-3'))).toBe('no function data');
 });
 
 test("a scanned repo's functions are each a granule inside its file, the same list each time; a scan that read none says so (C2, C3)", () => {

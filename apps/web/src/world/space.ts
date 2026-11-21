@@ -6,7 +6,10 @@
  * ground and run on past the layout's edge into the dark round it. Each star
  * is a disc a few pixels across at every zoom, its size measured against the
  * screen's footprint of the ground rather than the ground itself, and it
- * never blooms. The rules are an SVG over the canvas, beneath every other
+ * never blooms. Where the view climbs until the grid's cells would stand
+ * nearer than `SPACE.starGap` pixels, the grid is read coarser, a doubling at
+ * a time and cross-faded between, so a wide field seen whole keeps a sky and
+ * not a dust of stars (D340 (stars-thin-far)). The rules are an SVG over the canvas, beneath every other
  * layer: one line a band boundary, through where the boundary meets the
  * level ground, run out to the screen's edges, or in a field whose lanes
  * wrap into rows across its row alone (Q73), in a translucent ink. Under
@@ -23,7 +26,7 @@
 
 import { AdditiveBlending, Color, DataTexture, FloatType, Mesh, MeshBasicNodeMaterial, NearestFilter, PlaneGeometry, RGBAFormat, RepeatWrapping, Vector3 } from 'three/webgpu';
 import type { Camera } from 'three/webgpu';
-import { float, floor, fwidth, length, max, mrt, positionWorld, smoothstep, texture, uniform, vec4 } from 'three/tsl';
+import { exp2, float, floor, fract, fwidth, length, log2, max, mix, mrt, positionWorld, smoothstep, texture, uniform, vec4 } from 'three/tsl';
 import { BAND_LABEL_TOKENS, FONT_FAMILY, LABEL_BASELINE, across, between } from 'scene';
 import type { BandLabel } from 'scene';
 import type { MapJson } from 'core';
@@ -53,6 +56,9 @@ const SVG = 'http://www.w3.org/2000/svg';
 /** How far above the level field the stars' plane lies, in the heightfield's units: clear of the field, and under every body and swell that rises. */
 const STAR_LIFT = 0.3;
 
+/** How many cells of the star field a coarser reading of the grid steps aside for each doubling, so it reads other stars than the reading before it. */
+const STAR_SHIFT = 17;
+
 /** How many times the layout's longer side the plane reaches each way, so the stars run on past every frame the camera allows. */
 const STAR_REACH = 8;
 
@@ -71,16 +77,25 @@ export const createSpace = (map: MapJson, look: SpaceLook, type: BandLabelLook):
   const gain = uniform(look.starGain);
   const radius = uniform(look.starRadius);
   const spacing = uniform(look.starSpacing);
+  const gap = uniform(look.starGap);
 
-  // The ground under this fragment, its cell in the star grid, and that cell's star, if it has one.
+  // The ground under this fragment, and how much of it one pixel holds here.
   const ground = positionWorld.xz;
-  const cell = floor(ground.div(spacing));
-  const star = texture(field, cell.add(0.5).div(STAR_GRID));
-  const centre = cell.add(star.gb).mul(spacing);
-  // How far this fragment lies from the star in screen pixels: the ground's distance over how much ground one pixel holds here.
   const footprint = max(fwidth(ground.x), fwidth(ground.y));
-  const pixels = length(ground.sub(centre)).div(footprint);
-  const light = star.r.mul(float(1).sub(smoothstep(radius.sub(0.5), radius.add(0.5), pixels))).mul(gain);
+  // How many doublings coarser the grid is read (D340 (stars-thin-far)): none while its cells stand `starGap` pixels apart or more on the screen, and one more each time the view climbs to where they would stand half as far, so a wide field seen whole keeps the sky a small one has and never packs its stars into dust.
+  const coarser = log2(max(gap.mul(footprint).div(spacing), 1));
+  const lower = floor(coarser);
+  /** The light of the grid read `doublings` coarser at this fragment: its cell there, that cell's star, if it has one, and how far the fragment lies from the star in screen pixels. Each reading takes its stars from another stretch of the field, so one sky does not show through the next. */
+  const lightAt = (doublings: typeof lower): typeof lower => {
+    const size = spacing.mul(exp2(doublings));
+    const cell = floor(ground.div(size));
+    const star = texture(field, cell.add(doublings.mul(STAR_SHIFT)).add(0.5).div(STAR_GRID));
+    const centre = cell.add(star.gb).mul(size);
+    const pixels = length(ground.sub(centre)).div(footprint);
+    return star.r.mul(float(1).sub(smoothstep(radius.sub(0.5), radius.add(0.5), pixels)));
+  };
+  // Between two doublings the finer reading fades out as the coarser fades in, so no star blinks as the wheel turns.
+  const light = mix(lightAt(lower), lightAt(lower.add(1)), fract(coarser)).mul(gain);
 
   const material = new MeshBasicNodeMaterial();
   material.transparent = true;
@@ -132,6 +147,7 @@ export const createSpace = (map: MapJson, look: SpaceLook, type: BandLabelLook):
     gain.value = look.starGain;
     radius.value = look.starRadius;
     spacing.value = look.starSpacing;
+    gap.value = look.starGap;
     if (drawn.seed !== look.starSeed || drawn.density !== look.starDensity) {
       field.image.data = starField(look.starSeed, look.starDensity);
       field.needsUpdate = true;

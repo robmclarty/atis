@@ -29,15 +29,21 @@
  * read live (D156): the granules are laid again, in the buffer they were
  * given, on the first restyle after one moves.
  *
- * On a map whose packages stand as composites, and on one that carries no
- * function data, there is no mesh, and `shown` says why (D292
- * (granules-off-composites), D293 (granules-unmeasured)).
+ * A map with no more functions than `LEVELS.granuleMost`, none of whose
+ * packages stands as a composite, lays every granule as it opens. Any other
+ * lays only what a view shows (D343 (granules-in-view), D292
+ * (granules-off-composites)): once the view has come to rest, the granules
+ * of the files in it that are drawn large enough to show one and whose
+ * package stands open, in the same buffer, at most `LEVELS.granuleMost` of
+ * them, and `shown` says how many and how many files were left. A map that
+ * carries no function data has no mesh, and `shown` says why (D293
+ * (granules-unmeasured)).
  */
 
 import { BufferAttribute, Color, DoubleSide, DynamicDrawUsage, InstancedBufferAttribute, InstancedBufferGeometry, Mesh, MeshBasicNodeMaterial } from 'three/webgpu';
 import type { DataTexture, UniformNode } from 'three/webgpu';
 import { abs, attribute, clamp, float, max, mrt, positionLocal, step, texture, uniform, varying, vec2, vec3, vec4 } from 'three/tsl';
-import { nucleiOf, slideCellOf } from 'scene';
+import { compositesOf, nucleiInView, nucleiOf, nucleiUnread, slideCellOf } from 'scene';
 import type { Composite, Grid, NucleusTokens, Point, RestGranule } from 'scene';
 import type { MapJson } from 'core';
 
@@ -55,6 +61,11 @@ const LIFT = 0.95;
 const RENDER_ORDER = 2.5;
 /** The least the fade's two bounds are taken to stand apart, in pixels, so bounds set equal cut and never divide by nothing. */
 const FADE_LEAST = 1e-4;
+/** How far past the view's own box the granules are laid, as a share of its width and of its height each way, so a short drag meets them already there. */
+const VIEW_MARGIN = 0.25;
+
+/** The stretch of the map a view shows, in layout units. */
+export type ViewBox = { readonly x0: number; readonly y0: number; readonly x1: number; readonly y1: number };
 
 /**
  * The look the granules read live from the registry: the file's fill from
@@ -65,7 +76,7 @@ const FADE_LEAST = 1e-4;
 export type NucleiLook = {
   readonly tissue: Pick<OrganelleLook, 'ORGANELLE_FILL'>;
   readonly interior: Pick<InteriorLook, 'granuleShade'>;
-  readonly levels: Pick<LevelsLook, 'granuleFrom' | 'granuleFull'>;
+  readonly levels: Pick<LevelsLook, 'granuleFrom' | 'granuleFull' | 'granuleMost'>;
   readonly nucleus: NucleusTokens;
 };
 
@@ -78,6 +89,14 @@ export type Nuclei = {
   readonly shown: () => string;
   /** Each frame: the pixels one layout unit takes on the screen, which a granule's fade is read from. */
   readonly frame: (pixelsPerUnit: number) => void;
+  /**
+   * Each frame, on a map that lays only what a view shows (D343
+   * (granules-in-view)): the box the view shows, the pixels a unit takes, the
+   * files not drawn (those of a package that stands closed), and a value that
+   * is another whenever those files are. The granules are laid again once the
+   * view has stood still a frame; a map that laid them all hears nothing.
+   */
+  readonly view: (box: ViewBox | undefined, pixelsPerUnit: number, shut: (file: string) => boolean, shutAs: unknown) => void;
   /** Re-read the tokens into the material, each frame (D156), and lay the granules again once a nucleus token has moved. */
   readonly restyle: () => void;
   /** Let the granules of a module's files give way under its slide, by how far the slide has faded in; none with no module open. */
@@ -119,6 +138,7 @@ const none = (why: string): Nuclei => ({
   count: () => 0,
   shown: () => why,
   frame: () => undefined,
+  view: () => undefined,
   restyle: () => undefined,
   hide: () => undefined,
   move: () => undefined,
@@ -133,13 +153,17 @@ const none = (why: string): Nuclei => ({
  * whether or not the caller remembered them.
  */
 export const createNuclei = (map: MapJson, relief: DataTexture, grid: Grid, amp: Float, lift: Float, surface: Float, look: NucleiLook, composites?: readonly Composite[]): Nuclei => {
-  const first = nucleiOf(map, composites, look.nucleus);
-  if (first.off !== undefined) return none(`off: ${first.off}`);
+  const unread = nucleiUnread(map);
+  if (unread !== undefined) return none(`off: ${unread}`);
   const positions = map.terrain.layout?.positions ?? {};
   // The most granules any tokens lay: a function each, since the nucleus's own most only ever counts some away.
-  const room = map.terrain.organelles.reduce((total, organelle) => total + (positions[organelle.id] === undefined ? 0 : (organelle.functions?.length ?? 0)), 0);
+  const every = map.terrain.organelles.reduce((total, organelle) => total + (positions[organelle.id] === undefined ? 0 : (organelle.functions?.length ?? 0)), 0);
   // Function data that names no function is read, and is nothing to draw.
-  if (room === 0) return none('0');
+  if (every === 0) return none('0');
+  // Whether the map lays every granule as it opens, or only what a view shows (D343 (granules-in-view)): all of them where they are few enough and no package stands as one body.
+  const most = Math.max(0, Math.floor(look.levels.granuleMost));
+  const whole = (composites ?? compositesOf(map)).length === 0 && every <= most;
+  const room = whole ? every : Math.max(1, most);
 
   // The cells numbered from 1, in id order, as the files number them, so a granule gives way under its module's slide; 0 is no cell.
   const cellNumber = new Map(map.terrain.cells.map((cell) => cell.id).toSorted().map((cell, index) => [cell, index + 1] as const));
@@ -150,6 +174,9 @@ export const createNuclei = (map: MapJson, relief: DataTexture, grid: Grid, amp:
   const owners: string[] = [];
   let count = 0;
   let laidFor = '';
+  // The files a view was last told are not drawn, and how many times they have changed.
+  let shutWas: unknown;
+  let shutTurn = 0;
   // Each file's offset from its place as last laid, by path: none for a file at its place.
   let offsets = new Map<string, Point>();
 
@@ -184,7 +211,12 @@ export const createNuclei = (map: MapJson, relief: DataTexture, grid: Grid, amp:
     laidFor = laidBy(look.nucleus);
     place();
   };
-  lay(first.granules);
+  if (whole) lay(nucleiOf(map, [], look.nucleus).granules);
+  else lay([]);
+  // What a view last laid, the view the frame before showed, and how many files in view the last laying left out.
+  let laidView = '';
+  let lastView = '';
+  let left = 0;
 
   // The pixels one layout unit takes, nothing until the loop's first frame says; the fade's two bounds; the ink; and the cell under a slide, by its number, with how far the slide has faded in over it.
   const scale = uniform(0);
@@ -253,16 +285,35 @@ export const createNuclei = (map: MapJson, relief: DataTexture, grid: Grid, amp:
   return {
     meshes: [mesh],
     count: () => count,
-    shown: () => String(count),
+    shown: () => (whole ? String(count) : `${String(count)} in view${left === 0 ? '' : `, ${String(left)} files left`}`),
     frame: (pixelsPerUnit) => {
       scale.value = pixelsPerUnit;
+    },
+    view: (box, pixelsPerUnit, shut, shutAs) => {
+      if (whole || box === undefined || !(pixelsPerUnit > 0)) return;
+      if (shutAs !== shutWas) {
+        shutWas = shutAs;
+        shutTurn += 1;
+      }
+      // The view as one word, to a hundredth of a unit: the same word two frames running is a view at rest, and the word last laid is nothing to lay again.
+      const word = [box.x0, box.y0, box.x1, box.y1, pixelsPerUnit].map((value) => value.toFixed(2)).join(' ') + ` ${String(shutTurn)} ${laidBy(look.nucleus)} ${String(look.levels.granuleFrom)}`;
+      const still = word === lastView;
+      lastView = word;
+      if (!still || word === laidView) return;
+      laidView = word;
+      const dx = (box.x1 - box.x0) * VIEW_MARGIN;
+      const dy = (box.y1 - box.y0) * VIEW_MARGIN;
+      // A file drawn smaller than the fade's lower bound shows no granule at this zoom, so none of its is laid.
+      const laid = nucleiInView(map, { box: { x0: box.x0 - dx, y0: box.y0 - dy, x1: box.x1 + dx, y1: box.y1 + dy }, least: Math.max(0, look.levels.granuleFrom) / pixelsPerUnit, most: room }, shut, look.nucleus);
+      left = laid.left;
+      lay(laid.granules);
     },
     restyle: () => {
       from.value = look.levels.granuleFrom;
       full.value = look.levels.granuleFull;
       inked();
-      // No composites stand on this map, or there would be no mesh to lay in.
-      if (laidBy(look.nucleus) !== laidFor) lay(nucleiOf(map, [], look.nucleus).granules);
+      // A map that laid every granule lays them again once a nucleus token has moved; one that lays a view's does so when the view is next read.
+      if (whole && laidBy(look.nucleus) !== laidFor) lay(nucleiOf(map, [], look.nucleus).granules);
     },
     hide: (cell, fade) => {
       const number = cell === undefined ? 0 : (cellNumber.get(cell) ?? 0);

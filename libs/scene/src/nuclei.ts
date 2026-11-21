@@ -14,17 +14,20 @@
  * granules, never one made from a count (C2).
  *
  * Past 5,000 placed files, where each package stands as one composite (C14),
- * the map draws none and says why (D292 (granules-off-composites)): a closed
- * package draws none of its files, and the cost of a granule per function on
- * a repo that size is not measured. A map none of whose placed files carries
- * function data says that too, since no granules there means nobody read the
- * functions, not that there are none (D293 (granules-unmeasured), C2).
+ * the whole map's granules are never laid at once (D292
+ * (granules-off-composites)): a closed package draws none of its files, and
+ * a granule per function on a repo that size is more than a far view needs.
+ * There the world lays only the granules of the files in view that are drawn
+ * large enough to show one, as the view comes to rest (`nucleiInView`, D343
+ * (granules-in-view)). A map none of whose placed files carries function data
+ * says so, since no granules there means nobody read the functions, not that
+ * there are none (D293 (granules-unmeasured), C2).
  *
  * Pure (C1), and one map and one set of tokens give one list, in path order
  * and then line order (C3).
  */
 
-import type { MapJson } from 'core';
+import type { MapJson, Organelle } from 'core';
 
 import { compositesOf } from './composites.js';
 import type { Composite } from './composites.js';
@@ -56,6 +59,47 @@ export type NucleiOff = 'composites' | 'no function data';
 /** The map's granules at rest, files in path order and each file's in line order; or none and why. */
 export type RestNuclei = { readonly granules: readonly RestGranule[]; readonly off?: NucleiOff };
 
+/** The lines of the largest file each module's slide shows on a map, kept beside the map so a view laid again reads each module once. */
+const mostLines = new WeakMap<MapJson, Map<string, number>>();
+
+function mostLinesOf(map: MapJson, module: string): number {
+  const known = mostLines.get(map) ?? new Map<string, number>();
+  mostLines.set(map, known);
+  const lines = known.get(module) ?? Math.max(0, ...slideFilesOf(map, module).map(({ organelle }) => organelle.loc));
+  known.set(module, lines);
+  return lines;
+}
+
+/** One placed file's granules at rest on the map, in line order; none for a file with no place or no function data (C2). */
+function granulesOf(map: MapJson, organelle: Organelle, tokens: NucleusTokens): readonly RestGranule[] {
+  const place = map.terrain.layout?.positions[organelle.id];
+  if (place === undefined || organelle.functions === undefined) return [];
+  const file: NucleusFile = { id: organelle.id, lines: organelle.loc, functions: organelle.functions };
+  // The outline the map draws the file in at rest: its trouble's, still.
+  const outline = outlineOf(organelle.id, place, troubleOf(organelle).score);
+  const nucleus = nucleusOf(file, outline, mostLinesOf(map, slideCellOf(map, organelle.cell)), tokens);
+  return (nucleus?.granules ?? []).map((granule) => ({
+    file: organelle.id,
+    cell: organelle.cell,
+    name: granule.name,
+    line: granule.line,
+    x: place.x + granule.x,
+    y: place.y + granule.y,
+    r: granule.r,
+    breached: granule.rules.length > 0,
+  }));
+}
+
+function byId(a: Organelle, b: Organelle): number {
+  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+}
+
+/** Whether any placed file of the map carries function data. */
+function measured(map: MapJson): boolean {
+  const positions = map.terrain.layout?.positions ?? {};
+  return map.terrain.organelles.some((organelle) => organelle.functions !== undefined && positions[organelle.id] !== undefined);
+}
+
 /**
  * Every placed file's granules at rest. `composites` are the map's, as
  * `compositesOf` reads them, and `tokens` the nucleus's, live where a
@@ -63,36 +107,55 @@ export type RestNuclei = { readonly granules: readonly RestGranule[]; readonly o
  */
 export function nucleiOf(map: MapJson, composites: readonly Composite[] = compositesOf(map), tokens: NucleusTokens = NUCLEUS_TOKENS): RestNuclei {
   if (composites.length > 0) return { granules: [], off: 'composites' };
+  if (!measured(map)) return { granules: [], off: 'no function data' };
+  return { granules: map.terrain.organelles.toSorted(byId).flatMap((organelle) => granulesOf(map, organelle, tokens)) };
+}
+
+/**
+ * The stretch of the map a view shows, and what it can show of it: the box in
+ * layout units, the least radius a file must have on the ground for a granule
+ * of it to be seen at this zoom, and the most granules to lay.
+ */
+export type NucleiView = {
+  readonly box: { readonly x0: number; readonly y0: number; readonly x1: number; readonly y1: number };
+  readonly least: number;
+  readonly most: number;
+};
+
+/** The granules a view lays, files in path order and each file's in line order, and how many files in view it left unlaid once `most` was reached. */
+export type ViewNuclei = { readonly granules: readonly RestGranule[]; readonly left: number };
+
+/**
+ * The granules of the files a view shows (D343 (granules-in-view)): each
+ * placed file with function data that touches the view's box, is drawn at
+ * `least` or more, and that `shut` does not name, as a file of a package that
+ * stands closed is. Files are laid in path order until the next would pass
+ * `most`; a file is laid whole or not at all, and the count of those left
+ * says so, so a full view never reads as a quiet one (C2). Whatever the
+ * map's composites, since this is how a map of them draws its granules.
+ */
+export function nucleiInView(map: MapJson, view: NucleiView, shut: (file: string) => boolean = () => false, tokens: NucleusTokens = NUCLEUS_TOKENS): ViewNuclei {
   const positions = map.terrain.layout?.positions ?? {};
-  if (!map.terrain.organelles.some((organelle) => organelle.functions !== undefined && positions[organelle.id] !== undefined)) return { granules: [], off: 'no function data' };
-  // The lines of the largest file each module's slide shows, read once a module.
-  const most = new Map<string, number>();
-  const mostLinesOf = (module: string): number => {
-    const known = most.get(module);
-    if (known !== undefined) return known;
-    const lines = Math.max(0, ...slideFilesOf(map, module).map(({ organelle }) => organelle.loc));
-    most.set(module, lines);
-    return lines;
-  };
-  const granules = map.terrain.organelles
-    .toSorted((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
-    .flatMap((organelle): RestGranule[] => {
-      const place = positions[organelle.id];
-      if (place === undefined || organelle.functions === undefined) return [];
-      const file: NucleusFile = { id: organelle.id, lines: organelle.loc, functions: organelle.functions };
-      // The outline the map draws the file in at rest: its trouble's, still.
-      const outline = outlineOf(organelle.id, place, troubleOf(organelle).score);
-      const nucleus = nucleusOf(file, outline, mostLinesOf(slideCellOf(map, organelle.cell)), tokens);
-      return (nucleus?.granules ?? []).map((granule) => ({
-        file: organelle.id,
-        cell: organelle.cell,
-        name: granule.name,
-        line: granule.line,
-        x: place.x + granule.x,
-        y: place.y + granule.y,
-        r: granule.r,
-        breached: granule.rules.length > 0,
-      }));
-    });
-  return { granules };
+  const seen = map.terrain.organelles.toSorted(byId).filter((organelle) => {
+    const place = positions[organelle.id];
+    // A file that names no function has nothing to lay, so it is neither laid nor left.
+    if (place === undefined || organelle.functions === undefined || organelle.functions.length === 0 || place.r < view.least || shut(organelle.id)) return false;
+    return place.x + place.r >= view.box.x0 && place.x - place.r <= view.box.x1 && place.y + place.r >= view.box.y0 && place.y - place.r <= view.box.y1;
+  });
+  const granules: RestGranule[] = [];
+  let left = 0;
+  for (const organelle of seen) {
+    const next = left > 0 ? [] : granulesOf(map, organelle, tokens);
+    if (left > 0 || granules.length + next.length > view.most) {
+      left += 1;
+      continue;
+    }
+    granules.push(...next);
+  }
+  return { granules, left };
+}
+
+/** Why a map can draw no granule at any zoom, or nothing where it can: none of its placed files carries function data (D293 (granules-unmeasured)). */
+export function nucleiUnread(map: MapJson): NucleiOff | undefined {
+  return measured(map) ? undefined : 'no function data';
 }

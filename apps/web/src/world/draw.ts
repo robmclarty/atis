@@ -420,7 +420,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   const reduced = globalThis.matchMedia('(prefers-reduced-motion: reduce)').matches;
   canvas.dataset['motion'] = reduced ? 'reduced' : 'full';
   const levels = registry.view(LEVELS, 'LEVELS');
-  // Every file's functions as granules on the map itself (D206 (detail-by-size)), resolved by their size on the screen and by nothing else: laid from the map the weather comes from, so a watch's push lays them again (D330 (granules-follow-push)), and none on a map of composites or one that read no function (D292 (granules-off-composites), D293 (granules-unmeasured)). The canvas says how many, or why none.
+  // Every file's functions as granules on the map itself (D206 (detail-by-size)), resolved by their size on the screen and by nothing else: laid from the map the weather comes from, so a watch's push lays them again (D330 (granules-follow-push)); on a map of composites, or one with more functions than `LEVELS.granuleMost`, only those of the files in view (D343 (granules-in-view)); and none on a map that read no function (D293 (granules-unmeasured)). The canvas says how many, or why none.
   const nucleiOn = (from: MapJson): ReturnType<typeof createNuclei> => createNuclei(from, skin.relief, grid, skin.amp, skin.lift, organelles.surface, { tissue: tokens, interior: interiorLook, levels, nucleus: nucleusTokens }, composites);
   let nuclei = nucleiOn(map);
   // One mesh or none: a map that draws no granule has nothing to add, and the scene takes no empty ask.
@@ -489,6 +489,11 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   const fileOn = (thing: Selected | undefined): string | undefined => (thing === undefined ? undefined : thing.kind === 'organelle' ? thing.path : floaterOf.get(thing.cell));
   // The package each file stands in on a map past 5,000 files, where a package is drawn as one body until the view nears it (step 66).
   const compositeOf = new Map(composites.flatMap((composite) => composite.files.map((file) => [file, composite.id] as const)));
+  /** Whether a file is not drawn because the package it lies in stands closed as one body. */
+  const shutFile = (file: string): boolean => {
+    const owner = compositeOf.get(file);
+    return owner !== undefined && closedComposites.has(owner);
+  };
   // The files of a closed cell the surface draws where they last floated (D165), as the scheduler last said.
   let floatedOnSurface: ReadonlyMap<string, Point> = new Map();
   /** The body of the opened cell under a layout point, where it has floated, a file reaching `slop` past its edge. */
@@ -1071,6 +1076,8 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     organelles.restyle();
     // The granules resolve by the pixels a layout unit takes (D206 (detail-by-size)), are drawn with the files and not at the far field, and say how many are laid whenever a nucleus token moves that.
     nuclei.frame(pixelsPerUnit(camera, canvas.clientWidth));
+    // On a map too large to lay every granule, those of the files in view, laid once the view rests; a closed package draws no file, so none of its (D343 (granules-in-view)).
+    nuclei.view(seen, pixelsPerUnit(camera, canvas.clientWidth), shutFile, closedComposites);
     for (const mesh of nuclei.meshes) mesh.visible = surface > 0 || passes < 2;
     nuclei.restyle();
     if (nuclei.shown() !== nucleiShown) {
@@ -1089,6 +1096,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       layer.ribbons.bloom.value = weatherLook.ribbonBloom;
       // A ribbon that enters a module past its interface sways on the scheduler's clock (Q84, C12), and holds still under reduced motion.
       layer.ribbons.sway(frame.t, reduced);
+      layer.ribbons.frame(pixelsPerUnit(camera, canvas.clientWidth));
     }
     // The notices' lights are the shown frame's; the frame fading out holds the last it was given.
     current.sectors.light(frame.notices);

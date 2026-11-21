@@ -54,8 +54,11 @@ as a live token, and each fades in rather than switching on
   fade in as a granule's radius passes from `LEVELS.granuleFrom` to
   `LEVELS.granuleFull` pixels. Below the lower bound a granule is not drawn at
   all. They need per-function data in the map: a map that read none draws
-  none and says so (D293 (granules-unmeasured)), and so does a map past 5,000
-  placed files (D292 (granules-off-composites)).
+  none and says so (D293 (granules-unmeasured)). A map past 5,000 placed
+  files, or with more functions than `LEVELS.granuleMost`, never lays them
+  all (D292 (granules-off-composites)): it lays those of the files in view
+  that are drawn large enough to show one and whose package stands open,
+  once the view has come to rest (D343 (granules-in-view)).
 - A file's name is written once its radius on the screen passes
   `LEVELS.fileNameFrom` pixels, about 36 pixels across at rest. Names are laid
   when the labels are placed, which is when the camera rests, the hover
@@ -370,6 +373,10 @@ of the inspector's baked looks live, `PANEL.codeLeading`,
 | `LEVELS.fileNameBudget` | `80` | the most names written unasked at once, at any zoom, a noticed file's among them; at `0` none is written unasked (D245 (name-budget-token)) | the world |
 | `LEVELS.granuleFrom` | `1.5` | the radius on the screen, in pixels, at which a function's granule starts to show | the granules' mesh |
 | `LEVELS.granuleFull` | `4` | the radius at which it shows whole | the granules' mesh |
+| `LEVELS.granuleMost` | `12000` | the most granules laid at once; a map with more functions, or one whose packages stand as one body, lays only the view's (D343 (granules-in-view)); read when the map is laid | the granules' mesh |
+| `SPACE.starGap` | `20` | the least gap on the screen, in pixels, between two cells of the star grid before the grid is read coarser (D340 (stars-thin-far)) | the starfield |
+| `WEATHER.ribbonLeast` | `1.5` | the narrowest a line between modules is drawn on the screen, in pixels (D341 (ribbon-width-on-screen)) | the ribbons |
+| `WEATHER.ribbonMost` | `4` | the widest it is drawn, in pixels | the ribbons |
 | `HOVER.ink` | `#e6edf3` | the ink of the outline round the thing under the pointer, and round what a row of the chrome points at (D234 (pointed-ring)) | the world; the tree, for the pointed row's outline |
 | `HOVER.width` | `1.5` | that outline's width, in pixels | the world |
 | `HOVER.slop` | `4` | how far past its edge, in pixels, a file answers the pointer and a click | the world |
@@ -412,7 +419,7 @@ On the canvas, `#world`:
 | `data-pointed` | the target pointed at, where the map holds it; absent with none |
 | `data-pointed-by` | `world` or `chrome`, whichever side points; absent with `data-pointed` |
 | `data-open` | the cell whose slide is open; on the one surface it follows the selection |
-| `data-nuclei` | how many granules are laid, `14` on the demo; `off: composites` on a map past 5,000 placed files; `off: no function data` where no placed file carries function data; `0` where function data names no function |
+| `data-nuclei` | how many granules are laid, `14` on the demo; `<n> in view`, with `, <m> files left` where the most was reached, on a map past 5,000 placed files or with more functions than `LEVELS.granuleMost` (D343 (granules-in-view)); `off: no function data` where no placed file carries function data; `0` where function data names no function |
 
 `data-planet` is gone with the planet.
 
@@ -1343,8 +1350,9 @@ Unused: D287 to D289.
   against the largest file of the file's own module, meaning the cell whose
   slide shows it, so a file reads as full on the map as on its slide.
 - **D292 (granules-off-composites).** On a map whose packages stand as
-  composites, past 5,000 placed files, no granule is laid and the reason
-  given is `composites`.
+  composites, past 5,000 placed files, the whole map's granules are never
+  laid at once, and the scene's `nucleiOf` gives the reason `composites`.
+  Amended by D343 (granules-in-view): such a map lays the view's.
 - **D293 (granules-unmeasured).** A map none of whose placed files carries
   function data gives the reason `no function data` in place of an empty
   list, so the canvas never reports 0 for functions nobody read. Function
@@ -1534,7 +1542,36 @@ Unused: D315 to D319, D326 and D327.
   line reads the run's head, on an older frame of a range as well, where the
   panels list none (D333 (departures-of-head)).
 
-The next free number is D340.
+- **D340 (stars-thin-far).** Stars are a fixed size on the screen at a
+  fixed spacing on the ground, so on a wide field seen whole they packed
+  into a dust that drowned the map; the planet had covered it. Where the
+  star grid's cells would stand nearer than `SPACE.starGap` pixels the grid
+  is read coarser, a doubling at a time, each reading cross-faded into the
+  next and taken from another stretch of the field. A small map's sky, and
+  any map's seen close, is as it was.
+- **D341 (ribbon-width-on-screen).** A line between modules was as wide as
+  its width on the ground, so across a wide field it was a hair and close in
+  a band over the files. On the screen it is now never narrower than
+  `WEATHER.ribbonLeast` pixels nor wider than `WEATHER.ribbonMost`, and
+  keeps its ground width between; its arrowhead is held to the same bounds
+  about its tip. How far a swaying line sways is still measured on the
+  ground.
+- **D342 (pointing-keeps-place).** The world's pointer coming to rest on a
+  file still opens the directories above its row and lights it, but scrolls
+  the column to it only while the tree stands at the column's top. With the
+  notices in view, crossing the map scrolled them away. A selection still
+  brings its row wherever the column stands.
+- **D343 (granules-in-view).** A map past 5,000 placed files, or with more
+  functions than `LEVELS.granuleMost`, lays the granules of the files in
+  view alone: those touching the view's box and a quarter of it beyond,
+  drawn at `LEVELS.granuleFrom` pixels or more, in a package that stands
+  open, whole files in path order up to the most, laid again once the view
+  has stood still a frame. The canvas says `<n> in view` and counts the
+  files left. Amends D292 (granules-off-composites). Until the view rests
+  the granules last laid stand, so a fast pan shows none in the ground it
+  crosses.
+
+The next free number is D344.
 
 ## Deferred
 
@@ -1629,7 +1666,10 @@ explicit deletion list, because the dead-code check cannot see leftovers in
 
 - Dents on a granule for a function that breaks a rule; the scene already
   marks which.
-- Granules past 5,000 placed files, and granules in the still SVG.
+- Granules in the still SVG. Past 5,000 placed files the view's are laid
+  (D343 (granules-in-view)), but no fixture that large carries function
+  data, so that path has only been driven on the demo with
+  `LEVELS.granuleMost` set under its count.
 - Letting a granule dim the bloom in step with its ink, where today it cuts
   its disc out at once. It needs a blend mode on the emissive target in
   `apps/web/src/world/draw.ts`, which also changes the slide's bodies and the
