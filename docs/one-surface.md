@@ -230,6 +230,12 @@ Who calls what:
 | a tree or inspector row, under the pointer | `nav.point(target, 'chrome')`, and `nav.point(undefined, 'chrome')` on leaving |
 | a panel, to draw | `nav.selected()` and `nav.pointed()` through `nav.subscribe` |
 
+Every caller builds the selection it sets with `selectedOf(map, target)`, the
+world included, and never from a pick's own cell. A file floating in an open
+slide is picked with the slide's cell, which for a single-file module is the
+package it floats in, and the line holds two selections of one file in two
+cells apart: built both ways, one file would read as two selections.
+
 A panel under test makes its own line and needs no world:
 
 ```ts
@@ -243,21 +249,22 @@ nav.point('folder:libs/core/src/pm', 'world');
 ### The tokens
 
 `apps/web/src/materials.ts`, read through the registry as
-`registry.view(LEVELS, 'LEVELS')`, `registry.view(HOVER, 'HOVER')` and
-`registry.view(PANEL, 'PANEL')`. Every token a track reads is already
-declared, with its row in [design.md](design.md), so no track edits
-`materials.ts`, `registry.ts` or the design tables.
+`registry.view(LEVELS, 'LEVELS')`, `registry.view(HOVER, 'HOVER')`,
+`registry.view(WALK, 'WALK')` and `registry.view(PANEL, 'PANEL')`. Every
+token a track reads is already declared, with its row in
+[design.md](design.md), so no track edits `materials.ts`, `registry.ts` or
+the design tables.
 
 | Token | Rests at | Meaning | Read by |
 | --- | --- | --- | --- |
-| `LEVELS.gates` | `[{ enter: 0, exit: 0 }, { enter: 6, exit: 5 }, { enter: 1000000, exit: 1000000 }, { enter: 1000000, exit: 1000000 }]` | the zoom at which each old level is entered and left; parked, see below | the world, already |
+| `LEVELS.gates` | `[{ enter: 0, exit: 0 }, { enter: 6, exit: 5 }, { enter: 1000000, exit: 1000000 }, { enter: 1000000, exit: 1000000 }]` | the zoom at which each old level is entered and left; parked, see below. Read only while `LEVELS.autoOpen` is `0` | the world, already |
 | `LEVELS.cellOpen` | `0.6` | the share of the free screen at which a module opened as a slide by zoom; read only while `LEVELS.autoOpen` is above `0` | the world, already |
 | `LEVELS.cellClose` | `0.45` | the share a slide opened by zoom held open at | the world, already |
 | `LEVELS.cellHome` | `0.15` | the share at which a closed slide's files are back home | the world, already |
 | `LEVELS.compositeOpen` | `0.35` | past 5,000 files, the share at which a package drawn as one body opens into its modules; not parked | the world, already |
 | `LEVELS.compositeClose` | `0.25` | the share at which it closes back into one body | the world, already |
-| `LEVELS.autoOpen` | `0` | the switch for the old opening by zoom: at `0` no slide opens by screen share and a click opens none by the old rule | the world, already |
-| `LEVELS.openOnSelect` | `1` | above `0`, selecting a module opens it as the living slide in place; at `0` a selection is only ringed and named | the world track |
+| `LEVELS.autoOpen` | `0` | the one switch for the old levels: at `0` no slide opens by screen share and a click opens none by the old rule; above `0` the scene's own `LOD_GATES` are read in place of `LEVELS.gates`, a slide opens by screen share, and none opens by a selection | the world, already |
+| `LEVELS.openOnSelect` | `1` | above `0`, selecting a module opens it as the living slide in place; at `0`, and while `LEVELS.autoOpen` is above `0`, a selection is only ringed and named | the world track |
 | `LEVELS.fileNameFrom` | `18` | the radius on the screen, in pixels, from which a file's name is written unasked | the world track |
 | `LEVELS.granuleFrom` | `1.5` | the radius on the screen, in pixels, at which a function's granule starts to show | the granules track |
 | `LEVELS.granuleFull` | `4` | the radius at which it shows whole | the granules track |
@@ -269,6 +276,9 @@ declared, with its row in [design.md](design.md), so no track edits
 | `HOVER.selectWidth` | `2.5` | that ring's width, in pixels | the world track |
 | `HOVER.clickSlop` | `4` | how far, in pixels, a press may move and still be a click | the world track |
 | `HOVER.clickMs` | `400` | how long, in milliseconds, a press may last and still be a click | the world track |
+| `WALK.share` | `0.8` | the share of the free screen a stop the camera flies to fills | the world, already |
+| `WALK.fileContext` | `6` | how many of a file's radii of ground a file stop is framed with | the world, already |
+| `WALK.fieldZoom` | `1.7` | the zoom over the fit under which a view that came to rest stands at the field, whatever lies under its centre (D219 (field-by-zoom)) | the world, already |
 | `PANEL.inspectorWidth` | `420` | the inspector's width, in pixels | the inspector track |
 | `PANEL.codeSize` | `11` | the type size of its code and its diff, in pixels | the inspector track |
 | `PANEL.treeRow` | `16` | the height of one tree row, in pixels | the tree track |
@@ -283,9 +293,10 @@ Other frozen names from the same work:
   It is not a test file, so each export must stay imported by a test or the
   dead-code check goes red.
 - On the canvas, `data-lod` reads `1` under zoom 6 and `2` from it, and never
-  `0`, `3` or `4` at rest. The world track adds `data-selected`; the granules
-  track's mesh is reported as `data-nuclei`, which reads `off: composites` on
-  a map past 5,000 files.
+  `0`, `3` or `4` at rest. The breadcrumb's `data-crumbs` reads `field` while
+  the view rests under `WALK.fieldZoom`. The world track adds
+  `data-selected`; the granules track's mesh is reported as `data-nuclei`,
+  which reads `off: composites` on a map past 5,000 files.
 
 ### The map's approved block
 
@@ -309,6 +320,7 @@ export type DepartureKind = (typeof DEPARTURE_KINDS)[number];
 export type Departure = {
   readonly kind: DepartureKind;
   readonly target: string;
+  readonly cell?: string;
   readonly why: string;
   readonly was?: number;
   readonly now?: number;
@@ -329,26 +341,42 @@ What the block means and what the guard holds it to:
 - Present with no departures, the map keeps its approved shape. That is a
   different statement from absent.
 - `at` is the head the shape was approved at, as that map's `meta.head` wrote
-  it: a commit's full sha, or `working-tree`. It is never empty. The tree's
-  header writes the first seven characters of a sha.
+  it: a commit's full sha, or `working-tree`. It is never empty. A panel
+  writes the first seven characters of a sha, `since approved 3c0ee0a`, and
+  for `working-tree` the words `since approved working tree`.
 - `kind` is one of the eight.
 - `target` is the module's path, a cell's `path` and not its `id`. An id
   carries the cell's kind, so a directory that gains an interface file
   changes id and is still the same module. For `dependency-added` the target
   is the outside package's name. It is never empty.
-- Every kind but `module-removed` and `dependency-added` must name a path
-  some cell of the terrain has, so a reader finds the module with
-  `map.terrain.cells.find((cell) => cell.path === target)` and selects it by
-  that cell's id. `module-removed` must name a path no cell has.
+- `cell` says which module at that path is meant (D218 (departure-cell)). A
+  path does not name one module: a workspace member is a `package` cell, and
+  the loose files at its root are a `directory` cell with the same path, as
+  `package:.` and `directory:.` are in a repo of one package. 15 of the
+  fixture maps hold such a pair. By how core places a file, no other two
+  kinds share a path.
+  - For every kind but `module-removed` and `dependency-added`, `cell` is the
+    id of a cell of this map, and that cell's `path` is `target`. A reader
+    selects it with `selectedOf(map, departure.cell)` and never looks the
+    module up by its path.
+  - For `module-removed`, `cell` is the id the module had in the approved
+    shape, its kind and its path joined by a colon as `directory:src/gone`,
+    and no cell of this map has that id. Another cell may still stand at the
+    path: the directory half of a pair can go while the package stays. A
+    reader has nothing to select and writes the row muted.
+  - For `dependency-added` there is no `cell`: the departure is about no
+    module.
 - `why` is the reason in words, never empty.
 - `was` and `now` are the count the kind is about, as approved and as the map
   has it: files, lines, the interface's size, imports past the interface, or
   fan out. Each is a non-negative number where set, and is left out where
   that side was not measured, never written as a zero.
 - `names` are strings, sorted: an interface's new exports, for one.
-- The list is sorted by `target` and then by `kind`, each as `<` orders two
-  strings, with one of a kind for a target. So `kleur` sorts before
-  `src/foo`, and under one target `fan-out-up` before `files-grown`.
+- The list is sorted by `target`, then by `kind`, then by `cell`, each as `<`
+  orders two strings and an absent `cell` as the empty string, with one of a
+  kind for a cell. So `kleur` sorts before `src/foo`, under one target
+  `fan-out-up` before `files-grown`, and under one target and kind
+  `directory:.` before `package:.`.
 
 `Approved` and `assertApproved` are deliberately not exported from
 `schema.ts`. They are free for the approved document.
@@ -368,7 +396,7 @@ this session.
   schema_version: 1,
   kind: 'atis.approved',
   approved_at: string,          // the approved map's meta.head
-  modules: [                    // sorted by path
+  modules: [                    // sorted by path, then by kind
     {
       path: string,
       kind: CellKind,
@@ -391,7 +419,14 @@ The four functions the other tracks call:
 
 - `approvedOf(map)` reduces a map to the document. It holds no clock.
 - `assertApproved(value)` guards a document read from disk.
-- `departuresOf(doc, map, limits)` compares, matching modules by path. A field
+- `departuresOf(doc, map, limits)` compares, matching a module of the document
+  to a cell of the map by its path and by whether its kind is `package`, never
+  by its id and never by the path alone. The two together name one module on
+  each side: a path is shared only by a `package` and a `directory`
+  (D218 (departure-cell)), so a `directory` that became a `folder` is still
+  matched, and a package is never compared with the loose files at its root.
+  Each departure carries the `cell` the block's guard requires: the map's
+  cell's id, or for `module-removed` the document's `kind:path`. A field
   missing on either side yields no departure, never a zero.
 - `withApproved(map, doc)` returns the map with
   `approved: { at: doc.approved_at, departures }`, in the order the map's guard
@@ -435,6 +470,16 @@ export const Tree = (_props: TreeProps): ReactElement | null => null;
   `{nav !== undefined && <Tree map={map} registry={registry} nav={nav} />}`.
 - The chrome takes the link as a new optional prop, `pr`, and
   `apps/web/src/main.ts` passes it.
+- The chrome takes a second new optional prop, `live?: boolean | undefined`,
+  and hands it to the status line:
+  `<Status state={state} registry={registry} shapes={shapes} live={live} />`.
+  `apps/web/src/main.ts` sets it from the socket to the CLI: `true` once it
+  opens, `false` once it closes and on a page with no socket. `Status` in
+  `apps/web/src/chrome/status.tsx` declares the prop and writes nothing for
+  it yet; the inspector track writes the word `live` there and adds nothing
+  to `frame.tsx` or `main.ts`. The line's other new words,
+  `structure only: no checks ran`, are read from
+  `state.map.meta.instruments`, which it already has.
 - Both are exported through `apps/web/src/chrome/index.ts`.
 
 ### The file's text from the server
@@ -514,6 +559,36 @@ Applied from the owner's amendments:
   hands.
 - No track creates `checkride.baseline.json`, pushes, or commits to `main`.
 
+Settled when the ground was reviewed:
+
+- The granules track checks with `pnpm check --only types,lint,struct` and
+  its two scene tests, without the dead-code slot. Its
+  `apps/web/src/world/nuclei.ts` has no importer until the world track wires
+  it into `draw.ts` (W7), and a file nothing imports turns that slot red.
+  That red is expected on the granules' branch and is no reason to edit
+  `draw.ts`, to add a test that only imports the file, or to add a baseline.
+  The close-out merges the granules and the world track's wiring together
+  before it runs the dead-code slot.
+- The tree track gives a directory's row one target where a `package` and a
+  `directory` share its path: the package's cell, the outer body. The loose
+  files at the root are rows of their own beneath it, and the row's count of
+  departures is both cells' together.
+- The world track opens a slide by a selection (W1) only while
+  `LEVELS.openOnSelect` is above `0` and `LEVELS.autoOpen` is `0`, so the one
+  old switch brings the old levels back whole.
+- The world track, deleting the planet (W6), keeps the first gate parked
+  under `LEVELS.autoOpen`: it hands the scheduler `LEVELS.gates`' first gate
+  with the scene's other three, or the far zoom is an unlit map with nothing
+  over it. It drops the planet case from the browser tests with it.
+- The world track settles the opening frame, which it owns in
+  `apps/web/src/world/camera.ts`. The fit frames the whole layout, the
+  shore's strip at its top included, which the world never draws: on
+  `fixtures/corpus-6` that strip is 524 of 1,214 layout units, so the map
+  opens small in the lower part of the screen under empty sky. The planet
+  covered that frame before. Either open on the terrain's box when the page
+  names no centre and no zoom, leaving `fitFrame` and what zoom 1 means
+  alone, or record the owner's choice to keep it.
+
 The merge order is by what the owner sees: the core track; the world track
 once a click selects and the breadcrumb follows it; the inspector; the tree;
 the granules and the rest of the world track; the CLI track.
@@ -523,44 +598,35 @@ the granules and the rest of the world track; the CLI track.
 The slide a module opened as by zoom, the file's plate and the diff's sheet
 are parked, not deleted (D204 (parked-levels)). Their code and tests are all
 still there, and nothing on the normal path reaches them. They are parked by
-the values three tokens rest at, so the dev panel brings them back in a
-running tab with no build.
+the values their tokens rest at, and one token brings them all back in a
+running tab with no build, as the owner decided.
 
 | To get back | Set |
 | --- | --- |
-| a slide opening by zoom, when a module fills `LEVELS.cellOpen` of the free screen, and a click opening one by the old rule | `LEVELS.autoOpen` to `1` |
-| the file's plate at zoom 24 and the diff's sheet at zoom 80 | `LEVELS.gates` to the old values below |
-| the planet at the far zoom, until the world track deletes it | `LEVELS.gates` to the old values below |
-| all of the old levels as they were | both of the above, and `LEVELS.openOnSelect` to `0` |
-| a click that only rings and names, with no slide | `LEVELS.openOnSelect` to `0` |
+| all of the old levels as they were: the planet at the far zoom until the world track deletes it, a slide opening when a module fills `LEVELS.cellOpen` of the free screen, a click opening one by the old rule, the file's plate at zoom 24 and the diff's sheet at zoom 80, and no slide opened by a selection | `LEVELS.autoOpen` to `1` |
+| a click that only rings and names, with no slide, on the one surface | `LEVELS.openOnSelect` to `0` |
 
-The old gate values, as the dev panel takes them:
+While `LEVELS.autoOpen` is above `0` the world reads the scene's own
+`LOD_GATES`, which this session did not touch, in place of `LEVELS.gates`:
 
 ```json
 [{"enter":1.7,"exit":1.45},{"enter":6,"exit":5},{"enter":24,"exit":20},{"enter":80,"exit":66}]
 ```
 
-They are the scene's own `LOD_GATES`, which this session did not touch.
-
 How to do it: run `pnpm --filter web dev`, open the tab on a map, press
-`tokens` at the bottom right, and edit the three rows. An override lasts for
+`tokens` at the bottom right, and set the one row. An override lasts for
 the tab's session. Reset the tokens, or open a fresh tab, before judging the
 one surface again: a stale override brings the old behaviour back and looks
 like a bug.
 
-What each switch does alone:
-
-- `LEVELS.autoOpen` gates only the slide: its opening by zoom, and the old
-  click that opened a module which would hold open. The plate and the sheet
-  are parked by the two deep gates alone.
-- `LEVELS.gates` set back with `LEVELS.autoOpen` still `0` brings back the
-  planet, the plate and the sheet, and no slide by zoom.
-- `LEVELS.autoOpen` at `1` with the gates parked opens a slide by screen share
-  at any zoom, with no planet.
+`LEVELS.gates` is still a live token, and moves the one surface's own gates
+while `LEVELS.autoOpen` is `0`. Set to the values above with the switch off,
+it brings back the planet, the plate and the sheet and no slide by zoom; that
+is a way to look at one old level alone, not the way back.
 
 In a browser test, `legacy(page)` from `apps/web/src/__tests__/browser.ts`
-writes all three into the tab's store before the page loads. Every test of a
-parked path calls it.
+writes the one token into the tab's store before the page loads. Every test
+of a parked path calls it.
 
 Parking shows. The dev panel still lists slide and plate tokens that move
 nothing at rest, and `data-lod` still steps at zoom 6, where the label budget
@@ -582,7 +648,9 @@ comments cite them as written here, number and slug together.
   diff's sheet are parked by the values their tokens rest at, not deleted.
   `LEVELS.gates` rests out of the camera's reach and `LEVELS.autoOpen` at `0`.
   The owner is not yet sure those levels should go and wants to compare them
-  with the one surface on a real repo first.
+  with the one surface on a real repo first. `LEVELS.autoOpen` is the one
+  switch: above `0` the world reads the scene's own gates and opens a slide by
+  zoom, and opens none by a selection.
 - **D205 (open-on-select).** Selecting a module opens it in place as the
   living slide, by `LEVELS.openOnSelect`, resting at `1`. The owner likes the
   oscillating cells and wants them a click away. The selection opens and
@@ -604,8 +672,8 @@ comments cite them as written here, number and slug together.
 - **D210 (approved-block).** The map carries its departures from the approved
   shape in an optional root block, `approved`, absent where nothing was
   approved. A departure's target is the module's path, not its cell id. The
-  guard holds the eight kinds, the targets against the terrain, and the
-  list's order.
+  guard holds the eight kinds, the targets and cells against the terrain, and
+  the list's order.
 - **D211 (file-text).** The local server may return the read-only text of any
   file the map lists: on loopback, with the run's token, read from git's
   objects by sha, as JSON only. The page holds each answer in one of seven
@@ -632,8 +700,21 @@ comments cite them as written here, number and slug together.
 - **D217 (skin-stays).** The raised skin is kept exactly as it is. The glow
   does not depend on it, and flattening it would cost a star mask and edits in
   five vertex stages to gain nothing seen from overhead.
+- **D218 (departure-cell).** A departure names the cell it is about beside
+  its target's path. A path does not name one module: a workspace member is a
+  `package` cell and the loose files at its root a `directory` cell with the
+  same path, in 15 of the fixture maps. Keyed by path alone, two true
+  departures of one kind for such a pair were rejected by the map's guard, and
+  the tab would have shown no map after `atis approve` on a real repo. The
+  approved document is matched by path and by whether the kind is `package`.
+- **D219 (field-by-zoom).** A view that came to rest under `WALK.fieldZoom`
+  stands at the field, whatever lies under its centre. The far field's level
+  said so until it was parked; with the first gate at `0` the breadcrumb named
+  the module under the middle of the screen with the whole map in view, and
+  Enter walked in from there. The token rests at the zoom that level gave way
+  at, `1.7`.
 
-The next free number is D218.
+The next free number is D220.
 
 ## What this supersedes
 
