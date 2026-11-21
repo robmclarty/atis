@@ -63,7 +63,7 @@ import type { MapJson } from 'core';
 
 import { diffLevelOf } from '../diff.js';
 import { RAIL_WIDTH } from '../fit.js';
-import { counted, inspect, runsIn } from '../inspector.js';
+import { LOOSE_FILES, counted, inspect, runsIn } from '../inspector.js';
 import type { Crumb, Departures, Fact, FileChange, FileModel, FunctionRow, Measured, ModuleModel, NoticeMark } from '../inspector.js';
 import { PANEL } from '../materials.js';
 import { selectedOf, targetOf } from '../nav.js';
@@ -312,10 +312,14 @@ const Notices = ({ ui, notices }: { readonly ui: Ui; readonly notices: readonly 
 
 /**
  * The departures from the approved shape (D210 (approved-block)), the
- * map's or one module's: the muted line where no shape was approved, that
+ * map's or one module's with the modules it holds (D270
+ * (departures-by-contour)): the muted line where no shape was approved, that
  * the shape is kept where it is, else a row to a departure, which selects
  * its module. A module that is gone has no place to select and is written
- * muted.
+ * muted. The loose files at a package's root stand at the package's own
+ * path, so their row says which of the two it is about (D255 (loose-files)),
+ * and a row is known by its cell, which tells the two apart (D218
+ * (departure-cell)).
  */
 const DepartureList = ({ ui, departures, kept }: { readonly ui: Ui; readonly departures: Departures; readonly kept: string }): ReactElement => (
   <Section ui={ui} id="departures" title="departures" adds={departures.approved ? departures.words : undefined}>
@@ -329,10 +333,10 @@ const DepartureList = ({ ui, departures, kept }: { readonly ui: Ui; readonly dep
       </Says>
     ) : (
       departures.rows.map((row) => (
-        <Row key={`${row.kind}\n${row.target}\n${row.selects === undefined ? '' : targetOf(row.selects)}`} ui={ui} selects={row.selects} muted={row.gone}>
+        <Row key={`${row.kind}\n${row.target}\n${row.cell ?? ''}`} ui={ui} selects={row.selects} muted={row.gone}>
           <Words>
-            <span data-inspector-departure={row.kind} style={{ display: 'block' }}>
-              {row.words} {MIDDLE} {row.target}
+            <span data-inspector-departure={row.kind} {...(row.loose ? { 'data-inspector-loose': '' } : {})} style={{ display: 'block' }}>
+              {[row.words, row.target, ...(row.loose ? [LOOSE_FILES] : [])].join(` ${MIDDLE} `)}
             </span>
             <Under ui={ui}>{[row.why, ...(row.names.length === 0 ? [] : [row.names.join(', ')])].join(` ${MIDDLE} `)}</Under>
           </Words>

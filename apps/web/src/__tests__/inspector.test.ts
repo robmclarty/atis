@@ -395,24 +395,82 @@ test("the map's departures come in the map's order, each selecting the cell it n
     approved: true,
     words: 'since approved a1b2c3d',
     rows: [
-      { kind: 'dependency-added', words: 'outside package added', target: 'kleur', gone: false, why: 'kleur is imported and the approved shape did not hold it', names: [] },
-      { kind: 'past-interface-up', words: 'more imports past the interface', target: 'libs/core', selects: { kind: 'cell', cell: CORE }, gone: false, why: 'more imports go past its interface', count: 'now 1', names: [] },
-      { kind: 'files-grown', words: 'more files', target: 'libs/core/src/pm', selects: { kind: 'cell', cell: PM }, gone: false, why: 'it holds more files than approved', count: '3 → 4', names: [] },
-      { kind: 'interface-widened', words: 'interface widened', target: 'libs/core/src/pm', selects: { kind: 'cell', cell: PM }, gone: false, why: 'its interface exports more', count: '2 → 3', names: ['resolveTool'] },
-      { kind: 'module-removed', words: 'module removed', target: 'src/gone', gone: true, why: 'the approved shape held it and the map does not', names: [] },
+      { kind: 'dependency-added', words: 'outside package added', target: 'kleur', loose: false, gone: false, why: 'kleur is imported and the approved shape did not hold it', names: [] },
+      { kind: 'past-interface-up', words: 'more imports past the interface', target: 'libs/core', cell: CORE, loose: false, selects: { kind: 'cell', cell: CORE }, gone: false, why: 'more imports go past its interface', count: 'now 1', names: [] },
+      { kind: 'files-grown', words: 'more files', target: 'libs/core/src/pm', cell: PM, loose: false, selects: { kind: 'cell', cell: PM }, gone: false, why: 'it holds more files than approved', count: '3 → 4', names: [] },
+      { kind: 'interface-widened', words: 'interface widened', target: 'libs/core/src/pm', cell: PM, loose: false, selects: { kind: 'cell', cell: PM }, gone: false, why: 'its interface exports more', count: '2 → 3', names: ['resolveTool'] },
+      { kind: 'module-removed', words: 'module removed', target: 'src/gone', cell: 'directory:src/gone', loose: false, gone: true, why: 'the approved shape held it and the map does not', names: [] },
     ],
   });
 });
 
-test('a module shows the departures about its own cell, and a shape that is kept is approved with none', () => {
+/** The kinds and cells of a module's departures, in the order they are told. */
+const toldOf = (map: MapJson, target: string): readonly (readonly [string, string | undefined])[] => {
+  const { departures } = moduleAt(map, target);
+  if (!departures.approved) throw new Error(`${target} has no approved shape to depart from`);
+  return departures.rows.map((row) => [row.kind, row.cell] as const);
+};
+
+test('a module shows the departures of its whole contour, its own and those of the modules it holds, and a shape that is kept is approved with none (D270 (departures-by-contour))', () => {
   const map = assertMap({ ...DEMO, approved: APPROVED });
-  const pm = moduleAt(map, PM).departures;
-  expect(pm.approved && pm.rows.map((row) => row.kind)).toEqual(['files-grown', 'interface-widened']);
+  expect(toldOf(map, PM)).toEqual([
+    ['files-grown', PM],
+    ['interface-widened', PM],
+  ]);
+  // The package holds the module that grew, so it does not read as keeping its shape: its own departure, then the module's, each still selecting its own cell.
+  expect(toldOf(map, CORE)).toEqual([
+    ['past-interface-up', CORE],
+    ['files-grown', PM],
+    ['interface-widened', PM],
+  ]);
+  const core = moduleAt(map, CORE).departures;
+  expect(core.approved && core.rows.map((row) => row.selects)).toEqual([{ kind: 'cell', cell: CORE }, { kind: 'cell', cell: PM }, { kind: 'cell', cell: PM }]);
+  // A departure is told with the module it names and the package that holds it, and with no other.
+  expect(toldOf(map, 'directory:libs/core/src/util')).toEqual([]);
   expect(moduleAt(map, 'package:apps/cli').departures).toEqual({ approved: true, words: 'since approved a1b2c3d', rows: [] });
+  expect(departuresIn(map, PM)).toEqual(moduleAt(map, PM).departures);
+  expect(departuresIn(map, CORE)).toEqual(core);
 
   const kept = assertMap({ ...DEMO, approved: { at: 'working-tree', departures: [{ kind: 'lines-grown', target: 'libs/core', cell: CORE, why: 'it holds more lines than approved', was: 300 }] } });
   expect(departuresIn(kept)).toMatchObject({ words: 'since approved working tree', rows: [{ words: 'more lines', count: 'was 300' }] });
   expect(departuresIn(assertMap({ ...DEMO, approved: { at: 'working-tree', departures: [] } }))).toEqual({ approved: true, words: 'since approved working tree', rows: [] });
+});
+
+test('a module that is gone is told with the package it stood in, and the loose files at a package root are told apart from the package (D255 (loose-files))', () => {
+  const why = 'the approved shape held it and the map does not';
+  const map = assertMap({
+    ...DEMO,
+    approved: {
+      at: DEMO.meta.head,
+      departures: [
+        { kind: 'module-removed', target: 'apps', cell: 'directory:apps', why },
+        { kind: 'module-removed', target: 'apps/cli/src/old', cell: 'single:apps/cli/src/old', why },
+        // The loose files at the package's root went and the package stayed: one path, two modules (D218 (departure-cell)).
+        { kind: 'module-removed', target: 'libs/core', cell: 'directory:libs/core', why },
+        { kind: 'past-interface-up', target: 'libs/core', cell: CORE, why: 'more imports go past its interface', now: 1 },
+        { kind: 'module-removed', target: 'libs/core/src/old', cell: 'folder:libs/core/src/old', why },
+        // A package that is gone, and the loose files that went with it.
+        { kind: 'module-removed', target: 'libs/gone', cell: 'directory:libs/gone', why },
+        { kind: 'module-removed', target: 'libs/gone', cell: 'package:libs/gone', why },
+      ],
+    },
+  });
+  expect(toldOf(map, CORE)).toEqual([
+    ['module-removed', 'directory:libs/core'],
+    ['past-interface-up', CORE],
+    ['module-removed', 'folder:libs/core/src/old'],
+  ]);
+  expect(toldOf(map, 'package:apps/cli')).toEqual([['module-removed', 'single:apps/cli/src/old']]);
+  // A module the package held is not one of the module beside it, and a path no package holds is told with the map alone.
+  expect(toldOf(map, PM)).toEqual([]);
+  const all = departuresIn(map);
+  if (!all.approved) throw new Error('the map carries the block');
+  expect(all.rows).toHaveLength(7);
+  expect(all.rows.every((row) => row.gone === (row.selects === undefined))).toBe(true);
+  // Only a directory at a path a package stands at, or stood at, is its loose files.
+  expect(all.rows.filter((row) => row.loose).map((row) => row.cell)).toEqual(['directory:libs/core', 'directory:libs/gone']);
+  // Two rows of one kind at one path are still two rows, apart by their cells.
+  expect(new Set(all.rows.map((row) => `${row.kind} ${row.target} ${row.cell ?? ''}`)).size).toBe(7);
 });
 
 test('a count is written with its noun, one or many', () => {

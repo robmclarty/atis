@@ -342,7 +342,7 @@ test('the departures stand after the lists: every one the map carries, each sele
   expect(readingOf(assertMap({ ...STRIPPED, approved })).departures).toEqual({
     approved: true,
     words: 'since approved a1b2c3d',
-    rows: [{ kind: 'files-grown', words: 'more files', target: 'libs/core/src/pm', selects: cell(PM), gone: false, why: 'it holds more files than approved', count: '3 → 4', names: [] }],
+    rows: [{ kind: 'files-grown', words: 'more files', target: 'libs/core/src/pm', cell: PM, loose: false, selects: cell(PM), gone: false, why: 'it holds more files than approved', count: '3 → 4', names: [] }],
   });
 });
 

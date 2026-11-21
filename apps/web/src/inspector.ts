@@ -15,7 +15,8 @@
  *
  * A module is counted by its whole contour (D250 (contour-counts)): its own
  * files and those of every module it holds, as the map counts its lines, its
- * fans and what goes through and past its interface.
+ * fans and what goes through and past its interface. Its departures are its
+ * contour's too (D270 (departures-by-contour)).
  *
  * The words are the panels' plain nouns (D216 (plain-nouns)): package,
  * module, file and function, beside the map's own. Pure: no React, no DOM,
@@ -80,15 +81,22 @@ export type Exports = { readonly count: number; readonly names: Measured<readonl
 /**
  * One departure from the approved shape (D210 (approved-block)): what
  * happened, in words, to the module or the outside package `target` names,
- * and why it is told. `selects` is the module a click on its row selects,
- * none for a module that is gone, which the panel writes muted, and none for
- * an outside package. `count` is what the kind counts, as approved and as it
- * stands, a side that was not measured left out.
+ * and why it is told. `cell` is the module the map says it is about, none
+ * for an outside package, and what tells two rows of one kind at one path
+ * apart: a package and the loose files at its root share a path (D218
+ * (departure-cell)), and `loose` says the row is about the loose files,
+ * which a panel writes beside the path (D255 (loose-files)). `selects` is
+ * the module a click on its row selects, none for a module that is gone,
+ * which the panel writes muted, and none for an outside package. `count` is
+ * what the kind counts, as approved and as it stands, a side that was not
+ * measured left out.
  */
 export type DepartureRow = {
   readonly kind: DepartureKind;
   readonly words: string;
   readonly target: string;
+  readonly cell?: string;
+  readonly loose: boolean;
   readonly selects?: Selected;
   readonly gone: boolean;
   readonly why: string;
@@ -187,7 +195,7 @@ const MODULE_WORDS: Readonly<Record<Cell['kind'], string>> = {
 const below = (path: string, holder: string | undefined): string => (holder !== undefined && path.startsWith(`${holder}/`) ? path.slice(holder.length + 1) : path);
 
 /** What the directory at a package's own path is written as, since its path names the package (D255 (loose-files)). */
-const LOOSE_FILES = 'loose files';
+export const LOOSE_FILES = 'loose files';
 
 /**
  * A module's name under the module that holds it: its path below its
@@ -281,14 +289,23 @@ const countOf = ({ was, now }: Departure): string | undefined => {
   return was === undefined ? undefined : `was ${String(was)}`;
 };
 
+/** The id core writes for a package's cell at a path. */
+const packageAt = (path: string): string => `package:${path}`;
+
+/** The paths a package stands at or stood at: each package of the map, and each the departures say came or went. */
+const packagePaths = (map: MapJson, departures: readonly Departure[]): ReadonlySet<string> =>
+  new Set([...map.terrain.cells.filter((cell) => cell.kind === 'package').map((cell) => cell.path), ...departures.filter((departure) => departure.cell === packageAt(departure.target)).map((departure) => departure.target)]);
+
 /** A departure as its row. Its module is looked up by the cell it names, never by its path, which a package and the loose files at its root share (D218 (departure-cell)). */
-const departureRow = (map: MapJson, departure: Departure): DepartureRow => {
+const departureRow = (map: MapJson, departure: Departure, packages: ReadonlySet<string>): DepartureRow => {
   const selects = departure.cell === undefined ? undefined : selectedOf(map, departure.cell);
   const count = countOf(departure);
   return {
     kind: departure.kind,
     words: DEPARTURE_WORDS[departure.kind],
     target: departure.target,
+    ...(departure.cell === undefined ? {} : { cell: departure.cell }),
+    loose: departure.cell === `directory:${departure.target}` && packages.has(departure.target),
     ...(selects === undefined ? {} : { selects }),
     gone: departure.kind === 'module-removed',
     why: departure.why,
@@ -297,17 +314,51 @@ const departureRow = (map: MapJson, departure: Departure): DepartureRow => {
   };
 };
 
+/** How far in a package stands, by its path's length. The root's package is written `.` and holds every path, the outermost of them. */
+const depthOf = (cell: Cell): number => (cell.path === '.' ? 0 : cell.path.length);
+
 /**
- * The map's departures from the approved shape, in the map's order, or with
- * a cell's id those about that module alone (D210 (approved-block)). A map
- * with no approved block says no shape was approved, which is not a shape
- * kept: that one carries the block with no departures.
+ * The package of this map a module that is gone stood in: the innermost one
+ * whose path holds the module's, as core places a file in its workspace
+ * member. A module that is gone is no cell of the map, so its path is all
+ * there is to place it by; a package that is gone stood in none.
  */
-export const departuresIn = (map: MapJson, cell?: string): Departures => {
+const heldIn = (map: MapJson, departure: Departure): string | undefined => {
+  if (departure.kind !== 'module-removed' || departure.cell === undefined || departure.cell === packageAt(departure.target)) return undefined;
+  return map.terrain.cells
+    .filter((cell) => cell.kind === 'package' && (cell.path === '.' || departure.target === cell.path || departure.target.startsWith(`${cell.path}/`)))
+    .toSorted((a, b) => depthOf(b) - depthOf(a))[0]?.id;
+};
+
+/**
+ * The map's departures in the map's order: every one, or with a set of cell
+ * ids those of the modules it names (D270 (departures-by-contour)). A module
+ * that is gone is told with the package it stood in.
+ */
+const departuresAmong = (map: MapJson, within: ReadonlySet<string> | undefined): Departures => {
   const { approved } = map;
   if (approved === undefined) return { approved: false, words: NO_APPROVED_SHAPE };
-  const told = cell === undefined ? approved.departures : approved.departures.filter((departure) => departure.cell === cell);
-  return { approved: true, words: sinceOf(approved.at), rows: told.map((departure) => departureRow(map, departure)) };
+  const inside = (id: string | undefined): boolean => id !== undefined && within?.has(id) === true;
+  const told = within === undefined ? approved.departures : approved.departures.filter((departure) => inside(departure.cell) || inside(heldIn(map, departure)));
+  const packages = packagePaths(map, approved.departures);
+  return { approved: true, words: sinceOf(approved.at), rows: told.map((departure) => departureRow(map, departure, packages)) };
+};
+
+/**
+ * The map's departures from the approved shape, in the map's order, or with
+ * a cell's id those of that module (D210 (approved-block)). A module's are
+ * its whole contour's (D270 (departures-by-contour)): those about its own
+ * cell and about each module it holds, a module that is gone from it among
+ * them, as its files, its lines and its notices are counted (D250
+ * (contour-counts)). So a package whose module grew does not read as keeping
+ * its shape. A map with no approved block says no shape was approved, which
+ * is not a shape kept: that one carries the block with no departures.
+ */
+export const departuresIn = (map: MapJson, cell?: string): Departures => {
+  if (cell === undefined) return departuresAmong(map, undefined);
+  const index = indexOf(map);
+  const at = index.cells.get(cell);
+  return departuresAmong(map, new Set(at === undefined ? [cell] : contourOf(index, at).map((each) => each.id)));
 };
 
 /** Why a cell carries no count of what goes through and past its interface (D192). */
@@ -388,7 +439,7 @@ const moduleOf = (index: Index, cell: Cell): ModuleModel => {
     holds,
     exports: exportsOf(map, cell),
     notices: noticesOf(map, (target) => inside.has(target)),
-    departures: departuresIn(map, cell.id),
+    departures: departuresAmong(map, new Set(contour.map((each) => each.id))),
   };
 };
 

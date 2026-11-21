@@ -316,6 +316,37 @@ test('the departures from the approved shape are rows that select their module; 
   expect([...own.querySelectorAll('[data-inspector-departure]')].map((row) => row.getAttribute('data-inspector-departure'))).toEqual(['files-grown', 'interface-widened']);
   await select(nav, 'package:apps/cli', DEPARTED);
   expect(element('[data-inspector-section="departures"] [data-inspector-none]').textContent).toBe('none: the package keeps its approved shape');
+  // The package that holds the module that grew shows its departures too, and does not say it keeps its shape (D270 (departures-by-contour)).
+  await select(nav, CORE, DEPARTED);
+  const held = element('[data-inspector-section="departures"]');
+  expect([...held.querySelectorAll('[data-inspector-departure]')].map((row) => row.getAttribute('data-inspector-departure'))).toEqual(['files-grown', 'interface-widened']);
+  expect(held.querySelector('[data-inspector-none]')).toBeNull();
+  await click(`[data-inspector-section="departures"] [data-inspector-row="${PM}"]`);
+  expect(nav.selected()).toEqual({ kind: 'cell', cell: PM });
+});
+
+test('a package that is gone and the loose files that went with it are two rows at one path, told apart (D218 (departure-cell), D255 (loose-files))', async () => {
+  const why = 'the approved shape held it and the map does not';
+  const pair = assertMap({
+    ...DEMO,
+    approved: {
+      at: DEMO.meta.head,
+      departures: [
+        { kind: 'module-removed', target: 'libs/gone', cell: 'directory:libs/gone', why },
+        { kind: 'module-removed', target: 'libs/gone', cell: 'package:libs/gone', why },
+      ],
+    },
+  });
+  // React says so on the console where two rows share a key.
+  const said = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+  await draw(pair);
+  await click('[data-inspector="closed"]');
+  const rows = all('[data-inspector-section="departures"] [data-inspector-row]');
+  expect(rows.map((row) => row.querySelector('[data-inspector-departure]')?.textContent)).toEqual(['module removed · libs/gone · loose files', 'module removed · libs/gone']);
+  expect(rows.map((row) => row.querySelector('[data-inspector-departure]')?.hasAttribute('data-inspector-loose'))).toEqual([true, false]);
+  expect(rows.every((row) => row.tagName === 'DIV' && row.hasAttribute('data-inspector-muted'))).toBe(true);
+  expect(said).not.toHaveBeenCalled();
+  said.mockRestore();
 });
 
 test('a map that keeps its approved shape says so, which is not the muted line of a map with none', async () => {
