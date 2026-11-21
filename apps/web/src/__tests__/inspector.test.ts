@@ -615,3 +615,29 @@ test("a departure's count of files, and of lines, is the number the module's fac
     ],
   });
 });
+
+test("a module the change emptied is told removed while its cell still stands: the row is muted and still selects the cell, on the map, on the module itself and on its package (D334 (removed-off-head))", () => {
+  const UTIL = 'directory:libs/core/src/util';
+  const util = DEMO.terrain.cells.find((cell) => cell.id === UTIL);
+  const legacy = DEMO.weather.changed.find((file) => file.path === LEGACY);
+  if (util === undefined || legacy === undefined) throw new Error('the demo lost its util directory or its deleted file');
+  // The shape as it stood before any change, then a change that deletes both of the directory's files.
+  const before = approvedOf({ ...DEMO, weather: { ...DEMO.weather, changed: [] } });
+  const changed = [...DEMO.weather.changed.filter((file) => !util.organelles.includes(file.path)), ...util.organelles.map((path) => ({ ...legacy, path, cell: UTIL }))];
+  const emptied = withApproved({ ...DEMO, weather: { ...DEMO.weather, changed } }, before);
+  const removed = { kind: 'module-removed', words: 'module removed', target: 'libs/core/src/util', cell: UTIL, loose: false, selects: { kind: 'cell', cell: UTIL }, gone: true, count: 'was 2' };
+  const told = (cell?: string): readonly unknown[] => {
+    const departures = departuresIn(emptied, cell);
+    return departures.approved ? departures.rows.filter((row) => row.kind === 'module-removed') : [];
+  };
+  expect(told()).toMatchObject([removed]);
+  expect(told(UTIL)).toMatchObject([removed]);
+  expect(told(CORE)).toMatchObject([removed]);
+  expect(told(PM)).toEqual([]);
+  // The module's own facts say the same: nothing of it at the head.
+  const facts = factsOf(moduleAt(emptied, UTIL));
+  expect([facts['files'], facts['lines']]).toEqual([
+    { label: 'files', value: '0 · 2 deleted by the change' },
+    { label: 'lines', value: '0' },
+  ]);
+});
