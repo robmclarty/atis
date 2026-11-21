@@ -17,12 +17,16 @@ import { troubleOf } from '../trouble.js';
 
 /**
  * Every placed file's functions as granules at rest on the map (D206
- * (detail-by-size)), read on the demo, the one fixture that carries
- * per-function data: eight of its nine files name their functions, one of
- * those names none, and one carries no function data at all.
+ * (detail-by-size)), read first on the demo, small enough to count by hand:
+ * eight of its nine files name their functions, one of those names none, and
+ * one carries no function data at all. Five scanned fixtures carry
+ * per-function data too (go-1, javascript-1, python-1, shell-1 and
+ * terraform-1); go-1 is read here for a real repo's worth, and retake-3 for a
+ * scan that read none.
  */
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DEMO = assertMap(JSON.parse(readFileSync(join(HERE, '..', '..', '..', 'core', 'fixtures', 'demo', 'map.json'), 'utf8')));
+const scanned = (name: string): MapJson => assertMap(JSON.parse(readFileSync(join(HERE, '..', '..', '..', '..', 'fixtures', name, 'map.json'), 'utf8')));
 const DOCTOR = 'apps/cli/src/doctor.ts';
 const CLI_INDEX = 'apps/cli/src/index.ts';
 const CORE_INDEX = 'libs/core/src/index.ts';
@@ -166,4 +170,28 @@ test('a map whose packages stand as composites has no granules, and says why', (
   // The composites are the first reason given, whatever the files carry.
   const unread: MapJson = { ...DEMO, terrain: { ...DEMO.terrain, organelles: DEMO.terrain.organelles.map(({ functions: _functions, ...rest }) => rest) } };
   expect(nucleiOf(unread, composites).off).toBe('composites');
+});
+
+test("a scanned repo's functions are each a granule inside its file, the same list each time; a scan that read none says so (C2, C3)", () => {
+  const go = scanned('go-1');
+  const positions = go.terrain.layout?.positions ?? {};
+  const files = go.terrain.organelles.filter((organelle) => positions[organelle.id] !== undefined);
+  const functions = files.reduce((total, organelle) => total + (organelle.functions?.length ?? 0), 0);
+  // A repo's worth: over a thousand functions, and a file with more than a hundred of them, none past the most a nucleus draws.
+  expect(functions).toBeGreaterThan(1000);
+  const fullest = Math.max(...files.map((organelle) => organelle.functions?.length ?? 0));
+  expect(fullest).toBeGreaterThan(100);
+  expect(fullest).toBeLessThanOrEqual(NUCLEUS_MOST);
+  const nuclei = nucleiOf(go);
+  expect(nuclei.off).toBeUndefined();
+  expect(nuclei.granules).toHaveLength(functions);
+  const cores = new Map(files.map((organelle) => [organelle.id, outlineOf(organelle.id, positions[organelle.id] ?? { x: 0, y: 0, r: 0 }, troubleOf(organelle).score).core] as const));
+  for (const granule of nuclei.granules) {
+    const place = positions[granule.file];
+    expect(Number.isFinite(granule.x) && Number.isFinite(granule.y) && granule.r > 0, `${granule.file} ${granule.name}`).toBe(true);
+    expect(Math.hypot(granule.x - (place?.x ?? Number.NaN), granule.y - (place?.y ?? Number.NaN)) + granule.r, `${granule.file} ${granule.name}`).toBeLessThanOrEqual((cores.get(granule.file) ?? 0) * (1 - NUCLEUS_PAD) + 1e-9);
+  }
+  expect(nucleiOf(go)).toEqual(nuclei);
+  // A scan that read no functions carries none to lay, and the reason is the map's own, not a count of nothing.
+  expect(nucleiOf(scanned('retake-3'))).toEqual({ granules: [], off: 'no function data' });
 });
