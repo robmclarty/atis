@@ -69,9 +69,9 @@ atis --out map.json      # the map's data alone, then exit
 
 - `--svg` draws the still map: the field, the weather, the HUD and the notices of the
   world, in an SVG where nothing moves. `--open` opens it in your viewer.
-- `--png` captures the world at 1280 by 800 with its motion stilled, in your installed
-  Chrome, else a Chromium on the `PATH`, else the one
-  `npx playwright-core install chromium` installs.
+- `--png` captures the world as the tab opens, the whole map lit and fitted to the
+  picture, at 1280 by 800 with its motion stilled, in your installed Chrome, else a
+  Chromium on the `PATH`, else the one `npx playwright-core install chromium` installs.
 - `--out` writes `map.json`, the data every renderer reads. Beside `--svg` or `--png` it
   defaults to `map.json`.
 
@@ -84,6 +84,17 @@ atis --watch
 keeps serving and, whenever `HEAD`, the index or `.check/summary.json` changes, rebuilds
 the map and pushes its weather to the open tab over the terrain it already shows. Commit,
 or run your checks again, and the tab follows.
+
+```bash
+atis --working-tree --watch
+```
+
+follows the working tree's uncommitted edits too: an edit that stages nothing is read at
+the next look, twice a second, and the map is rebuilt, so the tab keeps up with you, or
+with a coding agent, as the files are written. The same holds once the strip under the HUD
+has switched the tab to the working tree. A file that is written all the time and not
+ignored, as a dev server's log is, keeps the watch rebuilding, and the terminal says so
+once; the cure is to ignore the file.
 
 ### Posting to a pull request
 
@@ -122,6 +133,41 @@ code, duplication, cycles, recent heat, and the findings a committed
 `checkride.baseline.json` grandfathers. The world toggles between them in the HUD; `--svg`
 draws one, trouble spots unless `--overlay` names another. An overlay whose source is
 missing says why.
+
+### The approved shape
+
+```bash
+atis approve
+atis approve --show
+```
+
+records the shape of the repository you accept: every module the head holds, with its
+files, its lines, its interface and its fan out, and the outside packages it imports. It
+measures the map the same flags would draw, the change over the trunk at `HEAD` with none,
+and keeps that map's shape as `atis/approved.json` in the repository's git directory, in
+place of the one before, so nothing lands in the working tree. `--show` prints the
+approved shape as it is kept and approves nothing.
+
+Every map built after carries its departures from the approved shape: a module added or
+removed, one grown in files, lines or fan out, an interface widened or entered past, an
+outside package added. The world lists them in the inspector and counts them on the
+folder tree's rows. It is a way to keep watch on the structure of a repository someone
+else is writing, a coding agent included: read the shape, approve it, and the next map
+says how it has moved.
+
+- Approve with the flags you map with: `atis approve` takes `--base`, `--last-commit`,
+  `--last-tag`, `--head`, `--working-tree` and `--whole-repo` as a map does. Lines, fan out
+  and an interface with no barrel are compared only by a map over the base the shape was
+  approved over; a map over another base says in the terminal that they were left out.
+- Growth is told past a limit: three more files, or three more of fan out, and a quarter
+  more; a hundred more lines and a quarter more; one more exported name, or one more
+  import past an interface, at once. So one file added to a module is no departure, and a
+  new directory is. Nothing is told for a module that shrank.
+- Over one base, a module's lines and its fan out are read from the base, so their growth
+  is told for the files a change adds and not for the ones it only edits.
+- Under `--watch`, approving rebuilds the map and pushes it to the open tab.
+- There is one approved shape for a repository, shared by all its worktrees, and approving
+  takes the place of the one before with no undo.
 
 ### The fingerprint
 
@@ -182,10 +228,12 @@ exits 0 once it has answered, and what counts as too far is yours to decide.
 
 ### Everything else
 
-- `--repo <path>` reads a repository other than the working directory.
+- `--repo <path>` reads a repository other than the working directory. Either may be any
+  directory inside the repository: atis reads it from its root.
 - atis keeps each base's terrain in `atis/` under the repository's git directory
   (`git rev-parse --git-common-dir`), never in the working tree, so a second run on the
   same base opens fast, from any worktree of the repository. `--no-cache` measures afresh.
+  The approved shape is kept beside it, one for the repository.
 - `--history <n>` reads the newest `n` commits of history, 5,000 by default.
 - `--verbose` prints each source's timing, and each cache's hit or miss, on stderr.
 - `atis.config.json` at the repository's root may name the `trunk`, and an `editor` URL
@@ -298,19 +346,39 @@ a thick grey ring, and boxes 4 to 6 are the numbered box alone. Each row gives i
 
 ### In the world
 
-The served tab opens far off, on the repository as a dark planet under the stars of the
-packages it depends on. The change's files are points of light on it, and the primary
-notice's file wears a halo in the category's colour that flares once and then breathes.
-Nothing else moves unless it means something, and the world honours your system's reduced
-motion setting.
+The served tab opens on the whole map, lit and fitted to the screen: the modules on their
+bands under a field of stars, the change's files stained and its reach glowing through
+them. The primary notice's file wears a halo in the category's colour that flares once and
+then breathes. Nothing else moves unless it means something, and the world honours your
+system's reduced motion setting.
 
 - The wheel or a pinch zooms toward the cursor, a drag pans, and the right button or three
-  fingers tilt and rotate. Modules, files and their marks come up as you come in.
-- Click a notice to fly to its target. The arrow keys walk to the neighbour that way, Enter
-  goes into what lies under the centre of the view, and Escape comes back out.
-- Close in on a module and it opens into its interior, its files floating as loosely as
-  they are tied to it. Closer still, a file opens onto its functions, its hunks and its
-  coverage strip, and a changed file onto its diff, with links that open it in your editor.
+  fingers tilt and rotate. Zooming only magnifies: nothing opens or changes mode as you
+  come in. A file's name is written once the file is large enough to carry it, and its
+  functions resolve inside it as small dark discs, where the map read them.
+- Click a file or a module to select it. It is ringed, its name stays written, its row
+  lights in the folder tree, and the inspector opens on it. The camera stays where it is.
+  Click open space, or press Escape, to let go.
+- A clicked module comes alive: it opens where it lies as a warm, pale slide, its files
+  taking their shapes, pulsing and drifting as loosely as they are tied to it. Click another
+  module and the slide moves there; let go and it closes.
+- The inspector, over the map at the right, says in words what the selection is. For a
+  module: its facts, its files, its exports and its wiring. For a file: its facts, its
+  functions, and its diff when it changed. With nothing selected, its `map` tab opens a
+  reading of the repository from its structure alone, which needs no checks: the largest
+  modules and files, the most depended-on, imports past an interface, unreachable files,
+  the longest functions, the packages it depends on, and the departures from the approved
+  shape.
+- When atis serves the tab from a repository, the inspector also shows any file's code,
+  read-only, with links that open it in your editor. The text is read from git's objects at
+  the map's head, never from the disk, and served on `127.0.0.1` behind the run's token.
+- The column at the right is one scroll of three parts, each under a header that folds it:
+  the notices, the folder tree and the shore. Point at a tree row and the map rings its
+  file or module; point at the map and the row lights; click a row to select it and fly
+  there.
+- Click a notice to fly to its target and select it. The arrow keys walk to the neighbour
+  that way, Enter goes in and selects where it lands, and Escape lets go of the selection,
+  then comes back out.
 - A HUD block opens its parts on a click, and Health Δ opens a radar of one file's health.
   The strip under the HUD switches the base without leaving the tab.
 - The minimap at the bottom left draws the whole repository small, with each notice's box
@@ -321,15 +389,19 @@ motion setting.
 - **It never blocks.** checkride gates; atis informs. Its exit code never depends on the
   weather.
 - **It never reaches the network**, sends telemetry, or asks for an account or a cloud
-  service. Its server listens on `127.0.0.1` alone. `--comment` is the one exception, and
-  only when you type it.
+  service. Its server listens on `127.0.0.1` alone, and the map, a check's raw output, a
+  changed file's diff and the text of a file the map lists are served only to the run's
+  token. `--comment` is the one exception, and only when you type it.
 - **It never measures people.** No author, email or owner appears in a map, an image or a
   comment.
 - **It never fakes a number.** A missing source mutes its block or its marks, and says so.
 - **It never runs your tests.** It reads what your checks already wrote.
 - **It needs no LLM.**
-- **It is no general codebase explorer or architecture diagram**, and has no
-  free-perspective 3D, no VR and no city metaphor.
+- **It never edits your code, and draws no diagram for you to arrange.** It reads a
+  repository to review a change, and the shape the code has taken, an AI-written
+  repository's as readily as your own: the map, the folder tree and the inspector show what
+  is there, and the code in them is read-only. It is no editor and no architecture
+  diagramming tool, and has no free-perspective 3D, no VR and no city metaphor.
 
 atis is TypeScript-first. Its git-only reading works on any repository; the evidence and
 the reach need checkride and fallow.
@@ -349,6 +421,8 @@ pnpm build && node apps/atis/dist/cli.js --version
 
 - [SPEC.md](./SPEC.md): the design, phase by phase.
 - [docs/design.md](./docs/design.md): the look, its tokens and their sources.
+- [docs/one-surface.md](./docs/one-surface.md): the world as one lit surface, its panels,
+  what is parked, and the decisions that made it.
 - [docs/glance-test.md](./docs/glance-test.md): how the map is judged, and every reading so far.
 - [docs/prior-art.md](./docs/prior-art.md) and [docs/inspiration.md](./docs/inspiration.md):
   what it borrows, and from whom.
