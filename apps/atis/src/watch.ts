@@ -21,18 +21,38 @@
  * platform and layout. A signature that moved is handed on once it has held
  * still a whole tick, so a commit's several writes, an agent's burst of
  * edits, or checkride writing a run, rebuild the map once (debounced), and
- * no rebuild starts while one runs.
+ * no rebuild starts while one runs. The working tree's term is the first
+ * that a file nobody is editing can move, as a log or a database written all
+ * the time does, so the wait has a ceiling and the rebuilds a floor
+ * (D328 (watch-bounds)): a signature that has moved at every tick for
+ * `WATCH_RESTLESS_TICKS` ticks is handed on as it stands, or the tab would
+ * stand still for as long as the file kept moving, commits and all; and
+ * after a rebuild the watch rests as long as that rebuild took, so a file
+ * that never settles cannot keep the server, which answers nothing while it
+ * measures, busy more than half the time.
  */
 
 import { execFile, execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { stat } from 'node:fs/promises';
+import { lstat, stat } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 
 import { approvedPath } from './cache.js';
 
 /** How often the watch reads the signature, in milliseconds; a signature that moved waits as long again to be handed on. */
 export const WATCH_EVERY_MS = 500;
+
+/**
+ * How many ticks running a signature may move at every reading before the
+ * watch hands it on without waiting for it to hold still
+ * (D328 (watch-bounds)): ten, five seconds at the tick the watch rests at.
+ * Long enough that an agent's burst of edits or a package install is over
+ * first; short enough that a tab is not left on a map minutes old.
+ */
+const WATCH_RESTLESS_TICKS = 10;
+
+/** The words the working tree's term is when git's status could not be read: fixed, so the other terms still move the signature. */
+const UNREAD = 'unread';
 
 /** The most `git status` may say in one reading, for a tree with a great many files uncommitted. */
 const STATUS_LIMIT = 64 * 1024 * 1024;
@@ -81,10 +101,16 @@ const headOf = (repo: string): Promise<string> =>
     execFile('git', ['rev-parse', '--verify', '--quiet', 'HEAD'], { cwd: repo, encoding: 'utf8' }, (error, stdout) => done(error === null ? stdout.trim() : ''));
   });
 
-/** A file's last write and size, or a dash when it is not there. */
-const stamp = async (file: string): Promise<string> => {
+/**
+ * A file's last write and size, or a dash when it is not there. `read` is
+ * `stat`, which follows a link to the file it names, for the few files the
+ * watch names itself; a path git's status lists is read with `lstat`, since
+ * the tree holds a link as the link's own text, and what it points at may
+ * lie outside the working tree, where its changes are no part of the map.
+ */
+const stamp = async (file: string, read: typeof stat = stat): Promise<string> => {
   try {
-    const { mtimeMs, size } = await stat(file);
+    const { mtimeMs, size } = await read(file);
     return `${String(mtimeMs)}:${String(size)}`;
   } catch {
     return '-';
@@ -128,22 +154,31 @@ const listedIn = (status: string): readonly string[] => {
  * and size of each file it lists. The listing alone moves when a file is
  * first edited, added or removed, and stands still at a second edit to a
  * file it already names; that file's stamp moves then. A reading git
- * refuses fails, and the tick it was read on is skipped.
+ * refuses, or one past `STATUS_LIMIT`, is the one fixed word `unread`: the
+ * signature's other terms still move it, so a commit is still followed,
+ * where a reading that failed whole would stop the watch without a word.
  */
 const workingOf = async (watched: Watched): Promise<string> => {
-  const status = await statusOf(watched.repo);
-  const stamps = await Promise.all(listedIn(status).map((path) => stamp(join(watched.root, path))));
+  let status: string;
+  try {
+    status = await statusOf(watched.repo);
+  } catch {
+    return UNREAD;
+  }
+  const stamps = await Promise.all(listedIn(status).map((path) => stamp(join(watched.root, path), lstat)));
   return createHash('sha256').update(status).update('\0').update(stamps.join(' ')).digest('hex');
 };
 
 /**
- * What a map's head side is made of, as one string: `HEAD`'s commit, the
- * index's stamp, the summary's and the approved document's, and, while the
- * head is the working tree, the term that moves with what it holds
- * uncommitted. A head that is a commit has no such term, so an edit that is
- * not committed rebuilds nothing under it.
+ * One reading of `watched`: its signature, and whether the working tree's
+ * term was asked for and could not be read. The signature is what a map's
+ * head side is made of, as one string: `HEAD`'s commit, the index's stamp,
+ * the summary's and the approved document's, and, while the head is the
+ * working tree, the term that moves with what it holds uncommitted. A head
+ * that is a commit has no such term, so an edit that is not committed
+ * rebuilds nothing under it.
  */
-export const signatureOf = async (watched: Watched): Promise<string> => {
+const readingOf = async (watched: Watched): Promise<{ readonly signature: string; readonly unread: boolean }> => {
   const [head, index, summary, approved, working] = await Promise.all([
     headOf(watched.repo),
     stamp(watched.index),
@@ -151,30 +186,61 @@ export const signatureOf = async (watched: Watched): Promise<string> => {
     stamp(watched.approved),
     watched.working() ? workingOf(watched) : undefined,
   ]);
-  return [head, index, summary, approved, ...(working === undefined ? [] : [working])].join(' ');
+  return { signature: [head, index, summary, approved, ...(working === undefined ? [] : [working])].join(' '), unread: working === UNREAD };
 };
+
+/** The signature of `watched` as it reads now: what the watch is started from, read before the map is measured. */
+export const signatureOf = async (watched: Watched): Promise<string> => (await readingOf(watched)).signature;
 
 /** A watch running: `close` stops it after the tick in hand. */
 export type Watching = { readonly close: () => void };
 
 /**
+ * How a move was handed on (D328 (watch-bounds)): `restless` when the
+ * signature never held still and the watch stopped waiting for it to, and
+ * `unread` when git could not list what the working tree holds uncommitted,
+ * so the signature it was handed on at follows no edit that stages nothing.
+ */
+export type Moved = { readonly restless: boolean; readonly unread: boolean };
+
+/** How long a signature read every `every` milliseconds may keep moving before it is handed on as it stands, in milliseconds. */
+export const restlessAfter = (every: number = WATCH_EVERY_MS): number => every * WATCH_RESTLESS_TICKS;
+
+/**
  * Read `watched`'s signature every `every` milliseconds and call `changed`
  * once it has moved from `from`, the signature the served map was built at,
- * and held still a whole tick; the next tick waits for `changed` to settle,
- * and a tick whose reading fails is skipped.
+ * and held still a whole tick, or has moved at every tick for
+ * `restlessAfter(every)`; the next tick waits for `changed` to settle, and
+ * no move is handed on until as long again has passed as `changed` took
+ * (D328 (watch-bounds)). No reading fails, each term standing for what it
+ * could not read, and a `changed` that throws is let go: the watch reads on.
  */
-export const watchRepo = (watched: Watched, from: string, changed: () => Promise<void>, every = WATCH_EVERY_MS): Watching => {
+export const watchRepo = (watched: Watched, from: string, changed: (moved: Moved) => Promise<void>, every = WATCH_EVERY_MS): Watching => {
+  const ceiling = restlessAfter(every);
   let built = from;
   let seen = from;
+  // When the signature began to move at every tick; nothing once it has held still for one.
+  let stirred: number | undefined;
+  // When the rest after the last rebuild is over.
+  let rested = 0;
   let open = true;
   let timer: ReturnType<typeof setTimeout> | undefined;
   const tick = async (): Promise<void> => {
-    const now = await signatureOf(watched);
-    if (now !== built && now === seen) {
-      built = now;
-      await changed();
-    }
+    const { signature: now, unread } = await readingOf(watched);
+    if (now === seen) stirred = undefined;
+    else stirred ??= performance.now();
     seen = now;
+    const restless = stirred !== undefined && performance.now() - stirred >= ceiling;
+    if (now === built || (stirred !== undefined && !restless) || performance.now() < rested) return;
+    built = now;
+    stirred = undefined;
+    const started = performance.now();
+    try {
+      await changed({ restless, unread });
+    } finally {
+      const ended = performance.now();
+      rested = ended + (ended - started);
+    }
   };
   const next = (): void => {
     if (!open) return;

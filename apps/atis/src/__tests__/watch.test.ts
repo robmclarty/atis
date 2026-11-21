@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -13,6 +13,7 @@ import type { HeadAsked } from '../run.js';
 import { serve } from '../serve.js';
 import type { Served, ServedFile } from '../serve.js';
 import { signatureOf, watchRepo, watchedIn } from '../watch.js';
+import type { Watched } from '../watch.js';
 
 /**
  * `--watch` (D106): a served run reads the head side's signature (`HEAD`'s
@@ -242,8 +243,10 @@ test('the signature moves with HEAD, the index and the summary, and the watch ha
 
   // Three writes in one burst are one change handed on; a later write is another.
   let changes = 0;
-  const watch = watchRepo(watched, await signatureOf(watched), () => {
+  const handed: unknown[] = [];
+  const watch = watchRepo(watched, await signatureOf(watched), (moved) => {
     changes += 1;
+    handed.push(moved);
     return Promise.resolve();
   }, EVERY);
   closers.push(() => {
@@ -257,6 +260,8 @@ test('the signature moves with HEAD, the index and the summary, and the watch ha
   writeFileSync(join(repo, '.check', 'summary.json'), '{"schema_version":1,"run":4}\n');
   await expect.poll(() => changes, { timeout: 5000 }).toBe(2);
   watch.close();
+  // Each held still before it was handed on, and git was asked for no working tree.
+  expect(handed).toEqual([{ restless: false, unread: false }, { restless: false, unread: false }]);
 });
 
 /** `src/square.ts` with a body of its own, written and not staged. */
@@ -373,6 +378,100 @@ test("the approved shape's document is stamped in every signature, so approving 
   await expect.poll(() => changes, { timeout: 5000 }).toBe(1);
   watch.close();
 });
+
+/** A file written every few milliseconds and never ignored, as a dev server's log is; the caller stops it. */
+const chatter = (repo: string): (() => void) => {
+  let line = 0;
+  const timer = setInterval(() => {
+    line += 1;
+    writeFileSync(join(repo, 'dev.log'), `line ${String(line)}\n`);
+  }, 5);
+  const stop = (): void => clearInterval(timer);
+  closers.push(() => {
+    stop();
+    return Promise.resolve();
+  });
+  return stop;
+};
+
+test('a signature that never holds still is handed on as it stands once it has moved for ten ticks, and after a rebuild the watch rests as long as the rebuild took (D328 (watch-bounds))', async () => {
+  const repo = twoCommits();
+  const watched = watchedIn(repo, () => true);
+  const TOOK = 250;
+  const moves: { readonly restless: boolean; readonly began: number; readonly ended: number }[] = [];
+  const watch = watchRepo(watched, await signatureOf(watched), async ({ restless }) => {
+    const began = performance.now();
+    await new Promise((rebuilt) => setTimeout(rebuilt, TOOK));
+    moves.push({ restless, began, ended: performance.now() });
+  }, EVERY);
+  closers.push(() => {
+    watch.close();
+    return Promise.resolve();
+  });
+  const stop = chatter(repo);
+  // Without the ceiling no tick ever reads the signature it read before, and nothing is handed on while the file is written.
+  await expect.poll(() => moves.filter((move) => move.restless).length, { timeout: 30_000 }).toBeGreaterThanOrEqual(2);
+  stop();
+  watch.close();
+  // No rebuild began until as long had passed since the one before as that one took.
+  for (const [at, move] of moves.entries()) {
+    const before = moves[at - 1];
+    if (before !== undefined) expect(move.began - before.ended).toBeGreaterThanOrEqual(before.ended - before.began);
+  }
+  // Ten ticks of the test's tick is the wait before the first.
+  expect(moves[0]?.restless).toBe(true);
+}, MINUTE);
+
+test("a working tree git cannot list is one fixed term, so the rest of the signature still moves and is handed on, said unread; and a link is stamped as the link, never as the file it names (D313 (watch-working-term))", async () => {
+  const repo = twoCommits();
+  // The same files watched from a directory git finds no repository in, as a status git refuses is read.
+  const lost: Watched = { ...watchedIn(repo, () => true), repo: temp('lost') };
+  const before = await signatureOf(lost);
+  expect(before.split(' ').at(-1)).toBe('unread');
+  expect(await signatureOf(lost)).toBe(before);
+  const handed: unknown[] = [];
+  const watch = watchRepo(lost, before, (moved) => {
+    handed.push(moved);
+    return Promise.resolve();
+  }, EVERY);
+  closers.push(() => {
+    watch.close();
+    return Promise.resolve();
+  });
+  mkdirSync(join(repo, '.check'));
+  writeFileSync(join(repo, '.check', 'summary.json'), '{"schema_version":1}\n');
+  await expect.poll(() => handed, { timeout: 5000 }).toEqual([{ restless: false, unread: true }]);
+  watch.close();
+
+  // A link the tree holds, to a file outside it: the tree records the path it names, so a write to that file moves nothing.
+  const outside = join(temp('outside'), 'notes.txt');
+  writeFileSync(outside, 'first\n');
+  symlinkSync(outside, join(repo, 'notes.txt'));
+  const working = watchedIn(repo, () => true);
+  const linked = await signatureOf(working);
+  await new Promise((later) => setTimeout(later, 20));
+  writeFileSync(outside, 'second, and longer\n');
+  expect(await signatureOf(working)).toBe(linked);
+  // The link itself named anew is a move.
+  rmSync(join(repo, 'notes.txt'));
+  symlinkSync(join(repo, 'package.json'), join(repo, 'notes.txt'));
+  expect(await signatureOf(working)).not.toBe(linked);
+});
+
+test('under --watch, a file written all the time and never ignored is rebuilt for without waiting for it to hold still, and the run says so once (D328 (watch-bounds))', async () => {
+  const repo = twoCommits();
+  const { served, lines } = await watching(repo, { workingTree: true });
+  const { next } = await listen(served);
+  await next();
+  const stop = chatter(repo);
+  const restless = 'atis: the watch rebuilt without waiting, since what it follows had not held still for 0.4 s; a file written all the time and not ignored, as a log is, keeps it rebuilding\n';
+  const watchedLines = (): number => lines.filter((line) => line.startsWith('atis: watched working-tree: ')).length;
+  await expect.poll(() => lines.includes(restless) && watchedLines() >= 3, { timeout: 45_000 }).toBe(true);
+  stop();
+  // The tab was pushed each of those maps, and the line was not said again for each.
+  expect(lines.filter((line) => line === restless).length).toBeLessThan(watchedLines());
+  expect((await next()).meta.head).toBe('working-tree');
+}, MINUTE);
 
 test("under --watch with the working tree as the head, an edit that stages nothing is rebuilt and pushed, then a second edit to the same file, then a new untracked file, each file's text read from the tree that map was measured from (D313 (watch-working-term), D312 (tree-beside-map))", async () => {
   const repo = twoCommits();

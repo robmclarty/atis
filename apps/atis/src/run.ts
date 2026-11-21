@@ -89,7 +89,7 @@ import { capturePng, launchBrowser } from './png.js';
 import type { BrowserCandidate, Captured } from './png.js';
 import { dropServing, keepServing, serve } from './serve.js';
 import type { BaseRequest, Rebuilt, Served } from './serve.js';
-import { WATCH_EVERY_MS, signatureOf, watchRepo, watchedIn } from './watch.js';
+import { WATCH_EVERY_MS, restlessAfter, signatureOf, watchRepo, watchedIn } from './watch.js';
 import {
   BASELINE_FILE,
   HISTORY_WINDOW,
@@ -1136,6 +1136,10 @@ const rebuiltOf = ({ map, tree }: Measured): Rebuilt => ({ map: serialize(map), 
  * keeps the map the tab holds and says why (D106). While the head is the
  * working tree, the signature moves with an edit that stages nothing too, so
  * the tab follows a coding agent as it writes (D313 (watch-working-term)).
+ * A file that never holds still is rebuilt for without waiting once it has
+ * moved long enough, and the watch rests after each rebuild; the run says
+ * once when that began, and once when git could not list the working tree
+ * (D328 (watch-bounds)).
  * Approving moves the signature too, so the tab is pushed the map with its
  * departures on it, and a map rebuilt over a base the approved shape was not
  * cut over says once, beside the watch's own lines, which readings it left
@@ -1196,13 +1200,24 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
     });
     timings.push({ source: 'serve', ms: Math.round(performance.now() - started) });
     asked = served.asked;
+    const every = options.watchEvery ?? WATCH_EVERY_MS;
+    // Whether the last move was handed on unsettled, and whether git could not list the working tree at it.
+    let stirring = false;
+    let unlisted = false;
     const watching =
       watched === undefined || from === undefined
         ? undefined
         : watchRepo(
             watched,
             from,
-            async () => {
+            async ({ restless, unread }) => {
+              // Each said once for as long as it stands, since a watch rebuilds often (D328 (watch-bounds)).
+              if (restless && !stirring) {
+                log(`atis: the watch rebuilt without waiting, since what it follows had not held still for ${String(restlessAfter(every) / 1000)} s; a file written all the time and not ignored, as a log is, keeps it rebuilding\n`);
+              }
+              stirring = restless;
+              if (unread && !unlisted) log("atis: git could not list the working tree's uncommitted files, so until it can the watch follows no edit that stages nothing\n");
+              unlisted = unread;
               try {
                 const switched = served.asked();
                 const next = switched === undefined ? measure(options.repo, asTyped) : mapOver(options, switched);
@@ -1213,7 +1228,7 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
                 log(`atis: the watch kept the last map: ${messageOf(error)}\n`);
               }
             },
-            options.watchEvery ?? WATCH_EVERY_MS,
+            every,
           );
     // Where `atis mcp`, started in this repository, finds the tab (D138); taken back as the run closes.
     let unkept = '';
