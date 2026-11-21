@@ -84,6 +84,9 @@ const keptAt = (repo: string): string => join(repo, '.git', 'atis', 'approved.js
 
 const NOON = new Date('2026-11-20T12:00:00.000Z');
 
+/** A test that builds several maps is given a minute: each build is a second or two alone and many times that beside the rest of the suite, on a machine under load. */
+const MINUTE = 60_000;
+
 test('atis approve keeps the shape of the head under the git directory, with the moment it was approved, and --show prints it as kept (D212 (approved-private), D320 (approved-time))', () => {
   const repo = shapesRepo('keep');
   const head = git(repo, 'rev-parse', 'HEAD');
@@ -120,7 +123,7 @@ test('atis approve keeps the shape of the head under the git directory, with the
 
   // --verbose times the write beside the sources.
   expect(approveRun({ repo, verbose: true }).stderr).toMatch(/approve\s+\d+ ms/);
-});
+}, MINUTE);
 
 test('every map built after an approval carries its departures: none while the shape is kept, then what a change added, at a working tree, a commit and the whole repository', () => {
   const repo = shapesRepo('held');
@@ -152,7 +155,7 @@ test('every map built after an approval carries its departures: none while the s
   // Approving the new head accepts them.
   expect(approveRun({ repo, verbose: false }).stdout).toMatch(/^approved the shape at [0-9a-f]{7}: 3 modules, 1 outside package, wrote /);
   expect(mapped(repo).map.approved).toEqual({ at: git(repo, 'rev-parse', 'HEAD'), departures: [] });
-});
+}, MINUTE);
 
 test('a shape approved from the working tree names it in words, and a map of that tree keeps it (D210 (approved-block))', () => {
   const repo = shapesRepo('working');
@@ -177,7 +180,7 @@ test('a shape approved from the working tree names it in words, and a map of tha
     at: 'working-tree',
     departures: [{ kind: 'module-removed', target: 'src/paint', cell: 'directory:src/paint', why: 'a module the approved shape held', was: 1 }],
   });
-});
+}, MINUTE);
 
 test('a map over another base than the shape was approved over says what was left out, once on stderr, and a map over the same base says nothing (D308 (same-terrain))', () => {
   const repo = shapesRepo('over');
@@ -201,7 +204,7 @@ test('a map over another base than the shape was approved over says what was lef
   expect(mapped(repo, { wholeRepo: true }).stderr).toBe(note);
   // Under --verbose the line comes ahead of the timings.
   expect(mapped(repo, { base: 'HEAD', verbose: true }).stderr.startsWith(`${note}  terrain cache `)).toBe(true);
-});
+}, MINUTE);
 
 test('a kept shape that will not read mutes the departures and says why, never as a map that keeps its shape, and approving again repairs it (D321 (approved-unreadable))', () => {
   const repo = shapesRepo('unread');
@@ -224,7 +227,7 @@ test('a kept shape that will not read mutes the departures and says why, never a
   const { map, stderr } = mapped(repo);
   expect(map.approved).toEqual({ at: git(repo, 'rev-parse', 'HEAD'), departures: [] });
   expect(stderr).toBe('');
-});
+}, MINUTE);
 
 test('a block the map\'s guard would refuse is left off the map and said so, since the page drops a map it refuses (D322 (approved-guarded))', () => {
   const repo = shapesRepo('guard');
@@ -259,7 +262,7 @@ test('every worktree of a repository holds to the one approved shape, and none k
 
   expect(mapped(repo).map.approved).toEqual({ at: head, departures: [] });
   expect(mapped(linked, { base: 'main' }).map.approved).toEqual({ at: head, departures: [] });
-});
+}, MINUTE);
 
 test('atis approve in a directory that is no repository exits 2 and keeps nothing (C4)', () => {
   const directory = temp('bare');
