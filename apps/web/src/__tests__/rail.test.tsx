@@ -9,9 +9,10 @@ import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { Root } from 'react-dom/client';
 import { shoreRail } from 'scene';
-import { afterEach, beforeEach, expect, test } from 'vitest';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 
 import { Chrome, Rail } from '../chrome/index.js';
+import { revealGroup } from '../highlight.js';
 import { createRegistry } from '../registry.js';
 
 /**
@@ -160,6 +161,27 @@ test('the shore stands under a header that folds it away, its count still on it,
   await click('[data-fold="shore"]');
   expect(all('[data-group]')).toHaveLength(shoreRail(DEMO).length);
   expect(host.querySelector('[data-group="deps"]')?.hasAttribute('data-open')).toBe(true);
+});
+
+test("a folded shore opens, drawn, before the event that asks for it by name returns, so a reveal from outside the chrome finds its group's block (D285 (unfold-by-event))", async () => {
+  const scrolled = vi.fn();
+  Element.prototype.scrollIntoView = scrolled;
+  await mount();
+  await click('[data-fold="shore"]');
+  expect(all('[data-group]')).toHaveLength(0);
+  // Another fold's name is not the shore's to hear.
+  act(() => {
+    document.dispatchEvent(new CustomEvent('atis:unfold', { detail: 'tree' }));
+  });
+  expect(all('[data-group]')).toHaveLength(0);
+  // The bare event, as a caller that cannot import the chrome sends it, and the reveal straight after it, with no frame waited for.
+  act(() => {
+    document.dispatchEvent(new CustomEvent('atis:unfold', { detail: 'shore' }));
+    revealGroup('docs');
+  });
+  expect(scrolled).toHaveBeenCalledTimes(1);
+  expect(scrolled.mock.contexts[0]).toBe(host.querySelector('[data-rail] [data-group="docs"]'));
+  expect(host.querySelector('[data-fold="shore"]')?.getAttribute('aria-expanded')).toBe('true');
 });
 
 /** The pointer passing onto an element and off it again, as a browser sends it and React reads it. */

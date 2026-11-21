@@ -5,8 +5,11 @@
  * part away or brings it back, and the header stays at the column's top
  * while its part scrolls under it, so a long tree is folded from anywhere in
  * it. Each part keeps its own fold, so one drawn alone, as a test draws it,
- * still folds. A fold opens when it is asked for by name, which is how a row
- * that leads to a shore group brings the shore back before it scrolls there.
+ * still folds. A fold opens when it is asked for by name on the document,
+ * and is drawn open before that asking returns (D285 (unfold-by-event)),
+ * which is how a row that leads to a shore group brings the shore back
+ * before it scrolls there, and how the world, which imports nothing of the
+ * chrome, can do the same for an agent's highlight.
  * It is the brutalist material (D12): the column's own face, a hard rule,
  * nothing that glows.
  */
@@ -24,17 +27,19 @@ type FoldLook = {
   readonly SHORE_BLOCK_PAD: number;
 };
 
-/** The event a fold hears to open: its detail is the fold's name. */
+/**
+ * The event a fold hears on the document to open: its detail is the fold's
+ * name, `notices`, `tree` or `shore`. The name is the whole contract, so a
+ * caller outside the chrome dispatches it bare (D285 (unfold-by-event)).
+ */
 const UNFOLD = 'atis:unfold';
 
 /** The mark a header leads with, and a directory's row in the tree: what it holds is open, or folded away. */
 export const foldMark = (open: boolean): string => (open ? '▾' : '▸');
 
-/** Open a fold by its name, wherever it is drawn, and have it drawn open before this returns, so what it holds can be scrolled to at once. */
+/** Open a fold by its name, wherever it is drawn. It is drawn open before this returns, so what it holds can be scrolled to at once. */
 export const unfold = (name: string): void => {
-  flushSync(() => {
-    document.dispatchEvent(new CustomEvent(UNFOLD, { detail: name }));
-  });
+  document.dispatchEvent(new CustomEvent(UNFOLD, { detail: name }));
 };
 
 /** A part's fold: whether it is open, which it is until it is folded, and the press that folds it or opens it again. */
@@ -42,7 +47,9 @@ export const useFold = (name: string): readonly [boolean, () => void] => {
   const [open, setOpen] = useState(true);
   useEffect(() => {
     const hear = (event: Event): void => {
-      if (event instanceof CustomEvent && event.detail === name) setOpen(true);
+      if (!(event instanceof CustomEvent) || event.detail !== name) return;
+      // Drawn at once, not on React's next turn: whoever asked scrolls to what the fold holds on its next line. It is asked from an event's handler or from outside React, as a socket's message is, never while React is drawing.
+      flushSync(() => setOpen(true));
     };
     document.addEventListener(UNFOLD, hear);
     return () => document.removeEventListener(UNFOLD, hear);
