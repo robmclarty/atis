@@ -230,7 +230,9 @@ const Tail = ({ node, paint }: { readonly node: TreeNode; readonly paint: Paint 
 };
 
 type RowProps = {
-  readonly row: TreeRow;
+  /** The row's node and how deep it stands, each handed over by itself: the model keeps a node while the map stands, where the list of rows on show is made anew whenever a directory opens. */
+  readonly node: TreeNode;
+  readonly depth: number;
   /** Whether a directory's row is open; false for a file's. */
   readonly open: boolean;
   readonly selected: boolean;
@@ -242,7 +244,7 @@ type RowProps = {
 };
 
 /** How a row is set and lit: the selection in the selection's ink with the ground's ink on it, what is pointed at outlined in the hover's, a row with nothing on the map in the muted grey. */
-const rowStyle = ({ row, selected, pointed, paint }: RowProps): CSSProperties => {
+const rowStyle = ({ node, depth, selected, pointed, paint }: RowProps): CSSProperties => {
   const { look, panel, hover } = paint;
   return {
     display: 'flex',
@@ -251,12 +253,12 @@ const rowStyle = ({ row, selected, pointed, paint }: RowProps): CSSProperties =>
     width: '100%',
     height: panel.treeRow,
     boxSizing: 'border-box',
-    padding: `0 ${String(look.SHORE_BLOCK_PAD)}px 0 ${String(look.SHORE_BLOCK_PAD + row.depth * panel.treeIndent)}px`,
+    padding: `0 ${String(look.SHORE_BLOCK_PAD)}px 0 ${String(look.SHORE_BLOCK_PAD + depth * panel.treeIndent)}px`,
     font: 'inherit',
     lineHeight: `${String(panel.treeRow)}px`,
     whiteSpace: 'nowrap',
     overflow: 'hidden',
-    color: selected ? look.CHROME_GROUND : offTheMap(row.node) ? look.CHROME_MUTED : look.CHROME_INK,
+    color: selected ? look.CHROME_GROUND : offTheMap(node) ? look.CHROME_MUTED : look.CHROME_INK,
     background: selected ? hover.selectInk : 'transparent',
     border: 'none',
     textAlign: 'left',
@@ -268,10 +270,15 @@ const rowStyle = ({ row, selected, pointed, paint }: RowProps): CSSProperties =>
   };
 };
 
-/** One row. Drawn again only when what it shows moves, so the pointer crossing the map redraws two rows and not the tree. */
+/**
+ * One row. Drawn again only when what it shows moves, so the pointer
+ * crossing the map redraws the row it left and the row it came to, and a
+ * directory it opens on the way draws the rows that brings and no other:
+ * every prop here is the same value from one drawing of the tree to the
+ * next until the row's own state moves.
+ */
 const Row = memo((props: RowProps): ReactElement => {
-  const { row, open, selected, pointed, tabbable, paint, asks } = props;
-  const { node } = row;
+  const { node, depth, open, selected, pointed, tabbable, paint, asks } = props;
   const target = targetIn(node);
   return (
     <button
@@ -279,7 +286,7 @@ const Row = memo((props: RowProps): ReactElement => {
       data-row={node.path}
       data-row-kind={node.kind}
       data-target={target}
-      data-depth={row.depth}
+      data-depth={depth}
       data-open={(node.kind === 'directory' && open) || undefined}
       data-selected={selected || undefined}
       data-pointed={pointed || undefined}
@@ -312,7 +319,12 @@ type Toggled = ReadonlyMap<string, boolean>;
 
 const isOpen = (toggled: Toggled, node: DirectoryNode): boolean => toggled.get(node.path) ?? startsOpen(node);
 
-/** These directories open, whatever they were; the same record back when they all are already. */
+/**
+ * These directories open, whatever they were; the same record back when
+ * they all are already. One that stood open unasked is written down as
+ * opened all the same, so it stays open under a later map that would have
+ * closed it over the row the tree was asked to show (D279 (pointing-opens)).
+ */
 const opening = (toggled: Toggled, paths: readonly string[]): Toggled => {
   const shut = paths.filter((path) => toggled.get(path) !== true);
   if (shut.length === 0) return toggled;
@@ -460,14 +472,15 @@ export const Tree = ({ map, registry, nav }: TreeProps): ReactElement => {
             {line.words}
           </div>
           <div data-rows ref={list} onKeyDown={onKeyDown}>
-            {rows.map((row) => (
+            {rows.map(({ node, depth }) => (
               <Row
-                key={row.node.path}
-                row={row}
-                open={row.node.kind === 'directory' && isOpen(toggled, row.node)}
-                selected={row.node.path === selectedRow}
-                pointed={row.node.path === pointedRow}
-                tabbable={row.node.path === tab}
+                key={node.path}
+                node={node}
+                depth={depth}
+                open={node.kind === 'directory' && isOpen(toggled, node)}
+                selected={node.path === selectedRow}
+                pointed={node.path === pointedRow}
+                tabbable={node.path === tab}
                 paint={paint}
                 asks={asks}
               />

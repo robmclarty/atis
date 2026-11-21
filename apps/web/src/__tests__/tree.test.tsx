@@ -15,6 +15,7 @@ import { createNav, selectedOf } from '../nav.js';
 import type { Nav } from '../nav.js';
 import { createRegistry } from '../registry.js';
 import { rowsShown, startsOpen, treeOf } from '../tree.js';
+import type * as TreeModel from '../tree.js';
 
 /**
  * The folder tree in a DOM (D208 (side-panels)): its rows as buttons set in
@@ -26,6 +27,17 @@ import { rowsShown, startsOpen, treeOf } from '../tree.js';
  * the test share a line, as the tree and the world do.
  */
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
+
+/** How many rows have been drawn. A row reads what it wears once each time it is drawn, so the readings count the drawings. */
+const drawn = vi.hoisted(() => ({ rows: 0 }));
+vi.mock('../tree.js', async (original) => {
+  const model = await original<typeof TreeModel>();
+  const wornBy: typeof model.wornBy = (node, open) => {
+    drawn.rows += 1;
+    return model.wornBy(node, open);
+  };
+  return { ...model, wornBy };
+});
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, '..', '..', '..', '..');
@@ -259,6 +271,39 @@ test('when the world points at something the directories above its row open, the
   expect(shows(FORMAT)).toBe(false);
   act(() => nav.point('libs/core/src/pm/slots.ts', 'chrome'));
   expect(row('libs/core/src/pm/slots.ts').dataset['pointed']).toBe('true');
+});
+
+test("the world's pointer draws the rows it brings and the rows whose light moved, and never the whole tree, though a directory opens", async () => {
+  const nav = await mount();
+  const before = all('[data-row]').length;
+  let from = drawn.rows;
+  const since = (): number => {
+    const rows = drawn.rows - from;
+    from = drawn.rows;
+    return rows;
+  };
+  // Into a closed directory: its own row, which opens, and the rows it held; the row pointed at is one of them.
+  act(() => nav.point(FORMAT, 'world'));
+  const brought = all('[data-row]').length - before;
+  expect(brought).toBeGreaterThan(0);
+  expect(since()).toBe(brought + 1);
+  // On to a row already on show, under directories the tree had not yet been asked to open: the row put out and the row lit.
+  act(() => nav.point(TOOLS, 'world'));
+  expect(since()).toBe(2);
+  // A moved selection is the same: the row it fills, and the first row, which gives it the Tab.
+  act(() => nav.select(selectedOf(DEMO, 'libs/core/src/pm/slots.ts'), 'stay'));
+  expect(since()).toBe(2);
+  // On a map of 1,244 files the pointer sweeping over sixty of them draws what each step brings and relights, not the tree once a step: at most a row for each row brought, one for the directory that brought it, and two for the light.
+  act(() => root.unmount());
+  root = createRoot(host);
+  await mount(nav, CORPUS);
+  const closed = all('[data-row]').length;
+  since();
+  const swept = CORPUS.terrain.organelles.slice(0, 60);
+  for (const file of swept) act(() => nav.point(file.id, 'world'));
+  const opened = all('[data-row]').length - closed;
+  expect(opened).toBeGreaterThan(100);
+  expect(since()).toBeLessThanOrEqual(2 * opened + 2 * swept.length);
 });
 
 test('when the selection moves the way to its row opens and the row is lit, from the first frame on; a selection the map does not hold lights none', async () => {
