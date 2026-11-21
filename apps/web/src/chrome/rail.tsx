@@ -125,8 +125,8 @@ const fitted = (words: string, budget: number): string => (words.length <= budge
 /** What kind of mark a file wears. */
 const kindOf = (file: ShoreFile): string => file.change?.kind ?? (file.ghost === true ? 'ghost' : 'file');
 
-/** A mark's paint by its kind, as the world stains it: filled for an edit, an outline for a deletion, dashed for a rename, a dashed grey ring for a ghost, the base tissue's grey for any other file. */
-const markPaint = (kind: string, look: Pick<Look, 'CHANGE_HUE' | 'CHROME_STROKE_WIDTH' | 'GHOST_STROKE' | 'ORGANELLE_FILL'>): CSSProperties => {
+/** A mark's paint by its kind, as the world stains it: filled for an edit, an outline for a deletion, dashed for a rename, a dashed grey ring for a ghost, the base tissue's grey for any other file. The folder tree paints its rows' marks with it, so one file wears one mark in both. */
+export const markPaint = (kind: string, look: Pick<Look, 'CHANGE_HUE' | 'CHROME_STROKE_WIDTH' | 'GHOST_STROKE' | 'ORGANELLE_FILL'>): CSSProperties => {
   const hairline = `${String(look.CHROME_STROKE_WIDTH)}px`;
   if (kind === 'ghost') return { border: `${hairline} dashed ${look.GHOST_STROKE}` };
   if (kind === 'file') return { background: look.ORGANELLE_FILL };

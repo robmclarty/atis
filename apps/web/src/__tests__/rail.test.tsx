@@ -132,7 +132,7 @@ test("a red slot over a shore group hangs its bolt on the block's header, the ch
   expect(all('[data-group="config"] button [data-slot]').map((storm) => storm.getAttribute('data-slot'))).toEqual(['docs']);
 });
 
-test('the chrome carries the rail once the map is read, and not before: the last part of its column, scrolled with it', async () => {
+test('the chrome carries the rail once the map is read, and not before: the last part of its column, under the notices and the tree, scrolled with it', async () => {
   const registry = createRegistry();
   await act(async () => root.render(<Chrome state={{ status: 'loading', url: '/map.json' }} registry={registry} dev={false} />));
   expect(host.querySelector('[data-rail]')).toBeNull();
@@ -141,7 +141,7 @@ test('the chrome carries the rail once the map is read, and not before: the last
   expect(rail).not.toBeNull();
   expect(rail?.textContent).not.toMatch(/shadow|blur|gradient/);
   const column = host.querySelector<HTMLElement>('[data-column]');
-  expect([...(column?.children ?? [])].map((child) => child.getAttribute('aria-label'))).toEqual(['notices', 'shore']);
+  expect([...(column?.children ?? [])].map((child) => child.getAttribute('aria-label'))).toEqual(['notices', 'tree', 'shore']);
   expect(column?.lastElementChild).toBe(rail);
   // The column scrolls, and the rail is as long as its blocks: nothing inside it scrolls by itself.
   expect(column?.style.overflowY).toBe('auto');

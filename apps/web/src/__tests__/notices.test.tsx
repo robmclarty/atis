@@ -21,8 +21,8 @@ import { screenType } from '../screen.js';
  * The notices as the world draws them (§5.4, step 34): each target's run of
  * boxes with its strongest tier and its light, the ranked list's rows and
  * tally, the boxes a shore block wears (D153), and the chrome's column
- * carrying the list over the rail in one scroll (D278 (column-folds)), each
- * box in its tier's style.
+ * carrying the list over the tree and the rail in one scroll
+ * (D278 (column-folds)), each box in its tier's style.
  */
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
@@ -209,14 +209,14 @@ test("the list stands under a header that folds it away, the tally still on it, 
   expect(all('[data-notice]')).toHaveLength(6);
 });
 
-test('the chrome carries the column once the map is read: the list at its head and the rail beneath, in one scroll (D278 (column-folds))', async () => {
+test('the chrome carries the column once the map is read: the list at its head, the tree beneath it and the rail last, in one scroll (D278 (column-folds))', async () => {
   const registry = createRegistry();
   await act(async () => root.render(<Chrome state={{ status: 'loading', url: '/map.json' }} registry={registry} dev={false} />));
   expect(host.querySelector('[data-column]')).toBeNull();
   await act(async () => root.render(<Chrome state={{ status: 'ready', url: '/map.json', map: DEMO }} registry={registry} dev={false} />));
   const column = element('[data-column]');
   const parts = [...column.children].filter((child): child is HTMLElement => child instanceof HTMLElement);
-  expect(parts.map((child) => child.getAttribute('aria-label'))).toEqual(['notices', 'shore']);
+  expect(parts.map((child) => child.getAttribute('aria-label'))).toEqual(['notices', 'tree', 'shore']);
   // The column is the one scroll: no part scrolls by itself or is held to a share of it, and each stands under its own header.
   expect(column.style.overflowY).toBe('auto');
   for (const part of parts) {
@@ -225,6 +225,8 @@ test('the chrome carries the column once the map is read: the list at its head a
     expect(part.querySelector('header [data-fold]')?.getAttribute('data-fold')).toBe(part.getAttribute('aria-label'));
   }
   expect(all('[data-column] [data-notice]')).toHaveLength(6);
+  expect(all('[data-column] [data-tree] [data-row]').length).toBeGreaterThan(0);
+  // A column handed no line to the world has no tree to light: the list stands over the rail.
   await act(async () => root.render(<Column map={ASHORE} registry={registry} />));
   expect([...element('[data-column]').children].map((child) => child.getAttribute('aria-label'))).toEqual(['notices', 'shore']);
   expect(all('[data-column] [data-notice]')).toHaveLength(3);

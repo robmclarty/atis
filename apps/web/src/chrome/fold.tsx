@@ -27,8 +27,8 @@ type FoldLook = {
 /** The event a fold hears to open: its detail is the fold's name. */
 const UNFOLD = 'atis:unfold';
 
-/** The mark a header leads with: what it holds is open, or folded away. */
-const foldMark = (open: boolean): string => (open ? '▾' : '▸');
+/** The mark a header leads with, and a directory's row in the tree: what it holds is open, or folded away. */
+export const foldMark = (open: boolean): string => (open ? '▾' : '▸');
 
 /** Open a fold by its name, wherever it is drawn, and have it drawn open before this returns, so what it holds can be scrolled to at once. */
 export const unfold = (name: string): void => {
