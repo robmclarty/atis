@@ -7,7 +7,7 @@ import type { MapJson } from 'core';
 import { afterEach, expect, test, vi } from 'vitest';
 
 import type { DiffAnswer, ServedDiff } from '../diff.js';
-import { codeLines, createAnswers, editorOf, loadSource, readServedSource, sourceHref, sourceNote } from '../source.js';
+import { codeLines, createAnswers, editorOf, loadSource, otherCommitNote, readServedSource, sourceHref, sourceNote } from '../source.js';
 import type { FetchSource, ServedSource, SourceAnswer } from '../source.js';
 
 /**
@@ -127,6 +127,17 @@ test('every state but ready says why the tab shows no text, so a fixture says it
     'the file is not text',
   ]);
   expect(sourceNote({ status: 'ready', source: SERVED })).toBe('');
+});
+
+test("a text read at another commit than the map's says so, and one of the map's own commit, of the working tree, or not yet there says nothing (D271 (marks-of-own-commit))", () => {
+  const ready: SourceAnswer = { status: 'ready', source: SERVED };
+  expect(otherCommitNote(SERVED.at, ready)).toBeUndefined();
+  const earlier = `9f8e7d6${'0'.repeat(33)}`;
+  expect(otherCommitNote(earlier, ready)).toBe("the text is not of this map's commit, 9f8e7d6, so no changed line and no function is marked on it");
+  // A map of the working tree names no commit, and its text is read from a tree: there is nothing to hold the two to.
+  expect(otherCommitNote('working-tree', ready)).toBeUndefined();
+  expect(otherCommitNote(earlier, { status: 'loading' })).toBeUndefined();
+  expect(otherCommitNote(earlier, { status: 'absent' })).toBeUndefined();
 });
 
 test("a file's text becomes numbered lines, the change's lines marked from its hunks and the line a deletion sits after marked cut", () => {

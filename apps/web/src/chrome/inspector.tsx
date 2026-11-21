@@ -73,7 +73,7 @@ import { readingOf } from '../reading.js';
 import type { ReadingList, ReadingRow } from '../reading.js';
 import type { Registry } from '../registry.js';
 import { screenType } from '../screen.js';
-import { createAnswers, editorOf } from '../source.js';
+import { createAnswers, editorOf, otherCommitNote } from '../source.js';
 import type { Answers, SourceAnswer } from '../source.js';
 import { ownsKey } from '../walk.js';
 import { NoticeBox } from './box.js';
@@ -601,7 +601,14 @@ const Functions = ({ ui, model, answers }: { readonly ui: Ui; readonly model: Fi
   );
 };
 
-/** A file's code tab: its text from the server, or for a file the change deleted, which has none at the head, that said and nothing asked. */
+/**
+ * A file's code tab: its text from the server, or for a file the change
+ * deleted, which has none at the head, that said and nothing asked. The
+ * map's hunks and function lines mark the text only where it was read at
+ * the map's own commit (D271 (marks-of-own-commit)): on a frame the scrubber
+ * stands at the server still answers from the head it holds, and that text
+ * is shown bare, with why.
+ */
 const CodeTab = ({ ui, model, answers, size }: { readonly ui: Ui; readonly model: FileModel; readonly answers: Answers; readonly size: number }): ReactElement => {
   const gone = model.change?.kind === 'deleted';
   const read = (): SourceAnswer => (gone ? NOT_ASKED : answers.source(ui.map, model.path));
@@ -614,7 +621,9 @@ const CodeTab = ({ ui, model, answers, size }: { readonly ui: Ui; readonly model
       </Says>
     );
   }
-  return <Code path={model.path} answer={answer} hunks={model.change?.hunks ?? NO_HUNKS} functions={functions} look={ui.look} size={size} />;
+  const apart = otherCommitNote(ui.map.meta.head, answer);
+  const own = apart === undefined;
+  return <Code path={model.path} answer={answer} hunks={own ? (model.change?.hunks ?? NO_HUNKS) : NO_HUNKS} functions={own ? functions : NO_FUNCTIONS} apart={apart} look={ui.look} size={size} />;
 };
 
 /** A changed file's diff tab: `diff.ts`'s level for it, from the server's answer, none on a fixture, and the PR the page was told of. */

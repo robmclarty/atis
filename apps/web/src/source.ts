@@ -95,6 +95,26 @@ const NOTES: Readonly<Record<SourceAnswer['status'], string>> = {
 /** What the code tab says of an answer that is not the file's text, so a fixture says it has no server rather than showing an empty box; empty once the text is there. */
 export const sourceNote = (answer: SourceAnswer): string => NOTES[answer.status];
 
+/** What a map's head is written as where the change runs to uncommitted work, in place of a commit's sha. */
+const WORKING_TREE = 'working-tree';
+
+/** How many characters of a commit's sha the note writes. */
+const SHORT_SHA = 7;
+
+/**
+ * Why a served text takes no mark from a map, in words; none where it may
+ * (D271 (marks-of-own-commit)). The server reads a file at the head it
+ * holds, and the map on the screen may be of another commit: a frame the
+ * scrubber stands at, or a map a watch pushed before the answer caught up.
+ * That map's hunks and function lines number another text's lines, so on
+ * this one they would mark the wrong lines. A map of the working tree names
+ * no commit to hold the answer to, and its text is marked as it comes.
+ */
+export const otherCommitNote = (head: string, answer: SourceAnswer): string | undefined => {
+  if (answer.status !== 'ready' || head === WORKING_TREE || answer.source.at === head) return undefined;
+  return `the text is not of this map's commit, ${head.slice(0, SHORT_SHA)}, so no changed line and no function is marked on it`;
+};
+
 /** One line of a file as the code tab draws it: its number, its text, whether the change wrote it, and whether the change removed lines just after it (D73). */
 export type CodeLine = { readonly line: number; readonly text: string; readonly changed: boolean; readonly cut: boolean };
 

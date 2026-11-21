@@ -10,7 +10,8 @@
  * marked down its edge from the file's hunks, a line the change removed
  * lines after is ruled beneath, and the line a function starts on has its
  * number as a link that opens the file there in the reader's editor, through
- * core's `editorLink`. A fixture has no server, and an answer that is not
+ * core's `editorLink`. A text read at another commit than the map's takes no
+ * such mark and says so (D271 (marks-of-own-commit)). A fixture has no server, and an answer that is not
  * the text says what it is in words, so the tab never shows an empty box
  * (C2). The sheet of rows takes the focus, so the keyboard scrolls it.
  *
@@ -90,13 +91,15 @@ export type CodeProps = {
   readonly hunks: readonly Hunk[];
   /** The file's functions by the line each starts on, none where the head scan read none. */
   readonly functions: readonly { readonly name: string; readonly line: number }[];
+  /** Why the text takes no mark from the map, where it is another commit's (D271 (marks-of-own-commit)): said under the head, with `hunks` and `functions` then handed empty. */
+  readonly apart?: string | undefined;
   readonly look: TextLook;
   /** The text's size in pixels, `PANEL.codeSize`. */
   readonly size: number;
 };
 
 /** A file's text, read-only, a row to a line; or what the answer is, in words, where it is not the text. */
-export const Code = ({ path, answer, hunks, functions, look, size }: CodeProps): ReactElement => {
+export const Code = ({ path, answer, hunks, functions, apart, look, size }: CodeProps): ReactElement => {
   const text = answer.status === 'ready' ? answer.source.text : undefined;
   const lines = useMemo(() => (text === undefined ? [] : codeLines(text, hunks)), [text, hunks]);
   const starts = useMemo(() => new Map(functions.map((fn) => [fn.line, fn.name] as const)), [functions]);
@@ -124,6 +127,11 @@ export const Code = ({ path, answer, hunks, functions, look, size }: CodeProps):
           </Out>
         )}
       </div>
+      {apart !== undefined && (
+        <p data-inspector-code-apart style={{ margin: `0 0 ${String(look.CHROME_PAD / 2)}px`, color: look.CHROME_MUTED, overflowWrap: 'anywhere' }}>
+          {apart}
+        </p>
+      )}
       {lines.length === 0 ? (
         <Says look={look} data-inspector-code-note="empty">
           the file is empty

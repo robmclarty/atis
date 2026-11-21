@@ -642,6 +642,31 @@ test('served, the code tab shows the text a row to a line, the changed lines mar
   expect(host.querySelector(`[data-inspector-code="${INDEX}"]`)).not.toBeNull();
 });
 
+test("a text read at another commit than the map's is shown bare, with why: no changed line and no function is marked on it (D271 (marks-of-own-commit))", async () => {
+  serve({ [`/file/${INDEX}`]: { status: 200, body: SERVED } });
+  // A frame the scrubber stands at: the map is of an earlier commit, and the server still reads the head it holds.
+  const frame: MapJson = { ...DEMO, meta: { ...DEMO.meta, head: `9f8e7d6${'0'.repeat(33)}` } };
+  const { nav, registry } = await draw(frame, { token: TOKEN });
+  await select(nav, INDEX, frame);
+  await click('[data-inspector-tab="code"]');
+  await settle();
+  expect(element('[data-inspector-code-head]').textContent).toBe('read at a1b2c3d · 31 linesopen in the editor');
+  expect(element('[data-inspector-code-apart]').textContent).toBe("the text is not of this map's commit, 9f8e7d6, so no changed line and no function is marked on it");
+  expect(element('[data-inspector-code-apart]').style.color).toBe(rgb(CHROME_MUTED));
+  // The text is all there, and nothing of the other commit is drawn on it.
+  expect(all(`[data-inspector-code="${INDEX}"] [data-inspector-line]`)).toHaveLength(31);
+  expect(all('[data-inspector-changed], [data-inspector-cut], [data-inspector-line][data-inspector-function]')).toHaveLength(0);
+  expect(all(`[data-inspector-code="${INDEX}"] a`)).toHaveLength(0);
+
+  // A map of the working tree names no commit to hold the text to, and the text is marked as it comes.
+  const tree: MapJson = { ...DEMO, meta: { ...DEMO.meta, head: 'working-tree' } };
+  await act(async () => root.render(<Inspector map={tree} registry={registry} nav={nav} token={TOKEN} />));
+  await settle();
+  expect(host.querySelector('[data-inspector-code-apart]')).toBeNull();
+  expect(all('[data-inspector-changed]')).toHaveLength(17);
+  expect(all('[data-inspector-line][data-inspector-function]')).toHaveLength(2);
+});
+
 test('an answer that is not the text says what it is, and a file the change deleted is never asked for', async () => {
   const asked = serve({ [`/file/${SLOTS}`]: { status: 413, body: { error: 'too large' } }, [`/file/${TOOLS}`]: { status: 200, body: { ...SERVED, path: TOOLS, text: '' } } });
   const { nav } = await draw(DEMO, { token: TOKEN });
