@@ -264,6 +264,33 @@ test('every worktree of a repository holds to the one approved shape, and none k
   expect(mapped(linked, { base: 'main' }).map.approved).toEqual({ at: head, departures: [] });
 }, MINUTE);
 
+test('a run named a directory inside the repository reads the whole repository from its root, so no part of a commit is kept as its terrain and approved as its shape (D329 (repo-root))', () => {
+  const repo = shapesRepo('inside');
+  const head = git(repo, 'rev-parse', 'HEAD');
+  const inside = join(repo, 'src', 'shapes');
+  const line = `approved the shape at ${head.slice(0, 7)}: 2 modules, 0 outside packages, wrote .git/atis/approved.json\n`;
+
+  // Approved from inside: the shape of the whole commit, kept in the one place, named from the root.
+  expect(approveRun({ repo: inside, verbose: false, now: NOON })).toEqual({ exitCode: 0, stdout: line, stderr: '' });
+  const kept = readFileSync(keptAt(repo), 'utf8');
+  expect(assertApproved(JSON.parse(kept)).modules.map((module) => `${module.kind}:${module.path}`)).toEqual(['package:.', 'folder:src/shapes']);
+
+  // The terrain that run kept is the commit's own: a run at the root reads it back and approves the same document.
+  expect(approveRun({ repo, verbose: false, now: NOON })).toEqual({ exitCode: 0, stdout: line, stderr: '' });
+  expect(readFileSync(keptAt(repo), 'utf8')).toBe(kept);
+
+  // A map from inside is the map from the root, with or without the kept terrain, and departs by nothing.
+  const files = ['package.json', 'src/index.ts', 'src/shapes/area.ts', 'src/shapes/index.ts'];
+  for (const asked of [{ repo: inside }, { repo: inside, cache: false }, { repo, cache: false }, { repo: inside, wholeRepo: true }, { repo: inside, base: 'HEAD', head: { workingTree: true } }] as const) {
+    const { map, stderr } = mapped(asked.repo, asked);
+    expect(map.meta.repo).toBe('repo');
+    expect([...map.terrain.organelles.map((organelle) => organelle.path), ...map.terrain.groups.flatMap((group) => group.files)].toSorted()).toEqual(files);
+    expect(map.approved).toEqual({ at: head, departures: [] });
+    expect(stderr).toBe('');
+  }
+  expect(git(repo, 'status', '--porcelain', '--untracked-files=all')).toBe('');
+}, MINUTE);
+
 test('atis approve in a directory that is no repository exits 2 and keeps nothing (C4)', () => {
   const directory = temp('bare');
   for (const show of [false, true]) {

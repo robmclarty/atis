@@ -211,6 +211,26 @@ function isRecord(value: unknown): value is Readonly<Record<string, unknown>> {
   return typeof value === 'object' && value !== null;
 }
 
+/**
+ * The directory a run reads as the repository (D329 (repo-root)): the path
+ * it was named, or, named a directory inside a working tree, that tree's
+ * root. Git reads a commit's archive, a diff's paths and the working tree
+ * from the directory it runs in, so a run started a level down archived that
+ * level alone, failed on the first path it then asked for, and left the part
+ * it had read as the commit's kept terrain, which the next run from the root
+ * mapped and `atis approve` kept as the repository's shape. At the root the
+ * path stays as it was typed, symlinks and all. Where git finds no working
+ * tree the path stands, and the read that follows says why.
+ */
+function rootOf(repoPath: string): string {
+  const named = resolve(repoPath);
+  try {
+    return git(named, 'rev-parse', '--show-cdup') === '' ? named : git(named, 'rev-parse', '--show-toplevel');
+  } catch {
+    return named;
+  }
+}
+
 /** Where a cache entry sits, for `--verbose` to say: from `repo` when it is under it, as the main worktree's git directory is, else whole, as a linked worktree's shared one is (D190). */
 function keptAt(repo: string, path: string): string {
   const from = relative(repo, path);
@@ -582,7 +602,7 @@ function committedBaseline(repo: string, sha: string): CheckBaseline {
  */
 function measureRepo(repoPath: string, asked: Asked): Measured {
   const { cache, history = HISTORY_WINDOW } = asked;
-  const repo = resolve(repoPath);
+  const repo = rootOf(repoPath);
   const timings: Timing[] = [];
   const extractions: Extraction[] = [];
 
@@ -623,7 +643,7 @@ function measureRepo(repoPath: string, asked: Asked): Measured {
 /** Read the repository and build the map of a change; throws on a repository it cannot read, with the extractions removed either way. */
 function measureChange(repoPath: string, asked: Asked): Measured {
   const { cache, history = HISTORY_WINDOW } = asked;
-  const repo = resolve(repoPath);
+  const repo = rootOf(repoPath);
   const timings: Timing[] = [];
   const extractions: Extraction[] = [];
 
@@ -841,7 +861,8 @@ export type ApproveRunOptions = {
  */
 export function approveRun(options: ApproveRunOptions): Outcome {
   try {
-    const repo = resolve(options.repo);
+    // The root, so the kept place is named from it wherever the command was typed (D329 (repo-root)).
+    const repo = rootOf(options.repo);
     if (options.show === true) {
       const shape = readApproved(repo);
       if (shape === undefined) return { exitCode: 0, stdout: '', stderr: 'atis: no approved shape yet: run atis approve\n' };
@@ -1161,7 +1182,8 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
   const assets = resolve(options.assets);
   if (!existsSync(join(assets, 'index.html'))) return unbuilt(assets);
   try {
-    const repo = resolve(options.repo);
+    // The root: the diffs, the files' text, the raw check output and the watch each read from where git runs (D329 (repo-root)).
+    const repo = rootOf(options.repo);
     // The tour is read before the scan is spent, so a broken file fails at once (C4).
     const tour = options.tour === undefined ? undefined : tourAt(resolve(options.tour));
     // The head the watch follows is the working tree by the flag, or once the page has switched to it, as `mapOver` reads the two (D313 (watch-working-term)).
@@ -1191,7 +1213,7 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
       assets,
       map: serialize(map),
       token,
-      checks: { dir: join(options.repo, '.check'), slots: map.weather.checks.slots.map((slot) => slot.name) },
+      checks: { dir: join(repo, '.check'), slots: map.weather.checks.slots.map((slot) => slot.name) },
       rebase: { repo, rebuild: (request) => Promise.resolve(rebuiltOf(noted(mapOver(options, request)))) },
       // A working tree's head is no commit, so the tree it was written as goes with the map for a file's text to be read from (D312 (tree-beside-map)).
       tree: measured.tree,

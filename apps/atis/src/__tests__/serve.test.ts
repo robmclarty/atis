@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync,
 import { request } from 'node:http';
 import type { OutgoingHttpHeaders } from 'node:http';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterAll, expect, test } from 'vitest';
@@ -901,4 +901,22 @@ test("served for real, a file on the terrain and one on the shore are read at th
   expect(read.at).toMatch(/^[0-9a-f]{40}$/);
   expect(read.at).not.toBe(head);
   expect(git(repo, 'cat-file', '-t', read.at)).toBe('tree');
+}, 60_000);
+
+test("served from a directory inside the repository, the map, a file's text and a diff are the whole repository's, read from its root (D329 (repo-root))", async () => {
+  const repo = twoCommits();
+  const root = realpathSync(repo);
+  const square = readFileSync(join(repo, 'src', 'square.ts'), 'utf8');
+  const inside = await serveRun({ repo: join(repo, 'src'), base: 'v1', assets: stubApp(), open: false, verbose: false, token: TOKEN });
+  if (inside.served === undefined) throw new Error(inside.stderr);
+  servers.push(inside.served);
+  const map = assertMap(JSON.parse((await get(inside.served.port, `/map.json?token=${TOKEN}`)).body));
+  expect(map.meta.repo).toBe(basename(root));
+  expect(map.terrain.organelles.map((organelle) => organelle.path).toSorted()).toEqual(['src/shapes.ts', 'src/square.ts']);
+  expect(map.weather.changed.map((file) => file.path)).toEqual(['src/square.ts']);
+  // Git reads a file's text from the tree's root wherever it runs, and a diff's path from the directory it runs in: both are the root's here.
+  expect(await textAt(inside.served, 'src/square.ts')).toEqual({ path: 'src/square.ts', text: square, at: git(repo, 'rev-parse', 'HEAD'), root, editor: DEFAULT_EDITOR });
+  const diff = await diffAt(inside.served, 'src/square.ts');
+  expect(diff.root).toBe(root);
+  expect(diff.diff).toContain('+export function square(side: number): number {');
 }, 60_000);
