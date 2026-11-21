@@ -333,21 +333,35 @@ const opening = (toggled: Toggled, paths: readonly string[]): Toggled => {
   return next;
 };
 
-/** Scroll the column until a row shows under the tree's header; nothing where the tree is drawn outside a column. */
-const bring = (row: Element): void => {
+/**
+ * Scroll the column until a row shows under the tree's header; nothing where
+ * the tree is drawn outside a column. A row the world's pointer leads to is
+ * brought only while the tree stands at the column's top, its header pinned
+ * there: a reader with the notices or anything else above the tree in view
+ * keeps what they are reading, and the pointer crossing the map never scrolls
+ * it away (D342 (pointing-keeps-place)). A selection is asked for, and
+ * always brings its row.
+ */
+const bring = (row: Element, by: News['by']): void => {
   const column = row.closest('[data-column]');
   if (column === null) return;
-  const head = row.closest('[data-tree]')?.querySelector('header')?.getBoundingClientRect().height ?? 0;
-  column.scrollTop += nudge(column.getBoundingClientRect(), row.getBoundingClientRect(), head);
+  const within = column.getBoundingClientRect();
+  const tree = row.closest('[data-tree]');
+  if (by === 'pointed' && tree !== null && tree.getBoundingClientRect().top > within.top + 1) return;
+  const head = tree?.querySelector('header')?.getBoundingClientRect().height ?? 0;
+  column.scrollTop += nudge(within, row.getBoundingClientRect(), head);
 };
 
 /** What the tree last heard on the line. */
 type Heard = { readonly selected: Selected | undefined; readonly pointed: Pointed | undefined };
 
+/** What the line's news leads to, and which news it was: the selection moving, or the world's pointer coming to rest. */
+type News = { readonly target: string; readonly by: 'selected' | 'pointed' };
+
 /** The target the line's news leads to: the selection's when it moved, else what the world's pointer came to rest on; none when neither moved, and for the chrome's own pointing, whose row is under the pointer already. */
-const newsOf = (was: Heard, now: Heard): string | undefined => {
-  if (now.selected !== was.selected) return now.selected === undefined ? undefined : targetOf(now.selected);
-  return now.pointed !== was.pointed && now.pointed?.from === 'world' ? now.pointed.target : undefined;
+const newsOf = (was: Heard, now: Heard): News | undefined => {
+  if (now.selected !== was.selected) return now.selected === undefined ? undefined : { target: targetOf(now.selected), by: 'selected' };
+  return now.pointed !== was.pointed && now.pointed?.from === 'world' ? { target: now.pointed.target, by: 'pointed' } : undefined;
 };
 
 /** The keys the tree takes, so the world's walk never hears them (D282 (tree-keys)). */
@@ -382,7 +396,7 @@ export const Tree = ({ map, registry, nav }: TreeProps): ReactElement => {
   const pointed = useSyncExternalStore(nav.subscribe, nav.pointed, nav.pointed);
   const [open, toggle] = useFold(TREE);
   const [cursor, setCursor] = useState<string | undefined>(undefined);
-  const [revealed, setRevealed] = useState<{ readonly path: string } | undefined>(undefined);
+  const [revealed, setRevealed] = useState<{ readonly path: string; readonly by: News['by'] } | undefined>(undefined);
   const list = useRef<HTMLDivElement>(null);
   const placed = useRef(places);
   placed.current = places;
@@ -392,12 +406,12 @@ export const Tree = ({ map, registry, nav }: TreeProps): ReactElement => {
   useEffect(() => {
     const hear = (): void => {
       const now: Heard = { selected: nav.selected(), pointed: nav.pointed() };
-      const target = newsOf(heard.current, now);
+      const news = newsOf(heard.current, now);
       heard.current = now;
-      const path = target === undefined ? undefined : model.index.get(target);
-      if (path === undefined) return;
+      const path = news === undefined ? undefined : model.index.get(news.target);
+      if (news === undefined || path === undefined) return;
       setToggled((was) => opening(was, lineOf(model, path)));
-      setRevealed({ path });
+      setRevealed({ path, by: news.by });
     };
     hear();
     return nav.subscribe(hear);
@@ -407,7 +421,7 @@ export const Tree = ({ map, registry, nav }: TreeProps): ReactElement => {
   useEffect(() => {
     const index = revealed === undefined ? undefined : placed.current.get(revealed.path);
     const row = index === undefined ? undefined : list.current?.children[index];
-    if (row !== undefined) bring(row);
+    if (row !== undefined && revealed !== undefined) bring(row, revealed.by);
   }, [revealed]);
 
   // What the tree points at, so it lets go of that alone: the inspector points from the chrome's side too, and a row of its own may have taken the pointing since (D265 (own-pointing)).

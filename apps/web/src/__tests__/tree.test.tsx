@@ -290,6 +290,25 @@ test('when the world points at something the directories above its row open, the
   expect(row('libs/core/src/pm/slots.ts').dataset['pointed']).toBe('true');
 });
 
+test("the world's pointer scrolls nothing while anything above the tree is in view, and a selection still brings its row (D342 (pointing-keeps-place))", async () => {
+  const nav = await mountColumn();
+  const column = host.querySelector<HTMLElement>('[data-column]');
+  if (column === null) throw new Error('the column is not drawn');
+  // The column is 600 pixels high and the tree starts 300 down it, under the notices; the row stands 300 pixels under the column's foot.
+  vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (this: Element) {
+    const [top, height] = this === column ? [0, 600] : this.matches('[data-tree]') ? [300, 2000] : this instanceof HTMLButtonElement && this.dataset['row'] === FORMAT ? [900, 16] : [0, 24];
+    return { top, bottom: top + height, height, left: 0, right: 0, width: 0, x: 0, y: top, toJSON: () => ({}) };
+  });
+  act(() => nav.point(FORMAT, 'world'));
+  // The directories open and the row is lit, where the reader will find it; the column stays where they were reading.
+  expect(row(UTIL).getAttribute('aria-expanded')).toBe('true');
+  expect(row(FORMAT).dataset['pointed']).toBe('true');
+  expect(column.scrollTop).toBe(0);
+  // A selection is asked for, so its row is brought wherever the column stands.
+  act(() => nav.select(selectedOf(DEMO, FORMAT), 'stay'));
+  expect(column.scrollTop).toBe(316);
+});
+
 test("the world's pointer draws the rows it brings and the rows whose light moved, and never the whole tree, though a directory opens", async () => {
   const nav = await mount();
   const before = all('[data-row]').length;
