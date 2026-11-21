@@ -1,12 +1,13 @@
+// @vitest-environment jsdom
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { assertMap } from 'core';
 import type { MapJson } from 'core';
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 
-import { litIn, pushedHighlight } from '../highlight.js';
+import { litIn, pushedHighlight, revealGroup } from '../highlight.js';
 import { destinationOf } from '../walk.js';
 
 /** What `atis mcp` asks the open tab to show (D178): what the page reads off its socket, and what each target lights in the map it draws. */
@@ -50,4 +51,32 @@ test('what the map drawn does not place lights nothing: a shore file, a file it 
   expect(litIn(DEMO, { kind: 'file', path: 'README.md' })).toBeUndefined();
   expect(litIn(DEMO, { kind: 'file', path: 'libs/core/src/nope.ts' })).toBeUndefined();
   expect(litIn(DEMO, { kind: 'notice', rank: DEMO.notices.length + 1 })).toBeUndefined();
+});
+
+test("a reveal of a shore group asks the shore's fold open by its bare event before it looks for the block, so a shore folded by hand opens for an agent's highlight (D285 (unfold-by-event))", () => {
+  const rail = document.createElement('div');
+  rail.dataset['rail'] = '';
+  document.body.append(rail);
+  const asked: unknown[] = [];
+  const scrolled = vi.fn();
+  // A folded shore holds no block until it hears its name, and has drawn them by the time the event returns, as the chrome's fold does.
+  const hear = (event: Event): void => {
+    asked.push(event instanceof CustomEvent ? event.detail : undefined);
+    const block = document.createElement('div');
+    block.dataset['group'] = 'docs';
+    block.scrollIntoView = scrolled;
+    rail.append(block);
+  };
+  document.addEventListener('atis:unfold', hear);
+  try {
+    expect(document.querySelector('[data-rail] [data-group="docs"]')).toBeNull();
+    revealGroup('docs');
+    expect(asked).toEqual(['shore']);
+    // The block is scrolled to in the same turn, with no frame waited for.
+    expect(scrolled).toHaveBeenCalledTimes(1);
+    expect(scrolled).toHaveBeenCalledWith({ block: 'nearest' });
+  } finally {
+    document.removeEventListener('atis:unfold', hear);
+    rail.remove();
+  }
 });

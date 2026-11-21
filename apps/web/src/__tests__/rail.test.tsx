@@ -184,6 +184,21 @@ test("a folded shore opens, drawn, before the event that asks for it by name ret
   expect(host.querySelector('[data-fold="shore"]')?.getAttribute('aria-expanded')).toBe('true');
 });
 
+test("the world's reveal of a shore group opens a shore folded by hand itself, and scrolls to the group's block in the same turn (D285 (unfold-by-event))", async () => {
+  const scrolled = vi.fn();
+  Element.prototype.scrollIntoView = scrolled;
+  await mount();
+  await click('[data-fold="shore"]');
+  expect(all('[data-group]')).toHaveLength(0);
+  // As the world calls it for an agent's highlight or a tour's stop: the one call, from outside React, and nothing sent before it.
+  act(() => {
+    revealGroup('docs');
+  });
+  expect(host.querySelector('[data-fold="shore"]')?.getAttribute('aria-expanded')).toBe('true');
+  expect(scrolled).toHaveBeenCalledTimes(1);
+  expect(scrolled.mock.contexts[0]).toBe(host.querySelector('[data-rail] [data-group="docs"]'));
+});
+
 /** The pointer passing onto an element and off it again, as a browser sends it and React reads it. */
 const pass = (target: Element, onto: boolean): Promise<void> =>
   act(async () => {

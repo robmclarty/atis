@@ -11,8 +11,8 @@
  * flares a notice at its anchor. A tour's stop is lit the same way (D112): it
  * leads to its target, a file or a cell the map places, or else where its
  * notice's row does, and flares that notice; it comes from the chrome's
- * stepper, never over the socket. Pure but for `revealGroup`, which scrolls
- * the rail.
+ * stepper, never over the socket. Pure but for `revealGroup`, which opens
+ * the shore's fold and scrolls the rail.
  */
 
 import type { MapJson } from 'core';
@@ -71,7 +71,15 @@ export const litIn = (map: MapJson, highlight: Highlight): Lit | undefined => {
   return notice === undefined || destination === undefined ? undefined : { destination, target: notice.target, flare: highlight.rank - 1 };
 };
 
-/** Bring a shore group's block in the rail into view, as a notice row on the shore does (D153). */
+/**
+ * Bring a shore group's block in the rail into view, as a notice row on the
+ * shore does (D153). The shore's fold is asked open first, by the bare event
+ * it listens for, since a reader may have folded it by hand and a folded
+ * rail holds no block to find; the fold is drawn open before the event
+ * returns, so the block is there on the next line (D285 (unfold-by-event)).
+ * It is called from a socket's message and a click, never while React draws.
+ */
 export const revealGroup = (group: string): void => {
+  document.dispatchEvent(new CustomEvent('atis:unfold', { detail: 'shore' }));
   document.querySelector(`[data-rail] [data-group="${group}"]`)?.scrollIntoView({ block: 'nearest' });
 };
