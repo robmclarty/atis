@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { assertMap } from 'core';
+import type { MapJson } from 'core';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { CHROME_INK, CHROME_MUTED, IFR_HUE } from 'scene';
 import { expect, test } from 'vitest';
@@ -53,6 +54,45 @@ test('the status line says shapes: demo while the demo switch is on, and nothing
   // The chrome hands the switch it was given to its status line.
   expect(renderToStaticMarkup(<Chrome state={ready} registry={createRegistry()} dev={false} shapes="demo" />)).toContain('shapes: demo');
   expect(renderToStaticMarkup(<Chrome state={ready} registry={createRegistry()} dev={false} />)).not.toContain('shapes: demo');
+});
+
+/** The demo with no `.check/` trusted, as the HUD's test strips it: git-only instruments, no slot and no evidence. */
+const UNCHECKED: MapJson = { ...DEMO, meta: { ...DEMO.meta, instruments: { mode: 'git-only', reason: 'no .check/' } }, weather: { ...DEMO.weather, checks: { category: 'NOINST', checks_run: 0, slots: [] }, evidence: {} } };
+
+test('a map no check was read for says it is structure only, and a checked map says nothing of it (C2)', () => {
+  const bare = markup({ status: 'ready', url: '/map.json', map: UNCHECKED });
+  expect(bare).toContain('demo against main · structure only: no checks ran');
+  expect(bare).toContain('data-structure-only');
+  const checked = markup({ status: 'ready', url: '/map.json', map: DEMO });
+  expect(checked).not.toContain('structure only');
+  expect(checked).not.toContain('data-structure-only');
+  // A map that has not arrived is not one with no checks: the line says nothing of it while it loads or after it fails.
+  expect(markup({ status: 'loading', url: '/map.json' })).not.toContain('structure only');
+  expect(markup({ status: 'failed', url: '/map.json', reason: 'the server answered 404' })).not.toContain('structure only');
+  // The chrome's own line says it.
+  expect(renderToStaticMarkup(<Chrome state={{ status: 'ready', url: '/map.json', map: UNCHECKED }} registry={createRegistry()} dev={false} />)).toContain('structure only: no checks ran');
+});
+
+const READY = { status: 'ready', url: '/map.json', map: DEMO } as const;
+
+/** The line's markup with the socket open, closed, or none. */
+const line = (live: boolean | undefined, state: Parameters<typeof Status>[0]['state'] = READY): string => renderToStaticMarkup(<Status state={state} registry={createRegistry()} live={live} />);
+
+test('the status line says live while the socket to the CLI is open, and nothing of it once it closes or where there is none (D106)', () => {
+  const ready = READY;
+  expect(line(true)).toContain('demo against main · live');
+  expect(line(true)).toContain('data-live');
+  for (const closed of [false, undefined]) {
+    expect(line(closed)).not.toContain('live');
+    expect(line(closed)).toContain('>demo against main<');
+  }
+  // The socket opens before the map is read, and the line says so then too.
+  expect(line(true, { status: 'loading', url: '/map.json' })).toContain('reading /map.json · live');
+  // Every part the line carries stands in one order: the map, that it is structure only, the demo switch, then live.
+  expect(renderToStaticMarkup(<Status state={{ status: 'ready', url: '/map.json', map: UNCHECKED }} registry={createRegistry()} shapes="demo" live />)).toContain('>demo against main · structure only: no checks ran · shapes: demo · live<');
+  // The chrome hands the socket's state it was given to its status line.
+  expect(renderToStaticMarkup(<Chrome state={ready} registry={createRegistry()} dev={false} live />)).toContain('demo against main · live');
+  expect(renderToStaticMarkup(<Chrome state={ready} registry={createRegistry()} dev={false} live={false} />)).not.toContain('· live');
 });
 
 test('the chrome never glows: no shadow, blur or gradient in its style', () => {

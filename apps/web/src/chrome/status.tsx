@@ -5,6 +5,10 @@
  * read through the registry so the dev panel moves them live (D156), and
  * nothing that glows, blurs or grades. While the demo switch is on the line
  * says so, since an opened cell's shapes are then no reading of the map (D202).
+ * A map no check was read for says it is structure only, so nobody takes a
+ * map with no weather on it for a clean one (C2), and a page whose socket to
+ * the CLI is open says it is live, since a watch can then push it a map
+ * (D106, D208 (side-panels)).
  */
 
 import { CHROME_GROUND, CHROME_INK, CHROME_MUTED, CHROME_PAD, FONT_FAMILY, HUD_FONT_SIZE, IFR_HUE } from 'scene';
@@ -19,6 +23,15 @@ const LOOK = { CHROME_GROUND, CHROME_INK, CHROME_MUTED, CHROME_PAD, FONT_FAMILY,
 
 /** What the line adds while `?shapes=demo` is on (D202). */
 const SHAPES_DEMO_WORDS = 'shapes: demo';
+
+/** What the line adds for a map read with no `.check/` trusted: it shows the repo's structure and no check's verdict. */
+const STRUCTURE_ONLY_WORDS = 'structure only: no checks ran';
+
+/** What the line adds while the page's socket to the CLI is open. */
+const LIVE_WORDS = 'live';
+
+/** What stands between the line's parts. */
+const BETWEEN = ' · ';
 
 /** How many characters of a commit's sha the line writes. */
 const SHORT_SHA = 7;
@@ -43,18 +56,22 @@ type StatusProps = {
   readonly state: MapState;
   readonly registry: Registry;
   readonly shapes?: 'demo' | undefined;
-  /** Whether the page's socket to the CLI is open (D106); none on a page with no socket. Handed in now, and written as a word by the inspector's track (D208 (side-panels)). */
+  /** Whether the page's socket to the CLI is open (D106); none on a page with no socket. The line says `live` while it is, and nothing of it otherwise. */
   readonly live?: boolean | undefined;
 };
 
-export const Status = ({ state, registry, shapes }: StatusProps): ReactElement => {
+export const Status = ({ state, registry, shapes, live }: StatusProps): ReactElement => {
   useLive(registry);
   const look = registry.view(LOOK);
+  const structureOnly = state.status === 'ready' && state.map.meta.instruments.mode !== 'check';
+  const words = [wordsOf(state), ...(structureOnly ? [STRUCTURE_ONLY_WORDS] : []), ...(shapes === undefined ? [] : [SHAPES_DEMO_WORDS]), ...(live === true ? [LIVE_WORDS] : [])];
   return (
     <p
       role="status"
       data-status={state.status}
       {...(shapes === undefined ? {} : { 'data-shapes': shapes })}
+      {...(structureOnly ? { 'data-structure-only': '' } : {})}
+      {...(live === true ? { 'data-live': '' } : {})}
       style={{
         margin: 0,
         padding: look.CHROME_PAD,
@@ -65,7 +82,7 @@ export const Status = ({ state, registry, shapes }: StatusProps): ReactElement =
         pointerEvents: 'auto',
       }}
     >
-      {shapes === undefined ? wordsOf(state) : `${wordsOf(state)} · ${SHAPES_DEMO_WORDS}`}
+      {words.join(BETWEEN)}
     </p>
   );
 };
