@@ -164,6 +164,17 @@ const mutedFact = (label: string, muted: string): Fact => ({ label, muted });
 /** `1 file`, `2 files`. */
 export const counted = (count: number, one: string, many = `${one}s`): string => `${String(count)} ${count === 1 ? one : many}`;
 
+/** Line numbers in words, each run of neighbours written by its two ends: `12-18, 31`. */
+export const runsIn = (lines: readonly number[]): string => {
+  const runs: [number, number][] = [];
+  for (const line of [...new Set(lines)].toSorted((a, b) => a - b)) {
+    const last = runs.at(-1);
+    if (last !== undefined && line === last[1] + 1) last[1] = line;
+    else runs.push([line, line]);
+  }
+  return runs.map(([from, to]) => (from === to ? String(from) : `${String(from)}-${String(to)}`)).join(', ');
+};
+
 /** What a cell is called in a panel: a package, or a module and what makes it one. */
 const MODULE_WORDS: Readonly<Record<Cell['kind'], string>> = {
   package: 'package',

@@ -6,7 +6,7 @@ import { assertMap } from 'core';
 import type { ApprovedBlock, MapJson } from 'core';
 import { expect, test } from 'vitest';
 
-import { NO_APPROVED_SHAPE, counted, departuresIn, inspect } from '../inspector.js';
+import { NO_APPROVED_SHAPE, counted, departuresIn, inspect, runsIn } from '../inspector.js';
 import type { Fact, FileModel, Inspected, ModuleModel } from '../inspector.js';
 import { selectedOf } from '../nav.js';
 import type { Selected } from '../nav.js';
@@ -495,3 +495,12 @@ test('on every committed fixture a file inspects whole: the selection selectedOf
     }
   }
 }, SWEEP_MS);
+
+test('line numbers are written as runs, each run of neighbours by its two ends', () => {
+  expect(runsIn([])).toBe('');
+  expect(runsIn([7])).toBe('7');
+  expect(runsIn([12, 13, 14, 15, 16, 17, 18, 31])).toBe('12-18, 31');
+  expect(runsIn([3, 4, 9, 10, 11, 20])).toBe('3-4, 9-11, 20');
+  // Out of order and written twice, they are the same lines.
+  expect(runsIn([5, 3, 4, 4, 1])).toBe('1, 3-5');
+});
