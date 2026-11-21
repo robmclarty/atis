@@ -631,7 +631,7 @@ test('the largest file on the slide fills its share of its core and the rest by 
   });
   // The tokens are read as handed in (D156): half the fill, half the area.
   const tools = bodyOf(bodies, TOOLS);
-  const halved = nucleusOf(tools, tools.outline, slide, { NUCLEUS_FILL: NUCLEUS_FILL / 2, NUCLEUS_PAD, NUCLEUS_MOST });
+  const halved = nucleusOf(tools, tools.outline, slide.mostLines, { NUCLEUS_FILL: NUCLEUS_FILL / 2, NUCLEUS_PAD, NUCLEUS_MOST });
   expect((halved?.granules ?? []).reduce((total, granule) => total + Math.PI * granule.r ** 2, 0)).toBeLessThan(areaOf(tools) * 0.75);
 });
 
