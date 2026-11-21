@@ -37,6 +37,11 @@
  * and checkride's baseline as the head commits it, and core draws the whole
  * repository's overlays over that terrain in place of weather (D101).
  *
+ * Either map is then held against the approved shape, where the repository
+ * keeps one: `atis approve` writes it under the git directory from the map
+ * its flags ask for, and every map built after carries its departures from
+ * it (D212 (approved-private)).
+ *
  * The map then goes one of three ways. `run` writes it atomically, and the
  * still SVG beside it, and exits. `pngRun` writes the same, then serves the
  * world for as long as a headless browser takes to capture it as a PNG
@@ -62,6 +67,7 @@ import type { CheckBaseline, Commit, Config, FrameInputs, Layout, MapJson, Overl
 import type { Browser } from 'playwright-core';
 import { renderCinema, renderFingerprint, renderSvg } from 'svg';
 
+import { holdToApproved, keepApproved, readApproved } from './approved.js';
 import {
   codeKey,
   configKey,
@@ -184,7 +190,7 @@ export type ServeRunOptions = {
   readonly watch?: boolean | undefined;
   /** How often the watch reads the repository, in milliseconds; a test shortens it. */
   readonly watchEvery?: number | undefined;
-  /** Where the watch says what it did: a line per map pushed, or kept when a rebuild failed; stderr unless a test listens. */
+  /** Where the run says what it did once it serves: a line per map the watch pushed, or kept when a rebuild failed, and what the approved shape could not say on a rebuilt map (D324 (unshared-said)); stderr unless a test listens. */
   readonly watchLog?: ((line: string) => void) | undefined;
   /** `--tour <file>`: a tour `apps/tour` wrote for this map, played in the world (D112, D183). */
   readonly tour?: string | undefined;
@@ -363,7 +369,14 @@ type Measured = {
   readonly cache: string;
   readonly structure?: { readonly base: string; readonly head: string };
   readonly entries?: string;
+  /** What the approved shape could not say on the map itself, each a sentence for stderr, said whether or not `--verbose` asks (D321 (approved-unreadable), D322 (approved-guarded), D324 (unshared-said)). */
+  readonly notes?: readonly string[];
 };
+
+/** A run's notes as stderr prints them, a line each. */
+function notesOf(measured: Measured): string {
+  return (measured.notes ?? []).map((note) => `atis: ${note}\n`).join('');
+}
 
 /**
  * What the head did to the dependencies (D47, D83): the workspace manifests'
@@ -607,9 +620,8 @@ function measureRepo(repoPath: string, asked: Asked): Measured {
   }
 }
 
-/** Read the repository and build the map; throws on a repository it cannot read, with the extractions removed either way. */
-function measure(repoPath: string, asked: Asked): Measured {
-  if (asked.wholeRepo === true) return measureRepo(repoPath, asked);
+/** Read the repository and build the map of a change; throws on a repository it cannot read, with the extractions removed either way. */
+function measureChange(repoPath: string, asked: Asked): Measured {
   const { cache, history = HISTORY_WINDOW } = asked;
   const repo = resolve(repoPath);
   const timings: Timing[] = [];
@@ -722,6 +734,27 @@ function measure(repoPath: string, asked: Asked): Measured {
   }
 }
 
+/** The map the flags ask for, of a change or of the whole repository, before the approved shape is held against it: what `atis approve` reduces. */
+function measureAsked(repoPath: string, asked: Asked): Measured {
+  return asked.wholeRepo === true ? measureRepo(repoPath, asked) : measureChange(repoPath, asked);
+}
+
+/**
+ * Read the repository and build the map, then hold it against the approved
+ * shape the repository keeps (D212 (approved-private)): with none, the map
+ * is the one measured, not a byte moved; with one, it carries its departures
+ * from it, and what the block cannot say comes back as notes. Throws on a
+ * repository it cannot read, never for the shape's sake.
+ */
+function measure(repoPath: string, asked: Asked): Measured {
+  const measured = measureAsked(repoPath, asked);
+  const started = performance.now();
+  const held = holdToApproved(resolve(repoPath), measured.map);
+  if (!held.read) return measured;
+  measured.timings.push({ source: 'approved', ms: Math.round(performance.now() - started) });
+  return { ...measured, map: held.map, ...(held.notes.length === 0 ? {} : { notes: held.notes }) };
+}
+
 /** Measure the repository and write the map, with the SVG beside it when asked; throws on a repository it cannot read. */
 function writeMap(options: Options): Measured {
   const measured = measure(options.repo, { base: options.base, head: options.head, range: options.range, wholeRepo: options.wholeRepo, cache: options.cache !== false, history: options.history });
@@ -750,7 +783,7 @@ const wroteOf = (files: readonly (string | undefined)[]): string => {
 export function run(options: Options): Outcome {
   try {
     const measured = writeMap(options);
-    return { exitCode: 0, stdout: `${summary(measured.map)}, wrote ${wroteOf([options.out, options.svg])}\n`, stderr: options.verbose ? report(measured) : '' };
+    return { exitCode: 0, stdout: `${summary(measured.map)}, wrote ${wroteOf([options.out, options.svg])}\n`, stderr: `${notesOf(measured)}${options.verbose ? report(measured) : ''}` };
   } catch (error) {
     return failed(error);
   }
@@ -768,9 +801,65 @@ export type FingerprintOptions = { readonly repo: string; readonly head?: string
  */
 export function fingerprintRun(options: FingerprintOptions): Outcome {
   try {
-    const { map } = measure(options.repo, { head: options.head, wholeRepo: true, cache: false });
+    // The terrain alone: no approved shape is read for an image that draws none of it.
+    const { map } = measureRepo(options.repo, { head: options.head, wholeRepo: true, cache: false });
     writeAtomic(resolve(options.out), renderFingerprint(map));
     return { exitCode: 0, stdout: `terrain of ${counted(map.terrain.organelles.length, 'file')} at ${shortSha(map.meta.head)}, wrote ${options.out}\n`, stderr: '' };
+  } catch (error) {
+    return failed(error);
+  }
+}
+
+/** The flags `atis approve` takes: the map whose shape is approved, asked for as a map run asks, or `--show`, which approves nothing. */
+export type ApproveRunOptions = {
+  readonly repo: string;
+  readonly base?: BaseAsked | undefined;
+  readonly head?: HeadAsked | undefined;
+  readonly wholeRepo?: boolean | undefined;
+  /** Print the shape already kept, as it is kept, and measure nothing. */
+  readonly show?: boolean | undefined;
+  readonly verbose: boolean;
+  readonly cache?: boolean | undefined;
+  readonly history?: number | undefined;
+  /** The moment of approval (D320 (approved-time)); the clock's unless a test names one. */
+  readonly now?: Date | undefined;
+};
+
+/**
+ * `atis approve` (D212 (approved-private)): the map the flags ask for,
+ * measured as a map run measures it and not held against the shape before,
+ * reduced by core to the shape its owner approves and kept under the git
+ * directory, in place of the one before, so nothing lands in the working
+ * tree. Approving from the map a later run draws is what lets that run
+ * compare every kind: lines, fan out and an interface with no barrel are
+ * held only against a map over the base the shape was approved over
+ * (D308 (same-terrain), D323 (approve-as-mapped)). `--show` prints the kept
+ * document byte for byte and approves nothing; with none kept it prints
+ * nothing and says so on stderr, so a script reads a document or nothing
+ * (D325 (show-as-kept)). Exits 0 once the shape is kept or shown, and 2 on
+ * a repository it cannot read or a kept shape that will not read (C4).
+ */
+export function approveRun(options: ApproveRunOptions): Outcome {
+  try {
+    const repo = resolve(options.repo);
+    if (options.show === true) {
+      const shape = readApproved(repo);
+      if (shape === undefined) return { exitCode: 0, stdout: '', stderr: 'atis: no approved shape yet: run atis approve\n' };
+      if ('reason' in shape) return failed(`the approved shape at ${shape.path} could not be read (${shape.reason}); run atis approve to write it again`);
+      return { exitCode: 0, stdout: shape.text, stderr: '' };
+    }
+    const measured = measureAsked(options.repo, { base: options.base, head: options.head, wholeRepo: options.wholeRepo, cache: options.cache !== false, history: options.history });
+    const { path, doc } = timed(measured.timings, 'approve', () => keepApproved(repo, measured.map, options.now ?? new Date()));
+    // The words the panels write for the head: a commit's short sha, or the working tree (D210 (approved-block)).
+    const at = doc.approved_at === WORKING_TREE ? 'of the working tree' : `at ${shortSha(doc.approved_at)}`;
+    const over = doc.over === undefined || doc.over === doc.approved_at ? '' : ` over ${shortSha(doc.over)}`;
+    // A list the map did not read is said so, never counted as none (C2).
+    const outside = doc.dependencies === undefined ? 'outside packages not listed' : counted(doc.dependencies.length, 'outside package');
+    return {
+      exitCode: 0,
+      stdout: `approved the shape ${at}${over}: ${counted(doc.modules.length, 'module')}, ${outside}, wrote ${keptAt(repo, path)}\n`,
+      stderr: options.verbose ? report(measured) : '',
+    };
   } catch (error) {
     return failed(error);
   }
@@ -950,7 +1039,7 @@ export async function commentRun(options: CommentRunOptions): Promise<Outcome> {
     }
     const url = await postComment(gh, repo, pr, commentBody(map, linked));
     const kept = linked === undefined ? '' : ` with its ${linked.kind.toUpperCase()} on ${MAPS_BRANCH}`;
-    return { exitCode: 0, stdout: `${summary(map)}, commented on ${url}${kept}\n`, stderr: `${unkept}${options.verbose ? report(measured) : ''}` };
+    return { exitCode: 0, stdout: `${summary(map)}, commented on ${url}${kept}\n`, stderr: `${unkept}${notesOf(measured)}${options.verbose ? report(measured) : ''}` };
   } catch (error) {
     return failed(error);
   } finally {
@@ -988,7 +1077,7 @@ export async function pngRun(options: PngRunOptions): Promise<Outcome> {
       writeAtomic(resolve(options.png), captured.png);
     });
     const drawn = captured.backend === undefined ? '' : `, drawn on ${captured.backend}`;
-    return { exitCode: 0, stdout: `${summary(map)}, wrote ${wroteOf([options.out, options.svg, options.png])}${drawn}\n`, stderr: options.verbose ? report(measured) : '' };
+    return { exitCode: 0, stdout: `${summary(map)}, wrote ${wroteOf([options.out, options.svg, options.png])}${drawn}\n`, stderr: `${notesOf(measured)}${options.verbose ? report(measured) : ''}` };
   } catch (error) {
     return failed(error);
   } finally {
@@ -1047,6 +1136,10 @@ const rebuiltOf = ({ map, tree }: Measured): Rebuilt => ({ map: serialize(map), 
  * keeps the map the tab holds and says why (D106). While the head is the
  * working tree, the signature moves with an edit that stages nothing too, so
  * the tab follows a coding agent as it writes (D313 (watch-working-term)).
+ * Approving moves the signature too, so the tab is pushed the map with its
+ * departures on it, and a map rebuilt over a base the approved shape was not
+ * cut over says once, beside the watch's own lines, which readings it left
+ * out (D314 (approved-stamp), D324 (unshared-said)).
  * While it serves, it says how to reach it in the `atis/serve.json` its
  * working tree's git directory keeps, so `atis mcp` started in the same
  * working tree can point at the tab (D138, D190); a repository that will not
@@ -1079,6 +1172,15 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
       return failed(`the tour at ${options.tour ?? ''} was written for ${sidesNamed(tour.base, tour.head)}, and this map is of ${sidesNamed(map.meta.base, map.meta.head)}; write the tour for this map, or serve the map it was written for`);
     }
     const token = options.token ?? randomBytes(16).toString('hex');
+    const log = options.watchLog ?? ((line: string) => process.stderr.write(line));
+    // What the approved shape could not say on a rebuilt map, said once for as long as it stands: a watch rebuilds often, and the page's switch of base is what stops a terrain being shared (D324 (unshared-said)).
+    let said = notesOf(measured);
+    const noted = (next: Measured): Measured => {
+      const notes = notesOf(next);
+      if (notes !== said && notes !== '') log(notes);
+      said = notes;
+      return next;
+    };
     const started = performance.now();
     // The raw check output beside the map (D93): the run's `.check/`, for the slots the map holds alone (D134).
     const served = await serve({
@@ -1086,7 +1188,7 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
       map: serialize(map),
       token,
       checks: { dir: join(options.repo, '.check'), slots: map.weather.checks.slots.map((slot) => slot.name) },
-      rebase: { repo, rebuild: (request) => Promise.resolve(rebuiltOf(mapOver(options, request))) },
+      rebase: { repo, rebuild: (request) => Promise.resolve(rebuiltOf(noted(mapOver(options, request)))) },
       // A working tree's head is no commit, so the tree it was written as goes with the map for a file's text to be read from (D312 (tree-beside-map)).
       tree: measured.tree,
       watch: watched !== undefined,
@@ -1094,7 +1196,6 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
     });
     timings.push({ source: 'serve', ms: Math.round(performance.now() - started) });
     asked = served.asked;
-    const log = options.watchLog ?? ((line: string) => process.stderr.write(line));
     const watching =
       watched === undefined || from === undefined
         ? undefined
@@ -1107,6 +1208,7 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
                 const next = switched === undefined ? measure(options.repo, asTyped) : mapOver(options, switched);
                 served.push(rebuiltOf(next));
                 log(`atis: watched ${shortSha(next.map.meta.head)}: ${summary(next.map)}\n`);
+                noted(next);
               } catch (error) {
                 log(`atis: the watch kept the last map: ${messageOf(error)}\n`);
               }
@@ -1124,7 +1226,7 @@ export async function serveRun(options: ServeRunOptions): Promise<Outcome> {
     return {
       exitCode: 0,
       stdout: `${summary(map)}, serving at ${served.url}${watching === undefined ? '' : ', watching'} (Ctrl-C to stop)\n`,
-      stderr: `${unkept}${options.verbose ? report(measured) : ''}`,
+      stderr: `${unkept}${notesOf(measured)}${options.verbose ? report(measured) : ''}`,
       served: {
         ...served,
         close: () => {
