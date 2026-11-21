@@ -8,10 +8,17 @@
  * neither moves of its own (§5.5, C12). Passing from one thing straight to
  * the next moves the highlight with the pointer, already shown, so a sweep
  * across the files reads as one highlight travelling, not a flicker.
+ *
+ * The selection is ringed in the same layer, under the hover's outline (D207
+ * (click-selects)): a second outline round the selected file or module, in
+ * `HOVER.selectInk` at `HOVER.selectWidth`, the hover's ink drawn heavier. It
+ * is steady: it eases neither in nor out, and stays for as long as the
+ * selection does, wherever the pointer is.
  */
 
 import { Vector3 } from 'three/webgpu';
 import type { Camera } from 'three/webgpu';
+import type { Point } from 'scene';
 import { CHROME_GROUND, CHROME_INK, CHROME_MUTED, CHROME_STROKE_WIDTH, FONT_FAMILY, LABELING } from 'scene';
 
 import type { Hovered } from '../hover.js';
@@ -27,7 +34,9 @@ export type Hover = {
   readonly tag: HTMLElement;
   /** What is under the pointer now, if anything, and where the pointer is on the page. The last thing shown stays drawn while the highlight eases out. */
   readonly show: (hovered: Hovered | undefined, pointer: { readonly x: number; readonly y: number } | undefined) => void;
-  /** Draw the outline over its thing for this camera and canvas, and the tag beside the pointer, at the eased hover. */
+  /** The selection's outline, in layout units, or none once nothing is selected (D207 (click-selects)). The same ring handed in again costs nothing, so the caller hands it in every frame, and a new one where its thing floats. */
+  readonly select: (ring: readonly Point[] | undefined) => void;
+  /** Draw the selection's ring, steady, and over it the outline of the thing under the pointer for this camera and canvas, with the tag beside the pointer, at the eased hover. */
   readonly render: (camera: Camera, width: number, height: number, eased: number) => void;
 };
 
@@ -38,16 +47,26 @@ export const createHover = (heightAt: (x: number, y: number) => number, look: Ho
   const outline = document.createElementNS(SVG, 'svg');
   outline.dataset['hover'] = '';
   Object.assign(outline.style, { position: 'fixed', inset: '0', pointerEvents: 'none', display: 'none' });
-  const path = document.createElementNS(SVG, 'path');
-  path.setAttribute('fill', 'none');
-  path.setAttribute('stroke-linejoin', 'round');
-  outline.append(path);
+  const stroke = (name: string): SVGPathElement => {
+    const drawn = document.createElementNS(SVG, 'path');
+    drawn.dataset['ring'] = name;
+    drawn.setAttribute('fill', 'none');
+    drawn.setAttribute('stroke-linejoin', 'round');
+    drawn.style.display = 'none';
+    return drawn;
+  };
+  // The selection's ring lies under the pointer's outline, so a hover over the selected thing reads on it.
+  const ring = stroke('selected');
+  const path = stroke('hover');
+  outline.append(ring, path);
   const tag = document.createElement('div');
   tag.dataset['hoverTag'] = '';
   Object.assign(tag.style, { position: 'fixed', left: '0', top: '0', pointerEvents: 'none', whiteSpace: 'nowrap', display: 'none' });
 
   let shown: Hovered | undefined;
   let lifted: readonly Vector3[] = [];
+  let selected: readonly Point[] | undefined;
+  let selectedLifted: readonly Vector3[] = [];
   let pointer: { readonly x: number; readonly y: number } | undefined;
   let sized: readonly [number, number] = [0, 0];
 
@@ -59,25 +78,45 @@ export const createHover = (heightAt: (x: number, y: number) => number, look: Ho
     tag.textContent = hovered.text;
   };
 
+  const select = (next: readonly Point[] | undefined): void => {
+    if (next === selected) return;
+    selected = next;
+    selectedLifted = next === undefined ? [] : next.map(([x, y]) => new Vector3(x, heightAt(x, y), y));
+  };
+
   const projected = new Vector3();
+  /** A closed outline's path on the screen, through its points where the camera shows them. */
+  const traced = (points: readonly Vector3[], camera: Camera, width: number, height: number): string =>
+    `M${points
+      .map((point) => {
+        projected.copy(point).project(camera);
+        return `${(((projected.x + 1) / 2) * width).toFixed(1)} ${(((1 - projected.y) / 2) * height).toFixed(1)}`;
+      })
+      .join('L')}Z`;
+
   const render = (camera: Camera, width: number, height: number, eased: number): void => {
     const visible = shown !== undefined && eased > 0;
-    outline.style.display = visible ? '' : 'none';
+    const ringed = selectedLifted.length > 0;
+    outline.style.display = visible || ringed ? '' : 'none';
     tag.style.display = visible && pointer !== undefined ? '' : 'none';
-    if (!visible) return;
+    ring.style.display = ringed ? '' : 'none';
+    path.style.display = visible ? '' : 'none';
+    if (!visible && !ringed) return;
     if (sized[0] !== width || sized[1] !== height) {
       outline.setAttribute('width', String(width));
       outline.setAttribute('height', String(height));
       sized = [width, height];
     }
-    const points = lifted.map((point) => {
-      projected.copy(point).project(camera);
-      return `${(((projected.x + 1) / 2) * width).toFixed(1)} ${(((1 - projected.y) / 2) * height).toFixed(1)}`;
-    });
-    path.setAttribute('d', `M${points.join('L')}Z`);
+    if (ringed) {
+      ring.setAttribute('d', traced(selectedLifted, camera, width, height));
+      ring.setAttribute('stroke', look.selectInk);
+      ring.setAttribute('stroke-width', String(look.selectWidth));
+    }
+    if (!visible) return;
+    path.setAttribute('d', traced(lifted, camera, width, height));
     path.setAttribute('stroke', look.ink);
     path.setAttribute('stroke-width', String(look.width));
-    outline.style.opacity = String(eased);
+    path.style.opacity = String(eased);
     if (pointer === undefined) return;
     Object.assign(tag.style, {
       transform: `translate(${String(pointer.x + look.tagGap)}px, ${String(pointer.y + look.tagGap)}px)`,
@@ -90,5 +129,5 @@ export const createHover = (heightAt: (x: number, y: number) => number, look: Ho
     });
   };
 
-  return { outline, tag, show, render };
+  return { outline, tag, show, select, render };
 };
