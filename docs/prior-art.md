@@ -1,7 +1,7 @@
 # Command centre: a glanceable verdict surface for a diff against trunk
 
 Prior-art research for atis, 2026-09-16, done before the spec was written.
-The spec is [../SPEC.md](../SPEC.md); this note is the reasoning behind its
+The spec is [founding-spec.md](founding-spec.md); this note is the reasoning behind its
 encodings and the catalogue of what was borrowed from where. Some proposals
 below were superseded by the spec (for example the geometry and the motion
 grammar); where they disagree, the spec wins.

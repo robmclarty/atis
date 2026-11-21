@@ -432,7 +432,10 @@ pnpm check                                    # the definition of done: exit 0
 pnpm build && node apps/atis/dist/cli.js --version
 ```
 
-- [SPEC.md](./SPEC.md): the design, phase by phase.
+- [keyframes.md](./keyframes.md): what atis is for and what must hold, as the gate's `intent` check
+  reads it.
+- [docs/founding-spec.md](./docs/founding-spec.md): the draft atis was first built from, kept as the
+  founding record. It is no longer the spec; the pages around it say what the product is now.
 - [docs/design.md](./docs/design.md): the look, its tokens and their sources.
 - [docs/one-surface.md](./docs/one-surface.md): the world as one lit surface, its panels,
   what is parked, and the decisions that made it.

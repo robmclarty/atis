@@ -13,7 +13,7 @@ example, the module that draws membranes carries `// Bubble Sets: Collins,
 Penn, Carpendale 2009, doi:10.1109/TVCG.2009.122`). If a row's "where"
 column stops being true, fix the row.
 
-Section references (§) point into [../SPEC.md](../SPEC.md). The longer
+Section references (§) point into [the founding spec](founding-spec.md). The longer
 reasoning behind each borrowing is in [prior-art.md](./prior-art.md).
 
 ## 1. Research

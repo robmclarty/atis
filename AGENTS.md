@@ -44,6 +44,30 @@ The `struct` check runs whatever ast-grep rules `sgconfig.yml` points at
 (`rules/` by default). Those files are this repo's boundary convention —
 read them rather than assuming one.
 
-Active checks in this repo: types, lint, struct, dead, test, docs, links, spell.
+Active checks in this repo: types, lint, struct, dead, test, docs, links, spell, intent.
+`checkride.config.json` names every slot: which tool fills it, which run only under
+`--include` or `--all`, and which are off.
+
+## Keyframes
+
+This project's intent is in `keyframes.md`. Read it before you change code. The `intent`
+check runs `keyframes check --strict` on it.
+
+- **Constraints (C)** must always hold. If a change would break one, stop and ask.
+- **Scenarios (S)** must keep working.
+- **Decisions (D)** are settled. Don't reverse one without asking.
+- **Questions (Q)** are open. Raise them; don't settle them on your own.
+- **Ideas (I)** aren't agreed yet. Don't build one unless a person asks.
+- **Principles (P)** decide judgment calls the plan doesn't cover.
+- **Taste (T)** is preference. Follow it unless you have a reason, and say what the reason was.
+- **Map (M)** says where things live. Put new code in the part it belongs to.
+- When your work relies on an item, cite it as `[C3 (slug)]` in your summary or commit message.
+- Don't edit `keyframes.md` unless a person asks you to. If it looks wrong or incomplete, say so
+  and propose the change.
+- After changing anything the plan points at, run `pnpm exec keyframes check --strict`.
+
+Its decisions and constraints keep the numbers and slugs the code's comments cite, as
+`D204 (parked-levels)`. The longer record is `docs/one-surface.md` and the build records
+under `.plumbbob/builds/`; `docs/founding-spec.md` is the founding record, not the spec.
 
 <!-- checkride:end -->

@@ -1,0 +1,34 @@
+{
+  "$schema": "./node_modules/checkride/schema/checkride.config.schema.json",
+  "note": "Every slot checkride knows is named here, so this file, not detection, says what runs. A slot set to false has no tool in this repo: format (no formatter is used), prose (no vale), mutation (no stryker config), publint and attw (not installed), unclaimed (no targets are declared) and schema (no schemas are declared). A slot with optIn runs only under --include or --all.",
+  "checks": {
+    "types": "tsc",
+    "format": false,
+    "lint": "oxlint",
+    "struct": "ast-grep",
+    "dead": "fallow",
+    "dupes": { "use": "fallow", "optIn": true },
+    "health": { "use": "fallow", "optIn": true },
+    "test": "vitest",
+    "docs": "markdownlint-cli2",
+    "links": "links",
+    "spell": "cspell",
+    "prose": false,
+    "mutation": false,
+    "security": { "use": "pnpm-audit", "optIn": true },
+    "build": { "use": "build", "optIn": true },
+    "publint": false,
+    "attw": false,
+    "pack": { "use": "pack", "optIn": true },
+    "smoke": { "use": "smoke", "optIn": true },
+    "snippets": { "use": "snippets", "optIn": true },
+    "unclaimed": false,
+    "schema": false,
+    "intent": {
+      "command": "pnpm",
+      "args": ["exec", "keyframes", "check", "--strict"],
+      "description": "keyframes.md, the project's intent, checked strictly",
+      "note": "keyframes.md is the current statement of what atis is for and what must hold (D345 (intent-in-keyframes)). The check reads only: it follows every citation and every held-by pointer into the repo, so a renamed test or a deleted rule that held a constraint turns this red. --strict fails on warnings too, budgets among them."
+    }
+  }
+}

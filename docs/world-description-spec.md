@@ -7,7 +7,7 @@ after that build finished, adds what Rob found setting the world's opened cell b
 spike's frames (P37, P25): nuclei inside the bodies (§4.7), an exploded view that spreads the
 labels and not the bodies (§4.8), held files gathered at the cell's middle (§4.9), and a shape
 demo switch (§4.2). It changes the 2.5D world (`apps/web`, drawn from `libs/scene`) and, where a
-new reading needs data, the map (`libs/core`). `SPEC.md` at the repo root stays the product spec; this is a feature spec on top of
+new reading needs data, the map (`libs/core`). `SPEC.md` at the repo root (since moved to [founding-spec.md](founding-spec.md)) stays the product spec; this is a feature spec on top of
 it.
 
 ## 1. Problem

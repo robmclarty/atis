@@ -39,7 +39,7 @@ It reuses what atis already knows how to compute and adds no new kind of evidenc
 
 - **Import reach** is `computeReach` (`libs/core/src/reach.ts:259`), fed a synthetic change: one
   `modified` entry per named file, walked over the head scan's reverse import edges, attenuated by
-  module hop exactly as [D5 (reach-by-module-hop)](../../SPEC.md#d5) says. A file named but not
+  module hop exactly as [D5 (reach-by-module-hop)](../founding-spec.md#d5) says. A file named but not
   yet on disk is a new file; nothing imports it yet, so it has no import reach, and the answer
   says so rather than leaving it out.
 - **Co-change reach** is `computeHistory` (`libs/core/src/history.ts:68`) over the same window a
@@ -75,7 +75,7 @@ map:
   (the determinism rule the map already holds).
 - A file reached both ways appears twice, once per `by`, since the two say different things: an
   import edge is structure, a co-change pair is habit.
-- A test file is never a cell ([D4 (tests-not-terrain)](../../SPEC.md#d4)), but it can be reached
+- A test file is never a cell ([D4 (tests-not-terrain)](../founding-spec.md#d4)), but it can be reached
   by co-change, and a planner wants to hear that a step usually drags a test along. Test files
   ride `by: "cochange"` only.
 - `muted` uses the same rule as the map: a source that is missing mutes what it would have said,

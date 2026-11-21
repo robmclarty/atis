@@ -27,9 +27,10 @@
   },
   "devDependencies": {
     "@ast-grep/cli": "0.45.3",
+    "@robmclarty/keyframes": "0.3.0",
     "@types/node": "22.20.1",
     "@vitest/coverage-v8": "4.1.11",
-    "checkride": "0.12.5",
+    "checkride": "0.25.0",
     "cspell": "10.2.0",
     "fallow": "3.22.0",
     "markdownlint-cli2": "0.23.2",

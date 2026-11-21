@@ -16,9 +16,11 @@ entry = [
   "apps/web/scripts/*.ts",
 ]
 
-# CLI/tooling deps used via command line or config files, not imported from source, and
-# tree-sitter-bash, whose WASM the shell producer and the bundle read by its path (D117).
-ignoreDependencies = ["@ast-grep/cli", "tree-sitter-bash"]
+# CLI/tooling deps used via command line or config files, not imported from source:
+# ast-grep, and keyframes, which the gate's intent check runs over keyframes.md (D345
+# (intent-in-keyframes)); and tree-sitter-bash, whose WASM the shell producer and the
+# bundle read by its path (D117).
+ignoreDependencies = ["@ast-grep/cli", "@robmclarty/keyframes", "tree-sitter-bash"]
 
 [rules]
 unused-exports = "error"

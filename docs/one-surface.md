@@ -7,7 +7,7 @@ built, what is parked and how to bring it back, the session's decisions, what
 was deferred, and the parts of the founding record this departs from.
 
 The token tables live in [design.md](design.md). The founding record,
-[SPEC.md](../SPEC.md), is left as it was written; where this session departs
+[founding-spec.md](founding-spec.md), is left as it was written; where this session departs
 from it, [what this supersedes](#what-this-supersedes) says so.
 What `main` gave up for it is in
 [one-surface-tradeoffs.md](one-surface-tradeoffs.md).
@@ -1573,7 +1573,29 @@ Unused: D315 to D319, D326 and D327.
   the granules last laid stand, so a fast pan shows none in the ground it
   crosses.
 
-The next free number is D344.
+- **D344 (founding-spec-moved).** `SPEC.md` left the repository's root for
+  `docs/founding-spec.md` on 2026-11-21, under a note at its head that it is
+  the founding record and no longer the spec, with where to read what the
+  product is now. Its text and its numbered decisions are unchanged, so every
+  `§` and decision cited from it still resolves there. The build records
+  under `.plumbbob/builds/` name it `SPEC.md`, as it was called when they
+  were written, and are left as they are.
+
+- **D345 (intent-in-keyframes).** The current statement of what atis is
+  for and what must hold is [keyframes.md](../keyframes.md) at the root: its
+  intent, principles, map, constraints, scenarios, decisions in force,
+  taste, open questions and ideas, in the keyframes format. Its decisions
+  and constraints keep the numbers and slugs this record and the code's
+  comments cite, so `D204 (parked-levels)` names one thing everywhere; its
+  questions start at Q100 and its principles keep the founding spec's
+  numbers where one survives. The gate checks it: `checkride.config.json`,
+  which now names every slot, carries a custom check `intent` that runs
+  `keyframes check --strict`, so a renamed test or a deleted rule that held
+  a constraint turns the gate red. checkride moved from 0.12.5 to 0.25.0
+  with it. This record and the build records stay the history; the plan
+  holds only what is in force.
+
+The next free number is D346.
 
 ## Deferred
 
@@ -1851,7 +1873,7 @@ opened cell, and they show on the map as well.
 
 ### The founding record and the looks still baked
 
-- Amending [SPEC.md](../SPEC.md) itself.
+- Amending [the founding spec](founding-spec.md) itself, or writing a current spec to stand in its place. It was moved out of the root and headed as the record (D344 (founding-spec-moved)); its text is as it was.
 - In a development build the minimap is drawn over the tokens panel's last
   rows, and the `tokens` button over the tree's.
 - Tokens for the looks still baked: the column's 260-pixel width, the zoom's
@@ -1861,7 +1883,7 @@ opened cell, and they show on the map as well.
 
 ## What this supersedes
 
-[SPEC.md](../SPEC.md) is the founding record and is left untouched. This
+[founding-spec.md](founding-spec.md) is the founding record and its text is left untouched. This
 session departs from it in three places, and adds to it in a fourth.
 
 **§5.6, the look: "revealed by zoom".** The founding look withholds: far away

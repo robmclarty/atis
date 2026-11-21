@@ -108,8 +108,10 @@ Other costs with no number:
   the budget script still sweeps toward a level that means something else
   now.
 - **The founding record no longer describes the product.**
-  [SPEC.md](../SPEC.md) is left as written; [one-surface.md](one-surface.md)
-  lists the four places it is superseded. A new reader has to read both.
+  The founding spec is left as written and has moved to
+  [founding-spec.md](founding-spec.md), with a note at its head saying it is
+  the record and not the spec; [one-surface.md](one-surface.md) lists the
+  four places it is superseded. A new reader has to read both.
 - **Parking shows in the code.** `LEVELS.gates` rests at `0` and
   `1000000`, and `data-lod` still steps at zoom 6.
 

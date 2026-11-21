@@ -1,10 +1,21 @@
-# Spec: atis, a weather map for code changes
+# Founding spec: atis, a weather map for code changes
+
+**This is the founding record, not the current spec.** It is the draft atis
+was first built from, kept as it was written so the reasoning and the
+decisions it numbers (section 13) can still be cited. It stood at the
+repository's root as `SPEC.md` until 2026-11-21. What atis is for and what
+must hold today is in [keyframes.md](../keyframes.md). The product has since
+moved on in places: [one-surface.md](one-surface.md) says what the world is
+now and [which parts of this it supersedes](one-surface.md#what-this-supersedes),
+[one-surface-tradeoffs.md](one-surface-tradeoffs.md) says what that cost,
+and [design.md](design.md) holds the look and its tokens. Where they
+disagree with this page, they win.
 
 > Draft v0.2, 2026-09-16. Written to be absorbed by `/plumbbob:plan SPEC.md`
 > or split by `spec-to-ridgeline`. Prior art and the reasoning behind the
-> encodings are in [docs/prior-art.md](./docs/prior-art.md); attribution,
+> encodings are in [prior-art.md](prior-art.md); attribution,
 > citations and licences for every borrowed idea and every dependency are
-> in [docs/inspiration.md](./docs/inspiration.md).
+> in [inspiration.md](inspiration.md).
 >
 > **Name.** *atis*: Automatic Terminal Information Service, the recorded
 > broadcast of field conditions a pilot listens to before approach. The tool
@@ -46,7 +57,7 @@ a stated, evidenced reason, without reading every line of every change.
 
 Full attributions with citations and licences, including the creative
 references and the libraries atis will depend on, are in
-[docs/inspiration.md](./docs/inspiration.md). Add a row there whenever
+[inspiration.md](inspiration.md). Add a row there whenever
 something new is borrowed, and cite the source at the implementation site.
 
 | Rob's read | Reference | Unique idea worth keeping | In this spec |
