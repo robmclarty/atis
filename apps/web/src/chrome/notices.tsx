@@ -11,6 +11,9 @@
  * drawn, or, for a target on the shore, brings its group's block in the rail
  * into view (step 39, D153), and while the pointer is over a row the world
  * writes its target's labels, which it writes for nothing unasked (D168).
+ * The list is the first part of the
+ * chrome's column, as long as its rows, under a header that folds it away
+ * (D278 (column-folds)).
  */
 
 import {
@@ -42,14 +45,15 @@ import { useMemo } from 'react';
 import type { ReactElement } from 'react';
 import type { MapJson } from 'core';
 
-import { revealGroup } from '../highlight.js';
 import type { Nav } from '../nav.js';
 import { categoryHue, rowsOf, tallyOf } from '../notices.js';
 import { screenType } from '../screen.js';
 import type { Registry } from '../registry.js';
 import { destinationOf } from '../walk.js';
 import { NoticeBox } from './box.js';
+import { Fold, useFold } from './fold.js';
 import { useLive } from './live.js';
+import { revealShore } from './rail.js';
 
 /** The tokens the list is drawn with, at rest: the shape its live view takes. */
 const LOOK = {
@@ -78,14 +82,14 @@ const LOOK = {
   VFR_HUE,
 };
 
-/** The share of the column the list may take before it scrolls, leaving the rail the rest. */
-const LIST_SHARE = '50%';
+/** The fold the list stands under, by name, and the name its header is written with. */
+const NOTICES = 'notices';
 
-/** Go where a notice's row leads: fly the world to its stop, or bring its shore group's block into view. */
+/** Go where a notice's row leads: fly the world to its stop, or bring its shore group's block into view, the shore opened first where it is folded away. */
 const go = (map: MapJson, rank: number, nav: Nav | undefined): void => {
   const destination = destinationOf(map, rank);
   if (destination?.kind === 'stop') nav?.visit(destination.stop);
-  if (destination?.kind === 'group') revealGroup(destination.group);
+  if (destination?.kind === 'group') revealShore(destination.group);
 };
 
 /** The ranked list for a map, read live from the registry; with the line to the world, a row's click flies there. */
@@ -94,52 +98,49 @@ export const Notices = ({ map, registry, nav }: { readonly map: MapJson; readonl
   const look = registry.view(LOOK);
   const rows = useMemo(() => rowsOf(map), [map]);
   const tally = useMemo(() => tallyOf(map), [map]);
+  const [open, toggle] = useFold(NOTICES);
   const hue = categoryHue(map.weather.checks.category, look);
   const type = screenType(look);
-  const rule = `${String(look.CHROME_STROKE_WIDTH)}px solid ${look.CHROME_RULE}`;
   return (
-    <section
-      data-notices
-      aria-label="notices"
-      style={{ flex: '0 1 auto', maxHeight: LIST_SHARE, overflowY: 'auto', borderBottom: rule, color: look.CHROME_INK, fontFamily: look.FONT_FAMILY, fontSize: type.text, lineHeight: look.NOTICE_LEADING }}
-    >
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', padding: look.SHORE_BLOCK_PAD, borderBottom: rule }}>
-        <span style={{ fontVariant: 'small-caps' }}>notices</span>
+    <section data-notices aria-label="notices" style={{ color: look.CHROME_INK, fontFamily: look.FONT_FAMILY, fontSize: type.text, lineHeight: look.NOTICE_LEADING }}>
+      <Fold name={NOTICES} open={open} onToggle={toggle} look={look}>
         <span data-tally style={{ color: look.CHROME_MUTED }}>
           {tally}
         </span>
-      </header>
-      <ol style={{ listStyle: 'none', margin: 0, padding: look.CHROME_PAD, display: 'flex', flexDirection: 'column', gap: look.NOTICE_ROW_GAP }}>
-        {rows.map((row) => (
-          <li
-            key={row.rank}
-            data-notice={row.rank}
-            data-tier={row.tier}
-            data-kind={row.kind}
-            data-target={row.target}
-            data-unplaced={row.placed ? undefined : 'true'}
-            onClick={row.placed ? () => go(map, row.rank, nav) : undefined}
-            onMouseEnter={() => nav?.hover(row.target)}
-            onMouseLeave={() => nav?.hover(undefined)}
-            style={{ display: 'flex', alignItems: 'flex-start', gap: look.NOTICE_TEXT_GAP, cursor: row.placed ? 'pointer' : 'default' }}
-          >
-            <NoticeBox rank={row.rank} tier={row.tier} look={look} hue={hue} side={type.box} numeral={type.numeral} />
-            <div style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
-              <div style={{ fontWeight: 'bold' }}>{row.words}</div>
-              <div style={{ fontSize: type.small, fontVariant: 'small-caps' }}>
-                {row.kind}
-                {!row.placed && (
-                  <span data-unplaced-tag style={{ color: look.CHROME_MUTED, marginLeft: look.NOTICE_BOX_GAP }}>
-                    unplaced
-                  </span>
-                )}
+      </Fold>
+      {open && (
+        <ol style={{ listStyle: 'none', margin: 0, padding: look.CHROME_PAD, display: 'flex', flexDirection: 'column', gap: look.NOTICE_ROW_GAP, borderBottom: `${String(look.CHROME_STROKE_WIDTH)}px solid ${look.CHROME_RULE}` }}>
+          {rows.map((row) => (
+            <li
+              key={row.rank}
+              data-notice={row.rank}
+              data-tier={row.tier}
+              data-kind={row.kind}
+              data-target={row.target}
+              data-unplaced={row.placed ? undefined : 'true'}
+              onClick={row.placed ? () => go(map, row.rank, nav) : undefined}
+              onMouseEnter={() => nav?.hover(row.target)}
+              onMouseLeave={() => nav?.hover(undefined)}
+              style={{ display: 'flex', alignItems: 'flex-start', gap: look.NOTICE_TEXT_GAP, cursor: row.placed ? 'pointer' : 'default' }}
+            >
+              <NoticeBox rank={row.rank} tier={row.tier} look={look} hue={hue} side={type.box} numeral={type.numeral} />
+              <div style={{ minWidth: 0, overflowWrap: 'anywhere' }}>
+                <div style={{ fontWeight: 'bold' }}>{row.words}</div>
+                <div style={{ fontSize: type.small, fontVariant: 'small-caps' }}>
+                  {row.kind}
+                  {!row.placed && (
+                    <span data-unplaced-tag style={{ color: look.CHROME_MUTED, marginLeft: look.NOTICE_BOX_GAP }}>
+                      unplaced
+                    </span>
+                  )}
+                </div>
+                <div>{row.why}</div>
+                {row.thresholds !== '' && <div style={{ fontSize: type.small, color: look.CHROME_MUTED }}>{row.thresholds}</div>}
               </div>
-              <div>{row.why}</div>
-              {row.thresholds !== '' && <div style={{ fontSize: type.small, color: look.CHROME_MUTED }}>{row.thresholds}</div>}
-            </div>
-          </li>
-        ))}
-      </ol>
+            </li>
+          ))}
+        </ol>
+      )}
     </section>
   );
 };
