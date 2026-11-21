@@ -155,25 +155,35 @@ test('the most depended-on and the most outward-reaching modules are ranked by t
   });
 });
 
-test('imports past an interface are ranked by how many go past, and the modules with no interface file are counted as not measured', () => {
+/** The note under the list on the demo: its directory and its single file are the two no import could go past. */
+const UNMEASURED = '2 modules are not measured: none has an interface file an import could go past';
+
+test('imports past an interface are ranked by how many go past, and the modules with no interface file to go past are counted as not measured', () => {
   expect(listOf(STRIPPED, 'past-interface')).toEqual({
     id: 'past-interface',
     title: 'imports past an interface',
     of: 1,
     rows: [{ words: 'libs/core', count: '1 past', tail: '1 through, package', selects: cell(CORE) }],
-    note: '2 modules have no interface file and are not measured',
+    note: UNMEASURED,
   });
 });
 
-test('a map whose modules have no interface file mutes the list with the reason, where one that measured none says none', () => {
-  const unentered = { ...STRIPPED, terrain: { ...STRIPPED.terrain, cells: STRIPPED.terrain.cells.map(({ integrity: _integrity, ...rest }) => rest) } };
-  expect(listOf(unentered, 'past-interface')).toEqual({
-    id: 'past-interface',
-    title: 'imports past an interface',
-    rows: [],
-    of: 0,
-    muted: 'no module has an interface file, so nothing can be seen to go past one',
-  });
+test('a map that counted no module mutes the list with the reason its interface files give, where one that measured none says none', () => {
+  const muted = (map: MapJson, why: string): void => expect(listOf(map, 'past-interface')).toEqual({ id: 'past-interface', title: 'imports past an interface', rows: [], of: 0, muted: why });
+  const uncounted = STRIPPED.terrain.cells.map(({ integrity: _integrity, ...rest }) => rest);
+
+  // No module has an interface file: there is nothing to go past.
+  const unentered = { ...STRIPPED, terrain: { ...STRIPPED.terrain, cells: uncounted.map(({ barrel: _barrel, ...rest }) => rest) } };
+  muted(unentered, 'no module has an interface file, so nothing can be seen to go past one');
+
+  // The modules have interface files and the map carries the count for none, as one written before the count does: that is no count, and never no interface.
+  expect(uncounted.some((each) => each.barrel !== undefined)).toBe(true);
+  muted({ ...STRIPPED, terrain: { ...STRIPPED.terrain, cells: uncounted } }, 'the map carries no count of what goes through or past an interface');
+
+  // Every interface file the modules had is one the change deleted, which core counts for none.
+  const interfaces = new Set(uncounted.flatMap((each) => each.barrel ?? []));
+  const changed = [...interfaces].map((path) => ({ path, kind: 'deleted' as const, is_barrel: true, added: 0, deleted: 1, hunks: [] }));
+  muted({ ...STRIPPED, terrain: { ...STRIPPED.terrain, cells: uncounted }, weather: { ...STRIPPED.weather, changed } }, 'the change deleted every interface file, so nothing can be seen to go past one');
 
   const tidy = { ...STRIPPED, terrain: { ...STRIPPED.terrain, cells: STRIPPED.terrain.cells.map((each) => (each.integrity === undefined ? each : { ...each, integrity: { ...each.integrity, past: 0 } })) } };
   expect(listOf(tidy, 'past-interface')).toEqual({
@@ -182,12 +192,28 @@ test('a map whose modules have no interface file mutes the list with the reason,
     rows: [],
     of: 0,
     empty: 'no import goes past an interface',
-    note: '2 modules have no interface file and are not measured',
+    note: UNMEASURED,
   });
 
   const one = { ...STRIPPED, terrain: { ...STRIPPED.terrain, cells: STRIPPED.terrain.cells.filter((each) => each.kind !== 'single') } };
-  expect(listOf(one, 'past-interface').note).toBe('1 module has no interface file and is not measured');
+  expect(listOf(one, 'past-interface').note).toBe('1 module is not measured: it has no interface file an import could go past');
 });
+
+test('on the committed fixtures a map with interface files never says it has none: it says the count is missing, or shows what it counted', () => {
+  const told = readdirSync(join(ROOT, 'fixtures')).flatMap((name) => {
+    const path = join(ROOT, 'fixtures', name, 'map.json');
+    if (!existsSync(path)) return [];
+    try {
+      const map = assertMap(JSON.parse(readFileSync(path, 'utf8')));
+      return map.terrain.cells.some((each) => each.barrel !== undefined) ? [listOf(map, 'past-interface').muted] : [];
+    } catch {
+      // A map an older contract wrote has no reading to hold.
+      return [];
+    }
+  });
+  expect(told.length).toBeGreaterThan(10);
+  expect(told.filter((muted) => muted?.startsWith('no module has an interface file'))).toEqual([]);
+}, 30_000);
 
 test('a map that carries no fan for its modules mutes both fan lists, where fans of none say none', () => {
   const fanless = { ...STRIPPED, terrain: { ...STRIPPED.terrain, cells: STRIPPED.terrain.cells.map(({ fan_in: _in, fan_out: _out, ...rest }) => rest) } };

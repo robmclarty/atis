@@ -135,22 +135,40 @@ const byFan = (map: MapJson, most: number, id: ReadingId, title: string, fanOf: 
 };
 
 /**
+ * Why a map carries the count for no module (D192, C2). The count is a key
+ * of its own, which a map written before it lacks on modules that do have an
+ * interface file, so the reason is read from the interface files and never
+ * from the count's absence alone: there is none to go past, the change
+ * deleted each one, or there are some and the map did not count.
+ */
+const uncountedWhy = (map: MapJson): string => {
+  const { cells } = map.terrain;
+  if (cells.length === 0) return 'the map holds no module';
+  const interfaces = cells.flatMap((cell) => cell.barrel ?? []);
+  if (interfaces.length === 0) return 'no module has an interface file, so nothing can be seen to go past one';
+  const deleted = new Set(map.weather.changed.filter((file) => file.kind === 'deleted').map((file) => file.path));
+  if (interfaces.every((path) => deleted.has(path))) return 'the change deleted every interface file, so nothing can be seen to go past one';
+  return 'the map carries no count of what goes through or past an interface';
+};
+
+/**
  * The modules entered past their interface (D192), the most first. Only a
  * module with an interface file at head is measured, so the list is muted
- * where there is none, and says how many went unmeasured where there are some.
+ * where none was, with why, and says how many went unmeasured where some were.
  */
 const pastInterface = (map: MapJson, most: number): ReadingList => {
   const id = 'past-interface';
   const title = 'imports past an interface';
   const { cells } = map.terrain;
   const measured = cells.flatMap((cell) => (cell.integrity === undefined ? [] : [{ cell, ...cell.integrity }]));
-  if (measured.length === 0) return mutedList(id, title, cells.length === 0 ? 'the map holds no module' : 'no module has an interface file, so nothing can be seen to go past one');
+  if (measured.length === 0) return mutedList(id, title, uncountedWhy(map));
   const rows = measured
     .filter(({ past }) => past > 0)
     .toSorted((a, b) => b.past - a.past || byText(a.cell.id, b.cell.id))
     .map(({ cell, past, through }): ReadingRow => ({ words: cell.path, count: `${String(past)} past`, tail: `${String(through)} through, ${nounOf(cell)}`, selects: cellStop(cell) }));
   const unmeasured = cells.length - measured.length;
-  const note = unmeasured === 0 ? {} : { note: `${counted(unmeasured, 'module has', 'modules have')} no interface file and ${unmeasured === 1 ? 'is' : 'are'} not measured` };
+  // A directory has no interface file, a single file is its own, and a deleted one is gone: none is one an import could go past.
+  const note = unmeasured === 0 ? {} : { note: `${counted(unmeasured, 'module is', 'modules are')} not measured: ${unmeasured === 1 ? 'it has no' : 'none has an'} interface file an import could go past` };
   return { ...ranked(id, title, rows, most, 'no import goes past an interface'), ...note };
 };
 
