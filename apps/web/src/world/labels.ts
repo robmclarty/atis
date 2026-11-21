@@ -21,7 +21,9 @@
  * which files those are, and they are placed after everything asked for,
  * in the room that leaves, under the same collision rule and one budget
  * at every level, which the caller hands in, each fading in the first time
- * it is written (D233 (asked-before-sized)). The addons import
+ * it is written (D233 (asked-before-sized)); none is written under a block
+ * of the chrome, which lies over this layer (D246 (names-off-chrome)). The
+ * addons import
  * three's core build by its bare name; the app's Vite config resolves that
  * name to the WebGPU build the world draws with, so one copy of three loads
  * and the console stays clean.
@@ -99,13 +101,13 @@ export const LABEL_LOOK = {
 };
 export type LabelLook = typeof LABEL_LOOK;
 
-/** The names the world writes unasked (D206 (detail-by-size)): the files large enough on the screen to be named, the most of them written at once (D245 (name-budget-token)), how long one new to the screen takes to fade in, in milliseconds, none cutting it in, and how many pixels of the screen's right edge the chrome covers, which such a name keeps off. */
-export type Unasked = { readonly files: ReadonlySet<string>; readonly budget: number; readonly fade: number; readonly right: number };
+/** The names the world writes unasked (D206 (detail-by-size)): the files large enough on the screen to be named, the most of them written at once (D245 (name-budget-token)), how long one new to the screen takes to fade in, in milliseconds, none cutting it in, and the chrome's boxes on the screen, in pixels, which such a name keeps off (D246 (names-off-chrome)). */
+export type Unasked = { readonly files: ReadonlySet<string>; readonly budget: number; readonly fade: number; readonly off: readonly LabelBox[] };
 
 export type Labels = {
   /** The layers over the canvas, in the order they stack: the leaders, then the text. */
   readonly elements: readonly Element[];
-  /** Lay the labels out again for what the camera shows at this level of detail and the targets it is asked about (D168): their notices' labels and file names, clear of each other (step 27), but for the files an opened cell's slide tags in its own columns (step 40), and none on the slide or its tag columns, where its own tags stand alone (D166); and their storm slots and old paths. Then the names written unasked (D206 (detail-by-size)), where they clear every label already placed and the chrome at the screen's right. */
+  /** Lay the labels out again for what the camera shows at this level of detail and the targets it is asked about (D168): their notices' labels and file names, clear of each other (step 27), but for the files an opened cell's slide tags in its own columns (step 40), and none on the slide or its tag columns, where its own tags stand alone (D166); and their storm slots and old paths. Then the names written unasked (D206 (detail-by-size)), where they clear every label already placed and the chrome's boxes. */
   readonly place: (viewport: Viewport, lod: Lod, slide: Slide | undefined, asked: ReadonlySet<string>, unasked: Unasked) => void;
   /** Keep every label over its point for this camera and canvas, and draw the leaders, with the surface's layer as the layers' opacity. */
   readonly render: (camera: Camera, width: number, height: number, surface: number) => void;
@@ -221,7 +223,7 @@ const slideGround = (slide: Slide, viewport: Viewport): readonly (readonly Point
  */
 const sizedBy = (most: number): typeof LABELING => ({ ...LABELING, budget: { 0: 0, 1: most, 2: most, 3: most, 4: most } });
 
-/** A placed label's box as a ring of layout units, which the scene keeps a later label off as it keeps one off a slide. */
+/** A box on the screen, a placed label's or a block of the chrome's, as a ring of layout units, which the scene keeps a later label off as it keeps one off a slide. */
 const ringOf = (box: LabelBox, viewport: Viewport): readonly Point[] => {
   const back = (px: number, py: number): Point => [px / viewport.pixelsPerUnit + viewport.x, py / viewport.pixelsPerUnit + viewport.y];
   return [back(box.x, box.y), back(box.x + box.width, box.y), back(box.x + box.width, box.y + box.height), back(box.x, box.y + box.height)];
@@ -311,7 +313,7 @@ export const createLabels = (map: MapJson, tags: readonly Label[], heightAt: Hei
     }
   };
 
-  const place = (viewport: Viewport, lod: Lod, slide: Slide | undefined, asked: ReadonlySet<string>, { files: large, budget, fade, right }: Unasked): void => {
+  const place = (viewport: Viewport, lod: Lod, slide: Slide | undefined, asked: ReadonlySet<string>, { files: large, budget, fade, off: covered }: Unasked): void => {
     const ppu = viewport.pixelsPerUnit;
     layRuns(ppu);
     const asks = asksFor(map, asked);
@@ -336,14 +338,13 @@ export const createLabels = (map: MapJson, tags: readonly Label[], heightAt: Hei
     const off = slide === undefined ? [] : slideGround(slide, viewport);
     // What is asked for is placed first, on a clear board, so the pointer's, a row's and the selection's words never give way to a name written by size (D233 (asked-before-sized)).
     const askedFor = labelsFor(map, lod, viewport, LABELING, off, asked);
-    // Then the files large enough on the screen (D206 (detail-by-size)), but for those just placed: each where it clears the slide, the chrome's column and every asked label, under one budget at every level, a noticed one by its first notice's label.
+    // Then the files large enough on the screen (D206 (detail-by-size)), but for those just placed: each where it clears the slide, the chrome's boxes and every asked label, under one budget at every level, a noticed one by its first notice's label.
     const unasked = new Set([...large].filter((id) => !asked.has(id)));
     // The most names written unasked, a noticed file's counted with the rest (D245 (name-budget-token)): the scene's budget counts only the files no notice names, so the whole list is held to it too.
     const most = Number.isFinite(budget) ? Math.max(0, Math.floor(budget)) : 0;
-    // A name nobody asked for is not written under the chrome's column, where it would be cut off or never seen.
-    const across = viewport.width * ppu;
-    const column = right <= 0 ? [] : [ringOf({ x: across - right, y: 0, width: right, height: viewport.height * ppu }, viewport)];
-    const bySize = unasked.size === 0 || most === 0 ? [] : oncePerTarget(labelsFor(map, lod, viewport, sizedBy(most), [...off, ...column, ...askedFor.map((label) => ringOf(label.box, viewport))], unasked)).slice(0, most);
+    // A name nobody asked for is not written under a block of the chrome, where it would be cut off or never seen (D246 (names-off-chrome)).
+    const chrome = covered.map((box) => ringOf(box, viewport));
+    const bySize = unasked.size === 0 || most === 0 ? [] : oncePerTarget(labelsFor(map, lod, viewport, sizedBy(most), [...off, ...chrome, ...askedFor.map((label) => ringOf(label.box, viewport))], unasked)).slice(0, most);
     const shown = [...askedFor.map((label) => ({ label, unasked: false })), ...bySize.map((label) => ({ label, unasked: true }))].filter(({ label }) => label.rank !== undefined || !onSlide.has(label.target));
     const before = written;
     written = new Set(shown.map(({ label }) => label.target));

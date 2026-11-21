@@ -48,7 +48,8 @@
  * pointed at and from which side. A file large enough on the screen is named
  * unasked, once the camera rests, after every word asked for has its place
  * (D206 (detail-by-size), D233 (asked-before-sized)), up to the token's
- * budget of names (D245 (name-budget-token)). A notice's row, the
+ * budget of names (D245 (name-budget-token)) and under no block of the
+ * chrome (D246 (names-off-chrome)). A notice's row, the
  * arrows, Enter and Escape fly the camera to a stop along the scheduler's
  * fly-to, and the skin swings as it lands; the stop goes back over the line
  * for the HUD's breadcrumb (step 39). The keys walk from the selection, else
@@ -239,7 +240,7 @@ const claimsOf = (height: number): { readonly top: number; readonly bottom: numb
   };
 };
 
-/** The chrome's boxes over the field's left side, in pixels, which a band's label keeps off (D196): the HUD at the top left, and the legend and the minimap at the bottom left. */
+/** The chrome's boxes over the field's left side, in pixels, which a band's label keeps off (D196), and a name written unasked (D246 (names-off-chrome)): the HUD at the top left, and the legend and the minimap at the bottom left. */
 const chromeBoxes = (): readonly LabelBox[] =>
   ['[data-hud]', '[data-legend]', '[data-minimap]'].flatMap((selector) => {
     const box = claimOf(selector);
@@ -399,8 +400,9 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   // What the chrome claims of the screen's top and foot, which the slide's tags keep clear of (P25), and how many frames ago it was read.
   let claims = { top: 0, bottom: 0 };
   let claimsAge = CLAIMS_EVERY;
-  // The chrome's boxes the bands' labels keep off, read as often, how many times the field's labels have been laid out, and what the bands' labels were last placed for.
+  // The chrome's boxes the bands' labels and the names written unasked keep off, read as often, what they were when last read, how many times the field's labels have been laid out, and what the bands' labels were last placed for.
   let chromeClaims: readonly LabelBox[] = [];
+  let chromeRead = '';
   let chromeAge = CLAIMS_EVERY;
   let placings = 0;
   let bandsPlacedFor = '';
@@ -1075,23 +1077,31 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     glow.threshold.value = bloomLook.threshold;
     post.render();
     space.render(camera, canvas.clientWidth, canvas.clientHeight, surface);
+    // The chrome's boxes are read a few times a second, before the labels are placed: a name written unasked keeps off them (D246 (names-off-chrome)), so the labels are laid again when a block of the HUD or the legend opens or folds away.
+    if ((chromeAge += 1) >= CLAIMS_EVERY) {
+      chromeAge = 0;
+      chromeClaims = chromeBoxes();
+      const read = chromeClaims.flatMap((box) => [box.x, box.y, box.width, box.height]).join();
+      if (read !== chromeRead) {
+        chromeRead = read;
+        placeLabels = true;
+      }
+    }
     if (placeLabels || lod !== placedLod) {
       const viewport = viewportOf(camera, canvas.clientWidth);
       const asked = askedOf(fieldTarget, rowTarget ?? litTarget, held === undefined ? undefined : targetOf(held), rowPointed === undefined ? undefined : targetOf(rowPointed));
       // The files large enough on the screen are named unasked (D206 (detail-by-size)), but for those of a package drawn as one body, which are not drawn. They fade in as a level of detail does, and cut in under reduced motion and on a frozen clock, where a capture takes one frame (D105).
       const sized = namedBySize(closedComposites.size === 0 ? placed.values() : [...placed.values()].filter((file) => !closedComposites.has(compositeOf.get(file.id) ?? '')), viewport, levels.fileNameFrom);
       const fade = reduced || frozen !== undefined ? 0 : tokens.LOD_FADE_MS;
-      for (const layer of layers()) layer.labels.place(viewport, lod, slide, asked, { files: sized, budget: levels.fileNameBudget, fade, right: chrome.right });
+      // Such a name is written under no block of the chrome, which lies over the labels: the column at the right, and the HUD, the legend and the minimap at the left (D246 (names-off-chrome)).
+      const column = chrome.right <= 0 ? [] : [{ x: canvas.clientWidth - chrome.right, y: 0, width: chrome.right, height: canvas.clientHeight }];
+      for (const layer of layers()) layer.labels.place(viewport, lod, slide, asked, { files: sized, budget: levels.fileNameBudget, fade, off: [...column, ...chromeClaims] });
       placeLabels = false;
       placedLod = lod;
       placings += 1;
     }
     for (const layer of layers()) layer.labels.render(camera, canvas.clientWidth, canvas.clientHeight, surface * (layer === current ? mixed : 1 - mixed));
     // Each band's quiet label (D196): placed again on a frame the view, the level, the field's labels, the chrome or their tokens moved, along its rule on the level ground and clear of the labels and marks just drawn and of the chrome.
-    if ((chromeAge += 1) >= CLAIMS_EVERY) {
-      chromeAge = 0;
-      chromeClaims = chromeBoxes();
-    }
     const bandsFor = [
       lod,
       placings,

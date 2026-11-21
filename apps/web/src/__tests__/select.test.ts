@@ -21,7 +21,8 @@
  * leaving (D209 (selection-line)). A file large enough on the screen is named
  * unasked and a smaller one beside it is not, until `LEVELS.fileNameFrom`
  * says otherwise (D206 (detail-by-size)); `LEVELS.fileNameBudget` caps how
- * many are (D245 (name-budget-token)). A single-file module, selected, is
+ * many are (D245 (name-budget-token)), and none is written under a block of
+ * the chrome (D246 (names-off-chrome)). A single-file module, selected, is
  * ringed where its file floats on the slide of the package it floats in, and
  * that file's tag stays written (D247 (single-as-its-file)). Enter walks in and selects where it
  * lands, an arrow carries the selection to the sibling it walks to, and
@@ -37,7 +38,7 @@ import type { Page } from 'playwright-core';
 import { expect, test } from 'vitest';
 
 import { assertMap, withinContour } from 'core';
-import { instances } from 'scene';
+import { LABELING, instances } from 'scene';
 
 import { namedBySize } from '../asked.js';
 import { RAIL_WIDTH, fitFrame } from '../fit.js';
@@ -438,7 +439,7 @@ const near = async (page: Page, url: string, centre: Point): Promise<readonly st
   return complaints;
 };
 
-test('the names written unasked are capped by their budget, with a clean console (D245 (name-budget-token))', { timeout: 150_000 }, async () => {
+test('the names written unasked are capped by their budget, and none is written under a block of the chrome, with a clean console (D245 (name-budget-token), D246 (names-off-chrome))', { timeout: 150_000 }, async () => {
   const { server, url } = await serve();
   const browser = await launch();
   try {
@@ -471,6 +472,36 @@ test('the names written unasked are capped by their budget, with a clean console
     await none.waitForSelector(`[data-labels] [data-target="${SLOTS}"]:not([data-named])`, { state: 'attached', timeout: 30_000 });
     expect(noneComplaints).toEqual([]);
     await none.close();
+
+    // Framed so a file large enough to be named, which no notice names, lies under the HUD, every place its name could take covered by it: the name is not written, where the others in view are, and no name written unasked lies on a block of the chrome.
+    const at = LAYOUT.positions[SLOTS] ?? { x: 0, y: 0, r: 0 };
+    expect(MAP.notices.map((notice) => notice.target)).not.toContain(SLOTS);
+    const under: Point = [MIDDLE[0], 40];
+    const centre: Point = [at.x, at.y + (MIDDLE[1] - under[1]) / NEAR_UNIT];
+    const page = await browser.newPage({ viewport: VIEWPORT });
+    const complaints = await near(page, url, centre);
+    const frame = { x: centre[0] - MIDDLE[0] / NEAR_UNIT, y: centre[1] - MIDDLE[1] / NEAR_UNIT, width: VIEWPORT.width / NEAR_UNIT, height: VIEWPORT.height / NEAR_UNIT, pixelsPerUnit: NEAR_UNIT };
+    expect([...namedBySize(files, frame, LEVELS.fileNameFrom)]).toContain(SLOTS);
+    const hud = await page.$eval('[data-hud]', (block) => block.getBoundingClientRect().toJSON() as { readonly left: number; readonly top: number; readonly right: number; readonly bottom: number });
+    const [x, y] = nearOf(centre, [at.x, at.y]);
+    // A name stands a gap off its file's edge, to a side, above or below, and is a line of type tall.
+    const reach = at.r * NEAR_UNIT + LABELING.gap + LABELING.fontSize + 2 * LABELING.pad;
+    expect(x - 200 > hud.left && x + 200 < hud.right && y + reach < hud.bottom, "every place the file's name could take lies under the HUD").toBe(true);
+    await expect.poll(async () => (await namedOn(page)).length, { timeout: 30_000 }).toBeGreaterThan(0);
+    await page.waitForTimeout(600);
+    expect(await namedOn(page)).not.toContain(SLOTS);
+    const covered = await page.evaluate(() => {
+      const blocks = ['[data-hud]', '[data-legend]', '[data-minimap]', '[data-column]'].flatMap((selector) => {
+        const block = document.querySelector(selector)?.getBoundingClientRect();
+        return block === undefined || block.height <= 0 ? [] : [block];
+      });
+      return [...document.querySelectorAll('[data-labels] [data-target][data-named="size"]')].flatMap((label) => {
+        const box = label.firstElementChild?.getBoundingClientRect();
+        return box !== undefined && blocks.some((block) => box.left < block.right && box.right > block.left && box.top < block.bottom && box.bottom > block.top) ? [label.getAttribute('data-target')] : [];
+      });
+    });
+    expect(covered).toEqual([]);
+    expect(complaints).toEqual([]);
   } finally {
     await browser.close();
     await server.close();
