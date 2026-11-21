@@ -544,7 +544,11 @@ const breachWords = (breaches: FunctionRow['breaches']): string => {
  * A file's functions beneath its tab, while the toggle has them shown: each
  * its name, set in by how deep it nests, the line it starts on and its size,
  * the thresholds it breaks, and where the run is served a link that opens
- * the file at it in the reader's editor.
+ * the file at it in the reader's editor. They stand under whichever tab is
+ * shown, so the code or the diff is read with them beside it, and the
+ * toggle holds from file to file (D264 (functions-beneath)). The editor's
+ * template comes with the file's text, so on a served run listing them asks
+ * for that text, once.
  */
 const Functions = ({ ui, model, answers }: { readonly ui: Ui; readonly model: FileModel; readonly answers: Answers }): ReactElement => {
   const gone = model.change?.kind === 'deleted';
@@ -778,7 +782,7 @@ export const Inspector = ({ map, registry, nav, token, pr }: InspectorProps): Re
   const [functions, setFunctions] = useState(false);
   const top = useGradesFoot();
 
-  // What this panel points at, so it lets go of that alone: another panel's row may have taken the chrome's pointing since.
+  // What this panel points at, so it lets go of that alone: the tree points from the chrome's side too, and its row may have taken the pointing since (D265 (own-pointing)).
   const mine = useRef<string | undefined>(undefined);
   const point = useCallback(
     (target: string | undefined): void => {
