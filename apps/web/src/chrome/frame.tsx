@@ -19,7 +19,7 @@ import type { PostBase } from '../bases.js';
 import type { DevPanel } from '../dev/index.js';
 import { frameMap } from '../frames.js';
 import type { MapState } from '../load.js';
-import { createNav } from '../nav.js';
+import { createNav, selectedOf, targetOf } from '../nav.js';
 import type { Nav } from '../nav.js';
 import { shownOverlay } from '../overlays.js';
 import type { Registry } from '../registry.js';
@@ -106,8 +106,13 @@ export const Chrome = ({ state, registry, nav: given, dev, token, load = loadPan
   // The overlay a whole repo's map shows, as the toggles asked (D101).
   const asked = useSyncExternalStore(nav.subscribe, nav.overlay, nav.overlay);
   const overlay = map === undefined ? undefined : shownOverlay(map, asked);
-  // The cell the world has open, which the HUD's reach opens on (D186).
+  // The module the HUD's reach opens on (D186): the selected one, held to the map shown, whether or not it stands open as a slide; else the cell the world has open, which is the slide a selected file floats on, or one the old levels opened (D232 (reach-by-module)).
   const opened = useSyncExternalStore(nav.subscribe, nav.opened, nav.opened);
+  const selected = useSyncExternalStore(nav.subscribe, nav.selected, nav.selected);
+  const selectedModule = useMemo(() => {
+    const held = map === undefined || selected === undefined ? undefined : selectedOf(map, targetOf(selected));
+    return held?.kind === 'cell' ? held.cell : undefined;
+  }, [map, selected]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
@@ -122,7 +127,7 @@ export const Chrome = ({ state, registry, nav: given, dev, token, load = loadPan
   return (
     <>
       <div style={COLUMN}>
-        {map !== undefined && <Hud map={map} registry={registry} token={token} overlay={overlay} cell={opened?.cell} />}
+        {map !== undefined && <Hud map={map} registry={registry} token={token} overlay={overlay} cell={selectedModule ?? opened?.cell} />}
         {ranged !== undefined && <Scrubber map={ranged} registry={registry} nav={nav} />}
         {map !== undefined && <OverlayToggles map={map} registry={registry} nav={nav} />}
         {ranged !== undefined && token !== undefined && <Bases map={ranged} registry={registry} token={token} {...(post === undefined ? {} : { post })} {...(reload === undefined ? {} : { reload })} />}

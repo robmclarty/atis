@@ -3,7 +3,13 @@
  * line that reads the walk's stop down from the field, `field › libs/core ›
  * src/pm › index.ts`, at every stop: one the keyboard or a notice's row flew
  * to, and one the reviewer moved to by hand. The stop it reads is the world's,
- * over the line between them (`nav.ts`). While a cell is open as a slide, a
+ * over the line between them (`nav.ts`). While something is selected it reads
+ * the selection in the stop's place (D207 (click-selects)): a click moves no
+ * camera, so the walk's stop does not follow it, and the line says where the
+ * reviewer's attention stands, the module or the file the ring is round. A
+ * selection the map shown does not hold reads as none (D209
+ * (selection-line)), and the walk's stop shows again once it is cleared.
+ * While a cell is open as a slide, a
  * flat button at the line's end spreads its exploded view or gathers it
  * (step 40), and, where any of the change's wiring reaches the cell, a second
  * draws its wiring or takes it away (step 41). It is the brutalist material (D12): one monospace face, the
@@ -16,6 +22,7 @@ import { Fragment, useMemo, useSyncExternalStore } from 'react';
 import type { CSSProperties, ReactElement } from 'react';
 import type { MapJson } from 'core';
 
+import { selectedOf, targetOf } from '../nav.js';
 import type { Nav } from '../nav.js';
 import type { Registry } from '../registry.js';
 import { createWalk } from '../walk.js';
@@ -31,14 +38,19 @@ export const Crumbs = ({ map, registry, nav }: { readonly map: MapJson; readonly
   useLive(registry);
   const look = registry.view(LOOK);
   const walk = useMemo(() => createWalk(map), [map]);
-  const stop = useSyncExternalStore(nav.subscribe, nav.stop, nav.stop);
+  const stood = useSyncExternalStore(nav.subscribe, nav.stop, nav.stop);
+  const selected = useSyncExternalStore(nav.subscribe, nav.selected, nav.selected);
   const opened = useSyncExternalStore(nav.subscribe, nav.opened, nav.opened);
+  // The selection as the map shown holds it, read by its target as the world reads it, so a frame of a range that lacks the file reads as nothing selected.
+  const held = useMemo(() => (selected === undefined ? undefined : selectedOf(map, targetOf(selected))), [map, selected]);
+  const stop = held ?? stood;
   const crumbs = walk.crumbs(stop);
   const wirable = useMemo(() => opened !== undefined && cellWiring(map, opened.cell) !== undefined, [map, opened]);
   const button: CSSProperties = { marginLeft: look.CHROME_PAD, font: 'inherit', color: look.CHROME_INK, background: 'transparent', border: `1px solid ${look.CHROME_MUTED}`, padding: '0 6px', cursor: 'pointer' };
   return (
     <nav
       data-crumbs={stop.kind}
+      data-crumbs-of={held === undefined ? 'walk' : 'selection'}
       aria-label="breadcrumb"
       style={{ margin: 0, padding: `0 ${String(look.CHROME_PAD)}px ${String(look.CHROME_PAD)}px`, background: look.CHROME_GROUND, color: look.CHROME_MUTED, fontFamily: look.FONT_FAMILY, fontSize: look.HUD_FONT_SIZE, whiteSpace: 'nowrap', pointerEvents: 'auto' }}
     >
