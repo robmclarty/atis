@@ -679,6 +679,7 @@ resolves by its size on the screen (D206 (detail-by-size)).
 | `HOVER.clickMs` | `400` | how long, in milliseconds, a press may last and still be a click |
 | `WALK.share` | `0.8` | the share of the free screen a stop the camera flies to fills, in whichever of its width and height it fills first |
 | `WALK.fileContext` | `6` | how many of a file's radii of ground a file stop is framed with |
+| `WALK.fieldZoom` | `1.7` | the camera's zoom over the fit under which a view that came to rest stands at the field, whatever lies under its centre, so the breadcrumb reads `field` and Enter walks in to a module (D219 (field-by-zoom)); the zoom the far field's level gave way at before it was parked |
 
 ### The minimap
 

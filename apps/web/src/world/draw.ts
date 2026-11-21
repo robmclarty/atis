@@ -803,7 +803,8 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       }
     }
     if (readStop && flight === undefined) {
-      if (middle !== undefined) settle(walk.stopAt(middle, lod));
+      // Under the walk's own zoom the view stands at the field, whatever lies under its centre: no level says so now that the far field's is parked (D219 (field-by-zoom)).
+      if (middle !== undefined) settle(walk.stopAt(middle, camera.zoom < walkLook.fieldZoom ? 0 : lod));
       readStop = false;
     }
     // The slide (step 40): laid when the cell it shows changes, its bodies laid every frame where the scene has them, and the surface's files and marks in it giving way as it fades in.

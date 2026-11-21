@@ -352,14 +352,19 @@ export const HOVER: HoverLook = { ink: '#e6edf3', width: 1.5, slop: 4, tagGap: 1
 /**
  * The walk's framing (step 39): a stop the camera flies to fills this share of
  * the free screen in whichever of its width and height it fills first, and a
- * file is framed with this many of its radii of ground round its centre.
+ * file is framed with this many of its radii of ground round its centre. A
+ * view that came to rest under `fieldZoom`, the camera's zoom over the fit,
+ * stands at the field whatever lies under its centre (D219 (field-by-zoom)):
+ * the far field's level said so until it was parked, at the zoom its gate
+ * stood at.
  */
 export type WalkLook = {
   readonly share: number;
   readonly fileContext: number;
+  readonly fieldZoom: number;
 };
 
-export const WALK: WalkLook = { share: 0.8, fileContext: 6 };
+export const WALK: WalkLook = { share: 0.8, fileContext: 6, fieldZoom: 1.7 };
 
 /**
  * An opened cell's slide (§5.6's inside, step 40): warm and clinical where

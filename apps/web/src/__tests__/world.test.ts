@@ -266,6 +266,7 @@ test('the tab opens on the lit surface with no zoom asked for and no planet, and
     await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
     expect(await page.getAttribute('#world', 'data-lod')).toBe('1');
     await nothingOpen();
+    expect(await page.getAttribute('[data-crumbs]', 'data-crumbs')).toBe('field');
     await page.evaluate(() => document.querySelector<HTMLElement>('#chrome')?.style.setProperty('visibility', 'hidden'));
     const reading = await frameOf(page);
     // The whole layout fitted to the free screen covers a smaller share of the frame than at zoom 2, and still one well clear of none.
@@ -275,10 +276,15 @@ test('the tab opens on the lit surface with no zoom asked for and no planet, and
     // Framed on a cell where the old levels opened it as a slide: it stays the surface, and a click on it opens nothing either.
     const cell = 'folder:libs/core/src/pm';
     const [x, y] = middleOf(cell);
+    // With the whole map in view the walk stands at the field though a cell lies under the view's centre, as it did while the far field was a level (D219 (field-by-zoom)); framed on the cell, it stands at the cell.
+    await page.goto(`${url}/?backend=webgl&centre=${String(x)},${String(y)}`);
+    await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
+    expect(await page.getAttribute('[data-crumbs]', 'data-crumbs')).toBe('field');
     await page.goto(`${url}/?backend=webgl&zoom=8&centre=${String(x)},${String(y)}`);
     await page.waitForSelector('#world[data-world="settled"]', { timeout: 90_000 });
     await page.waitForTimeout(600);
     expect(await page.getAttribute('#world', 'data-lod')).toBe('2');
+    expect(await page.getAttribute('[data-crumbs]', 'data-crumbs')).toBe('cell');
     await nothingOpen();
     // The middle of the free screen, where the cell is centred.
     await page.mouse.click(350, 360);
