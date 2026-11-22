@@ -1,6 +1,6 @@
 {
   "name": "@robmclarty/atis",
-  "version": "0.0.0",
+  "version": "0.2.0",
   "description": "A weather map for code changes: what changed, how far it reaches, what evidence covers it, and what to look at first.",
   "keywords": [
     "code-review",
