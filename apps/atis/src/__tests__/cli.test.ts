@@ -8,6 +8,7 @@ import { assertApproved, assertMap, assertReachAnswer } from 'core';
 import type { MapJson, ReachAnswer } from 'core';
 import { afterAll, expect, test } from 'vitest';
 
+import { VERSION } from '../index.js';
 import { reachRun, run, serveRun } from '../run.js';
 
 /**
@@ -269,7 +270,8 @@ test('a copy with an empty .check/ is NOINST and says which way it was empty', (
 }, MINUTE);
 
 test('--version and --help exit 0; an unknown flag, a stray positional and a --base with no ref are misuse', () => {
-  expect(atis(['--version']).stdout).toBe('0.0.0\n');
+  // The version is the release's own, which the release bumps in step with the manifests.
+  expect(atis(['--version']).stdout).toBe(`${VERSION}\n`);
   expect(atis(['-V']).status).toBe(0);
   expect(atis(['--help']).stdout).toContain('--base <ref>');
 

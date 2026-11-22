@@ -1,0 +1,11 @@
+{
+  "targets": [
+    { "path": "package.json", "type": "json", "key": "version" },
+    { "path": "apps/atis/package.json", "type": "json", "key": "version" },
+    { "path": "apps/atis/src/index.ts", "type": "regex", "match": "export const VERSION = '{semver}';" }
+  ],
+  "marker": { "commit": "chore: release {version}", "tag": false },
+  "changelog": { "path": "CHANGELOG.md", "style": "sections" },
+  "verify": "pnpm check --only docs,links,spell",
+  "publish": { "pushTag": false, "pushBranch": false, "confirm": false }
+}
