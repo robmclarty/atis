@@ -64,8 +64,8 @@ importers:
         specifier: 8.18.2
         version: 8.18.2
       checkride:
-        specifier: 0.19.1
-        version: 0.19.1
+        specifier: 0.25.0
+        version: 0.25.0(ajv@8.20.0)(jsonc-parser@3.3.1)(yaml@2.9.1)
       core:
         specifier: workspace:*
         version: link:../../libs/core
@@ -1199,11 +1199,6 @@ packages:
 
   character-reference-invalid@2.0.1:
     resolution: {integrity: sha512-iBZ4F4wRbyORVsu0jPV7gXkOsGYjGHPmAyv+HiHG8gi5PtC9KI2j1+v8/tlibRvjoWX027ypmG/n0HtO5t7unw==}
-
-  checkride@0.19.1:
-    resolution: {integrity: sha512-K/ZOPS49rehWCX2uFwx8uKFQZYWJEj3M2np8ZY3a//10Z+xCPhQBrveqLATlg7CPHZGFz/XwCkNvpzTHEoboTQ==}
-    engines: {node: '>=22.18.0', pnpm: '>=9.0.0'}
-    hasBin: true
 
   checkride@0.25.0:
     resolution: {integrity: sha512-wE0cHg13lKtI7zMoZgWOQXrUnlYZHSGzVExnlwuoWbOYj4OtuDfQVL29t0AKtOR5RIpwPbvlDB8rev6Xk7p43g==}
@@ -3238,8 +3233,6 @@ snapshots:
   character-entities@2.0.2: {}
 
   character-reference-invalid@2.0.1: {}
-
-  checkride@0.19.1: {}
 
   checkride@0.25.0(ajv@8.20.0)(jsonc-parser@3.3.1)(yaml@2.9.1):
     optionalDependencies:

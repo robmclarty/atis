@@ -2,7 +2,7 @@
 
 Instructions for any coding agent working in this repository.
 
-<!-- checkride:begin hash=v1ecef79927d8626ad -->
+<!-- checkride:begin hash=v19a490f51d20cc966 -->
 
 ## Checkride: the definition of done
 
@@ -13,8 +13,13 @@ complete; any other exit code means it is not. Never claim a task is finished wh
 When it fails:
 
 1. Read `.check/summary.json` to see which check failed.
-2. Read that check's raw output (`.check/<slot>.json` or `.check/<slot>.stdout.txt`).
+2. Read that check's raw output: `.check/<slot>.json` or `.jsonl`, `.check/<slot>.stdout.txt`,
+   or `.check/<slot>.stderr.txt`, where a check refused before it ran says why. A
+   target's check writes under `.check/<target>/` instead.
 3. Fix the root cause, then re-run.
+
+`pnpm check --digest` prints a capped excerpt of what failed below its report,
+each section naming the raw file that holds the rest, so start from that.
 
 `pnpm exec checkride triage` runs this procedure in full and reads `.check/` for you
 (`/checkride:check` and `/checkride-check` are the same thing as a skill).
@@ -45,13 +50,18 @@ The `struct` check runs whatever ast-grep rules `sgconfig.yml` points at
 read them rather than assuming one.
 
 Active checks in this repo: types, lint, struct, dead, test, docs, links, spell, intent.
+
+<!-- checkride:end -->
+
+## This repo's checks
+
 `checkride.config.json` names every slot: which tool fills it, which run only under
-`--include` or `--all`, and which are off.
+`--include` or `--all`, and which are off. `intent` is a custom check that runs
+`keyframes check --strict` on `keyframes.md`.
 
 ## Keyframes
 
-This project's intent is in `keyframes.md`. Read it before you change code. The `intent`
-check runs `keyframes check --strict` on it.
+This project's intent is in `keyframes.md`. Read it before you change code.
 
 - **Constraints (C)** must always hold. If a change would break one, stop and ask.
 - **Scenarios (S)** must keep working.
@@ -69,5 +79,3 @@ check runs `keyframes check --strict` on it.
 Its decisions and constraints keep the numbers and slugs the code's comments cite, as
 `D204 (parked-levels)`. The longer record is `docs/one-surface.md` and the build records
 under `.plumbbob/builds/`; `docs/founding-spec.md` is the founding record, not the spec.
-
-<!-- checkride:end -->

@@ -1,5 +1,16 @@
 import { defineConfig } from 'vitest/config';
 
+/**
+ * The test files that launch a browser and judge its frames. They wait up to
+ * ninety seconds for a page to draw, and timed out, a different case each
+ * time, when the rest of the suite was loading every core beside them. So
+ * they run as a group of their own once the other files are done, where the
+ * only load on the machine is each other.
+ */
+const BROWSER = ['apps/web/src/__tests__/world.test.ts', 'apps/web/src/__tests__/select.test.ts', 'apps/atis/src/__tests__/png.test.ts'];
+
+const EXCLUDE = ['**/node_modules/**', '**/dist/**'];
+
 export default defineConfig({
   // Workspace packages resolve to their TypeScript source under the `source`
   // export condition, so tests never need a build; Node takes `default` (dist/)
@@ -8,8 +19,11 @@ export default defineConfig({
   resolve: { conditions: ['source'] },
   ssr: { resolve: { conditions: ['source', 'module', 'node', 'development|production'] } },
   test: {
-    include: ['**/src/**/*.{test,spec}.{ts,tsx}', '**/test/**/*.{test,spec}.ts'],
-    exclude: ['**/node_modules/**', '**/dist/**'],
+    // Two groups, the second started when the first has finished: everything that runs in Node, then the browser's files. Each names its own files, since a project that extends this config adds to a list it finds here and never replaces it.
+    projects: [
+      { extends: true, test: { name: 'node', include: ['**/src/**/*.{test,spec}.{ts,tsx}', '**/test/**/*.{test,spec}.ts'], exclude: [...EXCLUDE, ...BROWSER], sequence: { groupOrder: 0 } } },
+      { extends: true, test: { name: 'browser', include: BROWSER, exclude: EXCLUDE, sequence: { groupOrder: 1 } } },
+    ],
     reporters: ['default'],
     coverage: {
       provider: 'v8',

@@ -1,6 +1,9 @@
 {
   "$schema": "./node_modules/checkride/schema/checkride.config.schema.json",
-  "note": "Every slot checkride knows is named here, so this file, not detection, says what runs. A slot set to false has no tool in this repo: format (no formatter is used), prose (no vale), mutation (no stryker config), publint and attw (not installed), unclaimed (no targets are declared) and schema (no schemas are declared). A slot with optIn runs only under --include or --all.",
+  "note": "Every slot checkride knows is named here, so this file, not detection, says what runs. A slot set to false has no tool in this repo: format (no formatter is used), prose (no vale), mutation (no stryker config), publint and attw (not installed), unclaimed (no targets are declared) and schema (no schemas are declared). A slot with optIn runs only under --include or --all. unclaimed.ignore names a test fixture that holds a go.mod: it is data the readers are tested on, not code of this repo, so no target claims it.",
+  "unclaimed": {
+    "ignore": ["apps/atis/fixtures/check-targets"]
+  },
   "checks": {
     "types": "tsc",
     "format": false,
