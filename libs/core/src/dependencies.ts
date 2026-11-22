@@ -9,6 +9,11 @@
  * the count sit what this change did to the package in a manifest (D83) and
  * the worst advisory naming it. An audit whose advisories were not read gives
  * no count at all, never a clean one (C2).
+ *
+ * A package an advisory names also lists the terrain files that import it
+ * (D351 (advised-files)), so the map can mark where a risky package is used:
+ * a mark on each file, a whole repo's overlay, and a star's reach. A package
+ * no advisory names lists none, which keeps the map the size it was.
  */
 
 import { severityRank } from './evidence.js';
@@ -52,23 +57,26 @@ function healthOf(name: string, advisories: readonly Advisory[] | undefined): Pi
  */
 export function computeDependencies(inputs: DependencyInputs): readonly Dependency[] | undefined {
   if (!inputs.files.some((file) => file.packages !== undefined)) return undefined;
-  const importers = new Map<string, number>();
+  const importing = new Map<string, string[]>();
   for (const file of inputs.files) {
     if (!inputs.terrain.has(file.path)) continue;
-    for (const name of new Set(file.packages)) importers.set(name, (importers.get(name) ?? 0) + 1);
+    for (const name of new Set(file.packages)) importing.set(name, [...(importing.get(name) ?? []), file.path]);
   }
   const added = new Set(inputs.deps_added.map((dep) => dep.name));
   const moved = new Set(inputs.deps_moved.map((dep) => dep.name));
   const changeOf = (name: string): DependencyChange | undefined => (added.has(name) ? 'added' : moved.has(name) ? 'moved' : undefined);
-  return [...importers]
+  return [...importing]
     .toSorted(([a], [b]) => byPath(a, b))
-    .map(([name, count]): Dependency => {
+    .map(([name, files]): Dependency => {
       const change = changeOf(name);
+      const health = healthOf(name, inputs.security?.advisories);
       return {
         name,
-        importers: count,
+        importers: files.length,
         ...(change === undefined ? {} : { change }),
-        ...healthOf(name, inputs.security?.advisories),
+        ...health,
+        // Only a package an advisory names says which files import it (D351 (advised-files)).
+        ...((health.advisories ?? 0) > 0 ? { files: files.toSorted(byPath) } : {}),
       };
     });
 }

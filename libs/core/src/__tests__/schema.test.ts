@@ -364,6 +364,21 @@ test('accepts the outside packages, none included, and rejects a severity no adv
   expect(() => assertMap(withDependencies({}))).toThrow(/weather\.dependencies: expected an array/);
 });
 
+test('accepts the files that import a package an advisory names, and rejects them on any other package, miscounted or unsorted (D351 (advised-files))', () => {
+  const withDependencies = (dependencies: unknown): unknown => {
+    const map = minimalMap();
+    return { ...map, weather: { ...map.weather, dependencies } };
+  };
+  const advised = { name: 'express', importers: 2, advisories: 1, severity: 'high' };
+  expect(() => assertMap(withDependencies([{ ...advised, files: ['src/a.ts', 'src/b.ts'] }]))).not.toThrow();
+  // A map written before the key carries none.
+  expect(() => assertMap(withDependencies([advised]))).not.toThrow();
+  expect(() => assertMap(withDependencies([{ name: 'kleur', importers: 1, advisories: 0, files: ['src/a.ts'] }]))).toThrow(/dependencies\[0\]\.files: only a package an advisory names/);
+  expect(() => assertMap(withDependencies([{ ...advised, files: ['src/a.ts'] }]))).toThrow(/dependencies\[0\]\.files: expected the 2 files that import it, got 1/);
+  expect(() => assertMap(withDependencies([{ ...advised, files: ['src/b.ts', 'src/a.ts'] }]))).toThrow(/dependencies\[0\]\.files\[1\]: expected the files sorted and unique/);
+  expect(() => assertMap(withDependencies([{ ...advised, files: ['src/a.ts', 7] }]))).toThrow(/dependencies\[0\]\.files\[1\]: expected a string/);
+});
+
 test('rejects a changed entry naming an unknown group', () => {
   const map = minimalMap();
   const withUnknownGroup = {

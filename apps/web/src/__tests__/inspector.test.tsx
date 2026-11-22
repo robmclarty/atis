@@ -88,6 +88,13 @@ const element = (selector: string): HTMLElement => {
   return found;
 };
 
+/** A strip of a file's lines, which is an SVG and so no `HTMLElement`. */
+const svgAt = (selector: string): SVGElement => {
+  const found = host.querySelector(selector);
+  if (!(found instanceof SVGElement)) throw new Error(`nothing matches ${selector}`);
+  return found;
+};
+
 const click = (selector: string): Promise<void> =>
   act(async () => {
     element(selector).dispatchEvent(new MouseEvent('click', { bubbles: true }));
@@ -627,13 +634,31 @@ test('served, the code tab shows the text a row to a line, the changed lines mar
   gate.resolve();
   await settle();
   expect(host.querySelector('[data-inspector-code-note]')).toBeNull();
-  expect(element('[data-inspector-code-head]').textContent).toBe('read at a1b2c3d · 31 linesopen in the editor');
+  expect(element('[data-inspector-code-head]').textContent).toBe('read at a1b2c3d · 31 lines · 5 untestedopen in the editor');
   expect(element('[data-inspector-code-head] [data-inspector-editor]').getAttribute('href')).toBe(editorLink(DEFAULT_EDITOR, { root: ROOT, path: INDEX, line: 1 }));
 
   const sheet = element(`[data-inspector-code="${INDEX}"]`);
   const lines = [...sheet.querySelectorAll<HTMLElement>('[data-inspector-line]')];
   expect(lines.map((line) => line.getAttribute('data-inspector-line'))).toEqual(Array.from({ length: 31 }, (_, at) => String(at + 1)));
   expect(lines[5]?.textContent).toBe('6// line 6');
+  // The changed lines no test ran are 8, 9, 25, 28 and 31: each carries a bar beside its number, and no other line a mark (D348 (line-strip)).
+  expect(lines.filter((line) => line.hasAttribute('data-inspector-untested')).map((line) => Number(line.getAttribute('data-inspector-line')))).toEqual([8, 9, 25, 28, 31]);
+  expect(lines[7]?.textContent).toBe('8▌// line 8');
+  expect(lines.filter((line) => line.hasAttribute('data-inspector-mutant'))).toEqual([]);
+  // Down the sheet's side runs the file's strip, to its scale: the two functions, the two hunks, and the untested lines as three runs.
+  const strip = svgAt('[data-inspector-body="code"] [data-strip="down"]');
+  expect(strip.getAttribute('viewBox')).toBe('0 0 1 31');
+  expect([...strip.querySelectorAll('[data-strip-function]')].map((mark) => mark.getAttribute('data-strip-function'))).toEqual(['resolveSlot', 'listSlots']);
+  expect([...strip.querySelectorAll('[data-strip-changed]')].map((mark) => [mark.getAttribute('y'), mark.getAttribute('height')])).toEqual([
+    ['5', '4'],
+    ['18', '13'],
+  ]);
+  expect([...strip.querySelectorAll('[data-strip-untested]')].map((mark) => [mark.getAttribute('y'), mark.getAttribute('height')])).toEqual([
+    ['7', '2'],
+    ['24', '1'],
+    ['27', '1'],
+    ['30', '1'],
+  ]);
   // The hunks are lines 6-9 and 19-32: those lines are marked down their edge in the change hue and no other.
   const changed = lines.filter((line) => line.hasAttribute('data-inspector-changed')).map((line) => Number(line.getAttribute('data-inspector-line')));
   expect(changed).toEqual([6, 7, 8, 9, ...Array.from({ length: 13 }, (_, at) => 19 + at)]);
@@ -1037,4 +1062,65 @@ test('the chrome mounts the panel over the map it draws, and a selection on its 
   // While the map is not read there is no panel.
   await act(async () => root.render(<Chrome state={{ status: 'loading', url: '/map.json' }} registry={createRegistry()} nav={nav} dev={false} />));
   expect(host.querySelector('[data-inspector]')).toBeNull();
+});
+
+test("a file's facts open on its lines to scale, with the lanes that hold a mark named, and a press on the strip opens its code at that line (D348 (line-strip))", async () => {
+  serve({ [`/file/${TOOLS}`]: { status: 200, body: { ...SERVED, path: TOOLS } } });
+  const { nav } = await draw(DEMO, { token: TOKEN });
+  await select(nav, TOOLS);
+  const shape = element('[data-inspector-section="shape"]');
+  const strip = svgAt('[data-inspector-section="shape"] [data-strip="across"]');
+  // tools.ts has two mutants still alive, on lines 27 and 64, each a tick in its own lane.
+  expect([...strip.querySelectorAll('[data-strip-mutant]')].map((mark) => mark.getAttribute('data-strip-mutant'))).toEqual(['27', '64']);
+  expect(strip.querySelectorAll('[data-strip-changed]').length).toBeGreaterThan(0);
+  expect(element('[data-inspector-strip-key]').textContent).toContain('tick: a mutant no test killed');
+  expect(shape.textContent).toContain(`${strip.getAttribute('data-strip-lines') ?? ''} lines`);
+  // A press half way along it turns the panel to the file's code.
+  await act(async () => {
+    strip.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 0, clientY: 0 }));
+    await Promise.resolve();
+  });
+  await settle();
+  expect(element('[data-inspector-tabs] [aria-selected="true"]').getAttribute('data-inspector-tab')).toBe('code');
+});
+
+test('a file the scan read no function in and the change left alone shows no strip, in its facts or beside its code', async () => {
+  const bare = assertMap({ ...DEMO, terrain: { ...DEMO.terrain, organelles: DEMO.terrain.organelles.map(({ functions: _functions, ...file }) => file) } });
+  const quiet = bare.terrain.organelles.find((file) => !bare.weather.changed.some((changed) => changed.path === file.id));
+  expect(quiet).toBeDefined();
+  const { nav } = await draw(bare);
+  await select(nav, quiet?.id ?? '');
+  expect(host.querySelector('[data-inspector-section="shape"]')).toBeNull();
+  expect(host.querySelector('[data-strip]')).toBeNull();
+});
+
+test("a file's plate button asks the world for its plate and puts it away again, and the plate goes when the selection moves (D350 (plate-by-ask))", async () => {
+  const { nav } = await draw();
+  await select(nav, TOOLS);
+  const button = element('[data-inspector-plate]');
+  expect(button.getAttribute('data-inspector-plate')).toBe('off');
+  expect(button.getAttribute('aria-pressed')).toBe('false');
+  expect(nav.plated()).toBeUndefined();
+
+  await click('[data-inspector-plate]');
+  expect(nav.plated()).toBe(TOOLS);
+  expect(element('[data-inspector-plate]').getAttribute('data-inspector-plate')).toBe('on');
+  expect(element('[data-inspector-plate]').getAttribute('aria-pressed')).toBe('true');
+  await click('[data-inspector-plate]');
+  expect(nav.plated()).toBeUndefined();
+
+  // Escape inside the panel puts the plate away first, and the selection stays; a second clears the selection.
+  await click('[data-inspector-plate]');
+  await act(async () => {
+    element('[data-inspector-plate]').dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+    await Promise.resolve();
+  });
+  expect(nav.plated()).toBeUndefined();
+  expect(nav.selected()).toEqual(pick(DEMO, TOOLS));
+
+  // Asked for again, it is the plate of this file alone: another file selected has none.
+  await click('[data-inspector-plate]');
+  await select(nav, INDEX);
+  expect(nav.plated()).toBeUndefined();
+  expect(element('[data-inspector-plate]').getAttribute('data-inspector-plate')).toBe('off');
 });

@@ -68,7 +68,7 @@ test('the toggles name every overlay, press the one shown, and send each press o
   await act(async () => root.render(<OverlayToggles map={map} registry={createRegistry()} nav={nav} />));
 
   expect(all('[data-overlay]').map((toggle) => toggle.getAttribute('data-overlay'))).toEqual([...OVERLAY_NAMES]);
-  expect(all('[data-overlay]').map((toggle) => toggle.textContent)).toEqual(['Trouble spots', 'Ugly spots', 'Coverage gaps', 'Dead code', 'Duplication', 'Cycles', 'Recent heat', 'Baselined']);
+  expect(all('[data-overlay]').map((toggle) => toggle.textContent)).toEqual(['Trouble spots', 'Ugly spots', 'Coverage gaps', 'Dead code', 'Duplication', 'Cycles', 'Recent heat', 'Advisories', 'Baselined']);
   expect(button('[data-overlay="trouble_spots"]').getAttribute('aria-pressed')).toBe('true');
 
   await act(async () => button('[data-overlay="coverage_gaps"]').click());

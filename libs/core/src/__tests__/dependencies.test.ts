@@ -47,7 +47,19 @@ test('a package an advisory names at high carries the worst severity among all t
     importers: 1,
     advisories: 2,
     severity: 'high',
+    files: ['src/cli/main.ts'],
   });
+});
+
+test('a package an advisory names lists the terrain files that import it, sorted, and one no advisory names lists none (D351 (advised-files))', () => {
+  const twice = [...FILES, { path: 'src/api/server.ts', packages: ['express'] }];
+  const dependencies = computeDependencies(inputs({ files: twice, terrain: new Set([...TERRAIN, 'src/api/server.ts']), security: SECURITY }));
+  const express = dependencies?.find((dependency) => dependency.name === 'express');
+  expect(express?.files).toEqual(['src/api/server.ts', 'src/cli/main.ts']);
+  expect(express?.importers).toBe(2);
+  // Read clean or never read, a package says nothing of its files.
+  expect(dependencies?.find((dependency) => dependency.name === 'kleur')).not.toHaveProperty('files');
+  for (const dependency of computeDependencies(inputs()) ?? []) expect(dependency).not.toHaveProperty('files');
 });
 
 test('with the audit read, a package no advisory names carries a count of none and no severity', () => {

@@ -3,9 +3,9 @@
 
 `main` → `a1b2c3d` · 8 files changed · 6 notices
 
-| Category | Patch cov | Mutants | Reach | Size | Gate | Standing | Health Δ | Notices | Other |
-| :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
-| **IFR** | **61%**, 1 unmeasured | **1** survived, 1 untested | **4** cells | **+210 −94**, 4 files | **1** red | **1** red | **+1.9** | **1·2·3** | **1** |
+| Category | Patch cov | Mutants | Reach | Size | Gate | Standing | Health Δ | Deps | Notices | Other |
+| :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
+| **IFR** | **61%**, 1 unmeasured | **1** survived, 1 untested | **4** cells | **+210 −94**, 4 files | **1** red | **1** red | **+1.9** | — | **1·2·3** | **1** |
 
 ![the weather map of this change at a1b2c3d](https://github.com/owner/repo/raw/0123456789abcdef0123456789abcdef01234567/head.png)
 

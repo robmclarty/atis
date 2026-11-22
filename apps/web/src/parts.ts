@@ -17,7 +17,7 @@
 
 import { OTHER_GROUP, OVERLAY_NAMES, changeSize, readRedSplit } from 'core';
 import type { CheckSlot, Improvement, MapJson, ReachEntry } from 'core';
-import { crossingsOf, healthDeltaOf, overlayOf } from 'scene';
+import { crossingsOf, dependencyHealthOf, healthDeltaOf, overlayOf, starHue } from 'scene';
 import type { OverlayUnit } from 'scene';
 
 import { rowsOf, tallyOf } from './notices.js';
@@ -195,6 +195,28 @@ const healthParts = (map: MapJson): Parts => {
   return { block: 'health', parts };
 };
 
+/**
+ * Deps (D352 (deps-block)): each outside package an advisory names, worst
+ * first, with how many advisories and the files that import it where the map
+ * lists them (D351 (advised-files)). With no audit read it opens the one
+ * line that says so, never a clean audit (C2).
+ */
+const depsParts = (map: MapJson): Parts => {
+  const health = dependencyHealthOf(map);
+  if (health.state === 'unread') return { block: 'deps', parts: [], empty: health.reason };
+  if (health.advised === 0) return { block: 'deps', parts: [], empty: `the audit names none of the ${String(health.packages)} outside packages the terrain imports` };
+  const advised = (map.weather.dependencies ?? [])
+    .filter((dependency) => (dependency.advisories ?? 0) > 0)
+    .toSorted((a, b) => Number(starHue(b) === 'ifr') - Number(starHue(a) === 'ifr') || b.importers - a.importers || byPath(a.name, b.name));
+  return {
+    block: 'deps',
+    parts: advised.map((dependency) => ({
+      heading: `${dependency.name} ${DOT} ${String(dependency.advisories ?? 0)} ${dependency.advisories === 1 ? 'advisory' : 'advisories'}${dependency.severity === undefined ? '' : `, ${dependency.severity}`} ${DOT} ${String(dependency.importers)} ${dependency.importers === 1 ? 'file imports' : 'files import'} it`,
+      lines: dependency.files ?? ['the map does not list the files that import it'],
+    })),
+  };
+};
+
 /** An overlay's unit, counted more than once. */
 const PLURALS: Readonly<Record<OverlayUnit, string>> = { file: 'files', finding: 'findings', family: 'families', cycle: 'cycles' };
 
@@ -230,6 +252,8 @@ export const partsOf = (map: MapJson, block: string, cell?: string): Parts => {
       return redParts(map, block, true);
     case 'health':
       return healthParts(map);
+    case 'deps':
+      return depsParts(map);
     case 'notices':
       return { block, parts: [{ heading: `${tallyOf(map)} by tier`, lines: rowsOf(map).map((row) => `${String(row.rank)} ${DOT} ${row.tier} ${DOT} ${row.kind} ${DOT} ${row.words}`) }] };
     case 'other': {

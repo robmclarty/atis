@@ -279,6 +279,13 @@ export type Dependency = {
   readonly advisories?: number;
   /** The worst severity among those advisories, lower-cased as the audit writes it; set exactly when `advisories` is above zero. */
   readonly severity?: string;
+  /**
+   * The terrain files that import it at head, sorted (C3), as many as
+   * `importers` counts (D351 (advised-files)). Set only where an advisory
+   * names the package; a map written before the key carries none, which says
+   * nothing of where the package is used (C2).
+   */
+  readonly files?: readonly string[];
 };
 
 /** What got better against the base (D98, §5.1): a function back under a threshold, a file's dent gone, a clone family dissolved, a cycle broken. */
@@ -484,6 +491,14 @@ export type BaselinedKind = 'threshold' | 'unused-file' | 'unused-export' | 'cyc
 export type BaselinedFinding = { readonly kind: BaselinedKind; readonly files: readonly string[]; readonly name?: string };
 
 /**
+ * A file under an advisory (D355 (advisories-overlay)): a terrain file that
+ * imports an outside package an advisory names, with every such package it
+ * imports, sorted, and the worst severity among them, lower-cased as the
+ * audit writes it.
+ */
+export type AdvisedImport = { readonly path: string; readonly packages: readonly string[]; readonly severity: string };
+
+/**
  * Whole-repository state at one commit, drawn over its own terrain in place
  * of a change's weather (D101). Each overlay is absent when its source is,
  * and `muted` then names it with the reason, as `overlay: reason` (C2). Every
@@ -498,12 +513,13 @@ export type Overlays = {
   readonly duplication?: readonly CloneFamily[];
   readonly cycles?: readonly Cycle[];
   readonly recent_heat?: RecentHeat;
+  readonly advisories?: readonly AdvisedImport[];
   readonly baselined?: readonly BaselinedFinding[];
   readonly muted?: readonly string[];
 };
 
 /** Every overlay a `repo` map can carry, in the order §8 lists them, the baseline last (D49, D101). */
-export const OVERLAY_NAMES = ['trouble_spots', 'ugly_spots', 'coverage_gaps', 'dead_code', 'duplication', 'cycles', 'recent_heat', 'baselined'] as const;
+export const OVERLAY_NAMES = ['trouble_spots', 'ugly_spots', 'coverage_gaps', 'dead_code', 'duplication', 'cycles', 'recent_heat', 'advisories', 'baselined'] as const;
 
 export type OverlayName = (typeof OVERLAY_NAMES)[number];
 
@@ -725,6 +741,16 @@ function assertDependency(value: unknown, path: string): string {
     fail(`${path}.severity`, 'a severity is required exactly when an advisory names the package');
   }
   if (severity !== undefined) expectString(severity, `${path}.severity`);
+  const files = dependency['files'];
+  if (files !== undefined) {
+    if (severity === undefined) fail(`${path}.files`, 'only a package an advisory names lists the files that import it');
+    const paths = expectArray(files, `${path}.files`).map((file, index) => expectString(file, `${path}.files[${String(index)}]`));
+    if (paths.length !== importers) fail(`${path}.files`, `expected the ${String(importers)} files that import it, got ${String(paths.length)}`);
+    paths.forEach((file, index) => {
+      const previous = paths[index - 1];
+      if (previous !== undefined && previous >= file) fail(`${path}.files[${String(index)}]`, `expected the files sorted and unique, got "${file}" after "${previous}"`);
+    });
+  }
   return name;
 }
 
@@ -1009,6 +1035,19 @@ function assertCycles(value: unknown, placed: Placed): void {
   });
 }
 
+/** Each advised file names the packages it imports that an advisory names, sorted, and the worst severity among them. */
+function assertAdvisories(value: unknown, placed: Placed): void {
+  for (const [file, at] of expectByPath(value, 'overlays.advisories', placed)) {
+    const packages = expectArray(file['packages'], `${at}.packages`).map((name, index) => expectString(name, `${at}.packages[${String(index)}]`));
+    if (packages.length === 0) fail(`${at}.packages`, 'expected the packages an advisory names');
+    packages.forEach((name, index) => {
+      const previous = packages[index - 1];
+      if (previous !== undefined && previous >= name) fail(`${at}.packages[${String(index)}]`, `expected the packages sorted and unique, got "${name}" after "${previous}"`);
+    });
+    expectString(file['severity'], `${at}.severity`);
+  }
+}
+
 /** The heat is a window of commits, and how many of them touched each file, never more than the window holds. */
 function assertRecentHeat(value: unknown, placed: Placed): void {
   const heat = expectRecord(value, 'overlays.recent_heat');
@@ -1037,11 +1076,12 @@ const OVERLAY_ASSERTS: Readonly<Record<OverlayName, (value: unknown, placed: Pla
   duplication: assertDuplication,
   cycles: assertCycles,
   recent_heat: assertRecentHeat,
+  advisories: assertAdvisories,
   baselined: assertBaselined,
 };
 
 /**
- * The overlays (D101): only the eight §8 names, each either drawn or muted
+ * The overlays (D101): only the names §8 and the advisories give, each either drawn or muted
  * with its reason as `overlay: reason`, never both and never neither (C2),
  * and each naming only files the map places.
  */

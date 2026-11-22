@@ -37,6 +37,7 @@ import type { OverlayName } from 'core';
 
 import { Chrome, Hud, Legend } from '../chrome/index.js';
 import { HUD_ORDER, LEGEND, SHAPE_KEY_WORDS, blockText, blocksOf, over } from '../hud.js';
+import { partsOf } from '../parts.js';
 import { createRegistry } from '../registry.js';
 import { repoMap } from './repo-map.js';
 
@@ -157,7 +158,7 @@ test("on a whole repo's map the world's blocks are the sheet's for every overlay
     expect(world.map(blockText), name).toEqual(sheet.map((block) => block.text));
     expect(world.map((block) => block.muted), name).toEqual(sheet.map((block) => block.reason));
   }
-  expect(blocksOf(map, 'trouble_spots').map(blockText)).toEqual(['VFR', 'Whole repo 8 files', 'Trouble spots 4 files', 'Gate pass', 'Standing 2 red', 'Other 1']);
+  expect(blocksOf(map, 'trouble_spots').map(blockText)).toEqual(['VFR', 'Whole repo 8 files', 'Trouble spots 4 files', 'Gate pass', 'Standing 2 red', 'Deps —', 'Other 1']);
   expect(blocksOf(map).find((block) => block.id === 'overlay')).toEqual({ id: 'overlay', label: 'Overlay', value: 'off', tail: '' });
 });
 
@@ -170,6 +171,36 @@ test("the world's Size counts the terrain alone, as the sheet's does, so a chang
   expect(blocksOf(map).map(blockText)).toEqual(sheetBlocks(map).map((block) => block.text));
 });
 
+/** What a map's `Deps` block reads as. */
+const depsOf = (map: MapJson): string => blockText(blocksOf(map).find((block) => block.id === 'deps') ?? { id: '', label: '', value: 'no deps block', tail: '' });
+
+test('Deps counts the outside packages an advisory names with the worst severity, reads clean where an audit named none, and is muted where none was read; the sheet says the same (D352 (deps-block), C2)', () => {
+  const index = 'libs/core/src/pm/index.ts';
+  const withDependencies = (dependencies: NonNullable<MapJson['weather']['dependencies']>): MapJson => assertMap({ ...DEMO, weather: { ...DEMO.weather, dependencies } });
+  const advised = withDependencies([
+    { name: 'kleur', importers: 1, advisories: 2, severity: 'high', files: [index] },
+    { name: 'picomatch', importers: 2, advisories: 1, severity: 'moderate' },
+    { name: 'semver', importers: 1, advisories: 0 },
+  ]);
+  const clean = withDependencies([{ name: 'kleur', importers: 1, advisories: 0 }]);
+  expect(depsOf(advised)).toBe('Deps 2 advised, worst high');
+  expect(depsOf(clean)).toBe('Deps clean');
+  // The demo's packages were read by no audit: the dash, and why, never clean.
+  expect(blocksOf(DEMO).find((block) => block.id === 'deps')).toEqual({ id: 'deps', label: 'Deps', value: MUTED_DASH, tail: '', muted: 'absent' });
+  for (const map of [advised, clean, DEMO]) expect(blocksOf(map).map(blockText)).toEqual(sheetBlocks(map).map((block) => block.text));
+
+  // It opens each advised package, the serious first, with the files that import it where the map lists them.
+  expect(partsOf(advised, 'deps')).toEqual({
+    block: 'deps',
+    parts: [
+      { heading: 'kleur · 2 advisories, high · 1 file imports it', lines: [index] },
+      { heading: 'picomatch · 1 advisory, moderate · 2 files import it', lines: ['the map does not list the files that import it'] },
+    ],
+  });
+  expect(partsOf(clean, 'deps')).toEqual({ block: 'deps', parts: [], empty: 'the audit names none of the 1 outside packages the terrain imports' });
+  expect(partsOf(DEMO, 'deps')).toEqual({ block: 'deps', parts: [], empty: 'no audit was read' });
+});
+
 test('the legend keys the same marks in the same words as the sheet, and the shape key says the same', () => {
   // The world keys three marks the sheet does not, last: the nucleus, which only an opened cell draws (D201), and the two that are motion and so the world's alone (C10), the membrane's ripple (D195) and the swaying line (Q84).
   expect(LEGEND).toEqual([
@@ -177,6 +208,10 @@ test('the legend keys the same marks in the same words as the sheet, and the sha
     { id: 'nucleus', words: 'nucleus: its functions, sized by their lines' },
     { id: 'ripple', words: 'membrane ripples: imported past its interface' },
     { id: 'sway', words: 'swaying line: enters a module past its interface' },
+    // And the three the one surface added, which the still draws none of: the lit function, the advisory's pip and the package's star.
+    { id: 'exposed', words: 'lit function: a changed line no test ran, or a live mutant' },
+    { id: 'advisory', words: 'red pip: imports a package with a serious advisory' },
+    { id: 'star', words: 'star: an outside package, coloured by its advisories' },
   ]);
   expect(SHAPE_KEY_WORDS).toBe(SHEET_SHAPE_KEY_WORDS);
   expect(over('#ffffff', '#000000', 0.5)).toBe('#808080');

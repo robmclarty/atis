@@ -7,7 +7,7 @@ import type { MapJson, Overlays } from 'core';
 import { expect, test } from 'vitest';
 
 import { DEFAULT_OVERLAY, overlayNamed, overlayOf } from '../overlays.js';
-import { OVERLAY_DEAD_EXPORT_LEVEL } from '../tokens.js';
+import { OVERLAY_ADVISORY_LESSER_LEVEL, OVERLAY_DEAD_EXPORT_LEVEL } from '../tokens.js';
 
 /**
  * Each overlay comes down to a level per terrain file, in the channel its
@@ -79,6 +79,28 @@ test('duplication is repetition, a cycle is state, and a baselined finding is mu
   expect(overlayOf(map, 'duplication')).toMatchObject({ channel: 'repetition', marks: [{ path: TOOLS, level: 1 }, { path: FORMAT, level: 1 }], unit: 'family' });
   expect(overlayOf(map, 'cycles')).toMatchObject({ channel: 'state', marks: [{ path: DOCTOR, level: 1 }, { path: FORMAT, level: 1 }], unit: 'cycle' });
   expect(overlayOf(map, 'baselined')).toMatchObject({ channel: 'muted', marks: [{ path: DOCTOR, level: 1 }, { path: FORMAT, level: 1 }], count: 2 });
+});
+
+test('the files under an advisory are luminance: lit full at high or critical, a share of that under a lesser one, and a clean audit marks none (D355 (advisories-overlay))', () => {
+  const map = repo({
+    advisories: [
+      { path: DOCTOR, packages: ['express', 'qs'], severity: 'critical' },
+      { path: TOOLS, packages: ['express'], severity: 'high' },
+      { path: FORMAT, packages: ['qs'], severity: 'moderate' },
+    ],
+  });
+  expect(overlayOf(map, 'advisories')).toEqual({
+    name: 'advisories',
+    title: 'Advisories',
+    channel: 'luminance',
+    marks: [{ path: DOCTOR, level: 1 }, { path: TOOLS, level: 1 }, { path: FORMAT, level: OVERLAY_ADVISORY_LESSER_LEVEL }],
+    count: 3,
+    unit: 'file',
+  });
+  // An audit that named nothing is drawn, with no file lit: read clean, not unread.
+  expect(overlayOf(repo({ advisories: [] }), 'advisories')).toMatchObject({ channel: 'luminance', marks: [], count: 0 });
+  expect(overlayOf(repo({ muted: ['advisories: .check/ ran no security slot'] }), 'advisories')).toEqual({ name: 'advisories', title: 'Advisories', reason: '.check/ ran no security slot' });
+  expect(overlayNamed('advisories')).toBe('advisories');
 });
 
 test('an overlay the map holds muted carries its reason rather than marks (C2)', () => {

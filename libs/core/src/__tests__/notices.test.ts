@@ -8,7 +8,7 @@ import { identifyGroups } from '../groups.js';
 import type { FileHistory } from '../history.js';
 import { identifyModules } from '../modules.js';
 import type { Modules, ScannedFile } from '../modules.js';
-import { HEAD_ONLY, changeSize, findGhosts, findPublicNames, rankNotices } from '../notices.js';
+import { HEAD_ONLY, brokenSurfaces, changeSize, findGhosts, findPublicNames, rankNotices } from '../notices.js';
 import type { ExportShapes, NamedEdge, NoticeInputs, PassedName, PublishingMember, ScanFile } from '../notices.js';
 import { computeReach } from '../reach.js';
 import type { DiffFile } from '../reach.js';
@@ -1129,6 +1129,32 @@ test('a moved fingerprint raises interface-change, its why naming the name that 
   expect(rowsOf(notices)).toEqual([['interface-change', BARREL]]);
   expect(notices[0]?.why).toBe('the interface of `src/pm` changed (`resolve` reshaped) and it sits in band 5');
   expect(notices[0]?.inputs).toMatchObject({ names_added: 0, names_removed: 0, names_reshaped: 1, names_uncompared: 0 });
+});
+
+/** One scanned source file with the names it exports and the shape each printed, or `null` where it printed none. */
+const surfaceFile = (path: string, exports: readonly string[], shapes: Record<string, string | null>): ScanFile => ({ path, loc: 1, kind: 'source', exports, shapes });
+
+test('a surface is broken by a name removed or a kept name reshaped, and by nothing else: a name added, a shape that could not be compared and an unchanged file prove no break (D346 (category-reads-surface))', () => {
+  const base = [
+    surfaceFile('reshaped.ts', ['a'], { a: 'function a(): string;' }),
+    surfaceFile('removed.ts', ['a', 'b'], { a: 'const a: 1;', b: 'const b: 2;' }),
+    surfaceFile('added.ts', ['a'], { a: 'const a: 1;' }),
+    surfaceFile('uncompared.ts', ['a'], { a: null }),
+    surfaceFile('same.ts', ['a'], { a: 'const a: 1;' }),
+    surfaceFile('deleted.ts', ['a'], { a: 'const a: 1;' }),
+  ];
+  const head = [
+    surfaceFile('reshaped.ts', ['a'], { a: 'function a(): number;' }),
+    surfaceFile('removed.ts', ['a'], { a: 'const a: 1;' }),
+    surfaceFile('added.ts', ['a', 'b'], { a: 'const a: 1;', b: 'const b: 2;' }),
+    surfaceFile('uncompared.ts', ['a'], { a: 'const a: 1;' }),
+    surfaceFile('same.ts', ['a'], { a: 'const a: 1;' }),
+    surfaceFile('new.ts', ['a'], { a: 'const a: 1;' }),
+  ];
+  const changed = ['reshaped.ts', 'removed.ts', 'added.ts', 'uncompared.ts', 'same.ts', 'deleted.ts', 'new.ts', 'unscanned.ts'];
+  expect([...brokenSurfaces(base, head, changed)].toSorted()).toEqual(['deleted.ts', 'removed.ts', 'reshaped.ts']);
+  // Only the files the change names are asked about.
+  expect([...brokenSurfaces(base, head, ['same.ts'])]).toEqual([]);
 });
 
 test('names only added raise interface-added at severity 3, whatever their shape, and a long list is counted (D81)', () => {

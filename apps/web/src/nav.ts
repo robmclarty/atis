@@ -19,7 +19,9 @@
  * chose, and what is pointed at, the thing under the pointer on the map or
  * under it in a row (D209 (selection-line)): either side sets them, both hear
  * them, and the line keeps them itself, so the chrome's panels select and
- * point with no world drawn. Neither imports the
+ * point with no world drawn. It holds the file whose plate the inspector
+ * asked for, too (D350 (plate-by-ask)): the world reads it each frame and
+ * lays the plate, and it goes when the selection moves. Neither imports the
  * other: `main.ts` hands both the same line, and an ask made before the world
  * is drawn, or with no world at all, as in a DOM test, goes nowhere. Pure, so
  * a test reads it straight.
@@ -111,7 +113,11 @@ export type Nav = {
    * nothing; its own pointing it is never asked back.
    */
   readonly point: (target: string | undefined, from: PointFrom) => void;
-  /** Hear the outline, the stop, the open cell, the selection or the pointing move. */
+  /** The file whose plate the chrome asked the world to lay, by its path (D350 (plate-by-ask)); none while none is asked for. */
+  readonly plated: () => string | undefined;
+  /** Ask for a file's plate, or put it away with none. The plate is the selection's: it is put away whenever the selection moves. */
+  readonly plate: (path: string | undefined) => void;
+  /** Hear the outline, the stop, the open cell, the selection, the pointing or the plate asked for move. */
   readonly subscribe: (listener: () => void) => () => void;
   /** Ask the world to centre the view on a layout point. */
   readonly lookAt: (point: Point) => void;
@@ -160,6 +166,7 @@ export const createNav = (): Nav => {
   let overlay: OverlayAsk;
   let selected: Selected | undefined;
   let pointed: Pointed | undefined;
+  let plated: string | undefined;
   /** What the chrome points at, which is all of the pointing the world is asked to draw. */
   const fromChrome = (): string | undefined => (pointed?.from === 'chrome' ? pointed.target : undefined);
   const tell = (): void => listeners.forEach((listener) => listener());
@@ -187,9 +194,17 @@ export const createNav = (): Nav => {
       const moved = !alike(next, selected);
       if (moved) {
         selected = next;
+        // A plate was asked for of the selection that was (D350 (plate-by-ask)).
+        plated = undefined;
         tell();
       }
       if (moved || (move === 'fly' && next !== undefined)) steering?.select?.(next, move);
+    },
+    plated: () => plated,
+    plate: (path) => {
+      if (path === plated) return;
+      plated = path;
+      tell();
     },
     pointed: () => pointed,
     point: (target, from) => {

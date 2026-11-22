@@ -7,7 +7,8 @@
  * and the standing block count the change's red and the rest apart (D70),
  * the Mutants block counts the survivors apart from those no test reached
  * (D143), and Health Δ is the maintainability fallow measured the change
- * move, muted with no base side (D98). A whole repo's map changes nothing,
+ * move, muted with no base side (D98), and Deps is how many outside packages
+ * an advisory names, muted where no audit was read (D352 (deps-block)). A whole repo's map changes nothing,
  * so in place of the change's blocks it names its terrain and the overlay the
  * world shows, counted, or muted with the map's reason (D101). A DOM test holds
  * the two renderers' words together on every fixture. Pure: no React, no
@@ -16,7 +17,7 @@
 
 import { OTHER_GROUP, changeSize, mutantOutcomes, readRedSplit } from 'core';
 import type { MapJson, OverlayName } from 'core';
-import { MUTED_DASH, healthDeltaOf, overlayOf } from 'scene';
+import { MUTED_DASH, depsBlockOf, healthDeltaOf, overlayOf } from 'scene';
 import type { OverlayUnit } from 'scene';
 
 import { tallyOf } from './notices.js';
@@ -37,7 +38,7 @@ export type Block = {
 };
 
 /** The HUD blocks of §7, by their id, in the order the row draws them: the change's own evidence beside the category, then the red slots (D70). */
-export const HUD_ORDER: readonly string[] = ['category', 'repo', 'overlay', 'patch-cov', 'mutants', 'reach', 'size', 'gate', 'standing', 'health', 'notices', 'other'];
+export const HUD_ORDER: readonly string[] = ['category', 'repo', 'overlay', 'patch-cov', 'mutants', 'reach', 'size', 'gate', 'standing', 'health', 'deps', 'notices', 'other'];
 
 /** The minus sign a tally is written with. */
 const MINUS = '−';
@@ -107,6 +108,12 @@ const healthBlock = (map: MapJson): Block => {
   return delta === undefined ? muted('health', 'Health Δ', 'absent') : block('health', 'Health Δ', delta);
 };
 
+/** `Deps 2 advised, worst high`: the outside packages an advisory names, `clean` where an audit named none, and muted where no audit was read (D352 (deps-block), C2). */
+const depsBlock = (map: MapJson): Block => {
+  const words = depsBlockOf(map);
+  return words === undefined ? muted('deps', 'Deps', 'absent') : block('deps', 'Deps', words.value, words.tail);
+};
+
 /** How the HUD counts an overlay's entries, by its unit. */
 const UNITS: Readonly<Record<OverlayUnit, readonly [string, string]>> = {
   file: ['file', 'files'],
@@ -143,7 +150,7 @@ export const blocksOf = (map: MapJson, overlay?: OverlayName): readonly Block[] 
   const size = changeSize(changed).terrain;
   const other = map.terrain.groups.find((group) => group.id === OTHER_GROUP);
   const others = other === undefined || other.files.length === 0 ? [] : [block('other', 'Other', String(other.files.length))];
-  const repo = map.overlays === undefined ? undefined : [block('category', '', checks.category), ...repoBlocks(map, overlay), ...gateBlocks(map), ...others];
+  const repo = map.overlays === undefined ? undefined : [block('category', '', checks.category), ...repoBlocks(map, overlay), ...gateBlocks(map), depsBlock(map), ...others];
   const blocks: readonly Block[] = repo ?? [
     block('category', '', checks.category),
     coverageBlock(map),
@@ -152,6 +159,7 @@ export const blocksOf = (map: MapJson, overlay?: OverlayName): readonly Block[] 
     block('size', 'Size', `+${String(size.added)} ${MINUS}${String(size.deleted)}`, `, ${String(size.files)} files`),
     ...gateBlocks(map),
     healthBlock(map),
+    depsBlock(map),
     block('notices', 'Notices', tallyOf(map)),
     ...others,
   ];
@@ -176,8 +184,11 @@ export type LegendMark = { readonly id: string; readonly words: string };
  * last the history's two textures (D166). A test holds the list to
  * `libs/svg`'s, and to the marks the world keys past it, last so no number
  * moves: the nucleus, which only an opened cell draws and the still sheet
- * never does (D197, D201), and the two that are motion and so the world's
- * alone (C10): the membrane's ripple (D195) and the swaying line (Q84).
+ * never does (D197, D201), the two that are motion and so the world's
+ * alone (C10): the membrane's ripple (D195) and the swaying line (Q84), and
+ * the three the one surface added: a function lit as exposed (D349
+ * (granules-carry-evidence)), the advisory's pip (D353 (advisory-pip)) and
+ * an outside package's star (D354 (package-stars)).
  */
 export const LEGEND: readonly LegendMark[] = [
   { id: 'category', words: 'category: set by the change alone' },
@@ -197,6 +208,9 @@ export const LEGEND: readonly LegendMark[] = [
   { id: 'nucleus', words: 'nucleus: its functions, sized by their lines' },
   { id: 'ripple', words: 'membrane ripples: imported past its interface' },
   { id: 'sway', words: 'swaying line: enters a module past its interface' },
+  { id: 'exposed', words: 'lit function: a changed line no test ran, or a live mutant' },
+  { id: 'advisory', words: 'red pip: imports a package with a serious advisory' },
+  { id: 'star', words: 'star: an outside package, coloured by its advisories' },
 ];
 
 /** What the key of the seven shapes says beside them (D194). */

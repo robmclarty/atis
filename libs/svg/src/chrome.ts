@@ -67,6 +67,7 @@ import {
   SECONDARY_RING_WIDTH,
   STITCH_LENGTH,
   VFR_HUE,
+  depsBlockOf,
   healthDeltaOf,
   noticeAnchors,
   overlayOf,
@@ -135,6 +136,7 @@ export const HUD_ORDER: readonly string[] = [
   'gate',
   'standing',
   'health',
+  'deps',
   'notices',
   'other',
 ];
@@ -290,6 +292,12 @@ function healthBlock(map: MapJson): Block {
   return delta === undefined ? muted('health', 'Health Δ', 'absent') : block('health', 'Health Δ', delta);
 }
 
+/** `Deps 2 advised, worst high`: the outside packages an advisory names, `clean` where an audit named none, and muted where no audit was read (D352 (deps-block), C2). */
+function depsBlock(map: MapJson): Block {
+  const words = depsBlockOf(map);
+  return words === undefined ? muted('deps', 'Deps', 'absent') : block('deps', 'Deps', words.value, words.tail);
+}
+
 /** The tally of each tier among the notices the list draws (C7). */
 function tierCounts(notices: readonly Notice[]): Readonly<Record<NoticeTier, number>> {
   const counts: Record<NoticeTier, number> = { primary: 0, secondary: 0, tertiary: 0 };
@@ -333,7 +341,7 @@ function blocksOf(map: MapJson, notices: readonly Notice[], overlay?: OverlayNam
   const tiers = tierCounts(notices);
   const other = map.terrain.groups.find((group) => group.id === OTHER_GROUP);
   const others = other === undefined || other.files.length === 0 ? [] : [block('other', 'Other', String(other.files.length))];
-  const blocks: readonly Block[] = overlay !== undefined ? [block('category', '', checks.category), ...repoBlocks(map, overlay), ...gateBlocks(map), ...others] : [
+  const blocks: readonly Block[] = overlay !== undefined ? [block('category', '', checks.category), ...repoBlocks(map, overlay), ...gateBlocks(map), depsBlock(map), ...others] : [
     block('category', '', checks.category),
     coverageBlock(map),
     mutantBlock(map),
@@ -341,6 +349,7 @@ function blocksOf(map: MapJson, notices: readonly Notice[], overlay?: OverlayNam
     block('size', 'Size', `+${String(size.added)} ${MINUS}${String(size.deleted)}`, `, ${String(size.files)} files`),
     ...gateBlocks(map),
     healthBlock(map),
+    depsBlock(map),
     block('notices', 'Notices', [tiers.primary, tiers.secondary, tiers.tertiary].map(String).join(DOT)),
     ...others,
   ];

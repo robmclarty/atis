@@ -326,6 +326,13 @@ export type EvidenceInputs = Omit<ReachInputs, 'changed'> & {
    * guess (C2).
    */
   readonly code: ReadonlyMap<string, readonly CodeSpan[]>;
+  /**
+   * The changed files whose exported surface the change provably broke, by
+   * head path: a name removed, or a kept name whose printed shape differs
+   * (D346 (category-reads-surface)). Absent where no scan compared the two
+   * sides, and then only a barrel can escape, as before.
+   */
+  readonly broke?: ReadonlySet<string>;
 };
 
 /** What the evidence knows about one changed file; §5.3 reads it for the category and §5.4 for the notices. */
@@ -344,7 +351,7 @@ export type FileEvidence = {
   readonly mutants: readonly Mutant[];
   /** The cells this one file's reach touches, its own included: D27's *high reach* input. */
   readonly cells_reached: number;
-  /** D27's *escaped interface*: a changed barrel that a file outside its cell imports. */
+  /** D27's *escaped interface*: a changed barrel that a file outside its cell imports, or any other file one does whose exported surface the change broke (D346 (category-reads-surface)). */
   readonly escaped_interface: boolean;
 };
 
@@ -425,18 +432,27 @@ function liveMutants(path: string, changedLines: ReadonlySet<number>, file: Muta
     .toSorted((a, b) => a.line - b.line || byPath(a.status, b.status));
 }
 
+/** No file's surface known to be broken: what a caller with no scans to compare hands the evidence. */
+const NONE_BROKE: ReadonlySet<string> = new Set();
+
 /** The innermost cell each terrain file lives in; a test file and a shore file have none (D4, D48). */
 function indexCells(modules: Modules): ReadonlyMap<string, string> {
   return new Map(modules.organelles.map((organelle) => [organelle.path, organelle.cell]));
 }
 
 /**
- * A changed barrel that something outside its cell imports: D27's *escaped
- * interface*. "Outside" is measured the way D45 measures a hop, by innermost
- * cell, and a test importer is evidence rather than a consumer (D4).
+ * A changed interface that something outside its cell imports: D27's
+ * *escaped interface*. A barrel is its cell's interface, and any change to
+ * one counts. A file with no barrel over it is an interface where outsiders
+ * import it (D45), a single-file module's own file most of all, and it
+ * counts once the change broke a name it exports, removed or reshaped, since
+ * an edit to its body alone changes nothing a reader holds (D346
+ * (category-reads-surface)). "Outside" is measured the way D45 measures a
+ * hop, by innermost cell, and a test importer is evidence rather than a
+ * consumer (D4).
  */
-function escapedInterface(file: ChangedFile, cells: ReadonlyMap<string, string>, edges: readonly ImportEdge[]): boolean {
-  if (!file.is_barrel) return false;
+function escapedInterface(file: ChangedFile, cells: ReadonlyMap<string, string>, edges: readonly ImportEdge[], broke: ReadonlySet<string>): boolean {
+  if (!file.is_barrel && !broke.has(file.path)) return false;
   const home = cells.get(file.path);
   return edges.some(({ from, to }) => to === file.path && cells.has(from) && cells.get(from) !== home);
 }
@@ -552,7 +568,7 @@ export function computeEvidence(inputs: EvidenceInputs): EvidenceResult {
         unmeasured: isUnmeasured(file, coverageOf, inputs.code, check?.coverage_extensions),
         mutants: mutation === undefined ? [] : liveMutants(file.path, changedLines, mutation),
         cells_reached: reached.get(file.path) ?? 0,
-        escaped_interface: escapedInterface(file, cells, inputs.headEdges),
+        escaped_interface: escapedInterface(file, cells, inputs.headEdges, inputs.broke ?? NONE_BROKE),
       };
     })
     .toSorted((a, b) => byPath(a.path, b.path));

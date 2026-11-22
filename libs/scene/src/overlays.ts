@@ -5,7 +5,8 @@
  * A `repo` map draws one overlay at a time, and each is drawn in the channel
  * its measure owns (C11): trouble spots and recent heat are history, so they
  * are texture; ugly spots, coverage gaps and dead code are what the checks
- * found, so they are luminance, as evidence is; duplication is repetition, a
+ * found, and so are the files under an advisory, so they are luminance, as
+ * evidence is; duplication is repetition, a
  * file's outline echoed; a cycle is a state, LIFR's; and a baselined finding
  * is muted, drawn in the standing state's graphite (D49). Each overlay comes
  * down to a level per terrain file, 0 to 1, how strongly its channel marks
@@ -17,7 +18,10 @@
 import { OVERLAY_NAMES } from 'core';
 import type { MapJson, OverlayName, Overlays } from 'core';
 
-import { OVERLAY_DEAD_EXPORT_LEVEL } from './tokens.js';
+import { OVERLAY_ADVISORY_LESSER_LEVEL, OVERLAY_DEAD_EXPORT_LEVEL } from './tokens.js';
+
+/** The severities an advisory is serious at, the two a package's star wore red for (D170). */
+const SEVERE_ADVISORIES: ReadonlySet<string> = new Set(['critical', 'high']);
 
 /** The overlay a `repo` map opens on: churn × complexity, where trouble usually is (§8). */
 export const DEFAULT_OVERLAY: OverlayName = 'trouble_spots';
@@ -31,6 +35,7 @@ export const OVERLAY_TITLES: Readonly<Record<OverlayName, string>> = {
   duplication: 'Duplication',
   cycles: 'Cycles',
   recent_heat: 'Recent heat',
+  advisories: 'Advisories',
   baselined: 'Baselined',
 };
 
@@ -45,6 +50,7 @@ export const OVERLAY_CHANNELS: Readonly<Record<OverlayName, OverlayChannel>> = {
   duplication: 'repetition',
   cycles: 'state',
   recent_heat: 'texture',
+  advisories: 'luminance',
   baselined: 'muted',
 };
 
@@ -115,6 +121,9 @@ const LEVELS: Readonly<Record<OverlayName, (overlays: Overlays) => Levels | unde
     const hottest = heat.files.reduce((most, file) => Math.max(most, file.commits), 0);
     return { levels: heat.files.map((file) => [file.path, file.commits / hottest] as const), count: heat.files.length, unit: 'file' };
   },
+  // An audit is a check's finding, so it is luminance (C11): full for a file under an advisory at high or critical, a share of that under a lesser one (D355 (advisories-overlay)).
+  advisories: ({ advisories: advised }) =>
+    advised && { levels: advised.map((file) => [file.path, SEVERE_ADVISORIES.has(file.severity) ? 1 : OVERLAY_ADVISORY_LESSER_LEVEL] as const), count: advised.length, unit: 'file' },
   baselined: ({ baselined: found }) =>
     found && { levels: found.flatMap((finding) => finding.files.map((path) => [path, 1] as const)), count: found.length, unit: 'finding' },
 };

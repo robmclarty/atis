@@ -175,6 +175,10 @@ export const EDGE_BOW = 0.15;
 /** The arrowhead the edge ends in, its rendered size in user units; the triangle's own shape is fixed geometry, drawn in patterns.ts. */
 export const ARROW_SIZE = 5;
 
+/** A file that imports an outside package a high or critical advisory names (D353 (advisory-pip)): a square pip in the IFR hue, this wide, this far off the file's edge at its upper left. */
+export const ADVISORY_PIP_SIZE = 3;
+export const ADVISORY_PIP_PAD = 2;
+
 /** A ghost, a missing co-change (§5.2): a dashed outline in a dim light this far outside the file's edge. */
 export const GHOST_STROKE = '#7c8590';
 export const GHOST_DASH = '2 2';
@@ -208,9 +212,12 @@ export const STIPPLE_DOT = 0.7;
  * The whole-repo overlays (D101), each in the channel its measure owns (C11):
  * a dead file is lit full and each dead export a share of it, a clone family
  * echoes a file's outline in rings this far apart, and a baselined finding
- * is drawn in the standing state's graphite, muted (D49).
+ * is drawn in the standing state's graphite, muted (D49). A file under an
+ * advisory at high or critical is lit full, and one under a lesser advisory
+ * a share of it (D355 (advisories-overlay)).
  */
 export const OVERLAY_DEAD_EXPORT_LEVEL = 0.25;
+export const OVERLAY_ADVISORY_LESSER_LEVEL = 0.5;
 export const OVERLAY_ECHO_GAP = 2.5;
 export const OVERLAY_ECHO_WIDTH = 1;
 export const OVERLAY_MUTED_STROKE = STANDING_STORM_FILL;

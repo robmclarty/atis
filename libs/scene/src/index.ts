@@ -6,6 +6,7 @@
  * inside the render are tested where they are made.
  */
 
+export * from './advisories.js';
 export * from './cinema.js';
 export * from './composites.js';
 export * from './drift.js';
@@ -24,6 +25,7 @@ export * from './picking.js';
 export * from './planet.js';
 export * from './shape.js';
 export * from './shore.js';
+export * from './stars.js';
 export * from './tokens.js';
 export * from './synthetic.js';
 export * from './trouble.js';

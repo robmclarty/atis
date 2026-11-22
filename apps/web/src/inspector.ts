@@ -36,6 +36,8 @@ import { rangeOf } from './diff.js';
 import { selectedOf } from './nav.js';
 import type { Selected } from './nav.js';
 import { thresholdsOf } from './notices.js';
+import { stripOf } from './strip.js';
+import type { Strip } from './strip.js';
 
 /** What an added file's path is written with, wherever the map writes it (D120). */
 const ADDED = '+';
@@ -164,6 +166,8 @@ export type FileModel = {
   readonly change?: FileChange;
   readonly notices: readonly NoticeMark[];
   readonly functions: Measured<readonly FunctionRow[]>;
+  /** The file's lines to scale, with its functions and what the change did where along them (D348 (line-strip)); a mark the map did not measure is not on it (C2). */
+  readonly strip: Strip;
 };
 
 /** What the inspector shows: the map view, a module, or a file. */
@@ -583,6 +587,9 @@ const functionsOf = (file: Organelle, gone: boolean, level: FileLevel): Measured
   return { value: rows };
 };
 
+/** A measured list's value, and none where it was not measured: what a picture draws, which marks nothing the map could not say (C2). */
+const measuredOr = <T,>(measured: Measured<readonly T[]> | undefined): readonly T[] => (measured === undefined || 'muted' in measured ? [] : measured.value);
+
 const fileOf = (index: Index, file: Organelle, level: FileLevel): FileModel => {
   const { map } = index;
   const changed = index.changed.get(file.id);
@@ -590,6 +597,9 @@ const fileOf = (index: Index, file: Organelle, level: FileLevel): FileModel => {
   const name = file.id.slice(file.id.lastIndexOf('/') + 1);
   const mark = changed?.kind === 'added' ? ADDED : '';
   const selected = fileSelection(file);
+  const gone = changed?.kind === 'deleted';
+  const change = changed === undefined ? undefined : changeOf(map, changed, level);
+  const functions = functionsOf(file, gone, level);
   return {
     kind: 'file',
     selected,
@@ -597,9 +607,11 @@ const fileOf = (index: Index, file: Organelle, level: FileLevel): FileModel => {
     title: `${mark}${file.id}`,
     trail: [...(cell === undefined ? [{ words: 'map' }] : trailOf(index, cell)), { words: `${mark}${name}`, selects: selected }],
     facts: fileFacts(map, file, changed),
-    ...(changed === undefined ? {} : { change: changeOf(map, changed, level) }),
+    ...(change === undefined ? {} : { change }),
     notices: noticesOf(map, (target) => target === file.id),
-    functions: functionsOf(file, changed?.kind === 'deleted', level),
+    functions,
+    // A deleted file has no line at the head, so its strip is bare.
+    strip: stripOf({ lines: level.lines, functions: measuredOr(functions), hunks: gone ? [] : (change?.hunks ?? []), untested: measuredOr(change?.untested), mutants: gone ? [] : measuredOr(change?.mutants) }),
   };
 };
 

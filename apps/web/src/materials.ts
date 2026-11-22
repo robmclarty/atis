@@ -66,7 +66,10 @@ export const SKIN: SkinLook = {
  * screen however near the camera comes and never bloom, and the rule at each
  * band's boundary that depth reads from, drawn over the 3D in an ink just
  * visible enough to register, so it sits back from every mark, with each
- * band's quiet label written in the same ink (D196).
+ * band's quiet label written in the same ink (D196). Round the ground hang
+ * the outside packages' stars, which do mean something: one a package, sized
+ * by the files that import it and coloured by its advisories (D354
+ * (package-stars)).
  */
 export type SpaceLook = {
   /** The stars' ink, how bright the brightest is drawn, and a star's radius in screen pixels. */
@@ -85,6 +88,16 @@ export type SpaceLook = {
   readonly ruleWidth: number;
   /** How much of a band's label shows, in the rule's ink: more than the rule, so its few words read, and still quiet beside every mark. */
   readonly labelOpacity: number;
+  /** An outside package's star (D354 (package-stars)): its radius on the screen, in pixels, for a package one file imports and for the busiest; the share of its light the bloom sees; and the size its name is written at beside it. */
+  readonly packageStarLeast: number;
+  readonly packageStarMost: number;
+  readonly packageStarBloom: number;
+  readonly packageStarLabel: number;
+  /** Where those stars hang: the nearest and the farthest one stands off the edge of the ground, and the least gap between two, each a share of the ground's longer side; and the seed their places are drawn from (C3). Read when the map is drawn. */
+  readonly packageStarNear: number;
+  readonly packageStarFar: number;
+  readonly packageStarGap: number;
+  readonly packageStarSeed: number;
 };
 
 export const SPACE: SpaceLook = {
@@ -99,6 +112,14 @@ export const SPACE: SpaceLook = {
   ruleOpacity: 0.16,
   ruleWidth: 1,
   labelOpacity: 0.5,
+  packageStarLeast: 3,
+  packageStarMost: 9,
+  packageStarBloom: 0.8,
+  packageStarLabel: 10,
+  packageStarNear: 0.03,
+  packageStarFar: 0.1,
+  packageStarGap: 0.035,
+  packageStarSeed: 7,
 };
 
 /** The bloom on the emissive target alone (D11, D12): how strong, how wide, and the light below which nothing blooms. */
@@ -360,8 +381,10 @@ export const INTERIOR: InteriorLook = { ...INTERIOR_LAYOUT, slide: '#efe6d3', sl
  * list of its map view shows at most; the most of its height a file's
  * functions take beneath a tab before they scroll, as CSS writes a length;
  * the amber an outside package a lesser advisory names is marked in, which
- * its star wore on the planet (D170); and the folder tree's row height and
- * the indent of each depth, in pixels.
+ * its star wore on the planet (D170); the folder tree's row height and
+ * the indent of each depth, in pixels; and how thick a file's strip of lines
+ * is drawn, down the side of its code and across the top of its facts (D348
+ * (line-strip)).
  */
 export type PanelLook = {
   readonly inspectorWidth: number;
@@ -372,6 +395,8 @@ export type PanelLook = {
   readonly amber: string;
   readonly treeRow: number;
   readonly treeIndent: number;
+  readonly stripWidth: number;
+  readonly stripHeight: number;
 };
 
-export const PANEL: PanelLook = { inspectorWidth: 420, codeSize: 11, codeLeading: 1.45, readingRows: 5, functionsShare: '40%', amber: '#e9a93c', treeRow: 16, treeIndent: 10 };
+export const PANEL: PanelLook = { inspectorWidth: 420, codeSize: 11, codeLeading: 1.45, readingRows: 5, functionsShare: '40%', amber: '#e9a93c', treeRow: 16, treeIndent: 10, stripWidth: 14, stripHeight: 30 };

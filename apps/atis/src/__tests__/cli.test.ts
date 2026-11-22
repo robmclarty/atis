@@ -591,7 +591,7 @@ test("--whole-repo maps the head's own terrain with its overlays, and draws mute
   const before = join(dir, 'before.json');
   const outcome = run({ repo, wholeRepo: true, out: before, verbose: false });
   expect(outcome.exitCode).toBe(0);
-  expect(outcome.stdout).toMatch(/^whole repo, 4 files on the terrain, 5 of 8 overlays, wrote /);
+  expect(outcome.stdout).toMatch(/^whole repo, 4 files on the terrain, 5 of 9 overlays, wrote /);
   const map = mapAt(before);
   expect(map.meta).toMatchObject({ mode: 'repo', base: 'HEAD', head: sha('HEAD'), merge_base: sha('HEAD') });
   expect(map.weather.changed).toEqual([]);
@@ -600,6 +600,7 @@ test("--whole-repo maps the head's own terrain with its overlays, and draws mute
   expect(map.overlays?.dead_code).toEqual([{ path: 'src/shapes.ts', kind: 'export', name: 'area', line: 1 }]);
   expect(map.overlays?.recent_heat?.commits).toBe(3);
   expect(map.overlays?.muted).toEqual([
+    'advisories: .check/ ran no security slot',
     'baselined: no checkride.baseline.json is committed at the head',
     'coverage_gaps: .check/ ran no test slot',
     'duplication: .check/dupes.json is missing or unreadable',
@@ -648,7 +649,7 @@ test('--overlay names the one overlay the still map of the whole repo draws, and
   for (const [args, reason] of [
     [['--base', 'HEAD~1', '--svg', svg, '--overlay', 'cycles'], '--overlay draws one overlay of the whole repo; it needs --whole-repo'],
     [['--whole-repo', '--out', join(dir, 'm.json'), '--overlay', 'cycles'], '--overlay names what the still map draws; it needs --svg <file>'],
-    [['--whole-repo', '--svg', svg, '--overlay', 'dead_code'], '--overlay takes one of trouble-spots, ugly-spots, coverage-gaps, dead-code, duplication, cycles, recent-heat, baselined'],
+    [['--whole-repo', '--svg', svg, '--overlay', 'dead_code'], '--overlay takes one of trouble-spots, ugly-spots, coverage-gaps, dead-code, duplication, cycles, recent-heat, advisories, baselined'],
   ] as const) {
     const result = atis(['--repo', repo, ...args]);
     expect(result.status, args.join(' ')).toBe(2);

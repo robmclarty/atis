@@ -23,6 +23,14 @@
  * says so, since no granules there means nobody read the functions, not that
  * there are none (D293 (granules-unmeasured), C2).
  *
+ * A granule also says whether its function is exposed (D349
+ * (granules-carry-evidence)): whether its lines hold a changed line no test
+ * ran, or a mutant still alive. Those are the marks the file's plate drew on
+ * its strip (D102), read the same way: the coverage report's uncovered lines,
+ * or every changed line of a file the report never names (D80), and the live
+ * mutants by line. With no coverage and no mutation report read, no granule
+ * is exposed, which is no evidence and not a tested function (C2).
+ *
  * Pure (C1), and one map and one set of tokens give one list, in path order
  * and then line order (C3).
  */
@@ -51,6 +59,8 @@ export type RestGranule = {
   readonly y: number;
   readonly r: number;
   readonly breached: boolean;
+  /** Whether the function's lines hold a changed line no test ran or a live mutant (D349 (granules-carry-evidence)). */
+  readonly exposed: boolean;
 };
 
 /** Why a map draws no granules at all: its packages stand as composites, or none of its placed files carries function data. */
@@ -70,6 +80,29 @@ function mostLinesOf(map: MapJson, module: string): number {
   return lines;
 }
 
+/** Each file's exposed lines on a map, by path: the changed lines no test ran and the lines a mutant is still alive on, kept beside the map so each is read once. */
+const exposedLines = new WeakMap<MapJson, ReadonlyMap<string, readonly number[]>>();
+
+/** The exposed lines of every file of a map that has any (D349 (granules-carry-evidence)), as the file level reads them (D80): none where no report was read (C2). */
+function exposedOf(map: MapJson): ReadonlyMap<string, readonly number[]> {
+  const known = exposedLines.get(map);
+  if (known !== undefined) return known;
+  const { evidence, changed } = map.weather;
+  const lines = new Map<string, number[]>();
+  const add = (path: string, more: readonly number[]): void => {
+    if (more.length > 0) lines.set(path, [...(lines.get(path) ?? []), ...more]);
+  };
+  for (const report of evidence.patch_coverage ?? []) add(report.path, report.uncovered_lines);
+  // A changed file no coverage report names counts every changed line as untested (D80).
+  const unmeasured = new Set(evidence.unmeasured ?? []);
+  for (const file of changed) {
+    if (unmeasured.has(file.path)) add(file.path, file.hunks.flatMap((hunk) => Array.from({ length: hunk.count }, (_, at) => hunk.start + at)));
+  }
+  for (const mutant of evidence.mutants ?? []) add(mutant.path, [mutant.line]);
+  exposedLines.set(map, lines);
+  return lines;
+}
+
 /** One placed file's granules at rest on the map, in line order; none for a file with no place or no function data (C2). */
 function granulesOf(map: MapJson, organelle: Organelle, tokens: NucleusTokens): readonly RestGranule[] {
   const place = map.terrain.layout?.positions[organelle.id];
@@ -78,6 +111,7 @@ function granulesOf(map: MapJson, organelle: Organelle, tokens: NucleusTokens): 
   // The outline the map draws the file in at rest: its trouble's, still.
   const outline = outlineOf(organelle.id, place, troubleOf(organelle).score);
   const nucleus = nucleusOf(file, outline, mostLinesOf(map, slideCellOf(map, organelle.cell)), tokens);
+  const exposed = exposedOf(map).get(organelle.id) ?? [];
   return (nucleus?.granules ?? []).map((granule) => ({
     file: organelle.id,
     cell: organelle.cell,
@@ -87,6 +121,7 @@ function granulesOf(map: MapJson, organelle: Organelle, tokens: NucleusTokens): 
     y: place.y + granule.y,
     r: granule.r,
     breached: granule.rules.length > 0,
+    exposed: exposed.some((line) => line >= granule.line && line < granule.line + Math.max(1, granule.line_count)),
   }));
 }
 

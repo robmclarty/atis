@@ -176,6 +176,8 @@ outline. The category letters always ride on the category hue.
 | `EDGE_WIDTH` | `1` | `#edges`: the exceptional edges, the only drawn lines on the map (§5.1) |
 | `EDGE_BOW` | `0.15` | how far an edge bows to the right of travel, so a cycle reads as a lens |
 | `ARROW_SIZE` | `5` | the rendered size of the arrowhead each exceptional edge ends in, filled by kind |
+| `ADVISORY_PIP_SIZE` | `3` | the world's pip at the upper left of a file that imports a package a high or critical advisory names, in `IFR_HUE`: its side (D353 (advisory-pip)) |
+| `ADVISORY_PIP_PAD` | `2` | how far off the file's edge that pip stands |
 
 ## Reach and evidence (luminance)
 
@@ -251,9 +253,10 @@ global red slot names no cell and hangs no storm.
 A `repo` map has no change, so in place of weather the still map draws one of
 its overlays at a time (D101), in the channel its measure owns (C11). Trouble
 spots and recent heat are history, so they are the churn hatching, at
-`TEXTURE_MAX_OPACITY` times the file's level. Ugly spots, coverage gaps and dead
-code are what the checks found, so each is a ring of `EVIDENCE_LIGHT` just past
-the file's edge, as a skin's gap is, lit at its level. Duplication echoes a
+`TEXTURE_MAX_OPACITY` times the file's level. Ugly spots, coverage gaps, dead
+code and the files that import an outside package an advisory names (D355
+(advisories-overlay)) are what the checks found, so each is a ring of
+`EVIDENCE_LIGHT` just past the file's edge, as a skin's gap is, lit at its level. Duplication echoes a
 clone family's files in two rings, a cycle rings its files in `LIFR_HUE`, and a
 finding checkride's committed baseline grandfathers is ringed in the standing
 state's graphite, muted (D49). The HUD names the overlay drawn and counts it.
@@ -261,6 +264,7 @@ state's graphite, muted (D49). The HUD names the overlay drawn and counts it.
 | Token | Value | Where it appears |
 | --- | --- | --- |
 | `OVERLAY_DEAD_EXPORT_LEVEL` | `0.25` | `#overlay`: the share of full light each dead export lights its file with; a dead file is lit full |
+| `OVERLAY_ADVISORY_LESSER_LEVEL` | `0.5` | the share of full light a file is lit with where the worst advisory on a package it imports is below high; at high or critical it is lit full (D355 (advisories-overlay)) |
 | `OVERLAY_ECHO_GAP` | `2.5` | how far apart a clone family's two echo rings sit past the file's edge |
 | `OVERLAY_ECHO_WIDTH` | `1` | each echo ring's stroke, in `GLYPH_STROKE` |
 | `OVERLAY_MUTED_STROKE` | `#58616b` | the graphite ring of a baselined finding, `STANDING_STORM_FILL`'s |
@@ -595,6 +599,14 @@ SVG keeps its bands (the terraces above).
 | `SPACE.ruleOpacity` | `0.16` | how much of the rule shows: just enough to register, so it sits back from every mark |
 | `SPACE.ruleWidth` | `1` | the rule's width in screen pixels |
 | `SPACE.labelOpacity` | `0.5` | how much of each band's label shows, written in `SPACE.ruleInk` just under its rule (D196 (band-labels)): more than the rule, so its few words read, and faded with the surface's layer |
+| `SPACE.packageStarLeast` | `3` | an outside package's star (D354 (package-stars)): its radius on the screen, in pixels, for a package one file imports |
+| `SPACE.packageStarMost` | `9` | its radius for the package the most files import; every other lies between, by the square root of its share |
+| `SPACE.packageStarBloom` | `0.8` | the share of a package star's light the bloom sees; a star no audit read has none |
+| `SPACE.packageStarLabel` | `10` | the size a package's name is written at beside its star, in pixels, where an advisory names it or the change touched it |
+| `SPACE.packageStarNear` | `0.03` | the nearest a package's star stands off the edge of the ground, a share of the ground's longer side |
+| `SPACE.packageStarFar` | `0.1` | the farthest it stands off that edge |
+| `SPACE.packageStarGap` | `0.035` | the least gap between two package stars |
+| `SPACE.packageStarSeed` | `7` | the seed their places are drawn from, with each package's own name (C3) |
 
 ### The lights
 
@@ -790,6 +802,8 @@ laid over the map beside the notice column, and the folder tree in that column.
 | `PANEL.amber` | `#e9a93c` | the mark of an outside package a lesser advisory names, the amber its star wore on the planet (D170) |
 | `PANEL.treeRow` | `16` | the height of one row of the folder tree, in pixels |
 | `PANEL.treeIndent` | `10` | how far each depth of the tree is set in from the one above, in pixels |
+| `PANEL.stripWidth` | `14` | how wide a file's strip of lines is down the side of its code, in pixels (D348 (line-strip)) |
+| `PANEL.stripHeight` | `30` | how tall the same strip is across the top of a file's facts, in pixels |
 
 Four looks of the panels are still baked, each a constant where it is drawn
 and not yet a token: the step a focused sheet of code scrolls by on an arrow

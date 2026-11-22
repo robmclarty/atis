@@ -128,6 +128,34 @@ test('a map that departs from its approved shape says by how many, before live; 
   expect(renderToStaticMarkup(<Chrome state={{ status: 'ready', url: '/map.json', map: one }} registry={createRegistry()} dev={false} />)).toContain('1 departure from the approved shape');
 });
 
+test('a map whose audit names outside packages says how many, after the departures; one audited clean, or never audited, says nothing of them (D347 (advisories-in-status))', () => {
+  const withDependencies = (dependencies: NonNullable<MapJson['weather']['dependencies']>): MapJson => assertMap({ ...DEMO, weather: { ...DEMO.weather, dependencies } });
+  const one = withDependencies([
+    { name: 'kleur', importers: 2, advisories: 2, severity: 'high' },
+    { name: 'picomatch', importers: 2, advisories: 0 },
+  ]);
+  const two = withDependencies([
+    { name: 'kleur', importers: 2, advisories: 1, severity: 'low' },
+    { name: 'picomatch', importers: 2, advisories: 1, severity: 'critical' },
+    { name: 'semver', importers: 1, advisories: 0 },
+  ]);
+  const clean = withDependencies([
+    { name: 'kleur', importers: 2, advisories: 0 },
+    { name: 'picomatch', importers: 2, advisories: 0 },
+  ]);
+  const at = (map: MapJson, live?: boolean): string => line(live, { status: 'ready', url: '/map.json', map });
+  expect(at(one)).toContain('>demo against main · 1 package with advisories<');
+  expect(at(one)).toContain('data-advised="1"');
+  expect(at(two, true)).toContain('>demo against main · 2 packages with advisories · live<');
+  // No audit is no clean audit, and neither is told on the line (C2).
+  for (const quiet of [at(clean), at(DEMO)]) {
+    expect(quiet).toContain('>demo against main<');
+    expect(quiet).not.toContain('data-advised');
+  }
+  const departure = { kind: 'dependency-added', target: 'kleur', why: 'kleur is imported and the approved shape did not hold it' } as const;
+  expect(at(assertMap({ ...one, approved: { at: DEMO.meta.head, departures: [departure] } }))).toContain('1 departure from the approved shape · 1 package with advisories<');
+});
+
 test('the chrome never glows: no shadow, blur or gradient in its style', () => {
   const html = markup({ status: 'ready', url: '/map.json', map: DEMO });
   expect(html).not.toMatch(/shadow|blur|gradient|filter/);

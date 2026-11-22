@@ -34,7 +34,7 @@ import { computeLayout } from './layout/index.js';
 import type { Ground, Prior } from './layout/index.js';
 import { classifyFile, identifyModules } from './modules.js';
 import type { ImportEdge, ModuleCell, Modules, ScannedFile } from './modules.js';
-import { findGhosts, findPublicNames, rankNotices } from './notices.js';
+import { brokenSurfaces, findGhosts, findPublicNames, rankNotices } from './notices.js';
 import type { NamedEdge, PublishingMember, ScanFile } from './notices.js';
 import { computeOverlays, numberCloneFamilies } from './overlays.js';
 import type { CheckBaseline } from './overlays.js';
@@ -843,7 +843,9 @@ function assemble(inputs: BuildInputs, config: Config): Assembled {
   const graphs = { modules, groups, headEdges: head.edges, baseEdges: base.edges } as const;
   const reach = computeReach({ ...graphs, changed: inputs.diff, moved: movedNames(base, head, inputs.diff) });
   const code = new Map(head.files.flatMap((file) => (file.code === undefined ? [] : [[file.path, file.code] as const])));
-  const evidence = computeEvidence({ ...graphs, changed: reach.changed, check, code });
+  // The files whose exported surface the change broke, which the category reads beside the barrels (D346 (category-reads-surface)).
+  const broke = brokenSurfaces(base.files, head.files, inputs.diff.map((file) => file.path));
+  const evidence = computeEvidence({ ...graphs, changed: reach.changed, check, code, broke });
   // What fallow measured the change did against its base, where it measured both sides (D98).
   const terrain = new Set(modules.organelles.map((organelle) => organelle.path));
   const structure = inputs.structure === undefined ? {} : compareStructure({ ...inputs.structure, diff: inputs.diff, terrain });
@@ -1028,6 +1030,7 @@ export function buildRepoMap(inputs: RepoInputs, config: Config = DEFAULT_CONFIG
     coverage_unnamed: trusted.muted !== undefined,
     baseline: inputs.baseline,
     config: config.overlays,
+    dependencies: assembled.weather.dependencies,
   });
   return { ...assembled, meta: { ...assembled.meta, mode: 'repo' }, terrain: { ...terrain, layout: lay() }, notices: [], overlays };
 }

@@ -2,7 +2,9 @@
  * inspector: the panel beside the notice column that says what is selected
  * (D208 (side-panels)): a module's facts, files, exports and wiring, a file's
  * facts, functions, code and diff, and with nothing selected a reading of the
- * map from its structure alone. It reads the selection and what is pointed at
+ * map from its structure alone. A file's `plate` button asks the world to lay
+ * the file's plate over the map, the picture a zoom used to open (D350
+ * (plate-by-ask)). It reads the selection and what is pointed at
  * over the line to the world, and selects and points through it too (D209
  * (selection-line)), so it is drawn and tested with no world. The run's token
  * is what a served file's text and diff are asked with, none for a fixture,
@@ -25,7 +27,7 @@
  * (D156), its width and its code's size the `PANEL` tokens.
  *
  * While the focus is inside it the keys are its own (D262 (panel-keys)):
- * Escape clears the selection, or folds the map view away; the arrows step
+ * Escape puts away a plate that was asked for, else clears the selection, or folds the map view away; the arrows step
  * the focus through its rows, or scroll a sheet of code that has it; and
  * Enter is a button's or a link's to take, and goes nowhere else. Each is
  * marked handled, so the camera does not walk under a panel being read. A
@@ -42,6 +44,7 @@ import {
   CHROME_PAD,
   CHROME_RULE,
   CHROME_STROKE_WIDTH,
+  EVIDENCE_LIGHT,
   FONT_FAMILY,
   IFR_HUE,
   LIFR_HUE,
@@ -78,10 +81,13 @@ import type { Registry } from '../registry.js';
 import { screenType } from '../screen.js';
 import { createAnswers, editorOf, otherCommitNote } from '../source.js';
 import type { Answers, SourceAnswer } from '../source.js';
+import { stripKey, stripMarked } from '../strip.js';
+import type { MutantMark } from '../strip.js';
 import { ownsKey } from '../walk.js';
 import { NoticeBox } from './box.js';
 import { Code, Diff, Out } from './code.js';
 import { useLive } from './live.js';
+import { FileStrip } from './strip.js';
 import { WiringPlate } from './wiring.js';
 
 /** The tokens the panel is drawn with, at rest: the shape its live view takes. */
@@ -94,6 +100,7 @@ const LOOK = {
   CHROME_PAD,
   CHROME_RULE,
   CHROME_STROKE_WIDTH,
+  EVIDENCE_LIGHT,
   FONT_FAMILY,
   IFR_HUE,
   LIFR_HUE,
@@ -131,6 +138,11 @@ const NOT_ASKED: SourceAnswer = { status: 'absent' };
 /** No hunks and no functions, one value each, so a file with none hands its code the same lists at every draw. */
 const NO_HUNKS: FileChange['hunks'] = [];
 const NO_FUNCTIONS: readonly FunctionRow[] = [];
+const NO_LINES: readonly number[] = [];
+const NO_MUTANTS: readonly MutantMark[] = [];
+
+/** A line of a file's code a press on its strip asked for (D348 (line-strip)): the file, and the line, a new value for each press. */
+type Jump = { readonly path: string; readonly line: number };
 
 export type InspectorProps = {
   /** The map as the frame the scrubber stands at shows it. */
@@ -522,8 +534,26 @@ const changeFacts = (change: FileChange): readonly Fact[] => [
   listed('mutants', change.mutants, (mutants) => mutants.map((mutant) => `line ${String(mutant.line)} ${mutant.status}`).join(', ')),
 ];
 
-const FileFacts = ({ ui, model }: { readonly ui: Ui; readonly model: FileModel }): ReactElement => (
+/**
+ * A file's lines to scale across the top of its facts (D348 (line-strip)):
+ * its functions and what the change did where along them, with the lanes
+ * that hold a mark named beneath. A press on it opens the file's code at
+ * that line. A file with nothing to mark, one the scan read no function in
+ * and the change left alone, shows no strip.
+ */
+const Shape = ({ ui, model, toLine }: { readonly ui: Ui; readonly model: FileModel; readonly toLine: (line: number) => void }): ReactElement | null =>
+  stripMarked(model.strip) ? (
+    <Section ui={ui} id="shape" title="shape" adds={counted(model.strip.lines, 'line')}>
+      <FileStrip strip={model.strip} look={ui.look} across thickness={ui.panel.stripHeight} onLine={toLine} />
+      <Under ui={ui} data-inspector-strip-key="">
+        {stripKey(model.strip)}
+      </Under>
+    </Section>
+  ) : null;
+
+const FileFacts = ({ ui, model, toLine }: { readonly ui: Ui; readonly model: FileModel; readonly toLine: (line: number) => void }): ReactElement => (
   <>
+    <Shape ui={ui} model={model} toLine={toLine} />
     <Facts ui={ui} facts={model.facts} />
     {model.change !== undefined && (
       <Section ui={ui} id="change" title="the change" adds={`+${String(model.change.added)} −${String(model.change.deleted)}`}>
@@ -610,7 +640,7 @@ const Functions = ({ ui, model, answers }: { readonly ui: Ui; readonly model: Fi
  * stands at the server still answers from the head it holds, and that text
  * is shown bare, with why.
  */
-const CodeTab = ({ ui, model, answers, size }: { readonly ui: Ui; readonly model: FileModel; readonly answers: Answers; readonly size: number }): ReactElement => {
+const CodeTab = ({ ui, model, answers, size, jump }: { readonly ui: Ui; readonly model: FileModel; readonly answers: Answers; readonly size: number; readonly jump: Jump | undefined }): ReactElement => {
   const gone = model.change?.kind === 'deleted';
   const read = (): SourceAnswer => (gone ? NOT_ASKED : answers.source(ui.map, model.path));
   const answer = useSyncExternalStore(answers.subscribe, read, read);
@@ -624,7 +654,23 @@ const CodeTab = ({ ui, model, answers, size }: { readonly ui: Ui; readonly model
   }
   const apart = otherCommitNote(ui.map.meta.head, answer);
   const own = apart === undefined;
-  return <Code path={model.path} answer={answer} hunks={own ? (model.change?.hunks ?? NO_HUNKS) : NO_HUNKS} functions={own ? functions : NO_FUNCTIONS} apart={apart} look={ui.look} size={size} leading={ui.panel.codeLeading} />;
+  const { untested, mutants } = model.change ?? {};
+  return (
+    <Code
+      path={model.path}
+      answer={answer}
+      hunks={own ? (model.change?.hunks ?? NO_HUNKS) : NO_HUNKS}
+      functions={own ? functions : NO_FUNCTIONS}
+      untested={own && untested !== undefined && 'value' in untested ? untested.value : NO_LINES}
+      mutants={own && mutants !== undefined && 'value' in mutants ? mutants.value : NO_MUTANTS}
+      jump={jump?.path === model.path ? jump : undefined}
+      apart={apart}
+      look={ui.look}
+      size={size}
+      leading={ui.panel.codeLeading}
+      stripWidth={ui.panel.stripWidth}
+    />
+  );
 };
 
 /** A changed file's diff tab: `diff.ts`'s level for it, from the server's answer, none on a fixture, and the PR the page was told of. */
@@ -736,20 +782,29 @@ type FileViewProps = {
   /** Whether the file's functions are listed beneath its tab, which rests off, and the toggle that lists them. */
   readonly functions: boolean;
   readonly toggle: () => void;
+  /** The line of the file's code a press on its strip asked for, and the press that asks. */
+  readonly jump: Jump | undefined;
+  readonly toLine: (line: number) => void;
+  /** Whether the world lays the file's plate, which rests off, and the toggle that asks for it (D350 (plate-by-ask)). */
+  readonly plate: boolean;
+  readonly togglePlate: () => void;
 };
 
 /** A selected file under the panel's head: its tabs with the functions' toggle at their end, the tab shown, and the functions beneath it while the toggle is on. */
-const FileView = ({ ui, model, answers, pr, size, tab, show, functions, toggle }: FileViewProps): ReactElement => (
+const FileView = ({ ui, model, answers, pr, size, tab, show, functions, toggle, jump, toLine, plate, togglePlate }: FileViewProps): ReactElement => (
   <>
     <Tabs ui={ui} tabs={fileTabsOf(model)} shown={tab} show={show}>
-      <button type="button" data-inspector-functions={functions ? 'on' : 'off'} aria-pressed={functions} onClick={toggle} style={{ ...buttonOf(ui.look, functions), marginLeft: 'auto' }}>
+      <button type="button" data-inspector-plate={plate ? 'on' : 'off'} aria-pressed={plate} title="lay the file's plate over the map: its functions beside its lines" onClick={togglePlate} style={{ ...buttonOf(ui.look, plate), marginLeft: 'auto' }}>
+        plate
+      </button>
+      <button type="button" data-inspector-functions={functions ? 'on' : 'off'} aria-pressed={functions} onClick={toggle} style={buttonOf(ui.look, functions)}>
         functions
       </button>
     </Tabs>
     <Body ui={ui} tab={tab}>
-      {tab === 'facts' && <FileFacts ui={ui} model={model} />}
+      {tab === 'facts' && <FileFacts ui={ui} model={model} toLine={toLine} />}
       {tab === 'diff' && <DiffTab ui={ui} model={model} answers={answers} pr={pr} size={size} />}
-      {tab === 'code' && <CodeTab ui={ui} model={model} answers={answers} size={size} />}
+      {tab === 'code' && <CodeTab ui={ui} model={model} answers={answers} size={size} jump={jump} />}
     </Body>
     {functions && <Functions ui={ui} model={model} answers={answers} />}
   </>
@@ -787,6 +842,8 @@ export const Inspector = ({ map, registry, nav, token, pr }: InspectorProps): Re
   const look = registry.view(LOOK);
   const panel = registry.view(PANEL, 'PANEL');
   const selected = useSyncExternalStore(nav.subscribe, nav.selected, nav.selected);
+  // The file whose plate the world lays, asked for from here and put away when the selection moves (D350 (plate-by-ask)).
+  const plated = useSyncExternalStore(nav.subscribe, nav.plated, nav.plated);
   // A selection the map no longer holds, as a scrubbed frame's or a pushed map's may not, reads as none (D209 (selection-line)).
   const model = useMemo(() => inspect(map, selected), [map, selected]);
   const answers = useMemo(() => createAnswers(token), [token]);
@@ -794,7 +851,13 @@ export const Inspector = ({ map, registry, nav, token, pr }: InspectorProps): Re
   const [moduleTab, setModuleTab] = useState<ModuleTab>('facts');
   const [fileTab, setFileTab] = useState<FileTab>('facts');
   const [functions, setFunctions] = useState(false);
+  const [jump, setJump] = useState<Jump | undefined>(undefined);
   const top = useGradesFoot();
+  // A press on the strip across a file's facts opens its code at the line pressed (D348 (line-strip)).
+  const toLine = (path: string, line: number): void => {
+    setJump({ path, line });
+    setFileTab('code');
+  };
 
   // What this panel points at, so it lets go of that alone: the tree points from the chrome's side too, and its row may have taken the pointing since (D265 (own-pointing)).
   const mine = useRef<string | undefined>(undefined);
@@ -857,7 +920,9 @@ export const Inspector = ({ map, registry, nav, token, pr }: InspectorProps): Re
     if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
     if (event.key === 'Escape') {
       event.preventDefault();
-      close();
+      // A plate asked for is put away first, and the selection it is of stays (D350 (plate-by-ask)).
+      if (nav.plated() === undefined) close();
+      else nav.plate(undefined);
     } else if (event.key === 'Enter') {
       // A button's or a link's Enter is its own, and the world leaves that one be; any other would walk the camera in.
       if (!ownsKey(event.target, event.key)) event.preventDefault();
@@ -926,7 +991,7 @@ export const Inspector = ({ map, registry, nav, token, pr }: InspectorProps): Re
           </div>
         )}
         {model.kind === 'module' && <ModuleView ui={ui} model={model} registry={registry} nav={nav} tab={moduleTab} show={setModuleTab} width={panel.inspectorWidth - 2 * look.CHROME_PAD - look.CHROME_STROKE_WIDTH} />}
-        {model.kind === 'file' && <FileView ui={ui} model={model} answers={answers} pr={pr} size={panel.codeSize} tab={fileShown} show={setFileTab} functions={functions} toggle={() => setFunctions((was) => !was)} />}
+        {model.kind === 'file' && <FileView ui={ui} model={model} answers={answers} pr={pr} size={panel.codeSize} tab={fileShown} show={setFileTab} functions={functions} toggle={() => setFunctions((was) => !was)} jump={jump} toLine={(line) => toLine(model.path, line)} plate={plated === model.path} togglePlate={() => nav.plate(plated === model.path ? undefined : model.path)} />}
       </PointingOf>
     </aside>
   );

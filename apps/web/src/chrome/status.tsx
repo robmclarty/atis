@@ -12,7 +12,10 @@
  * watch says neither, though its socket is open, since nothing follows the
  * repository for it. A map that departs from its approved shape says by how
  * many departures, so the count is on the first frame wherever the column
- * is scrolled to (D339 (departures-in-status)).
+ * is scrolled to (D339 (departures-in-status)). A map whose audit names
+ * outside packages says how many, so an advisory is on the first frame and
+ * not only in the map view's list (D347 (advisories-in-status)); a map no
+ * audit was read for says nothing of them, since that is no clean audit (C2).
  */
 
 import { CHROME_GROUND, CHROME_INK, CHROME_MUTED, CHROME_PAD, FONT_FAMILY, HUD_FONT_SIZE, IFR_HUE } from 'scene';
@@ -42,6 +45,12 @@ const departuresOf = (state: MapState): number => (state.status === 'ready' ? (s
 
 /** What the line adds for a map that departs from its approved shape. */
 const departedWords = (count: number): string => `${String(count)} ${count === 1 ? 'departure' : 'departures'} from the approved shape`;
+
+/** How many outside packages an advisory names; none where no audit was read, which the line says nothing of (C2), and on a map not read yet. */
+const advisedOf = (state: MapState): number => (state.status === 'ready' ? (state.map.weather.dependencies ?? []).filter((dependency) => (dependency.advisories ?? 0) > 0).length : 0);
+
+/** What the line adds for a map whose audit names outside packages (D347 (advisories-in-status)). */
+const advisedWords = (count: number): string => `${String(count)} ${count === 1 ? 'package' : 'packages'} with advisories`;
 
 /** What stands between the line's parts. */
 const BETWEEN = ' · ';
@@ -80,8 +89,17 @@ export const Status = ({ state, registry, shapes, live, rebuilding }: StatusProp
   const look = registry.view(LOOK);
   const structureOnly = state.status === 'ready' && state.map.meta.instruments.mode !== 'check';
   const departed = departuresOf(state);
+  const advised = advisedOf(state);
   const building = live === true && rebuilding === true;
-  const words = [wordsOf(state), ...(structureOnly ? [STRUCTURE_ONLY_WORDS] : []), ...(shapes === undefined ? [] : [SHAPES_DEMO_WORDS]), ...(departed === 0 ? [] : [departedWords(departed)]), ...(live === true ? [LIVE_WORDS] : []), ...(building ? [REBUILDING_WORDS] : [])];
+  const words = [
+    wordsOf(state),
+    ...(structureOnly ? [STRUCTURE_ONLY_WORDS] : []),
+    ...(shapes === undefined ? [] : [SHAPES_DEMO_WORDS]),
+    ...(departed === 0 ? [] : [departedWords(departed)]),
+    ...(advised === 0 ? [] : [advisedWords(advised)]),
+    ...(live === true ? [LIVE_WORDS] : []),
+    ...(building ? [REBUILDING_WORDS] : []),
+  ];
   return (
     <p
       role="status"
@@ -89,6 +107,7 @@ export const Status = ({ state, registry, shapes, live, rebuilding }: StatusProp
       {...(shapes === undefined ? {} : { 'data-shapes': shapes })}
       {...(structureOnly ? { 'data-structure-only': '' } : {})}
       {...(departed === 0 ? {} : { 'data-departed': String(departed) })}
+      {...(advised === 0 ? {} : { 'data-advised': String(advised) })}
       {...(live === true ? { 'data-live': '' } : {})}
       {...(building ? { 'data-rebuilding': '' } : {})}
       style={{

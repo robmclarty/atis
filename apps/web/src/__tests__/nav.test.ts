@@ -198,3 +198,21 @@ test('a target names its selection in a map, a file before a module, and a selec
     expect(selected === undefined ? undefined : targetOf(selected)).toBe(target);
   }
 });
+
+test('the line holds the file whose plate was asked for, tells who listens, and puts it away when the selection moves (D350 (plate-by-ask))', () => {
+  const nav = createNav();
+  let heard = 0;
+  nav.subscribe(() => (heard += 1));
+  expect(nav.plated()).toBeUndefined();
+  nav.plate('libs/core/src/pm/tools.ts');
+  expect(nav.plated()).toBe('libs/core/src/pm/tools.ts');
+  expect(heard).toBe(1);
+  // Asked for again, nothing moved and nobody hears.
+  nav.plate('libs/core/src/pm/tools.ts');
+  expect(heard).toBe(1);
+  nav.select({ kind: 'cell', cell: 'folder:libs/core/src/pm' }, 'stay');
+  expect(nav.plated()).toBeUndefined();
+  nav.plate('libs/core/src/pm/tools.ts');
+  nav.plate(undefined);
+  expect(nav.plated()).toBeUndefined();
+});

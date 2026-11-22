@@ -1055,3 +1055,64 @@ test("a page whose address names a selection opens with it selected and the came
     await server.close();
   }
 });
+
+test("the sky hangs a star for each outside package and names those an advisory names or the change touched, the canvas counts the functions lit as exposed, and a file's plate is laid when the inspector asks and put away on Escape with the selection kept, with a clean console (D354 (package-stars), D349 (granules-carry-evidence), D350 (plate-by-ask))", { timeout: 120_000 }, async () => {
+  const advised = assertMap({
+    ...MAP,
+    weather: {
+      ...MAP.weather,
+      dependencies: [
+        { name: 'kleur', importers: 2, advisories: 1, severity: 'high', files: ['libs/core/src/pm/index.ts', TOOLS] },
+        { name: 'picomatch', importers: 2, change: 'added', advisories: 0 },
+        { name: 'semver', importers: 1, advisories: 0 },
+      ],
+    },
+  });
+  const { server, url } = await serve(JSON.stringify(advised));
+  const browser = await launch();
+  try {
+    const page = await browser.newPage({ viewport: VIEWPORT });
+    const complaints: string[] = [];
+    page.on('console', (message) => {
+      if (message.type() === 'error' || message.type() === 'warning') complaints.push(`${message.type()}: ${message.text()}`);
+    });
+    page.on('pageerror', (error) => complaints.push(`pageerror: ${error.message}`));
+    await page.goto(`${url}/?backend=webgl`);
+    await page.waitForSelector('#world[data-ready="true"]', { timeout: 90_000 });
+
+    // One star a package, and a name beside the one an advisory names and the one the change added; the calm one keeps quiet.
+    expect(await page.getAttribute('#world', 'data-stars')).toBe('3');
+    expect(await page.$$eval('[data-package-star]', (names) => names.map((name) => [name.getAttribute('data-package-star'), name.getAttribute('data-hue'), name.textContent]))).toEqual([
+      ['kleur', 'ifr', 'kleur'],
+      ['picomatch', 'change', 'picomatch'],
+    ]);
+    // The status line and the HUD say the advisory on the first frame.
+    expect(await page.textContent('[role="status"]')).toContain('1 package with advisories');
+    expect(await page.textContent('[data-block="deps"]')).toBe('Deps 1 advised, worst high');
+    // The functions whose lines hold an untested changed line or a live mutant are lit, and the canvas counts them.
+    const exposed = nucleiOf(advised).granules.filter((granule) => granule.exposed).length;
+    expect(exposed).toBeGreaterThan(0);
+    expect(await page.getAttribute('#world', 'data-nuclei-exposed')).toBe(String(exposed));
+
+    // No plate is laid unasked, at any zoom.
+    expect(await page.getAttribute('#world', 'data-file')).toBeNull();
+    await page.click(treeRow(TOOLS));
+    await page.waitForSelector(`[data-inspector-target="${TOOLS}"]`, { timeout: 30_000 });
+    await page.click('[data-inspector-plate]');
+    await page.waitForSelector(`#world[data-file="${TOOLS}"]`, { timeout: 30_000 });
+    await page.waitForSelector('[data-file-plate] [data-function]', { state: 'attached', timeout: 30_000 });
+    expect(await page.$$eval('[data-file-plate] [data-function]', (granules) => granules.map((granule) => granule.getAttribute('data-function')))).toEqual(['localBin', 'resolveTool', 'toolName']);
+    // The plate stands in the room the panels leave free: left of the inspector.
+    const [plate, panel] = await Promise.all([page.$eval('[data-file-plate] rect', (ground) => ground.getBoundingClientRect().right), page.$eval('[data-inspector]', (aside) => aside.getBoundingClientRect().left)]);
+    expect(plate).toBeLessThanOrEqual(panel);
+    // Escape puts the plate away and keeps the selection it is of.
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('#world:not([data-file])', { timeout: 30_000 });
+    expect(await page.getAttribute('#world', 'data-selected')).toBe(TOOLS);
+    expect(await page.getAttribute('[data-inspector-plate]', 'data-inspector-plate')).toBe('off');
+    expect(complaints).toEqual([]);
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+});

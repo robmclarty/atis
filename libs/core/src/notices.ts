@@ -621,6 +621,26 @@ function surfaceMoves(
   };
 }
 
+/**
+ * The changed files whose exported surface the change provably broke, by
+ * head path: a name removed, whoever still takes it, or a kept name whose
+ * shape both scans printed and printed differently. The category reads it
+ * for the same proof an `interface-change` notice rests on (D346
+ * (category-reads-surface)); a name added, or one whose shape could not be
+ * compared, proves no break (D81).
+ */
+export function brokenSurfaces(baseFiles: readonly ScanFile[], headFiles: readonly ScanFile[], changed: readonly string[]): ReadonlySet<string> {
+  const before = new Map(baseFiles.map((file) => [file.path, file] as const));
+  const after = new Map(headFiles.map((file) => [file.path, file] as const));
+  const none: ReadonlySet<string> = new Set();
+  return new Set(
+    changed.filter((path) => {
+      const moves = surfaceMoves(before.get(path), after.get(path), none);
+      return moves.removed.length + moves.reshaped.length > 0;
+    }),
+  );
+}
+
 /** `a`, `a and b`, `a, b and c`, then `a, b, c and 4 more`: a long list of names counted rather than spelled out. */
 function sampled(names: readonly string[]): string {
   if (names.length <= NAMED) return listed(names);

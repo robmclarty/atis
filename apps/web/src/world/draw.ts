@@ -149,7 +149,7 @@ import type { Highlight } from '../highlight.js';
 import { hoverOf } from '../hover.js';
 import type { Hovered } from '../hover.js';
 import { marksOf } from '../marks.js';
-import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, NOTICE, SKIN, SKY, SPACE, WALK, WEATHER } from '../materials.js';
+import { BLOOM, CAMERA, HOVER, INTERIOR, LEVELS, LIGHTING, NOTICE, PANEL, SKIN, SKY, SPACE, WALK, WEATHER } from '../materials.js';
 import { selectedOf, targetOf } from '../nav.js';
 import type { Nav, Pointed, Selected } from '../nav.js';
 import { frameMap, lastFrame as ownFrame } from '../frames.js';
@@ -186,6 +186,7 @@ import type { Sectors } from './sectors.js';
 import { createSkin } from './skin.js';
 import { createSky } from './sky.js';
 import { BAND_LABEL_LOOK, createSpace } from './space.js';
+import { STAR_LOOK, createPackageStars } from './stars.js';
 
 /** How far off the key light stands: far enough that its direction is one across the layout. */
 const CAMERA_REACH = 1000;
@@ -287,7 +288,8 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   scene.add(skin.mesh);
   // The field is space (D169): faint stars on the open ground and past it, and a rule at each band's boundary over the canvas.
   const bandLook = registry.view(BAND_LABEL_LOOK);
-  const space = createSpace(map, registry.view(SPACE, 'SPACE'), bandLook);
+  const spaceLook = registry.view(SPACE, 'SPACE');
+  const space = createSpace(map, spaceLook, bandLook);
   scene.add(space.mesh);
   const grid = gridFor(map, skin.resolution);
   const organelles = createOrganelles(map, skin.relief, grid, skin.amp, skin.lift, tokens, composites, skin.composites);
@@ -421,15 +423,25 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
   canvas.dataset['motion'] = reduced ? 'reduced' : 'full';
   const levels = registry.view(LEVELS, 'LEVELS');
   // Every file's functions as granules on the map itself (D206 (detail-by-size)), resolved by their size on the screen and by nothing else: laid from the map the weather comes from, so a watch's push lays them again (D330 (granules-follow-push)); on a map of composites, or one with more functions than `LEVELS.granuleMost`, only those of the files in view (D343 (granules-in-view)); and none on a map that read no function (D293 (granules-unmeasured)). The canvas says how many, or why none.
-  const nucleiOn = (from: MapJson): ReturnType<typeof createNuclei> => createNuclei(from, skin.relief, grid, skin.amp, skin.lift, organelles.surface, { tissue: tokens, interior: interiorLook, levels, nucleus: nucleusTokens }, composites);
+  const nucleiOn = (from: MapJson): ReturnType<typeof createNuclei> => createNuclei(from, skin.relief, grid, skin.amp, skin.lift, organelles.surface, { tissue: tokens, evidence: tokens, weather: weatherLook, interior: interiorLook, levels, nucleus: nucleusTokens }, composites);
   let nuclei = nucleiOn(map);
   // One mesh or none: a map that draws no granule has nothing to add, and the scene takes no empty ask.
   for (const mesh of nuclei.meshes) scene.add(mesh);
   let nucleiShown = nuclei.shown();
   canvas.dataset['nuclei'] = nucleiShown;
+  // How many of them are lit as exposed, which a test and a screenshot read (D349 (granules-carry-evidence)).
+  let nucleiExposed = nuclei.exposed();
+  canvas.dataset['nucleiExposed'] = String(nucleiExposed);
   // The walk (step 39): the stop the view stands at, and the flight under way to the next one, eased by the scheduler's fly-to.
   const walk = createWalk(map);
   const walkLook = registry.view(WALK, 'WALK');
+  // The outside packages as stars round the ground (D354 (package-stars)): hung from the map the weather comes from, so a watch's push hangs them again; their names lie over the canvas, under every label. The canvas says how many hang.
+  const starsLook = { hues: registry.view(STAR_LOOK), space: spaceLook, panel: registry.view(PANEL, 'PANEL') };
+  const starsOn = (from: MapJson): ReturnType<typeof createPackageStars> => createPackageStars(from, walk.ground(), starsLook);
+  let stars = starsOn(map);
+  for (const mesh of stars.meshes) scene.add(mesh);
+  space.rules.after(stars.labels);
+  canvas.dataset['stars'] = String(stars.count());
   const layout = map.terrain.layout ?? { width: 1, height: 1 };
   /** The view that frames a stretch of the ground: centred on it, at the zoom where it fills the walk's share of the free screen. */
   const frameOf = (box: Box): { readonly centre: Point; readonly zoom: number } => ({ centre: [(box.x0 + box.x1) / 2, (box.y0 + box.y1) / 2], zoom: clampZoom(zoomFor(layout, box, canvas.clientWidth, canvas.clientHeight, chrome, walkLook.share)) });
@@ -844,6 +856,13 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     nuclei.dispose();
     nuclei = nucleiOn(next);
     for (const mesh of nuclei.meshes) scene.add(mesh);
+    // A package can come, go or be read by an audit with the ground unchanged, so the stars are hung again too (D354 (package-stars)).
+    for (const mesh of stars.meshes) scene.remove(mesh);
+    stars.dispose();
+    stars = starsOn(next);
+    for (const mesh of stars.meshes) scene.add(mesh);
+    space.rules.after(stars.labels);
+    canvas.dataset['stars'] = String(stars.count());
     relay(frameMap(next, shownFrame));
     return undefined;
   };
@@ -902,6 +921,12 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     if (event.key === 'Escape' && opening.open !== undefined && levels.autoOpen > 0) {
       event.preventDefault();
       apply(openedBy(opening, { kind: 'escape' }));
+      return;
+    }
+    // A plate the inspector asked for is put away first (D350 (plate-by-ask)), and the selection it is of stays.
+    if (event.key === 'Escape' && nav.plated() !== undefined) {
+      event.preventDefault();
+      nav.plate(undefined);
       return;
     }
     if (event.key === 'Escape' && nav.selected() !== undefined) {
@@ -1084,6 +1109,10 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       nucleiShown = nuclei.shown();
       canvas.dataset['nuclei'] = nucleiShown;
     }
+    if (nuclei.exposed() !== nucleiExposed) {
+      nucleiExposed = nuclei.exposed();
+      canvas.dataset['nucleiExposed'] = String(nucleiExposed);
+    }
     for (const layer of layers()) {
       layer.palette.restyle();
       layer.sectors.fade.value = layer === current ? mixed : 1 - mixed;
@@ -1110,6 +1139,8 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
     glow.strength.value = bloomLook.strength;
     glow.radius.value = bloomLook.radius;
     glow.threshold.value = bloomLook.threshold;
+    // The packages' stars keep their size on the screen, and their names ride them (D354 (package-stars)).
+    stars.frame(camera, canvas.clientWidth, canvas.clientHeight, pixelsPerUnit(camera, canvas.clientWidth));
     post.render();
     space.render(camera, canvas.clientWidth, canvas.clientHeight, surface);
     // The chrome's boxes are read a few times a second, before the labels are placed: a name written unasked keeps off them (D246 (names-off-chrome)), so the labels are laid again when a block of the HUD or the legend opens or folds away.
@@ -1158,9 +1189,13 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       };
       space.label(bandLabelsFor(current.map, lod, viewportOf(camera, across), [], [...current.labels.claims(), ...chromeClaims], project, bandLook));
     }
-    // The file level (D102): past LOD3's gate the file nearest the view's centre, a floating body of the opened cell first, opens onto its plate.
-    const fileShown = frame.lod?.opacity[3] ?? 0;
-    const focus = fileShown <= 0 || middle === undefined ? undefined : nearestFile(middle);
+    // The file level (D102): past LOD3's gate the file nearest the view's centre, a floating body of the opened cell first, opens onto its plate. On the one surface no zoom reaches that gate, and the plate is laid for the file the inspector asks for (D350 (plate-by-ask)): in the middle of the screen the panels leave free, since the file may lie anywhere.
+    const askedPlate = levels.autoOpen > 0 || view.cinema === true ? undefined : nav.plated();
+    const askedAt = askedPlate === undefined ? undefined : placed.get(askedPlate);
+    const fileShown = askedAt === undefined ? (frame.lod?.opacity[3] ?? 0) : 1;
+    const focus = askedAt === undefined ? (fileShown <= 0 || middle === undefined ? undefined : nearestFile(middle)) : { id: askedAt.id, x: askedAt.x, y: askedAt.y };
+    // The room the plate is centred in when asked for: left of the inspector, which lies over the map's right.
+    const plateRoom = askedAt === undefined ? free : Math.max(1, Math.min(free, claimOf('[data-inspector]')?.left ?? free));
     if (focus?.id !== fileFocus || current.map !== fileMap) {
       fileFocus = focus?.id;
       fileMap = current.map;
@@ -1176,7 +1211,7 @@ export const drawWorld = async (canvas: HTMLCanvasElement, map: MapJson, view: V
       if (diffLevel === undefined) delete canvas.dataset['diff'];
       else canvas.dataset['diff'] = diffLevel.path;
     }
-    filePlate.render(camera, canvas.clientWidth, canvas.clientHeight, free, focus === undefined ? undefined : new Vector3(focus.x, heightAt(focus.x, focus.y), focus.y), fileLevel, fileShown * (1 - diffShown));
+    filePlate.render(camera, canvas.clientWidth, canvas.clientHeight, plateRoom, focus === undefined ? undefined : new Vector3(focus.x, heightAt(focus.x, focus.y), focus.y), fileLevel, fileShown * (1 - diffShown), askedAt !== undefined);
     diffSheet.render(canvas.clientHeight, free, diffLevel, diffShown);
     const words = slideWords(open.exploded, fieldTarget, slide === undefined ? undefined : barrelOf.get(slide.cell), fileOn(held), fileOn(rowPointed));
     // The chrome's claims are read again a few times a second while a slide shows: the HUD's blocks and the legend open and close under it.

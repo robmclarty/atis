@@ -102,9 +102,12 @@ moved, how far it reaches, and what evidence covers it.
 ## Scenarios
 
 - **S1 (review-a-change)**: On a branch, `atis` opens a tab on the lit map
-  with the category, the HUD and at most six notices.
+  with the category, the HUD, at most six notices, and any advisory on an
+  outside package said on that first frame.
   - held-by: `file:apps/atis/src/__tests__/cli.test.ts#"the command serves the world, prints its URL"`,
-    `file:apps/web/src/__tests__/select.test.ts#"opens framed on the ground the world draws"`
+    `file:apps/web/src/__tests__/select.test.ts#"opens framed on the ground the world draws"`,
+    `file:apps/web/src/__tests__/status.test.tsx#"a map whose audit names outside packages says how many"`,
+    `file:apps/web/src/__tests__/select.test.ts#"the sky hangs a star for each outside package"`
 - **S2 (inspect-by-click)**: A click rings a file or module and opens the
   inspector on its facts; the camera stays.
   - held-by: `file:apps/web/src/__tests__/select.test.ts#"a click on a file on the map opens the inspector on its facts"`
@@ -119,8 +122,11 @@ moved, how far it reaches, and what evidence covers it.
   - held-by: `file:apps/atis/src/__tests__/cli.test.ts#"atis approve keeps the shape of the map its flags draw under the git directory"`
 - **S6 (follow-an-agent)**: Under a watch the tab follows uncommitted edits.
   - held-by: `file:apps/atis/src/__tests__/watch.test.ts#"while the head is the working tree the signature moves with an unstaged edit"`
-- **S7 (read-the-code)**: A served run shows any file's text, read-only.
-  - held-by: `file:apps/atis/src/__tests__/serve.test.ts#"a file's text is served at /file/<path> with the token"`
+- **S7 (read-the-code)**: A served run shows any file's text, read-only, and
+  a changed file shows where its untested lines and live mutants sit.
+  - held-by: `file:apps/atis/src/__tests__/serve.test.ts#"a file's text is served at /file/<path> with the token"`,
+    `file:apps/web/src/__tests__/inspector.test.tsx#"a file's facts open on its lines to scale"`,
+    `file:libs/scene/src/__tests__/nuclei.test.ts#"a granule is exposed where its lines hold a changed line no test ran or a live mutant"`
 - **S8 (post-to-a-pull-request)**: `atis --comment` posts the HUD, notices
   and image.
   - held-by: `file:apps/atis/src/__tests__/comment.test.ts#"the comment opens on its marker"`
@@ -157,8 +163,9 @@ in [docs/one-surface.md](docs/one-surface.md) and the build records.
 - **D190 (files-in-git-dir)**: Caches and the approved shape live under the
   git directory.
   - because: nothing atis writes should land in the working tree.
-- **D204 (parked-levels)**: The slide by zoom, the file plate and the diff
-  sheet are off behind `LEVELS.autoOpen`, not deleted.
+- **D204 (parked-levels)**: The slide by zoom, the plate by zoom and the diff
+  sheet are off behind `LEVELS.autoOpen`, not deleted. The plate is laid only
+  when the inspector's button asks.
   - because: the old and new can be compared on real repositories first.
 - **D205 (open-on-select)**: A selected module comes alive in place.
   - because: the moving cells are liked, and zoom must open nothing.
@@ -174,8 +181,8 @@ in [docs/one-surface.md](docs/one-surface.md) and the build records.
 - **D212 (approved-private)**: The approved shape is private to the clone,
   written by `atis approve`.
   - because: sharing it waits on use.
-- **D213 (planet-goes)**: The far zoom's planet is deleted; outside packages
-  are a list.
+- **D213 (planet-goes)**: The far zoom's planet is deleted. Outside packages
+  are a list, and stars again per [D354 (package-stars)].
   - because: it withheld the map from the ten-second read.
 - **D343 (granules-in-view)**: A large map lays granules for the files in
   view alone.
@@ -183,13 +190,27 @@ in [docs/one-surface.md](docs/one-surface.md) and the build records.
 - **D345 (intent-in-keyframes)**: This file is the current statement of
   intent, and the gate checks it. The founding spec is the record.
   - because: the product had outgrown its spec.
+- **D348 (line-strip)**: The inspector draws a file's lines to scale, with
+  its functions, changed lines, untested lines and live mutants in lanes; on
+  the map a function with an untested line or a live mutant is lit.
+  - because: with the plate parked, where the risk sits was words alone.
+- **D352 (deps-block)**: The HUD's `Deps` block and the status line count the
+  packages an advisory names, and the map marks the files that import one.
+  No audit read is a dash, never clean.
+  - because: an advisory one click away was easy to miss; [C2 (never-fake)].
+- **D354 (package-stars)**: Outside packages hang as stars round the ground,
+  sized by importers and hued by health; only advised or changed ones are
+  named.
+  - because: a serious advisory belongs on the opening frame, and calm stays
+    quiet per [P1 (attention-budget)].
 
 ## Taste
 
 - **T1 (two-materials)**: The world is organic and luminous; the chrome is
   flat, hard-edged and never glows.
 - **T2 (sky-and-weather)**: The picture is astronomical and atmospheric:
-  clusters as galaxies, a module as one organism, the change as weather.
+  clusters as galaxies, a module as one organism, outside packages as stars,
+  the change as weather.
 - **T3 (plain-nouns)**: Panels say package, module, file, function.
 - **T4 (dash-not-zero)**: A missing number is a dash and a reason.
 - **T5 (calm-is-still)**: A calm change is a still map.
@@ -204,11 +225,14 @@ in [docs/one-surface.md](docs/one-surface.md) and the build records.
 - **Q101 (speed)**: Does the one surface hold its frame budget? Unmeasured
   since [D213 (planet-goes)].
 - **Q102 (delete-parked)**: When does the parked code go, after
-  [D204 (parked-levels)]?
+  [D204 (parked-levels)]? The plate stays, since a button now asks for it.
 - **Q103 (import-corridors)**: Should every module-to-module import be a
   standing line, not only those a change added?
 - **Q104 (live-speed)**: Can an edit reach the tab in a second?
 - **Q105 (shared-shape)**: Should an approved shape be committed and shared?
+- **Q106 (still-parity)**: Should the still draw the advisory pip, the stars
+  and the lit functions? Only the world does, which bends
+  [C10 (svg-is-still)].
 
 ## Ideas
 

@@ -106,6 +106,8 @@ describe('trouble spots: churn × complexity (§8)', () => {
     const overlays = overlaysOf({ commits: [commit('c1', 'a.ts')], check: { mode: 'git-only', reason: '.check/ is absent' } });
 
     expect(muted(overlays)).toEqual([
+      // The advisories read the outside packages the map counted, and this one counted none.
+      "advisories: the head scan recorded no file's imports by package",
       'baselined: no checkride.baseline.json is committed at the head',
       'coverage_gaps: .check/ is absent',
       'cycles: .check/ is absent',
@@ -369,6 +371,8 @@ describe('a repo map (D101)', () => {
     expect(map.sequence).toBeUndefined();
     // The demo's health totals no complexity, and it commits no baseline.
     expect(map.overlays?.muted).toEqual([
+      // The demo's `security` slot was skipped, so no audit was read: no overlay, never a clean one (C2).
+      'advisories: the security slot was skipped',
       'baselined: no checkride.baseline.json is committed at the head',
       "trouble_spots: health.json totals no file's cyclomatic complexity",
     ]);
@@ -433,5 +437,46 @@ describe('assertMap and the overlays', () => {
     const map = repo();
     const overlays = map['overlays'] as Record<string, unknown>;
     expect(() => assertMap({ ...map, overlays: { ...overlays, cycles: [{ kind: 'import', files: ['nowhere.ts'] }] } })).toThrow(/unknown organelle or group file "nowhere.ts"/);
+  });
+});
+
+describe('advisories: the files that import a package an advisory names (D355 (advisories-overlay))', () => {
+  const audit = { vulnerabilities: { high: 1, low: 1 }, advisories: [] };
+  const audited = (): CheckArtifacts => {
+    const check = ran({});
+    if (check.mode !== 'check') return check;
+    const checks = [...check.summary.checks, { name: 'security', ok: false, skipped: false }];
+    return { ...check, security: audit, summary: { ...check.summary, checks_run: checks.length, checks } };
+  };
+  const dependencies = [
+    { name: 'express', importers: 2, advisories: 2, severity: 'high', files: ['a.ts', 'b.ts'] },
+    { name: 'kleur', importers: 1, advisories: 0 },
+    { name: 'qs', importers: 2, advisories: 1, severity: 'low', files: ['b.ts', 'z.ts'] },
+  ];
+
+  test('each placed file is listed once, by path, with its advised packages sorted and the worst severity among them', () => {
+    const overlays = overlaysOf({ check: audited(), dependencies });
+    expect(overlays.advisories).toEqual([
+      { path: 'a.ts', packages: ['express'], severity: 'high' },
+      { path: 'b.ts', packages: ['express', 'qs'], severity: 'high' },
+    ]);
+    expect(muted(overlays).some((line) => line.startsWith('advisories: '))).toBe(false);
+  });
+
+  test('a clean audit is an overlay with no files, and is not muted (C2)', () => {
+    const overlays = overlaysOf({ check: audited(), dependencies: [{ name: 'kleur', importers: 1, advisories: 0 }] });
+    expect(overlays.advisories).toEqual([]);
+    expect(muted(overlays).some((line) => line.startsWith('advisories: '))).toBe(false);
+  });
+
+  test('with no audit read there is no overlay, and the reason says which it was', () => {
+    const reasonOf = (over: Partial<OverlayInputs>): string | undefined => muted(overlaysOf(over)).find((line) => line.startsWith('advisories: '));
+    expect(reasonOf({ check: audited() })).toBe("advisories: the head scan recorded no file's imports by package");
+    expect(reasonOf({ check: ran({}), dependencies })).toBe('advisories: .check/ ran no security slot');
+    expect(reasonOf({ check: { mode: 'git-only', reason: '.check/ is absent' }, dependencies })).toBe('advisories: .check/ is absent');
+    const unlisted = audited();
+    const counts = unlisted.mode === 'check' ? { ...unlisted, security: { vulnerabilities: { high: 1 } } } : unlisted;
+    expect(reasonOf({ check: counts, dependencies })).toBe('advisories: security.json lists no advisories to read');
+    for (const over of [{ check: ran({}), dependencies }, { check: audited() }]) expect(overlaysOf(over).advisories).toBeUndefined();
   });
 });

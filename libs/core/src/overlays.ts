@@ -4,9 +4,11 @@
  * A `repo` map has no change to draw, so in place of weather it carries
  * overlays over the commit's own terrain: trouble spots (churn × complexity),
  * ugly spots (thresholds and maintainability), coverage gaps, dead code,
- * duplication, cycles, recent heat over the newest commits, and the findings
- * checkride's committed baseline grandfathers, drawn muted (D49). Each reads
- * one source: git's log, a channel of `.check/`, or the baseline beside one.
+ * duplication, cycles, recent heat over the newest commits, the files that
+ * import an outside package an advisory names (D355 (advisories-overlay)),
+ * and the findings checkride's committed baseline grandfathers, drawn muted
+ * (D49). Each reads one source: git's log, a channel of `.check/`, the
+ * outside packages the map already counted, or the baseline beside one.
  * An overlay whose source is missing is absent, and `muted` says why (C2).
  *
  * A baselined finding is found the one way checkride's contract allows: its
@@ -18,10 +20,11 @@
  */
 
 import type { OverlayConfig } from './config.js';
-import { coverageSpeaksFor, pathsOf, rulesOf } from './evidence.js';
+import { coverageSpeaksFor, pathsOf, rulesOf, severityRank } from './evidence.js';
 import type { CheckArtifacts, CodeSpan, Coverage, Dead, Dupes, Health, HealthFinding } from './evidence.js';
 import type { Commit } from './history.js';
 import type {
+  AdvisedImport,
   Breach,
   BaselinedFinding,
   BaselinedKind,
@@ -29,6 +32,7 @@ import type {
   CoverageGap,
   Cycle,
   DeadCode,
+  Dependency,
   OverlayName,
   Overlays,
   RecentHeat,
@@ -61,6 +65,8 @@ export type OverlayInputs = {
   readonly coverage_unnamed: boolean;
   readonly baseline: CheckBaseline;
   readonly config: OverlayConfig;
+  /** The outside packages the map counted at the commit, each with the files that import it where an advisory names it (D351 (advised-files)); nothing where the scan recorded no file's imports by package. */
+  readonly dependencies?: readonly Dependency[] | undefined;
 };
 
 /** One overlay as read, or why it could not be. */
@@ -446,6 +452,40 @@ function baselinedOf(check: CheckArtifacts, baseline: CheckBaseline, placed: Rea
 }
 
 /**
+ * The files under an advisory (D355 (advisories-overlay)): each placed file
+ * that imports an outside package an advisory names, with those packages and
+ * the worst severity among them. It reads the packages the map already
+ * counted, so the overlay and the list of packages can never disagree. With
+ * no audit read there is no overlay, and the reason says which it was: no
+ * package list, no trusted `.check/`, no `security` slot, or an audit whose
+ * advisories were not read. A clean audit is an overlay with no files (C2).
+ */
+function advisedImports(check: CheckArtifacts, dependencies: readonly Dependency[] | undefined, placed: ReadonlySet<string>): Read<readonly AdvisedImport[]> {
+  if (dependencies === undefined) return { reason: "the head scan recorded no file's imports by package" };
+  const audit = readChannel(check, 'security', 'security.json', (ran) => ran.security);
+  if ('reason' in audit) return audit;
+  if (audit.value.advisories === undefined) return { reason: 'security.json lists no advisories to read' };
+  const byFile = new Map<string, { packages: string[]; severities: string[] }>();
+  for (const dependency of dependencies) {
+    if (dependency.severity === undefined) continue;
+    for (const path of dependency.files ?? []) {
+      if (!placed.has(path)) continue;
+      const entry = byFile.get(path) ?? { packages: [], severities: [] };
+      entry.packages.push(dependency.name);
+      entry.severities.push(dependency.severity);
+      byFile.set(path, entry);
+    }
+  }
+  const files = [...byFile]
+    .map(([path, entry]): AdvisedImport => {
+      const [worst = ''] = entry.severities.toSorted((a, b) => severityRank(a) - severityRank(b) || byPath(a, b));
+      return { path, packages: entry.packages.toSorted(byPath), severity: worst };
+    })
+    .toSorted((a, b) => byPath(a.path, b.path));
+  return { value: files };
+}
+
+/**
  * Every overlay of a `repo` map (D101), each read from its own source and
  * absent with its reason where that source is (C2).
  */
@@ -466,6 +506,7 @@ export function computeOverlays(inputs: OverlayInputs): Overlays {
   const families = from(dupes, (read) => ({ value: duplication(read, placed) }));
   const loops = from(dead, (read) => ({ value: cycles(read, placed) }));
   const grandfathered = baselinedOf(check, inputs.baseline, placed);
+  const advised = advisedImports(check, inputs.dependencies, placed);
 
   const reads: readonly (readonly [OverlayName, Read<unknown>])[] = [
     ['trouble_spots', trouble],
@@ -474,6 +515,7 @@ export function computeOverlays(inputs: OverlayInputs): Overlays {
     ['dead_code', unused],
     ['duplication', families],
     ['cycles', loops],
+    ['advisories', advised],
     ['baselined', grandfathered],
   ];
   const muted = reads.flatMap(([name, read]) => ('reason' in read ? [`${name}: ${read.reason}`] : [])).toSorted(byPath);
@@ -486,6 +528,7 @@ export function computeOverlays(inputs: OverlayInputs): Overlays {
     ...('value' in loops ? { cycles: loops.value } : {}),
     // The log is never missing: a repository has at least the commit it is mapped at.
     recent_heat: recentHeat(inputs.commits, inputs.config.heat_commits, placed),
+    ...('value' in advised ? { advisories: advised.value } : {}),
     ...('value' in grandfathered ? { baselined: grandfathered.value } : {}),
     ...(muted.length === 0 ? {} : { muted }),
   };

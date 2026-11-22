@@ -217,7 +217,8 @@ function slotsSet(map: MapJson, red: Readonly<Record<string, RedScope>>, green: 
 test('the HUD draws the blocks of §7 in order, with Standing only when some red is standing and Other only when the other group has files', () => {
   // The change's own evidence sits beside the category; the gate and the standing state follow it (D70).
   // A repo map's own two blocks take the change's place, so a change map draws neither (D101).
-  expect(HUD_ORDER).toEqual(['category', 'repo', 'overlay', 'patch-cov', 'mutants', 'reach', 'size', 'gate', 'standing', 'health', 'notices', 'other']);
+  // Deps follows Health Δ: the outside packages an advisory names, on a change's map and a whole repo's alike (D352 (deps-block)).
+  expect(HUD_ORDER).toEqual(['category', 'repo', 'overlay', 'patch-cov', 'mutants', 'reach', 'size', 'gate', 'standing', 'health', 'deps', 'notices', 'other']);
   const map = demo();
   const changeOrder = HUD_ORDER.filter((id) => id !== 'repo' && id !== 'overlay');
   expect(blockIds(chromeOf(renderSvg(map)))).toEqual(changeOrder);

@@ -31,6 +31,18 @@ These were deleted, and the old-levels switch does not bring them back.
   reviewer travels through the change rather than opening panels". There are
   now two panels, and reading a module or a file happens in one of them.
 
+Since the merge, two of these were partly bought back (2026-11-21). The
+outside packages hang as stars round the map again, hued by their advisories
+(D354 (package-stars)), with a `Deps` block in the HUD, a pip on each file
+that imports a seriously advised package and a whole-repo overlay (D352
+(deps-block), D353 (advisory-pip), D355 (advisories-overlay)). And the file
+plate's picture of where the risk sits in a file is in the inspector as a
+strip of the file's lines, on the map as lit functions, and behind a `plate`
+button (D348 (line-strip), D349 (granules-carry-evidence), D350
+(plate-by-ask)). The planet, the darkness and travel as the way to read stay
+gone. The cost is more on the screen: three more legend rows, one more HUD
+block on every still, and stars that are no longer only decoration.
+
 ## Parked, one switch away
 
 The slide a module opened as by filling the screen, the file's plate and the

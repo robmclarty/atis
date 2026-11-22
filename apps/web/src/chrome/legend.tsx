@@ -14,6 +14,8 @@
  */
 
 import {
+  ADVISORY_PIP_PAD,
+  ADVISORY_PIP_SIZE,
   ARROW_SIZE,
   CALLOUT_FONT_SIZE,
   CALLOUT_R,
@@ -84,6 +86,8 @@ import { useLive } from './live.js';
 
 /** The tokens the inset is drawn with, at rest: the shape its live view takes. */
 const LOOK = {
+  ADVISORY_PIP_PAD,
+  ADVISORY_PIP_SIZE,
   ARROW_SIZE,
   CALLOUT_FONT_SIZE,
   CALLOUT_R,
@@ -401,9 +405,41 @@ const sampleOf = (id: string, look: Look): ReactNode => {
       return <Ripple look={look} />;
     case 'sway':
       return <Sway look={look} />;
+    case 'exposed':
+      // The nucleus's sample with one granule in the evidence light, the exposed function (D349 (granules-carry-evidence)).
+      return (
+        <>
+          <File look={look} />
+          {NUCLEUS_DOTS.map(([dx, dy, r], at) => (
+            <circle key={`${String(dx)},${String(dy)}`} {...(at === 0 ? { 'data-exposed': '' } : { 'data-granule': '' })} cx={dx * look.LEGEND_SAMPLE_R} cy={dy * look.LEGEND_SAMPLE_R} r={r * look.LEGEND_SAMPLE_R} fill={at === 0 ? look.EVIDENCE_LIGHT : look.ORGANELLE_STROKE} />
+          ))}
+        </>
+      );
+    case 'advisory':
+      // A file with its pip at its upper left, in the IFR hue (D353 (advisory-pip)).
+      return (
+        <>
+          <File look={look} />
+          <rect data-advisory-pip x={-look.ADVISORY_PIP_SIZE / 2} y={-(look.LEGEND_SAMPLE_R + look.ADVISORY_PIP_PAD + look.ADVISORY_PIP_SIZE)} width={look.ADVISORY_PIP_SIZE} height={look.ADVISORY_PIP_SIZE} fill={look.IFR_HUE} transform="rotate(-45)" />
+        </>
+      );
+    case 'star':
+      // A star as the sky draws one (D354 (package-stars)): four points, in the ink an audit read clean wears.
+      return <path data-star d={starPath(look.LEGEND_SAMPLE_R)} fill={look.CHROME_INK} />;
     default:
       return null;
   }
+};
+
+/** A four-pointed star `r` from its middle to a point, its waist a quarter of that: the shape an outside package's star is drawn in (D354 (package-stars)). */
+const starPath = (r: number): string => {
+  const waist = r / 4;
+  const points = Array.from({ length: 8 }, (_, at) => {
+    const reach = at % 2 === 0 ? r : waist;
+    const angle = (at * Math.PI) / 4 - Math.PI / 2;
+    return `${(Math.cos(angle) * reach).toFixed(2)} ${(Math.sin(angle) * reach).toFixed(2)}`;
+  });
+  return `M${points.join('L')}Z`;
 };
 
 /** A sample in its slot: an SVG of the slot's size in the sheet's units, shown at the screen's scale, its origin at the centre. */

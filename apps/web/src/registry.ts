@@ -92,6 +92,8 @@ export const SECTIONS: readonly Section[] = [
       'EDGE_WIDTH',
       'EDGE_BOW',
       'ARROW_SIZE',
+      'ADVISORY_PIP_SIZE',
+      'ADVISORY_PIP_PAD',
     ],
   },
   {
@@ -128,7 +130,7 @@ export const SECTIONS: readonly Section[] = [
   },
   {
     title: "The whole repo's overlays",
-    names: ['OVERLAY_DEAD_EXPORT_LEVEL', 'OVERLAY_ECHO_GAP', 'OVERLAY_ECHO_WIDTH', 'OVERLAY_MUTED_STROKE'],
+    names: ['OVERLAY_DEAD_EXPORT_LEVEL', 'OVERLAY_ADVISORY_LESSER_LEVEL', 'OVERLAY_ECHO_GAP', 'OVERLAY_ECHO_WIDTH', 'OVERLAY_MUTED_STROKE'],
   },
   {
     title: 'The file level',

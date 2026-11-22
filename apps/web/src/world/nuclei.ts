@@ -16,6 +16,13 @@
  * moment it has any size, ahead of its own ink, as a file blots the skin's
  * (D298 (granules-blot-bloom), D152, D11).
  *
+ * One granule is not base tissue: a function whose lines hold a changed line
+ * no test ran, or a mutant still alive (D349 (granules-carry-evidence)). It
+ * is drawn in the evidence light, the light a file's lit arc is (D71), and
+ * the bloom sees `WEATHER.markBloom` of it as it does of any mark, so where
+ * in a file the risk sits reads on the map before the file is opened. Light
+ * is evidence's channel and stays its alone (C11).
+ *
  * It resolves by its size on the screen and by nothing else (D206
  * (detail-by-size)): the loop hands in the pixels one layout unit takes, and
  * a granule fades in as its radius grows from `LEVELS.granuleFrom` pixels to
@@ -42,12 +49,12 @@
 
 import { BufferAttribute, Color, DoubleSide, DynamicDrawUsage, InstancedBufferAttribute, InstancedBufferGeometry, Mesh, MeshBasicNodeMaterial } from 'three/webgpu';
 import type { DataTexture, UniformNode } from 'three/webgpu';
-import { abs, attribute, clamp, float, max, mrt, positionLocal, step, texture, uniform, varying, vec2, vec3, vec4 } from 'three/tsl';
+import { abs, attribute, clamp, float, max, mix, mrt, positionLocal, step, texture, uniform, varying, vec2, vec3, vec4 } from 'three/tsl';
 import { compositesOf, nucleiInView, nucleiOf, nucleiUnread, slideCellOf } from 'scene';
 import type { Composite, Grid, NucleusTokens, Point, RestGranule } from 'scene';
 import type { MapJson } from 'core';
 
-import type { InteriorLook, LevelsLook } from '../materials.js';
+import type { InteriorLook, LevelsLook, WeatherLook } from '../materials.js';
 import type { OrganelleLook } from './organelles.js';
 
 /** A float uniform the skin moves and the granules read: the scheduler's amplitude and lift, and the surface's layer. */
@@ -75,6 +82,9 @@ export type ViewBox = { readonly x0: number; readonly y0: number; readonly x1: n
  */
 export type NucleiLook = {
   readonly tissue: Pick<OrganelleLook, 'ORGANELLE_FILL'>;
+  /** The light an exposed granule is drawn in, and the share of it the bloom sees (D349 (granules-carry-evidence)). */
+  readonly evidence: { readonly EVIDENCE_LIGHT: string };
+  readonly weather: Pick<WeatherLook, 'markBloom'>;
   readonly interior: Pick<InteriorLook, 'granuleShade'>;
   readonly levels: Pick<LevelsLook, 'granuleFrom' | 'granuleFull' | 'granuleMost'>;
   readonly nucleus: NucleusTokens;
@@ -87,6 +97,8 @@ export type Nuclei = {
   readonly count: () => number;
   /** What the canvas says of them (`data-nuclei`): how many, or why there are none. */
   readonly shown: () => string;
+  /** How many of the granules laid are exposed, drawn in the evidence light (D349 (granules-carry-evidence)). */
+  readonly exposed: () => number;
   /** Each frame: the pixels one layout unit takes on the screen, which a granule's fade is read from. */
   readonly frame: (pixelsPerUnit: number) => void;
   /**
@@ -137,6 +149,7 @@ const none = (why: string): Nuclei => ({
   meshes: [],
   count: () => 0,
   shown: () => why,
+  exposed: () => 0,
   frame: () => undefined,
   view: () => undefined,
   restyle: () => undefined,
@@ -180,10 +193,17 @@ export const createNuclei = (map: MapJson, relief: DataTexture, grid: Grid, amp:
   // Each file's offset from its place as last laid, by path: none for a file at its place.
   let offsets = new Map<string, Point>();
 
+  // Whether each instance's function is exposed, 1 or 0 (D349 (granules-carry-evidence)).
+  const lit = new Float32Array(room);
+
   const geometry = fanGeometry();
   const granuleAttribute = new InstancedBufferAttribute(packed, 4);
   granuleAttribute.setUsage(DynamicDrawUsage);
   geometry.setAttribute('granule', granuleAttribute);
+  const litAttribute = new InstancedBufferAttribute(lit, 1);
+  litAttribute.setUsage(DynamicDrawUsage);
+  geometry.setAttribute('exposed', litAttribute);
+  let exposedCount = 0;
 
   /** Stand every laid instance at its rest, moved with its file. */
   const place = (): void => {
@@ -198,16 +218,20 @@ export const createNuclei = (map: MapJson, relief: DataTexture, grid: Grid, amp:
   const lay = (granules: readonly RestGranule[]): void => {
     count = Math.min(room, granules.length);
     owners.length = 0;
+    exposedCount = 0;
     for (let i = 0; i < count; i += 1) {
       const granule = granules[i];
       if (granule === undefined) continue;
       owners[i] = granule.file;
+      lit[i] = granule.exposed ? 1 : 0;
+      if (granule.exposed) exposedCount += 1;
       rests[i * 2] = granule.x;
       rests[i * 2 + 1] = granule.y;
       packed[i * 4 + 2] = granule.r;
       packed[i * 4 + 3] = cellNumber.get(slideCellOf(map, granule.cell)) ?? 0;
     }
     geometry.instanceCount = count;
+    litAttribute.needsUpdate = true;
     laidFor = laidBy(look.nucleus);
     place();
   };
@@ -223,10 +247,14 @@ export const createNuclei = (map: MapJson, relief: DataTexture, grid: Grid, amp:
   const from = uniform(look.levels.granuleFrom);
   const full = uniform(look.levels.granuleFull);
   const ink = uniform(new Color());
+  const light = uniform(new Color());
+  const bloomShare = uniform(look.weather.markBloom);
   const hidden = uniform(0);
   const hiddenFade = uniform(0);
   const inked = (): void => {
     ink.value.set(look.tissue.ORGANELLE_FILL).multiplyScalar(1 - clamp01(look.interior.granuleShade));
+    light.value.set(look.evidence.EVIDENCE_LIGHT);
+    bloomShare.value = look.weather.markBloom;
   };
   inked();
 
@@ -255,11 +283,14 @@ export const createNuclei = (map: MapJson, relief: DataTexture, grid: Grid, amp:
   // One value an instance, worked out at its vertices and carried to its fragments.
   const drawn = varying(eased.mul(float(1).sub(under)));
   const shown = surface.mul(drawn);
-  material.colorNode = ink;
+  // An exposed function is drawn in the evidence light, every other in the tissue's ink; one value an instance.
+  const exposed = varying(attribute('exposed', 'float'));
+  material.colorNode = mix(ink, light, exposed);
   material.opacityNode = shown;
   // Base tissue never blooms (D152, D11): a granule writes no light. Only the pass's own colour blends; every other target takes what is written whole, so this
   // replaces the light beneath the disc at any opacity. Alpha 1, as the files write, keeps that the same where a backend blends every target by the material (D298 (granules-blot-bloom)).
-  material.mrtNode = mrt({ emissive: vec4(0, 0, 0, 1) });
+  // An exposed granule is evidence and so a light (D349 (granules-carry-evidence)): the bloom sees a mark's share of it, by how far the granule has resolved, where it writes none for base tissue.
+  material.mrtNode = mrt({ emissive: vec4(light.mul(exposed).mul(bloomShare).mul(shown), 1) });
 
   const mesh = new Mesh(geometry, material);
   mesh.frustumCulled = false;
@@ -286,6 +317,7 @@ export const createNuclei = (map: MapJson, relief: DataTexture, grid: Grid, amp:
     meshes: [mesh],
     count: () => count,
     shown: () => (whole ? String(count) : `${String(count)} in view${left === 0 ? '' : `, ${String(left)} files left`}`),
+    exposed: () => exposedCount,
     frame: (pixelsPerUnit) => {
       scale.value = pixelsPerUnit;
     },

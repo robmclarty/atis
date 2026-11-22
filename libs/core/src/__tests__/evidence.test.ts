@@ -549,6 +549,29 @@ test('a changed barrel nothing outside its cell imports has not escaped', () => 
   expect(fileAt(files, 'src/solo/index.ts').escaped_interface).toBe(false);
 });
 
+test('a file with no barrel over it that another cell imports has escaped once the change broke a name it exports, and not for an edit to its body alone (D346 (category-reads-surface))', () => {
+  // `doctor.ts` is a module of its own, read by the package's barrel.
+  const body = computeEvidence(inputsFor(CHAIN, [change('src/doctor.ts')], ran()));
+  expect(fileAt(body.files, 'src/doctor.ts').escaped_interface).toBe(false);
+
+  const broke = computeEvidence({ ...inputsFor(CHAIN, [change('src/doctor.ts')], ran()), broke: new Set(['src/doctor.ts']) });
+  expect(fileAt(broke.files, 'src/doctor.ts').escaped_interface).toBe(true);
+
+  // A broken name on a file nothing outside its cell reads stays inside it.
+  const inside = computeEvidence({ ...inputsFor(CHAIN, [change('src/pm/util.ts')], ran()), broke: new Set(['src/pm/util.ts']) });
+  expect(fileAt(inside.files, 'src/pm/util.ts').escaped_interface).toBe(false);
+
+  // With every check green and every changed line run, the broken interface alone is a look: MVFR, where the body's edit is VFR.
+  const closed = ran({ coverage: [{ path: 'src/doctor.ts', statements: [{ line: 10, hits: 2 }] }] });
+  const categoryOf = (inputs: Parameters<typeof computeEvidence>[0]): string => {
+    const { evidence, files } = computeEvidence(inputs);
+    return computeCategory({ check: closed, changed: inputs.changed, files, stitches: evidence.stitches ?? [], deps_added: [], deps_moved: [], config: DEFAULT_CONFIG }).category;
+  };
+  const inputs = inputsFor(CHAIN, [change('src/doctor.ts')], closed);
+  expect(categoryOf(inputs)).toBe('VFR');
+  expect(categoryOf({ ...inputs, broke: new Set(['src/doctor.ts']) })).toBe('MVFR');
+});
+
 test('checks green, evidence closed and nothing escaped is VFR', () => {
   const checks = categoryFor(CHAIN, [change('src/pm/tools.ts')], ran(TOOLS_CLOSED));
 

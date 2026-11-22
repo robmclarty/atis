@@ -79,6 +79,31 @@ test('every placed file with function data has a granule per function, files in 
   expect(nucleiOf(structuredClone(DEMO))).toEqual(nuclei);
 });
 
+/** The functions a map's granules mark as exposed, each as its file and its name. */
+function exposed(map: typeof DEMO): readonly string[] {
+  return nucleiOf(map)
+    .granules.filter((granule) => granule.exposed)
+    .map((granule) => `${granule.file}#${granule.name}`);
+}
+
+test('a granule is exposed where its lines hold a changed line no test ran or a live mutant, and nowhere with no report read (D349 (granules-carry-evidence), C2)', () => {
+  // The coverage report's uncovered lines and the live mutants name four functions; doctor.ts is a changed file no report names, so every changed line of it counts (D80), which reaches two of its three.
+  expect(exposed(DEMO)).toEqual([
+    `${DOCTOR}#runDoctor`,
+    `${DOCTOR}#report`,
+    'libs/core/src/pm/index.ts#resolveSlot',
+    'libs/core/src/pm/index.ts#listSlots',
+    `${TOOLS}#localBin`,
+    `${TOOLS}#resolveTool`,
+  ]);
+  // The mutants alone still expose the functions they stand in.
+  const { patch_coverage: _coverage, unmeasured: _unmeasured, ...mutantsOnly } = DEMO.weather.evidence;
+  expect(exposed({ ...DEMO, weather: { ...DEMO.weather, evidence: mutantsOnly } })).toEqual([`${TOOLS}#localBin`, `${TOOLS}#resolveTool`]);
+  // No report read is no evidence: nothing is exposed, and nothing is read as tested either.
+  const { mutants: _mutants, ...bare } = mutantsOnly;
+  expect(exposed({ ...DEMO, weather: { ...DEMO.weather, evidence: bare } })).toEqual([]);
+});
+
 test('a count of functions alone makes no granule, and neither does a file the layout did not place (C2)', () => {
   const counted = withFile(TOOLS, ({ functions: _functions, ...rest }) => ({ ...rest, function_count: 12 }));
   expect(of(nucleiOf(counted).granules, TOOLS)).toEqual([]);

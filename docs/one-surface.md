@@ -1595,7 +1595,89 @@ Unused: D315 to D319, D326 and D327.
   with it. This record and the build records stay the history; the plan
   holds only what is in force.
 
-The next free number is D346.
+- **D346 (category-reads-surface).** The category's *escaped interface*
+  was a changed barrel that a file outside its module imports, so a module
+  that is one file could never escape: on checkride's 0.25.0 release the map
+  read VFR while its first notice said the `Adapter` type was reshaped and 23
+  files read it. A file with no barrel over it now escapes too, where a file
+  outside its module imports it and the change broke a name it exports, one
+  removed or one whose printed shape differs. That is the proof an
+  `interface-change` notice rests on, read by one function for both. An edit
+  to such a file's body alone, a name added, and a shape that could not be
+  compared escape nothing; a barrel still escapes on any change to it. The
+  README's line for MVFR already said this.
+
+- **D347 (advisories-in-status).** The planet's stars were the one place a
+  serious advisory showed on the opening frame, and they went with it (D213
+  (planet-goes)), leaving the advisories a list in the inspector's map view.
+  The status line now says how many outside packages an advisory names, after
+  the departures. A map audited clean, and one no audit read, say nothing of
+  them: no audit is no clean audit (C2).
+
+- **D348 (line-strip).** The file plate drew a file's lines to scale beside
+  its functions, and it is parked (D204 (parked-levels)), so where in a file
+  the risk sits was words alone. The inspector now draws that strip itself,
+  from one model (`strip.ts`): the functions as blocks, the lines the change
+  wrote, the changed lines no test ran and the live mutants, each in a lane
+  of its own. It lies across the top of a file's facts, where a press opens
+  the code at that line, and runs down the side of the code, where it is the
+  sheet's scroll map. In the code a changed line no test ran carries a bar
+  beside its number and a line with a live mutant a diamond, and the head
+  counts both. A mark the map did not measure is not drawn, and a text of
+  another commit takes none (D271 (marks-of-own-commit)).
+
+- **D349 (granules-carry-evidence).** A function's granule on the map is
+  drawn in the evidence light, and blooms as a mark does, where its lines
+  hold a changed line no test ran or a live mutant; every other stays base
+  tissue. The lines are read as the plate read them (D80): the coverage
+  report's, or every changed line of a file it never names. This bends D298
+  (granules-blot-bloom) for those granules alone, since evidence is light.
+  The canvas counts them in `data-nuclei-exposed`.
+
+- **D350 (plate-by-ask).** The file's plate is laid when the inspector's
+  `plate` button asks for it, and no zoom opens it (D204 (parked-levels)
+  stands). It is the same plate, drawn by the same code, centred in the room
+  the panels leave free, since the file may be anywhere. It is the
+  selection's: it goes when the selection moves, and Escape puts it away
+  before it clears the selection. This keeps the plate's code alive past the
+  day the other parked levels are deleted.
+
+- **D351 (advised-files).** A package an advisory names lists the terrain
+  files that import it, in `weather.dependencies[].files`. A package no
+  advisory names lists none, so a map with no advisory is the bytes it was. A
+  map written before the key carries the advisory and marks no file (C2).
+
+- **D352 (deps-block).** The HUD has a `Deps` block after Health Δ, on a
+  change's map and a whole repo's: how many outside packages an advisory
+  names and the worst severity, `clean` where an audit named none, and the
+  muted dash where no audit was read. It is the scene's one reading, so the
+  still sheet, the pull request's table and the world say the same words. It
+  opens each advised package with the files that import it. Every still's
+  golden gained the block.
+
+- **D353 (advisory-pip).** Each file that imports a package named at high or
+  critical wears a square pip in the IFR hue at its upper left, on every map,
+  clear of the notches at its top and the stitches at its foot. It is the
+  world's alone: the still says it in its `Deps` block. A lesser advisory
+  hangs no pip; the overlay and the list carry it.
+
+- **D354 (package-stars).** The outside packages hang as stars round the
+  ground the world draws: four-pointed, a size on the screen by how many
+  files import each, and hued by health as the planet's were (D170). A star
+  an advisory names, or the change touched, is named beside it; a calm one
+  is not (P1), and a star no audit read does not glow. They are told from
+  the field's faint stars by their points and their hue. Each keeps its
+  place from map to map (C3). This partly reverses D213 (planet-goes), which
+  made the packages a list: the planet stays gone, the stars are back.
+
+- **D355 (advisories-overlay).** A whole repo's map has a ninth overlay,
+  `advisories`: each file that imports a package an advisory names, lit full
+  at high or critical and at `OVERLAY_ADVISORY_LESSER_LEVEL` below. It reads
+  the packages the map already counted, so it and the list cannot disagree,
+  and it is luminance, as what a check found is (C11). With no audit read it
+  is muted with the reason; a clean audit is an overlay with no file lit.
+
+The next free number is D356.
 
 ## Deferred
 

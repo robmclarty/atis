@@ -19,10 +19,16 @@
  * channel the still map draws it in: history as hatching, what the checks
  * found as a ring of the evidence light, duplication as two echo rings, a
  * cycle as an LIFR ring, a baselined finding as a graphite one (C11, D49).
+ * One mark is the world's alone (D353 (advisory-pip)): a square pip in the
+ * IFR hue at the upper left of each file that imports an outside package a high or critical
+ * advisory names, on every map, so a serious advisory shows where it is used
+ * and not only in a list; the still says it in its `Deps` block.
  * Pure: no three, no DOM, so a test reads the records straight.
  */
 
 import {
+  ADVISORY_PIP_PAD,
+  ADVISORY_PIP_SIZE,
   ARROW_SIZE,
   BUGFIX_FULL_AT,
   CHANGE_OUTLINE_WIDTH,
@@ -53,6 +59,7 @@ import {
   STITCH_WIDTH,
   STORM_LABEL_GAP,
   TEXTURE_MAX_OPACITY,
+  advisedFilesOf,
   overlayOf,
   renameLeaderOf,
   slideCellOf,
@@ -71,7 +78,7 @@ export type Hue = (typeof HUES)[number];
 export type Pattern = 'none' | 'hatch' | 'stipple';
 
 /** What a mark is, for a reader and a test; the GPU reads the numbers. A `halo` is the primary notice's light, a `ring` a tier's emphasis (§5.4), an `overlay` a whole repo's overlay on a file (D101). */
-export type MarkKind = 'stain' | 'outline' | 'crossing' | 'hairline' | 'gap' | 'notch' | 'stitch' | 'ghost' | 'history' | 'halo' | 'ring' | 'overlay';
+export type MarkKind = 'stain' | 'outline' | 'crossing' | 'hairline' | 'gap' | 'notch' | 'stitch' | 'ghost' | 'history' | 'halo' | 'ring' | 'overlay' | 'advisory';
 
 /**
  * One sector about a file: an arc from `from` to `to` (radians, y down, the
@@ -321,7 +328,20 @@ const overlaySectorsOf = (map: MapJson, name: OverlayName | undefined): readonly
   });
 };
 
-/** The marks on every placed file the weather touches, in the SVG's own layer order: stains, the primary's halo, history, evidence, ghosts, the tier rings, and a whole repo's overlay last; crossings with the reach beneath. */
+/** Up and to the left of a file's middle, in the layout's radians, y down: clear of the notches at its top and the stitches at its foot. */
+export const ADVISORY_AT = (-3 * Math.PI) / 4;
+
+/** A pip at the upper left of each placed file that imports an outside package a high or critical advisory names (D353 (advisory-pip)): a square in the IFR hue, clear of the file's edge, that never blooms, since it is a state and no light. */
+const advisoriesOf = (map: MapJson): readonly Sector[] => {
+  const positions = map.terrain.layout?.positions ?? {};
+  return advisedFilesOf(map).flatMap((file) => {
+    const at = positions[file.path];
+    if (at === undefined || !file.severe) return [];
+    return [spoke('advisory', { path: file.path }, at, ADVISORY_AT, ADVISORY_PIP_PAD, ADVISORY_PIP_PAD + ADVISORY_PIP_SIZE, ADVISORY_PIP_SIZE / 2, ADVISORY_PIP_SIZE / 2, 'ifr', 0)];
+  });
+};
+
+/** The marks on every placed file the weather touches, in the SVG's own layer order: stains, the primary's halo, history, evidence, ghosts, the tier rings, and a whole repo's overlay last; crossings with the reach beneath. The advisory pips, which the still does not draw, lie over them all. */
 const sectorsOf = (map: MapJson, weather: SceneWeather, overlay: OverlayName | undefined): readonly Sector[] => {
   const positions = map.terrain.layout?.positions ?? {};
   const placed = weather.files.flatMap((file) => {
@@ -336,7 +356,7 @@ const sectorsOf = (map: MapJson, weather: SceneWeather, overlay: OverlayName | u
   // The cell each mark sits in, its file's or the cell itself when a notice's emphasis hangs on a cell's skin, and the slide that shows it: a package's for a single-file module it holds (D167).
   const cellOf = new Map(map.terrain.organelles.map((organelle) => [organelle.id, organelle.cell] as const));
   const cells = new Set(map.terrain.cells.map((cell) => cell.id));
-  return [...crossings, ...stains, ...halos, ...historyOf(map), ...evidence, ...ghosts, ...rings, ...overlaySectorsOf(map, overlay)].map((sector): Sector => {
+  return [...crossings, ...stains, ...halos, ...historyOf(map), ...evidence, ...ghosts, ...rings, ...overlaySectorsOf(map, overlay), ...advisoriesOf(map)].map((sector): Sector => {
     const cell = cellOf.get(sector.path) ?? (cells.has(sector.path) ? sector.path : undefined);
     return cell === undefined ? sector : { ...sector, cell: slideCellOf(map, cell) };
   });

@@ -11,6 +11,11 @@
  * level's plan eases it (step 28, C12), and its every token is read live
  * through the registry (D156). It is laid again only when the file or its
  * size on the screen changes, and moves with the file between.
+ *
+ * On the one surface no zoom opens it (D204 (parked-levels)): it is laid
+ * when the inspector asks for a file's (D350 (plate-by-ask)), and then it
+ * stands in the middle of the screen the panels leave free, where the file
+ * itself may be anywhere, or off the screen.
  */
 
 import { Vector3 } from 'three/webgpu';
@@ -35,8 +40,8 @@ export type FileLook = typeof FILE_LOOK;
 
 export type FilePlate = {
   readonly element: SVGSVGElement;
-  /** Draw `level` on its plate over the file at `at` on the skin, for this camera and canvas, `free` pixels of it left of the rail, at `shown`; nothing when either is absent or `shown` is 0. */
-  readonly render: (camera: Camera, width: number, height: number, free: number, at: Vector3 | undefined, level: FileLevel | undefined, shown: number) => void;
+  /** Draw `level` on its plate over the file at `at` on the skin, for this camera and canvas, `free` pixels of it left of the rail, at `shown`; nothing when either is absent or `shown` is 0. With `centred`, the plate stands in the middle of the free screen, wherever the file lies (D350 (plate-by-ask)). */
+  readonly render: (camera: Camera, width: number, height: number, free: number, at: Vector3 | undefined, level: FileLevel | undefined, shown: number, centred?: boolean) => void;
 };
 
 const SVG = 'http://www.w3.org/2000/svg';
@@ -87,7 +92,7 @@ export const createFilePlate = (look: FileLook): FilePlate => {
   let sized: readonly [number, number] = [0, 0];
   const projected = new Vector3();
 
-  const render: FilePlate['render'] = (camera, width, height, free, at, level, shown) => {
+  const render: FilePlate['render'] = (camera, width, height, free, at, level, shown, centred = false) => {
     const visible = at !== undefined && level !== undefined && shown > 0;
     element.style.display = visible ? '' : 'none';
     if (!visible) return;
@@ -104,8 +109,8 @@ export const createFilePlate = (look: FileLook): FilePlate => {
       laid = key;
     }
     projected.copy(at).project(camera);
-    const x = ((projected.x + 1) / 2) * width - side / 2;
-    const y = ((1 - projected.y) / 2) * height - side / 2;
+    const x = (centred ? free / 2 : ((projected.x + 1) / 2) * width) - side / 2;
+    const y = (centred ? height / 2 : ((1 - projected.y) / 2) * height) - side / 2;
     plate.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
     element.style.opacity = String(shown);
   };

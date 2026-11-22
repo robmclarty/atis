@@ -4,10 +4,10 @@ import { fileURLToPath } from 'node:url';
 
 import { assertMap } from 'core';
 import type { MapJson, OverlayName } from 'core';
-import { ARROW_SIZE, CROSSING_PAD, EMPHASIS_PAD, GHOST_PAD, INTEGRITY_GAP_WIDTH, INTEGRITY_PAD, MUTANT_NOTCH_DEPTH, PRIMARY_RING_WIDTH, RENAME_DASH, RENAME_LEADER_WIDTH, SECONDARY_RING_WIDTH, STANDING_STORM_SCALE, STITCH_LENGTH, STITCH_TEAR, STORM_LABEL_GAP, TEXTURE_MAX_OPACITY, renameLeaderOf, weatherOf } from 'scene';
+import { ADVISORY_PIP_PAD, ADVISORY_PIP_SIZE, ARROW_SIZE, CROSSING_PAD, EMPHASIS_PAD, GHOST_PAD, INTEGRITY_GAP_WIDTH, INTEGRITY_PAD, MUTANT_NOTCH_DEPTH, PRIMARY_RING_WIDTH, RENAME_DASH, RENAME_LEADER_WIDTH, SECONDARY_RING_WIDTH, STANDING_STORM_SCALE, STITCH_LENGTH, STITCH_TEAR, STORM_LABEL_GAP, TEXTURE_MAX_OPACITY, renameLeaderOf, weatherOf } from 'scene';
 import { expect, test } from 'vitest';
 
-import { HUES, marksOf } from '../marks.js';
+import { ADVISORY_AT, HUES, marksOf } from '../marks.js';
 import type { Sector } from '../marks.js';
 import { repoMap } from './repo-map.js';
 
@@ -314,4 +314,29 @@ test("a whole repo's overlay is laid as sectors in the channel the still map dra
   // None shown is the weather's marks alone, and a map of a change has no overlay to lay.
   expect(marksOf(map).sectors.some((sector) => sector.kind === 'overlay')).toBe(false);
   expect(marksOf(DEMO, 'cycles')).toEqual(marksOf(DEMO));
+});
+
+test('a file that imports a package a high or critical advisory names wears a pip at its upper left in the IFR hue, on any map; a lesser advisory and no audit hang none (D353 (advisory-pip))', () => {
+  const index = 'libs/core/src/pm/index.ts';
+  const tools = 'libs/core/src/pm/tools.ts';
+  const advised = assertMap({
+    ...DEMO,
+    weather: {
+      ...DEMO.weather,
+      dependencies: [
+        { name: 'kleur', importers: 2, advisories: 1, severity: 'critical', files: [index, tools] },
+        { name: 'semver', importers: 1, advisories: 1, severity: 'low', files: ['libs/core/src/pm/slots.ts'] },
+      ],
+    },
+  });
+  const pips = marksOf(advised).sectors.filter((mark) => mark.kind === 'advisory');
+  expect(pips.map((mark) => mark.path)).toEqual([index, tools]);
+  for (const pip of pips) {
+    const at = advised.terrain.layout?.positions[pip.path];
+    expect(pip).toMatchObject({ x: at?.x, y: at?.y, r: at?.r, hue: 'ifr', bloom: 0, from: ADVISORY_AT, to: ADVISORY_AT, inner: ADVISORY_PIP_PAD, outer: ADVISORY_PIP_PAD + ADVISORY_PIP_SIZE, innerHalf: ADVISORY_PIP_SIZE / 2, outerHalf: ADVISORY_PIP_SIZE / 2 });
+    // It gives way under its module's slide with the file's other marks.
+    expect(pip.cell).toBeDefined();
+  }
+  // The demo's own packages were read by no audit.
+  expect(marksOf(DEMO).sectors.filter((mark) => mark.kind === 'advisory')).toEqual([]);
 });

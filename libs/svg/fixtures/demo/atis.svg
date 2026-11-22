@@ -168,13 +168,17 @@
         <rect x="103.12" y="31" width="84.54" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
         <text x="109.12" y="44.15" font-size="9" fill="#e6edf3"><tspan>Health Δ </tspan><tspan font-weight="bold">+1.9</tspan></text>
       </g>
+      <g data-block="deps" data-muted="true" data-reason="absent">
+        <rect x="190.66" y="31" width="45.48" height="20" fill="none" stroke="#6b7480" stroke-width="1"/>
+        <text x="196.66" y="44.15" font-size="9" fill="#6b7480"><tspan>Deps </tspan><tspan font-weight="bold">—</tspan></text>
+      </g>
       <g data-block="notices">
-        <rect x="190.66" y="31" width="84.54" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="196.66" y="44.15" font-size="9" fill="#e6edf3"><tspan>Notices </tspan><tspan font-weight="bold">1·2·3</tspan></text>
+        <rect x="239.14" y="31" width="84.54" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="245.14" y="44.15" font-size="9" fill="#e6edf3"><tspan>Notices </tspan><tspan font-weight="bold">1·2·3</tspan></text>
       </g>
       <g data-block="other">
-        <rect x="278.2" y="31" width="51.06" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
-        <text x="284.2" y="44.15" font-size="9" fill="#e6edf3"><tspan>Other </tspan><tspan font-weight="bold">1</tspan></text>
+        <rect x="326.68" y="31" width="51.06" height="20" fill="none" stroke="#e6edf3" stroke-width="1"/>
+        <text x="332.68" y="44.15" font-size="9" fill="#e6edf3"><tspan>Other </tspan><tspan font-weight="bold">1</tspan></text>
       </g>
     </g>
     <g id="rules" stroke="#2b333d" stroke-width="1">
